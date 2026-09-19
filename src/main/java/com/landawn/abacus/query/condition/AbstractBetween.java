@@ -17,6 +17,7 @@ package com.landawn.abacus.query.condition;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -63,7 +64,16 @@ public abstract class AbstractBetween extends ComposableCondition {
      */
     private Object maxValue;
 
-    /** Lazily memoized parameters (performance only). */
+    /**
+     * Whether {@link #parameters()} must rebuild its result on every call instead of memoizing it: {@code true}
+     * when either bound is an array, {@code Date}, {@code Calendar} or a nested {@link Condition} (a
+     * {@link SubQuery} or {@link SqlExpression}). Computed once at construction because the bounds are
+     * immutable afterwards. A nested condition counts as mutable because its own {@code parameters()} may hand
+     * out fresh defensive copies that a memoized outer list would otherwise share across calls.
+     */
+    private final boolean rebuildParametersPerCall;
+
+    /** Lazily memoized parameters (performance only; unused when {@link #rebuildParametersPerCall} is {@code true}). */
     private transient ImmutableList<Object> cachedParameters;
 
     /**
@@ -71,6 +81,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      */
     AbstractBetween() {
         propName = null;
+        rebuildParametersPerCall = false;
     }
 
     /**
@@ -103,6 +114,17 @@ public abstract class AbstractBetween extends ComposableCondition {
 
         this.minValue = snapshotMutableValue(validateNonQuantifiedValueOperand(minValue, "minValue"));
         this.maxValue = snapshotMutableValue(validateNonQuantifiedValueOperand(maxValue, "maxValue"));
+        this.rebuildParametersPerCall = requiresPerCallParameters(this.minValue) || requiresPerCallParameters(this.maxValue);
+    }
+
+    /**
+     * Detects whether returning a memoized parameter list would expose a known mutable value: an array,
+     * {@code Date} or {@code Calendar} bound, or a nested {@link Condition} whose spliced-in parameters may
+     * themselves be per-call defensive copies. Evaluated once at construction into
+     * {@link #rebuildParametersPerCall}.
+     */
+    private static boolean requiresPerCallParameters(final Object bound) {
+        return isSnapshotMutableValue(bound) || bound instanceof Condition;
     }
 
     private static Operator validateOperator(final Operator operator) {
@@ -192,13 +214,18 @@ public abstract class AbstractBetween extends ComposableCondition {
      * List<Object> p2 = subBound.parameters();   // [true, 65]
      * }</pre>
      *
+     * <p>The result is memoized only when both bounds are plain scalars (neither an array, {@code Date},
+     * {@code Calendar} nor a nested {@link Condition}); otherwise a fresh list, holding fresh defensive copies of
+     * any array/{@code Date}/{@code Calendar} values (including those spliced in from a nested condition), is
+     * built on every call, so mutating a returned element never affects this condition or a later call.</p>
+     *
      * @return an immutable list containing {@code [minValue, maxValue]}, or their respective
      *         parameters spliced in where a bound is itself a {@link Condition}; known mutable JDK
      *         bounds are returned as defensive copies
      */
     @Override
     public ImmutableList<Object> parameters() {
-        if (isSnapshotMutableValue(minValue) || isSnapshotMutableValue(maxValue)) {
+        if (rebuildParametersPerCall) {
             return computeParameters();
         }
 
@@ -265,7 +292,7 @@ public abstract class AbstractBetween extends ComposableCondition {
         final String opStr = op == null ? Strings.NULL : op.toString();
 
         final StringBuilder sb = new StringBuilder();
-        sb.append(effectiveNamingPolicy.convert(propName))
+        sb.append(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy))
                 .append(SK._SPACE)
                 .append(opStr)
                 .append(SK._SPACE)
@@ -308,7 +335,9 @@ public abstract class AbstractBetween extends ComposableCondition {
     /**
      * Checks if this condition is equal to another object.
      * Two conditions are equal if they have the exact same runtime class, property name,
-     * operator, minValue, and maxValue.
+     * operator, minValue, and maxValue. Array bounds are compared by content via
+     * {@link N#deepEquals(Object, Object)}, pairing with the {@link N#deepHashCode(Object)} used by
+     * {@link #hashCode()}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -340,7 +369,7 @@ public abstract class AbstractBetween extends ComposableCondition {
         }
 
         final AbstractBetween other = (AbstractBetween) obj;
-        return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.equals(minValue, other.minValue)
-                && N.equals(maxValue, other.maxValue);
+        return N.equals(propName, other.propName) && N.equals(operator, other.operator) && N.deepEquals(minValue, other.minValue)
+                && N.deepEquals(maxValue, other.maxValue);
     }
 }

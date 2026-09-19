@@ -98,12 +98,8 @@ public class CrossJoin extends Join {
      * This produces the Cartesian product of the listed tables. The rendered SQL is
      * {@code CROSS JOIN (t1 CROSS JOIN t2 ...)}; a single-element collection renders bare, without the
      * parentheses. The collection is copied by the base class, so later
-     * changes to the supplied collection do not affect the join.
-     *
-     * <p>Note: the comma-separated parenthesized form is rarely directly executable on most databases
-     * (which expect {@code CROSS JOIN t1 CROSS JOIN t2 ...}); this overload is provided mainly for
-     * symmetry with the other multi-table join constructors. Prefer a separate {@code CrossJoin} per
-     * table for portable SQL.</p>
+     * changes to the supplied collection do not affect the join. The parenthesized {@code CROSS JOIN}
+     * tree is a standard joined-table operand and is equivalent to chaining one {@code CrossJoin} per table.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

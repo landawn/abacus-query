@@ -151,12 +151,25 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * are rendered as {@code IS NULL}/{@code IS NOT NULL} respectively. Binary conditions whose operator is
      * {@code IN}/{@code NOT IN} and whose value is a {@code List} are rendered as a full IN list
      * ({@code col IN (?, ?, ...)}), identically to {@link In}/{@link NotIn}. Nested conditions and sub-queries
-     * are rendered recursively, with sub-query parameters merged into this builder's parameter list.</p>
+     * are rendered recursively, with sub-query parameters (including the positional bindings of a raw
+     * {@code SubQuery(String, Collection)}) merged into this builder's parameter list. The positional
+     * {@code ?} placeholders of such a raw sub-query follow this builder's SQL policy: under
+     * {@code PARAMETERIZED_SQL} they stay as {@code ?} and the bindings are appended to the parameter list;
+     * under {@code NAMED_SQL}/{@code IBATIS_SQL} they are rewritten, in order, to the next collision-safe
+     * generated names ({@code :param}, {@code :param_2}, ... / {@code #{param}}, ...) so the statement never
+     * mixes parameter styles, and the bindings are appended in that order; under {@code RAW_SQL} each one is
+     * replaced by the literal rendering of its binding (exactly as a structured condition's value is inlined:
+     * strings quoted and escaped, {@code null} as the {@code null} literal, a {@link SqlExpression} verbatim) and nothing
+     * is added to the parameter list (see {@link #renameRawSubQueryPlaceholders(String, List)}). An empty
+     * {@link Junction} renders as its Boolean identity ({@code 1 = 1} for AND, {@code 1 = 0} for OR),
+     * exactly as {@code Junction.toSql} does.</p>
      *
      * @param cond the condition to render; must be one of the supported condition types
-     * @throws IllegalArgumentException if {@code cond} is an unsupported condition type, if a
-     *         {@link Junction} contains no sub-conditions, or if a structured {@link SubQuery} (one
-     *         not defined by raw SQL) has no selected property/column names
+     * @throws IllegalArgumentException if {@code cond} is an unsupported condition type; if a
+     *         structured {@link SubQuery} (one not defined by raw SQL) has no selected property/column names;
+     *         or if, under {@code NAMED_SQL}/{@code IBATIS_SQL}/{@code RAW_SQL}, the top-level {@code ?} count of
+     *         a bound raw sub-query cannot be matched to its bindings (PostgreSQL JSON {@code ?} operators or
+     *         {@code ?} inside array subscripts)
      */
     @Override
     protected void appendCondition(final Condition cond) {
@@ -226,7 +239,10 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             final List<Condition> conditionList = junction.conditions();
 
             if (N.isEmpty(conditionList)) {
-                throw new IllegalArgumentException("Junction condition (" + junction.operator() + ") must contain at least one element");
+                // An empty junction is a complete predicate through its Boolean identity, exactly as
+                // Junction.toSql renders it: "1 = 1" for AND (neutral element) and "1 = 0" for OR.
+                _sb.append(junction.operator() == Operator.OR ? "1 = 0" : "1 = 1");
+                return;
             }
 
             if (conditionList.size() == 1) {
@@ -254,7 +270,18 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             if (subQuery instanceof final SubQuerySnapshot subQuerySnapshot) {
                 appendSubQuerySnapshot(subQuerySnapshot);
             } else if (Strings.isNotEmpty(subQuery.rawSql())) {
-                _sb.append(subQuery.rawSql());
+                // A raw sub-query may carry positional JDBC bindings (SubQuery(String, Collection)); merge
+                // them in placeholder order so the parent's parameter list lines up with the rendered
+                // placeholders. Under NAMED_SQL / IBATIS_SQL the raw "?"s are first rewritten to generated
+                // names so the statement does not mix parameter styles (see renameRawSubQueryPlaceholders).
+                // Under RAW_SQL the "?"s are replaced by the bindings' literal renderings, so nothing is bound.
+                final List<Object> rawParameters = subQuery.parameters();
+
+                _sb.append(renameRawSubQueryPlaceholders(subQuery.rawSql(), rawParameters));
+
+                if (N.notEmpty(rawParameters) && _sqlPolicy != SqlPolicy.RAW_SQL) {
+                    _parameters.addAll(rawParameters);
+                }
             } else {
                 final SqlBuilder subBuilder = newSubQueryBuilder(subQuery);
 

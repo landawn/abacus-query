@@ -96,8 +96,8 @@ public class Where extends Clause {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a
      *             {@link Criteria}, is a standalone {@link SubQuery} or another clause, contains an
      *             {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, or is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}) — none of
-     *             which can be nested inside a clause
+     *             operand, or is a blank {@link SqlExpression} — none of which can be nested inside a clause.
+     *             An empty {@link Junction} is accepted and renders its Boolean identity (for example {@code WHERE 1 = 1})
      */
     public Where(final Condition condition) {
         super(Operator.WHERE, condition);

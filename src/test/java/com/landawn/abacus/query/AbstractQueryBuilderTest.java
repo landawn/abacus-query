@@ -1118,30 +1118,25 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testAppendCriteriaJoinTracksFollowUpOnUsingEligibility() {
-        // A criteria join that carries its own ON condition closes the connector slot, even though the
-        // preceding standalone join had left it open: a follow-up on() must not emit a second ON.
+        // An open qualified JOIN must be completed before a Criteria join may follow.
+        final SqlBuilder openJoin = PSC.select("u.id").from("users u").join("orders o");
+        assertThrows(IllegalStateException.class,
+                () -> openJoin.append(Criteria.builder().join("payments p", Filters.expr("p.order_id = o.id")).build()));
+
+        // A criteria join always carries its own ON/USING (Join constructor invariant) and therefore closes
+        // the connector slot: a follow-up on() must not emit a second ON.
         final SqlBuilder conditionedJoin = PSC.select("u.id")
                 .from("users u")
                 .join("orders o")
-                .append(Criteria.builder().join("payments p", Filters.expr("p.order_id = o.id")).build());
-        assertThrows(IllegalStateException.class, () -> conditionedJoin.on("u.id = o.user_id"));
-        assertEquals("SELECT u.id FROM users u JOIN orders o JOIN payments p ON p.order_id = o.id", conditionedJoin.build().query());
-
-        // A condition-less criteria join re-opens the slot: a follow-up on() is accepted and renders.
-        final String openJoinSql = PSC.select("u.id")
-                .from("users u")
-                .join("orders o")
                 .on("u.id = o.user_id")
-                .append(Criteria.builder().join("payments p").build())
-                .on("p.order_id = o.id")
-                .build()
-                .query();
-        assertEquals("SELECT u.id FROM users u JOIN orders o ON u.id = o.user_id JOIN payments p ON p.order_id = o.id", openJoinSql);
+                .append(Criteria.builder().join("payments p", Filters.expr("p.order_id = o.id")).build());
+        assertThrows(IllegalStateException.class, () -> conditionedJoin.on("x = y"));
+        assertEquals("SELECT u.id FROM users u JOIN orders o ON u.id = o.user_id JOIN payments p ON p.order_id = o.id", conditionedJoin.build().query());
 
-        // A single raw criteria join entity that already supplies its ON inline closes the slot too.
-        final SqlBuilder inlineOnJoin = PSC.select("u.id").from("users u").append(Criteria.builder().join("payments p ON p.user_id = u.id").build());
-        assertThrows(IllegalStateException.class, () -> inlineOnJoin.on("p.status = 'OPEN'"));
-        assertEquals("SELECT u.id FROM users u JOIN payments p ON p.user_id = u.id", inlineOnJoin.build().query());
+        // A condition-less qualified criteria join is no longer constructible, so the "re-opened slot"
+        // scenario cannot arise; the same holds for a raw join entity carrying its ON inline.
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("payments p"));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("payments p ON p.user_id = u.id"));
 
         // A CROSS JOIN never accepts a connector, no matter how it is appended.
         final SqlBuilder crossJoined = PSC.select("u.id").from("users u").append(Criteria.builder().join(Filters.crossJoin("payments")).build());
@@ -2638,10 +2633,12 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         final SqlBuilder on = PSC.select("id").from("users").innerJoin("accounts");
         assertThrows(IllegalArgumentException.class, () -> on.on(Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class, () -> on.on(Filters.and()));
         assertThrows(IllegalArgumentException.class, () -> on.on(nullOperator));
         assertEquals("SELECT id FROM users INNER JOIN accounts ON users.id = accounts.user_id",
                 on.on(Filters.expr("users.id = accounts.user_id")).build().query());
+
+        // An empty junction is a complete predicate (its Boolean identity), so it is accepted as an ON predicate.
+        assertEquals("SELECT id FROM users INNER JOIN accounts ON 1 = 1", PSC.select("id").from("users").innerJoin("accounts").on(Filters.and()).build().query());
     }
 
     @Test
@@ -2726,5 +2723,138 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("UPDATE t SET COUNT = ? WHERE ORDER = ?", PAC.update("t").set("count").where(Filters.eq("order", 1)).build().query());
         // The canonical upper-case keyword form is still left untouched.
         assertEquals("SELECT id FROM t WHERE x = CURRENT_DATE", PLC.select("id").from("t").where(Filters.expr("x = CURRENT_DATE")).build().query());
+    }
+
+    // NamingPolicy.convert strips leading and trailing underscore runs; both rendering paths must restore
+    // them through QueryUtil.convertIdentifier so a column literally named "_id" or "__v" keeps its identity.
+    @Test
+    public void testLeadingAndTrailingUnderscoreIdentifiersKeepTheirRunsUnderNamingPolicy() {
+        assertEquals("SELECT id FROM t WHERE _id = ?", PSC.select("id").from("t").where(Filters.eq("_id", 1)).build().query());
+        assertEquals("SELECT _id, __v, _first_name AS \"_firstName\", first_name_ AS \"firstName_\" FROM t",
+                PSC.select("_id", "__v", "_firstName", "firstName_").from("t").build().query());
+        assertEquals("INSERT INTO t (_id, _first_name) VALUES (?, ?)", PSC.insert("_id", "_firstName").into("t").build().query());
+        assertEquals("UPDATE t SET _id = ? WHERE ___ = ?", PSC.update("t").set("_id", 1).where(Filters.eq("___", 2)).build().query());
+        assertEquals("SELECT id FROM t WHERE _first_name = other_value", PSC.select("id").from("t").where(Filters.expr("_firstName = otherValue")).build().query());
+
+        assertEquals("SELECT _ID AS \"_id\", __V AS \"__v\", _FIRST_NAME AS \"_firstName\" FROM t",
+                PAC.select("_id", "__v", "_firstName").from("t").build().query());
+        assertEquals("SELECT ID AS \"id\" FROM t WHERE _ID = ?", PAC.select("id").from("t").where(Filters.eq("_id", 1)).build().query());
+        assertEquals("INSERT INTO t (_ID) VALUES (?)", PAC.insert("_id").into("t").build().query());
+
+        // Parity with the condition path.
+        assertEquals("_first_name = other_value", Filters.expr("_firstName = otherValue").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_FIRST_NAME = OTHER_VALUE", Filters.expr("_firstName = otherValue").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+    }
+
+    // An empty junction is a complete predicate: the builder renders its Boolean identity exactly as Junction.toSql does.
+    @Test
+    public void testEmptyJunctionRendersAsBooleanIdentityThroughTheBuilder() {
+        assertEquals("1 = 1", PSC.renderCondition(Filters.and()).build().query());
+        assertEquals("1 = 0", PSC.renderCondition(Filters.or()).build().query());
+        assertEquals("SELECT * FROM account WHERE 1 = 0", PSC.select("*").from("account").where(Filters.or()).build().query());
+        assertEquals("SELECT * FROM account WHERE 1 = 1", PSC.select("*").from("account").where(Filters.and()).build().query());
+        assertEquals("SELECT * FROM account HAVING 1 = 1", PSC.select("*").from("account").having(Filters.and()).build().query());
+        assertEquals("SELECT * FROM account WHERE (1 = 0) AND (id = ?)",
+                PSC.select("*").from("account").where(Filters.and(Filters.or(), Filters.eq("id", 1))).build().query());
+        assertEquals("SELECT * FROM account WHERE 1 = 1", PSC.select("*").from("account").append(Criteria.builder().where(Filters.and()).build()).build().query());
+    }
+
+    // A raw ON/USING fragment completes the pending qualified JOIN, exactly as on()/using() would.
+    @Test
+    public void testRawAppendedConnectorCompletesQualifiedJoin() {
+        assertEquals("SELECT * FROM users u JOIN orders o ON u.id = o.user_id WHERE u.active = 1",
+                PSC.select("*").from("users u").join("orders o").append("ON u.id = o.user_id").where("u.active = 1").build().query());
+        assertEquals("SELECT * FROM users u JOIN orders o USING (user_id)", PSC.select("*").from("users u").join("orders o").append("USING (user_id)").build().query());
+        assertEquals("SELECT * FROM users u JOIN orders o on(u.id = o.user_id)",
+                PSC.select("*").from("users u").join("orders o").append("on(u.id = o.user_id)").build().query());
+
+        // The slot is closed afterwards, so a structured connector is rejected instead of double-rendering ON.
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users u").join("orders o").append("ON u.id = o.user_id").on("x = y"));
+
+        // Any other raw fragment leaves the JOIN open; the next clause and build() still reject it.
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users u").join("orders o").append("only").build());
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users u").join("orders o").append("online = 1").where("x = 1"));
+    }
+
+    // from(Collection) / from(String...) derive the primary table alias exactly like from(String): an element
+    // carrying an inline JOIN must not hand its final predicate token to the alias scanner.
+    @Test
+    public void testFromCollectionDerivesPrimaryAliasLikeFromString() {
+        final String tableRefs = "users u JOIN orders o ON u.id = o.uid AND o.active = flag";
+        final String viaString = PSC.select("flag.id", "u.id").from(tableRefs).build().query();
+        assertEquals("SELECT flag.id AS \"flag.id\", u.id FROM users u JOIN orders o ON u.id = o.uid AND o.active = flag", viaString);
+
+        assertEquals(viaString + ", extra x", PSC.select("flag.id", "u.id").from(Arrays.asList(tableRefs, "extra x")).build().query());
+        assertEquals(viaString + ", extra x", PSC.select("flag.id", "u.id").from(tableRefs, "extra x").build().query());
+        assertEquals("SELECT o.id AS \"o.id\" FROM users u, orders o", PSC.select("o.id").from(Arrays.asList("users u", "orders o")).build().query());
+    }
+
+    // limit(int, int) reports the lifecycle error before argument validation, exactly like limit(int).
+    @Test
+    public void testLimitWithOffsetReportsClosedBuilderBeforeArgumentErrors() {
+        final SqlBuilder closed = PSC.select("*").from("t");
+        closed.build();
+        assertThrows(IllegalStateException.class, () -> closed.limit(-1, 0));
+        assertThrows(IllegalStateException.class, () -> closed.limit(-1));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("t").limit(-1, 0));
+    }
+
+    // The positional set(...) overloads back onto a map, which would silently collapse a repeated name.
+    @Test
+    public void testPositionalSetOverloadsRejectDuplicateNames() {
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set("a", 1, "a", 2));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set("a", 1, "b", 2, "a", 3));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set("a", 1, "b", 2, "b", 3));
+        assertEquals("UPDATE t SET a = ?, b = ?, c = ?", PSC.update("t").set("a", 1, "b", 2, "c", 3).build().query());
+    }
+
+    // IS / IS NOT with a Boolean is normalized to the SQL keyword expression: no bind parameter on any policy,
+    // and the rendering is identical to Filters.isTrue/isFalse (the keyword's letter case follows the naming
+    // policy exactly as it does for isTrue/isFalse; it is never bound as a value).
+    @Test
+    public void testIsWithBooleanRendersSqlLiteralWithoutParameter() {
+        final AbstractQueryBuilder.SP isTrue = PSC.select("*").from("t").where(Filters.is("x", true)).build();
+        assertTrue("SELECT * FROM t WHERE x IS TRUE".equalsIgnoreCase(isTrue.query()), isTrue.query());
+        assertTrue(isTrue.parameters().isEmpty());
+        assertEquals(PSC.select("*").from("t").where(Filters.isTrue("x")).build().query(), isTrue.query());
+        assertEquals("SELECT * FROM t WHERE X IS TRUE", PAC.select("*").from("t").where(Filters.is("x", true)).build().query());
+
+        final AbstractQueryBuilder.SP isNotFalse = NSC.select("*").from("t").where(Filters.isNot("x", false)).build();
+        assertTrue("SELECT * FROM t WHERE x IS NOT FALSE".equalsIgnoreCase(isNotFalse.query()), isNotFalse.query());
+        assertTrue(isNotFalse.parameters().isEmpty());
+        assertEquals(NSC.select("*").from("t").where(Filters.isNot("x", SqlExpression.of("FALSE"))).build().query(), isNotFalse.query());
+
+        // Builder and condition paths agree.
+        assertEquals(Filters.isTrue("x").toSql(NamingPolicy.SNAKE_CASE), Filters.is("x", true).toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // The positional set(name, value, name, value[, name, value]) duplicate check skips blank names so a blank
+    // name is reported by the map overload's blank-name error, not as a "Duplicate" of another blank name.
+    @Test
+    public void testPositionalSetReportsBlankNamesAsBlankNotDuplicate() {
+        final IllegalArgumentException twoBlank = assertThrows(IllegalArgumentException.class, () -> PSC.update("users").set("", 1, "", 2));
+        assertTrue(twoBlank.getMessage().contains("blank"), twoBlank.getMessage());
+        assertFalse(twoBlank.getMessage().contains("Duplicate"), twoBlank.getMessage());
+
+        final IllegalArgumentException threeBlank = assertThrows(IllegalArgumentException.class, () -> PSC.update("users").set(" ", 1, " ", 2, "name", 3));
+        assertTrue(threeBlank.getMessage().contains("blank"), threeBlank.getMessage());
+        assertFalse(threeBlank.getMessage().contains("Duplicate"), threeBlank.getMessage());
+
+        // Non-blank duplicates are still rejected as duplicates.
+        final IllegalArgumentException dup = assertThrows(IllegalArgumentException.class, () -> PSC.update("users").set("name", 1, "name", 2));
+        assertTrue(dup.getMessage().contains("Duplicate"), dup.getMessage());
+    }
+
+    @Test
+    public void testTrueFalseKeywordsAreNotCaseConvertedByEitherRenderingPath() {
+        // TRUE / FALSE are registered SQL keywords in BOTH registries (AbstractQueryBuilder.sqlKeyWords and
+        // SqlExpression.SQL_KEY_WORDS), so a naming policy never rewrites them into "true" / "false".
+        assertEquals("SELECT * FROM t WHERE active IS TRUE", PSC.select("*").from("t").where(Filters.isTrue("active")).build().query());
+        assertEquals("SELECT * FROM t WHERE active IS NOT FALSE", PSC.select("*").from("t").where(Filters.isNot("active", false)).build().query());
+        assertEquals("SELECT * FROM t WHERE active_flag = TRUE", PSC.select("*").from("t").where(Filters.expr("activeFlag = TRUE")).build().query());
+        assertEquals("active_flag = TRUE", Filters.expr("activeFlag = TRUE").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("active_flag = FALSE", Filters.expr("activeFlag = FALSE").toSql(NamingPolicy.SNAKE_CASE));
+        // Registration is UPPER-case only: a column genuinely named "true" is still converted.
+        assertEquals("is_true = 1", Filters.expr("isTrue = 1").toSql(NamingPolicy.SNAKE_CASE));
     }
 }

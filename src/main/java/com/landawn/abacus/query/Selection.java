@@ -243,7 +243,9 @@ public final class Selection {
         }
 
         /**
-         * Sets the table alias.
+         * Sets the table alias. {@code null} or an empty string means no alias; a non-empty alias is
+         * validated when the selection is rendered and must not be blank, quoted, or contain SQL
+         * comment tokens (it is prefixed verbatim to every rendered column).
          *
          * @param tableAlias the table alias
          * @return this builder

@@ -1,8 +1,10 @@
 package com.landawn.abacus.query.condition;
 
+import static com.landawn.abacus.query.Dsl.PSC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -733,8 +735,9 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testIsOperatorsRestrictRightHandValues() {
-        assertEquals("flag IS true", new Binary("flag", Operator.IS, true).toString());
-        assertEquals("flag IS NOT false", new Binary("flag", Operator.IS_NOT, false).toString());
+        // Booleans are normalized to the SQL truth-value keywords (never bound as parameters).
+        assertEquals("flag IS TRUE", new Binary("flag", Operator.IS, true).toString());
+        assertEquals("flag IS NOT FALSE", new Binary("flag", Operator.IS_NOT, false).toString());
         assertEquals("flag IS UNKNOWN", new Binary("flag", Operator.IS, Filters.expr("UNKNOWN")).toString());
 
         assertThrows(IllegalArgumentException.class, () -> new Binary("flag", Operator.IS, 1));
@@ -863,5 +866,155 @@ public class BinaryTest extends TestBase {
             assertEquals("first_name LIKE 'John%'", binary.toSql(NamingPolicy.SNAKE_CASE));
             assertEquals("FIRST_NAME LIKE 'John%'", binary.toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
         }
+    }
+
+    /**
+     * Array-valued conditions compare by content (N.deepEquals) and hash by content (N.deepHashCode), so
+     * equals/hashCode stay consistent even for nested arrays and for the same array instance reused across
+     * two conditions (each constructor takes its own snapshot). Fails on a shallow, identity-based equals.
+     */
+    @Test
+    public void testEqualsAndHashCode_ArrayValuesUseDeepContentEquality() {
+        final byte[] shared = { 1, 2 };
+        final Binary fromShared1 = new Binary("payload", Operator.EQUAL, shared);
+        final Binary fromShared2 = new Binary("payload", Operator.EQUAL, shared);
+        assertEquals(fromShared1, fromShared2);
+        assertEquals(fromShared1.hashCode(), fromShared2.hashCode());
+
+        final Binary nested1 = new Binary("payload", Operator.EQUAL, new Object[] { new byte[] { 1 }, "x" });
+        final Binary nested2 = new Binary("payload", Operator.EQUAL, new Object[] { new byte[] { 1 }, "x" });
+        assertEquals(nested1, nested2);
+        assertEquals(nested1.hashCode(), nested2.hashCode());
+        assertNotEquals(nested1, new Binary("payload", Operator.EQUAL, new Object[] { new byte[] { 2 }, "x" }));
+
+        final Binary in1 = new Binary("payload", Operator.IN, Arrays.asList(new byte[] { 1 }, new byte[] { 2 }));
+        final Binary in2 = new Binary("payload", Operator.IN, Arrays.asList(new byte[] { 1 }, new byte[] { 2 }));
+        assertEquals(in1, in2);
+        assertEquals(in1.hashCode(), in2.hashCode());
+        assertNotEquals(in1, new Binary("payload", Operator.IN, Arrays.asList(new byte[] { 1 }, new byte[] { 3 })));
+
+        // Different array component types with the same numeric content are not equal.
+        assertNotEquals(new Binary("payload", Operator.EQUAL, new byte[] { 1 }), new Binary("payload", Operator.EQUAL, new int[] { 1 }));
+    }
+
+    /**
+     * A Boolean IS/IS NOT operand is normalized to the SQL truth-value keyword so that no rendering path
+     * ever emits {@code x IS ?}; the result is indistinguishable from {@code Filters.isTrue/isFalse}.
+     */
+    @Test
+    public void testIsBooleanOperandIsNormalizedToKeywordAndNeverBound() {
+        final Binary isTrue = new Binary("active", Operator.IS, true);
+        assertEquals("active IS TRUE", isTrue.toSql(NamingPolicy.NO_CHANGE));
+        assertTrue(isTrue.parameters().isEmpty());
+        assertEquals(SqlExpression.of("TRUE"), isTrue.propValue());
+
+        // propValue() exposes the normalized keyword expression, not the original Boolean, so
+        // propValueAs(Boolean.class) throws; propValueAs(SqlExpression.class) / propValue() are the accessors.
+        final Is is = new Is("x", true);
+        assertTrue(is.propValue() instanceof SqlExpression);
+        assertEquals("TRUE", ((SqlExpression) is.propValue()).literal());
+        assertEquals("TRUE", is.propValueAs(SqlExpression.class).literal());
+        assertThrows(ClassCastException.class, () -> is.propValueAs(Boolean.class));
+        assertEquals("FALSE", ((SqlExpression) new IsNot("x", false).propValue()).literal());
+        assertThrows(ClassCastException.class, () -> new IsNot("x", false).propValueAs(Boolean.class));
+
+        final Binary isNotFalse = Filters.binary("active", Operator.IS_NOT, false);
+        assertEquals("active IS NOT FALSE", isNotFalse.toSql(NamingPolicy.NO_CHANGE));
+        assertTrue(isNotFalse.parameters().isEmpty());
+
+        assertEquals(Filters.isTrue("active"), Filters.is("active", true));
+        assertEquals(Filters.isTrue("active").hashCode(), Filters.is("active", true).hashCode());
+        assertEquals(Filters.isFalse("active"), Filters.is("active", false));
+        assertNotEquals(Filters.is("active", true), Filters.is("active", false));
+
+        // Booleans are still ordinary bind values for every other comparison operator.
+        assertEquals(List.of(true), new Binary("active", Operator.EQUAL, true).parameters());
+    }
+
+    /**
+     * A blank SqlExpression in value position would render a truncated comparison such as {@code a = };
+     * it is rejected at construction with the shared blank-expression wording.
+     */
+    @Test
+    public void testBlankSqlExpressionValueOperandIsRejected() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new Binary("a", Operator.EQUAL, Filters.expr("")));
+        assertEquals("propValue must not be a blank SqlExpression", ex.getMessage());
+
+        assertThrows(IllegalArgumentException.class, () -> new Equal("a", Filters.expr("   ")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.gt("a", Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("a", Operator.IS, Filters.expr("")));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("a", Operator.IN, Arrays.asList(1, Filters.expr(""))));
+        assertThrows(IllegalArgumentException.class, () -> new Binary("a", Operator.IN, Filters.expr("  ")));
+
+        // Non-blank expressions remain the supported escape hatch.
+        assertEquals("a = CURRENT_DATE", new Binary("a", Operator.EQUAL, Filters.expr("CURRENT_DATE")).toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testToSqlPreservesLeadingAndTrailingUnderscoreRuns() {
+        // Binary.toSql must convert the property name through QueryUtil.convertIdentifier (like SqlExpression
+        // and the builders do) so leading/trailing '_' runs survive instead of being stripped by NamingPolicy.
+        assertEquals("_id = 1", Filters.eq("_id", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_id != 1", Filters.ne("_id", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name_ > 1", Filters.gt("firstName_", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("__v LIKE 'a%'", Filters.like("__v", "a%").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_id IS NULL", Filters.isNull("_id").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_id IS NOT NULL", Filters.isNotNull("_id").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_id IS NULL", new Binary("_id", Operator.EQUAL, null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_id IS NOT NULL", new Binary("_id", Operator.NOT_EQUAL, null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_id IN (1, 2)", new Binary("_id", Operator.IN, Arrays.asList(1, 2)).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_ = 1", Filters.eq("_", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("__ = 1", Filters.eq("__", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_1 = 1", Filters.eq("_1", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_1 IS NULL", Filters.isNull("_1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("t.__v = 1", Filters.eq("t.__v", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_first_name = 1", Filters.eq("_firstName", 1).toSql(NamingPolicy.SNAKE_CASE));
+
+        assertEquals("_ID = 1", Filters.eq("_id", 1).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("FIRST_NAME_ > 1", Filters.gt("firstName_", 1).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("__V LIKE 'a%'", Filters.like("__v", "a%").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_ID IS NULL", Filters.isNull("_id").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_ = 1", Filters.eq("_", 1).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_1 = 1", Filters.eq("_1", 1).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("T.__V = 1", Filters.eq("t.__v", 1).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+
+        // ON conditions render through Binary as well
+        assertEquals("ON _id = o._user_id", Filters.on("_id", "o._userId").toSql(NamingPolicy.SNAKE_CASE));
+
+        // parity with the builder path (bind-free condition so the two strings compare directly)
+        final Condition isNull = Filters.isNull("_id");
+        assertEquals("SELECT * FROM t WHERE " + isNull.toSql(NamingPolicy.SNAKE_CASE), PSC.select("*").from("t").where(isNull).build().query());
+    }
+
+    @Test
+    public void testParametersOfSubQueryOperandAreNotSharedAcrossCalls() {
+        // `= (subquery)`: the outer Binary must not memoize the inner Binary's per-call array copies, otherwise a
+        // mutation through the outer parameters() would leak into every later call.
+        final SubQuery subQuery = Filters.subQuery("files", Arrays.asList("id"), Filters.eq("blob", new byte[] { 1, 2 }));
+        final Binary eqSub = new Equal("fileId", subQuery);
+
+        final byte[] first = (byte[]) eqSub.parameters().get(0);
+        assertEquals(2, first[1]);
+        first[1] = 9;
+        assertEquals(2, ((byte[]) eqSub.parameters().get(0))[1]);
+        assertNotSame(eqSub.parameters(), eqSub.parameters());
+
+        // `= ANY (subquery)`: same guarantee through a quantified operand.
+        final Binary eqAny = new Equal("fileId", Filters.any(subQuery));
+        ((byte[]) eqAny.parameters().get(0))[0] = 7;
+        assertEquals(1, ((byte[]) eqAny.parameters().get(0))[0]);
+        assertNotSame(eqAny.parameters(), eqAny.parameters());
+
+        // IN with a nested sub-query element rebuilds as well.
+        final Binary inSub = new Binary("fileId", Operator.IN, Arrays.asList(subQuery, 3));
+        ((byte[]) inSub.parameters().get(0))[0] = 7;
+        assertEquals(1, ((byte[]) inSub.parameters().get(0))[0]);
+        assertEquals(3, inSub.parameters().get(1));
+
+        // All-scalar operands keep the O(1) memoized instance.
+        final Binary scalar = new Equal("age", 25);
+        assertSame(scalar.parameters(), scalar.parameters());
+        final Binary scalarIn = new Binary("id", Operator.IN, Arrays.asList(1, 2));
+        assertSame(scalarIn.parameters(), scalarIn.parameters());
     }
 }

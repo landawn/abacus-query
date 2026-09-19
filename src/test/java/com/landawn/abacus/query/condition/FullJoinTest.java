@@ -3,7 +3,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -19,9 +18,12 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class FullJoinTest extends TestBase {
+    /** A column-to-column ON predicate: renders {@code ON a.id = b.id} and binds no parameters. */
+    private static final On ON_AB = Filters.on("a.id", "b.id");
+
     @Test
     public void testConstructor_Simple() {
-        FullJoin join = new FullJoin("departments");
+        FullJoin join = new FullJoin("departments", ON_AB);
         assertNotNull(join);
         assertEquals(Operator.FULL_JOIN, join.operator());
     }
@@ -46,7 +48,7 @@ public class FullJoinTest extends TestBase {
     @Test
     public void testGetJoinEntities() {
         List<String> entities = Arrays.asList("table1", "table2");
-        FullJoin join = new FullJoin(entities, null);
+        FullJoin join = new FullJoin(entities, Filters.on("table1.id", "table2.id"));
         List<String> result = join.joinEntities();
         assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
@@ -62,14 +64,19 @@ public class FullJoinTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testGetCondition_Null() {
-        FullJoin join = new FullJoin("departments");
-        assertNull(join.condition());
+        // A FULL JOIN can no longer be condition-less: the single-argument form always throws.
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new FullJoin("departments"));
+        assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new FullJoin("departments", null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new FullJoin(Arrays.asList("departments", "teams"), null));
     }
 
     @Test
     public void testParameters_Empty() {
-        FullJoin join = new FullJoin("orders");
+        // A column-to-column ON predicate binds no parameters.
+        FullJoin join = new FullJoin("orders", ON_AB);
         assertTrue(join.parameters().isEmpty());
     }
 
@@ -83,7 +90,7 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testToString_Simple() {
-        FullJoin join = new FullJoin("departments");
+        FullJoin join = new FullJoin("departments", ON_AB);
         String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("FULL JOIN"));
         assertTrue(result.contains("departments"));
@@ -106,7 +113,7 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        FullJoin join = new FullJoin("orders");
+        FullJoin join = new FullJoin("orders", ON_AB);
         assertEquals(join, join);
     }
 
@@ -119,14 +126,14 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testEquals_DifferentEntities() {
-        FullJoin join1 = new FullJoin("orders");
-        FullJoin join2 = new FullJoin("products");
+        FullJoin join1 = new FullJoin("orders", ON_AB);
+        FullJoin join2 = new FullJoin("products", ON_AB);
         assertNotEquals(join1, join2);
     }
 
     @Test
     public void testEquals_Null() {
-        FullJoin join = new FullJoin("orders");
+        FullJoin join = new FullJoin("orders", ON_AB);
         assertNotEquals(null, join);
     }
 
@@ -160,13 +167,13 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
-        FullJoin join = Filters.fullJoin("departments");
+        FullJoin join = Filters.fullJoin("departments", ON_AB);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.FULL_JOIN, join.operator());
         Assertions.assertEquals(1, join.joinEntities().size());
         Assertions.assertTrue(join.joinEntities().contains("departments"));
-        Assertions.assertNull(join.condition());
+        Assertions.assertSame(ON_AB, join.condition());
     }
 
     @Test
@@ -196,7 +203,7 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        FullJoin join = Filters.fullJoin("orders");
+        FullJoin join = Filters.fullJoin("orders", ON_AB);
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("FULL JOIN"));
@@ -242,7 +249,8 @@ public class FullJoinTest extends TestBase {
 
     @Test
     public void testParametersWithoutCondition() {
-        FullJoin join = Filters.fullJoin("departments");
+        // No bound parameters when the predicate compares columns only.
+        FullJoin join = Filters.fullJoin("departments", ON_AB);
 
         List<Object> params = join.parameters();
         Assertions.assertNotNull(params);
@@ -257,12 +265,12 @@ public class FullJoinTest extends TestBase {
         FullJoin join1 = Filters.fullJoin("employees", eq1);
         FullJoin join2 = Filters.fullJoin("employees", eq2);
         FullJoin join3 = Filters.fullJoin("departments", eq1);
-        FullJoin join4 = Filters.fullJoin("employees");
+        FullJoin join4 = Filters.fullJoin("employees", Filters.eq("dept.id", "other"));
 
         Assertions.assertEquals(join1, join1);
         Assertions.assertEquals(join1, join2);
         Assertions.assertNotEquals(join1, join3); // Different entity
-        Assertions.assertNotEquals(join1, join4); // No condition vs with condition
+        Assertions.assertNotEquals(join1, join4); // Different condition
         Assertions.assertNotEquals(join1, null);
         Assertions.assertNotEquals(join1, "string");
     }
@@ -294,5 +302,30 @@ public class FullJoinTest extends TestBase {
         Assertions.assertTrue(result.contains("dept.closed_date IS NULL"));
         Assertions.assertTrue(result.contains("OR"));
         Assertions.assertTrue(result.contains("AND"));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testEntityValidationPrecedesPredicateCheck() {
+        // A null/blank entity is reported as such, not as a missing join predicate.
+        final String entityMessage = "must not be null, empty, or blank";
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new FullJoin((String) null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+        Assertions.assertFalse(ex.getMessage().contains("requires a non-null ON/USING predicate"), ex.getMessage());
+
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new FullJoin("   ", null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testDeprecatedSingleArgConstructorAlwaysThrows() {
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new FullJoin("orders"));
+        Assertions.assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+
+        // The advertised alternatives work.
+        Assertions.assertEquals("FULL JOIN orders ON a.id = b.id", new FullJoin("orders", ON_AB).toSql(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("CROSS JOIN orders", new CrossJoin("orders").toSql(NamingPolicy.NO_CHANGE));
     }
 }

@@ -1197,6 +1197,67 @@ public class QueryUtilTest extends TestBase {
         assertEquals("SELECT id AS \"id\" FROM parent_with_filtered_child", sql);
     }
 
+    @Test
+    public void testConvertIdentifierPreservesLeadingAndTrailingUnderscoreRuns() {
+        // NamingPolicy.convert alone drops leading/trailing '_' runs; convertIdentifier must keep them
+        // and convert only the part in between (shared by SqlExpression.toSql and the builders).
+        assertEquals("first_name", QueryUtil.convertIdentifier("firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("_first_name", QueryUtil.convertIdentifier("_firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name_", QueryUtil.convertIdentifier("firstName_", NamingPolicy.SNAKE_CASE));
+        assertEquals("__first_name__", QueryUtil.convertIdentifier("__firstName__", NamingPolicy.SNAKE_CASE));
+        assertEquals("_FIRST_NAME", QueryUtil.convertIdentifier("_firstName", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_firstName", QueryUtil.convertIdentifier("_first_name", NamingPolicy.CAMEL_CASE));
+        assertEquals("__x", QueryUtil.convertIdentifier("__x", NamingPolicy.SNAKE_CASE));
+        assertEquals("__X", QueryUtil.convertIdentifier("__x", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_1", QueryUtil.convertIdentifier("_1", NamingPolicy.SNAKE_CASE));
+        assertEquals("_1", QueryUtil.convertIdentifier("_1", NamingPolicy.SCREAMING_SNAKE_CASE));
+
+        // all-underscore identifiers are returned as-is
+        assertEquals("_", QueryUtil.convertIdentifier("_", NamingPolicy.SNAKE_CASE));
+        assertEquals("___", QueryUtil.convertIdentifier("___", NamingPolicy.SCREAMING_SNAKE_CASE));
+
+        // NO_CHANGE / null policy, null / empty identifier: returned as-is
+        assertEquals("_firstName_", QueryUtil.convertIdentifier("_firstName_", NamingPolicy.NO_CHANGE));
+        assertEquals("_firstName_", QueryUtil.convertIdentifier("_firstName_", null));
+        assertEquals("", QueryUtil.convertIdentifier("", NamingPolicy.SNAKE_CASE));
+        assertEquals(null, QueryUtil.convertIdentifier(null, NamingPolicy.SNAKE_CASE));
+
+        // the condition rendering path goes through the same helper (builder-path parity is pinned in AbstractQueryBuilderTest)
+        assertEquals("_first_name = other_value", Filters.expr("_firstName = otherValue").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testConvertIdentifierPreservesUnderscoreRunsPerQualifiedSegment() {
+        // leading/trailing '_' runs are preserved for EVERY dot-separated segment, not just the whole string
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE));
+        assertEquals("T.__V", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.CAMEL_CASE));
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.KEBAB_CASE));
+        assertEquals("acc._id", QueryUtil.convertIdentifier("acc._id", NamingPolicy.SNAKE_CASE));
+        assertEquals("ACC._ID", QueryUtil.convertIdentifier("acc._id", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("a._b_.c_", QueryUtil.convertIdentifier("a._b_.c_", NamingPolicy.SNAKE_CASE));
+        assertEquals("A._B_.C_", QueryUtil.convertIdentifier("a._b_.c_", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_t._id_", QueryUtil.convertIdentifier("_t._id_", NamingPolicy.SNAKE_CASE));
+        assertEquals("t.first_name_", QueryUtil.convertIdentifier("t.firstName_", NamingPolicy.SNAKE_CASE));
+        assertEquals("acc._first_name", QueryUtil.convertIdentifier("acc._firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("acc._firstName", QueryUtil.convertIdentifier("acc._first_name", NamingPolicy.CAMEL_CASE));
+
+        // all-underscore segments and identifiers are kept as-is
+        assertEquals("t.__", QueryUtil.convertIdentifier("t.__", NamingPolicy.SNAKE_CASE));
+        assertEquals("_._", QueryUtil.convertIdentifier("_._", NamingPolicy.SCREAMING_SNAKE_CASE));
+
+        // segments WITHOUT edge runs still render exactly as NamingPolicy.convert renders the whole identifier
+        assertEquals(NamingPolicy.SNAKE_CASE.convert("t.firstName"), QueryUtil.convertIdentifier("t.firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals(NamingPolicy.UPPER_CAMEL_CASE.convert("t.firstName"), QueryUtil.convertIdentifier("t.firstName", NamingPolicy.UPPER_CAMEL_CASE));
+
+        // internal runs are NOT preserved: they follow the naming policy (8.0.0 collapses a__b -> a_b)
+        assertEquals(NamingPolicy.SNAKE_CASE.convert("a__b"), QueryUtil.convertIdentifier("a__b", NamingPolicy.SNAKE_CASE));
+        assertEquals(NamingPolicy.CAMEL_CASE.convert("a__b"), QueryUtil.convertIdentifier("a__b", NamingPolicy.CAMEL_CASE));
+
+        // the SqlExpression path renders qualified names through the same helper
+        assertEquals("t.__v = acc._id", Filters.expr("t.__v = acc._id").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
     static class ParentWithFilteredChild {
         private long id;
 

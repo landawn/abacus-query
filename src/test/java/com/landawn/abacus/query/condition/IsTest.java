@@ -27,8 +27,15 @@ public class IsTest extends TestBase {
 
         assertEquals("deletedAt", nullCondition.propName());
         assertEquals(Operator.IS, nullCondition.operator());
-        assertEquals(Boolean.TRUE, booleanCondition.propValue());
+        // A Boolean is normalized to the SQL keyword expression at construction.
+        assertEquals(SqlExpression.of("TRUE"), booleanCondition.propValue());
         assertEquals(unknown, expressionCondition.propValue());
+    }
+
+    @Test
+    public void testConstructorRejectsBlankExpression() {
+        assertThrows(IllegalArgumentException.class, () -> new Is("status", Filters.expr("")));
+        assertThrows(IllegalArgumentException.class, () -> new Is("status", Filters.expr("   ")));
     }
 
     @Test
@@ -57,11 +64,25 @@ public class IsTest extends TestBase {
 
     @Test
     public void testBooleanRendersLiteralAndIsReportedAsParameter() {
+        // `x IS ?` is not valid SQL, so a Boolean is rendered as the TRUE/FALSE keyword and never bound.
         final Is condition = new Is("enabled", true);
 
-        assertEquals("enabled IS true", condition.toString());
-        assertEquals(List.of(true), condition.parameters());
-        assertEquals(Boolean.TRUE, condition.propValueAs(Boolean.class));
+        assertEquals("enabled IS TRUE", condition.toString());
+        assertTrue(condition.parameters().isEmpty());
+        assertEquals(SqlExpression.of("TRUE"), condition.propValueAs(SqlExpression.class));
+
+        final Is falseCondition = new Is("enabled", false);
+        assertEquals("enabled IS FALSE", falseCondition.toString());
+        assertTrue(falseCondition.parameters().isEmpty());
+    }
+
+    @Test
+    public void testBooleanOperandEqualsIsTrueIsFalseFactories() {
+        assertEquals(Filters.isTrue("enabled"), new Is("enabled", true));
+        assertEquals(Filters.isTrue("enabled").hashCode(), new Is("enabled", true).hashCode());
+        assertEquals(Filters.isFalse("enabled"), Filters.is("enabled", false));
+        assertEquals(Filters.isFalse("enabled").hashCode(), Filters.is("enabled", false).hashCode());
+        assertEquals(List.of(), Filters.is("enabled", true).parameters());
     }
 
     @Test

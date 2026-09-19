@@ -60,8 +60,9 @@ public class GreaterThanTest extends TestBase {
 
     @Test
     public void testGetPropValue_Null() {
-        GreaterThan condition = new GreaterThan("field", null);
-        assertNull(condition.propValue());
+        // A null RHS is rejected at construction: `x > NULL` can never be true under three-valued logic.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new GreaterThan("field", null));
+        assertEquals("propValue must not be null for >; use an IS NULL/IS NOT NULL condition instead", ex.getMessage());
     }
 
     @Test
@@ -216,9 +217,8 @@ public class GreaterThanTest extends TestBase {
 
     @Test
     public void testConstructorWithNull() {
-        GreaterThan gt = Filters.gt("value", null);
-        Assertions.assertNotNull(gt);
-        Assertions.assertNull(gt.propValue());
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.gt("value", null));
+        Assertions.assertEquals("propValue must not be null for >; use an IS NULL/IS NOT NULL condition instead", ex.getMessage());
     }
 
     @Test

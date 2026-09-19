@@ -86,23 +86,32 @@ public class FullJoin extends Join {
 
     /**
      * Creates a FULL JOIN clause for the specified table or entity without a join condition.
-     * Most databases require an {@code ON} or {@code USING} clause for a FULL JOIN; use
-     * {@link #FullJoin(String, Condition)} when a condition is required.
+     *
+     * <p>This constructor <b>always throws</b>: a FULL JOIN requires a non-{@code null}
+     * {@code ON}/{@code USING} predicate, so there is no way for it to succeed. It is retained only
+     * for source compatibility.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Simple full join without condition
-     * FullJoin join = new FullJoin("departments");
-     * // SQL: FULL JOIN departments
+     * // Full join with an ON predicate
+     * FullJoin join = new FullJoin("employee_departments ed", Filters.on("employees.id", "ed.employee_id"));
+     * // SQL: FULL JOIN employee_departments ed ON employees.id = ed.employee_id
      *
-     * // Full join with table alias
-     * FullJoin aliasJoin = new FullJoin("employee_departments ed");
-     * // SQL: FULL JOIN employee_departments ed
+     * // Unconditional join
+     * Join cross = new CrossJoin("departments");
+     * // SQL: CROSS JOIN departments
+     *
+     * // Edge: the single-argument form cannot succeed
+     * new FullJoin("departments");   // throws IllegalArgumentException
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
+     *                                  otherwise because a FULL JOIN requires a non-{@code null} {@code ON}/{@code USING} predicate
+     * @deprecated always throws {@link IllegalArgumentException} because a qualified join requires an {@code ON}/{@code USING}
+     *             predicate; use {@link #FullJoin(String, Condition)} instead, or {@link CrossJoin} for an unconditional join
      */
+    @Deprecated
     public FullJoin(final String joinEntity) {
         super(Operator.FULL_JOIN, joinEntity);
     }
@@ -141,14 +150,14 @@ public class FullJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param joinCondition the join condition. A plain non-empty predicate is automatically prefixed with
+     * @param joinCondition the join condition; must not be {@code null}. A plain non-empty predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
-     *            May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public FullJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.FULL_JOIN, joinEntity, joinCondition);
@@ -176,14 +185,14 @@ public class FullJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param joinCondition the join condition. A plain non-empty predicate is automatically prefixed with
+     * @param joinCondition the join condition; must not be {@code null}. A plain non-empty predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
-     *            May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements;
+     *                                  if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public FullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.FULL_JOIN, joinEntities, joinCondition);

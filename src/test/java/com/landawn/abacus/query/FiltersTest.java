@@ -514,8 +514,22 @@ public class FiltersTest extends TestBase {
 
     @Test
     public void testIs() {
-        Is is = Filters.is("status", "active");
-        assertNotNull(is);
+        // IS accepts only null, a Boolean, or an SqlExpression right-hand value
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.is("status", "active"));
+        assertTrue(ex.getMessage().contains("IS requires null, a Boolean, or an explicit SqlExpression"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.is("status", 1));
+        assertThrows(IllegalArgumentException.class, () -> Filters.is("status", Filters.subQuery("SELECT 1")));
+
+        // a Boolean is normalized to the TRUE/FALSE keyword, never a bind parameter
+        Is isTrue = Filters.is("x", true);
+        assertEquals("x IS TRUE", isTrue.toString());
+        assertTrue(isTrue.parameters().isEmpty());
+        assertEquals(Filters.isTrue("x"), isTrue);
+        assertEquals("x IS FALSE", Filters.is("x", false).toString());
+        assertEquals(Filters.isFalse("x"), Filters.is("x", false));
+
+        assertEquals("x IS NULL", Filters.is("x", null).toString());
+        assertEquals("x IS UNKNOWN", Filters.is("x", Filters.expr("UNKNOWN")).toString());
     }
 
     @Test
@@ -536,8 +550,16 @@ public class FiltersTest extends TestBase {
 
     @Test
     public void testIsNot() {
-        IsNot isNot = Filters.isNot("status", "deleted");
-        assertNotNull(isNot);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.isNot("status", "deleted"));
+        assertTrue(ex.getMessage().contains("IS NOT requires null, a Boolean, or an explicit SqlExpression"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.isNot("status", 1));
+
+        IsNot isNotFalse = Filters.isNot("x", false);
+        assertEquals("x IS NOT FALSE", isNotFalse.toString());
+        assertTrue(isNotFalse.parameters().isEmpty());
+        assertEquals("x IS NOT TRUE", Filters.isNot("x", true).toString());
+        assertEquals("x IS NOT NULL", Filters.isNot("x", null).toString());
+        assertEquals("x IS NOT UNKNOWN", Filters.isNot("x", Filters.expr("UNKNOWN")).toString());
     }
 
     @Test
@@ -978,9 +1000,15 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testJoinEntity() {
-        com.landawn.abacus.query.condition.Join join = Filters.join("orders");
-        assertNotNull(join);
+        // a qualified JOIN needs an ON/USING predicate: the single-arg factory always throws
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.join("orders"));
+        assertTrue(ex.getMessage().contains("JOIN requires a non-null ON/USING predicate"));
+
+        // the two-arg form is the supported way to build it
+        com.landawn.abacus.query.condition.Join join = Filters.join("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("JOIN orders ON users.id = orders.user_id", join.toString());
     }
 
     @Test
@@ -998,9 +1026,15 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testLeftJoinEntity() {
-        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("orders");
-        assertNotNull(leftJoin);
+        // a qualified LEFT JOIN needs an ON/USING predicate: the single-arg factory always throws
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders"));
+        assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"));
+
+        // the two-arg form is the supported way to build it
+        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin.toString());
     }
 
     @Test
@@ -1018,9 +1052,15 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testRightJoinEntity() {
-        com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin("orders");
-        assertNotNull(rightJoin);
+        // a qualified RIGHT JOIN needs an ON/USING predicate: the single-arg factory always throws
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("orders"));
+        assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"));
+
+        // the two-arg form is the supported way to build it
+        com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("RIGHT JOIN orders ON users.id = orders.user_id", rightJoin.toString());
     }
 
     @Test
@@ -1050,9 +1090,15 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testFullJoinEntity() {
-        com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin("orders");
-        assertNotNull(fullJoin);
+        // a qualified FULL JOIN needs an ON/USING predicate: the single-arg factory always throws
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("orders"));
+        assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"));
+
+        // the two-arg form is the supported way to build it
+        com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("FULL JOIN orders ON users.id = orders.user_id", fullJoin.toString());
     }
 
     @Test
@@ -1070,9 +1116,15 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testInnerJoinEntity() {
-        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders");
-        assertNotNull(innerJoin);
+        // a qualified INNER JOIN needs an ON/USING predicate: the single-arg factory always throws
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("orders"));
+        assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"));
+
+        // the two-arg form is the supported way to build it
+        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("INNER JOIN orders ON users.id = orders.user_id", innerJoin.toString());
     }
 
     @Test
@@ -1914,54 +1966,57 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testJoin() {
-        // Test with entity name only
-        Join join1 = Filters.join("users");
-        Assertions.assertNotNull(join1);
+        // Entity name only: a qualified JOIN requires an ON/USING predicate
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.join("users"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.join("users", (Condition) null));
 
         // Test with entity name and condition
-        Condition condition = Filters.eq("users.id", "orders.user_id");
+        Condition condition = Filters.on("users.id", "orders.user_id");
         Join join2 = Filters.join("users", condition);
-        Assertions.assertNotNull(join2);
+        Assertions.assertEquals("JOIN users ON users.id = orders.user_id", join2.toString());
 
         // Test with collection of entities and condition
         List<String> entities = Arrays.asList("users", "roles");
         Join join3 = Filters.join(entities, condition);
-        Assertions.assertNotNull(join3);
+        Assertions.assertEquals("JOIN (users CROSS JOIN roles) ON users.id = orders.user_id", join3.toString());
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testLeftJoin() {
-        // Test with entity name only
-        LeftJoin leftJoin1 = Filters.leftJoin("orders");
-        Assertions.assertNotNull(leftJoin1);
+        // Entity name only: a qualified LEFT JOIN requires an ON/USING predicate
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders", (Condition) null));
 
         // Test with entity name and condition
-        Condition condition = Filters.eq("users.id", "orders.user_id");
+        Condition condition = Filters.on("users.id", "orders.user_id");
         LeftJoin leftJoin2 = Filters.leftJoin("orders", condition);
-        Assertions.assertNotNull(leftJoin2);
+        Assertions.assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin2.toString());
 
         // Test with collection of entities and condition
         List<String> entities = Arrays.asList("orders", "order_items");
         LeftJoin leftJoin3 = Filters.leftJoin(entities, condition);
-        Assertions.assertNotNull(leftJoin3);
+        Assertions.assertEquals("LEFT JOIN (orders CROSS JOIN order_items) ON users.id = orders.user_id", leftJoin3.toString());
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testRightJoin() {
-        // Test with entity name only
-        RightJoin rightJoin1 = Filters.rightJoin("departments");
-        Assertions.assertNotNull(rightJoin1);
+        // Entity name only: a qualified RIGHT JOIN requires an ON/USING predicate
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("departments"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("departments", (Condition) null));
 
         // Test with entity name and condition
-        Condition condition = Filters.eq("employees.dept_id", "departments.id");
+        Condition condition = Filters.on("employees.dept_id", "departments.id");
         RightJoin rightJoin2 = Filters.rightJoin("departments", condition);
-        Assertions.assertNotNull(rightJoin2);
+        Assertions.assertEquals("RIGHT JOIN departments ON employees.dept_id = departments.id", rightJoin2.toString());
 
         // Test with collection of entities and condition
         List<String> entities = Arrays.asList("departments", "locations");
         RightJoin rightJoin3 = Filters.rightJoin(entities, condition);
-        Assertions.assertNotNull(rightJoin3);
+        Assertions.assertEquals("RIGHT JOIN (departments CROSS JOIN locations) ON employees.dept_id = departments.id", rightJoin3.toString());
     }
 
     @Test
@@ -1977,37 +2032,39 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testFullJoin() {
-        // Test with entity name only
-        FullJoin fullJoin1 = Filters.fullJoin("employees");
-        Assertions.assertNotNull(fullJoin1);
+        // Entity name only: a qualified FULL JOIN requires an ON/USING predicate
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("employees"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("employees", (Condition) null));
 
         // Test with entity name and condition
-        Condition condition = Filters.eq("employees.id", "managers.employee_id");
+        Condition condition = Filters.on("employees.id", "managers.employee_id");
         FullJoin fullJoin2 = Filters.fullJoin("managers", condition);
-        Assertions.assertNotNull(fullJoin2);
+        Assertions.assertEquals("FULL JOIN managers ON employees.id = managers.employee_id", fullJoin2.toString());
 
         // Test with collection of entities and condition
         List<String> entities = Arrays.asList("employees", "departments");
         FullJoin fullJoin3 = Filters.fullJoin(entities, condition);
-        Assertions.assertNotNull(fullJoin3);
+        Assertions.assertEquals("FULL JOIN (employees CROSS JOIN departments) ON employees.id = managers.employee_id", fullJoin3.toString());
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testInnerJoin() {
-        // Test with entity name only
-        InnerJoin innerJoin1 = Filters.innerJoin("roles");
-        Assertions.assertNotNull(innerJoin1);
+        // Entity name only: a qualified INNER JOIN requires an ON/USING predicate
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("roles"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("roles", (Condition) null));
 
         // Test with entity name and condition
-        Condition condition = Filters.eq("users.role_id", "roles.id");
+        Condition condition = Filters.on("users.role_id", "roles.id");
         InnerJoin innerJoin2 = Filters.innerJoin("roles", condition);
-        Assertions.assertNotNull(innerJoin2);
+        Assertions.assertEquals("INNER JOIN roles ON users.role_id = roles.id", innerJoin2.toString());
 
         // Test with collection of entities and condition
         List<String> entities = Arrays.asList("users", "user_roles");
         InnerJoin innerJoin3 = Filters.innerJoin(entities, condition);
-        Assertions.assertNotNull(innerJoin3);
+        Assertions.assertEquals("INNER JOIN (users CROSS JOIN user_roles) ON users.role_id = roles.id", innerJoin3.toString());
     }
 
     @Test
@@ -2545,33 +2602,63 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testFilters_join() {
-        Join join = Filters.join("orders ON users.id = orders.user_id");
-        assertNotNull(join);
+        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Filters.join("orders ON users.id = orders.user_id"));
+        assertTrue(ex.getMessage().contains("JOIN requires a non-null ON/USING predicate"));
+
+        Join join = Filters.join("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("JOIN orders ON users.id = orders.user_id", join.toString());
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testFilters_leftJoin() {
-        LeftJoin leftJoin = Filters.leftJoin("orders ON users.id = orders.user_id");
-        assertNotNull(leftJoin);
+        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Filters.leftJoin("orders ON users.id = orders.user_id"));
+        assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"));
+
+        LeftJoin leftJoin = Filters.leftJoin("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin.toString());
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testFilters_rightJoin() {
-        RightJoin rightJoin = Filters.rightJoin("orders ON users.id = orders.user_id");
-        assertNotNull(rightJoin);
+        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Filters.rightJoin("orders ON users.id = orders.user_id"));
+        assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"));
+
+        RightJoin rightJoin = Filters.rightJoin("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("RIGHT JOIN orders ON users.id = orders.user_id", rightJoin.toString());
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testFilters_innerJoin() {
-        InnerJoin innerJoin = Filters.innerJoin("orders ON users.id = orders.user_id");
-        assertNotNull(innerJoin);
+        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Filters.innerJoin("orders ON users.id = orders.user_id"));
+        assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"));
+
+        InnerJoin innerJoin = Filters.innerJoin("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("INNER JOIN orders ON users.id = orders.user_id", innerJoin.toString());
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testFilters_fullJoin() {
-        FullJoin fullJoin = Filters.fullJoin("orders ON users.id = orders.user_id");
-        assertNotNull(fullJoin);
+        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Filters.fullJoin("orders ON users.id = orders.user_id"));
+        assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"));
+
+        FullJoin fullJoin = Filters.fullJoin("orders", Filters.on("users.id", "orders.user_id"));
+        assertEquals("FULL JOIN orders ON users.id = orders.user_id", fullJoin.toString());
     }
 
     @Test
@@ -2673,6 +2760,21 @@ public class FiltersTest extends TestBase {
     @Test
     public void testHavingString_EmptyExpr_ThrowsIAE() {
         assertThrows(IllegalArgumentException.class, () -> Filters.having(""));
+    }
+
+    @Test
+    public void testWhereAndHavingStringRejectBlankExpression() {
+        // where(String)/having(String) use checkArgNotBlank: whitespace-only expressions are rejected up front,
+        // with a message that names the blank rejection (same contract as Criteria.Builder.where(String)/having(String)).
+        final IllegalArgumentException whereEx = assertThrows(IllegalArgumentException.class, () -> Filters.where("  "));
+        assertTrue(whereEx.getMessage().toLowerCase().contains("blank"), whereEx.getMessage());
+
+        final IllegalArgumentException havingEx = assertThrows(IllegalArgumentException.class, () -> Filters.having("  "));
+        assertTrue(havingEx.getMessage().toLowerCase().contains("blank"), havingEx.getMessage());
+
+        // Tabs/newlines count as blank too.
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("\t\n"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.having("\t\n"));
     }
 
     @Test
@@ -2816,17 +2918,17 @@ public class FiltersTest extends TestBase {
 
     @Test
     public void test2ndPass_orEmptyArray_buildsEmptyOrJunction() {
-        // Verify or() with empty array doesn't NPE; the resulting toString is empty.
+        // Verify or() with empty array doesn't NPE; an empty OR renders its Boolean identity.
         Or empty = Filters.or(new Condition[0]);
         assertNotNull(empty);
-        assertEquals("", empty.toString());
+        assertEquals("1 = 0", empty.toString());
     }
 
     @Test
     public void test2ndPass_andEmptyArray_buildsEmptyAndJunction() {
         And empty = Filters.and(new Condition[0]);
         assertNotNull(empty);
-        assertEquals("", empty.toString());
+        assertEquals("1 = 1", empty.toString());
     }
 
     @Test
@@ -2986,5 +3088,132 @@ public class FiltersTest extends TestBase {
     @Test
     public void testFiltersIsFinal() {
         assertTrue(java.lang.reflect.Modifier.isFinal(Filters.class.getModifiers()));
+    }
+
+    // ---- fix-round 2026-09-19 regression tests ----
+
+    @Test
+    public void testEmptyJunctionsComposeAsBooleanIdentityPredicates() {
+        // D-C: an initialized empty AND/OR is a complete predicate and may be nested, negated, or used in a clause
+        assertEquals("((1 = 1) OR (1 = 0))", Filters.or(Filters.and(), Filters.or()).toString());
+        assertEquals("((1 = 1))", Filters.and(Filters.and()).toString());
+        assertEquals("NOT (1 = 1)", Filters.not(Filters.and()).toString());
+        assertEquals("WHERE 1 = 1", Filters.where(Filters.and()).toString());
+        assertEquals("HAVING 1 = 0", Filters.having(Filters.or()).toString());
+        assertEquals("((id = 1) AND (1 = 1))", Filters.eq("id", 1).and(Filters.and()).toString());
+        assertEquals("SELECT id FROM users WHERE 1 = 0", Filters.subQuery("users", Arrays.asList("id"), Filters.or()).toString());
+        assertEquals("ON 1 = 1", Filters.on(Filters.and()).toString());
+        assertEquals("JOIN orders ON 1 = 1", Filters.join("orders", Filters.and()).toString());
+
+        // a blank SqlExpression is still an empty predicate and is still rejected
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.expr("  ")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.not(Filters.expr("")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where(Filters.expr(" ")));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSingleArgQualifiedJoinFactoriesAlwaysThrow() {
+        // D-E: the deprecated single-arg factories cannot succeed; CROSS/NATURAL joins remain condition-less
+        for (final String entity : new String[] { "orders", "orders o", "orders ON a.id = o.id" }) {
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.join(entity)).getMessage()
+                    .contains("JOIN requires a non-null ON/USING predicate"));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin(entity)).getMessage()
+                    .contains("INNER JOIN requires a non-null ON/USING predicate"));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin(entity)).getMessage()
+                    .contains("LEFT JOIN requires a non-null ON/USING predicate"));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(entity)).getMessage()
+                    .contains("RIGHT JOIN requires a non-null ON/USING predicate"));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin(entity)).getMessage()
+                    .contains("FULL JOIN requires a non-null ON/USING predicate"));
+        }
+
+        assertEquals("CROSS JOIN orders", Filters.crossJoin("orders").toString());
+        assertEquals("NATURAL JOIN orders", Filters.naturalJoin("orders").toString());
+
+        // multi-entity joins render a CROSS JOIN tree, not a comma list
+        assertEquals("CROSS JOIN (colors CROSS JOIN sizes)", Filters.crossJoin(Arrays.asList("colors", "sizes")).toString());
+        assertEquals("NATURAL JOIN (employees CROSS JOIN departments)", Filters.naturalJoin(Arrays.asList("employees", "departments")).toString());
+        assertEquals("JOIN (orders CROSS JOIN products) ON orders.product_id = products.id",
+                Filters.join(Arrays.asList("orders", "products"), Filters.on("orders.product_id", "products.id")).toString());
+    }
+
+    @Test
+    public void testPairOverloadsRejectDuplicatePropertyNames() {
+        // D-L: a repeated name used to collapse silently into one entry with the last direction winning
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Filters.groupBy("a", SortDirection.ASC, "a", SortDirection.DESC));
+        assertTrue(ex.getMessage().contains("Duplicate property name: a"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "b", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("a", SortDirection.ASC, "a", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("b", SortDirection.ASC, "a", SortDirection.ASC, "b", SortDirection.DESC));
+
+        // null names are still reported by the clause constructor, not as duplicates
+        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy(null, SortDirection.ASC, null, SortDirection.DESC));
+
+        // distinct names keep working
+        assertEquals("GROUP BY a ASC, b DESC", Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.DESC).toString());
+        assertEquals("ORDER BY a ASC, b DESC, c ASC",
+                Filters.orderBy("a", SortDirection.ASC, "b", SortDirection.DESC, "c", SortDirection.ASC).toString());
+    }
+
+    @Test
+    public void testBlankSqlExpressionRejectedAsValueOperand() {
+        // D-G: `a = ` is not a usable predicate
+        assertThrows(IllegalArgumentException.class, () -> Filters.equal("a", Filters.expr("")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.gt("a", Filters.expr("  ")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.like("a", Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.between("a", Filters.expr(""), 5));
+        assertThrows(IllegalArgumentException.class, () -> Filters.in("a", Filters.expr(""), 1));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("a", Operator.EQUAL, Filters.expr(" ")));
+
+        // a non-blank expression is still accepted verbatim
+        assertEquals("a = now()", Filters.equal("a", Filters.expr("now()")).toString());
+    }
+
+    @Test
+    public void testNullValueOperandRejectedByOrderingAndLikeFactories() {
+        // D1 / D3 / D4: null is only meaningful for =, !=, IS and IS NOT
+        assertEquals("a IS NULL", Filters.equal("a", null).toString());
+        assertEquals("a IS NOT NULL", Filters.notEqual("a", null).toString());
+        assertEquals("a IS NULL", Filters.binary("a", Operator.EQUAL, null).toString());
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.greaterThan("age", null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.gt("age", null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.greaterThanOrEqual("age", null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.ge("age", null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.lessThan("age", null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.lt("age", null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.lessThanOrEqual("age", null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.le("age", null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.like("email", (String) null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.like("email", (Object) null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.notLike("email", (String) null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.notLike("email", (Object) null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.gtAndLt("age", null, 5));
+        assertThrows(IllegalArgumentException.class, () -> Filters.geAndLt("age", 1, null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.geAndLe("age", null, 5));
+        assertThrows(IllegalArgumentException.class, () -> Filters.gtAndLe("age", 1, null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.between("age", null, 5));
+        assertThrows(IllegalArgumentException.class, () -> Filters.notBetween("age", 1, null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("age", Operator.GREATER_THAN, null));
+
+        // D7: an ordinary predicate is not a value operand either
+        assertThrows(IllegalArgumentException.class, () -> Filters.equal("a", Filters.equal("b", 1)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.gt("a", Filters.isNull("b")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.like("a", Filters.any(Filters.subQuery("SELECT 1"))));
+        assertThrows(IllegalArgumentException.class, () -> Filters.in("x", Filters.equal("a", 1)));
+    }
+
+    @Test
+    public void testEntityEqualFactoriesRejectNullPropertyNameWithIllegalArgumentException() {
+        // D6: a null name is an IllegalArgumentException, not a NullPointerException
+        Account account = new Account().setId(7L).setFirstName("Jane");
+        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList((String) null)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(account, Arrays.asList("id", null)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account), Arrays.asList((String) null)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList("nonexistent")));
     }
 }

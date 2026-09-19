@@ -3,7 +3,9 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -271,5 +273,81 @@ public class AbstractBetweenTest extends TestBase {
     public void testToString_NaNBoundIsRejected_Pass3() {
         final TestAbstractBetween condition = new TestAbstractBetween("v", Double.NaN, 100.0);
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> condition.toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    /**
+     * Array bounds compare by content (N.deepEquals), consistent with the N.deepHashCode-based hash. Each
+     * constructor snapshots its bounds, so even the same array instance reused across two conditions must
+     * still compare equal. Fails on a shallow, identity-based equals.
+     */
+    @Test
+    @Tag("2025")
+    public void testEquals_SameArrayInstanceReusedAcrossConditions() {
+        final byte[] shared = { 1 };
+        final TestAbstractBetween a = new TestAbstractBetween("p", shared, shared);
+        final TestAbstractBetween b = new TestAbstractBetween("p", shared, shared);
+
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertNotEquals(new TestAbstractBetween("p", new byte[] { 1 }, new byte[] { 2 }), new TestAbstractBetween("p", new byte[] { 1 }, new byte[] { 3 }));
+
+        final TestAbstractBetween nested1 = new TestAbstractBetween("p", new Object[] { new int[] { 1 } }, new Object[] { new int[] { 2 } });
+        final TestAbstractBetween nested2 = new TestAbstractBetween("p", new Object[] { new int[] { 1 } }, new Object[] { new int[] { 2 } });
+        assertEquals(nested1, nested2);
+        assertEquals(nested1.hashCode(), nested2.hashCode());
+    }
+
+    /**
+     * A blank SqlExpression bound would render a truncated {@code p BETWEEN  AND 5}; it is rejected at construction.
+     */
+    @Test
+    @Tag("2025")
+    public void testBlankSqlExpressionBoundIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("p", Filters.expr(""), 5));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("p", 1, Filters.expr("   ")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.between("p", Filters.expr(" "), 5));
+
+        assertEquals("p BETWEEN CURRENT_DATE AND 5", new TestAbstractBetween("p", Filters.expr("CURRENT_DATE"), 5).toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    @Tag("2025")
+    public void testToSqlPreservesLeadingAndTrailingUnderscoreRuns() {
+        // AbstractBetween.toSql must convert the property name through QueryUtil.convertIdentifier
+        // so leading/trailing '_' runs survive instead of being stripped by NamingPolicy.
+        assertEquals("_id BETWEEN 1 AND 2", Filters.between("_id", 1, 2).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name_ NOT BETWEEN 1 AND 2", Filters.notBetween("firstName_", 1, 2).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_ BETWEEN 1 AND 2", Filters.between("_", 1, 2).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_1 BETWEEN 1 AND 2", Filters.between("_1", 1, 2).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("t.__v BETWEEN 1 AND 2", Filters.between("t.__v", 1, 2).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_ID BETWEEN 1 AND 2", Filters.between("_id", 1, 2).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("FIRST_NAME_ NOT BETWEEN 1 AND 2", Filters.notBetween("firstName_", 1, 2).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("T.__V BETWEEN 1 AND 2", Filters.between("t.__v", 1, 2).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("__v BETWEEN 1 AND 2", new TestAbstractBetween("__v", 1, 2).toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testParametersOfSubQueryBoundAreNotSharedAcrossCalls() {
+        // A sub-query bound splices the inner Binary's per-call array copies into parameters(); the outer condition
+        // must not memoize them, otherwise a mutation through the outer parameters() would leak into later calls.
+        final SubQuery subQuery = Filters.subQuery("config", Arrays.asList("minAge"), Filters.eq("blob", new byte[] { 1, 2 }));
+        final TestAbstractBetween lower = new TestAbstractBetween("age", subQuery, 65);
+
+        final byte[] first = (byte[]) lower.parameters().get(0);
+        assertEquals(2, first[1]);
+        first[1] = 9;
+        assertEquals(2, ((byte[]) lower.parameters().get(0))[1]);
+        assertEquals(65, lower.parameters().get(1));
+        assertNotSame(lower.parameters(), lower.parameters());
+
+        // Same guarantee when the sub-query is the upper bound.
+        final TestAbstractBetween upper = new TestAbstractBetween("age", 18, subQuery);
+        ((byte[]) upper.parameters().get(1))[0] = 7;
+        assertEquals(1, ((byte[]) upper.parameters().get(1))[0]);
+        assertEquals(18, upper.parameters().get(0));
+
+        // All-scalar bounds keep the O(1) memoized instance.
+        final TestAbstractBetween scalars = new TestAbstractBetween("age", 18, 65);
+        assertSame(scalars.parameters(), scalars.parameters());
     }
 }

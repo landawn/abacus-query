@@ -770,7 +770,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank
      */
     public SqlBuilder update(final String tableName) {
-        N.checkArgument(!Strings.isBlank(tableName), SqlBuilder.UPDATE_PART_MSG);
+        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
@@ -804,7 +804,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or {@code entityClass} is null
      */
     public SqlBuilder update(final String tableName, final Class<?> entityClass) {
-        N.checkArgument(!Strings.isBlank(tableName), SqlBuilder.UPDATE_PART_MSG);
+        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
         N.checkArgNotNull(entityClass, SqlBuilder.UPDATE_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
@@ -911,7 +911,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank
      */
     public SqlBuilder deleteFrom(final String tableName) {
-        N.checkArgument(!Strings.isBlank(tableName), SqlBuilder.DELETION_PART_MSG);
+        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
@@ -942,7 +942,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or {@code entityClass} is null
      */
     public SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
-        N.checkArgument(!Strings.isBlank(tableName), SqlBuilder.DELETION_PART_MSG);
+        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
         N.checkArgNotNull(entityClass, SqlBuilder.DELETION_PART_MSG);
 
         final SqlBuilder instance = createSqlBuilderInstance();
@@ -1543,8 +1543,8 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity results
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if either entity class is {@code null}, or if either selection has no property
-     *                                  remaining after exclusions
+     * @throws IllegalArgumentException if either entity class is {@code null}, or if the two selections together
+     *                                  resolve to no selectable property after exclusions are applied
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
@@ -1583,7 +1583,8 @@ public final class Dsl {
      *
      * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code selection} is {@code null} or resolves to no selectable property
+     * @throws IllegalArgumentException if {@code selection} is {@code null} or resolves to no selectable property,
+     *                                  or carries a blank, quoted, or comment-bearing table or class alias
      * @see #select(List)
      * @see Selection
      */
@@ -1622,7 +1623,8 @@ public final class Dsl {
      *
      * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains invalid data,
+     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains invalid data (including a
+     *                                  blank, quoted, or comment-bearing table or class alias),
      *                                  or resolves to no properties in total
      */
     public SqlBuilder select(final List<Selection> selections) {
@@ -1689,8 +1691,9 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if either entity class is {@code null}, if either selection has no property
-     *                                  remaining after exclusions, or if the generated FROM clause is blank
+     * @throws IllegalArgumentException if either entity class is {@code null}, if the two selections together
+     *                                  resolve to no selectable property after exclusions are applied, or if the
+     *                                  generated FROM clause is blank
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
@@ -1729,6 +1732,7 @@ public final class Dsl {
      * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
      * @return a new SqlBuilder instance with SELECT and FROM configured
      * @throws IllegalArgumentException if {@code selection} is {@code null}, resolves to no selectable property,
+     *                                  carries a blank, quoted, or comment-bearing table or class alias,
      *                                  or produces a blank generated FROM clause
      * @see #selectFrom(List)
      * @see Selection
@@ -1764,7 +1768,8 @@ public final class Dsl {
      *
      * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains invalid data,
+     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains invalid data (including a
+     *                                  blank, quoted, or comment-bearing table or class alias),
      *                                  produces a blank generated FROM clause, or resolves to no properties in total
      */
     public SqlBuilder selectFrom(final List<Selection> selections) {
@@ -1860,8 +1865,11 @@ public final class Dsl {
      * Renders a condition as a standalone SQL fragment, using the given entity class for property-to-column mapping.
      *
      * <p>This method is useful for generating just the WHERE clause portion of a query
-     * with proper property-to-column name mapping. The resulting builder is condition-only:
-     * no {@code SELECT}, {@code FROM}, or other clause keyword is emitted, only the rendered condition.</p>
+     * with proper property-to-column name mapping. The resulting builder is condition-only: it emits no
+     * {@code SELECT}/{@code FROM} and adds no clause keyword of its own; a plain predicate renders bare
+     * (e.g. {@code first_name = ?}), while a clause or {@link com.landawn.abacus.query.condition.Criteria} argument renders with its own
+     * keyword(s) (e.g. {@code WHERE id = ? ORDER BY id}). An empty junction renders as its Boolean
+     * identity ({@code 1 = 1} / {@code 1 = 0}).</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1961,12 +1969,27 @@ public final class Dsl {
      *                                  token ({@code --}, {@code /*}, {@code *}{@code /}, or {@code #})
      */
     static void validateColumnAlias(final String propOrColumnName, final String alias) {
+        validateAlias("Column alias", propOrColumnName, alias);
+    }
+
+    /**
+     * Shared implementation behind {@link #validateColumnAlias(String, String)} and the table-alias check in
+     * {@code AbstractQueryBuilder}: one set of character rules, labelled by the kind of alias being validated
+     * so the two call sites cannot drift apart.
+     *
+     * @param aliasKind the label used in the error message, for example {@code "Column alias"} or {@code "Table alias"}
+     * @param ownerName the name the alias belongs to (used in the error message)
+     * @param alias the alias to validate
+     * @throws IllegalArgumentException if {@code alias} is {@code null}, blank, contains a quote character
+     *                                  ({@code "}, {@code `}, or {@code '}), a line break, or an SQL comment
+     *                                  token ({@code --}, {@code /*}, {@code *}{@code /}, or {@code #})
+     */
+    static void validateAlias(final String aliasKind, final String ownerName, final String alias) {
         // '#' starts a comment in MySQL and a single quote opens a string literal; both would truncate
-        // or corrupt the statement when the alias is emitted unquoted (e.g. inline "expr AS alias").
+        // or corrupt the statement when the alias is emitted unquoted (e.g. inline "expr AS alias" or "alias.col").
         if (Strings.isBlank(alias) || alias.indexOf('"') >= 0 || alias.indexOf('`') >= 0 || alias.indexOf('\'') >= 0 || alias.indexOf('\r') >= 0
                 || alias.indexOf('\n') >= 0 || alias.contains("--") || alias.contains("/*") || alias.contains("*/") || alias.indexOf('#') >= 0) {
-            throw new IllegalArgumentException(
-                    "Column alias for '" + propOrColumnName + "' must not be null, blank, quoted, or contain SQL comment tokens: " + alias);
+            throw new IllegalArgumentException(aliasKind + " for '" + ownerName + "' must not be null, blank, quoted, or contain SQL comment tokens: " + alias);
         }
     }
 

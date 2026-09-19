@@ -56,15 +56,35 @@ public class CellTest extends TestBase {
 
     @Test
     public void testHashCodeTracksMutableValueInWrappedCondition() {
+        // The wrapped Binary snapshots the array at construction, so external mutation must not leak into
+        // the cell's rendering, equality, or hash code.
         final byte[] value = { 1 };
         final TestCell condition = new TestCell(Operator.WHERE, new Binary("payload", Operator.EQUAL, value));
 
-        condition.hashCode();
+        final int originalHash = condition.hashCode();
         value[0] = 2;
 
-        final TestCell equalAfterMutation = new TestCell(Operator.WHERE, new Binary("payload", Operator.EQUAL, new byte[] { 2 }));
-        assertEquals(condition, equalAfterMutation);
-        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+        assertEquals("WHERE payload = '[1]'", condition.toString());
+
+        final TestCell equalToSnapshot = new TestCell(Operator.WHERE, new Binary("payload", Operator.EQUAL, new byte[] { 1 }));
+        assertEquals(equalToSnapshot, condition);
+        assertEquals(equalToSnapshot.hashCode(), condition.hashCode());
+        assertEquals(originalHash, condition.hashCode());
+
+        final TestCell builtFromMutatedValue = new TestCell(Operator.WHERE, new Binary("payload", Operator.EQUAL, new byte[] { 2 }));
+        assertNotEquals(builtFromMutatedValue, condition);
+    }
+
+    @Test
+    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        // Cell.parameters() is not memoized: each call must hand out the wrapped condition's fresh defensive copy.
+        final TestCell cell = new TestCell(Operator.WHERE, Filters.eq("payload", new byte[] { 1 }));
+
+        final byte[] first = (byte[]) cell.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) cell.parameters().get(0)));
+        assertEquals("WHERE payload = '[1]'", cell.toString());
     }
 
     @Test

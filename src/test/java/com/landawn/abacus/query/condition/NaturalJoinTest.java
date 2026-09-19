@@ -34,7 +34,8 @@ public class NaturalJoinTest extends TestBase {
     public void testMultipleEntities() {
         NaturalJoin join = new NaturalJoin(Arrays.asList("employees", "departments"));
         assertEquals(Arrays.asList("employees", "departments"), join.joinEntities());
-        assertEquals("NATURAL JOIN (employees, departments)", join.toSql(NamingPolicy.NO_CHANGE));
+        // Multiple entities render as a parenthesized CROSS JOIN tree (a standard joined-table operand).
+        assertEquals("NATURAL JOIN (employees CROSS JOIN departments)", join.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test

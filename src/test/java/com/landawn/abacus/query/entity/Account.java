@@ -38,7 +38,6 @@ public class Account {
 
     /**
      *
-     *
      * @param id
      */
     public Account(long id) {
@@ -48,7 +47,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param gui
      * @param emailAddress
@@ -80,7 +78,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param id
      * @param gui
@@ -115,7 +112,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("long")
@@ -124,7 +120,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param id
      * @return
@@ -137,7 +132,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -146,7 +140,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param gui
      * @return
@@ -159,7 +152,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -168,7 +160,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param emailAddress
      * @return
@@ -181,7 +172,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -190,7 +180,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param firstName
      * @return
@@ -203,7 +192,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -212,7 +200,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param middleName
      * @return
@@ -225,7 +212,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -234,7 +220,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param lastName
      * @return
@@ -247,7 +232,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("Timestamp")
@@ -256,7 +240,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param birthDate
      * @return
@@ -269,7 +252,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("int")
@@ -278,7 +260,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param status
      * @return
@@ -291,7 +272,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("Timestamp")
@@ -300,7 +280,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param lastUpdateTime
      * @return
@@ -313,7 +292,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("Timestamp")
@@ -322,7 +300,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param createTime
      * @return
@@ -335,7 +312,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     @Type("com.landawn.abacus.util.entity.AccountContact")
@@ -344,7 +320,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param contact
      * @return
@@ -357,7 +332,6 @@ public class Account {
 
     /**
      *
-     *
      * @return
      */
     public List<AccountDevice> getDevices() {
@@ -365,7 +339,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @param devices
      * @return
@@ -377,7 +350,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @return
      */
@@ -400,7 +372,6 @@ public class Account {
 
     /**
      *
-     *
      * @param obj
      * @return
      */
@@ -422,7 +393,6 @@ public class Account {
     }
 
     /**
-     *
      *
      * @return
      */

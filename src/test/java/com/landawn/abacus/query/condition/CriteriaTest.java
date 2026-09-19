@@ -112,7 +112,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testFindConditionsNullOperatorReturnsEmpty() {
-        Criteria criteria = Criteria.builder().join("orders").where(Filters.equal("status", "active")).build();
+        Criteria criteria = Criteria.builder().crossJoin("orders").where(Filters.equal("status", "active")).build();
         assertTrue(criteria.findConditions(null).isEmpty());
     }
 
@@ -181,8 +181,9 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testJoinEntity() {
-        Criteria criteria = Criteria.builder().join("orders").build();
+        Criteria criteria = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
         assertNotNull(criteria);
+        assertEquals(" JOIN orders ON users.id = orders.user_id", criteria.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -398,7 +399,11 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testMultipleJoins() {
-        Criteria criteria = Criteria.builder().join("orders").join("products").join("categories").build();
+        Criteria criteria = Criteria.builder()
+                .join("orders", Filters.on("u.id", "orders.user_id"))
+                .join("products", Filters.on("orders.pid", "products.id"))
+                .join("categories", Filters.on("products.cid", "categories.id"))
+                .build();
         assertEquals(3, criteria.joins().size());
     }
 
@@ -515,15 +520,22 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testHashCodeTracksMutableValueInClause() {
+        // Array values are snapshotted at construction: a later mutation of the caller's array is invisible to
+        // the condition, so equals/hashCode/toSql all keep reflecting the value as it was when the clause was built.
         final byte[] value = { 1 };
         final Criteria criteria = Criteria.builder().where(Filters.eq("payload", value)).build();
+        final int hashBeforeMutation = criteria.hashCode();
 
-        criteria.hashCode();
         value[0] = 2;
 
-        final Criteria equalAfterMutation = Criteria.builder().where(Filters.eq("payload", new byte[] { 2 })).build();
-        assertEquals(criteria, equalAfterMutation);
-        assertEquals(criteria.hashCode(), equalAfterMutation.hashCode());
+        final Criteria equalToSnapshot = Criteria.builder().where(Filters.eq("payload", new byte[] { 1 })).build();
+        assertEquals(equalToSnapshot, criteria);
+        assertEquals(equalToSnapshot.hashCode(), criteria.hashCode());
+        assertEquals(hashBeforeMutation, criteria.hashCode());
+        assertEquals(" WHERE payload = '[1]'", criteria.toSql(NamingPolicy.NO_CHANGE));
+
+        final Criteria mutatedValue = Criteria.builder().where(Filters.eq("payload", new byte[] { 2 })).build();
+        Assertions.assertNotEquals(mutatedValue, criteria);
     }
 
     @Test
@@ -821,7 +833,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testJoinSingle() {
-        Criteria criteria = Criteria.builder().join("orders").build();
+        Criteria criteria = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
 
         List<Join> joins = criteria.joins();
         Assertions.assertEquals(1, joins.size());
@@ -851,8 +863,8 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testJoinArray() {
-        Join join1 = Filters.join("orders");
-        Join join2 = Filters.leftJoin("products");
+        Join join1 = new Join("orders", Filters.on("a", "b"));
+        Join join2 = new LeftJoin("products", Filters.on("c", "d"));
         Criteria criteria = Criteria.builder().join(join1, join2).build();
 
         List<Join> joins = criteria.joins();
@@ -863,11 +875,12 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testInnerJoin() {
-        // entity-only overload
-        Criteria criteria1 = Criteria.builder().innerJoin("orders").build();
+        // entity + ON connector overload (the entity-only overload always throws: a qualified join needs ON/USING)
+        Criteria criteria1 = Criteria.builder().innerJoin("orders", Filters.on("users.id", "orders.user_id")).build();
         List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.INNER_JOIN, joins1.get(0).operator());
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().innerJoin("orders"));
 
         // entity + condition overload
         Equal eq = Filters.eq("users.id", "orders.user_id");
@@ -888,10 +901,11 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testLeftJoin() {
-        Criteria criteria1 = Criteria.builder().leftJoin("orders").build();
+        Criteria criteria1 = Criteria.builder().leftJoin("orders", Filters.on("users.id", "orders.user_id")).build();
         List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.LEFT_JOIN, joins1.get(0).operator());
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin("orders"));
 
         Equal eq = Filters.eq("users.id", "orders.user_id");
         Criteria criteria2 = Criteria.builder().leftJoin("orders", eq).build();
@@ -910,10 +924,11 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testRightJoin() {
-        Criteria criteria1 = Criteria.builder().rightJoin("orders").build();
+        Criteria criteria1 = Criteria.builder().rightJoin("orders", Filters.on("users.id", "orders.user_id")).build();
         List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.RIGHT_JOIN, joins1.get(0).operator());
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().rightJoin("orders"));
 
         Equal eq = Filters.eq("users.id", "orders.user_id");
         Criteria criteria2 = Criteria.builder().rightJoin("orders", eq).build();
@@ -932,10 +947,11 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testFullJoin() {
-        Criteria criteria1 = Criteria.builder().fullJoin("orders").build();
+        Criteria criteria1 = Criteria.builder().fullJoin("orders", Filters.on("users.id", "orders.user_id")).build();
         List<Join> joins1 = criteria1.joins();
         Assertions.assertEquals(1, joins1.size());
         Assertions.assertEquals(Operator.FULL_JOIN, joins1.get(0).operator());
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().fullJoin("orders"));
 
         Equal eq = Filters.eq("users.id", "orders.user_id");
         Criteria criteria2 = Criteria.builder().fullJoin("orders", eq).build();
@@ -1121,7 +1137,11 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testGet() {
-        Criteria criteria = Criteria.builder().join("orders").join("products").where(Filters.eq("status", "active")).build();
+        Criteria criteria = Criteria.builder()
+                .join("orders", Filters.on("a", "b"))
+                .join("products", Filters.on("c", "d"))
+                .where(Filters.eq("status", "active"))
+                .build();
 
         List<Condition> joins = criteria.findConditions(Operator.JOIN);
         Assertions.assertEquals(2, joins.size());
@@ -1245,8 +1265,8 @@ public class CriteriaTest extends TestBase {
         final Criteria c = Criteria.builder()
                 .where(Filters.eq("a", 1))
                 .where(Filters.eq("b", 2)) // replaces first WHERE
-                .leftJoin("t1")
-                .leftJoin("t2") // accumulates
+                .leftJoin("t1", Filters.on("users.id", "t1.user_id"))
+                .leftJoin("t2", Filters.on("users.id", "t2.user_id")) // accumulates
                 .union(sub1)
                 .union(sub2) // accumulates
                 .orderBy("x")
@@ -1600,7 +1620,7 @@ public class CriteriaTest extends TestBase {
                 .orderBy("name")
                 .limit(10)
                 .union(Filters.subQuery("SELECT 1"))
-                .join("orders")
+                .join("orders", Filters.on("users.id", "orders.user_id"))
                 .build();
 
         assertNotNull(c);
@@ -1676,7 +1696,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     public void testAddJoinRoutesToJoinAndAccumulates() {
-        Criteria c = Criteria.builder().add(new Join("orders")).add(new Join("payments")).build();
+        Criteria c = Criteria.builder().add(new Join("orders", Filters.on("a", "b"))).add(new Join("payments", Filters.on("c", "d"))).build();
 
         // Joins accumulate; they are not replaced.
         assertEquals(2, c.joins().size());
@@ -1769,5 +1789,80 @@ public class CriteriaTest extends TestBase {
 
         assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(first, second)));
         assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new Limit(10), new Limit(20))));
+    }
+
+    // --- 2026-09-19 fix round: deprecated single-arg qualified joins, duplicate pair names, blank where/having, limit(null). ---
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testDeprecatedSingleArgQualifiedJoinsAlwaysThrow() {
+        final String expectedFragment = "ON/USING predicate";
+
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("orders")).getMessage().contains(expectedFragment));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().innerJoin("orders")).getMessage().contains(expectedFragment));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin("orders")).getMessage().contains(expectedFragment));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().rightJoin("orders")).getMessage().contains(expectedFragment));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().fullJoin("orders")).getMessage().contains(expectedFragment));
+
+        // The two-argument overloads reject a null predicate the same way; the condition-less forms still work.
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("orders", (Condition) null));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin(Arrays.asList("orders", "items"), (Condition) null));
+        assertEquals(" CROSS JOIN orders", Criteria.builder().crossJoin("orders").build().toSql(NamingPolicy.NO_CHANGE));
+        assertEquals(" NATURAL JOIN orders", Criteria.builder().naturalJoin("orders").build().toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testPairOverloadsRejectDuplicatePropertyName() {
+        final String expectedFragment = "Duplicate property name";
+
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a", SortDirection.DESC, "a", SortDirection.ASC))
+                .getMessage()
+                .contains(expectedFragment));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("a", SortDirection.DESC, "a", SortDirection.ASC))
+                .getMessage()
+                .contains(expectedFragment));
+        assertTrue(assertThrows(IllegalArgumentException.class,
+                () -> Criteria.builder().orderBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC)).getMessage()
+                .contains(expectedFragment));
+        assertTrue(assertThrows(IllegalArgumentException.class,
+                () -> Criteria.builder().groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "b", SortDirection.DESC)).getMessage()
+                .contains(expectedFragment));
+
+        // Distinct names keep working, in call order.
+        assertEquals(" ORDER BY a DESC, b ASC", Criteria.builder().orderBy("a", SortDirection.DESC, "b", SortDirection.ASC).build().toSql(NamingPolicy.NO_CHANGE));
+        assertEquals(" GROUP BY a ASC, b ASC, c DESC",
+                Criteria.builder().groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "c", SortDirection.DESC).build().toSql(NamingPolicy.NO_CHANGE));
+
+        // The varargs sibling deliberately keeps repeated names.
+        assertEquals(" ORDER BY a, a", Criteria.builder().orderBy("a", "a").build().toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testWhereAndHavingStringRejectBlankExpression() {
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("   ")).getMessage().contains("expr"));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having("   ")).getMessage().contains("expr"));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(""));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(""));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where((String) null));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having((String) null));
+    }
+
+    @Test
+    public void testLimitNullMessageNamesLimit() {
+        final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().limit((Limit) null));
+
+        assertTrue(error.getMessage().contains("limit"), error.getMessage());
+    }
+
+    @Test
+    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        // Criteria.parameters() is not memoized: each call must hand out the constituent condition's fresh defensive copy.
+        final Criteria criteria = Criteria.builder().where(Filters.eq("payload", new byte[] { 1 })).build();
+
+        final byte[] first = (byte[]) criteria.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) criteria.parameters().get(0)));
+        assertEquals(" WHERE payload = '[1]'", criteria.toString());
     }
 }

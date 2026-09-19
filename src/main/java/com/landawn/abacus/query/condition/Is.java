@@ -75,13 +75,20 @@ public class Is extends Binary {
      * as {@code NULL}, {@code TRUE}, or {@code UNKNOWN}.
      *
      * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
-     * {@code propName IS NULL}.</p>
+     * {@code propName IS NULL}. A Boolean is normalized at construction to the SQL keyword expression
+     * {@code TRUE}/{@code FALSE}, so it is rendered inline ({@code propName IS TRUE}) by every rendering
+     * path, contributes no bind parameter, and makes {@code new Is("x", true)} equal to
+     * {@code Filters.isTrue("x")}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check for NULL (though IsNull is preferred)
      * Is nullCheck = new Is("phone_number", null);
      * // SQL: phone_number IS NULL
+     *
+     * // Boolean truth value: rendered as a keyword, never bound as a parameter
+     * Is activeCheck = new Is("active", true);
+     * // SQL: active IS TRUE   (parameters: [])
      *
      * // Custom database-specific value
      * SqlExpression unknownExpr = Filters.expr("UNKNOWN");
@@ -91,10 +98,11 @@ public class Is extends Binary {
      *
      * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value of the IS predicate; must be {@code null} (renders as
-     *            {@code IS NULL}), a Boolean, or an explicit {@link SqlExpression} for a SQL keyword
+     *            {@code IS NULL}), a Boolean (normalized to the {@code TRUE}/{@code FALSE} keyword), or an
+     *            explicit non-blank {@link SqlExpression} for a SQL keyword
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
      *                                  {@code propValue} is not {@code null}, a Boolean, or an
-     *                                  {@link SqlExpression}
+     *                                  {@link SqlExpression}, or is a blank {@link SqlExpression}
      */
     public Is(final String propName, final Object propValue) {
         super(propName, Operator.IS, propValue);

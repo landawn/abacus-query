@@ -36,7 +36,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @param id
      */
     public AccountDevice(long id) {
@@ -46,7 +45,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param accountId
      * @param name
@@ -80,7 +78,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param id
      * @param accountId
@@ -117,7 +114,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("long")
@@ -126,7 +122,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param id
      * @return
@@ -139,7 +134,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("long")
@@ -148,7 +142,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param accountId
      * @return
@@ -161,7 +154,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -170,7 +162,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param name
      * @return
@@ -183,7 +174,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -192,7 +182,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param udid
      * @return
@@ -205,7 +194,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -214,7 +202,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param platform
      * @return
@@ -227,7 +214,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -236,7 +222,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param model
      * @return
@@ -249,7 +234,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -258,7 +242,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param manufacturer
      * @return
@@ -271,7 +254,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("Timestamp")
@@ -280,7 +262,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param produceTime
      * @return
@@ -293,7 +274,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -302,7 +282,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param category
      * @return
@@ -315,7 +294,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -324,7 +302,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param description
      * @return
@@ -337,7 +314,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("int")
@@ -346,7 +322,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param status
      * @return
@@ -359,7 +334,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("Timestamp")
@@ -368,7 +342,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param lastUpdateTime
      * @return
@@ -381,7 +354,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @return
      */
     @Type("Timestamp")
@@ -390,7 +362,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @param createTime
      * @return
@@ -402,7 +373,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @return
      */
@@ -426,7 +396,6 @@ public class AccountDevice {
 
     /**
      *
-     *
      * @param obj
      * @return
      */
@@ -448,7 +417,6 @@ public class AccountDevice {
     }
 
     /**
-     *
      *
      * @return
      */

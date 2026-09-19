@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -49,9 +50,6 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
 
     /** The subquery whose result set the property value(s) are tested against; {@code null} for an uninitialized instance. */
     private SubQuery subQuery;
-
-    /** Lazily memoized parameters (performance only). */
-    private transient ImmutableList<Object> cachedParameters;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -252,10 +250,13 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
 
     /**
      * Returns the list of parameters from the subquery.
+     * The list is obtained from the subquery afresh on every call (it is not memoized here), so
+     * mutable parameter values such as arrays or {@code Date}s come from the subquery's own per-call
+     * defensive copies and are never shared between callers.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Raw SQL subquery has no bind parameters -> empty list
+     * // Raw SQL subquery without placeholders -> empty list
      * SubQuery raw = new SubQuery("SELECT id FROM departments WHERE active = true");
      * InSubQuery inSub = new InSubQuery("deptId", raw);
      * List<Object> p1 = inSub.parameters();   // [] (empty)
@@ -271,14 +272,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> parameters() {
-        ImmutableList<Object> result = cachedParameters;
-
-        if (result == null) {
-            result = subQuery == null ? ImmutableList.empty() : subQuery.parameters();
-            cachedParameters = result;
-        }
-
-        return result;
+        return subQuery == null ? ImmutableList.empty() : subQuery.parameters();
     }
 
     /**
@@ -393,7 +387,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
             if (size == 1) {
                 final String singleProp = propNames.iterator().next();
 
-                return effectiveNamingPolicy.convert(singleProp) + SK._SPACE + opStr + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
+                return QueryUtil.convertIdentifier(singleProp, effectiveNamingPolicy) + SK._SPACE + opStr + SK.SPACE_PARENTHESIS_L + subQueryString
+                        + SK.PARENTHESIS_R;
             }
 
             final StringBuilder sb = new StringBuilder(16 + (size << 4) + subQueryString.length());
@@ -405,7 +400,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
                     sb.append(SK.COMMA_SPACE);
                 }
 
-                sb.append(effectiveNamingPolicy.convert(propName));
+                sb.append(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy));
             }
 
             sb.append(SK._PARENTHESIS_R).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L).append(subQueryString).append(SK.PARENTHESIS_R);

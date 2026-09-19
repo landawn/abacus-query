@@ -105,8 +105,9 @@ public abstract class Clause extends Cell {
      *         standalone {@link SubQuery} except as the required operand of a set-operation clause, is not a
      *         {@link SubQuery} when the operator is a set operation, is or contains an {@code ON}/{@code USING}
      *         condition or another non-predicate component (including a null operator), is an
-     *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is an empty predicate
-     *         (a blank {@link SqlExpression} or empty {@link Junction}) — none of which can be nested inside a clause
+     *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank {@link SqlExpression}
+     *         — none of which can be nested inside a clause. An empty {@link Junction} is accepted and renders its
+     *         Boolean identity ({@code 1 = 1} / {@code 1 = 0})
      */
     protected Clause(final Operator operator, final Condition condition) {
         super(operator, validateClauseOperand(operator, condition));

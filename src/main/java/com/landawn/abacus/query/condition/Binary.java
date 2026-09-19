@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -36,7 +37,9 @@ import com.landawn.abacus.util.Strings;
  * <p>This class is concrete and can be instantiated directly, but it also serves as the
  * foundation for all comparison operations in queries,
  * providing common functionality for storing the property name, operator, and value.
- * The value can be a literal, an explicit {@link SqlExpression}, or a scalar {@link SubQuery}.</p>
+ * The value can be a literal, an explicit {@link SqlExpression}, or a scalar {@link SubQuery}.
+ * A Boolean right-hand value of {@code IS}/{@code IS NOT} is stored as the {@link SqlExpression}
+ * {@code TRUE}/{@code FALSE}, so {@link #propValue()} returns that expression rather than the Boolean.</p>
  *
  * <p>Arrays, {@link java.util.Date} values, and {@link java.util.Calendar} values are snapshotted
  * on construction and defensively copied when exposed. Other application-defined mutable values
@@ -100,6 +103,14 @@ public class Binary extends ComposableCondition {
             Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL);
 
     /**
+     * SQL truth-value keywords a Boolean {@code IS}/{@code IS NOT} operand is normalized to (the same
+     * literals {@code Filters.isTrue(String)}/{@code Filters.isFalse(String)} use), so the truth value is
+     * always rendered inline and never bound as a parameter.
+     */
+    private static final String SQL_TRUE_LITERAL = "TRUE";
+    private static final String SQL_FALSE_LITERAL = "FALSE";
+
+    /**
      * The property (column) name on the left-hand side of this binary condition;
      * {@code null} only on an uninitialized instance created by a serialization framework like Kryo.
      */
@@ -112,7 +123,18 @@ public class Binary extends ComposableCondition {
      */
     private final Object propValue;
 
-    /** Lazily memoized parameters (performance only). */
+    /**
+     * Whether {@link #parameters()} must rebuild its result on every call instead of memoizing it: {@code true}
+     * when {@link #propValue} is (or, for {@code IN}/{@code NOT IN}, contains) an array, {@code Date},
+     * {@code Calendar} or a nested {@link Condition} such as a {@link SubQuery}, a quantified
+     * {@link All}/{@link Any}/{@link Some} operand or a {@link SqlExpression}. Computed once at construction
+     * because the operand is immutable afterwards. A nested condition counts as mutable because its own
+     * {@code parameters()} may hand out fresh defensive copies that a memoized outer list would otherwise
+     * share across calls.
+     */
+    private final boolean rebuildParametersPerCall;
+
+    /** Lazily memoized parameters (performance only; unused when {@link #rebuildParametersPerCall} is {@code true}). */
     private transient ImmutableList<Object> cachedParameters;
 
     /**
@@ -123,6 +145,7 @@ public class Binary extends ComposableCondition {
     Binary() {
         propName = null;
         propValue = null;
+        rebuildParametersPerCall = false;
     }
 
     /**
@@ -155,17 +178,23 @@ public class Binary extends ComposableCondition {
      *                  only as the direct right-hand side of {@code =}, {@code !=}, {@code <>}, {@code <},
      *                  {@code <=}, {@code >}, or {@code >=}. For an {@code IN}/{@code NOT_IN} operator, a
      *                  {@link Collection} or array value is copied defensively and must be non-empty;
-     *                  elements must be non-null scalar values or explicit scalar expressions.
+     *                  elements must be non-null scalar values or explicit scalar expressions. A
+     *                  {@link SqlExpression} or a {@link SubQuery} is also accepted as the whole right-hand
+     *                  side of {@code IN}/{@code NOT IN}.
      *                  For {@code IS}/{@code IS NOT}, the value must be {@code null}, a Boolean, or
      *                  an explicit {@link SqlExpression} such as {@code NULL}, {@code TRUE}, or {@code UNKNOWN}.
+     *                  A Boolean is normalized at construction to the SQL keyword expression {@code TRUE} /
+     *                  {@code FALSE} (the same literals {@code Filters.isTrue}/{@code Filters.isFalse} use), so it
+     *                  is always rendered inline ({@code x IS TRUE}) and never bound as a parameter; consequently
+     *                  {@code new Is("x", true)} equals {@code Filters.isTrue("x")}.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not one of the operators listed above; or if, for an {@code IN}/{@code NOT_IN}
      *                                  operator, {@code propValue} is not a non-empty {@link Collection}, a non-empty
-     *                                  array, or an explicit scalar SQL expression; if a value that must be non-null is
+     *                                  array, a {@link SqlExpression}, or a {@link SubQuery}; if a value that must be non-null is
      *                                  {@code null}; if {@code IS}/{@code IS NOT} receives an arbitrary literal; if a
-     *                                  condition-valued operand is an ordinary predicate or query clause;
-     *                                  or if an {@link All}/{@link Any}/{@link Some} operand is used anywhere
-     *                                  other than the direct RHS of a compatible scalar comparison
+     *                                  condition-valued operand is an ordinary predicate or query clause or a blank
+     *                                  {@link SqlExpression}; or if an {@link All}/{@link Any}/{@link Some} operand is used
+     *                                  anywhere other than the direct RHS of a compatible scalar comparison
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
@@ -180,6 +209,7 @@ public class Binary extends ComposableCondition {
 
         this.propName = propName;
         this.propValue = normalizePropValue(operator, propValue);
+        this.rebuildParametersPerCall = requiresPerCallParameters(this.propValue);
     }
 
     /**
@@ -205,6 +235,10 @@ public class Binary extends ComposableCondition {
      * Returns the property value without an unchecked generic cast. Arrays, dates, calendars, and
      * mutable values nested in an {@code IN}/{@code NOT IN} membership list are defensively copied.
      *
+     * <p>A Boolean right-hand value of {@code IS}/{@code IS NOT} is normalized at construction to the
+     * {@link SqlExpression} {@code TRUE}/{@code FALSE}, so this method returns that expression (not the
+     * original {@code Boolean}) for such conditions.</p>
+     *
      * @return the property value, which may be {@code null}
      */
     public Object propValue() {
@@ -220,6 +254,11 @@ public class Binary extends ComposableCondition {
      * Equal cond = new Equal("status", "active");
      * String status = cond.propValueAs(String.class);   // "active"
      * }</pre>
+     *
+     * <p>A Boolean right-hand value of {@code IS}/{@code IS NOT} is normalized at construction to the
+     * {@link SqlExpression} {@code TRUE}/{@code FALSE}, so {@code propValueAs(Boolean.class)} throws
+     * {@link ClassCastException} for such conditions; use {@code propValueAs(SqlExpression.class)} or
+     * {@link #propValue()} instead.</p>
      *
      * @param <T> the requested value type
      * @param valueType the requested value type; must not be {@code null}
@@ -245,7 +284,9 @@ public class Binary extends ComposableCondition {
      *       is returned.</li>
      *   <li>If the operator is {@code IN} or {@code NOT IN} and the value is a {@link Collection}, each element is
      *       added as a parameter; any element that is itself a {@link Condition} has its own parameters spliced in.</li>
-     *   <li>If the value is a {@link Condition} (e.g., a subquery), the subquery's own parameters are returned.</li>
+     *   <li>If the value is a {@link Condition} (e.g., a subquery), the subquery's own parameters are returned.
+     *       This includes a Boolean {@code IS}/{@code IS NOT} operand, which is normalized to the keyword
+     *       expression {@code TRUE}/{@code FALSE} at construction and therefore contributes no bind parameter.</li>
      *   <li>Otherwise, a single-element list containing the value is returned.</li>
      * </ul>
      *
@@ -265,12 +306,17 @@ public class Binary extends ComposableCondition {
      * List<Object> p3 = eqSub.parameters();   // [true] (the subquery's params)
      * }</pre>
      *
+     * <p>The result is memoized only when every operand is a plain scalar (neither an array, {@code Date},
+     * {@code Calendar} nor a nested {@link Condition}); otherwise a fresh list, holding fresh defensive copies of
+     * any array/{@code Date}/{@code Calendar} values (including those spliced in from a nested condition), is
+     * built on every call, so mutating a returned element never affects this condition or a later call.</p>
+     *
      * @return an immutable list of parameter values; known mutable JDK values in the list are defensive
      *         copies, and the result is never {@code null}
      */
     @Override
     public ImmutableList<Object> parameters() {
-        if (containsSnapshotMutableValue(propValue)) {
+        if (rebuildParametersPerCall) {
             return computeParameters();
         }
 
@@ -285,8 +331,10 @@ public class Binary extends ComposableCondition {
     }
 
     /**
-     * Builds the parameter list returned by {@link #parameters()}, applying the rules described there;
-     * invoked at most once, with the result memoized.
+     * Builds the parameter list returned by {@link #parameters()}, applying the rules described there.
+     * The result is memoized unless the value is or contains a snapshot-mutable value (array, {@code Date},
+     * {@code Calendar}) or a nested {@link Condition}, in which case it is rebuilt on every call so each caller
+     * receives fresh defensive copies.
      *
      * @return an immutable list of parameter values; never {@code null}
      */
@@ -368,19 +416,20 @@ public class Binary extends ComposableCondition {
 
         if (propValue == null) {
             if (op == Operator.EQUAL || op == Operator.IS) {
-                return effectiveNamingPolicy.convert(propName) + SK._SPACE + SK.IS_NULL;
+                return QueryUtil.convertIdentifier(propName, effectiveNamingPolicy) + SK._SPACE + SK.IS_NULL;
             } else if (op == Operator.NOT_EQUAL || op == Operator.NOT_EQUAL_ANSI || op == Operator.IS_NOT) {
-                return effectiveNamingPolicy.convert(propName) + SK._SPACE + SK.IS_NOT_NULL;
+                return QueryUtil.convertIdentifier(propName, effectiveNamingPolicy) + SK._SPACE + SK.IS_NOT_NULL;
             }
         }
 
         final String opStr = op == null ? Strings.NULL : op.toString();
 
         if (isCollectionOperator(op) && propValue instanceof final Collection<?> values) {
-            return effectiveNamingPolicy.convert(propName) + SK._SPACE + opStr + SK._SPACE + formatCollection(values, effectiveNamingPolicy);
+            return QueryUtil.convertIdentifier(propName, effectiveNamingPolicy) + SK._SPACE + opStr + SK._SPACE
+                    + formatCollection(values, effectiveNamingPolicy);
         }
 
-        return effectiveNamingPolicy.convert(propName) + SK._SPACE + opStr + SK._SPACE + formatParameter(propValue, effectiveNamingPolicy);
+        return QueryUtil.convertIdentifier(propName, effectiveNamingPolicy) + SK._SPACE + opStr + SK._SPACE + formatParameter(propValue, effectiveNamingPolicy);
     }
 
     /**
@@ -482,8 +531,15 @@ public class Binary extends ComposableCondition {
         }
 
         if (op == Operator.IS || op == Operator.IS_NOT) {
-            if (propValue instanceof Boolean || propValue instanceof SqlExpression) {
-                return propValue;
+            if (propValue instanceof Boolean) {
+                // Normalize to the SQL truth-value keyword so every rendering path (toSql and the
+                // parameterized/named builders) emits `x IS TRUE` and never binds the Boolean as a
+                // parameter (`x IS ?` is not valid SQL). Same literals as Filters.isTrue/isFalse.
+                return SqlExpression.of(((Boolean) propValue) ? SQL_TRUE_LITERAL : SQL_FALSE_LITERAL);
+            }
+
+            if (propValue instanceof SqlExpression) {
+                return validateValueOperand(propValue, "propValue");
             }
 
             throw new IllegalArgumentException(op + " requires null, a Boolean, or an explicit SqlExpression right-hand value");
@@ -515,15 +571,20 @@ public class Binary extends ComposableCondition {
         return snapshotMutableValue(value);
     }
 
-    /** Detects whether returning a memoized parameter list would expose a known mutable value. */
-    private static boolean containsSnapshotMutableValue(final Object value) {
-        if (isSnapshotMutableValue(value)) {
+    /**
+     * Detects whether returning a memoized parameter list would expose a known mutable value: an array,
+     * {@code Date} or {@code Calendar} operand, or a nested {@link Condition} whose spliced-in parameters may
+     * themselves be per-call defensive copies. Evaluated once at construction into
+     * {@link #rebuildParametersPerCall}.
+     */
+    private static boolean requiresPerCallParameters(final Object value) {
+        if (isSnapshotMutableValue(value) || value instanceof Condition) {
             return true;
         }
 
         if (value instanceof Collection<?>) {
             for (final Object element : (Collection<?>) value) {
-                if (isSnapshotMutableValue(element)) {
+                if (isSnapshotMutableValue(element) || element instanceof Condition) {
                     return true;
                 }
             }
@@ -628,7 +689,8 @@ public class Binary extends ComposableCondition {
 
     /**
      * Deep equality for the RHS value. Collections (IN membership lists) are compared element-wise
-     * so array members use content equality via {@link N#equals(Object, Object)}.
+     * so array members use content equality via {@link N#deepEquals(Object, Object)}, which pairs
+     * with the {@link N#deepHashCode(Object)} used by {@link #hashCode()}.
      */
     private static boolean deepPropValueEquals(final Object left, final Object right) {
         if (left == right) {
@@ -656,7 +718,7 @@ public class Binary extends ComposableCondition {
             return true;
         }
 
-        return N.equals(left, right);
+        return N.deepEquals(left, right);
     }
 
     /**

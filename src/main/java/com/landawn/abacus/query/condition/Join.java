@@ -36,7 +36,7 @@ import com.landawn.abacus.util.Strings;
  * <p>A JOIN clause combines rows from two or more tables based on a related column between them.
  * This class supports:
  * <ul>
- *   <li>Simple joins without an explicit condition (e.g., for {@link CrossJoin} or {@link NaturalJoin})</li>
+ *   <li>Conditionless joins ({@link CrossJoin} and {@link NaturalJoin} only; every other join type requires an ON/USING predicate)</li>
  *   <li>Joins with ON conditions specifying how tables relate</li>
  *   <li>Joins with multiple tables in a single operation</li>
  *   <li>Complex join conditions using AND/OR logic</li>
@@ -62,9 +62,9 @@ import com.landawn.abacus.util.Strings;
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Basic join (usually through subclasses)
- * Join join = new Join("orders");
- * // SQL: JOIN orders
+ * // Unconditional join: only CrossJoin and NaturalJoin can be built without a predicate
+ * Join cross = new CrossJoin("orders");
+ * // SQL: CROSS JOIN orders
  *
  * // Join with ON condition using On class
  * Join joinWithCondition = new Join("orders o",
@@ -98,9 +98,6 @@ public class Join extends AbstractCondition {
 
     private Condition condition;
 
-    /** Lazily memoized parameters (performance only). */
-    private transient ImmutableList<Object> cachedParameters;
-
     /** Lazily memoized immutable view of {@link #joinEntities} (performance only). */
     private transient ImmutableList<String> cachedJoinEntitiesView;
 
@@ -113,41 +110,50 @@ public class Join extends AbstractCondition {
     }
 
     /**
-     * Creates a simple JOIN clause for the specified table or entity.
-     * Uses the default {@link Operator#JOIN} operator without any join condition.
+     * Creates a plain {@code JOIN} clause for the specified table or entity without a join condition.
      *
-     * <p><b>&#9888;&#65039;</b> This form is rarely used
-     * directly; most databases require an explicit {@code ON} or {@code USING} clause for a plain
-     * {@code JOIN}, so use {@link #Join(String, Condition)} when a condition is required.
+     * <p>This constructor <b>always throws</b>: a qualified join requires a non-{@code null}
+     * {@code ON}/{@code USING} predicate, so there is no way for it to succeed. It is retained only
+     * for source compatibility.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Simple join (rarely used directly)
-     * Join join = new Join("products");
-     * // SQL: JOIN products
+     * // Join with an ON predicate
+     * Join join = new Join("products p", Filters.on("categories.id", "p.category_id"));
+     * // SQL: JOIN products p ON categories.id = p.category_id
      *
-     * // With alias
-     * Join aliasJoin = new Join("product_categories pc");
-     * // SQL: JOIN product_categories pc
+     * // Unconditional join
+     * Join cross = new CrossJoin("products");
+     * // SQL: CROSS JOIN products
+     *
+     * // Edge: the single-argument form cannot succeed
+     * new Join("products");   // throws IllegalArgumentException
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
+     *                                  otherwise because a qualified {@code JOIN} requires a non-{@code null} {@code ON}/{@code USING} predicate
+     * @deprecated always throws {@link IllegalArgumentException} because a qualified join requires an {@code ON}/{@code USING}
+     *             predicate; use {@link #Join(String, Condition)} instead, or {@link CrossJoin} for an unconditional join
      */
+    @Deprecated
     public Join(final String joinEntity) {
         this(Operator.JOIN, joinEntity);
     }
 
     /**
-     * Creates a JOIN clause with the specified operator and table or entity.
-     * This protected constructor is used by subclasses to specify the join type
-     * (INNER, LEFT, RIGHT, FULL, CROSS, NATURAL) while reusing the common join logic.
+     * Creates a JOIN clause with the specified operator and table or entity, without a join condition.
+     * This protected constructor is used by subclasses to specify the join type while reusing the
+     * common join logic. Only {@link Operator#CROSS_JOIN} and {@link Operator#NATURAL_JOIN} can be
+     * built without a predicate; every other JOIN operator rejects the missing condition.
      *
-     * @param operator the join operator (e.g. {@code INNER_JOIN}, {@code LEFT_JOIN})
+     * @param operator the join operator; only {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} succeeds here
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator, or if {@code joinEntity} is
-     *                                  {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntity} is
+     *                                  {@code null}, empty, or blank; or if {@code operator} is any JOIN operator other than
+     *                                  {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} (those require a non-{@code null}
+     *                                  {@code ON}/{@code USING} predicate)
      */
     protected Join(final Operator operator, final String joinEntity) {
         this(operator, joinEntity, null);
@@ -183,13 +189,13 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
-     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; or if {@code joinCondition} is or contains a
+     * @param joinCondition the join condition; must not be {@code null}. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword.
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression}
-     *                                  or empty {@link Junction})
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public Join(final String joinEntity, final Condition joinCondition) {
         this(Operator.JOIN, joinEntity, joinCondition);
@@ -213,16 +219,16 @@ public class Join extends AbstractCondition {
      * @param operator the join operator
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
-     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. May be {@code null}.
+     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. Must be {@code null} for
+     *            {@link Operator#CROSS_JOIN}/{@link Operator#NATURAL_JOIN} and non-{@code null} for every other JOIN operator.
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code operator} is
-     *                                  {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
-     *                                  {@code joinCondition} is non-{@code null}; if {@code joinEntity} is {@code null}, empty, or blank;
-     *                                  or if {@code joinCondition} is or contains a
+     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntity} is {@code null}, empty, or blank;
+     *                                  if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
+     *                                  {@code joinCondition} is non-{@code null}; if {@code operator} is any other JOIN operator and
+     *                                  {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression}
-     *                                  or empty {@link Junction})
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     protected Join(final Operator operator, final String joinEntity, final Condition joinCondition) {
         this(operator, Collections.singletonList(joinEntity), joinCondition);
@@ -251,14 +257,14 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
-     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
+     * @param joinCondition the join condition; must not be {@code null}. A plain predicate is rendered with an {@code ON} prefix; an explicit
+     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword.
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements;
+     *                                  if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins
      *                                  with {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate
-     *                                  (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public Join(final Collection<String> joinEntities, final Condition joinCondition) {
         this(Operator.JOIN, joinEntities, joinCondition);
@@ -282,16 +288,18 @@ public class Join extends AbstractCondition {
      * @param operator the join operator
      * @param joinEntities the collection of tables or entities to join with.
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
-     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. May be {@code null}.
+     *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. Must be {@code null} for
+     *            {@link Operator#CROSS_JOIN}/{@link Operator#NATURAL_JOIN} and non-{@code null} for every other JOIN operator.
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntities} is
-     *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements; or
+     *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements;
      *                                  if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
-     *                                  {@code joinCondition} is non-{@code null}; or
+     *                                  {@code joinCondition} is non-{@code null}; if {@code operator} is any other JOIN operator and
+     *                                  {@code joinCondition} is {@code null}; or
      *                                  if {@code joinCondition} is or contains a {@link Criteria}, a null operator,
      *                                  a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *                                  operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition joinCondition) {
         super(operator);
@@ -301,6 +309,10 @@ public class Join extends AbstractCondition {
                     "Join operator must be JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, INNER JOIN, or NATURAL JOIN, but was: " + operator);
         }
 
+        // Validate the entities before the condition policy so that a null/blank entity is reported as such
+        // rather than as a missing (or unexpected) join predicate.
+        this.joinEntities = copyAndValidateJoinEntities(joinEntities);
+
         if ((operator == Operator.CROSS_JOIN || operator == Operator.NATURAL_JOIN) && joinCondition != null) {
             throw new IllegalArgumentException(operator + " derives its row combinations without an explicit join condition");
         }
@@ -309,7 +321,6 @@ public class Join extends AbstractCondition {
             throw new IllegalArgumentException(operator + " requires a non-null ON/USING predicate; use CROSS JOIN for an unconditional join");
         }
 
-        this.joinEntities = copyAndValidateJoinEntities(joinEntities);
         this.condition = validateJoinCondition(joinCondition);
     }
 
@@ -348,10 +359,10 @@ public class Join extends AbstractCondition {
      * Validates that {@code joinCondition} is usable as a join predicate: an {@link On} or {@link Using}
      * connector is unwrapped to the condition it carries, and the result must not be or contain a
      * non-predicate component (a {@link Criteria}, a SQL clause, a nested ON/USING connector, an
-     * {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or an
-     * empty predicate).
+     * {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a
+     * blank {@link SqlExpression}).
      *
-     * @param joinCondition the join condition; may be {@code null}
+     * @param joinCondition the join condition; may be {@code null} (CROSS/NATURAL joins)
      * @return the validated join condition, or {@code null} when none was supplied
      * @throws IllegalArgumentException if the condition is or contains a non-predicate component
      */
@@ -361,7 +372,7 @@ public class Join extends AbstractCondition {
 
             if (containsNonPredicateComponent(predicate)) {
                 throw new IllegalArgumentException("Join condition type " + joinCondition.getClass().getName()
-                        + " is not allowed: use a non-empty predicate without nested ON/USING or clause/quantified operators");
+                        + " is not allowed: use a predicate without clause, quantified, ON, or USING operators (a blank expression is not a predicate)");
             }
         }
 
@@ -420,9 +431,9 @@ public class Join extends AbstractCondition {
      * On condition = (On) join.condition();
      * // condition == onCondition (the same On instance is returned)
      *
-     * // Join without condition
-     * Join simpleJoin = new Join("products");
-     * Condition noCondition = simpleJoin.condition();
+     * // Conditionless join type (only CrossJoin/NaturalJoin can be built without a predicate)
+     * Join crossJoin = new CrossJoin("products");
+     * Condition noCondition = crossJoin.condition();
      * // noCondition == null
      *
      * // Edge: the condition is returned as-is; an incompatible cast fails
@@ -439,9 +450,9 @@ public class Join extends AbstractCondition {
      * Returns whether this join has a condition.
      * Returns {@code true} if a condition was supplied at construction time, {@code false}
      * otherwise. Unlike {@link #condition()}, which requires a {@code null} check on its
-     * result, this method gives a direct boolean answer &mdash; useful for conditionless joins
-     * such as {@link CrossJoin} and {@link NaturalJoin}, and for simple joins constructed
-     * without an {@code ON}/{@code USING} clause.
+     * result, this method gives a direct boolean answer &mdash; useful for the conditionless
+     * {@link CrossJoin} and {@link NaturalJoin}, the only join types that can be built without
+     * a predicate.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -449,9 +460,9 @@ public class Join extends AbstractCondition {
      * Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
      * join.hasCondition();    // returns true
      *
-     * // Join without condition
-     * Join simpleJoin = new Join("products");
-     * simpleJoin.hasCondition();   // returns false
+     * // Conditionless join type
+     * Join crossJoin = new CrossJoin("products");
+     * crossJoin.hasCondition();   // returns false
      *
      * // Typical use: guard before unwrapping the condition
      * if (join.hasCondition()) {
@@ -469,6 +480,9 @@ public class Join extends AbstractCondition {
      * Returns all parameters from the join condition.
      * Returns any bound parameters used in the join condition. Returns an empty
      * list if there's no condition or the condition has no parameters.
+     * The list is built afresh on every call (it is not memoized here), so mutable parameter values
+     * such as arrays or {@code Date}s come from the join condition's own per-call defensive copies
+     * and are never shared between callers.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -480,22 +494,15 @@ public class Join extends AbstractCondition {
      * Join onJoin = new Join("orders o", new On("customers.id", "o.customer_id"));
      * onJoin.parameters();       // returns [] (empty, immutable)
      *
-     * // Edge: no condition at all -> empty list
-     * new Join("products").parameters();   // returns []
+     * // Edge: conditionless join type -> empty list
+     * new CrossJoin("products").parameters();   // returns []
      * }</pre>
      *
      * @return an immutable list of parameters from the condition, or an empty immutable list if no condition
      */
     @Override
     public ImmutableList<Object> parameters() {
-        ImmutableList<Object> result = cachedParameters;
-
-        if (result == null) {
-            result = (condition == null) ? ImmutableList.empty() : condition.parameters();
-            cachedParameters = result;
-        }
-
-        return result;
+        return (condition == null) ? ImmutableList.empty() : condition.parameters();
     }
 
     /**
@@ -518,8 +525,8 @@ public class Join extends AbstractCondition {
      * snake.toSql(NamingPolicy.SNAKE_CASE);
      * // returns "JOIN orders o ON first_name = 'John'"
      *
-     * // Edge: no condition -> just the operator and entity
-     * new Join("products").toSql(NamingPolicy.NO_CHANGE);   // returns "JOIN products"
+     * // Edge: conditionless join type -> just the operator and entity
+     * new CrossJoin("products").toSql(NamingPolicy.NO_CHANGE);   // returns "CROSS JOIN products"
      * }</pre>
      *
      * @param namingPolicy the naming policy passed through to the join condition's {@link Condition#toSql(NamingPolicy)} method;

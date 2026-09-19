@@ -906,11 +906,10 @@ public class NamedProperty {
      * NamedProperty.of("email").like("%@example.com");   // email LIKE '%@example.com'
      * }</pre>
      *
-     * @param value the pattern to match (can include % for any characters and _ for single character).
-     *              Passing {@code null} renders the value as {@code null} (e.g. {@code name LIKE null}),
-     *              which is not a meaningful SQL comparison; do not pass {@code null} (the
-     *              {@link #startsWith(String)}/{@link #contains(String)} siblings reject a {@code null} value)
+     * @param value the pattern to match (can include % for any characters and _ for single character);
+     *              must not be {@code null}
      * @return a Like condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null}
      * @see Like
      * @see Filters#like(String, String)
      */
@@ -928,11 +927,10 @@ public class NamedProperty {
      * NamedProperty.of("name").notLike("test%");         // name NOT LIKE 'test%'
      * }</pre>
      *
-     * @param value the pattern to exclude (can include % for any characters and _ for single character).
-     *              Passing {@code null} renders the value as {@code null} (e.g. {@code name NOT LIKE null}),
-     *              which is not a meaningful SQL comparison; do not pass {@code null} (the
-     *              {@link #notContains(String)} sibling rejects a {@code null} value)
+     * @param value the pattern to exclude (can include % for any characters and _ for single character);
+     *              must not be {@code null}
      * @return a NotLike condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null}
      * @see NotLike
      * @see Filters#notLike(String, String)
      */

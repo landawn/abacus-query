@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.9.2)
-- Build: 965f6afef86d928fbff63589fb3d59edc322574e
+# abacus-query API Index (v4.9.3)
+- Build: d59a14566256f9898dabfab204d74aec93eb49b3
 - Java: 17
-- Generated: 2026-08-10
+- Generated: 2026-09-19
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -192,11 +192,11 @@ Base class for fluent SQL builders.
 - **Contract:**
   - Child parameters are merged before parameters from subsequent outer clauses, and generated named parameters are renamed when necessary to avoid collisions with the parent query.
 - **Parameters:**
-  - `sqlBuilder` (`This`) — the child builder supplying a complete, read-only SELECT query; consumed once child finalization begins
+  - `sqlBuilder` (`This`) — the child builder supplying a complete, lexically SELECT-only query (a syntactic SELECT candidate); consumed once child finalization begins
   - `alias` (`String`) — the derived-table alias, emitted as trusted SQL
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this builder, does not build a complete read-only SELECT, uses an incompatible parameter policy, or alias is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this builder, does not build a complete, lexically SELECT-only SELECT query, uses an incompatible parameter policy, or alias is null, empty, or blank
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT, has no projection, or already has a FROM clause, or if the child is incomplete or was already consumed
 - **Examples:**
   - ```java
@@ -257,7 +257,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -273,7 +273,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -293,7 +293,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -313,7 +313,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -329,7 +329,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class).innerJoin(Order.class).on("users.id = orders.user_id").build().query();
@@ -345,7 +345,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class, "u").innerJoin(Order.class, "o").on("u.id = o.user_id").build().query();
@@ -361,7 +361,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -377,7 +377,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class).leftJoin(Order.class).on("users.id = orders.user_id").build().query();
@@ -393,7 +393,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class, "u").leftJoin(Order.class, "o").on("u.id = o.user_id").build().query();
@@ -409,7 +409,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -425,7 +425,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class).rightJoin(Order.class).on("users.id = orders.user_id").build().query();
@@ -441,7 +441,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class, "u").rightJoin(Order.class, "o").on("u.id = o.user_id").build().query();
@@ -457,7 +457,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -473,7 +473,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class).fullJoin(Order.class).on("users.id = orders.user_id").build().query();
@@ -489,7 +489,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class, "u").fullJoin(Order.class, "o").on("u.id = o.user_id").build().query();
@@ -505,7 +505,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains a top-level ON/USING connector
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -521,7 +521,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class).crossJoin(Order.class).build().query();
@@ -537,7 +537,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class, "u").crossJoin(Order.class, "o").build().query();
@@ -553,7 +553,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains a top-level ON/USING connector
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -569,7 +569,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class).naturalJoin(Order.class).build().query();
@@ -585,7 +585,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
-  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet or a later SQL clause has already been emitted
+  - `java.lang.IllegalStateException` — if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*").from(User.class, "u").naturalJoin(Order.class, "o").build().query();
@@ -634,7 +634,7 @@ Base class for fluent SQL builders.
   - `condition` (`Condition`) — the join condition (must not be null)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or if a condition other than an explicit On/Using has a null operator or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or empty predicate
+  - `java.lang.IllegalArgumentException` — if condition is null, or if a condition other than an explicit On/Using has a null operator or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example ON 1 = 1)
   - `java.lang.IllegalStateException` — if there is no immediately preceding JOIN that accepts an ON/USING connector
 - **Examples:**
   - ```java
@@ -706,7 +706,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if WHERE has already been set on this builder
+  - `java.lang.IllegalStateException` — if WHERE has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -721,8 +721,8 @@ Base class for fluent SQL builders.
   - `condition` (`Condition`) — the WHERE condition (must not be null)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or empty predicate
-  - `java.lang.IllegalStateException` — if WHERE has already been set on this builder
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example WHERE 1 = 1)
+  - `java.lang.IllegalStateException` — if WHERE has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -740,7 +740,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "COUNT(*)")
@@ -756,7 +756,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "brand", "COUNT(*)")
@@ -772,7 +772,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     List<String> columns = Arrays.asList("category", "brand");
@@ -790,7 +790,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "COUNT(*)")
@@ -806,7 +806,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "brand", "COUNT(*)")
@@ -822,7 +822,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     List<String> columns = Arrays.asList("category", "brand");
@@ -840,7 +840,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "COUNT(*)")
@@ -856,7 +856,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "brand", "COUNT(*)")
@@ -873,7 +873,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if direction is null
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "COUNT(*)")
@@ -889,7 +889,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     List<String> columns = Arrays.asList("category", "brand");
@@ -907,7 +907,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element, or if direction is null
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     List<String> columns = Arrays.asList("category", "brand");
@@ -924,7 +924,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if groupings is null or empty, contains a null, empty, or blank key, or maps any key to a null direction
-  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     Map<String, SortDirection> orders = new LinkedHashMap<>();
@@ -944,7 +944,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
-  - `java.lang.IllegalStateException` — if HAVING has already been set on this builder
+  - `java.lang.IllegalStateException` — if HAVING has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "COUNT(*) as count")
@@ -960,8 +960,8 @@ Base class for fluent SQL builders.
   - `condition` (`Condition`) — the HAVING condition (must not be null)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or empty predicate
-  - `java.lang.IllegalStateException` — if HAVING has already been set on this builder
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example HAVING 1 = 1)
+  - `java.lang.IllegalStateException` — if HAVING has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("category", "COUNT(*) as count")
@@ -980,7 +980,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -996,7 +996,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1012,7 +1012,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     List<String> columns = Arrays.asList("lastName", "firstName");
@@ -1030,7 +1030,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1046,7 +1046,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1062,7 +1062,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     List<String> columns = Arrays.asList("createdDate", "id");
@@ -1080,7 +1080,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1096,7 +1096,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1113,7 +1113,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if direction is null
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1129,7 +1129,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     List<String> columns = Arrays.asList("lastName", "firstName");
@@ -1147,7 +1147,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element, or if direction is null
-  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder
+  - `java.lang.IllegalStateException` — if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     List<String> columns = Arrays.asList("lastName", "firstName");
@@ -1185,7 +1185,7 @@ Base class for fluent SQL builders.
   - `count` (`int`) — the maximum number of rows to return
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, or for SQL Server if ORDER BY has not been set
+  - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, for SQL Server if ORDER BY has not been set, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
   - `java.lang.IllegalArgumentException` — if count is negative
 - **Examples:**
   - ```java
@@ -1210,7 +1210,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if count or offset is negative
-  - `java.lang.IllegalStateException` — if LIMIT or OFFSET has already been set on this builder, on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or for SQL Server if ORDER BY has not been set
+  - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), if LIMIT or OFFSET has already been set on this builder, on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, for SQL Server if ORDER BY has not been set, on UPDATE/DELETE statements (the OFFSET portion is not valid there), or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1236,7 +1236,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if offset is negative
-  - `java.lang.IllegalStateException` — if OFFSET has already been set on this builder, or for SQL Server if ORDER BY has not been set
+  - `java.lang.IllegalStateException` — if OFFSET has already been set on this builder, for SQL Server if ORDER BY has not been set, or if a preceding qualified JOIN has not been completed with on(...)/using(...)
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1313,12 +1313,12 @@ Base class for fluent SQL builders.
 - **Signature:** `@Beta public This append(final Condition condition)`
 - **Summary:** Appends a condition to the SQL statement.
 - **Contract:**
-  - method: it must follow a SELECT segment completed by from(...), must precede ORDER BY, pagination, and FOR UPDATE, its operand must be a complete read-only SELECT sub-query, and afterwards only compound-result clauses (ORDER BY, pagination, FOR UPDATE) may follow.
+  - method: it must follow a SELECT segment completed by from(...), must precede ORDER BY, pagination, and FOR UPDATE, its operand must be a complete, lexically SELECT-only SELECT sub-query (a syntactic check, not a read-only guarantee), and afterwards only compound-result clauses (ORDER BY, pagination, FOR UPDATE) may follow.
 - **Parameters:**
   - `condition` (`Condition`) — the condition to append
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, if a predicate position contains a non-predicate condition, if a generic clause uses an operator that requires a dedicated builder method or condition type, or if a set-operation operand (standalone or carried by a Criteria) is not a complete read-only SELECT query
+  - `java.lang.IllegalArgumentException` — if condition is null, if a predicate position contains a non-predicate condition, if a generic clause uses an operator that requires a dedicated builder method or condition type, or if a set-operation operand (standalone or carried by a Criteria) is not a complete, lexically SELECT-only SELECT query
   - `java.lang.IllegalStateException` — if there is no current SELECT segment, if that segment already has a select modifier, if a clause emitted by the criteria has already been set, if any Criteria clause would be emitted after a clause that must follow it, or if a set-operation clause is appended before the current SELECT segment has been completed by from(...) or after ORDER BY, pagination, or FOR UPDATE
 - **Examples:**
   - ```java
@@ -1374,7 +1374,7 @@ Base class for fluent SQL builders.
   - `expr` (`String`) — the expression to append
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalStateException` — if this builder has already been closed by #build()
+  - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if b is true and the statement prefix cannot be rendered yet (see #append(String))
   - `java.lang.IllegalArgumentException` — if b is true and expr is null, empty, or blank
 - **Examples:**
   - ```java
@@ -1417,7 +1417,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if the selected expression (the one chosen by b) is null, empty, or blank
-  - `java.lang.IllegalStateException` — if this builder has already been closed by #build()
+  - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (see #append(String))
 - **Examples:**
   - ```java
     boolean sortAscending = true;
@@ -1436,7 +1436,7 @@ Base class for fluent SQL builders.
   - `sqlBuilder` (`This`) — the SQL builder containing the query to union (must not be null and must not be this same instance)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete read-only SELECT query (the child builder has already been consumed by build() when this is thrown)
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1448,10 +1448,10 @@ Base class for fluent SQL builders.
 - **Signature:** `public This union(final String query)`
 - **Summary:** Adds a UNION clause with a SQL query string.
 - **Parameters:**
-  - `query` (`String`) — the complete read-only SELECT sub-query to union
+  - `query` (`String`) — the complete SELECT sub-query to union (lexically SELECT-only; a syntactic check, not a read-only guarantee)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, not a complete SELECT sub-query, or is not read-only
+  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, or is not a complete, lexically SELECT-only SELECT sub-query
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1487,7 +1487,7 @@ Base class for fluent SQL builders.
   - `sqlBuilder` (`This`) — the SQL builder containing the query to union all (must not be null and must not be this same instance)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete read-only SELECT query (the child builder has already been consumed by build() when this is thrown)
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1499,10 +1499,10 @@ Base class for fluent SQL builders.
 - **Signature:** `public This unionAll(final String query)`
 - **Summary:** Adds a UNION ALL clause with a SQL query string.
 - **Parameters:**
-  - `query` (`String`) — the complete read-only SELECT sub-query to union all
+  - `query` (`String`) — the complete SELECT sub-query to union all (lexically SELECT-only; a syntactic check, not a read-only guarantee)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, not a complete SELECT sub-query, or is not read-only
+  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, or is not a complete, lexically SELECT-only SELECT sub-query
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1538,7 +1538,7 @@ Base class for fluent SQL builders.
   - `sqlBuilder` (`This`) — the SQL builder containing the query to intersect (must not be null and must not be this same instance)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete read-only SELECT query (the child builder has already been consumed by build() when this is thrown)
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1550,10 +1550,10 @@ Base class for fluent SQL builders.
 - **Signature:** `public This intersect(final String query)`
 - **Summary:** Adds an INTERSECT clause with a SQL query string.
 - **Parameters:**
-  - `query` (`String`) — the complete read-only SELECT sub-query to intersect
+  - `query` (`String`) — the complete SELECT sub-query to intersect (lexically SELECT-only; a syntactic check, not a read-only guarantee)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, not a complete SELECT sub-query, or is not read-only
+  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, or is not a complete, lexically SELECT-only SELECT sub-query
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1589,7 +1589,7 @@ Base class for fluent SQL builders.
   - `sqlBuilder` (`This`) — the SQL builder containing the query to except (must not be null and must not be this same instance)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete read-only SELECT query (the child builder has already been consumed by build() when this is thrown)
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1601,10 +1601,10 @@ Base class for fluent SQL builders.
 - **Signature:** `public This except(final String query)`
 - **Summary:** Adds an EXCEPT clause with a SQL query string.
 - **Parameters:**
-  - `query` (`String`) — the complete read-only SELECT sub-query to except
+  - `query` (`String`) — the complete SELECT sub-query to except (lexically SELECT-only; a syntactic check, not a read-only guarantee)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, not a complete SELECT sub-query, or is not read-only
+  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, or is not a complete, lexically SELECT-only SELECT sub-query
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1640,7 +1640,7 @@ Base class for fluent SQL builders.
   - `sqlBuilder` (`This`) — the SQL builder containing the query to minus (must not be null and must not be this same instance)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete read-only SELECT query (the child builder has already been consumed by build() when this is thrown)
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1652,10 +1652,10 @@ Base class for fluent SQL builders.
 - **Signature:** `public This minus(final String query)`
 - **Summary:** Adds a MINUS clause with a SQL query string (Oracle syntax).
 - **Parameters:**
-  - `query` (`String`) — the complete read-only SELECT sub-query to subtract with MINUS
+  - `query` (`String`) — the complete SELECT sub-query to subtract with MINUS (lexically SELECT-only; a syntactic check, not a read-only guarantee)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, not a complete SELECT sub-query, or is not read-only
+  - `java.lang.IllegalArgumentException` — if query is null, empty, blank, or is not a complete, lexically SELECT-only SELECT sub-query
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added
 - **Examples:**
   - ```java
@@ -1792,7 +1792,7 @@ Base class for fluent SQL builders.
   - `value2` (`Object`) — the second value to render, or a SqlExpression to embed
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if either property or column name is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if either property or column name is null, empty, or blank, or if the same name is given more than once
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
 - **Examples:**
   - ```java
@@ -1810,7 +1810,7 @@ Base class for fluent SQL builders.
   - `value3` (`Object`) — the third value to render, or a SqlExpression to embed
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property or column name is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if any property or column name is null, empty, or blank, or if the same name is given more than once
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
 - **Examples:**
   - ```java
@@ -1842,7 +1842,7 @@ Base class for fluent SQL builders.
   - `excludedPropNames` (`Set<String>`) — property names to exclude from the update (may be null)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entity is null, if entity is a Collection or array (use #set(Collection) for column lists), or if a bean entity has no updatable property remaining after exclusions are applied
+  - `java.lang.IllegalArgumentException` — if entity is null, if entity is a Collection or array (use #set(Collection) for column lists), or if a bean entity has no updatable property, or a Map entity has no entry, remaining after exclusions are applied
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted
 - **Examples:**
   - ```java
@@ -1893,7 +1893,7 @@ Base class for fluent SQL builders.
   - (none)
 - **Returns:** an SP (SQL-Parameters) pair containing the SQL string and parameter list
 - **Throws:**
-  - `java.lang.IllegalStateException` — if this method is called after the builder has already been closed by a prior call to build(), or if the statement is incomplete (e.g. a query segment staged columns or a select modifier that no from(...) rendered, an INSERT has no target table, or an UPDATE has no SET columns)
+  - `java.lang.IllegalStateException` — if this method is called after the builder has already been closed by a prior call to build(), or if the statement is incomplete (e.g. a query segment staged columns or a select modifier that no from(...) rendered, an INSERT has no target table, or an UPDATE has no SET columns, or a qualified JOIN was appended without a following on(...)/using(...))
 - **Examples:**
   - ```java
     // Get SQL and parameters together
@@ -1987,14 +1987,14 @@ Base class for fluent SQL builders.
     ```
 ##### toSubQuery(...) -> SubQuery
 - **Signature:** `@Beta public SubQuery toSubQuery()`
-- **Summary:** Finalizes and consumes this builder, validates that the resulting statement is a complete, read-only SELECT, and captures it as a reusable SubQuery.
+- **Summary:** Finalizes and consumes this builder, validates that the resulting statement is a complete, syntactic SELECT query candidate (as classified by SqlParser.isSyntacticallyReadQuery; a syntactic check, not a read-only guarantee), and captures it as a reusable SubQuery.
 - **Contract:**
   - If the captured SQL contains generated placeholders, an enclosing builder must use the same SQL policy; compatibility is checked when the snapshot is composed.
 - **Parameters:**
   - (none)
 - **Returns:** a reusable builder-backed subquery snapshot
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if the built statement is blank, is not a complete SELECT, or is not read-only
+  - `java.lang.IllegalArgumentException` — if the built statement is blank or is not a complete syntactic SELECT query candidate
   - `java.lang.IllegalStateException` — if this builder is incomplete or was already consumed
 - **Examples:**
   - ```java
@@ -2612,7 +2612,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNamesB` (`Set<String>`) — excluded properties for second entity
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if either entity class is null, or if either selection has no property remaining after exclusions
+  - `java.lang.IllegalArgumentException` — if either entity class is null, or if the two selections together resolve to no selectable property after exclusions are applied
 - **Examples:**
   - ```java
     Set<String> userExclude = N.asSet("password", "salt");
@@ -2632,7 +2632,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `selection` (`Selection`) — the selection descriptor defining the entity, aliases, and property filtering; must not be null
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if selection is null or resolves to no selectable property
+  - `java.lang.IllegalArgumentException` — if selection is null or resolves to no selectable property, or carries a blank, quoted, or comment-bearing table or class alias
 - **Examples:**
   - ```java
     SqlBuilder sql = PSC.select(Selection.builder(Account.class)
@@ -2648,7 +2648,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `selections` (`List<Selection>`) — list of Selection objects defining what to select from each entity
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if selections is null or empty, contains invalid data, or resolves to no properties in total
+  - `java.lang.IllegalArgumentException` — if selections is null or empty, contains invalid data (including a blank, quoted, or comment-bearing table or class alias), or resolves to no properties in total
 - **Examples:**
   - ```java
     List<Selection> selections = Arrays.asList(
@@ -2831,7 +2831,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNamesB` (`Set<String>`) — excluded properties for second entity
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if either entity class is null, if either selection has no property remaining after exclusions, or if the generated FROM clause is blank
+  - `java.lang.IllegalArgumentException` — if either entity class is null, if the two selections together resolve to no selectable property after exclusions are applied, or if the generated FROM clause is blank
 - **Examples:**
   - ```java
     Set<String> userExclude = N.asSet("password");
@@ -2848,7 +2848,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `selection` (`Selection`) — the selection descriptor defining the entity, aliases, and property filtering; must not be null
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if selection is null, resolves to no selectable property, or produces a blank generated FROM clause
+  - `java.lang.IllegalArgumentException` — if selection is null, resolves to no selectable property, carries a blank, quoted, or comment-bearing table or class alias, or produces a blank generated FROM clause
 - **Examples:**
   - ```java
     SqlBuilder sql = PSC.selectFrom(Selection.builder(Account.class)
@@ -2864,7 +2864,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `selections` (`List<Selection>`) — list of Selection objects defining what to select from each entity
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if selections is null or empty, contains invalid data, produces a blank generated FROM clause, or resolves to no properties in total
+  - `java.lang.IllegalArgumentException` — if selections is null or empty, contains invalid data (including a blank, quoted, or comment-bearing table or class alias), produces a blank generated FROM clause, or resolves to no properties in total
 - **Examples:**
   - ```java
     List<Selection> selections = Arrays.asList(
@@ -3084,7 +3084,7 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Returns:** this builder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if count is negative
-  - `java.lang.IllegalStateException` — if this builder has already been closed by a prior call to #build()
+  - `java.lang.IllegalStateException` — if a limit count was already specified, SQL:2008 pagination was selected, or this builder has already been closed by a prior call to #build()
 - **Examples:**
   - ```java
     Builder builder = DynamicQuery.builder();
@@ -3097,13 +3097,14 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Summary:** Adds a LIMIT clause with count and offset for pagination.
 - **Contract:**
   - Generates: LIMIT count OFFSET offset; the OFFSET portion is omitted when offset is 0, emitting just LIMIT count.
+  - A zero offset still counts as a specified plain offset, so a later #offset(int) call throws IllegalStateException; use #limit(int) when the offset should remain open.
 - **Parameters:**
   - `count` (`int`) — the maximum number of rows to return (must not be negative)
   - `offset` (`int`) — the number of rows to skip (must not be negative)
 - **Returns:** this builder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if count or offset is negative
-  - `java.lang.IllegalStateException` — if this builder has already been closed by a prior call to #build()
+  - `java.lang.IllegalStateException` — if a limit or plain offset was already specified, SQL:2008 pagination was selected, or this builder has already been closed by a prior call to #build()
 - **Examples:**
   - ```java
     Builder builder = DynamicQuery.builder();
@@ -3117,14 +3118,14 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Signature:** `public Builder offset(final int offset)`
 - **Summary:** Adds a plain OFFSET clause to skip the given number of leading rows.
 - **Contract:**
-  - When offset is 0, nothing is appended.
+  - When offset is 0, the offset remains semantically specified but is omitted from the generated SQL.
   - Use #offsetRows(int) instead when you need the SQL:2008 OFFSET n ROWS form (typically paired with #fetchNextRows(int) or #fetchFirstRows(int)).
 - **Parameters:**
   - `offset` (`int`) — the number of rows to skip (must not be negative)
 - **Returns:** this builder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if offset is negative
-  - `java.lang.IllegalStateException` — if this builder has already been closed by a prior call to #build()
+  - `java.lang.IllegalStateException` — if a plain offset was already specified (by this method or by #limit(int, int), including with a zero offset), SQL:2008 pagination was selected, or this builder has already been closed by a prior call to #build()
 - **Examples:**
   - ```java
     builder.limit(10).offset(20);
@@ -3135,13 +3136,13 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Signature:** `public Builder offsetRows(final int offset)`
 - **Summary:** Adds an OFFSET clause for SQL:2008 standard pagination.
 - **Contract:**
-  - When offset is 0, nothing is appended.
+  - An explicitly supplied zero is rendered as OFFSET 0 ROWS; this is useful when the target dialect requires an offset before FETCH NEXT.
 - **Parameters:**
   - `offset` (`int`) — the number of rows to skip (must not be negative)
 - **Returns:** this builder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if offset is negative
-  - `java.lang.IllegalStateException` — if this builder has already been closed by a prior call to #build()
+  - `java.lang.IllegalStateException` — if an OFFSET ... ROWS value was already specified, LIMIT-style pagination was selected, or this builder has already been closed by a prior call to #build()
 - **Examples:**
   - ```java
     builder.offsetRows(20).fetchNextRows(10);
@@ -3155,7 +3156,7 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Returns:** this builder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if count is negative
-  - `java.lang.IllegalStateException` — if this builder has already been closed by a prior call to #build()
+  - `java.lang.IllegalStateException` — if a fetch count was already specified, LIMIT-style pagination was selected, or this builder has already been closed by a prior call to #build()
 - **Examples:**
   - ```java
     builder.offsetRows(100).fetchNextRows(25);
@@ -3169,7 +3170,7 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Returns:** this builder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if count is negative
-  - `java.lang.IllegalStateException` — if this builder has already been closed by a prior call to #build()
+  - `java.lang.IllegalStateException` — if a fetch count was already specified, LIMIT-style pagination was selected, or this builder has already been closed by a prior call to #build()
 - **Examples:**
   - ```java
     builder.fetchFirstRows(10);
@@ -4212,7 +4213,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `condition` (`Condition`) — the condition to negate (must not be null and must be a composable condition)
 - **Returns:** a Not condition that wraps and negates the provided condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or is non-composable — a Criteria, a clause (for example WHERE, HAVING, or ORDER BY), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, or is non-composable — a Criteria, a clause (for example WHERE, HAVING, or ORDER BY), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     // Create a NOT LIKE condition
@@ -4242,10 +4243,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
   - `operator` (`Operator`) — the binary comparison or membership operator to use (must not be null; structural operators are rejected)
-  - `propValue` (`Object`) — the value to compare against; may be a literal, null, or another Condition such as a SubQuery. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty.
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, or a scalar SubQuery. null is accepted only for EQUAL, NOT_EQUAL, NOT_EQUAL_ANSI, IS and IS_NOT (rendering IS NULL/IS NOT NULL); IS/IS_NOT otherwise accept only a Boolean (normalized to the TRUE/FALSE keyword, never a bind parameter) or an SqlExpression; for IN/NOT_IN a non-empty Collection or array without null elements is copied defensively
 - **Returns:** a Binary condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; if operator is not a valid binary comparison/membership operator (e.g. a structural operator); if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, or a Condition; if a condition-valued operand is or contains a Criteria, SQL clause, JOIN, or ON/USING connector; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; if operator is not a valid binary comparison/membership operator (e.g. a structural operator); if propValue is null for any operator other than EQUAL, NOT_EQUAL, NOT_EQUAL_ANSI, IS or IS_NOT; if an IS/IS_NOT operand is not null, a Boolean, or an SqlExpression; if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, or a Condition, or the collection or array contains a null element; if a condition-valued operand is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector) or a blank SqlExpression; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison
   - `java.lang.NullPointerException` — if operator is null
 - **Examples:**
   - ```java
@@ -4274,10 +4275,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an equality condition (=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare for equality; may be a literal, null (renders as IS NULL), or another Condition such as a SubQuery
+  - `propValue` (`Object`) — the value to compare for equality: a literal, null (renders as IS NULL), an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand
 - **Returns:** an Equal condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     Equal condition = Filters.equal("username", "john_doe");
@@ -4301,10 +4302,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an equality condition (=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `propValue` (`Object`) — the value to compare for equality
+  - `propValue` (`Object`) — the value to compare for equality: a literal, null (renders as IS NULL), an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand
 - **Returns:** an Equal condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     Equal condition = Filters.eq("status", "active");
@@ -4360,8 +4361,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `includedPropNames` (`Collection<String>`) — the property names to include (must not be empty). Names are consumed once during this call; subsequent mutations do not affect the returned condition
 - **Returns:** an Or condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entity is null or is a map, or if includedPropNames is null, empty, contains an empty or blank name, or names an unreadable property
-  - `java.lang.NullPointerException` — if includedPropNames contains a null name
+  - `java.lang.IllegalArgumentException` — if entity is null or is a map, or if includedPropNames is null, empty, or contains a null, empty, blank, or unreadable name
 - **Examples:**
   - ```java
     User user = new User("John", "john@example.com", 25);
@@ -4436,8 +4436,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `includedPropNames` (`Collection<String>`) — the property names to include (must not be empty). Names are consumed once during this call; subsequent mutations do not affect the returned condition
 - **Returns:** an And condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entity is null or is a map, or if includedPropNames is null, empty, contains an empty or blank name, or names an unreadable property
-  - `java.lang.NullPointerException` — if includedPropNames contains a null name
+  - `java.lang.IllegalArgumentException` — if entity is null or is a map, or if includedPropNames is null, empty, or contains a null, empty, blank, or unreadable name
 - **Examples:**
   - ```java
     User user = new User("John", "john@example.com", 25);
@@ -4517,8 +4516,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `includedPropNames` (`Collection<String>`) — the property names to include (must not be empty). Both input collections are snapshotted during the call
 - **Returns:** an Or condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entities or includedPropNames is null or empty, all entities are null, an element is a map, or a property name is empty, blank, or not readable
-  - `java.lang.NullPointerException` — if includedPropNames contains a null name
+  - `java.lang.IllegalArgumentException` — if entities or includedPropNames is null or empty, all entities are null, an element is a map, or a property name is null, empty, blank, or not readable
 - **Examples:**
   - ```java
     List<User> users = Arrays.asList(new User("John", "active"), new User("Jane", "trial"));
@@ -4532,11 +4530,11 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a BETWEEN-like condition using greater-than (gt) and less-than (lt) comparisons.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `minValue` (`Object`) — the minimum value (exclusive)
-  - `maxValue` (`Object`) — the maximum value (exclusive)
+  - `minValue` (`Object`) — the minimum value (exclusive, must not be null)
+  - `maxValue` (`Object`) — the maximum value (exclusive, must not be null)
 - **Returns:** an And condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if minValue or maxValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     And condition = Filters.gtAndLt("age", 18, 65);
@@ -4559,11 +4557,11 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a BETWEEN-like condition using greater-than-or-equal (ge) and less-than (lt) comparisons.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `minValue` (`Object`) — the minimum value (inclusive)
-  - `maxValue` (`Object`) — the maximum value (exclusive)
+  - `minValue` (`Object`) — the minimum value (inclusive, must not be null)
+  - `maxValue` (`Object`) — the maximum value (exclusive, must not be null)
 - **Returns:** an And condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if minValue or maxValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     And condition = Filters.geAndLt("price", 100, 500);
@@ -4586,11 +4584,11 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a BETWEEN-like condition using greater-than-or-equal (ge) and less-than-or-equal (le) comparisons.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `minValue` (`Object`) — the minimum value (inclusive)
-  - `maxValue` (`Object`) — the maximum value (inclusive)
+  - `minValue` (`Object`) — the minimum value (inclusive, must not be null)
+  - `maxValue` (`Object`) — the maximum value (inclusive, must not be null)
 - **Returns:** an And condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if minValue or maxValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     And condition = Filters.geAndLe("date", "2023-01-01", "2023-12-31");
@@ -4613,11 +4611,11 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a BETWEEN-like condition using greater-than (gt) and less-than-or-equal (le) comparisons.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `minValue` (`Object`) — the minimum value (exclusive)
-  - `maxValue` (`Object`) — the maximum value (inclusive)
+  - `minValue` (`Object`) — the minimum value (exclusive, must not be null)
+  - `maxValue` (`Object`) — the maximum value (inclusive, must not be null)
 - **Returns:** an And condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if minValue or maxValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     And condition = Filters.gtAndLe("score", 0, 100);
@@ -4688,10 +4686,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a not-equal condition (!=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare for inequality; may be a literal, null (renders as IS NOT NULL), or another Condition such as a SubQuery
+  - `propValue` (`Object`) — the value to compare for inequality: a literal, null (renders as IS NOT NULL), an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand
 - **Returns:** a NotEqual condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     NotEqual condition = Filters.notEqual("status", "deleted");
@@ -4715,10 +4713,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a not-equal condition (!=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `propValue` (`Object`) — the value to compare for inequality
+  - `propValue` (`Object`) — the value to compare for inequality: a literal, null (renders as IS NOT NULL), an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand
 - **Returns:** a NotEqual condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     NotEqual condition = Filters.ne("status", "inactive");
@@ -4742,10 +4740,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a greater-than condition (>) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand (must not be null; use #isNull(String) / #isNotNull(String) for null tests)
 - **Returns:** a GreaterThan condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     GreaterThan condition = Filters.greaterThan("age", 18);
@@ -4769,10 +4767,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a greater-than condition (>) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `propValue` (`Object`) — the value to compare against
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand (must not be null; use #isNull(String) / #isNotNull(String) for null tests)
 - **Returns:** a GreaterThan condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     GreaterThan condition = Filters.gt("price", 100);
@@ -4796,10 +4794,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a greater-than-or-equal condition (>=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand (must not be null; use #isNull(String) / #isNotNull(String) for null tests)
 - **Returns:** a GreaterThanOrEqual condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     GreaterThanOrEqual condition = Filters.greaterThanOrEqual("score", 60);
@@ -4823,10 +4821,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a greater-than-or-equal condition (>=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `propValue` (`Object`) — the value to compare against
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand (must not be null; use #isNull(String) / #isNotNull(String) for null tests)
 - **Returns:** a GreaterThanOrEqual condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     GreaterThanOrEqual condition = Filters.ge("level", 5);
@@ -4850,10 +4848,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a less-than condition (<) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand (must not be null; use #isNull(String) / #isNotNull(String) for null tests)
 - **Returns:** a LessThan condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     LessThan condition = Filters.lessThan("age", 65);
@@ -4877,10 +4875,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a less-than condition (<) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `propValue` (`Object`) — the value to compare against
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand (must not be null; use #isNull(String) / #isNotNull(String) for null tests)
 - **Returns:** a LessThan condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     LessThan condition = Filters.lt("stock", 10);
@@ -4904,10 +4902,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a less-than-or-equal condition (<=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand (must not be null; use #isNull(String) / #isNotNull(String) for null tests)
 - **Returns:** a LessThanOrEqual condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     LessThanOrEqual condition = Filters.lessThanOrEqual("discount", 50);
@@ -4931,10 +4929,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a less-than-or-equal condition (<=) for the specified property and value.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `propValue` (`Object`) — the value to compare against
+  - `propValue` (`Object`) — the value to compare against: a literal, an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand (must not be null; use #isNull(String) / #isNotNull(String) for null tests)
 - **Returns:** a LessThanOrEqual condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)
 - **Examples:**
   - ```java
     LessThanOrEqual condition = Filters.le("priority", 3);
@@ -4958,11 +4956,11 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a Between condition for the specified property and range values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `minValue` (`Object`) — the minimum value (inclusive)
-  - `maxValue` (`Object`) — the maximum value (inclusive)
+  - `minValue` (`Object`) — the minimum value (inclusive, must not be null)
+  - `maxValue` (`Object`) — the maximum value (inclusive, must not be null)
 - **Returns:** a Between condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if either condition-valued bound is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if either bound is null or a blank SqlExpression, or if either bound is any other Condition than an SqlExpression or a scalar SubQuery (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or an All/Any/Some operand)
 - **Examples:**
   - ```java
     Between condition = Filters.between("age", 18, 65);
@@ -4986,11 +4984,11 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a NotBetween condition for the specified property and range values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `minValue` (`Object`) — the minimum value of the excluded range (inclusive)
-  - `maxValue` (`Object`) — the maximum value of the excluded range (inclusive)
+  - `minValue` (`Object`) — the minimum value of the excluded range (inclusive, must not be null)
+  - `maxValue` (`Object`) — the maximum value of the excluded range (inclusive, must not be null)
 - **Returns:** a NotBetween condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if either condition-valued bound is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if either bound is null or a blank SqlExpression, or if either bound is any other Condition than an SqlExpression or a scalar SubQuery (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or an All/Any/Some operand)
 - **Examples:**
   - ```java
     NotBetween condition = Filters.notBetween("temperature", -10, 40);
@@ -5015,10 +5013,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a Like condition for pattern matching.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `pattern` (`String`) — the pattern to match (can include SQL wildcards). Passing null renders as propName LIKE null, which is not a meaningful SQL comparison; do not pass null (the #contains(String, String) / #startsWith(String, String) siblings reject a null value)
+  - `pattern` (`String`) — the pattern to match (can include SQL wildcards); must not be null
 - **Returns:** a Like condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if pattern is null
 - **Examples:**
   - ```java
     Like condition = Filters.like("email", "%@gmail.com");
@@ -5028,10 +5026,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a Like condition with a non-string operand such as an expression or subquery.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the operand to compare with LIKE; may be a literal or another condition
+  - `propValue` (`Object`) — the operand to compare with LIKE: a literal, an SqlExpression, or a scalar SubQuery (must not be null)
 - **Returns:** a Like condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null, a blank SqlExpression, or an All/Any/Some operand, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector)
 - **Examples:**
   - ```java
     Like condition = Filters.like("email", Filters.expr("CONCAT(domain, '%')"));
@@ -5055,10 +5053,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a NotLike condition for pattern matching exclusion.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `pattern` (`String`) — the pattern to exclude (can include SQL wildcards). Passing null renders as propName NOT LIKE null, which is not a meaningful SQL comparison; do not pass null (the #notContains(String, String) sibling rejects a null value)
+  - `pattern` (`String`) — the pattern to exclude (can include SQL wildcards); must not be null
 - **Returns:** a NotLike condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if pattern is null
 - **Examples:**
   - ```java
     NotLike condition = Filters.notLike("filename", "%.tmp");
@@ -5068,10 +5066,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a NotLike condition with a non-string operand such as an expression or subquery.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the operand to compare with NOT LIKE; may be a literal or another condition
+  - `propValue` (`Object`) — the operand to compare with NOT LIKE: a literal, an SqlExpression, or a scalar SubQuery (must not be null)
 - **Returns:** a NotLike condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if propValue is null, a blank SqlExpression, or an All/Any/Some operand, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector)
 - **Examples:**
   - ```java
     NotLike condition = Filters.notLike("email", Filters.expr("CONCAT('%', blocked_domain)"));
@@ -5309,12 +5307,13 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an Is condition (SQL IS predicate) for the specified property and value.
 - **Contract:**
   - If propValue is Java null, the rendered SQL collapses to propName IS NULL.
+  - Otherwise propValue must be a Boolean or an SqlExpression naming the desired SQL keyword.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the right-hand value (typically an SqlExpression); may be null (renders as IS NULL)
+  - `propValue` (`Object`) — the right-hand value; must be null (renders as IS NULL), a Boolean (normalized to IS TRUE/IS FALSE, no bind parameter), or an SqlExpression naming the SQL keyword
 - **Returns:** an Is condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is not null, a Boolean, or an SqlExpression
 - **Examples:**
   - ```java
     Is condition = Filters.is("status", Filters.expr("UNKNOWN"));
@@ -5345,12 +5344,13 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an IsNot condition (SQL IS NOT predicate) for the specified property and value.
 - **Contract:**
   - If propValue is Java null, the rendered SQL collapses to propName IS NOT NULL.
+  - Otherwise propValue must be a Boolean or an SqlExpression naming the desired SQL keyword.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the right-hand value (typically an SqlExpression); may be null (renders as IS NOT NULL)
+  - `propValue` (`Object`) — the right-hand value; must be null (renders as IS NOT NULL), a Boolean (normalized to IS NOT TRUE/IS NOT FALSE, no bind parameter), or an SqlExpression naming the SQL keyword
 - **Returns:** an IsNot condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is not null, a Boolean, or an SqlExpression
 - **Examples:**
   - ```java
     IsNot condition = Filters.isNot("status", Filters.expr("UNKNOWN"));
@@ -5362,10 +5362,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Contract:**
   - At least one condition must be true for the OR to be true.
 - **Parameters:**
-  - `conditions` (`Condition[]`) — the array of conditions to combine with OR; null or empty is permitted and yields an empty junction (which renders as an empty string)
+  - `conditions` (`Condition[]`) — the array of conditions to combine with OR; null or empty is permitted and yields the false identity 1 = 0
 - **Returns:** an Or junction
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     Or condition = Filters.or(
@@ -5380,10 +5380,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Contract:**
   - At least one condition must be true for the OR to be true.
 - **Parameters:**
-  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with OR; null or empty is permitted and yields an empty junction (which renders as an empty string)
+  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with OR; null or empty is permitted and yields the false identity 1 = 0
 - **Returns:** an Or junction
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     List<Condition> conditions = Arrays.asList(
@@ -5399,10 +5399,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Contract:**
   - All conditions must be true for the AND to be true.
 - **Parameters:**
-  - `conditions` (`Condition[]`) — the array of conditions to combine with AND; null or empty is permitted and yields an empty junction (which renders as an empty string)
+  - `conditions` (`Condition[]`) — the array of conditions to combine with AND; null or empty is permitted and yields the true identity 1 = 1
 - **Returns:** an And junction
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     And condition = Filters.and(
@@ -5417,10 +5417,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Contract:**
   - All conditions must be true for the AND to be true.
 - **Parameters:**
-  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with AND; null or empty is permitted and yields an empty junction (which renders as an empty string)
+  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with AND; null or empty is permitted and yields the true identity 1 = 1
 - **Returns:** an And junction
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     List<Condition> conditions = Arrays.asList(
@@ -5437,11 +5437,11 @@ Factory class for creating SQL Condition objects used in query construction.
   - This is useful when the operator is chosen at runtime; for a fixed operator prefer #and(Condition...) or #or(Condition...).
 - **Parameters:**
   - `operator` (`Operator`) — the junction operator; must be Operator#AND or Operator#OR
-  - `conditions` (`Condition[]`) — the array of conditions to combine; null or empty is permitted and yields an empty junction (which renders as an empty string)
+  - `conditions` (`Condition[]`) — the array of conditions to combine; null or empty is permitted and yields 1 = 1 for AND or 1 = 0 for OR
 - **Returns:** a Junction with the specified operator
 - **Throws:**
   - `java.lang.NullPointerException` — if operator is null
-  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     Junction condition = Filters.junction(Operator.OR,
@@ -5456,11 +5456,11 @@ Factory class for creating SQL Condition objects used in query construction.
   - This is useful when the operator is chosen at runtime; for a fixed operator prefer #and(Collection) or #or(Collection).
 - **Parameters:**
   - `operator` (`Operator`) — the junction operator; must be Operator#AND or Operator#OR
-  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; null or empty is permitted and yields an empty junction (which renders as an empty string)
+  - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; null or empty is permitted and yields 1 = 1 for AND or 1 = 0 for OR
 - **Returns:** a Junction with the specified operator
 - **Throws:**
   - `java.lang.NullPointerException` — if operator is null
-  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element of conditions is null, or is a Criteria, a clause (WHERE, JOIN variants, ORDER BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     List<Condition> conditionsList = Arrays.asList(Filters.equal("flag1", true), Filters.equal("flag2", true));
@@ -5474,7 +5474,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `condition` (`Condition`) — the condition for the WHERE clause (must not be null)
 - **Returns:** a Where clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is a blank SqlExpression — none of which can be nested inside a clause
 - **Examples:**
   - ```java
     Where where = Filters.where(Filters.equal("active", true));
@@ -5488,7 +5488,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `expr` (`String`) — the SQL expression as a string (must not be null, empty, or blank)
 - **Returns:** a Where clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank (rejected up front, with the same 'expr' cannot be null or empty or blank message as Criteria.Builder.where(String))
 - **Examples:**
   - ```java
     Where where = Filters.where("YEAR(created_date) = 2023");
@@ -5631,7 +5631,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `direction2` (`SortDirection`) — second property sort direction
 - **Returns:** a GroupBy clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, or if any sort direction is null
+  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, if the property names are not distinct, or if any sort direction is null
 - **Examples:**
   - ```java
     GroupBy groupBy = Filters.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
@@ -5648,7 +5648,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `direction3` (`SortDirection`) — third property sort direction
 - **Returns:** a GroupBy clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, or if any sort direction is null
+  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, if the property names are not distinct, or if any sort direction is null
 - **Examples:**
   - ```java
     GroupBy groupBy = Filters.groupBy("country", SortDirection.ASC, "state", SortDirection.ASC, "city", SortDirection.DESC);
@@ -5677,7 +5677,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `condition` (`Condition`) — the grouping condition (must not be null)
 - **Returns:** a GroupBy clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is a blank SqlExpression — none of which can be nested inside a clause
 - **Examples:**
   - ```java
     GroupBy groupBy = Filters.groupBy(
@@ -5692,7 +5692,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `condition` (`Condition`) — the condition for the HAVING clause (must not be null)
 - **Returns:** a Having clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is a blank SqlExpression — none of which can be nested inside a clause
 - **Examples:**
   - ```java
     Having having = Filters.having(Filters.greaterThan("COUNT(*)", 5));
@@ -5706,7 +5706,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `expr` (`String`) — the SQL expression as a string (must not be null, empty, or blank)
 - **Returns:** a Having clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank (rejected up front, with the same 'expr' cannot be null or empty or blank message as Criteria.Builder.having(String))
 - **Examples:**
   - ```java
     Having having = Filters.having("SUM(amount) > 1000");
@@ -5849,7 +5849,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `direction2` (`SortDirection`) — second property sort direction
 - **Returns:** an OrderBy clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, or if any sort direction is null
+  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, if the property names are not distinct, or if any sort direction is null
 - **Examples:**
   - ```java
     OrderBy orderBy = Filters.orderBy("status", SortDirection.ASC, "priority", SortDirection.DESC);
@@ -5866,7 +5866,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `direction3` (`SortDirection`) — third property sort direction
 - **Returns:** an OrderBy clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, or if any sort direction is null
+  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, if the property names are not distinct, or if any sort direction is null
 - **Examples:**
   - ```java
     OrderBy orderBy = Filters.orderBy("year", SortDirection.DESC, "month", SortDirection.DESC, "day", SortDirection.ASC);
@@ -5896,7 +5896,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `condition` (`Condition`) — the ordering condition (must not be null)
 - **Returns:** an OrderBy clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is a blank SqlExpression — none of which can be nested inside a clause
 - **Examples:**
   - ```java
     OrderBy orderBy = Filters.orderBy(
@@ -5911,7 +5911,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `condition` (`Condition`) — the join condition (must not be null)
 - **Returns:** an On clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, or is/contains a Criteria, another clause, an ON/USING condition, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, or is/contains a Criteria, another clause, an ON/USING condition, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     On on = Filters.on(Filters.expr("users.id = orders.user_id"));
@@ -5988,26 +5988,28 @@ Factory class for creating SQL Condition objects used in query construction.
     // Results in SQL like: USING (user_id, department_id)
     ```
 ##### join(...) -> Join
-- **Signature:** `public static Join join(final String joinEntity)`
-- **Summary:** Creates a Join clause for the specified entity/table.
+- **Signature:** `@Deprecated public static Join join(final String joinEntity)`
+- **Summary:** Creates a Join clause for the specified entity/table without a join condition.
+- **Deprecated:** always throws; use #join(String, Condition) or #crossJoin(String) instead
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to join
-- **Returns:** a Join clause
+- **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
-    Join join = Filters.join("orders");
-    // Results in SQL like: JOIN orders
+    // Filters.join("orders") always throws; supply the predicate instead:
+    Join join = Filters.join("orders", Filters.on("users.id", "orders.user_id"));
+    // Results in SQL like: JOIN orders ON users.id = orders.user_id
     ```
 - **Signature:** `public static Join join(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a Join clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a Join clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     Join join = Filters.join("orders",
@@ -6018,37 +6020,39 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a Join clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a Join clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     Join join = Filters.join(Arrays.asList("orders", "products"),
         Filters.on("orders.product_id", "products.id"));
-    // Results in SQL like: JOIN (orders, products) ON orders.product_id = products.id
+    // Results in SQL like: JOIN (orders CROSS JOIN products) ON orders.product_id = products.id
     ```
 ##### leftJoin(...) -> LeftJoin
-- **Signature:** `public static LeftJoin leftJoin(final String joinEntity)`
-- **Summary:** Creates a LEFT JOIN clause for the specified entity/table.
+- **Signature:** `@Deprecated public static LeftJoin leftJoin(final String joinEntity)`
+- **Summary:** Creates a LeftJoin clause for the specified entity/table without a join condition.
+- **Deprecated:** always throws; use #leftJoin(String, Condition) or #crossJoin(String) instead
 - **Parameters:**
-  - `joinEntity` (`String`) — the entity/table name to left join
-- **Returns:** a LeftJoin clause
+  - `joinEntity` (`String`) — the entity/table name to join
+- **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified LEFT JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
-    LeftJoin join = Filters.leftJoin("orders");
-    // Results in SQL like: LEFT JOIN orders
+    // Filters.leftJoin("orders") always throws; supply the predicate instead:
+    LeftJoin join = Filters.leftJoin("orders", Filters.on("users.id", "orders.user_id"));
+    // Results in SQL like: LEFT JOIN orders ON users.id = orders.user_id
     ```
 - **Signature:** `public static LeftJoin leftJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to left join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a LeftJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     LeftJoin join = Filters.leftJoin("orders",
@@ -6059,37 +6063,39 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a LEFT JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to left join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a LeftJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     LeftJoin join = Filters.leftJoin(Arrays.asList("orders", "order_items"),
         Filters.on("orders.id", "order_items.order_id"));
-    // Results in SQL like: LEFT JOIN (orders, order_items) ON orders.id = order_items.order_id
+    // Results in SQL like: LEFT JOIN (orders CROSS JOIN order_items) ON orders.id = order_items.order_id
     ```
 ##### rightJoin(...) -> RightJoin
-- **Signature:** `public static RightJoin rightJoin(final String joinEntity)`
-- **Summary:** Creates a RIGHT JOIN clause for the specified entity/table.
+- **Signature:** `@Deprecated public static RightJoin rightJoin(final String joinEntity)`
+- **Summary:** Creates a RightJoin clause for the specified entity/table without a join condition.
+- **Deprecated:** always throws; use #rightJoin(String, Condition) or #crossJoin(String) instead
 - **Parameters:**
-  - `joinEntity` (`String`) — the entity/table name to right join
-- **Returns:** a RightJoin clause
+  - `joinEntity` (`String`) — the entity/table name to join
+- **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified RIGHT JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
-    RightJoin join = Filters.rightJoin("users");
-    // Results in SQL like: RIGHT JOIN users
+    // Filters.rightJoin("users") always throws; supply the predicate instead:
+    RightJoin join = Filters.rightJoin("users", Filters.on("orders.user_id", "users.id"));
+    // Results in SQL like: RIGHT JOIN users ON orders.user_id = users.id
     ```
 - **Signature:** `public static RightJoin rightJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to right join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a RightJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     RightJoin join = Filters.rightJoin("users",
@@ -6100,15 +6106,15 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a RIGHT JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to right join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a RightJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     RightJoin join = Filters.rightJoin(Arrays.asList("departments", "locations"),
         Filters.on("departments.location_id", "locations.id"));
-    // Results in SQL like: RIGHT JOIN (departments, locations) ON departments.location_id = locations.id
+    // Results in SQL like: RIGHT JOIN (departments CROSS JOIN locations) ON departments.location_id = locations.id
     ```
 ##### crossJoin(...) -> CrossJoin
 - **Signature:** `public static CrossJoin crossJoin(final String joinEntity)`
@@ -6133,31 +6139,31 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Examples:**
   - ```java
     CrossJoin join = Filters.crossJoin(Arrays.asList("colors", "sizes"));
-    // Results in SQL like: CROSS JOIN (colors, sizes)
+    // Results in SQL like: CROSS JOIN (colors CROSS JOIN sizes)
     ```
 ##### fullJoin(...) -> FullJoin
-- **Signature:** `public static FullJoin fullJoin(final String joinEntity)`
-- **Summary:** Creates a FULL JOIN clause for the specified entity/table.
-- **Contract:**
-  - Returns all records when there is a match in either table.
+- **Signature:** `@Deprecated public static FullJoin fullJoin(final String joinEntity)`
+- **Summary:** Creates a FullJoin clause for the specified entity/table without a join condition.
+- **Deprecated:** always throws; use #fullJoin(String, Condition) or #crossJoin(String) instead
 - **Parameters:**
-  - `joinEntity` (`String`) — the entity/table name to full join
-- **Returns:** a FullJoin clause
+  - `joinEntity` (`String`) — the entity/table name to join
+- **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified FULL JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
-    FullJoin join = Filters.fullJoin("departments");
-    // Results in SQL like: FULL JOIN departments
+    // Filters.fullJoin("employees") always throws; supply the predicate instead:
+    FullJoin join = Filters.fullJoin("employees", Filters.on("departments.id", "employees.dept_id"));
+    // Results in SQL like: FULL JOIN employees ON departments.id = employees.dept_id
     ```
 - **Signature:** `public static FullJoin fullJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to full join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a FullJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     FullJoin join = Filters.fullJoin("employees",
@@ -6168,37 +6174,39 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a FULL JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to full join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a FullJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     FullJoin join = Filters.fullJoin(Arrays.asList("employees", "contractors"),
         Filters.on("employees.project_id", "contractors.project_id"));
-    // Results in SQL like: FULL JOIN (employees, contractors) ON employees.project_id = contractors.project_id
+    // Results in SQL like: FULL JOIN (employees CROSS JOIN contractors) ON employees.project_id = contractors.project_id
     ```
 ##### innerJoin(...) -> InnerJoin
-- **Signature:** `public static InnerJoin innerJoin(final String joinEntity)`
-- **Summary:** Creates an INNER JOIN clause for the specified entity/table.
+- **Signature:** `@Deprecated public static InnerJoin innerJoin(final String joinEntity)`
+- **Summary:** Creates an InnerJoin clause for the specified entity/table without a join condition.
+- **Deprecated:** always throws; use #innerJoin(String, Condition) or #crossJoin(String) instead
 - **Parameters:**
-  - `joinEntity` (`String`) — the entity/table name to inner join
-- **Returns:** an InnerJoin clause
+  - `joinEntity` (`String`) — the entity/table name to join
+- **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified INNER JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
-    InnerJoin join = Filters.innerJoin("orders");
-    // Results in SQL like: INNER JOIN orders
+    // Filters.innerJoin("products") always throws; supply the predicate instead:
+    InnerJoin join = Filters.innerJoin("products", Filters.on("order_items.product_id", "products.id"));
+    // Results in SQL like: INNER JOIN products ON order_items.product_id = products.id
     ```
 - **Signature:** `public static InnerJoin innerJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to inner join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** an InnerJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     InnerJoin join = Filters.innerJoin("products",
@@ -6209,15 +6217,15 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an INNER JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to inner join
-  - `joinCondition` (`Condition`) — the join condition; may be null for a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** an InnerJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     InnerJoin join = Filters.innerJoin(Arrays.asList("orders", "order_details"),
         Filters.on("orders.id", "order_details.order_id"));
-    // Results in SQL like: INNER JOIN (orders, order_details) ON orders.id = order_details.order_id
+    // Results in SQL like: INNER JOIN (orders CROSS JOIN order_details) ON orders.id = order_details.order_id
     ```
 ##### naturalJoin(...) -> NaturalJoin
 - **Signature:** `public static NaturalJoin naturalJoin(final String joinEntity)`
@@ -6242,7 +6250,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Examples:**
   - ```java
     NaturalJoin join = Filters.naturalJoin(Arrays.asList("employees", "departments"));
-    // Results in SQL like: NATURAL JOIN (employees, departments)
+    // Results in SQL like: NATURAL JOIN (employees CROSS JOIN departments)
     ```
 ##### in(...) -> In
 - **Signature:** `public static In in(final String propName, final boolean[] values)`
@@ -6353,10 +6361,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an IN condition with an array of object values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `values` (`Object[]`) — array of values
+  - `values` (`Object[]`) — array of non-null values
 - **Returns:** an In condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if values is null or empty, or if a condition-valued element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)
 - **Examples:**
   - ```java
     In condition = Filters.in("status", new String[] {"active", "pending", "approved"});
@@ -6366,10 +6374,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an IN condition with a collection of values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `values` (`Collection<?>`) — collection of values
+  - `values` (`Collection<?>`) — collection of non-null values
 - **Returns:** an In condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if values is null or empty, or if a condition-valued element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)
 - **Examples:**
   - ```java
     List<String> categories = Arrays.asList("electronics", "books", "toys");
@@ -6380,13 +6388,13 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a row value constructor IN condition.
 - **Contract:**
   - The tuple of property values must match one of the supplied value rows.
-  - A map contributes null for an absent property key; a bean must expose every requested property.
+  - Every requested map key or bean property must exist, and every resolved tuple element must be non-null.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the property/column names (must not be null or empty and must not contain null/blank names)
-  - `valueRows` (`Collection<?>`) — collection of value rows; each row must resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean
+  - `valueRows` (`Collection<?>`) — collection of value rows; each row must resolve to exactly propNames.size() non-null values. A row may be a Collection, Iterable, object array, Map or bean
 - **Returns:** an In condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a requested property is missing or unreadable on a bean row, or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)
 - **Examples:**
   - ```java
     In condition = Filters.in(Arrays.asList("first_name", "last_name"),
@@ -6402,7 +6410,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `subQuery` (`SubQuery`) — the subquery to check against
 - **Returns:** an InSubQuery condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if subQuery is null, or if subQuery is a structured subquery (exposing selected property names) that selects a number of columns other than 1
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if subQuery is null, or if subQuery is a structured subquery whose known, non-wildcard projection selects a number of columns other than 1
 - **Examples:**
   - ```java
     SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
@@ -6416,7 +6424,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `subQuery` (`SubQuery`) — the subquery to check against
 - **Returns:** an InSubQuery condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propNames is null or empty or contains a null, empty, or blank name, if subQuery is null, or if subQuery is a structured subquery (exposing selected property names) whose number of selected columns does not match propNames.size()
+  - `java.lang.IllegalArgumentException` — if propNames is null or empty or contains a null, empty, or blank name, if subQuery is null, or if subQuery is a structured subquery whose known, non-wildcard projection selects a number of columns that does not match propNames.size()
 - **Examples:**
   - ```java
     SubQuery subQuery = Filters.subQuery("SELECT user_id, order_id FROM recent_orders");
@@ -6532,10 +6540,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a NOT IN condition with an array of object values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `values` (`Object[]`) — array of values to exclude
+  - `values` (`Object[]`) — array of non-null values to exclude
 - **Returns:** a NotIn condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if values is null or empty, or if a condition-valued element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)
 - **Examples:**
   - ```java
     NotIn condition = Filters.notIn("role", new String[] {"guest", "banned"});
@@ -6545,10 +6553,10 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a NOT IN condition with a collection of values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `values` (`Collection<?>`) — collection of values to exclude
+  - `values` (`Collection<?>`) — collection of non-null values to exclude
 - **Returns:** a NotIn condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if values is null or empty, or if a condition-valued element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)
 - **Examples:**
   - ```java
     List<String> excludedCountries = Arrays.asList("XX", "YY");
@@ -6559,13 +6567,13 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a row value constructor NOT IN condition.
 - **Contract:**
   - The tuple of property values must not match any of the supplied value rows.
-  - A map contributes null for an absent property key; a bean must expose every requested property.
+  - Every requested map key or bean property must exist, and every resolved tuple element must be non-null.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the property/column names (must not be null or empty and must not contain null/blank names)
-  - `valueRows` (`Collection<?>`) — collection of value rows to exclude; each row must resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean
+  - `valueRows` (`Collection<?>`) — collection of value rows to exclude; each row must resolve to exactly propNames.size() non-null values. A row may be a Collection, Iterable, object array, Map or bean
 - **Returns:** a NotIn condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a requested property is missing or unreadable on a bean row, or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)
 - **Examples:**
   - ```java
     NotIn condition = Filters.notIn(Arrays.asList("first_name", "last_name"),
@@ -6581,7 +6589,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `subQuery` (`SubQuery`) — the subquery to check against
 - **Returns:** a NotInSubQuery condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if subQuery is null, or if subQuery is a structured subquery (exposing selected property names) that selects a number of columns other than 1
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if subQuery is null, or if subQuery is a structured subquery whose known, non-wildcard projection selects a number of columns other than 1
 - **Examples:**
   - ```java
     SubQuery subQuery = Filters.subQuery("SELECT id FROM blacklisted_users");
@@ -6595,7 +6603,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `subQuery` (`SubQuery`) — the subquery to check against
 - **Returns:** a NotInSubQuery condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propNames is null or empty or contains a null, empty, or blank name, if subQuery is null, or if subQuery is a structured subquery (exposing selected property names) whose number of selected columns does not match propNames.size()
+  - `java.lang.IllegalArgumentException` — if propNames is null or empty or contains a null, empty, or blank name, if subQuery is null, or if subQuery is a structured subquery whose known, non-wildcard projection selects a number of columns that does not match propNames.size()
 - **Examples:**
   - ```java
     SubQuery subQuery = Filters.subQuery("SELECT user_id, product_id FROM returns");
@@ -6760,7 +6768,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the table (must not be null)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty, and must not contain null, empty, or blank elements)
-  - `condition` (`Condition`) — the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression or empty Junction condition is likewise treated as no filter condition)
+  - `condition` (`Condition`) — the WHERE condition for the subquery; may be null for no WHERE clause. A blank SqlExpression is likewise treated as no filter; an empty Junction is preserved as its Boolean identity
 - **Returns:** a SubQuery
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null, if propNames is null or empty, contains a null, empty, or blank element, if condition uses an ON/USING operator, if condition is a Criteria carrying a SELECT modifier (e.g. DISTINCT), or if condition is an ANY/ALL/SOME quantified-subquery operand or a standalone SubQuery (neither of which can be nested inside the generated WHERE clause)
@@ -6811,7 +6819,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be null, empty, or blank)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty, and must not contain null, empty, or blank elements)
-  - `condition` (`Condition`) — the WHERE condition for the subquery; may be null for no WHERE clause (a blank SqlExpression or empty Junction condition is likewise treated as no filter condition)
+  - `condition` (`Condition`) — the WHERE condition for the subquery; may be null for no WHERE clause. A blank SqlExpression is likewise treated as no filter; an empty Junction is preserved as its Boolean identity
 - **Returns:** a SubQuery
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityName is null, empty, or blank, if propNames is null or empty, contains a null, empty, or blank element, if condition uses an ON/USING operator, if condition is a Criteria carrying a SELECT modifier (e.g. DISTINCT), or if condition is an ANY/ALL/SOME quantified-subquery operand or a standalone SubQuery (neither of which can be nested inside the generated WHERE clause)
@@ -6862,12 +6870,12 @@ Factory class for creating SQL Condition objects used in query construction.
   - `sql` (`String`) — the complete SQL for the subquery (must not be null, empty, or blank)
 - **Returns:** a SubQuery
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank, or contains an unbound parameter placeholder
 - **Examples:**
   - ```java
     SubQuery subQuery = Filters.subQuery("orders",
-        "SELECT COUNT(*) FROM orders WHERE user_id = ?");
-    // Generates: SELECT COUNT(*) FROM orders WHERE user_id = ?   (entityName is ignored when full SQL is supplied)
+        "SELECT COUNT(*) FROM orders WHERE user_id = 42");
+    // Generates: SELECT COUNT(*) FROM orders WHERE user_id = 42   (entityName is ignored when full SQL is supplied)
     ```
 - **See also:** #subQuery(String)
 - **Signature:** `public static SubQuery subQuery(final String sql)`
@@ -6876,13 +6884,32 @@ Factory class for creating SQL Condition objects used in query construction.
   - `sql` (`String`) — the complete SQL for the subquery (must not be null, empty, or blank)
 - **Returns:** a SubQuery
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank, or contains an unbound parameter placeholder
 - **Examples:**
   - ```java
     SubQuery subQuery = Filters.subQuery(
         "SELECT user_id FROM orders WHERE total > 1000 GROUP BY user_id"
     );
     // Generates: SELECT user_id FROM orders WHERE total > 1000 GROUP BY user_id
+    ```
+- **Signature:** `public static SubQuery subQuery(final String sql, final Collection<?> parameters)`
+- **Summary:** Creates a raw SubQuery with positional JDBC bindings.
+- **Contract:**
+  - The complete SQL is retained verbatim; parameters is defensively copied and must have exactly one value for each positional ?
+  - Use SqlBuilder#toSubQuery() when a named SQL policy is required.
+  - As with every raw SQL API, the SQL structure itself must not come from untrusted input.
+- **Parameters:**
+  - `sql` (`String`) — complete raw query-expression text (must not be null, empty, or blank)
+  - `parameters` (`Collection<?>`) — positional binding values in placeholder encounter order (must not be null); individual values may be null
+- **Returns:** a raw SubQuery carrying an immutable binding snapshot
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if the SQL is blank, parameters is null, a named/MyBatis marker is present, or the placeholder and binding counts differ
+- **Examples:**
+  - ```java
+    SubQuery subQuery = Filters.subQuery(
+        "SELECT user_id FROM orders WHERE status = ? AND total > ?",
+        Arrays.asList("OPEN", 100));
+    // parameters(): ["OPEN", 100]
     ```
 ##### limit(...) -> Limit
 - **Signature:** `public static Limit limit(final int count)`
@@ -6913,17 +6940,16 @@ Factory class for creating SQL Condition objects used in query construction.
     // Results in SQL like: LIMIT 20 OFFSET 10 (skip 10, take 20)
     ```
 - **Signature:** `public static Limit limit(final String expr)`
-- **Summary:** Creates a LIMIT clause from a string expression, formatting and validating it against a fixed grammar.
+- **Summary:** Creates a LIMIT clause from a string expression, normalizing and validating it against a fixed grammar.
 - **Contract:**
-  - The expression is trimmed, its internal whitespace collapsed, and its SQL keywords upper-cased (parameter names left intact); a "LIMIT " prefix is prepended when it begins with a digit, '?', ':', or "#{" .
-  - It must be one of LIMIT count, LIMIT count OFFSET offset, MySQL's LIMIT offset, count, or the SQL:2008 \[OFFSET offset ROWS\] FETCH NEXT/FIRST count ROWS ONLY forms — where each number is an integer or a ?
-  - When the condition is rendered by a SQL builder, a parsed expression is emitted in the target dialect's pagination syntax (so MySQL's comma form and the FETCH forms are re-rendered per dialect).
-  - An opaque (placeholder) expression is re-rendered in the dialect's FETCH syntax only when the dialect paginates with OFFSET/FETCH (Oracle, DB2 or SQL Server, per SqlDialect.ProductInfo) and it is a generic LIMIT count \[OFFSET offset\] form; otherwise it is emitted verbatim.
+  - The expression is trimmed, its internal whitespace collapsed and its SQL keywords upper-cased; a "LIMIT " prefix is prepended when it begins with a digit.
+  - It must be one of LIMIT count, LIMIT count OFFSET offset, MySQL's LIMIT offset, count, or the SQL:2008 \[OFFSET offset ROW\[S\]\] FETCH FIRST|NEXT count ROW\[S\] ONLY forms, where every number is a non-negative integer literal.
+  - When rendered by a SQL builder, a resolved expression is emitted in the target dialect's pagination syntax (so MySQL's comma form and the FETCH forms are re-rendered per dialect); an unresolved (out-of-range) expression is emitted verbatim.
 - **Parameters:**
   - `expr` (`String`) — the limit expression as a string (must not be null, empty, or blank, and must match one of the accepted forms)
 - **Returns:** a Limit clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or not an accepted limit form
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, contains a placeholder, or is not one of the accepted forms
 - **Examples:**
   - ```java
     Limit limit = Filters.limit("10 OFFSET 20");
@@ -6955,7 +6981,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
   - `sql` (`String`) — the SQL string to parse (must not be null, empty, or blank)
 - **Returns:** a ParsedSql instance for the given SQL (typically a cached instance)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank, if it mixes different parameter styles (?, :propName, #{propName}), or if it contains a malformed iBatis/MyBatis parameter that is missing its closing brace
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank, if it mixes different parameter styles (?, :propName, #{propName}), or if it contains a malformed iBatis/MyBatis parameter that is missing its closing brace, or an unpaired UTF-16 surrogate in, or immediately before, a prospective colon-style parameter name
 - **Examples:**
   - ```java
     // Using named parameters
@@ -7024,7 +7050,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
 - **Summary:** Returns the total number of parameters (named or positional) in the SQL.
 - **Parameters:**
   - (none)
-- **Returns:** the number of parameters in the SQL
+- **Returns:** the number of parameters in the SQL; this can be smaller than the number of ? characters in #parameterizedSql() when a bracket-quoted identifier such as \[what?\] is preserved verbatim
 - **Examples:**
   - ```java
     ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (:name, :email, :age)");
@@ -7294,7 +7320,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Signature:** `@Internal @Immutable public static ImmutableList<String> idPropNames(final Class<?> entityClass)`
 - **Summary:** Returns the ID property names for the specified entity class.
 - **Contract:**
-  - ID properties are those annotated with @Id or @ReadOnlyId; when the class declares neither annotation, a property named exactly "id" is treated as the ID by convention.
+  - ID properties are those annotated with @Id or @ReadOnlyId; when the class declares neither annotation, a property named exactly "id" whose type is int/Integer, long/Long, String, java.sql.Timestamp or java.util.UUID is treated as the ID by convention.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
 - **Returns:** an immutable list of ID property names, or an empty list if no ID properties are defined
@@ -7312,7 +7338,7 @@ Utility class for handling database query operations, entity-column mappings, an
     
     // Entity without @Id returns empty list
     List<String> noIds = QueryUtil.idPropNames(LogEntry.class);
-    // Returns: [] (no @Id/@ReadOnlyId and no property named "id")
+    // Returns: [] (no @Id/@ReadOnlyId and no conventionally-typed property named "id")
     ```
 ##### isNonColumn(...) -> boolean
 - **Signature:** `@Internal public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo)`
@@ -7356,6 +7382,28 @@ Utility class for handling database query operations, entity-column mappings, an
     // Returns: "?, ?, ?"
     String sql = "INSERT INTO users (name, email, age) VALUES (" + placeholders + ")";
     // Result: "INSERT INTO users (name, email, age) VALUES (?, ?, ?)"
+    ```
+##### convertIdentifier(...) -> String
+- **Signature:** `public static String convertIdentifier(final String identifier, final NamingPolicy namingPolicy)`
+- **Summary:** Converts a SQL identifier (a column or property name, optionally qualified such as t.firstName) with the given naming policy while preserving the leading and trailing underscore runs of every dot-separated segment.
+- **Parameters:**
+  - `identifier` (`String`) — the identifier to convert; null and empty strings are returned as-is
+  - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to the parts between the underscore runs; null and NamingPolicy#NO_CHANGE return identifier as-is
+- **Returns:** the converted identifier with the leading and trailing underscore runs of every dot-separated segment preserved
+- **Examples:**
+  - ```java
+    QueryUtil.convertIdentifier("firstName", NamingPolicy.SNAKE_CASE);            // "first_name"
+    QueryUtil.convertIdentifier("_firstName", NamingPolicy.SNAKE_CASE);           // "_first_name"
+    QueryUtil.convertIdentifier("firstName_", NamingPolicy.SNAKE_CASE);           // "first_name_"
+    QueryUtil.convertIdentifier("__x", NamingPolicy.SNAKE_CASE);                  // "__x"
+    QueryUtil.convertIdentifier("_firstName", NamingPolicy.SCREAMING_SNAKE_CASE); // "_FIRST_NAME"
+    QueryUtil.convertIdentifier("_1", NamingPolicy.SNAKE_CASE);                   // "_1"
+    QueryUtil.convertIdentifier("__", NamingPolicy.SNAKE_CASE);                   // "__" (all underscores, returned as-is)
+    QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE);                // "t.__v" (runs preserved per segment)
+    QueryUtil.convertIdentifier("acc._id", NamingPolicy.SCREAMING_SNAKE_CASE);    // "ACC._ID"
+    QueryUtil.convertIdentifier("a__b", NamingPolicy.SNAKE_CASE);                 // "a_b" (internal runs follow the policy)
+    QueryUtil.convertIdentifier("_firstName", NamingPolicy.NO_CHANGE);            // "_firstName"
+    QueryUtil.convertIdentifier("", NamingPolicy.SNAKE_CASE);                     // ""
     ```
 ##### tableAlias(...) -> String
 - **Signature:** `@Internal public static String tableAlias(final Class<?> entityClass)`
@@ -7552,6 +7600,8 @@ Builder for immutable Selection instances.
 ##### tableAlias(...) -> SelectionBuilder
 - **Signature:** `public SelectionBuilder tableAlias(final String tableAlias)`
 - **Summary:** Sets the table alias.
+- **Contract:**
+  - null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain SQL comment tokens (it is prefixed verbatim to every rendered column).
 - **Parameters:**
   - `tableAlias` (`String`) — the table alias
 - **Returns:** this builder
@@ -8576,18 +8626,25 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     boolean result5 = SqlParser.isSelectQuery("INSERT INTO users VALUES (1, 'John')");
     // result5 = false
     ```
-- **See also:** #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isReadOrInsertQuery(String)
-##### isReadOnlyQuery(...) -> boolean
-- **Signature:** `public static boolean isReadOnlyQuery(final String sql)`
-- **Summary:** Checks whether the given SQL statement is read-only, i.e. a SELECT that performs no data mutation.
+- **See also:** #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isSyntacticallyReadQuery(String), #isReadOrInsertQuery(String)
+##### isSyntacticallyReadQuery(...) -> boolean
+- **Signature:** `public static boolean isSyntacticallyReadQuery(final String sql)`
+- **Summary:** Lexically classifies whether the given SQL text consists only of accepted SELECT-shaped statements.
 - **Contract:**
-  - A statement is considered read-only only if its leading keyword is SELECT (see #isSelectQuery(String)) and it contains no top-level mutation, DDL, or procedure-invocation keyword (INSERT, UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP), no procedure invocation (CALL, JDBC {call ...} / {?
-  - For multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) makes the SQL non-read-only.
-  - Every lexically valid interpretation must be read-only, so an ambiguous quote or comment cannot hide a mutation clause.
+  - A statement is accepted only if its leading keyword is SELECT (see #isSelectQuery(String)) and it contains no top-level mutation or DDL keyword (INSERT, UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP), no procedure invocation (CALL, JDBC {call ...} / {?
+  - For multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) is rejected.
+  - Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot hide a mutation clause.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
-- **Returns:** true if the SQL is a read-only SELECT query, false otherwise
+- **Returns:** true if the SQL text has an accepted SELECT-only shape, false otherwise
 - **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOrInsertQuery(String)
+##### isReadOnlyQuery(...) -> boolean
+- **Signature:** `@Deprecated public static boolean isReadOnlyQuery(final String sql)`
+- **Summary:** Legacy alias for #isSyntacticallyReadQuery(String).
+- **Deprecated:** The name overstates what lexical SQL inspection can prove. Use #isSyntacticallyReadQuery(String) and enforce actual read-only behavior with database privileges and transaction settings.
+- **Parameters:**
+  - `sql` (`String`) — the SQL statement to classify; may be empty or null
+- **Returns:** the lexical SELECT-only classification
 ##### isInsertQuery(...) -> boolean
 - **Signature:** `public static boolean isInsertQuery(final String sql)`
 - **Summary:** Checks if the given SQL statement is an INSERT query.
@@ -8613,7 +8670,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     boolean result5 = SqlParser.isInsertQuery("SELECT * FROM users");
     // result5 = false
     ```
-- **See also:** #isSelectQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isReadOrInsertQuery(String)
+- **See also:** #isSelectQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isSyntacticallyReadQuery(String), #isReadOrInsertQuery(String)
 ##### isUpdateQuery(...) -> boolean
 - **Signature:** `public static boolean isUpdateQuery(final String sql)`
 - **Summary:** Checks if the given SQL statement is an UPDATE query.
@@ -8636,7 +8693,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     boolean result4 = SqlParser.isUpdateQuery("DELETE FROM users WHERE id = 1");
     // result4 = false
     ```
-- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isReadOrInsertQuery(String)
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isSyntacticallyReadQuery(String), #isReadOrInsertQuery(String)
 ##### isDeleteQuery(...) -> boolean
 - **Signature:** `public static boolean isDeleteQuery(final String sql)`
 - **Summary:** Checks if the given SQL statement is a DELETE query.
@@ -8659,7 +8716,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     boolean result4 = SqlParser.isDeleteQuery("UPDATE users SET name = 'John'");
     // result4 = false
     ```
-- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String), #isReadOrInsertQuery(String)
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isInsertOrReplaceQuery(String), #isSyntacticallyReadQuery(String), #isReadOrInsertQuery(String)
 ##### isInsertOrReplaceQuery(...) -> boolean
 - **Signature:** `public static boolean isInsertOrReplaceQuery(final String sql)`
 - **Summary:** Checks whether the given SQL statement begins with an INSERT OR REPLACE clause (the SQLite upsert form that overwrites an existing row when a uniqueness constraint is violated).
@@ -8676,18 +8733,18 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     boolean result2 = SqlParser.isInsertOrReplaceQuery("INSERT INTO t (id) VALUES (1)");
     // result2 = false
     ```
-- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isReadOnlyQuery(String), #isReadOrInsertQuery(String)
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isSyntacticallyReadQuery(String), #isReadOrInsertQuery(String)
 ##### isReadOrInsertQuery(...) -> boolean
 - **Signature:** `public static boolean isReadOrInsertQuery(final String sql)`
-- **Summary:** Checks whether the given SQL statement is a read or a plain/safe insert.
+- **Summary:** Lexically classifies whether the given SQL text consists only of SELECT-shaped statements or plain INSERT-shaped statements without a recognized overwrite/upsert clause.
 - **Contract:**
   - A statement qualifies as read-or-insert only if its leading keyword is SELECT or INSERT and it contains none of the following (matching outside of quoted string literals and SQL comments): a top-level UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP keyword (matched only at statement-start positions, so e.g. SELECT ...
   - More generally, every top-level statement must resolve to either SELECT or INSERT; an unrecognized or vendor-specific command is rejected rather than assumed to be safe.
-  - Every lexically valid interpretation must be safe, so an ambiguous quote or comment cannot hide an upsert or overwrite clause.
+  - Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot hide an upsert or overwrite clause.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
-- **Returns:** true for an accepted read or plain/safe insert; false otherwise, including for a null or empty statement
-- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isReadOnlyQuery(String)
+- **Returns:** true for an accepted SELECT/plain-INSERT lexical shape; false otherwise, including for a null or empty statement
+- **See also:** #isSelectQuery(String), #isInsertQuery(String), #isUpdateQuery(String), #isDeleteQuery(String), #isInsertOrReplaceQuery(String), #isSyntacticallyReadQuery(String)
 
 #### Public Instance Methods
 - (none)
@@ -8883,13 +8940,22 @@ Instance-scoped, thread-safe SQL tokenizer.
 - **Throws:**
   - `java.lang.NullPointerException` — if sql is null
 - **See also:** SqlParser#nextTokenEndIndex(String, int)
-##### isReadOnlyQuery(...) -> boolean
-- **Signature:** `public boolean isReadOnlyQuery(final String sql)`
-- **Summary:** Checks whether the statement is a read-only SELECT using this tokenizer's configured separator rules.
+##### isSyntacticallyReadQuery(...) -> boolean
+- **Signature:** `public boolean isSyntacticallyReadQuery(final String sql)`
+- **Summary:** Lexically classifies the statement as SELECT-only using this tokenizer's configured separator rules.
+- **Contract:**
+  - This method does not resolve functions, triggers, locking clauses, or other database semantics and must not be used as a security boundary.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to classify; may be empty or null
-- **Returns:** true if the SQL is a read-only SELECT query, false otherwise
-- **See also:** SqlParser#isReadOnlyQuery(String)
+- **Returns:** true if the SQL text has an accepted SELECT-only shape, false otherwise
+- **See also:** SqlParser#isSyntacticallyReadQuery(String)
+##### isReadOnlyQuery(...) -> boolean
+- **Signature:** `@Deprecated public boolean isReadOnlyQuery(final String sql)`
+- **Summary:** Legacy alias for #isSyntacticallyReadQuery(String).
+- **Deprecated:** The name overstates what lexical SQL inspection can prove. Use #isSyntacticallyReadQuery(String) and enforce actual read-only behavior with database privileges and transaction settings.
+- **Parameters:**
+  - `sql` (`String`) — the SQL statement to classify; may be empty or null
+- **Returns:** the lexical SELECT-only classification
 
 ## com.landawn.abacus.query.condition
 ### Class AbstractBetween (com.landawn.abacus.query.condition.AbstractBetween)
@@ -8924,7 +8990,7 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 - **Summary:** Returns the lower bound of the range.
 - **Parameters:**
   - (none)
-- **Returns:** the configured minimum value, which may be a literal, a SqlExpression, a SubQuery, another non-structural, non-quantified Condition, or null
+- **Returns:** the configured minimum value, which may be a literal, a SqlExpression, or a scalar SubQuery; known mutable JDK values are returned as defensive copies; null is returned only for an uninitialized serialization-framework instance
 - **Examples:**
   - ```java
     Between between = new Between("age", 18, 65);
@@ -8935,7 +9001,7 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 - **Summary:** Returns the upper bound of the range.
 - **Parameters:**
   - (none)
-- **Returns:** the configured maximum value, which may be a literal, a SqlExpression, a SubQuery, another non-structural, non-quantified Condition, or null
+- **Returns:** the configured maximum value, which may be a literal, a SqlExpression, or a scalar SubQuery; known mutable JDK values are returned as defensive copies; null is returned only for an uninitialized serialization-framework instance
 - **Examples:**
   - ```java
     Between between = new Between("age", 18, 65);
@@ -8946,23 +9012,20 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
 - **Summary:** Returns the parameters for this condition.
 - **Contract:**
   - If either bound is a Condition (typically a SubQuery), its parameters are spliced in place of the bound itself.
+  - Usage Examples: The result is memoized only when both bounds are plain scalars (neither an array, Date, Calendar nor a nested Condition); otherwise a fresh list, holding fresh defensive copies of any array/Date/Calendar values (including those spliced in from a nested condition), is built on every call, so mutating a returned element never affects this condition or a later call.
 - **Parameters:**
   - (none)
-- **Returns:** an immutable list containing \[minValue, maxValue\], or their respective parameters spliced in where a bound is itself a Condition
+- **Returns:** an immutable list containing \[minValue, maxValue\], or their respective parameters spliced in where a bound is itself a Condition; known mutable JDK bounds are returned as defensive copies
 - **Examples:**
   - ```java
     // Literal bounds -> [min, max]
     Between between = new Between("age", 18, 65);
     List<Object> p1 = between.parameters();   // [18, 65]
     
-    // Null bounds are kept as-is
-    Between nullBounds = new Between("age", (Object) null, (Object) null);
-    List<Object> p2 = nullBounds.parameters();   // [null, null]
-    
     // A Condition bound has its parameters spliced in
     SubQuery sub = Filters.subQuery("config", Arrays.asList("minAge"), Filters.eq("active", true));
     Between subBound = new Between("age", sub, 65);
-    List<Object> p3 = subBound.parameters();   // [true, 65]
+    List<Object> p2 = subBound.parameters();   // [true, 65]
     ```
 ##### toSql(...) -> String
 - **Signature:** `@Override public String toSql(final NamingPolicy namingPolicy)`
@@ -9118,7 +9181,7 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
 - **Summary:** Returns the values used by this IN or NOT IN condition.
 - **Parameters:**
   - (none)
-- **Returns:** an immutable list of the values (or value tuples), or an empty immutable list for an uninitialized instance
+- **Returns:** an immutable list of the values (or value tuples), or an empty immutable list for an uninitialized instance; array, Date and Calendar elements in the list are defensive copies (a fresh list is built on every call when any element is an array, Date, Calendar or nested Condition; the memoized view is reused only when every element is a plain scalar), so mutating a returned element never affects this condition
 - **Examples:**
   - ```java
     In inCond = new In("status", Arrays.asList("active", "pending"));
@@ -9142,9 +9205,11 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
 ##### parameters(...) -> ImmutableList<Object>
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Returns the parameter values for this condition, flattened in declaration order.
+- **Contract:**
+  - Usage Examples: The result is memoized only when every membership value is a plain scalar (neither an array, Date, Calendar nor a nested Condition); otherwise a fresh list, holding fresh defensive copies of any array/Date/Calendar values (including those spliced in from a nested condition), is built on every call.
 - **Parameters:**
   - (none)
-- **Returns:** an immutable list of parameter values, or an empty immutable list for an uninitialized instance (e.g. created via the no-arg constructor for deserialization)
+- **Returns:** an immutable list of parameter values, or an empty immutable list for an uninitialized instance (e.g. created via the no-arg constructor for deserialization); array, Date and Calendar values in the list are defensive copies (the list is rebuilt on every call in that case rather than memoized), so mutating a returned element never affects this condition or a later call
 - **Examples:**
   - ```java
     // String values listed in order
@@ -9276,7 +9341,7 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
 - **Returns:** an immutable list of parameter values from the subquery; an empty immutable list if the subquery is null (only possible for an uninitialized instance)
 - **Examples:**
   - ```java
-    // Raw SQL subquery has no bind parameters -> empty list
+    // Raw SQL subquery without placeholders -> empty list
     SubQuery raw = new SubQuery("SELECT id FROM departments WHERE active = true");
     InSubQuery inSub = new InSubQuery("deptId", raw);
     List<Object> p1 = inSub.parameters();   // [] (empty)
@@ -9406,13 +9471,13 @@ Represents a composable AND condition that combines multiple conditions.
 - **Parameters:**
   - `conditions` (`Condition[]`) — the conditions to combine with AND logic; may be null or empty
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Signature:** `public And(final Collection<? extends Condition> conditions)`
 - **Summary:** Creates a new AND condition with the specified collection of conditions.
 - **Parameters:**
   - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with AND logic; may be null or empty
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -9422,10 +9487,10 @@ Represents a composable AND condition that combines multiple conditions.
 - **Signature:** `@Override public And and(final Condition condition)`
 - **Summary:** Creates a new AND condition by adding another condition to this AND.
 - **Parameters:**
-  - `condition` (`Condition`) — the condition to add to this AND. Must not be null and must be composable (i.e. must not be or contain a Criteria, a Clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate).
+  - `condition` (`Condition`) — the condition to add to this AND. Must not be null and must be composable (i.e. must not be or contain a Criteria, a Clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank expression).
 - **Returns:** a new And condition containing all existing conditions plus the new one
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or if condition is or contains a non-composable component — a Criteria, a Clause condition (such as Where or OrderBy), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, or if condition is or contains a non-composable component — a Criteria, a Clause condition (such as Where or OrderBy), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     // Start with a basic AND
@@ -9496,10 +9561,10 @@ Represents a BETWEEN condition in SQL queries.
 - **Summary:** Creates a new BETWEEN condition.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `minValue` (`Object`) — the minimum value (inclusive); may be a literal value, SqlExpression, SubQuery, or another non-structural, non-quantified Condition (may be null)
-  - `maxValue` (`Object`) — the maximum value (inclusive); may be a literal value, SqlExpression, SubQuery, or another non-structural, non-quantified Condition (may be null)
+  - `minValue` (`Object`) — the non-null minimum value (inclusive); a literal value, explicit SqlExpression, or scalar SubQuery
+  - `maxValue` (`Object`) — the non-null maximum value (inclusive); a literal value, explicit SqlExpression, or scalar SubQuery
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if either condition-valued bound is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; either bound is null; or a bound is another predicate, query clause, JOIN, ON/USING connector, or quantified All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -9522,9 +9587,9 @@ Base class for binary conditions that compare a property with a value.
 - **Parameters:**
   - `propName` (`String`) — the property name to compare (must not be null, empty, or blank)
   - `operator` (`Operator`) — the comparison operator (must not be null); must be an operator valid for a binary propName OP value condition, i.e. one of Operator#EQUAL, Operator#NOT_EQUAL, Operator#NOT_EQUAL_ANSI, Operator#GREATER_THAN, Operator#GREATER_THAN_OR_EQUAL, Operator#LESS_THAN, Operator#LESS_THAN_OR_EQUAL, Operator#LIKE, Operator#NOT_LIKE, Operator#IS, Operator#IS_NOT, Operator#IN, or Operator#NOT_IN
-  - `propValue` (`Object`) — the value to compare against; may be a literal value, null (for equality operators, renders as IS NULL / IS NOT NULL), or a non-structural Condition such as a SqlExpression or SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; condition-valued elements are subject to the same structural restriction.
+  - `propValue` (`Object`) — the value to compare against; may be a literal value, null only for equality and IS/IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values or explicit scalar expressions. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is("x", true) equals Filters.isTrue("x").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; if operator is not one of the operators listed above; or if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, or a Condition; or if a condition-valued operand is or contains a Criteria, SQL clause, JOIN, or ON/USING connector; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; if operator is not one of the operators listed above; or if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, a SqlExpression, or a SubQuery; if a value that must be non-null is null; if IS/IS NOT receives an arbitrary literal; if a condition-valued operand is an ordinary predicate or query clause or a blank SqlExpression; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison
   - `java.lang.NullPointerException` — if operator is null
 
 #### Public Static Methods
@@ -9558,7 +9623,7 @@ Base class for binary conditions that compare a property with a value.
   - This is the type-safe companion to #propValue() when the expected value type is known.
 - **Parameters:**
   - `valueType` (`Class<T>`) — the requested value type; must not be null
-- **Returns:** the property value cast to valueType, or null when the stored value is null
+- **Returns:** the property value cast to valueType, or null when the stored value is null; known mutable JDK values are returned as defensive copies
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if valueType is null
   - `java.lang.ClassCastException` — if the stored value is not assignable to valueType
@@ -9572,13 +9637,13 @@ Base class for binary conditions that compare a property with a value.
 - **Summary:** Returns the parameters for this condition.
 - **Contract:**
   - If the value is null and the operator is =, !=, <>, IS, or IS NOT, an empty list is returned because the SQL is rendered as IS NULL / IS NOT NULL with no bind parameter.
-  - If the value is null with any other operator (e.g. LIKE), a single-element list containing null is returned, mirroring the rendered null literal (see #toSql(NamingPolicy)).
   - If the operator is null (only possible for an uninitialized instance), an empty list is returned.
   - If the operator is IN or NOT IN and the value is a Collection, each element is added as a parameter; any element that is itself a Condition has its own parameters spliced in.
   - If the value is a Condition (e.g., a subquery), the subquery's own parameters are returned.
+  - Usage Examples: The result is memoized only when every operand is a plain scalar (neither an array, Date, Calendar nor a nested Condition); otherwise a fresh list, holding fresh defensive copies of any array/Date/Calendar values (including those spliced in from a nested condition), is built on every call, so mutating a returned element never affects this condition or a later call.
 - **Parameters:**
   - (none)
-- **Returns:** an immutable list of parameter values; never null
+- **Returns:** an immutable list of parameter values; known mutable JDK values in the list are defensive copies, and the result is never null
 - **Examples:**
   - ```java
     // Literal value -> single-element list
@@ -9945,7 +10010,7 @@ A Condition that supports logical composition via and(), or(), not(), and xor().
   - (none)
 - **Returns:** a new Not condition wrapping this condition
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if this condition is non-composable — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if this condition is non-composable — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     Condition active = Filters.equal("status", "active");
@@ -9961,7 +10026,7 @@ A Condition that supports logical composition via and(), or(), not(), and xor().
   - `condition` (`Condition`) — the condition to AND with this condition (must not be null)
 - **Returns:** a new And condition containing both conditions
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or if either this or condition is or contains a non-composable component — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, or if either this or condition is or contains a non-composable component — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     Condition age = Filters.greaterThan("age", 18);
@@ -9978,7 +10043,7 @@ A Condition that supports logical composition via and(), or(), not(), and xor().
   - `condition` (`Condition`) — the condition to OR with this condition (must not be null)
 - **Returns:** a new Or condition containing both conditions
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or if either this or condition is or contains a non-composable component — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, or if either this or condition is or contains a non-composable component — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     Condition admin = Filters.equal("role", "admin");
@@ -9995,7 +10060,7 @@ A Condition that supports logical composition via and(), or(), not(), and xor().
   - `condition` (`Condition`) — the condition to XOR with this condition (must not be null)
 - **Returns:** a composable condition representing the exclusive-or (this AND NOT condition) OR (NOT this AND condition)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or if either this or condition is or contains a non-composable component — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, or if either this or condition is or contains a non-composable component — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     Condition a = Filters.equal("type", "A");
@@ -10120,7 +10185,7 @@ A container representing a complete SQL query structure composed of multiple cla
     Criteria.builder().distinct().build().selectModifier();         // returns "DISTINCT"
     Criteria.builder().distinctOn("a, b").build().selectModifier(); // returns "DISTINCT ON (a, b)"
     ```
-- **See also:** Builder#distinct(), Builder#distinctOn(String), Builder#distinctRow(), Builder#distinctRowBy(String), Builder#selectModifier(String)
+- **See also:** Builder#distinct(), Builder#distinctOn(String), Builder#distinctRow(), Builder#selectModifier(String)
 ##### joins(...) -> ImmutableList<Join>
 - **Signature:** `public ImmutableList<Join> joins()`
 - **Summary:** Returns all JOIN clauses (JOIN, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, NATURAL JOIN) in the order they were added.
@@ -10131,7 +10196,10 @@ A container representing a complete SQL query structure composed of multiple cla
   - ```java
     Criteria.builder().build().joins();   // returns [] (empty list)
     
-    Criteria c = Criteria.builder().join("orders").innerJoin("items").build();
+    Criteria c = Criteria.builder()
+        .join("orders", Filters.on("users.id", "orders.user_id"))
+        .innerJoin("items", Filters.on("orders.id", "items.order_id"))
+        .build();
     c.joins().size();                     // returns 2
     c.joins().add(null);                  // throws UnsupportedOperationException (unmodifiable view)
     ```
@@ -10235,7 +10303,11 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Returns:** an immutable list of matching conditions; empty if none found
 - **Examples:**
   - ```java
-    Criteria c = Criteria.builder().join("o1").join("o2").where(Filters.eq("a", 1)).build();
+    Criteria c = Criteria.builder()
+        .join("o1", Filters.on("a", "b"))
+        .join("o2", Filters.on("c", "d"))
+        .where(Filters.eq("a", 1))
+        .build();
     c.findConditions(Operator.JOIN).size();    // returns 2 (JOINs accumulate)
     c.findConditions(Operator.WHERE).size();   // returns 1
     c.findConditions(Operator.HAVING);         // returns [] (no HAVING present)
@@ -10378,22 +10450,6 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .build();
     c.selectModifier();   // returns "DISTINCTROW"
     ```
-##### distinctRowBy(...) -> Builder
-- **Signature:** `public Builder distinctRowBy(final String columnNames)`
-- **Summary:** Sets the literal, database-specific DISTINCTROW(columnNames) modifier.
-- **Contract:**
-  - If columnNames is null, empty, or blank, a plain DISTINCTROW modifier (without parentheses) is used.
-- **Parameters:**
-  - `columnNames` (`String`) — the expressions to place inside DISTINCTROW(...); if null, empty, or blank, plain DISTINCTROW is used
-- **Returns:** this Builder instance for method chaining
-- **Examples:**
-  - ```java
-    Criteria.builder().distinctRowBy("category, subcategory").build().selectModifier();
-    // returns "DISTINCTROW(category, subcategory)"
-    
-    // null, empty, or blank falls back to a plain DISTINCTROW (no parentheses).
-    Criteria.builder().distinctRowBy(null).build().selectModifier();   // returns "DISTINCTROW"
-    ```
 ##### selectModifier(...) -> Builder
 - **Signature:** `public Builder selectModifier(final String selectModifier)`
 - **Summary:** Sets a custom SELECT modifier.
@@ -10450,29 +10506,30 @@ A mutable builder for constructing Criteria instances with a fluent API.
     Criteria empty = Criteria.builder().join(new ArrayList<Join>()).build();
     empty.joins();      // returns [] (empty list)
     ```
-- **Signature:** `public Builder join(final String joinEntity)`
-- **Summary:** Adds a plain JOIN (no explicit type keyword) to this criteria, without an explicit condition.
+- **Signature:** `@Deprecated public Builder join(final String joinEntity)`
+- **Summary:** Adds a plain JOIN (no explicit type keyword) to this criteria, without a join condition.
+- **Deprecated:** always throws IllegalArgumentException; use #join(String, Condition) or #crossJoin(String) instead.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-- **Returns:** this Builder instance for method chaining
+- **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified join requires an ON/USING predicate
 - **Examples:**
   - ```java
-    Criteria criteria = Criteria.builder()
-        .join("orders")
-        .where(Filters.expr("users.id = orders.user_id"))
-        .build();
-    // SQL: JOIN orders WHERE users.id = orders.user_id
+    Criteria.builder().join("orders");   // throws IllegalArgumentException
+    
+    // Supply the join predicate instead:
+    Criteria c = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN orders ON users.id = orders.user_id"
     ```
 - **Signature:** `public Builder join(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds a plain JOIN (no explicit type keyword) with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria criteria = Criteria.builder()
@@ -10485,49 +10542,47 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a plain JOIN (no explicit type keyword) with multiple entities and a condition to this criteria.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Collection<String> tables = Arrays.asList("orders", "order_items");
     Criteria c = Criteria.builder()
         .join(tables, new On("id", "order_id"))
         .build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN (orders, order_items) ON id = order_id"
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN (orders CROSS JOIN order_items) ON id = order_id"
     
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().join(Arrays.asList("orders"), new On("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN orders ON a = b"
     ```
 ##### innerJoin(...) -> Builder
-- **Signature:** `public Builder innerJoin(final String joinEntity)`
-- **Summary:** Adds an INNER JOIN to this criteria.
+- **Signature:** `@Deprecated public Builder innerJoin(final String joinEntity)`
+- **Summary:** Adds an INNER JOIN to this criteria, without a join condition.
+- **Deprecated:** always throws IllegalArgumentException; use #innerJoin(String, Condition) or #crossJoin(String) instead.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-- **Returns:** this Builder instance for method chaining
+- **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified join requires an ON/USING predicate
 - **Examples:**
   - ```java
-    Criteria c = Criteria.builder()
-        .innerJoin("orders")
-        .where(Filters.expr("users.id = orders.user_id"))
-        .build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders WHERE users.id = orders.user_id"
+    Criteria.builder().innerJoin("orders");   // throws IllegalArgumentException
     
-    Criteria bare = Criteria.builder().innerJoin("orders").build();
-    bare.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders"
+    // Supply the join predicate instead:
+    Criteria c = Criteria.builder().innerJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON users.id = orders.user_id"
     ```
 - **Signature:** `public Builder innerJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds an INNER JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -10543,45 +10598,46 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds an INNER JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
         .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"))
         .build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN (orders, order_items) ON id = order_id"
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN (orders CROSS JOIN order_items) ON id = order_id"
     
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().innerJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON a = b"
     ```
 ##### leftJoin(...) -> Builder
-- **Signature:** `public Builder leftJoin(final String joinEntity)`
-- **Summary:** Adds a LEFT JOIN to this criteria.
+- **Signature:** `@Deprecated public Builder leftJoin(final String joinEntity)`
+- **Summary:** Adds a LEFT JOIN to this criteria, without a join condition.
+- **Deprecated:** always throws IllegalArgumentException; use #leftJoin(String, Condition) or #crossJoin(String) instead.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-- **Returns:** this Builder instance for method chaining
+- **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified join requires an ON/USING predicate
 - **Examples:**
   - ```java
-    Criteria c = Criteria.builder().leftJoin("orders").build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders"
+    Criteria.builder().leftJoin("orders");   // throws IllegalArgumentException
     
-    Criteria c2 = Criteria.builder().leftJoin("orders").where(Filters.eq("a", 1)).build();
-    c2.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders WHERE a = 1"
+    // Supply the join predicate instead:
+    Criteria c = Criteria.builder().leftJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON users.id = orders.user_id"
     ```
 - **Signature:** `public Builder leftJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds a LEFT JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -10596,45 +10652,46 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a LEFT JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
         .leftJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
         .build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN (orders, items) ON a = b"
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN (orders CROSS JOIN items) ON a = b"
     
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().leftJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON a = b"
     ```
 ##### rightJoin(...) -> Builder
-- **Signature:** `public Builder rightJoin(final String joinEntity)`
-- **Summary:** Adds a RIGHT JOIN to this criteria.
+- **Signature:** `@Deprecated public Builder rightJoin(final String joinEntity)`
+- **Summary:** Adds a RIGHT JOIN to this criteria, without a join condition.
+- **Deprecated:** always throws IllegalArgumentException; use #rightJoin(String, Condition) or #crossJoin(String) instead.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-- **Returns:** this Builder instance for method chaining
+- **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified join requires an ON/USING predicate
 - **Examples:**
   - ```java
-    Criteria c = Criteria.builder().rightJoin("orders").build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders"
+    Criteria.builder().rightJoin("orders");   // throws IllegalArgumentException
     
-    Criteria c2 = Criteria.builder().rightJoin("orders").where(Filters.eq("a", 1)).build();
-    c2.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders WHERE a = 1"
+    // Supply the join predicate instead:
+    Criteria c = Criteria.builder().rightJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON users.id = orders.user_id"
     ```
 - **Signature:** `public Builder rightJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds a RIGHT JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -10649,45 +10706,46 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a RIGHT JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
         .rightJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
         .build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN (orders, items) ON a = b"
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN (orders CROSS JOIN items) ON a = b"
     
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().rightJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON a = b"
     ```
 ##### fullJoin(...) -> Builder
-- **Signature:** `public Builder fullJoin(final String joinEntity)`
-- **Summary:** Adds a FULL JOIN to this criteria.
+- **Signature:** `@Deprecated public Builder fullJoin(final String joinEntity)`
+- **Summary:** Adds a FULL JOIN to this criteria, without a join condition.
+- **Deprecated:** always throws IllegalArgumentException; use #fullJoin(String, Condition) or #crossJoin(String) instead.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-- **Returns:** this Builder instance for method chaining
+- **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always, because a qualified join requires an ON/USING predicate
 - **Examples:**
   - ```java
-    Criteria c = Criteria.builder().fullJoin("orders").build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders"
+    Criteria.builder().fullJoin("orders");   // throws IllegalArgumentException
     
-    Criteria c2 = Criteria.builder().fullJoin("orders").where(Filters.eq("a", 1)).build();
-    c2.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders WHERE a = 1"
+    // Supply the join predicate instead:
+    Criteria c = Criteria.builder().fullJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON users.id = orders.user_id"
     ```
 - **Signature:** `public Builder fullJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Adds a FULL JOIN with a condition to this criteria.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join (equivalent to the single-argument overload)
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -10702,16 +10760,16 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Adds a FULL JOIN with multiple entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
-  - `joinCondition` (`Condition`) — the join condition; null produces a condition-less join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, or if joinCondition is not valid for a JOIN
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is not valid for a JOIN
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
         .fullJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
         .build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN (orders, items) ON a = b"
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN (orders CROSS JOIN items) ON a = b"
     
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().fullJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
@@ -10743,7 +10801,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().crossJoin(Arrays.asList("colors", "sizes")).build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN (colors, sizes)"
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN (colors CROSS JOIN sizes)"
     
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().crossJoin(Arrays.asList("colors")).build();
@@ -10775,7 +10833,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().naturalJoin(Arrays.asList("employees", "departments")).build();
-    c.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (employees, departments)"
+    c.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (employees CROSS JOIN departments)"
     
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().naturalJoin(Arrays.asList("employees")).build();
@@ -10790,7 +10848,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `condition` (`Condition`) — the WHERE condition (must not be null); if its operator is already Operator#WHERE it is added directly, otherwise it is wrapped in a Where
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression or empty Junction), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than WHERE
+  - `java.lang.IllegalArgumentException` — if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than WHERE
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -10923,7 +10981,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `condition` (`Condition`) — the GROUP BY condition (must not be null); if its operator is already Operator#GROUP_BY it is added directly, otherwise it is wrapped in a GroupBy
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression or empty Junction), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than GROUP_BY
+  - `java.lang.IllegalArgumentException` — if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than GROUP_BY. An empty Junction is accepted and renders its Boolean identity (for example GROUP BY 1 = 1)
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().groupBy(Filters.expr("YEAR(order_date)")).build();
@@ -10973,7 +11031,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `direction2` (`SortDirection`) — the sort direction for the second property
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, or if any sort direction is null
+  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, if the two property names are equal (duplicate property name), or if any sort direction is null
 - **Examples:**
   - ```java
     Criteria.Builder builder = Criteria.builder()
@@ -10993,7 +11051,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `direction3` (`SortDirection`) — the sort direction for the third property
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, or if any sort direction is null
+  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, if any two property names are equal (duplicate property name), or if any sort direction is null
 - **Examples:**
   - ```java
     Criteria.Builder builder = Criteria.builder()
@@ -11063,7 +11121,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `condition` (`Condition`) — the HAVING condition (must not be null); if its operator is already Operator#HAVING it is added directly, otherwise it is wrapped in a Having
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression or empty Junction), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than HAVING
+  - `java.lang.IllegalArgumentException` — if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than HAVING
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11198,7 +11256,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `condition` (`Condition`) — the ORDER BY condition (must not be null); if its operator is already Operator#ORDER_BY it is added directly, otherwise it is wrapped in an OrderBy
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression or empty Junction), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than ORDER_BY
+  - `java.lang.IllegalArgumentException` — if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than ORDER_BY. An empty Junction is accepted and renders its Boolean identity (for example ORDER BY 1 = 0)
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().orderBy(Filters.expr("created_date DESC")).build();
@@ -11248,7 +11306,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `direction2` (`SortDirection`) — the sort direction for the second property
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, or if any sort direction is null
+  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, if the two property names are equal (duplicate property name), or if any sort direction is null
 - **Examples:**
   - ```java
     Criteria.Builder builder = Criteria.builder()
@@ -11268,7 +11326,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `direction3` (`SortDirection`) — the sort direction for the third property
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, or if any sort direction is null
+  - `java.lang.IllegalArgumentException` — if any property name is null, empty, or blank, if any two property names are equal (duplicate property name), or if any sort direction is null
 - **Examples:**
   - ```java
     Criteria.Builder builder = Criteria.builder()
@@ -11330,15 +11388,15 @@ A mutable builder for constructing Criteria instances with a fluent API.
     // SQL: ORDER BY priority DESC, createdDate DESC, name ASC
     ```
 ##### limit(...) -> Builder
-- **Signature:** `public Builder limit(final Limit condition)`
+- **Signature:** `public Builder limit(final Limit limit)`
 - **Summary:** Sets or replaces the LIMIT clause.
 - **Contract:**
   - If a LIMIT clause already exists, it will be replaced.
 - **Parameters:**
-  - `condition` (`Limit`) — the LIMIT condition (must not be null); its operator must be Operator#LIMIT, which is guaranteed for any Limit instance
+  - `limit` (`Limit`) — the LIMIT condition (must not be null); its operator must be Operator#LIMIT, which is guaranteed for any Limit instance
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null
+  - `java.lang.IllegalArgumentException` — if limit is null
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().limit(Filters.limit(100)).build();
@@ -11391,15 +11449,14 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `expr` (`String`) — the LIMIT expression as a string (must not be null, empty, or blank)
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or not an accepted limit form
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, not an accepted limit form, or contains a placeholder
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().limit("10 OFFSET 20").build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " LIMIT 10 OFFSET 20"
     
-    // Placeholder form for parameterized queries.
-    Criteria c2 = Criteria.builder().limit("? OFFSET ?").build();
-    c2.toSql(NamingPolicy.NO_CHANGE);   // returns " LIMIT ? OFFSET ?"
+    // Placeholders are not accepted: each count or offset must be a non-negative integer literal.
+    Criteria.builder().limit("? OFFSET ?");   // throws IllegalArgumentException
     ```
 ##### union(...) -> Builder
 - **Signature:** `public Builder union(final SubQuery subQuery)`
@@ -11501,7 +11558,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `condition` (`Condition`) — the condition to add (must not be null)
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, reports a null operator, is a nested Criteria, uses an ON/USING operator, is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, is an empty predicate (a blank SqlExpression or empty Junction), or reports a routed operator without being the corresponding clause type
+  - `java.lang.IllegalArgumentException` — if condition is null, reports a null operator, is a nested Criteria, uses an ON/USING operator, is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, is an empty predicate (a blank SqlExpression), or reports a routed operator without being the corresponding clause type
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11568,9 +11625,9 @@ Represents an equality (=) condition in SQL queries.
 - **Summary:** Creates a new Equal condition.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against; may be null (renders as IS NULL), a literal value, or a non-structural Condition such as a SubQuery or SqlExpression. A direct All, Any, or Some right-hand operand is also supported
+  - `propValue` (`Object`) — the value to compare against; may be null (renders as IS NULL), a literal value, an explicit SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is an ordinary predicate or query clause (any Condition other than an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand), or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -11668,26 +11725,27 @@ Represents a FULL JOIN clause in SQL queries.
 - (none)
 
 #### Public Constructors
-- **Signature:** `public FullJoin(final String joinEntity)`
+- **Signature:** `@Deprecated public FullJoin(final String joinEntity)`
 - **Summary:** Creates a FULL JOIN clause for the specified table or entity without a join condition.
+- **Deprecated:** always throws IllegalArgumentException because a qualified join requires an ON/USING predicate; use #FullJoin(String, Condition) instead, or CrossJoin for an unconditional join
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a FULL JOIN requires a non-null ON/USING predicate
 - **Signature:** `public FullJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Signature:** `public FullJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -11709,9 +11767,9 @@ Represents a greater-than (&gt;) comparison condition in SQL queries.
 - **Summary:** Creates a new GreaterThan condition.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop > null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported
+  - `propValue` (`Object`) — the non-null literal value, explicit SqlExpression, scalar SubQuery, or direct All/Any/Some operand to compare against
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -11733,9 +11791,9 @@ Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL querie
 - **Summary:** Creates a new GreaterThanOrEqual condition.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop >= null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported
+  - `propValue` (`Object`) — the non-null literal value, explicit SqlExpression, scalar SubQuery, or direct All/Any/Some operand to compare against
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -11758,7 +11816,7 @@ Represents a GROUP BY clause in SQL queries.
 - **Parameters:**
   - `condition` (`Condition`) — the grouping condition or expression. Must not be null.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is a blank SqlExpression — none of which can be nested inside a clause. An empty Junction is accepted and renders its Boolean identity (for example GROUP BY 1 = 1)
 - **Signature:** `public GroupBy(final String... propNames)`
 - **Summary:** Creates a new GROUP BY clause with the specified property names.
 - **Parameters:**
@@ -11813,7 +11871,7 @@ Represents a HAVING clause in SQL queries.
 - **Parameters:**
   - `condition` (`Condition`) — the condition to apply in the HAVING clause. Must not be null.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is a blank SqlExpression — none of which can be nested inside a clause. An empty Junction is accepted and renders its Boolean identity (for example HAVING 1 = 0)
 
 #### Public Static Methods
 - (none)
@@ -11835,16 +11893,16 @@ Represents an IN condition in SQL queries.
 - **Summary:** Creates a new IN condition for the specified property and collection of values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `values` (`Collection<?>`) — the collection of values to check against (must not be null or empty); the collection is copied internally to prevent external modifications. A condition-valued element must not be query-structural or quantified
+  - `values` (`Collection<?>`) — the collection of values to check against (must not be null, empty, or contain null); the collection is copied internally to prevent external modifications, and array, Date and Calendar elements are snapshotted at construction. A condition-valued element must be a non-blank SqlExpression or a scalar SubQuery
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null/empty/blank, if values is null/empty, or if a condition-valued element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null/empty/blank, if values is null/empty or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected)
 - **Signature:** `public In(final Collection<String> propNames, final Collection<?> valueRows)`
 - **Summary:** Creates a new row value constructor IN condition.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the property/column names (must not be null or empty and must not contain null, empty, or blank names)
-  - `valueRows` (`Collection<?>`) — the collection of value rows (must not be null or empty); each row must be non-null and resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean. A missing property-name key in a map contributes null; condition-valued elements must not be query-structural or quantified
+  - `valueRows` (`Collection<?>`) — the collection of value rows (must not be null or empty); each row must be non-null and resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean. Map rows must contain every requested property key; a condition-valued element must be a non-blank SqlExpression or a scalar SubQuery
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), or if a bean row does not expose a requested property, or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected)
 
 #### Public Static Methods
 - (none)
@@ -11893,26 +11951,27 @@ Represents an INNER JOIN clause in SQL queries.
 - (none)
 
 #### Public Constructors
-- **Signature:** `public InnerJoin(final String joinEntity)`
+- **Signature:** `@Deprecated public InnerJoin(final String joinEntity)`
 - **Summary:** Creates an INNER JOIN clause for the specified table or entity without a join condition.
+- **Deprecated:** always throws IllegalArgumentException because a qualified join requires an ON/USING predicate; use #InnerJoin(String, Condition) instead, or CrossJoin for an unconditional join
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because an INNER JOIN requires a non-null ON/USING predicate
 - **Signature:** `public InnerJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Signature:** `public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -11974,9 +12033,9 @@ Represents an SQL IS predicate (e.g. IS NULL).
 - **Summary:** Creates a new IS condition with the specified property name and right-hand value.
 - **Parameters:**
   - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the right-hand value of the IS predicate; may be null (renders as IS NULL), an SqlExpression for a SQL keyword, or another non-structural value rendered by Binary; whether that value is valid with IS is dialect-specific
+  - `propValue` (`Object`) — the right-hand value of the IS predicate; must be null (renders as IS NULL), a Boolean (normalized to the TRUE/FALSE keyword), or an explicit non-blank SqlExpression for a SQL keyword
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is not null, a Boolean, or an SqlExpression, or is a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12044,9 +12103,9 @@ Represents an SQL IS NOT predicate (e.g. IS NOT NULL).
 - **Summary:** Creates a new IS NOT condition with the specified property name and right-hand value.
 - **Parameters:**
   - `propName` (`String`) — the name of the property/column to check (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the right-hand value of the IS NOT predicate; may be null (renders as IS NOT NULL), an SqlExpression for a SQL keyword, or another non-structural value rendered by Binary; whether that value is valid with IS NOT is dialect-specific
+  - `propValue` (`Object`) — the right-hand value of the IS NOT predicate; must be null (renders as IS NOT NULL), a Boolean (normalized to the TRUE/FALSE keyword), or an explicit non-blank SqlExpression for a SQL keyword
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is not null, a Boolean, or an SqlExpression, or is a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12156,26 +12215,27 @@ Base class for SQL JOIN operations.
 - (none)
 
 #### Public Constructors
-- **Signature:** `public Join(final String joinEntity)`
-- **Summary:** Creates a simple JOIN clause for the specified table or entity.
+- **Signature:** `@Deprecated public Join(final String joinEntity)`
+- **Summary:** Creates a plain JOIN clause for the specified table or entity without a join condition.
+- **Deprecated:** always throws IllegalArgumentException because a qualified join requires an ON/USING predicate; use #Join(String, Condition) instead, or CrossJoin for an unconditional join
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified JOIN requires a non-null ON/USING predicate
 - **Signature:** `public Join(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a JOIN clause with a condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
-  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Signature:** `public Join(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a JOIN clause with multiple tables or entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12220,9 +12280,9 @@ Base class for SQL JOIN operations.
     On condition = (On) join.condition();
     // condition == onCondition (the same On instance is returned)
     
-    // Join without condition
-    Join simpleJoin = new Join("products");
-    Condition noCondition = simpleJoin.condition();
+    // Conditionless join type (only CrossJoin/NaturalJoin can be built without a predicate)
+    Join crossJoin = new CrossJoin("products");
+    Condition noCondition = crossJoin.condition();
     // noCondition == null
     
     // Edge: the condition is returned as-is; an incompatible cast fails
@@ -12242,9 +12302,9 @@ Base class for SQL JOIN operations.
     Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
     join.hasCondition();    // returns true
     
-    // Join without condition
-    Join simpleJoin = new Join("products");
-    simpleJoin.hasCondition();   // returns false
+    // Conditionless join type
+    Join crossJoin = new CrossJoin("products");
+    crossJoin.hasCondition();   // returns false
     
     // Typical use: guard before unwrapping the condition
     if (join.hasCondition()) {
@@ -12269,8 +12329,8 @@ Base class for SQL JOIN operations.
     Join onJoin = new Join("orders o", new On("customers.id", "o.customer_id"));
     onJoin.parameters();       // returns [] (empty, immutable)
     
-    // Edge: no condition at all -> empty list
-    new Join("products").parameters();   // returns []
+    // Edge: conditionless join type -> empty list
+    new CrossJoin("products").parameters();   // returns []
     ```
 ##### toSql(...) -> String
 - **Signature:** `@Override public String toSql(final NamingPolicy namingPolicy)`
@@ -12289,8 +12349,8 @@ Base class for SQL JOIN operations.
     snake.toSql(NamingPolicy.SNAKE_CASE);
     // returns "JOIN orders o ON first_name = 'John'"
     
-    // Edge: no condition -> just the operator and entity
-    new Join("products").toSql(NamingPolicy.NO_CHANGE);   // returns "JOIN products"
+    // Edge: conditionless join type -> just the operator and entity
+    new CrossJoin("products").toSql(NamingPolicy.NO_CHANGE);   // returns "CROSS JOIN products"
     ```
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
@@ -12346,7 +12406,7 @@ Base class for composable junction conditions that combine multiple conditions.
   - `conditions` (`Condition[]`) — the conditions to combine; may be null or empty (treated as no conditions)
 - **Throws:**
   - `java.lang.NullPointerException` — if operator is null
-  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Signature:** `public Junction(final Operator operator, final Collection<? extends Condition> conditions)`
 - **Summary:** Creates a new Junction with the specified operator and collection of conditions.
 - **Parameters:**
@@ -12354,7 +12414,7 @@ Base class for composable junction conditions that combine multiple conditions.
   - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine; may be null or empty (treated as no conditions)
 - **Throws:**
   - `java.lang.NullPointerException` — if operator is null
-  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if operator is not Operator#AND or Operator#OR, or if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12406,11 +12466,9 @@ Base class for composable junction conditions that combine multiple conditions.
 ##### toSql(...) -> String
 - **Signature:** `@Override public String toSql(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this junction to its SQL representation according to the specified naming policy.
-- **Contract:**
-  - An empty string is returned if the junction has no conditions.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to property names within each condition; if null, com.landawn.abacus.util.NamingPolicy#NO_CHANGE is used
-- **Returns:** the SQL representation with proper parentheses and spacing, or an empty string if the junction has no conditions
+- **Returns:** the SQL representation with proper parentheses and spacing, or the operator's Boolean identity if the junction has no conditions
 - **Examples:**
   - ```java
     Junction and = new Junction(Operator.AND,
@@ -12427,8 +12485,9 @@ Base class for composable junction conditions that combine multiple conditions.
     Junction snake = new Junction(Operator.AND, new Equal("firstName", "John"));
     snake.toSql(NamingPolicy.SNAKE_CASE);   // returns "((first_name = 'John'))"
     
-    // Edge: an empty junction renders as an empty string
-    new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE);   // returns ""
+    // Edge: empty junctions preserve their Boolean identities
+    new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE);   // returns "1 = 1"
+    new Junction(Operator.OR).toSql(NamingPolicy.NO_CHANGE);    // returns "1 = 0"
     ```
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
@@ -12478,26 +12537,27 @@ Represents a LEFT JOIN clause in SQL queries.
 - (none)
 
 #### Public Constructors
-- **Signature:** `public LeftJoin(final String joinEntity)`
+- **Signature:** `@Deprecated public LeftJoin(final String joinEntity)`
 - **Summary:** Creates a LEFT JOIN clause for the specified table or entity without a join condition.
+- **Deprecated:** always throws IllegalArgumentException because a qualified join requires an ON/USING predicate; use #LeftJoin(String, Condition) instead, or CrossJoin for an unconditional join
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a LEFT JOIN requires a non-null ON/USING predicate
 - **Signature:** `public LeftJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Signature:** `public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12519,9 +12579,9 @@ Represents a less-than (&lt;) comparison condition in SQL queries.
 - **Summary:** Creates a new LessThan condition.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop < null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported
+  - `propValue` (`Object`) — the non-null literal value, explicit SqlExpression, scalar SubQuery, or direct All/Any/Some operand to compare against
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12543,9 +12603,9 @@ Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL queries.
 - **Summary:** Creates a new LessThanOrEqual condition.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against (a literal value or a non-structural Condition, such as a SubQuery or SqlExpression); passing null renders as prop <= null, which is not a meaningful SQL comparison; do not pass null to this operator. A direct All, Any, or Some right-hand operand is also supported
+  - `propValue` (`Object`) — the non-null literal value, explicit SqlExpression, scalar SubQuery, or direct All/Any/Some operand to compare against
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12567,9 +12627,9 @@ Represents a LIKE condition in SQL queries for pattern matching.
 - **Summary:** Creates a new LIKE condition with the specified property name and pattern.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the pattern to match (typically a String containing % and/or _ wildcards; may also be a SubQuery, an SqlExpression, or another non-structural Condition). Use % to match any sequence of characters and _ to match a single character. Passing null renders as prop LIKE null, which is not a meaningful SQL comparison; do not pass null to this operator.
+  - `propValue` (`Object`) — the pattern to match (typically a String containing % and/or _ wildcards; may also be an explicit SqlExpression or scalar SubQuery). Use % to match any sequence of characters and _ to match a single character.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or propValue is null, an ordinary predicate or query clause, or a quantified All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -13220,8 +13280,10 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 - **Signature:** `public Like like(final String value)`
 - **Summary:** Creates a LIKE condition for this property.
 - **Parameters:**
-  - `value` (`String`) — the pattern to match (can include % for any characters and _ for single character). Passing null renders the value as null (e.g. name LIKE null), which is not a meaningful SQL comparison; do not pass null (the #startsWith(String)/#contains(String) siblings reject a null value)
+  - `value` (`String`) — the pattern to match (can include % for any characters and _ for single character); must not be null
 - **Returns:** a Like condition for this property
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if value is null
 - **Examples:**
   - ```java
     NamedProperty.of("name").like("John%");            // name LIKE 'John%'
@@ -13232,8 +13294,10 @@ A utility class that provides a fluent API for creating SQL conditions based on 
 - **Signature:** `public NotLike notLike(final String value)`
 - **Summary:** Creates a NOT LIKE condition for this property.
 - **Parameters:**
-  - `value` (`String`) — the pattern to exclude (can include % for any characters and _ for single character). Passing null renders the value as null (e.g. name NOT LIKE null), which is not a meaningful SQL comparison; do not pass null (the #notContains(String) sibling rejects a null value)
+  - `value` (`String`) — the pattern to exclude (can include % for any characters and _ for single character); must not be null
 - **Returns:** a NotLike condition for this property
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if value is null
 - **Examples:**
   - ```java
     NamedProperty.of("email").notLike("%@temp.com");   // email NOT LIKE '%@temp.com'
@@ -13725,7 +13789,7 @@ Represents a logical NOT condition in SQL queries.
 - **Parameters:**
   - `condition` (`Condition`) — the condition to be negated; must not be null. May be any composable condition, including simple comparisons, logical junctions (And, Or), or subquery predicates such as Exists, NotExists, or InSubQuery. It should not be a clause condition (such as Where or Having), since those are not meant to be composed.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or if condition is non-composable — a Criteria, a Clause condition (for example Where, Having, or OrderBy), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, or if condition is non-composable — a Criteria, a Clause condition (for example Where, Having, or OrderBy), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression. An empty Junction is accepted and negates its Boolean identity (for example NOT (1 = 1))
 
 #### Public Static Methods
 - (none)
@@ -13747,10 +13811,10 @@ Represents a NOT BETWEEN condition in SQL queries.
 - **Summary:** Creates a new NOT BETWEEN condition.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `minValue` (`Object`) — the lower bound of the range to exclude; may be a literal value, a SqlExpression, a SubQuery, or another non-structural, non-quantified Condition (may be null)
-  - `maxValue` (`Object`) — the upper bound of the range to exclude; may be a literal value, a SqlExpression, a SubQuery, or another non-structural, non-quantified Condition (may be null)
+  - `minValue` (`Object`) — the non-null lower bound to exclude; a literal value, explicit SqlExpression, or scalar SubQuery
+  - `maxValue` (`Object`) — the non-null upper bound to exclude; a literal value, explicit SqlExpression, or scalar SubQuery
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if either condition-valued bound is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank; either bound is null; or a bound is another predicate, query clause, JOIN, ON/USING connector, or quantified All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -13772,9 +13836,9 @@ Represents a NOT EQUAL (!= or &lt;&gt;) condition in SQL queries.
 - **Summary:** Creates a new NotEqual condition.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the value to compare against; may be null (renders as IS NOT NULL), a literal value, or a non-structural Condition such as a SubQuery or SqlExpression. A direct All, Any, or Some right-hand operand is also supported
+  - `propValue` (`Object`) — the value to compare against; may be null (renders as IS NOT NULL), a literal value, an explicit SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or contains a non-direct All/Any/Some operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is an ordinary predicate or query clause (any Condition other than an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand), or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -13836,16 +13900,16 @@ Represents a NOT IN condition in SQL queries.
 - **Summary:** Creates a new NOT IN condition for the specified property and collection of values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `values` (`Collection<?>`) — the collection of values that the property should NOT match (must not be null or empty); the collection is copied internally to prevent external modifications. A condition-valued element must not be query-structural or quantified
+  - `values` (`Collection<?>`) — the collection of values that the property should NOT match (must not be null, empty, or contain null); the collection is copied internally to prevent external modifications, and array, Date and Calendar elements are snapshotted at construction. A condition-valued element must be a non-blank SqlExpression or a scalar SubQuery
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null/empty/blank, if values is null/empty, or if a condition-valued element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null/empty/blank, if values is null/empty or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected)
 - **Signature:** `public NotIn(final Collection<String> propNames, final Collection<?> valueRows)`
 - **Summary:** Creates a new row value constructor NOT IN condition.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the property/column names (must not be null or empty and must not contain null, empty, or blank names)
-  - `valueRows` (`Collection<?>`) — the collection of value rows (must not be null or empty); each row must be non-null and resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean. A missing property-name key in a map contributes null; condition-valued elements must not be query-structural or quantified
+  - `valueRows` (`Collection<?>`) — the collection of value rows (must not be null or empty); each row must be non-null and resolve to exactly propNames.size() values. A row may be a Collection, Iterable, object array, Map or bean. Map rows must contain every requested property key; a condition-valued element must be a non-blank SqlExpression or a scalar SubQuery
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a bean row does not expose a requested property, or if a condition-valued row element is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected)
 
 #### Public Static Methods
 - (none)
@@ -13898,9 +13962,9 @@ Represents a NOT LIKE condition in SQL queries for pattern exclusion.
 - **Summary:** Creates a new NOT LIKE condition for the specified property and pattern.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `propValue` (`Object`) — the pattern to match against (typically a String containing % and/or _ wildcards; may also be a SubQuery, an SqlExpression, or another non-structural Condition). Use % to match any sequence of characters and _ to match a single character. Passing null renders as prop NOT LIKE null, which is not a meaningful SQL comparison; do not pass null to this operator.
+  - `propValue` (`Object`) — the pattern to match against (typically a String containing % and/or _ wildcards; may also be an explicit SqlExpression or scalar SubQuery). Use % to match any sequence of characters and _ to match a single character.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or if propValue is or contains a Criteria, SQL clause, JOIN, or ON/USING connector, or is/contains an All, Any, or Some quantified operand
+  - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, or propValue is null, an ordinary predicate or query clause, or a quantified All/Any/Some operand
 
 #### Public Static Methods
 - (none)
@@ -13923,7 +13987,7 @@ Represents an ON clause used in SQL JOIN operations.
 - **Parameters:**
   - `condition` (`Condition`) — the join condition. Any non-clause, non-null predicate is allowed, including SqlExpression, Equal, And, Or, or Between. Must not be null.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or is or contains a Criteria, a null operator, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, or is or contains a Criteria, a null operator, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression. An empty Junction is accepted and renders its Boolean identity (for example ON 1 = 1)
 - **Signature:** `public On(final String leftPropName, final String rightPropName)`
 - **Summary:** Creates an ON clause for simple column equality between tables.
 - **Parameters:**
@@ -14180,13 +14244,13 @@ Represents a composable OR condition that combines multiple conditions.
 - **Parameters:**
   - `conditions` (`Condition[]`) — the conditions to combine with OR logic; may be null or empty
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Signature:** `public Or(final Collection<? extends Condition> conditions)`
 - **Summary:** Creates a new OR condition with a collection of conditions.
 - **Parameters:**
   - `conditions` (`Collection<? extends Condition>`) — the collection of conditions to combine with OR logic; may be null or empty
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if any element in conditions is null, or if any element is or contains a Criteria, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -14196,10 +14260,10 @@ Represents a composable OR condition that combines multiple conditions.
 - **Signature:** `@Override public Or or(final Condition condition)`
 - **Summary:** Creates a new OR condition by adding another condition to this OR.
 - **Parameters:**
-  - `condition` (`Condition`) — the condition to add to this OR. Must not be null and must be composable (i.e. must not be or contain a Criteria, a Clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate).
+  - `condition` (`Condition`) — the condition to add to this OR. Must not be null and must be composable (i.e. must not be or contain a Criteria, a Clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank expression).
 - **Returns:** a new Or condition containing all existing conditions plus the new one
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or if condition is or contains a non-composable component — a Criteria, a Clause condition (such as Where or OrderBy), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if condition is null, or if condition is or contains a non-composable component — a Criteria, a Clause condition (such as Where or OrderBy), an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Examples:**
   - ```java
     // Build condition step by step
@@ -14237,7 +14301,7 @@ Represents an ORDER BY clause in SQL queries, used to specify the sort order of 
 - **Parameters:**
   - `condition` (`Condition`) — the ordering condition. Must not be null.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is a blank SqlExpression — none of which can be nested inside a clause. An empty Junction is accepted and renders its Boolean identity (for example ORDER BY 1 = 0)
 - **Signature:** `public OrderBy(final String... propNames)`
 - **Summary:** Creates an ORDER BY clause with multiple property names.
 - **Parameters:**
@@ -14287,26 +14351,27 @@ Represents a RIGHT JOIN clause in SQL queries.
 - (none)
 
 #### Public Constructors
-- **Signature:** `public RightJoin(final String joinEntity)`
+- **Signature:** `@Deprecated public RightJoin(final String joinEntity)`
 - **Summary:** Creates a RIGHT JOIN clause for the specified table or entity without a join condition.
+- **Deprecated:** always throws IllegalArgumentException because a qualified join requires an ON/USING predicate; use #RightJoin(String, Condition) instead, or CrossJoin for an unconditional join
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a RIGHT JOIN requires a non-null ON/USING predicate
 - **Signature:** `public RightJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 - **Signature:** `public RightJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
-  - `joinCondition` (`Condition`) — the join condition. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword. May be null.
+  - `joinCondition` (`Condition`) — the join condition; must not be null. A plain non-empty predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements, or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or an empty predicate (a blank SqlExpression or empty Junction)
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -14374,17 +14439,17 @@ Represents a raw SQL expression that can be used in queries.
 #### Public Static Methods
 ##### of(...) -> SqlExpression
 - **Signature:** `public static SqlExpression of(final String literal)`
-- **Summary:** Creates or retrieves a cached SqlExpression instance for the given expression text.
+- **Summary:** Creates a SqlExpression instance for the given expression text.
 - **Parameters:**
   - `literal` (`String`) — the raw SQL expression text (must not be null)
-- **Returns:** a cached or newly created SqlExpression instance for the given text
+- **Returns:** a new SqlExpression instance for the given text
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if literal is null
 - **Examples:**
   - ```java
     SqlExpression expr1 = SqlExpression.of("CURRENT_DATE");
     SqlExpression expr2 = SqlExpression.of("CURRENT_DATE");
-    // expr1 == expr2 (same instance due to caching)
+    // expr1.equals(expr2), but expr1 != expr2
     
     SqlExpression calc = SqlExpression.of("price * 1.1");
     // Reuse the same expression in multiple places
@@ -14399,7 +14464,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NULL)
 - **Returns:** a SQL representation of the equality expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.equal("age", 25);
@@ -14419,7 +14484,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NULL)
 - **Returns:** a SQL representation of the equality expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.eq("user_id", 123);
@@ -14435,7 +14500,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NOT NULL)
 - **Returns:** a SQL representation of the not-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.notEqual("status", "INACTIVE");
@@ -14455,7 +14520,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NOT NULL)
 - **Returns:** a SQL representation of the not-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.ne("type", "guest");
@@ -14469,7 +14534,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the greater-than expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.greaterThan("salary", 50000);
@@ -14486,7 +14551,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the greater-than expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.gt("age", 18);
@@ -14500,7 +14565,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the greater-than-or-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.greaterThanOrEqual("score", 60);
@@ -14514,7 +14579,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the greater-than-or-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.ge("quantity", 1);
@@ -14528,7 +14593,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the less-than expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.lessThan("price", 100);
@@ -14542,7 +14607,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the less-than expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.lt("stock", 10);
@@ -14556,7 +14621,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the less-than-or-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.lessThanOrEqual("discount", 50);
@@ -14570,7 +14635,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the less-than-or-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if value is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.le("temperature", 32);
@@ -14585,7 +14650,7 @@ Represents a raw SQL expression that can be used in queries.
   - `maxValue` (`Object`) — the maximum value (inclusive); should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the BETWEEN expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if minValue or maxValue is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if minValue or maxValue is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.between("age", 18, 65);
@@ -14605,7 +14670,7 @@ Represents a raw SQL expression that can be used in queries.
   - `maxValue` (`Object`) — the upper bound of the excluded range (inclusive); should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the NOT BETWEEN expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if minValue or maxValue is a Float or Double that is NaN or infinite
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if minValue or maxValue is a Float or Double that is NaN or infinite
 - **Examples:**
   - ```java
     String expr = SqlExpression.notBetween("age", 18, 65);
@@ -14621,6 +14686,8 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to match
   - `value` (`String`) — the pattern to match against (can include % and _ wildcards); should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the LIKE expression
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.like("name", "John%");
@@ -14639,6 +14706,8 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to match
   - `value` (`String`) — the pattern to exclude (can include % and _ wildcards); should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the NOT LIKE expression
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.notLike("name", "John%");
@@ -14653,6 +14722,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to check for null
 - **Returns:** a SQL representation of the IS NULL expression
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.isNull("email");          // Returns: "email IS NULL"
@@ -14664,6 +14735,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to check for not null
 - **Returns:** a SQL representation of the IS NOT NULL expression
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.isNotNull("email");    // Returns: "email IS NOT NULL"
@@ -14671,25 +14744,29 @@ Represents a raw SQL expression that can be used in queries.
     ```
 ##### isNullOrEmpty(...) -> String
 - **Signature:** `public static String isNullOrEmpty(final String expr)`
-- **Summary:** Creates a framework-specific IS BLANK expression for the specified expression, which the query engine interprets as a combined null-or-empty check.
+- **Summary:** Creates a SQL expression that tests whether the specified string expression is either NULL or the empty string.
 - **Parameters:**
   - `expr` (`String`) — the column reference or expression to check
-- **Returns:** a framework-specific IS BLANK expression string
+- **Returns:** a parenthesized IS NULL OR = '' expression
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
-    String expr = SqlExpression.isNullOrEmpty("description");   // Returns: "description IS BLANK"
-    String expr2 = SqlExpression.isNullOrEmpty("address");      // Returns: "address IS BLANK"
+    String expr = SqlExpression.isNullOrEmpty("description");
+    // Returns: "(description IS NULL OR description = '')"
     ```
 ##### isNotNullAndNotEmpty(...) -> String
 - **Signature:** `public static String isNotNullAndNotEmpty(final String expr)`
-- **Summary:** Creates a framework-specific IS NOT BLANK expression for the specified expression, which the query engine interprets as a combined not-null-and-not-empty check.
+- **Summary:** Creates a SQL expression that tests whether the specified string expression is both non-NULL and different from the empty string.
 - **Parameters:**
   - `expr` (`String`) — the column reference or expression to check
-- **Returns:** a framework-specific IS NOT BLANK expression string
+- **Returns:** a parenthesized IS NOT NULL AND <> '' expression
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
-    String expr = SqlExpression.isNotNullAndNotEmpty("name");       // Returns: "name IS NOT BLANK"
-    String expr2 = SqlExpression.isNotNullAndNotEmpty("comment");   // Returns: "comment IS NOT BLANK"
+    String expr = SqlExpression.isNotNullAndNotEmpty("name");
+    // Returns: "(name IS NOT NULL AND name <> '')"
     ```
 ##### and(...) -> String
 - **Signature:** `public static String and(final String... exprs)`
@@ -14699,13 +14776,15 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `exprs` (`String[]`) — the expressions to combine with AND; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the AND expression, or an empty string if no expressions are supplied
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if an element is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.and("active = true", "age > 18", "status = 'APPROVED'");
-    // Returns: "active = true AND age > 18 AND status = 'APPROVED'"
+    // Returns: "(active = true) AND (age > 18) AND (status = 'APPROVED')"
     
     String expr2 = SqlExpression.and("verified = 1", "email IS NOT NULL");
-    // Returns: "verified = 1 AND email IS NOT NULL"
+    // Returns: "(verified = 1) AND (email IS NOT NULL)"
     ```
 ##### or(...) -> String
 - **Signature:** `public static String or(final String... exprs)`
@@ -14715,10 +14794,12 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `exprs` (`String[]`) — the expressions to combine with OR; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the OR expression, or an empty string if no expressions are supplied
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if an element is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.or("status = 'active'", "status = 'pending'", "priority = 1");
-    // Returns: "status = 'active' OR status = 'pending' OR priority = 1"
+    // Returns: "(status = 'active') OR (status = 'pending') OR (priority = 1)"
     ```
 ##### plus(...) -> String
 - **Signature:** `public static String plus(final Object... operands)`
@@ -14906,7 +14987,7 @@ Represents a raw SQL expression that can be used in queries.
 - **Signature:** `public static String renderValue(final Object value)`
 - **Summary:** Converts a value to its SQL representation.
 - **Contract:**
-  - This method performs SQL escaping and formatting: null values become the string "null" Strings are wrapped in single quotes and escaped via AbstractCondition#escapeStringLiteral(String): embedded unescaped single and double quotes are backslash-escaped (' becomes \\', " becomes \\"); a backslash shields the character that follows it, so any existing \\x pair — including an already-escaped quote such as \\' — is copied verbatim rather than escaped again, plus a defensive guard that appends one extra backslash when the body would otherwise end in an unescaped trailing backslash Number values must render as decimal, integer, or scientific-notation literals; NaN/infinite Float/Double values and non-numeric custom text are rejected.
+  - Some database modes assign non-standard meanings to backslash characters (for example MySQL without NO_BACKSLASH_ESCAPES), where a copied backslash can escape the closing quote; prefer a parameterized builder for such values Number values must render as decimal, integer, or scientific-notation literals; NaN/infinite Float/Double values and non-numeric custom text are rejected.
   - SqlExpression objects return their literal SQL text (or "null" if the literal is null) SubQuery instances render their toString() wrapped in parentheses; other Conditions use their toString() verbatim Other objects are converted via N#stringOf(Object), then quoted and escaped Usage Examples:
 - **Parameters:**
   - `value` (`Object`) — the value to render
@@ -14916,8 +14997,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Examples:**
   - ```java
     SqlExpression.renderValue("text");                         // returns "'text'"
-    SqlExpression.renderValue("O'Brien");                      // returns "'O\'Brien'" (single quote backslash-escaped)
-    SqlExpression.renderValue("say \"hi\"");                   // returns "'say \"hi\"'" (double quote backslash-escaped)
+    SqlExpression.renderValue("O'Brien");                      // returns "'O''Brien'" (single quote doubled)
+    SqlExpression.renderValue("say \"hi\"");                   // returns "'say \"hi\"'" (double quote left as-is)
     SqlExpression.renderValue(123);                            // returns "123"
     SqlExpression.renderValue(45.67);                          // returns "45.67"
     SqlExpression.renderValue(null);                           // returns "null"
@@ -14932,6 +15013,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to count
 - **Returns:** a COUNT function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.count("*");                      // Returns: "COUNT(*)"
@@ -14944,6 +15027,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to average
 - **Returns:** an AVG function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.avg("salary");   // Returns: "AVG(salary)"
@@ -14955,6 +15040,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to sum
 - **Returns:** a SUM function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.sum("amount");              // Returns: "SUM(amount)"
@@ -14966,6 +15053,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to find minimum
 - **Returns:** a MIN function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.min("price");           // Returns: "MIN(price)"
@@ -14977,6 +15066,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to find maximum
 - **Returns:** a MAX function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.max("score");         // Returns: "MAX(score)"
@@ -14988,6 +15079,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to get absolute value of
 - **Returns:** an ABS function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.abs("balance");        // Returns: "ABS(balance)"
@@ -14999,6 +15092,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate arc cosine of
 - **Returns:** an ACOS function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.acos("0.5");             // Returns: "ACOS(0.5)"
@@ -15010,6 +15105,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate arc sine of
 - **Returns:** an ASIN function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.asin("0.5");           // Returns: "ASIN(0.5)"
@@ -15021,6 +15118,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate arc tangent of
 - **Returns:** an ATAN function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.atan("1");                // Returns: "ATAN(1)"
@@ -15032,6 +15131,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to round up
 - **Returns:** a CEIL function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.ceil("4.2");      // Returns: "CEIL(4.2)"
@@ -15043,6 +15144,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate cosine of
 - **Returns:** a COS function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.cos("3.14159");   // Returns: "COS(3.14159)"
@@ -15054,6 +15157,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate exponential of
 - **Returns:** an EXP function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.exp("2");              // Returns: "EXP(2)"
@@ -15065,6 +15170,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to round down
 - **Returns:** a FLOOR function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.floor("4.8");        // Returns: "FLOOR(4.8)"
@@ -15077,6 +15184,8 @@ Represents a raw SQL expression that can be used in queries.
   - `base` (`String`) — the logarithm base
   - `value` (`String`) — the value to calculate logarithm of
 - **Returns:** a LOG function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if base or value is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.log("10", "100");     // Returns: "LOG(10, 100)"
@@ -15088,6 +15197,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate natural logarithm of
 - **Returns:** an LN function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.ln("10");       // Returns: "LN(10)"
@@ -15100,6 +15211,8 @@ Represents a raw SQL expression that can be used in queries.
   - `dividend` (`String`) — the dividend
   - `divisor` (`String`) — the divisor
 - **Returns:** a MOD function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if dividend or divisor is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.mod("10", "3");             // Returns: "MOD(10, 3)"
@@ -15112,6 +15225,8 @@ Represents a raw SQL expression that can be used in queries.
   - `base` (`String`) — the base
   - `exponent` (`String`) — the exponent
 - **Returns:** a POWER function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if base or exponent is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.power("2", "10");             // Returns: "POWER(2, 10)"
@@ -15123,6 +15238,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to get sign of
 - **Returns:** a SIGN function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.sign("-5");         // Returns: "SIGN(-5)"
@@ -15134,6 +15251,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate sine of
 - **Returns:** a SIN function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.sin("1.5708");   // Returns: "SIN(1.5708)"
@@ -15145,6 +15264,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate square root of
 - **Returns:** a SQRT function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.sqrt("16");      // Returns: "SQRT(16)"
@@ -15156,6 +15277,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the expression to calculate tangent of
 - **Returns:** a TAN function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.tan("0.7854");   // Returns: "TAN(0.7854)"
@@ -15168,6 +15291,8 @@ Represents a raw SQL expression that can be used in queries.
   - `expr1` (`String`) — the first SQL expression (column reference or pre-quoted literal)
   - `expr2` (`String`) — the second SQL expression (column reference or pre-quoted literal)
 - **Returns:** a CONCAT function string of the form CONCAT(expr1, expr2)
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr1 or expr2 is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.concat("firstName", "' '");
@@ -15184,6 +15309,8 @@ Represents a raw SQL expression that can be used in queries.
   - `oldString` (`String`) — the string to search for
   - `replacement` (`String`) — the replacement string
 - **Returns:** a REPLACE function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr, oldString, or replacement is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.replace("email", "'@'", "'_at_'");
@@ -15198,6 +15325,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression whose length is returned
 - **Returns:** a LENGTH function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.length("name");           // Returns: "LENGTH(name)"
@@ -15210,6 +15339,8 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the SQL expression to extract from
   - `fromIndex` (`int`) — the starting position (1-based)
 - **Returns:** a SUBSTR function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.substr("phone", 1);   // Returns: "SUBSTR(phone, 1)"
@@ -15222,6 +15353,8 @@ Represents a raw SQL expression that can be used in queries.
   - `fromIndex` (`int`) — the starting position (1-based)
   - `length` (`int`) — the number of characters to extract
 - **Returns:** a SUBSTR function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.substr("phone", 1, 3);   // Returns: "SUBSTR(phone, 1, 3)"
@@ -15233,6 +15366,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to trim
 - **Returns:** a TRIM function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.trim("input");        // Returns: "TRIM(input)"
@@ -15244,6 +15379,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to left trim
 - **Returns:** an LTRIM function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.ltrim("comment");    // Returns: "LTRIM(comment)"
@@ -15255,6 +15392,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to right trim
 - **Returns:** an RTRIM function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.rtrim("code");           // Returns: "RTRIM(code)"
@@ -15268,6 +15407,8 @@ Represents a raw SQL expression that can be used in queries.
   - `length` (`int`) — the total length after padding
   - `padExpr` (`String`) — the SQL expression to pad with
 - **Returns:** an LPAD function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr or padExpr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.lpad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
@@ -15281,6 +15422,8 @@ Represents a raw SQL expression that can be used in queries.
   - `length` (`int`) — the total length after padding
   - `padExpr` (`String`) — the SQL expression to pad with
 - **Returns:** an RPAD function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr or padExpr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.rpad("name", 20, "' '");    // Returns: "RPAD(name, 20, ' ')"
@@ -15292,6 +15435,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to convert to lowercase
 - **Returns:** a LOWER function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.lower("email");      // Returns: "LOWER(email)"
@@ -15303,6 +15448,8 @@ Represents a raw SQL expression that can be used in queries.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to convert to uppercase
 - **Returns:** an UPPER function string
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
 - **Examples:**
   - ```java
     String expr = SqlExpression.upper("name");            // Returns: "UPPER(name)"
@@ -15378,7 +15525,7 @@ Represents a raw SQL expression that can be used in queries.
 - **Examples:**
   - ```java
     new SqlExpression("a + b").equals(new SqlExpression("a + b"));   // returns true (same literal)
-    SqlExpression.of("a + b").equals(SqlExpression.of("a + b"));     // returns true (cached, same instance)
+    SqlExpression.of("a + b").equals(SqlExpression.of("a + b"));     // returns true (same literal)
     new SqlExpression("a + b").equals(new SqlExpression("a - b"));   // returns false (different literal)
     new SqlExpression("a + b").equals("a + b");                      // returns false (not an SqlExpression)
     ```
@@ -15396,9 +15543,16 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Signature:** `public SubQuery(final String sql)`
 - **Summary:** Creates a subquery with raw SQL.
 - **Parameters:**
-  - `sql` (`String`) — complete raw query-expression text (must not be null, empty, or blank)
+  - `sql` (`String`) — complete raw query-expression text (must not be null, empty, blank, or contain a parameter placeholder)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; contains a named placeholder; or contains a positional placeholder without a corresponding binding
+- **Signature:** `public SubQuery(final String sql, final Collection<?> parameters)`
+- **Summary:** Creates a raw subquery with positional JDBC bindings.
+- **Parameters:**
+  - `sql` (`String`) — complete raw query-expression text (must not be null, empty, or blank)
+  - `parameters` (`Collection<?>`) — positional binding values in placeholder encounter order (must not be null); individual binding values may be null; array/Date/Calendar bindings are snapshotted, all others kept by reference
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; parameters is null; the SQL contains a named/MyBatis placeholder; the number of positional placeholders differs from the number of bindings; or an object-array binding contains a cycle
 - **Signature:** `@Deprecated public SubQuery(final String entityName, final String sql)`
 - **Summary:** Creates a subquery with an entity name and raw SQL.
 - **Deprecated:** the entity name is unused when rendering raw query-expression text; it is only exposed by #entityName() and participates in #equals(Object)/#hashCode(). Use #SubQuery(String) for raw text, or #SubQuery(String, java.util.Collection, Condition) when an entity-name-based structured subquery is actually wanted.
@@ -15406,13 +15560,13 @@ Represents a complete or structured SELECT used within SQL conditions.
   - `entityName` (`String`) — the entity/table name; may be null or empty, in which case it is stored as the empty string
   - `sql` (`String`) — complete raw query-expression text (must not be null, empty, or blank)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; contains a named placeholder; or contains a positional placeholder without a corresponding binding
 - **Signature:** `public SubQuery(final String entityName, final String propName, final Condition condition)`
 - **Summary:** Creates a structured single-property subquery for an entity name.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be null, empty, or blank)
   - `propName` (`String`) — the property to select (must not be null, empty, or blank)
-  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.
+  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, or an empty Criteria adds no clause. An empty Junction is preserved as its true/false Boolean identity.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityName or propName is null, empty, or blank, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
 - **Signature:** `public SubQuery(final String entityName, final Collection<String> propNames, final Condition condition)`
@@ -15420,7 +15574,7 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be null, empty, or blank)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty and must not contain null, empty, or blank names)
-  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.
+  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, or an empty Criteria adds no clause. An empty Junction is preserved as its true/false Boolean identity.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityName is null, empty, or blank, if propNames is null or empty, if propNames contains null, empty, or blank names, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
 - **Signature:** `public SubQuery(final Class<?> entityClass, final String propName, final Condition condition)`
@@ -15428,7 +15582,7 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class (must not be null)
   - `propName` (`String`) — the property to select (must not be null, empty, or blank)
-  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.
+  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, or an empty Criteria adds no clause. An empty Junction is preserved as its true/false Boolean identity.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null, if propName is null, empty, or blank, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
 - **Signature:** `public SubQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition)`
@@ -15436,7 +15590,7 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class (must not be null)
   - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty and must not contain null, empty, or blank names)
-  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, an empty Junction, or an empty Criteria adds no clause.
+  - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, or an empty Criteria adds no clause. An empty Junction is preserved as its true/false Boolean identity.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null, if propNames is null or empty, if propNames contains null, empty, or blank names, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
 
@@ -15549,10 +15703,10 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Signature:** `@Override public ImmutableList<Object> parameters()`
 - **Summary:** Returns this subquery's parameter values.
 - **Contract:**
-  - &#9888;&#65039; For raw SQL subqueries constructed from text this returns an empty list even when that text contains placeholders; raw bindings are managed by the caller.
+  - Raw bindings were snapshotted at construction (see #SubQuery(String, java.util.Collection)); when any of them is an array, Date, or Calendar, a fresh list holding fresh defensive copies of those bindings is built on every call, so mutating a returned element never affects this subquery or a later call.
 - **Parameters:**
   - (none)
-- **Returns:** an immutable list of parameter values, or an empty immutable list when none were captured
+- **Returns:** an immutable list of parameter values (array/Date/Calendar raw bindings are defensive copies), or an empty immutable list when none were captured
 - **Examples:**
   - ```java
     // Structured subquery: parameters are collected from the condition (in order)
@@ -15561,10 +15715,10 @@ Represents a complete or structured SELECT used within SQL conditions.
     List<Object> params = structured.parameters();
     // returns ["active", 18, 65]
     
-    // Raw SQL subquery: no bound parameters
-    SubQuery raw = Filters.subQuery("SELECT * FROM users");
+    // Raw SQL subquery with positional bindings
+    SubQuery raw = Filters.subQuery("SELECT id FROM users WHERE status = ?", Arrays.asList("active"));
     List<Object> rawParams = raw.parameters();
-    // returns [] (empty immutable list)
+    // returns ["active"] (immutable)
     
     // Structured subquery without a condition: also empty
     SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
@@ -15611,9 +15765,11 @@ Represents a complete or structured SELECT used within SQL conditions.
 ##### hashCode(...) -> int
 - **Signature:** `@Override public int hashCode()`
 - **Summary:** Generates the hash code for this subquery.
+- **Contract:**
+  - Captured raw bindings are hashed by content (array bindings element-wise via N#deepHashCode(Object)), consistent with #equals(Object); because array/Date/Calendar bindings were snapshotted at construction, the hash is stable even if the caller later mutates the originals.
 - **Parameters:**
   - (none)
-- **Returns:** hash code based on sql, entity name/class, properties, and condition
+- **Returns:** hash code based on SQL, entity name/class, properties, condition, and captured raw bindings
 - **Examples:**
   - ```java
     // Equal subqueries produce equal hash codes
@@ -15626,7 +15782,8 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Signature:** `@Override public boolean equals(final Object obj)`
 - **Summary:** Checks if this subquery is equal to another object.
 - **Contract:**
-  - Two subqueries are equal only when they have the exact same runtime class and all of their identity fields are equal: the entity name, the entity class, the selected properties, the stored SQL string, and the condition.
+  - Two subqueries are equal only when they have the exact same runtime class and all of their identity fields are equal: the entity name, the entity class, the selected properties, the stored SQL string, the condition, and captured raw bindings.
+  - Raw bindings are compared by content (array bindings element-wise via N#deepEquals(Object, Object), other bindings through their own equals); since array/Date/Calendar bindings are snapshotted at construction, the result does not change when the caller later mutates the originals.
   - The entity name participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their SQL and their entity name match.
 - **Parameters:**
   - `obj` (`Object`) — the object to compare with
@@ -15797,7 +15954,7 @@ Represents a WHERE clause in SQL queries.
 - **Parameters:**
   - `condition` (`Condition`) — the condition to apply in the WHERE clause. Must not be null.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is an empty predicate (a blank SqlExpression or empty Junction) — none of which can be nested inside a clause
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, is or contains a Criteria, is a standalone SubQuery or another clause, contains an ON/USING condition or an ANY/ALL/SOME quantified-subquery operand, or is a blank SqlExpression — none of which can be nested inside a clause. An empty Junction is accepted and renders its Boolean identity (for example WHERE 1 = 1)
 
 #### Public Static Methods
 - (none)

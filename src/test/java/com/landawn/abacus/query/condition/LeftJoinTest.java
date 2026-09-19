@@ -3,7 +3,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -19,9 +18,12 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class LeftJoinTest extends TestBase {
+    /** A column-to-column ON predicate: renders {@code ON a.id = b.id} and binds no parameters. */
+    private static final On ON_AB = Filters.on("a.id", "b.id");
+
     @Test
     public void testConstructor_Simple() {
-        LeftJoin join = new LeftJoin("orders");
+        LeftJoin join = new LeftJoin("orders", ON_AB);
         assertNotNull(join);
         assertEquals(Operator.LEFT_JOIN, join.operator());
     }
@@ -46,7 +48,7 @@ public class LeftJoinTest extends TestBase {
     @Test
     public void testGetJoinEntities() {
         List<String> entities = Arrays.asList("table1", "table2");
-        LeftJoin join = new LeftJoin(entities, null);
+        LeftJoin join = new LeftJoin(entities, Filters.on("table1.id", "table2.id"));
         List<String> result = join.joinEntities();
         assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
@@ -62,14 +64,19 @@ public class LeftJoinTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testGetCondition_Null() {
-        LeftJoin join = new LeftJoin("departments");
-        assertNull(join.condition());
+        // A LEFT JOIN can no longer be condition-less: the single-argument form always throws.
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new LeftJoin("departments"));
+        assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new LeftJoin("departments", null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new LeftJoin(Arrays.asList("departments", "teams"), null));
     }
 
     @Test
     public void testParameters_Empty() {
-        LeftJoin join = new LeftJoin("orders");
+        // A column-to-column ON predicate binds no parameters.
+        LeftJoin join = new LeftJoin("orders", ON_AB);
         assertTrue(join.parameters().isEmpty());
     }
 
@@ -83,7 +90,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testToString_Simple() {
-        LeftJoin join = new LeftJoin("orders");
+        LeftJoin join = new LeftJoin("orders", ON_AB);
         String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("LEFT JOIN"));
         assertTrue(result.contains("orders"));
@@ -106,7 +113,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        LeftJoin join = new LeftJoin("orders");
+        LeftJoin join = new LeftJoin("orders", ON_AB);
         assertEquals(join, join);
     }
 
@@ -119,14 +126,14 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testEquals_DifferentEntities() {
-        LeftJoin join1 = new LeftJoin("orders");
-        LeftJoin join2 = new LeftJoin("products");
+        LeftJoin join1 = new LeftJoin("orders", ON_AB);
+        LeftJoin join2 = new LeftJoin("products", ON_AB);
         assertNotEquals(join1, join2);
     }
 
     @Test
     public void testEquals_Null() {
-        LeftJoin join = new LeftJoin("orders");
+        LeftJoin join = new LeftJoin("orders", ON_AB);
         assertNotEquals(null, join);
     }
 
@@ -139,7 +146,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testWithAlias() {
-        LeftJoin join = new LeftJoin("employee_departments ed");
+        LeftJoin join = new LeftJoin("employee_departments ed", ON_AB);
         String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("employee_departments ed"));
     }
@@ -168,18 +175,18 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
-        LeftJoin join = new LeftJoin("orders");
+        LeftJoin join = new LeftJoin("orders", ON_AB);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.LEFT_JOIN, join.operator());
         Assertions.assertEquals(1, join.joinEntities().size());
         Assertions.assertEquals("orders", join.joinEntities().get(0));
-        Assertions.assertNull(join.condition());
+        Assertions.assertSame(ON_AB, join.condition());
     }
 
     @Test
     public void testConstructorWithJoinEntityAndAlias() {
-        LeftJoin join = new LeftJoin("orders o");
+        LeftJoin join = new LeftJoin("orders o", ON_AB);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals("orders o", join.joinEntities().get(0));
@@ -232,7 +239,8 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testParametersNoCondition() {
-        LeftJoin join = new LeftJoin("orders");
+        // No bound parameters when the predicate compares columns only.
+        LeftJoin join = new LeftJoin("orders", ON_AB);
         List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
@@ -241,7 +249,7 @@ public class LeftJoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        LeftJoin join = new LeftJoin("orders");
+        LeftJoin join = new LeftJoin("orders", ON_AB);
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("LEFT JOIN"));
@@ -278,7 +286,7 @@ public class LeftJoinTest extends TestBase {
         LeftJoin join1 = new LeftJoin("table", condition);
         LeftJoin join2 = new LeftJoin("table", condition);
         LeftJoin join3 = new LeftJoin("other", condition);
-        LeftJoin join4 = new LeftJoin("table");
+        LeftJoin join4 = new LeftJoin("table", Filters.eq("a", "c"));
 
         Assertions.assertEquals(join1, join1);
         Assertions.assertEquals(join1, join2);
@@ -302,5 +310,30 @@ public class LeftJoinTest extends TestBase {
 
         result = optionalData.toString();
         Assertions.assertTrue(result.contains("LEFT JOIN customer_preferences cp"));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testEntityValidationPrecedesPredicateCheck() {
+        // A null/blank entity is reported as such, not as a missing join predicate.
+        final String entityMessage = "must not be null, empty, or blank";
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new LeftJoin((String) null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+        Assertions.assertFalse(ex.getMessage().contains("requires a non-null ON/USING predicate"), ex.getMessage());
+
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new LeftJoin("   ", null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testDeprecatedSingleArgConstructorAlwaysThrows() {
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new LeftJoin("orders"));
+        Assertions.assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+
+        // The advertised alternatives work.
+        Assertions.assertEquals("LEFT JOIN orders ON a.id = b.id", new LeftJoin("orders", ON_AB).toSql(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("CROSS JOIN orders", new CrossJoin("orders").toSql(NamingPolicy.NO_CHANGE));
     }
 }

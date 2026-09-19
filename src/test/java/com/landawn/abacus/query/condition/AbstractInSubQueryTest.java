@@ -118,18 +118,27 @@ public class AbstractInSubQueryTest extends TestBase {
     }
 
     @Test
-    public void testHashCodeTracksMutableValueInSubQuery() {
+    public void testSubQueryConditionSnapshotsMutableArrayValue() {
+        // The nested Binary snapshots its array value at construction, so mutating the caller's array
+        // afterwards must not change the rendered SQL, the hash, or equality with the {1} variant.
         final byte[] value = { 1 };
         final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id",
                 Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", value)));
 
-        condition.hashCode();
+        final int hashBeforeMutation = condition.hashCode();
         value[0] = 2;
 
-        final TestAbstractInSubQuery equalAfterMutation = new TestAbstractInSubQuery("user_id",
+        assertEquals("user_id IN (SELECT id FROM users WHERE payload = '[1]')", condition.toSql(NamingPolicy.NO_CHANGE));
+        assertEquals(hashBeforeMutation, condition.hashCode());
+
+        final TestAbstractInSubQuery equalToSnapshot = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 1 })));
+        assertEquals(condition, equalToSnapshot);
+        assertEquals(condition.hashCode(), equalToSnapshot.hashCode());
+
+        final TestAbstractInSubQuery mutatedVariant = new TestAbstractInSubQuery("user_id",
                 Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 2 })));
-        assertEquals(condition, equalAfterMutation);
-        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+        assertNotEquals(condition, mutatedVariant);
     }
 
     @Test
@@ -252,5 +261,18 @@ public class AbstractInSubQueryTest extends TestBase {
         final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
 
         assertNotNull(sql);
+    }
+
+    @Test
+    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        // AbstractInSubQuery.parameters() is not memoized: each call must hand out the subquery's fresh defensive copy.
+        final SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 1 }));
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("id", subQuery);
+
+        final byte[] first = (byte[]) condition.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) condition.parameters().get(0)));
+        assertEquals("id IN (SELECT id FROM users WHERE payload = '[1]')", condition.toString());
     }
 }

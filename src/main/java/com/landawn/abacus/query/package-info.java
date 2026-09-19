@@ -83,7 +83,8 @@
  *   <li>{@link com.landawn.abacus.query.SqlParser} tokenizes SQL &mdash; handling quoted literals and
  *       identifiers, comments, multi-character operators, and hash-prefixed temp-table names &mdash;
  *       and classifies statements through {@code isSelectQuery}, {@code isInsertQuery},
- *       {@code isUpdateQuery}, {@code isDeleteQuery}, {@code isReadOnlyQuery}, and related methods.</li>
+ *       {@code isUpdateQuery}, {@code isDeleteQuery}, {@code isSyntacticallyReadQuery},
+ *       {@code isReadOrInsertQuery}, and related methods.</li>
  *   <li>{@link com.landawn.abacus.query.ParsedSql} converts the named parameters ({@code :name} or
  *       <code>#{name}</code>) of a recognized data-operation statement into standard JDBC {@code ?}
  *       placeholders and reports the parameter names in order of appearance.</li>

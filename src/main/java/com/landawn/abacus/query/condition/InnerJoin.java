@@ -44,10 +44,6 @@ import java.util.Collection;
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Simple inner join
- * InnerJoin join1 = new InnerJoin("orders");
- * // SQL: INNER JOIN orders
- *
  * // Inner join with ON condition
  * InnerJoin join2 = new InnerJoin("orders o",
  *     new On("customers.id", "o.customer_id"));
@@ -99,23 +95,32 @@ public class InnerJoin extends Join {
 
     /**
      * Creates an INNER JOIN clause for the specified table or entity without a join condition.
-     * Most databases require an {@code ON} or {@code USING} clause for an INNER JOIN; use
-     * {@link #InnerJoin(String, Condition)} when a condition is required.
+     *
+     * <p>This constructor <b>always throws</b>: an INNER JOIN requires a non-{@code null}
+     * {@code ON}/{@code USING} predicate, so there is no way for it to succeed. It is retained only
+     * for source compatibility.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Simple join without explicit condition
-     * InnerJoin join = new InnerJoin("products");
-     * // SQL: INNER JOIN products
+     * // Inner join with an ON predicate
+     * InnerJoin join = new InnerJoin("order_details od", Filters.on("orders.id", "od.order_id"));
+     * // SQL: INNER JOIN order_details od ON orders.id = od.order_id
      *
-     * // Join with table alias
-     * InnerJoin aliasJoin = new InnerJoin("order_details od");
-     * // SQL: INNER JOIN order_details od
+     * // Unconditional join
+     * Join cross = new CrossJoin("products");
+     * // SQL: CROSS JOIN products
+     *
+     * // Edge: the single-argument form cannot succeed
+     * new InnerJoin("products");   // throws IllegalArgumentException
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
+     *                                  otherwise because an INNER JOIN requires a non-{@code null} {@code ON}/{@code USING} predicate
+     * @deprecated always throws {@link IllegalArgumentException} because a qualified join requires an {@code ON}/{@code USING}
+     *             predicate; use {@link #InnerJoin(String, Condition)} instead, or {@link CrossJoin} for an unconditional join
      */
+    @Deprecated
     public InnerJoin(final String joinEntity) {
         super(Operator.INNER_JOIN, joinEntity);
     }
@@ -157,14 +162,14 @@ public class InnerJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param joinCondition the join condition. A plain non-empty predicate is automatically prefixed with
+     * @param joinCondition the join condition; must not be {@code null}. A plain non-empty predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
-     *            May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public InnerJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.INNER_JOIN, joinEntity, joinCondition);
@@ -199,14 +204,14 @@ public class InnerJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param joinCondition the join condition. A plain non-empty predicate is automatically prefixed with
+     * @param joinCondition the join condition; must not be {@code null}. A plain non-empty predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
-     *            May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements;
+     *                                  if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.INNER_JOIN, joinEntities, joinCondition);

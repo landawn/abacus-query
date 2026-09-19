@@ -59,8 +59,9 @@ public class LessThanTest extends TestBase {
 
     @Test
     public void testGetPropValue_Null() {
-        LessThan condition = new LessThan("field", null);
-        assertNull(condition.propValue());
+        // A null RHS is rejected at construction: `x < NULL` can never be true under three-valued logic.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new LessThan("field", null));
+        assertEquals("propValue must not be null for <; use an IS NULL/IS NOT NULL condition instead", ex.getMessage());
     }
 
     @Test
@@ -268,13 +269,8 @@ public class LessThanTest extends TestBase {
 
     @Test
     public void testWithNullValue() {
-        LessThan condition = new LessThan("field", null);
-
-        Assertions.assertNotNull(condition);
-        Assertions.assertNull(condition.propValue());
-        String result = condition.toString();
-        Assertions.assertTrue(result.contains("field"));
-        Assertions.assertTrue(result.contains("<"));
-        Assertions.assertTrue(result.contains("null"));
+        // `field < null` is no longer renderable: the constructor rejects the null RHS with a pointed message.
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new LessThan("field", null));
+        Assertions.assertEquals("propValue must not be null for <; use an IS NULL/IS NOT NULL condition instead", ex.getMessage());
     }
 }

@@ -249,4 +249,13 @@ public class NotTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.not(Filters.expr("   ")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.not(new And()));
     }
+
+    @Test
+    public void testEmptyJunctionOperandNegatesItsBooleanIdentity() {
+        // An initialized empty junction is a complete predicate (1 = 1 / 1 = 0), so NOT accepts it.
+        assertEquals("NOT (1 = 1)", new Not(Filters.and()).toString());
+        assertEquals("NOT (1 = 0)", Filters.not(Filters.or()).toString());
+        assertEquals("NOT (1 = 1)", Filters.and().not().toString());
+        assertTrue(new Not(Filters.and()).parameters().isEmpty());
+    }
 }

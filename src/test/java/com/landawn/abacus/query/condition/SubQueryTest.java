@@ -877,6 +877,89 @@ public class SubQueryTest extends TestBase {
         assertEquals("SELECT id FROM users WHERE a = 1", new SubQuery("users", Arrays.asList("id"), Filters.eq("a", 1)).toString());
     }
 
+    @Test
+    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        // SubQuery.parameters() is not memoized: each call must hand out the condition's fresh defensive copy.
+        final SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 1 }));
+
+        final byte[] first = (byte[]) subQuery.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) subQuery.parameters().get(0)));
+        assertEquals("SELECT id FROM users WHERE payload = '[1]'", subQuery.toString());
+    }
+
+    @Test
+    public void testRawBindingArraysUseContentEqualityAndConsistentHashCode() {
+        // Raw bindings are snapshotted at construction and compared by content: distinct-but-equal arrays make equal subqueries.
+        final SubQuery a = new SubQuery("SELECT id FROM users WHERE tags = ?", List.of(new int[] { 1 }));
+        final SubQuery b = new SubQuery("SELECT id FROM users WHERE tags = ?", List.of(new int[] { 1 }));
+
+        assertEquals(a, b);
+        assertEquals(b, a);
+        assertEquals(a.hashCode(), b.hashCode());
+
+        // Different array content -> unequal.
+        final SubQuery c = new SubQuery("SELECT id FROM users WHERE tags = ?", List.of(new int[] { 2 }));
+        assertNotEquals(a, c);
+
+        // Nested arrays are compared element-wise too.
+        final SubQuery d = new SubQuery("SELECT id FROM users WHERE tags = ?", List.of((Object) new Object[] { new int[] { 1 }, "x" }));
+        final SubQuery e = new SubQuery("SELECT id FROM users WHERE tags = ?", List.of((Object) new Object[] { new int[] { 1 }, "x" }));
+        assertEquals(d, e);
+        assertEquals(d.hashCode(), e.hashCode());
+
+        // Non-array bindings still use their own equals (null included).
+        final SubQuery f = new SubQuery("SELECT id FROM users WHERE a = ? AND b = ?", Arrays.asList("v", null));
+        final SubQuery g = new SubQuery("SELECT id FROM users WHERE a = ? AND b = ?", Arrays.asList("v", null));
+        assertEquals(f, g);
+        assertEquals(f.hashCode(), g.hashCode());
+        assertNotEquals(f, new SubQuery("SELECT id FROM users WHERE a = ? AND b = ?", Arrays.asList("v", "w")));
+    }
+
+    @Test
+    public void testRawBindingsAreSnapshottedAndHashStableUnderCallerMutation() {
+        // Raw array/Date bindings are snapshotted at construction (like Binary), so a caller mutating its own
+        // originals afterwards must not change hashCode()/equals() or what parameters() exposes.
+        final byte[] callerArray = new byte[] { 1, 2 };
+        final java.util.Date callerDate = new java.util.Date(1_000_000L);
+        final long originalTime = callerDate.getTime();
+
+        final SubQuery subQuery = new SubQuery("SELECT id FROM users WHERE payload = ? AND created > ?", Arrays.asList(callerArray, callerDate));
+        final int hashBefore = subQuery.hashCode();
+        final SubQuery twin = new SubQuery("SELECT id FROM users WHERE payload = ? AND created > ?",
+                Arrays.asList(new byte[] { 1, 2 }, new java.util.Date(originalTime)));
+
+        final java.util.Set<SubQuery> set = new java.util.HashSet<>();
+        set.add(subQuery);
+
+        callerArray[0] = 9;
+        callerDate.setTime(originalTime + 60_000L);
+
+        assertEquals(hashBefore, subQuery.hashCode());
+        assertTrue(set.contains(subQuery));
+        assertEquals(twin, subQuery);
+        assertEquals(twin.hashCode(), subQuery.hashCode());
+
+        final List<Object> params = subQuery.parameters();
+        assertTrue(Arrays.equals(new byte[] { 1, 2 }, (byte[]) params.get(0)));
+        assertEquals(originalTime, ((java.util.Date) params.get(1)).getTime());
+
+        // parameters() hands out defensive copies: neither the caller's originals nor the same reference twice.
+        assertFalse(params.get(0) == callerArray);
+        assertFalse(params.get(1) == callerDate);
+        assertFalse(params.get(0) == subQuery.parameters().get(0));
+        assertFalse(params.get(1) == subQuery.parameters().get(1));
+
+        // Mutating a returned copy does not leak into a later call either.
+        ((byte[]) params.get(0))[1] = 7;
+        assertTrue(Arrays.equals(new byte[] { 1, 2 }, (byte[]) subQuery.parameters().get(0)));
+
+        // Scalar-only raw bindings still return the plain immutable list (same instance each call).
+        final SubQuery scalars = new SubQuery("SELECT id FROM users WHERE a = ?", List.of("v"));
+        assertTrue(scalars.parameters() == scalars.parameters());
+    }
+
     private static final class SinglePropEntity {
         private long id;
     }

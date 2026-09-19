@@ -599,4 +599,46 @@ public class InTest extends TestBase {
     public void testMultiColumn_RejectsNullRow() {
         assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), null)));
     }
+
+    // Regression (abacus-common 8.0.0 made N.equals shallow): two In conditions built from equal but
+    // distinct int[]/byte[] elements must still be equal with equal hash codes (content equality).
+    @Test
+    public void testEqualsAndHashCode_EqualArrayElementsUseContentEquality() {
+        final In intLeft = new In("payload", Arrays.asList(new int[] { 1, 2 }, new int[] { 3 }));
+        final In intRight = new In("payload", Arrays.asList(new int[] { 1, 2 }, new int[] { 3 }));
+        assertEquals(intLeft, intRight);
+        assertEquals(intLeft.hashCode(), intRight.hashCode());
+
+        final In byteLeft = new In("payload", Arrays.asList(new byte[] { 1, 2 }));
+        final In byteRight = new In("payload", Arrays.asList(new byte[] { 1, 2 }));
+        assertEquals(byteLeft, byteRight);
+        assertEquals(byteLeft.hashCode(), byteRight.hashCode());
+
+        // Different content or a different array type is not equal.
+        assertNotEquals(byteLeft, new In("payload", Arrays.asList(new byte[] { 1, 3 })));
+        assertNotEquals(byteLeft, new In("payload", Arrays.asList(new int[] { 1, 2 })));
+    }
+
+    // Regression: In snapshots array elements at construction (like Binary.IN), so mutating the caller's
+    // array afterwards changes neither toString nor hashCode, and values() exposes a defensive copy.
+    @Test
+    public void testArrayElementIsSnapshottedAtConstruction() {
+        final int[] member = { 1, 2 };
+        final In condition = new In("payload", Arrays.asList(member));
+        final String sqlBeforeMutation = condition.toString();
+        final int hashBeforeMutation = condition.hashCode();
+
+        member[0] = 9;
+
+        assertEquals("payload IN ('[1, 2]')", sqlBeforeMutation);
+        assertEquals(sqlBeforeMutation, condition.toString());
+        assertEquals(hashBeforeMutation, condition.hashCode());
+        assertEquals(new In("payload", Arrays.asList(new int[] { 1, 2 })), condition);
+
+        final int[] exposed = (int[]) condition.values().get(0);
+        assertNotSame(member, exposed);
+        assertNotSame(exposed, condition.values().get(0));
+        assertTrue(Arrays.equals(new int[] { 1, 2 }, exposed));
+        assertNotSame(condition.parameters().get(0), condition.values().get(0));
+    }
 }

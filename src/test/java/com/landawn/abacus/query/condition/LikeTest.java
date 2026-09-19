@@ -58,8 +58,9 @@ public class LikeTest extends TestBase {
 
     @Test
     public void testGetPropValue_Null() {
-        Like condition = new Like("field", null);
-        assertNull(condition.propValue());
+        // A null pattern is rejected at construction: `x LIKE NULL` can never be true under three-valued logic.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new Like("field", null));
+        assertEquals("propValue must not be null for LIKE; use an IS NULL/IS NOT NULL condition instead", ex.getMessage());
     }
 
     @Test
@@ -322,12 +323,9 @@ public class LikeTest extends TestBase {
 
     @Test
     public void testNullPattern() {
-        Like condition = new Like("field", null);
-
-        Assertions.assertNull(condition.propValue());
-        String result = condition.toString();
-        Assertions.assertTrue(result.contains("LIKE"));
-        Assertions.assertTrue(result.contains("null"));
+        // `field LIKE null` is no longer renderable: the constructor rejects the null pattern with a pointed message.
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new Like("field", null));
+        Assertions.assertEquals("propValue must not be null for LIKE; use an IS NULL/IS NOT NULL condition instead", ex.getMessage());
     }
 
     @Test

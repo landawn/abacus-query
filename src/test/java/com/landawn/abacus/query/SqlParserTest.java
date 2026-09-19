@@ -2961,4 +2961,203 @@ public class SqlParserTest extends TestBase {
         assertTrue(SqlParser.isReadOnlyQuery("SELECT 1 /* ordinary comment */"));
         assertTrue(SqlParser.isReadOnlyQuery("SELECT /*+ MAX_EXECUTION_TIME(1000) */ 1"));
     }
+
+    // ----------------------------------------------------------------------------------------------
+    // 2026-09-19 review fixes: memoized '#' classification, quote-aware backward comment scan,
+    // scanner symmetry for '#' after a consumed operator, allowlist splitting on every ';',
+    // INTO OUTFILE / DUMPFILE, leading "--comment" without a space
+    // ----------------------------------------------------------------------------------------------
+
+    private static String multiRowInsertWithHashCommentPerRow(final int rows) {
+        final StringBuilder sb = new StringBuilder("INSERT INTO t (a) VALUES (1) #r0\n");
+
+        for (int i = 1; i < rows; i++) {
+            sb.append(", (").append(i + 1).append(") #r").append(i).append('\n');
+        }
+
+        return sb.toString();
+    }
+
+    @Test
+    public void testHashCommentAfterClosingParenthesis_manyRowsDoesNotBlowUp() {
+        // Regression (2026-09-19): classifying a '#' preceded by ')' matched the parenthesis with a
+        // forward scan from index 0 that re-classified every earlier '#', without memoization, so a
+        // MySQL multi-row INSERT with a "#tag" comment per row was O(2^rows): 24 rows took ~8 s to
+        // tokenize, 40 rows would have run for hours (the classification gates were slower still).
+        final String sql = multiRowInsertWithHashCommentPerRow(40);
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            final List<String> tokens = SqlParser.tokenize(sql);
+            assertFalse(tokens.contains("#r0")); // '#r0' after ')' is a MySQL comment
+            assertFalse(tokens.contains("#r39"));
+            assertTrue(tokens.contains("40"));
+            assertTrue(SqlParser.isReadOrInsertQuery(sql));
+            assertTrue(SqlParser.isInsertQuery(sql));
+            assertFalse(SqlParser.isSyntacticallyReadQuery(sql));
+        });
+
+        // '), #rowN' variant (hash after a comma after a parenthesized row) walks the list backward
+        // through every earlier row and had the same exponential shape.
+        final StringBuilder commaFirst = new StringBuilder("INSERT INTO t (a) VALUES (1), #row1\n");
+
+        for (int i = 2; i <= 40; i++) {
+            commaFirst.append('(').append(i).append("), #row").append(i).append('\n');
+        }
+
+        commaFirst.append("(41)");
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            final List<String> tokens = SqlParser.tokenize(commaFirst.toString());
+            assertFalse(tokens.contains("#row1"));
+            assertTrue(tokens.contains("41"));
+            assertTrue(SqlParser.isReadOrInsertQuery(commaFirst.toString()));
+        });
+    }
+
+    @Test
+    public void testHashCommentAfterClosingParenthesis_memoizedTokensMatchUnmemoizedResult() {
+        // The token streams below were recorded from the pre-memoization tokenizer (small row counts
+        // it could still finish): the memo must be a pure optimization.
+        assertEquals(Arrays.asList("INSERT", " ", "INTO", " ", "t", " ", "(", "a", ")", " ", "VALUES", " ", "(", "1", ")", " ", ",", " ", "(", "2", ")", " ",
+                ",", " ", "(", "3", ")", " ", ",", " ", "(", "4", ")", " "), SqlParser.tokenize(multiRowInsertWithHashCommentPerRow(4)));
+        assertEquals(
+                Arrays.asList("INSERT", " ", "INTO", " ", "t", " ", "(", "a", ")", " ", "VALUES", " ", "(", "1", ")", ",", " ", "(", "2", ")", ",", " ", "(",
+                        "3", ")", ",", " ", "(", "4", ")"),
+                SqlParser.tokenize("INSERT INTO t (a) VALUES (1), #row1\n(2), #row2\n(3), #row3\n(4)"));
+        // Identifier contexts are still recognized after a parenthesized list element.
+        assertEquals(Arrays.asList("FROM", " ", "(", "SELECT", " ", "1", ")", " ", "d", ",", " ", "#t"), SqlParser.tokenize("FROM (SELECT 1) d, #t"));
+        assertEquals(Arrays.asList("FROM", " ", "t1", ",", " ", "(", "SELECT", " ", "1", " ", ")", " ", "d", ",", " ", "#t2"),
+                SqlParser.tokenize("FROM t1, (SELECT 1 #c\n) d, #t2"));
+        assertEquals(Arrays.asList("DELETE", " ", "TOP", " ", "(", "1", ")", " ", "#t"), SqlParser.tokenize("DELETE TOP (1) #t"));
+        assertEquals(Arrays.asList("x", " ", "IN", " ", "(", "1", ",", "2", ")", " "), SqlParser.tokenize("x IN (1,2) #c"));
+    }
+
+    @Test
+    public void testHashTempTable_manyOnOneLineClassifiesQuickly() {
+        // Regression (2026-09-19): every '#' classification re-lexed its whole line from the start,
+        // so 800 "#tN" joins on ONE line took ~0.4 s to tokenize and ~10 s to classify. The
+        // line-comment lexing pass is now computed once per scan.
+        final StringBuilder sb = new StringBuilder("SELECT * FROM #t0");
+
+        for (int i = 1; i <= 800; i++) {
+            sb.append(" JOIN #t").append(i).append(" ON t").append(i - 1).append(".id = t").append(i).append(".id");
+        }
+
+        final String sql = sb.toString();
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            for (int i = 0; i < 3; i++) {
+                assertTrue(SqlParser.tokenize(sql).contains("#t800"));
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+                assertFalse(SqlParser.isSyntacticallyReadQuery(sql + "; DELETE FROM #t800"));
+            }
+        });
+    }
+
+    @Test
+    public void testHashTempTable_afterMultiLineLiteralContainingCommentLikeLine() {
+        // Regression (2026-09-19): the backward line-comment scan started at the current line with
+        // a fresh quote state, so a '#' or '--' that merely began a later line of a multi-line
+        // string literal, bracket identifier or block comment was taken as a comment opener and
+        // the following "FROM #tmp" lost its temp table.
+        assertTrue(SqlParser.tokenize("SELECT 'multi\n# line' FROM\n#tmp").contains("#tmp"));
+        assertTrue(SqlParser.tokenize("SELECT 'multi\n-- line' FROM\n#tmp").contains("#tmp"));
+        assertTrue(SqlParser.tokenize("SELECT 'a\n# b' FROM #tmp").contains("#tmp"));
+        assertTrue(SqlParser.tokenize("SELECT \"q\n--r\" FROM #t").contains("#t"));
+        assertTrue(SqlParser.tokenize("SELECT `a\n#b` FROM #t").contains("#t"));
+        assertTrue(SqlParser.tokenize("SELECT [a\n# b] FROM #tmp").contains("#tmp"));
+        assertTrue(SqlParser.tokenize("SELECT 1 /* x\n# y */ FROM #tmp").contains("#tmp"));
+        assertTrue(SqlParser.tokenize("FROM [x\n]] #q] , #t2").contains("#t2"));
+        assertEquals("#tmp", SqlParser.nextToken("SELECT 'multi\n# line' FROM\n#tmp", 26));
+        assertEquals(27, SqlParser.indexOfToken("SELECT 'multi\n# line' FROM\n#tmp", "#tmp"));
+
+        // Controls: a real comment before the hash still wins, and a comment-looking literal on the
+        // same line never mattered.
+        assertTrue(SqlParser.tokenize("SELECT '# line' FROM\n#tmp").contains("#tmp"));
+        assertFalse(SqlParser.tokenize("SELECT a FROM t -- c\n#x").contains("#x"));
+        assertTrue(SqlParser.tokenize("SELECT 'multi\nline' FROM\n#tmp").contains("#tmp"));
+    }
+
+    @Test
+    public void testHashAfterConsumedOperator_isCommentInAllScanners() {
+        // Regression (2026-09-19): tokenize consumed "@?" as a unit and then dropped "#c" as a
+        // MySQL comment, but nextToken/indexOfToken applied a covering-operator guard ("?#" starts
+        // one char earlier) and emitted a bare "#" token followed by "c".
+        assertEquals(Arrays.asList("a", " ", "@?"), SqlParser.tokenize("a @?#c"));
+        assertEquals("", SqlParser.nextToken("a @?#c", 4));
+        assertEquals("a @?#c".length(), SqlParser.nextTokenEndIndex("a @?#c", 4));
+        assertEquals(-1, SqlParser.indexOfToken("a @?#c", "c"));
+
+        // The guard still applies where it belongs: character-visiting scanners (the classification
+        // gates) must not read the '#' of a configured "?#" operator as a comment that hides the
+        // rest of the line.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT a FROM t WHERE j ?#c; DELETE FROM t"));
+        assertEquals(Arrays.asList("x", "=", "?#", "c"), SqlParser.tokenize("x=?#c"));
+        assertEquals("?#", SqlParser.nextToken("x=?#c", 2));
+    }
+
+    @Test
+    public void testUnbalancedParenthesisCannotHideLaterStatementFromAllowlist() {
+        // Regression (2026-09-19): the top-level allowlist only split statements on ';' at
+        // parenthesis depth 0, so an unbalanced '(' (e.g. from unmodelled PostgreSQL dollar-quoting)
+        // hid every later statement whose verb is outside the finite mutation keyword list.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT (1; GRANT ALL ON t TO public"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT $$($$; GRANT ALL ON t TO public"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT $$($$; DO $b$ BEGIN DELETE FROM t; END $b$"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT (1; COPY t FROM '/etc/passwd'"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES ((1); UPSERT INTO t VALUES (2)"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT (1; GRANT ALL ON t TO public"));
+
+        // No new false rejects: a non-MySQL "--(" comment is broken into " -(" under the MySQL
+        // comment mode, and both statements still lead with SELECT.
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a --( x\nFROM t; SELECT 2"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a --( x\nFROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT (1); SELECT (2)"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT ';' ; SELECT 2"));
+    }
+
+    @Test
+    public void testTrailingIntoOutfileIsNotReadOnly() {
+        // Regression (2026-09-19): MySQL accepts (and since 8.0.20 prefers) "SELECT ... FROM t INTO
+        // OUTFILE 'f'"; only the select-list position was rejected before.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t INTO OUTFILE '/tmp/x'"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t INTO DUMPFILE '/tmp/x'"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("select * from t into outfile '/tmp/x'"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * INTO OUTFILE '/tmp/x' FROM t"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT 1; SELECT * FROM t INTO OUTFILE '/tmp/x'"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT * FROM t INTO OUTFILE '/tmp/x'"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1); SELECT * FROM t INTO DUMPFILE '/tmp/x'"));
+
+        // Session-variable and column/table names are unaffected.
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM t INTO @v"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT outfile, dumpfile FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 'INTO OUTFILE' FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM t -- INTO OUTFILE 'x'"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO outfile VALUES (1)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO dumpfile SELECT 1"));
+        // INSERT modifiers between INSERT and INTO must not turn a table named outfile into an INTO OUTFILE clause.
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT IGNORE INTO outfile VALUES (1)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT LOW_PRIORITY INTO dumpfile SELECT 1"));
+        assertTrue(SqlParser.isReadOrInsertQuery("insert delayed into OUTFILE values (1)"));
+        // ...but a real trailing INTO OUTFILE after such an INSERT is still rejected.
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT IGNORE INTO t SELECT * FROM s INTO OUTFILE '/tmp/x'"));
+    }
+
+    @Test
+    public void testLeadingDashCommentWithoutSpace_stillResolvesLeadingKeyword() {
+        // Regression (2026-09-19): under MySQL's rule "--x" is not a comment, so that lexical mode
+        // found no leading verb; the modes "disagreed" and isSelectQuery/isDeleteQuery returned
+        // false. A mode that finds no verb at all now has no opinion.
+        assertTrue(SqlParser.isSelectQuery("--x\nSELECT 1"));
+        assertTrue(SqlParser.isSelectQuery("--TODO: review\nSELECT 1"));
+        assertTrue(SqlParser.isDeleteQuery("--x\nDELETE FROM t"));
+        assertTrue(SqlParser.isInsertQuery("--x\nINSERT INTO t VALUES (1)"));
+        assertTrue(SqlParser.isUpdateQuery("--x\nUPDATE t SET a = 1"));
+        assertFalse(SqlParser.isSelectQuery("--x\nDELETE FROM t"));
+
+        // The verb that follows the comment still decides.
+        assertFalse(SqlParser.isSelectQuery("--x\nDELETE FROM t; -- \nSELECT 1"));
+        assertTrue(SqlParser.isSelectQuery("-- x\nSELECT 1"));
+        assertTrue(SqlParser.isSelectQuery("#x\nSELECT 1"));
+    }
 }

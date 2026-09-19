@@ -101,8 +101,8 @@ public class On extends Cell {
 
     /**
      * Creates an ON clause with a custom condition.
-     * This is the most flexible constructor, accepting any non-empty predicate that does not
-     * contain a clause, connector, or quantified-subquery operand. It is typically used for
+     * This is the most flexible constructor, accepting any predicate that does not
+     * contain a clause, connector, quantified-subquery operand, or blank {@link SqlExpression}. It is typically used for
      * complex joins that go beyond simple column equality.
      *
      * <p><b>Usage Examples:</b></p>
@@ -141,19 +141,19 @@ public class On extends Cell {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or is or contains a {@link Criteria},
      *                                  a null operator, a SQL clause, an {@code ON}/{@code USING} connector, an
      *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or
-     *                                  empty {@link Junction})
+     *                                  {@link SubQuery}, or a blank {@link SqlExpression}. An empty {@link Junction}
+     *                                  is accepted and renders its Boolean identity (for example {@code ON 1 = 1})
      */
     public On(final Condition condition) {
         super(Operator.ON, validateOnCondition(condition));
     }
 
     private static Condition validateOnCondition(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+        N.checkArgNotNull(cond, "condition");
 
         if (containsNonPredicateComponent(cond)) {
             throw new IllegalArgumentException("ON condition type " + cond.getClass().getName()
-                    + " is not allowed: use a non-empty predicate without clause, quantified, ON, or USING operators");
+                    + " is not allowed: use a predicate without clause, quantified, ON, or USING operators (a blank expression is not a predicate)");
         }
 
         return cond;

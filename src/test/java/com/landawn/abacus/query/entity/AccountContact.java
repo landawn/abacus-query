@@ -39,7 +39,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @param id
      */
     public AccountContact(long id) {
@@ -49,7 +48,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param accountId
      * @param mobile
@@ -89,7 +87,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param id
      * @param accountId
@@ -132,7 +129,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("long")
@@ -141,7 +137,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param id
      * @return
@@ -154,7 +149,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("long")
@@ -163,7 +157,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param accountId
      * @return
@@ -176,7 +169,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -185,7 +177,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param mobile
      * @return
@@ -198,7 +189,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -207,7 +197,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param telephone
      * @return
@@ -220,7 +209,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -229,7 +217,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param email
      * @return
@@ -242,7 +229,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -251,7 +237,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param address
      * @return
@@ -264,7 +249,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -273,7 +257,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param address2
      * @return
@@ -286,7 +269,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -295,7 +277,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param city
      * @return
@@ -308,7 +289,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -317,7 +297,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param state
      * @return
@@ -330,7 +309,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -339,7 +317,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param country
      * @return
@@ -352,7 +329,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -361,7 +337,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param zipCode
      * @return
@@ -374,7 +349,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -383,7 +357,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param category
      * @return
@@ -396,7 +369,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("String")
@@ -405,7 +377,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param description
      * @return
@@ -418,7 +389,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("int")
@@ -427,7 +397,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param status
      * @return
@@ -440,7 +409,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("Timestamp")
@@ -449,7 +417,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param lastUpdateTime
      * @return
@@ -462,7 +429,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @return
      */
     @Type("Timestamp")
@@ -471,7 +437,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @param createTime
      * @return
@@ -483,7 +448,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @return
      */
@@ -510,7 +474,6 @@ public class AccountContact {
 
     /**
      *
-     *
      * @param obj
      * @return
      */
@@ -533,7 +496,6 @@ public class AccountContact {
     }
 
     /**
-     *
      *
      * @return
      */

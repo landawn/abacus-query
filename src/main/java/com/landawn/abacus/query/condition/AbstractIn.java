@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -71,7 +72,18 @@ public abstract class AbstractIn extends ComposableCondition {
 
     private List<?> values;
 
-    /** Lazily memoized parameters (performance only). */
+    /**
+     * Whether {@link #values} holds at least one array, {@code Date}, {@code Calendar} or nested
+     * {@link Condition} element (a scalar {@link SubQuery} or {@link SqlExpression}, directly or inside a row
+     * tuple). Computed once at construction because the membership list is immutable afterwards; when
+     * {@code true}, {@link #values()} and {@link #parameters()} rebuild a fresh list with defensive copies on
+     * every call instead of memoizing. A nested condition counts as mutable because its own
+     * {@code parameters()} may hand out fresh defensive copies that a memoized outer list would otherwise
+     * share across calls.
+     */
+    private final boolean rebuildPerCall;
+
+    /** Lazily memoized parameters (performance only; unused when {@link #rebuildPerCall} is {@code true}). */
     private transient ImmutableList<Object> cachedParameters;
 
     /** Lazily memoized immutable view of {@link #values} (performance only). */
@@ -85,14 +97,20 @@ public abstract class AbstractIn extends ComposableCondition {
     AbstractIn() {
         propNames = ImmutableList.empty();
         rowValueConstructor = false;
+        rebuildPerCall = false;
     }
 
     /**
      * Creates a new single-column IN or NOT IN condition. The given values are copied into an internal
      * {@link ArrayList}, so later mutations to the supplied collection do not affect this
-     * condition. {@code null} elements are rejected because SQL membership predicates do not treat
-     * {@code NULL} as an ordinary value. Individual elements may be literal values or non-structural, non-quantified
-     * {@link Condition} instances; the latter have their parameters spliced into {@link #parameters()}.
+     * condition. Array, {@link java.util.Date} and {@link java.util.Calendar} elements are snapshotted
+     * (deep-copied) at construction, exactly as {@link Binary} does for an {@code IN} membership list, so
+     * later mutation of the caller's objects does not change this condition's SQL, parameters, hash code or
+     * equality; {@link #values()} and {@link #parameters()} hand out defensive copies of such elements.
+     * Other application-defined values are retained by reference. {@code null} elements are rejected because
+     * SQL membership predicates do not treat {@code NULL} as an ordinary value. Individual elements may be
+     * literal values, {@link SqlExpression}s or scalar {@link SubQuery}s; the latter two have their parameters
+     * spliced into {@link #parameters()}. Any other {@link Condition} element is rejected.
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
@@ -101,9 +119,10 @@ public abstract class AbstractIn extends ComposableCondition {
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, {@code values} is {@code null}/empty
      *                                  or contains {@code null},
      *                                  or {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
-     *                                  or a condition-valued element is or contains a {@link Criteria}, SQL clause,
-     *                                  JOIN, or {@code ON}/{@code USING} connector, or is/contains an
-     *                                  {@link All}, {@link Any}, or {@link Some} quantified operand
+     *                                  or if any element is a {@link Condition} other than a non-blank {@link SqlExpression}
+     *                                  or a scalar {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING
+     *                                  connectors and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
+     *                                  or if an element is a cyclic object array
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {
@@ -112,13 +131,21 @@ public abstract class AbstractIn extends ComposableCondition {
         checkPropName(propName);
         N.checkArgNotNull(values, "values");
 
-        final List<?> valuesCopy = new ArrayList<>(values);
+        final List<Object> valuesCopy = new ArrayList<>(values.size());
+
+        // Snapshot array/Date/Calendar elements like Binary.IN so the caller's later mutations cannot
+        // desync this condition's SQL/parameters/hashCode from its equality.
+        for (final Object value : values) {
+            valuesCopy.add(snapshotMutableValue(value));
+        }
+
         N.checkArgNotEmpty(valuesCopy, "values");
         rejectNullElements(valuesCopy, "values");
         validateNonQuantifiedValueOperands(valuesCopy, "values");
 
         this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
         this.rowValueConstructor = false;
+        this.rebuildPerCall = containsSnapshotMutableValue(valuesCopy, false);
         // Freeze the list like Binary.IN and the row-value path so a future internal mutator
         // cannot desync memoized parameters() / values() from the stored membership list.
         this.values = Collections.unmodifiableList(valuesCopy);
@@ -139,9 +166,12 @@ public abstract class AbstractIn extends ComposableCondition {
      *   <li>a bean whose property values are read by property name.</li>
      * </ul>
      * Both the property names and each row are copied internally, so later mutations to the supplied
-     * collections do not affect this condition. Individual row values may be literal values or
-     * non-structural, non-quantified {@link Condition} instances; the latter have their parameters
-     * spliced into {@link #parameters()}.
+     * collections do not affect this condition. Array, {@link java.util.Date} and {@link java.util.Calendar}
+     * tuple elements are snapshotted (deep-copied) at construction and exposed as defensive copies by
+     * {@link #values()} and {@link #parameters()}, as in the single-column form; other application-defined
+     * values are retained by reference. Individual row values may be literal values, {@link SqlExpression}s
+     * or scalar {@link SubQuery}s; the latter two have their parameters spliced into {@link #parameters()}.
+     * Any other {@link Condition} element is rejected.
      *
      * <p>Every resolved tuple element must be non-{@code null}. Missing map keys are reported separately
      * from explicitly mapped {@code null} values so a property-name typo cannot silently change SQL
@@ -159,10 +189,11 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map row is missing a requested key, if a tuple element is {@code null},
-     *                                  or if a bean row does not expose a requested property, or if a condition-valued
-     *                                  row element is or contains a {@link Criteria}, SQL clause, JOIN, or
-     *                                  {@code ON}/{@code USING} connector, or is/contains an {@link All},
-     *                                  {@link Any}, or {@link Some} quantified operand
+     *                                  if a bean row does not expose a requested property, if any tuple element is a
+     *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
+     *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
+     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
+     *                                  or if a tuple element is a cyclic object array
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> valueRows) {
@@ -187,11 +218,18 @@ public abstract class AbstractIn extends ComposableCondition {
             // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).
             final List<Object> tuple = toRowTuple(row, this.propNames, arity);
             final String rowPath = "valueRows[" + rowIndex++ + "]";
+
+            // Snapshot array/Date/Calendar tuple elements like the single-column form and Binary.IN.
+            for (int i = 0, n = tuple.size(); i < n; i++) {
+                tuple.set(i, snapshotMutableValue(tuple.get(i)));
+            }
+
             rejectNullElements(tuple, rowPath);
             validateNonQuantifiedValueOperands(tuple, rowPath);
             copy.add(Collections.unmodifiableList(tuple));
         }
 
+        this.rebuildPerCall = containsSnapshotMutableValue(copy, true);
         this.values = copy;
     }
 
@@ -228,7 +266,7 @@ public abstract class AbstractIn extends ComposableCondition {
             return tuple;
         } else if (row instanceof Object[]) {
             final Object[] array = (Object[]) row;
-            checkRowWidth(array.length, arity);
+            checkRowWidth(array.length, arity, false);
 
             final List<Object> tuple = new ArrayList<>(arity);
             Collections.addAll(tuple, array);
@@ -244,7 +282,13 @@ public abstract class AbstractIn extends ComposableCondition {
                 tuple.add(iter.next());
             }
 
-            checkRowWidth(tuple.size(), arity);
+            if (row instanceof Collection) {
+                // A Collection knows its exact size, so report it instead of the truncated lower bound.
+                checkRowWidth(((Collection<?>) row).size(), arity, false);
+            } else {
+                // The loop above stops one element past the expected width, so an oversized count is a lower bound.
+                checkRowWidth(tuple.size(), arity, tuple.size() > arity);
+            }
 
             return tuple;
         } else if (Beans.isBeanClass(row.getClass())) {
@@ -261,11 +305,15 @@ public abstract class AbstractIn extends ComposableCondition {
         }
     }
 
-    private static void checkRowWidth(final int actual, final int arity) {
+    /**
+     * @param truncated {@code true} when {@code actual} is only a lower bound because the row was read from an
+     *                  {@link Iterable} that was not consumed past {@code arity + 1} elements
+     */
+    private static void checkRowWidth(final int actual, final int arity, final boolean truncated) {
         if (actual != arity) {
-            final String actualDescription = actual > arity ? "at least " + actual : String.valueOf(actual);
-            throw new IllegalArgumentException("Each value row must have exactly " + arity
-                    + " element(s) to match the number of property names, but found " + actualDescription);
+            final String actualDescription = truncated ? "at least " + actual : String.valueOf(actual);
+            throw new IllegalArgumentException(
+                    "Each value row must have exactly " + arity + " element(s) to match the number of property names, but found " + actualDescription);
         }
     }
 
@@ -340,11 +388,19 @@ public abstract class AbstractIn extends ComposableCondition {
      * List<?> values = inCond.values();   // ["active", "pending"]
      * }</pre>
      *
-     * @return an immutable list of the values (or value tuples), or an empty immutable list for an uninitialized instance
+     * @return an immutable list of the values (or value tuples), or an empty immutable list for an uninitialized instance;
+     *         array, {@code Date} and {@code Calendar} elements in the list are defensive copies (a fresh list is
+     *         built on every call when any element is an array, {@code Date}, {@code Calendar} or nested
+     *         {@link Condition}; the memoized view is reused only when every element is a plain scalar), so
+     *         mutating a returned element never affects this condition
      */
     public ImmutableList<?> values() { //NOSONAR
         if (values == null) {
             return ImmutableList.empty();
+        }
+
+        if (rebuildPerCall) {
+            return ImmutableList.wrap(copyValuesForExposure());
         }
 
         ImmutableList<?> view = cachedValuesView;
@@ -355,6 +411,56 @@ public abstract class AbstractIn extends ComposableCondition {
         }
 
         return view;
+    }
+
+    /** Mirrors {@code Binary.copyPropValueForExposure}: fresh copies of snapshot-mutable elements, identity for the rest. */
+    private List<Object> copyValuesForExposure() {
+        final List<Object> copy = new ArrayList<>(values.size());
+
+        if (usesRowValueConstructor()) {
+            for (final Object tuple : values) {
+                final Collection<?> row = (Collection<?>) tuple;
+                final List<Object> tupleCopy = new ArrayList<>(row.size());
+
+                for (final Object value : row) {
+                    tupleCopy.add(snapshotMutableValue(value));
+                }
+
+                copy.add(Collections.unmodifiableList(tupleCopy));
+            }
+        } else {
+            for (final Object value : values) {
+                copy.add(snapshotMutableValue(value));
+            }
+        }
+
+        return copy;
+    }
+
+    /**
+     * Detects whether a memoized {@link #values()} / {@link #parameters()} list would expose a known mutable
+     * element: an array, {@code Date} or {@code Calendar}, or a nested {@link Condition} whose spliced-in
+     * parameters may themselves be per-call defensive copies. Evaluated once at construction into
+     * {@link #rebuildPerCall}, since the membership list is immutable afterwards.
+     */
+    private static boolean containsSnapshotMutableValue(final List<?> values, final boolean rowValueConstructor) {
+        if (rowValueConstructor) {
+            for (final Object tuple : values) {
+                for (final Object value : (Collection<?>) tuple) {
+                    if (isSnapshotMutableValue(value) || value instanceof Condition) {
+                        return true;
+                    }
+                }
+            }
+        } else {
+            for (final Object value : values) {
+                if (isSnapshotMutableValue(value) || value instanceof Condition) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -402,11 +508,23 @@ public abstract class AbstractIn extends ComposableCondition {
      * List<Object> p2 = nums.parameters();   // [1, 2, 3]
      * }</pre>
      *
+     * <p>The result is memoized only when every membership value is a plain scalar (neither an array,
+     * {@code Date}, {@code Calendar} nor a nested {@link Condition}); otherwise a fresh list, holding fresh
+     * defensive copies of any array/{@code Date}/{@code Calendar} values (including those spliced in from a
+     * nested condition), is built on every call.</p>
+     *
      * @return an immutable list of parameter values, or an empty immutable list for an uninitialized instance
-     *         (e.g. created via the no-arg constructor for deserialization)
+     *         (e.g. created via the no-arg constructor for deserialization); array, {@code Date} and
+     *         {@code Calendar} values in the list are defensive copies (the list is rebuilt on every call in
+     *         that case rather than memoized), so mutating a returned element never affects this condition
+     *         or a later call
      */
     @Override
     public ImmutableList<Object> parameters() {
+        if (rebuildPerCall) {
+            return computeParameters();
+        }
+
         ImmutableList<Object> result = cachedParameters;
 
         if (result == null) {
@@ -417,6 +535,11 @@ public abstract class AbstractIn extends ComposableCondition {
         return result;
     }
 
+    /**
+     * Builds the parameter list returned by {@link #parameters()}. The result is memoized unless a membership
+     * value is an array, {@code Date}, {@code Calendar} or a nested {@link Condition}, in which case it is
+     * rebuilt on every call so each caller receives fresh defensive copies.
+     */
     private ImmutableList<Object> computeParameters() {
         if (values == null) {
             return ImmutableList.empty();
@@ -443,7 +566,7 @@ public abstract class AbstractIn extends ComposableCondition {
         if (value instanceof Condition) {
             parameters.addAll(((Condition) value).parameters());
         } else {
-            parameters.add(value);
+            parameters.add(snapshotMutableValue(value));
         }
     }
 
@@ -492,7 +615,7 @@ public abstract class AbstractIn extends ComposableCondition {
                 if (p++ > 0) {
                     sb.append(SK.COMMA_SPACE);
                 }
-                sb.append(effectiveNamingPolicy.convert(propName));
+                sb.append(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy));
             }
             sb.append(SK._PARENTHESIS_R).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
 
@@ -517,7 +640,7 @@ public abstract class AbstractIn extends ComposableCondition {
             return sb.toString();
         }
 
-        sb.append(effectiveNamingPolicy.convert(propName())).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
+        sb.append(QueryUtil.convertIdentifier(propName(), effectiveNamingPolicy)).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
 
         if (values != null) {
             for (int i = 0; i < size; i++) {
@@ -534,9 +657,10 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Generates the hash code for this condition.
-     * The value collection is copied, but its individual elements are retained. The hash is therefore
-     * recomputed on every call so a mutable value element cannot leave this condition with a stale hash
-     * that disagrees with an equal, newly constructed condition.
+     * Array, {@code Date} and {@code Calendar} elements are snapshotted at construction, so their contribution
+     * is stable; other application-defined elements are retained by reference, so the hash is recomputed on
+     * every call rather than memoized, and a mutable element of that kind cannot leave this condition with a
+     * stale hash that disagrees with an equal, newly constructed condition. Array elements hash by content.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -606,7 +730,8 @@ public abstract class AbstractIn extends ComposableCondition {
 
     /**
      * Deep equality for membership values / row tuples. Collections are compared element-wise so
-     * array members use content equality ({@link N#equals(Object, Object)}) rather than reference
+     * array members use content equality ({@link N#deepEquals(Object, Object)}, aligned with the
+     * {@link N#deepHashCode(Object)} leaf in {@link #deepMembershipHashCode}) rather than reference
      * identity from {@link List#equals(Object)}.
      */
     private static boolean deepMembershipEquals(final Object left, final Object right) {
@@ -635,7 +760,7 @@ public abstract class AbstractIn extends ComposableCondition {
             return true;
         }
 
-        return N.equals(left, right);
+        return N.deepEquals(left, right);
     }
 
     /**

@@ -107,8 +107,8 @@ public class LessThan extends Binary {
      * @param propValue the non-{@code null} literal value, explicit {@link SqlExpression}, scalar
      *                  {@link SubQuery}, or direct {@link All}/{@link Any}/{@link Some} operand to compare against
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; {@code propValue}
-     *                                  is {@code null}, an ordinary predicate or query clause; or a quantified
-     *                                  operand is nested rather than supplied directly
+     *                                  is {@code null}, an ordinary predicate or query clause, or a blank
+     *                                  {@link SqlExpression}
      */
     public LessThan(final String propName, final Object propValue) {
         super(propName, Operator.LESS_THAN, propValue);

@@ -215,21 +215,25 @@ public final class DynamicQuery {
 
         /** Mutually exclusive SQL pagination families supported by the typed methods. */
         private enum PaginationSyntax {
-            NONE,
-            LIMIT,
-            FETCH
+            NONE, LIMIT, FETCH
         }
 
+        /** Which typed pagination family has been selected; {@code NONE} until a typed pagination method is called. */
         private PaginationSyntax paginationSyntax = PaginationSyntax.NONE;
 
+        /** {@code LIMIT} row count; {@code null} until {@link #limit(int)} / {@link #limit(int, int)} is called. */
         private Integer limitCount;
 
+        /** Plain {@code OFFSET} value; {@code null} until set. Zero is recorded but not rendered. */
         private Integer plainOffset;
 
+        /** SQL:2008 {@code OFFSET n ROWS} value; {@code null} until {@link #offsetRows(int)} is called. Zero is rendered. */
         private Integer rowsOffset;
 
+        /** SQL:2008 {@code FETCH} row count; {@code null} until a fetch method is called. */
         private Integer fetchCount;
 
+        /** {@code true} renders {@code FETCH FIRST}, {@code false} renders {@code FETCH NEXT}; meaningful only when {@code fetchCount != null}. */
         private boolean fetchFirst;
 
         /**
@@ -408,7 +412,10 @@ public final class DynamicQuery {
         /**
          * Adds a {@code LIMIT} clause with count and offset for pagination.
          * Generates: {@code LIMIT count OFFSET offset}; the {@code OFFSET} portion is
-         * omitted when {@code offset} is {@code 0}, emitting just {@code LIMIT count}.
+         * omitted when {@code offset} is {@code 0}, emitting just {@code LIMIT count}. A zero
+         * {@code offset} still counts as a specified plain offset, so a later {@link #offset(int)}
+         * call throws {@link IllegalStateException}; use {@link #limit(int)} when the offset should
+         * remain open.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -460,7 +467,8 @@ public final class DynamicQuery {
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
          * @throws IllegalArgumentException if {@code offset} is negative
-         * @throws IllegalStateException if a plain offset was already specified, SQL:2008 pagination was selected,
+         * @throws IllegalStateException if a plain offset was already specified (by this method or by
+         *         {@link #limit(int, int)}, including with a zero offset), SQL:2008 pagination was selected,
          *         or this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
@@ -839,7 +847,7 @@ public final class DynamicQuery {
             paginationSyntax = requested;
         }
 
-        /** Rejects duplicate typed pagination components before any state is changed. */
+        /** Rejects duplicate typed pagination components before any pagination value is recorded. */
         private static void checkPaginationPartUnset(final Integer currentValue, final String partName) {
             if (currentValue != null) {
                 throw new IllegalStateException(partName + " has already been specified");

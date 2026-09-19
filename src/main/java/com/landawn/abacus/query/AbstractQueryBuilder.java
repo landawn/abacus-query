@@ -444,7 +444,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // rendering paths for the same expression text.
         for (final String keyword : new String[] { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME",
                 "CURRENT_TIMESTAMP", "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME", "UTC_TIMESTAMP",
-                "NAN", "INFINITE", "UNKNOWN" }) {
+                "NAN", "INFINITE", "UNKNOWN", "TRUE", "FALSE" }) {
             sqlKeyWords.add(keyword);
         }
     }
@@ -702,7 +702,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Gets the table name for the specified entity class based on the naming policy.
      * If the entity class has a {@link Table} annotation with a name attribute, that name is used.
-     * Otherwise, the class name is converted according to the naming policy.
+     * Otherwise the class name is converted for {@code SNAKE_CASE}, {@code SCREAMING_SNAKE_CASE} and
+     * {@code CAMEL_CASE}; any other policy (including {@code NO_CHANGE}) returns the simple class name unchanged.
      *
      * @param entityClass the entity class
      * @param namingPolicy the naming policy to apply
@@ -1239,7 +1240,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Maps a set-operation SQL keyword to the builder method that accepts a column list, so the remediation
      * hint in {@link #checkSetOperationSubQuery(String, String)} names a method that actually exists
-     * ({@code "UNION ALL"} -&gt; {@code unionAll}, not {@code "UNION ALL(Collection)"}).
+     * ({@code "UNION ALL"} -&gt; {@code unionAllSelect}, not {@code "UNION ALL(Collection)"}).
      *
      * @param operationName the set-operation SQL keyword
      * @return the corresponding builder method name, or {@code operationName} itself if it is not a known keyword
@@ -1683,7 +1684,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return from(normalizedTableNames.get(0));
         }
 
-        final String localTableName = normalizedTableNames.get(0);
+        // Derive the primary table reference exactly as from(String) does: only the text before the first
+        // top-level separator (comma or JOIN) supplies the table/alias used while rendering entity properties.
+        final String firstTableName = normalizedTableNames.get(0);
+        final int separatorIdx = findFirstTopLevelFromSeparator(firstTableName, _dialectFamily == DialectFamily.SQL_SERVER);
+        final String localTableName = (separatorIdx > 0 ? firstTableName.substring(0, separatorIdx) : firstTableName).trim();
+
         return appendFromClause(localTableName, Strings.join(normalizedTableNames, SK.COMMA_SPACE));
     }
 
@@ -1736,11 +1742,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM (SELECT id FROM users WHERE active = ?) u
      * }</pre>
      *
-     * @param sqlBuilder the child builder supplying a complete, read-only SELECT query; consumed once child finalization begins
+     * @param sqlBuilder the child builder supplying a complete, lexically SELECT-only query (a syntactic {@code SELECT} candidate); consumed once child finalization begins
      * @param alias the derived-table alias, emitted as trusted SQL
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this builder, does not build a
-     *                                  complete read-only SELECT, uses an incompatible parameter policy, or
+     *                                  complete, lexically SELECT-only {@code SELECT} query, uses an incompatible parameter policy, or
      *                                  {@code alias} is {@code null}, empty, or blank
      * @throws IllegalStateException if this builder is closed, is not building a SELECT, has no projection,
      *                               or already has a FROM clause, or if the child is incomplete or was already consumed
@@ -1868,7 +1874,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return the validated predicate condition
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or
      *         is/contains a {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
-     *         connector, quantified-subquery operand, or empty predicate
+     *         connector, quantified-subquery operand, or blank {@link SqlExpression}. An empty {@link com.landawn.abacus.query.condition.Junction} is
+     *         accepted and renders its Boolean identity (for example {@code 1 = 1})
      */
     private static Condition validatePredicateCondition(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
@@ -2584,7 +2591,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present, e.g. {@code "orders o ON u.id = o.user_id"} (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This join(final String joinExpr) {
         return appendJoinExpr(_SPACE_JOIN_SPACE, joinExpr, true);
@@ -2637,7 +2646,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to join
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This join(final Class<?> entityClass) {
         return join(entityClass, QueryUtil.tableAlias(entityClass));
@@ -2694,7 +2705,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This join(final Class<?> entityClass, final String alias) {
         return appendJoin(_SPACE_JOIN_SPACE, entityClass, alias);
@@ -2715,7 +2728,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This innerJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_INNER_JOIN_SPACE, joinExpr, true);
@@ -2735,7 +2750,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to join
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This innerJoin(final Class<?> entityClass) {
         return innerJoin(entityClass, QueryUtil.tableAlias(entityClass));
@@ -2756,7 +2773,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This innerJoin(final Class<?> entityClass, final String alias) {
         return appendJoin(_SPACE_INNER_JOIN_SPACE, entityClass, alias);
@@ -2777,7 +2796,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This leftJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_LEFT_JOIN_SPACE, joinExpr, true);
@@ -2797,7 +2818,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to join
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This leftJoin(final Class<?> entityClass) {
         return leftJoin(entityClass, QueryUtil.tableAlias(entityClass));
@@ -2818,7 +2841,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This leftJoin(final Class<?> entityClass, final String alias) {
         return appendJoin(_SPACE_LEFT_JOIN_SPACE, entityClass, alias);
@@ -2839,7 +2864,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This rightJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_RIGHT_JOIN_SPACE, joinExpr, true);
@@ -2859,7 +2886,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to join
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This rightJoin(final Class<?> entityClass) {
         return rightJoin(entityClass, QueryUtil.tableAlias(entityClass));
@@ -2880,7 +2909,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This rightJoin(final Class<?> entityClass, final String alias) {
         return appendJoin(_SPACE_RIGHT_JOIN_SPACE, entityClass, alias);
@@ -2901,7 +2932,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param joinExpr the full join expression, including the {@code ON} clause if present (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This fullJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_FULL_JOIN_SPACE, joinExpr, true);
@@ -2921,7 +2954,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to join
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This fullJoin(final Class<?> entityClass) {
         return fullJoin(entityClass, QueryUtil.tableAlias(entityClass));
@@ -2942,7 +2977,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This fullJoin(final Class<?> entityClass, final String alias) {
         return appendJoin(_SPACE_FULL_JOIN_SPACE, entityClass, alias);
@@ -2964,7 +3001,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains a top-level
      *                                  {@code ON}/{@code USING} connector
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This crossJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_CROSS_JOIN_SPACE, joinExpr, false);
@@ -2984,7 +3023,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to join
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This crossJoin(final Class<?> entityClass) {
         return crossJoin(entityClass, QueryUtil.tableAlias(entityClass));
@@ -3005,7 +3046,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This crossJoin(final Class<?> entityClass, final String alias) {
         return appendJoin(_SPACE_CROSS_JOIN_SPACE, entityClass, alias);
@@ -3027,7 +3070,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains a top-level
      *                                  {@code ON}/{@code USING} connector
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This naturalJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_NATURAL_JOIN_SPACE, joinExpr, false);
@@ -3047,7 +3092,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to join
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This naturalJoin(final Class<?> entityClass) {
         return naturalJoin(entityClass, QueryUtil.tableAlias(entityClass));
@@ -3068,7 +3115,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param alias the table alias
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
-     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet or a later SQL clause has already been emitted
+     * @throws IllegalStateException if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
+     *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This naturalJoin(final Class<?> entityClass, final String alias) {
         return appendJoin(_SPACE_NATURAL_JOIN_SPACE, entityClass, alias);
@@ -3169,7 +3218,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if a condition other than an explicit
      *                                  {@link On}/{@link Using} has a {@code null} operator or is/contains a {@link Criteria},
      *                                  standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING} connector,
-     *                                  quantified-subquery operand, or empty predicate
+     *                                  quantified-subquery operand, or blank {@link SqlExpression}. An empty
+     *                                  {@link com.landawn.abacus.query.condition.Junction} is accepted and renders its Boolean identity (for example {@code ON 1 = 1})
      * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This on(final Condition condition) {
@@ -3322,7 +3372,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the WHERE condition expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if {@code WHERE} has already been set on this builder
+     * @throws IllegalStateException if {@code WHERE} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This where(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -3352,8 +3403,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is/contains a
      *                                  {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
-     *                                  connector, quantified-subquery operand, or empty predicate
-     * @throws IllegalStateException if {@code WHERE} has already been set on this builder
+     *                                  connector, quantified-subquery operand, or blank {@link SqlExpression}. An empty
+     *                                  {@link com.landawn.abacus.query.condition.Junction} is accepted and renders its Boolean identity (for example {@code WHERE 1 = 1})
+     * @throws IllegalStateException if {@code WHERE} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      * @see Filters
      */
     public This where(final Condition condition) {
@@ -3384,7 +3437,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnName the property or column name to group by ascending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This groupByAsc(final String propOrColumnName) {
@@ -3407,7 +3461,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the columns to group by ascending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This groupByAsc(final String... propOrColumnNames) {
@@ -3431,7 +3486,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to group by ascending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This groupByAsc(final Collection<String> propOrColumnNames) {
@@ -3454,7 +3510,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnName the property or column name to group by descending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This groupByDesc(final String propOrColumnName) {
@@ -3477,7 +3534,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the columns to group by descending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This groupByDesc(final String... propOrColumnNames) {
@@ -3501,7 +3559,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to group by descending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This groupByDesc(final Collection<String> propOrColumnNames) {
@@ -3523,7 +3582,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnName the property or column name to group by (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This groupBy(final String propOrColumnName) {
         checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
@@ -3552,7 +3612,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the columns to group by (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This groupBy(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -3588,7 +3649,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param direction the sort direction
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This groupBy(final String expr, final SortDirection direction) {
         N.checkArgNotNull(direction, "direction");
@@ -3617,7 +3679,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to group by
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This groupBy(final Collection<String> propOrColumnNames) {
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
@@ -3655,7 +3718,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param direction the direction appended after each column in the GROUP BY clause
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element, or if {@code direction} is {@code null}
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This groupBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
@@ -3701,7 +3765,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param groupings map of columns to their sort directions
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, contains a {@code null}, empty, or blank key, or maps any key to a {@code null} direction
-     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder
+     * @throws IllegalStateException if {@code GROUP BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This groupBy(final Map<String, SortDirection> groupings) {
         final Map<String, SortDirection> groupingsSnapshot = copyAndValidateSqlFragmentMap(groupings, "groupings");
@@ -3745,7 +3810,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param expr the HAVING condition expression (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
-     * @throws IllegalStateException if {@code HAVING} has already been set on this builder
+     * @throws IllegalStateException if {@code HAVING} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This having(final String expr) {
         checkSqlFragmentNotBlank(expr, "expr");
@@ -3776,8 +3842,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is/contains a
      *                                  {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
-     *                                  connector, quantified-subquery operand, or empty predicate
-     * @throws IllegalStateException if {@code HAVING} has already been set on this builder
+     *                                  connector, quantified-subquery operand, or blank {@link SqlExpression}. An empty
+     *                                  {@link com.landawn.abacus.query.condition.Junction} is accepted and renders its Boolean identity (for example {@code HAVING 1 = 1})
+     * @throws IllegalStateException if {@code HAVING} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      * @see Filters
      */
     public This having(final Condition condition) {
@@ -3808,7 +3876,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnName the property or column name to order by ascending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This orderByAsc(final String propOrColumnName) {
@@ -3831,7 +3900,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the columns to order by ascending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This orderByAsc(final String... propOrColumnNames) {
@@ -3855,7 +3925,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to order by ascending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This orderByAsc(final Collection<String> propOrColumnNames) {
@@ -3878,7 +3949,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnName the property or column name to order by descending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This orderByDesc(final String propOrColumnName) {
@@ -3901,7 +3973,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the columns to order by descending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This orderByDesc(final String... propOrColumnNames) {
@@ -3925,7 +3998,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to order by descending
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     @Beta
     public This orderByDesc(final Collection<String> propOrColumnNames) {
@@ -3947,7 +4021,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnName the property or column name to order by (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This orderBy(final String propOrColumnName) {
         checkSqlFragmentNotBlank(propOrColumnName, "propOrColumnName");
@@ -3976,7 +4051,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the columns to order by (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This orderBy(final String... propOrColumnNames) {
         checkSqlFragmentsNotBlank(propOrColumnNames, "propOrColumnNames");
@@ -4012,7 +4088,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param direction the sort direction
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This orderBy(final String expr, final SortDirection direction) {
         N.checkArgNotNull(direction, "direction");
@@ -4041,7 +4118,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnNames the collection of columns to order by
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This orderBy(final Collection<String> propOrColumnNames) {
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
@@ -4079,7 +4157,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param direction the direction appended after each column in the ORDER BY clause
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element, or if {@code direction} is {@code null}
-     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder
+     * @throws IllegalStateException if {@code ORDER BY} has already been set on this builder, or if a preceding qualified JOIN
+     *         has not been completed with {@code on(...)}/{@code using(...)}
      */
     public This orderBy(final Collection<String> propOrColumnNames, final SortDirection direction) {
         final List<String> propOrColumnNamesSnapshot = copyAndValidateSqlFragments(propOrColumnNames, "propOrColumnNames");
@@ -4193,8 +4272,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if
      *         {@code LIMIT} has already been set on this builder, or on a {@code FETCH}-style dialect if
      *         {@code FETCH FIRST}/{@code FETCH NEXT} has already been set, or if {@code OFFSET} was already
-     *         emitted on a limit-style dialect where {@code LIMIT} must precede {@code OFFSET}, or for SQL
-     *         Server if {@code ORDER BY} has not been set
+     *         emitted on a limit-style dialect where {@code LIMIT} must precede {@code OFFSET}, for SQL
+     *         Server if {@code ORDER BY} has not been set, or if a preceding qualified JOIN has not been
+     *         completed with {@code on(...)}/{@code using(...)}
      * @throws IllegalArgumentException if {@code count} is negative
      */
     public This limit(final int count) {
@@ -4306,11 +4386,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
-     * @throws IllegalStateException if {@code LIMIT} or {@code OFFSET} has already been set on this builder,
-     *         on a {@code FETCH}-style dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set,
-     *         or for SQL Server if {@code ORDER BY} has not been set
+     * @throws IllegalStateException if this builder has already been closed by {@link #build()}, if
+     *         {@code LIMIT} or {@code OFFSET} has already been set on this builder, on a {@code FETCH}-style
+     *         dialect if {@code FETCH FIRST}/{@code FETCH NEXT} has already been set, for SQL Server if
+     *         {@code ORDER BY} has not been set, on UPDATE/DELETE statements (the {@code OFFSET} portion is
+     *         not valid there), or if a preceding qualified JOIN has not been completed with
+     *         {@code on(...)}/{@code using(...)}
      */
     public This limit(final int count, final int offset) {
+        // Like limit(int): the lifecycle error takes precedence over argument validation.
+        assertNotClosed();
         N.checkArgNotNegative(count, "count");
         N.checkArgNotNegative(offset, "offset");
         claimClauseSlots(SK.LIMIT, SK.OFFSET);
@@ -4467,8 +4552,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code offset} is negative
-     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder, or for SQL Server
-     *                               if {@code ORDER BY} has not been set
+     * @throws IllegalStateException if {@code OFFSET} has already been set on this builder, for SQL Server
+     *                               if {@code ORDER BY} has not been set, or if a preceding qualified JOIN has
+     *                               not been completed with {@code on(...)}/{@code using(...)}
      */
     public This offset(final int offset) {
         N.checkArgNotNegative(offset, "offset");
@@ -4959,7 +5045,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code Intersect}, {@code Except}, {@code Minus}) is validated like the corresponding
      * {@code union(...)}/{@code intersect(...)}/... method: it must follow a SELECT segment completed by
      * {@code from(...)}, must precede {@code ORDER BY}, pagination, and {@code FOR UPDATE}, its operand
-     * must be a complete read-only {@code SELECT} sub-query, and afterwards only compound-result clauses
+     * must be a complete, lexically SELECT-only {@code SELECT} sub-query (a syntactic check, not a read-only
+     * guarantee), and afterwards only compound-result clauses
      * ({@code ORDER BY}, pagination, {@code FOR UPDATE}) may follow. Any other condition is appended with
      * a leading {@code WHERE} keyword
      * (unless this builder is condition-only). A multi-element {@link com.landawn.abacus.query.condition.Junction}
@@ -4980,7 +5067,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code condition} is {@code null}, if a predicate position contains a
      *                                  non-predicate condition, if a generic clause uses an operator that requires a
      *                                  dedicated builder method or condition type, or if a set-operation operand
-     *                                  (standalone or carried by a Criteria) is not a complete read-only {@code SELECT} query
+     *                                  (standalone or carried by a Criteria) is not a complete, lexically SELECT-only {@code SELECT} query
      * @throws IllegalStateException if there is no current SELECT segment, if that segment already
      *                               has a select modifier, if a clause emitted by the criteria has already been set,
      *                               if any Criteria clause would be emitted after a clause that must follow it,
@@ -5099,12 +5186,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         appendCondition(joinCond);
                     }
 
-                    // Mirror the standalone join methods: a follow-up on()/using() connector is legal only
-                    // when this join carried no condition of its own, its join type accepts a connector
-                    // (CROSS/NATURAL JOIN take none), and a single raw join entity did not already supply a
-                    // top-level ON/USING inline.
-                    _joinConditionAllowed = joinCond == null && join.operator() != Operator.CROSS_JOIN && join.operator() != Operator.NATURAL_JOIN
-                            && (join.joinEntities().size() != 1 || !containsTopLevelJoinCondition(join.joinEntities().get(0)));
+                    // Join's constructor guarantees that a qualified join carries its own ON/USING predicate and
+                    // that CROSS/NATURAL joins take none, so a Criteria join never leaves the connector slot open
+                    // for a follow-up on()/using().
+                    _joinConditionAllowed = false;
                 }
             }
 
@@ -5295,6 +5380,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * statement ends with a space and {@code expr} begins with one, both spaces remain. The rest of
      * {@code expr} is emitted verbatim and is not validated, escaped, or interpreted in any way.</p>
      *
+     * <p>A fragment that begins with an {@code ON} or {@code USING} keyword completes a pending qualified
+     * JOIN exactly as {@link #on(String)} / {@link #using(String)} would, so
+     * {@code join("orders o").append("ON u.id = o.user_id").where(...)} is accepted; any other fragment
+     * leaves the pending JOIN open and the next clause or {@link #build()} rejects it.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.select("*")
@@ -5327,7 +5417,33 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb.append(expr);
 
+        // A raw fragment that starts with a top-level ON/USING connector completes the pending qualified
+        // JOIN, mirroring what appendJoinExpr does for an inline connector, so the escape-hatch idiom
+        // join("orders o").append("ON u.id = o.user_id").where(...) keeps working.
+        if (_joinConditionAllowed && startsWithJoinConnector(expr)) {
+            _joinConditionAllowed = false;
+        }
+
         return (This) this;
+    }
+
+    /**
+     * Tests whether {@code expr}, ignoring leading whitespace, begins with an {@code ON} or {@code USING}
+     * keyword that is followed by a non-identifier character or the end of the text (the same boundary
+     * rule as {@link #isAliasKeywordBoundary(String, int)}, so {@code ON=}, {@code ON(} and {@code ON,} all
+     * qualify while {@code ONLY}, {@code ON_HAND} and {@code ON.x} do not).
+     *
+     * @param expr the raw fragment to inspect (never {@code null} or blank)
+     * @return {@code true} if the fragment starts with a join connector keyword
+     */
+    private static boolean startsWithJoinConnector(final String expr) {
+        int i = 0;
+
+        while (i < expr.length() && Character.isWhitespace(expr.charAt(i))) {
+            i++;
+        }
+
+        return isSqlWordAt(expr, i, SK.ON) || isSqlWordAt(expr, i, SK.USING);
     }
 
     /**
@@ -5379,7 +5495,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param b if true, the expression will be appended
      * @param expr the expression to append
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if this builder has already been closed by {@link #build()}
+     * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if {@code b} is
+     *         {@code true} and the statement prefix cannot be rendered yet (see {@link #append(String)})
      * @throws IllegalArgumentException if {@code b} is {@code true} and {@code expr} is {@code null}, empty, or blank
      */
     @Beta
@@ -5448,7 +5565,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param exprToAppendForFalse the expression to append if {@code b} is false
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if the selected expression (the one chosen by {@code b}) is {@code null}, empty, or blank
-     * @throws IllegalStateException if this builder has already been closed by {@link #build()}
+     * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if the statement
+     *         prefix cannot be rendered yet (see {@link #append(String)})
      */
     @Beta
     public This appendIfOrElse(final boolean b, final String exprToAppendForTrue, final String exprToAppendForFalse) {
@@ -5479,7 +5597,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
+     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
@@ -5503,9 +5621,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
      * }</pre>
      *
-     * @param query the complete read-only {@code SELECT} sub-query to union
+     * @param query the complete {@code SELECT} sub-query to union (lexically SELECT-only; a syntactic check, not a read-only guarantee)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or is not a complete, lexically SELECT-only {@code SELECT} sub-query
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
@@ -5556,7 +5674,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
+     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
@@ -5580,9 +5698,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers
      * }</pre>
      *
-     * @param query the complete read-only {@code SELECT} sub-query to union all
+     * @param query the complete {@code SELECT} sub-query to union all (lexically SELECT-only; a syntactic check, not a read-only guarantee)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or is not a complete, lexically SELECT-only {@code SELECT} sub-query
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
@@ -5633,7 +5751,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
+     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
@@ -5657,9 +5775,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users
      * }</pre>
      *
-     * @param query the complete read-only {@code SELECT} sub-query to intersect
+     * @param query the complete {@code SELECT} sub-query to intersect (lexically SELECT-only; a syntactic check, not a read-only guarantee)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or is not a complete, lexically SELECT-only {@code SELECT} sub-query
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
@@ -5710,7 +5828,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
+     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
@@ -5734,9 +5852,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param query the complete read-only {@code SELECT} sub-query to except
+     * @param query the complete {@code SELECT} sub-query to except (lexically SELECT-only; a syntactic check, not a read-only guarantee)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or is not a complete, lexically SELECT-only {@code SELECT} sub-query
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
@@ -5788,7 +5906,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete read-only SELECT query (the child builder has already been consumed by {@code build()}
+     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
      *         when this is thrown)
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
@@ -5812,9 +5930,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users
      * }</pre>
      *
-     * @param query the complete read-only {@code SELECT} sub-query to subtract with MINUS
+     * @param query the complete {@code SELECT} sub-query to subtract with MINUS (lexically SELECT-only; a syntactic check, not a read-only guarantee)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, not a complete SELECT sub-query, or is not read-only
+     * @throws IllegalArgumentException if {@code query} is {@code null}, empty, blank, or is not a complete, lexically SELECT-only {@code SELECT} sub-query
      * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
      *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
@@ -5853,7 +5971,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param keyword the set-operation keyword token (e.g. {@link #_SPACE_UNION_SPACE})
      * @param operationName the set-operation SQL keyword (e.g. {@code "UNION ALL"}) used in validation messages
-     * @param query the complete read-only {@code SELECT} query to append
+     * @param query the complete, lexically SELECT-only {@code SELECT} query to append
      * @return this builder instance for method chaining
      */
     private This appendSetOperation(final char[] keyword, final String operationName, final String query) {
@@ -5869,7 +5987,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@link #checkCanAppendSetOperation} at the builder's current structural position first.
      *
      * @param keyword the set-operation keyword token (e.g. {@link #_SPACE_UNION_SPACE})
-     * @param query the complete read-only {@code SELECT} query to append
+     * @param query the complete, lexically SELECT-only {@code SELECT} query to append
      * @return this builder instance for method chaining
      */
     @SuppressWarnings("unchecked")
@@ -6685,10 +6803,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnName2 the second property or column to assign
      * @param value2 the second value to render, or a {@link SqlExpression} to embed
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if either property or column name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if either property or column name is {@code null}, empty, or blank, or if the
+     *         same name is given more than once
      * @throws IllegalStateException if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
      */
     public This set(final String propOrColumnName1, final Object value1, final String propOrColumnName2, final Object value2) {
+        checkNoDuplicateSetName(propOrColumnName1, propOrColumnName2);
+
         return set(N.asMap(propOrColumnName1, value1, propOrColumnName2, value2));
     }
 
@@ -6711,12 +6832,32 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propOrColumnName3 the third property or column to assign
      * @param value3 the third value to render, or a {@link SqlExpression} to embed
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if any property or column name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if any property or column name is {@code null}, empty, or blank, or if the
+     *         same name is given more than once
      * @throws IllegalStateException if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted
      */
     public This set(final String propOrColumnName1, final Object value1, final String propOrColumnName2, final Object value2, final String propOrColumnName3,
             final Object value3) {
+        checkNoDuplicateSetName(propOrColumnName1, propOrColumnName2);
+        checkNoDuplicateSetName(propOrColumnName1, propOrColumnName3);
+        checkNoDuplicateSetName(propOrColumnName2, propOrColumnName3);
+
         return set(N.asMap(propOrColumnName1, value1, propOrColumnName2, value2, propOrColumnName3, value3));
+    }
+
+    /**
+     * Rejects a repeated column name in the positional {@code set(name, value, name, value[, name, value])}
+     * overloads, where a map-backed assignment list would otherwise silently collapse the duplicate.
+     *
+     * @param first one property or column name (blank names are skipped here and rejected, with the
+     *        blank-name error, by the map overload)
+     * @param second another property or column name
+     * @throws IllegalArgumentException if {@code first} is non-blank and equal to {@code second}
+     */
+    private static void checkNoDuplicateSetName(final String first, final String second) {
+        if (Strings.isNotBlank(first) && first.equals(second)) {
+            throw new IllegalArgumentException("Duplicate property or column name in set(...): " + first);
+        }
     }
 
     /** Renders a validated SET property map after the public entry point has installed its checkpoint. */
@@ -6860,7 +7001,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code entity} is {@code null}, if {@code entity} is a {@code Collection} or array
      *         (use {@link #set(Collection)} for column lists), or if a bean {@code entity}
-     *         has no updatable property remaining after exclusions are applied
+     *         has no updatable property, or a {@code Map} {@code entity} has no entry, remaining after exclusions are applied
      * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
      *                               or a post-SET clause such as {@code WHERE} has already been emitted
      */
@@ -7022,7 +7163,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this method is called after the builder has already been closed by a prior
      *         call to {@code build()}, or if the statement is incomplete (e.g. a query segment staged columns or a
      *         select modifier that no {@code from(...)} rendered, an INSERT has no target table, or an UPDATE has no
-     *         SET columns)
+     *         SET columns, or a qualified JOIN was appended without a following {@code on(...)}/{@code using(...)})
      */
     public SP build() {
         assertNotClosed();
@@ -7169,7 +7310,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Finalizes and consumes this builder, validates that the resulting statement is a complete,
-     * read-only SELECT, and captures it for use as a condition or derived-table subquery.
+     * syntactic {@code SELECT} query candidate (as classified by {@code SqlParser.isSyntacticallyReadQuery}; a
+     * syntactic check, not a read-only guarantee), and captures it for use as a condition or derived-table subquery.
      *
      * <p>{@link #build()} runs before SELECT validation, so once finalization begins this builder is
      * consumed even if the completed SQL is subsequently rejected. The returned snapshot receives the
@@ -7178,7 +7320,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Parent builders create working copies for collision rewriting, so the snapshot can be reused.</p>
      *
      * @return a reusable internal snapshot containing the SQL, parameters, SQL policy, and generated-placeholder metadata
-     * @throws IllegalArgumentException if the built statement is blank, is not a complete SELECT, or is not read-only
+     * @throws IllegalArgumentException if the built statement is blank or is not a complete syntactic {@code SELECT} query candidate
      * @throws IllegalStateException if this builder is incomplete or was already consumed
      */
     final SubQuerySnapshot buildSubQuery() {
@@ -7191,7 +7333,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Finalizes and consumes this builder, validates that the resulting statement is a complete,
-     * read-only SELECT, and captures it as a reusable {@link SubQuery}. The returned snapshot retains
+     * syntactic {@code SELECT} query candidate (as classified by {@code SqlParser.isSyntacticallyReadQuery}; a
+     * syntactic check, not a read-only guarantee), and captures it as a reusable {@link SubQuery}. The returned snapshot retains
      * the rendered SQL, parameter values, SQL policy, and generated-placeholder metadata so it can be
      * safely composed into an enclosing builder without losing binding order.
      *
@@ -7214,7 +7357,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @return a reusable builder-backed subquery snapshot
-     * @throws IllegalArgumentException if the built statement is blank, is not a complete SELECT, or is not read-only
+     * @throws IllegalArgumentException if the built statement is blank or is not a complete syntactic {@code SELECT} query candidate
      * @throws IllegalStateException if this builder is incomplete or was already consumed
      */
     @Beta
@@ -7425,6 +7568,109 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         _renderedNamedParameterTokens.put(parameterName, _sb.substring(start));
+    }
+
+    /** Base name for the generated parameter names that replace the positional {@code ?} of a bound raw sub-query. */
+    private static final String RAW_SUB_QUERY_PARAMETER_NAME = "param";
+
+    /**
+     * Prepares the SQL text of a raw sub-query ({@code SubQuery(String, Collection)}) for embedding into
+     * this builder's statement. Under {@code PARAMETERIZED_SQL} the text is returned unchanged and its
+     * positional {@code ?} placeholders line up with {@code rawParameters}, which the caller binds. Under
+     * {@code NAMED_SQL} and {@code IBATIS_SQL} a raw sub-query with bindings would otherwise leave
+     * {@code ?} placeholders inside a {@code :name}/{@code #{name}} statement, which named-parameter
+     * consumers such as {@code ParsedSql} reject ("Cannot mix parameter styles"). So each top-level
+     * {@code ?} (outside quoted regions, bracket-quoted identifiers and comments) is rewritten, in order,
+     * to the next collision-safe generated name ({@code :param}, {@code :param_2}, ... or
+     * {@code #{param}}, ...) exactly as structured conditions are named, and the caller binds
+     * {@code rawParameters} in that same order. Under {@code RAW_SQL} each top-level {@code ?} is instead
+     * replaced, in order, by the literal rendering of its binding ({@code SqlExpression.renderValue}: the
+     * same rendering a structured condition's value receives, so strings are quoted and escaped, numbers and
+     * booleans are emitted verbatim, {@code null} becomes the {@code null} literal and a {@link SqlExpression}
+     * is embedded verbatim) and the caller must NOT bind {@code rawParameters}; the result carries no
+     * placeholders.
+     *
+     * <p>The placeholders are located by {@code ParsedSql}, the same classifier {@code SubQuery(String, Collection)}
+     * validated the binding count with, so exactly the {@code ?} markers it counted are rewritten and nothing
+     * else: a {@code ?} inside a quoted literal, a (bracket-)quoted identifier or a comment, and a PostgreSQL
+     * JSON {@code ?} operator ({@code doc ? 'key'}), stay verbatim, while a {@code ?} inside an array subscript
+     * ({@code arr[?]}) is a placeholder. Should the number of placeholders nevertheless differ from the number
+     * of bindings, the rewrite is refused with a pointed {@link IllegalArgumentException} instead of binding
+     * values to the wrong placeholders.</p>
+     *
+     * @param rawSql the verbatim SQL text of the raw sub-query (never {@code null} or empty)
+     * @param rawParameters the positional bindings of the raw sub-query (may be empty)
+     * @return the text to append: {@code rawSql} itself, the copy with its {@code ?} placeholders renamed, or
+     *         (under {@code RAW_SQL}) the copy with its {@code ?} placeholders replaced by literals
+     * @throws IllegalArgumentException if the SQL policy is {@code NAMED_SQL}/{@code IBATIS_SQL}/{@code RAW_SQL},
+     *         the sub-query has bindings, and the number of positional {@code ?} placeholders differs from the
+     *         number of bindings
+     */
+    protected final String renameRawSubQueryPlaceholders(final String rawSql, final List<Object> rawParameters) {
+        if (N.isEmpty(rawParameters) || _sqlPolicy == SqlPolicy.PARAMETERIZED_SQL) {
+            return rawSql;
+        }
+
+        final boolean inlineAsLiterals = _sqlPolicy == SqlPolicy.RAW_SQL;
+        final int bindingCount = rawParameters.size();
+
+        // ParsedSql is the single source of truth for which '?' are placeholders (SubQuery(String, Collection)
+        // validated the binding count against it). Its offsets refer to the trimmed text, so the leading
+        // whitespace String.trim() drops from rawSql is added back below.
+        final ParsedSql parsedSql = ParsedSql.parse(rawSql);
+        final int[] placeholderOffsets = parsedSql.positionalParameterOffsets();
+        final int placeholderCount = placeholderOffsets.length;
+
+        // Checked before any parameter name is generated (leaves the builder's naming state untouched).
+        if (placeholderCount != bindingCount) {
+            throw new IllegalArgumentException("Cannot rewrite the positional '?' placeholders of a raw sub-query to "
+                    + (inlineAsLiterals ? "inline " + SqlPolicy.RAW_SQL + " literals" : _sqlPolicy + " named parameters") + ": found " + placeholderCount
+                    + " positional '?' placeholder(s) but " + bindingCount + " binding(s): " + rawSql);
+        }
+
+        int leadingWhitespace = 0;
+
+        while (leadingWhitespace < rawSql.length() && rawSql.charAt(leadingWhitespace) <= ' ') {
+            leadingWhitespace++;
+        }
+
+        if (!rawSql.startsWith(parsedSql.originalSql(), leadingWhitespace)) {
+            throw new IllegalStateException("The parsed text of a raw sub-query does not match its raw text: " + rawSql);
+        }
+
+        final StringBuilder sb = new StringBuilder(rawSql.length() + bindingCount * 8);
+        int last = 0;
+        int bindingIndex = 0;
+
+        for (final int placeholderOffset : placeholderOffsets) {
+            final int i = leadingWhitespace + placeholderOffset;
+
+            if (rawSql.charAt(i) != '?') {
+                throw new IllegalStateException("No positional '?' placeholder at offset " + i + " of the raw sub-query: " + rawSql);
+            }
+
+            sb.append(rawSql, last, i);
+
+            if (inlineAsLiterals) {
+                // Same literal rendering as setParameterForRawSql applies to a structured condition's value:
+                // strings quoted/escaped, numbers/booleans verbatim, null as NULL, SqlExpression embedded verbatim.
+                sb.append(SqlExpression.renderValue(rawParameters.get(bindingIndex++)));
+            } else {
+                final String parameterName = nextNamedParameterName(RAW_SUB_QUERY_PARAMETER_NAME);
+
+                if (_sqlPolicy == SqlPolicy.NAMED_SQL) {
+                    final String token = renderNamedParameterToken(_handlerForNamedParameter, parameterName);
+                    _renderedNamedParameterTokens.put(parameterName, token);
+                    sb.append(token);
+                } else {
+                    sb.append("#{").append(parameterName).append('}');
+                }
+            }
+
+            last = i + 1;
+        }
+
+        return sb.append(rawSql, last, rawSql.length()).toString();
     }
 
     /**
@@ -8318,8 +8564,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Normalizes a column name according to the specified naming policy.
      * SQL keywords (and any name when the policy is {@code NO_CHANGE}) are returned unchanged.
-     * Otherwise the name is converted with {@link NamingPolicy#convert(String)}, exactly as
-     * {@code SqlExpression.toSql} does, so the two rendering paths agree.
+     * Otherwise the name is converted with {@link QueryUtil#convertIdentifier(String, NamingPolicy)},
+     * exactly as {@code SqlExpression.toSql} does, so the two rendering paths agree. Leading and
+     * trailing underscore runs are preserved ({@code _firstName} renders as {@code _first_name} under
+     * {@code SNAKE_CASE}); only the identifier between them is converted.
      *
      * @param word the column name to normalize
      * @param namingPolicy the naming policy to apply
@@ -8332,8 +8580,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         // CAMEL_CASE used to go through Beans.normalizePropName, whose Java-keyword map rewrote the
         // identifier "class" (any case) to "clazz" -- a bean-property convention that has no place in a
-        // SQL column name and that SqlExpression.toSql never applied. Plain conversion keeps both paths equal.
-        return namingPolicy.convert(word);
+        // SQL column name and that SqlExpression.toSql never applied. The shared helper keeps both paths
+        // equal and restores the leading/trailing underscores that NamingPolicy.convert strips.
+        return QueryUtil.convertIdentifier(word, namingPolicy);
     }
 
     /**
@@ -8554,7 +8803,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param multiSelects the list of selections to validate
      * @throws IllegalArgumentException if {@code multiSelects} is {@code null} or empty, contains a
      *         {@code null} selection or one with a {@code null} entity class, a blank selected property,
-     *         or an unsafe class alias
+     *         an unsafe (blank, quoted, or comment-bearing) table alias, or an unsafe class alias
      */
     protected static void checkMultiSelects(final List<Selection> multiSelects) {
         N.checkArgNotEmpty(multiSelects, "multiSelects");
@@ -8567,10 +8816,32 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 checkSqlFragmentsNotBlank(selection.includedPropNames(), "selection.includedPropNames");
             }
 
+            // A non-empty table alias is prefixed verbatim to every rendered column, so validate it like the
+            // class alias: a whitespace-only alias would render " .col" and a comment token would swallow the list.
+            if (Strings.isNotEmpty(selection.tableAlias())) {
+                validateTableAlias(selection.entityClass().getSimpleName(), selection.tableAlias());
+            }
+
             if (Strings.isNotEmpty(selection.classAlias())) {
                 Dsl.validateColumnAlias(selection.entityClass().getSimpleName(), selection.classAlias());
             }
         }
+    }
+
+    /**
+     * Validates that a table alias is safe to prefix to rendered column names, applying exactly the checks
+     * of {@code Dsl.validateColumnAlias(String, String)} (both delegate to the same {@code Dsl.validateAlias}
+     * helper) but reporting the failure as a table alias: it must be non-blank and must not contain a quote
+     * character, a line break, or an SQL comment token.
+     *
+     * @param entityName the simple name of the entity the alias belongs to (used in the error message)
+     * @param tableAlias the table alias to validate
+     * @throws IllegalArgumentException if {@code tableAlias} is {@code null}, blank, contains a quote character
+     *                                  ({@code "}, {@code `}, or {@code '}), a line break, or an SQL comment
+     *                                  token ({@code --}, {@code /*}, {@code *}{@code /}, or {@code #})
+     */
+    private static void validateTableAlias(final String entityName, final String tableAlias) {
+        Dsl.validateAlias("Table alias", entityName, tableAlias);
     }
 
     /**

@@ -778,6 +778,25 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testLimitWithZeroOffsetReservesPlainOffsetSlot() {
+        // limit(count, 0) renders like limit(count) but still occupies the plain-offset slot,
+        // exactly like offset(0) does, so a later offset(...) is a duplicate.
+        Builder builder = DynamicQuery.builder();
+        builder.select().append("*");
+        builder.from().append("users");
+        builder.limit(10, 0);
+        assertThrows(IllegalStateException.class, () -> builder.offset(20));
+        assertEquals("SELECT * FROM users LIMIT 10", builder.build());
+
+        // limit(count) alone leaves the offset slot open.
+        Builder open = DynamicQuery.builder();
+        open.select().append("*");
+        open.from().append("users");
+        open.limit(10).offset(20);
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", open.build());
+    }
+
+    @Test
     public void testOffsetRows() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("*");

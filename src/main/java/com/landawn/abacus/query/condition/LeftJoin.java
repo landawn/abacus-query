@@ -43,10 +43,6 @@ import java.util.Collection;
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
- * // Simple left join
- * LeftJoin join1 = new LeftJoin("orders");
- * // SQL: LEFT JOIN orders
- *
  * // Left join with ON condition
  * LeftJoin customerOrders = new LeftJoin("orders o",
  *     new On("customers.id", "o.customer_id"));
@@ -93,23 +89,32 @@ public class LeftJoin extends Join {
 
     /**
      * Creates a LEFT JOIN clause for the specified table or entity without a join condition.
-     * Most databases require an {@code ON} or {@code USING} clause for a LEFT JOIN; use
-     * {@link #LeftJoin(String, Condition)} when a condition is required.
+     *
+     * <p>This constructor <b>always throws</b>: a LEFT JOIN requires a non-{@code null}
+     * {@code ON}/{@code USING} predicate, so there is no way for it to succeed. It is retained only
+     * for source compatibility.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * // Simple left join without condition
-     * LeftJoin join = new LeftJoin("departments");
-     * // SQL: LEFT JOIN departments
+     * // Left join with an ON predicate
+     * LeftJoin join = new LeftJoin("employee_departments ed", Filters.on("employees.id", "ed.employee_id"));
+     * // SQL: LEFT JOIN employee_departments ed ON employees.id = ed.employee_id
      *
-     * // Left join with table alias
-     * LeftJoin aliasJoin = new LeftJoin("employee_departments ed");
-     * // SQL: LEFT JOIN employee_departments ed
+     * // Unconditional join
+     * Join cross = new CrossJoin("departments");
+     * // SQL: CROSS JOIN departments
+     *
+     * // Edge: the single-argument form cannot succeed
+     * new LeftJoin("departments");   // throws IllegalArgumentException
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
+     *                                  otherwise because a LEFT JOIN requires a non-{@code null} {@code ON}/{@code USING} predicate
+     * @deprecated always throws {@link IllegalArgumentException} because a qualified join requires an {@code ON}/{@code USING}
+     *             predicate; use {@link #LeftJoin(String, Condition)} instead, or {@link CrossJoin} for an unconditional join
      */
+    @Deprecated
     public LeftJoin(final String joinEntity) {
         super(Operator.LEFT_JOIN, joinEntity);
     }
@@ -148,13 +153,13 @@ public class LeftJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param joinCondition the join condition. A plain non-empty predicate is automatically prefixed with
+     * @param joinCondition the join condition; must not be {@code null}. A plain non-empty predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
-     *            May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition} is or contains a
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public LeftJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.LEFT_JOIN, joinEntity, joinCondition);
@@ -182,14 +187,14 @@ public class LeftJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param joinCondition the join condition. A plain non-empty predicate is automatically prefixed with
+     * @param joinCondition the join condition; must not be {@code null}. A plain non-empty predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
-     *            May be {@code null}.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements,
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements;
+     *                                  if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.LEFT_JOIN, joinEntities, joinCondition);

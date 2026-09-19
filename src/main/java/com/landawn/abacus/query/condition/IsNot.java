@@ -74,13 +74,19 @@ public class IsNot extends Binary {
      * such as {@code NULL}, {@code FALSE}, or {@code UNKNOWN}.
      *
      * <p>If {@code propValue} is the Java {@code null} reference, the generated SQL collapses to
-     * {@code propName IS NOT NULL}.</p>
+     * {@code propName IS NOT NULL}. A Boolean is normalized at construction to the SQL keyword expression
+     * {@code TRUE}/{@code FALSE}, so it is rendered inline ({@code propName IS NOT FALSE}) by every rendering
+     * path and contributes no bind parameter.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Check for NOT NULL (though IsNotNull is preferred)
      * IsNot notNull = new IsNot("phone_number", null);
      * // SQL: phone_number IS NOT NULL
+     *
+     * // Boolean truth value: rendered as a keyword, never bound as a parameter
+     * IsNot notFalse = new IsNot("active", false);
+     * // SQL: active IS NOT FALSE   (parameters: [])
      *
      * // Check if not a custom value
      * SqlExpression unknownExpr = Filters.expr("UNKNOWN");
@@ -90,10 +96,11 @@ public class IsNot extends Binary {
      *
      * @param propName the name of the property/column to check (must not be {@code null}, empty, or blank)
      * @param propValue the right-hand value of the IS NOT predicate; must be {@code null} (renders as
-     *            {@code IS NOT NULL}), a Boolean, or an explicit {@link SqlExpression} for a SQL keyword
+     *            {@code IS NOT NULL}), a Boolean (normalized to the {@code TRUE}/{@code FALSE} keyword), or an
+     *            explicit non-blank {@link SqlExpression} for a SQL keyword
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if
      *                                  {@code propValue} is not {@code null}, a Boolean, or an
-     *                                  {@link SqlExpression}
+     *                                  {@link SqlExpression}, or is a blank {@link SqlExpression}
      */
     public IsNot(final String propName, final Object propValue) {
         super(propName, Operator.IS_NOT, propValue);

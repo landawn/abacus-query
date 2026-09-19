@@ -99,9 +99,6 @@ public class Junction extends ComposableCondition {
      */
     final List<Condition> conditions;
 
-    /** Lazily memoized parameters (performance only). */
-    private transient ImmutableList<Object> cachedParameters;
-
     /** Lazily memoized immutable view of {@link #conditions} (performance only). */
     private transient ImmutableList<Condition> cachedConditionsView;
 
@@ -315,7 +312,9 @@ public class Junction extends ComposableCondition {
      * Returns all parameters from all conditions in this junction.
      * This method recursively collects parameters from all nested conditions,
      * including those in nested junctions. The order of parameters matches
-     * the order they would appear in the generated SQL.
+     * the order they would appear in the generated SQL. The list is rebuilt on every call (not
+     * memoized) so that mutable parameter values such as arrays are defensively copied per caller,
+     * exactly as the child conditions do.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -337,22 +336,15 @@ public class Junction extends ComposableCondition {
      */
     @Override
     public ImmutableList<Object> parameters() {
-        ImmutableList<Object> result = cachedParameters;
+        final List<Object> parameters = new ArrayList<>(conditions.size());
 
-        if (result == null) {
-            final List<Object> parameters = new ArrayList<>(conditions.size());
-
-            for (final Condition condition : conditions) {
-                if (condition != null) {
-                    parameters.addAll(condition.parameters());
-                }
+        for (final Condition condition : conditions) {
+            if (condition != null) {
+                parameters.addAll(condition.parameters());
             }
-
-            result = ImmutableList.wrap(parameters);
-            cachedParameters = result;
         }
 
-        return result;
+        return ImmutableList.wrap(parameters);
     }
 
     /**

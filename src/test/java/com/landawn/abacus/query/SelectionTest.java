@@ -246,4 +246,19 @@ public class SelectionTest extends TestBase {
         assertEquals(selectFirst.getMessage(), selectFromFirst.getMessage());
         assertEquals(selectFirst.getMessage(), selectFromSecond.getMessage());
     }
+
+    // A non-empty table alias is prefixed verbatim to every rendered column, so it is validated like the class
+    // alias: a whitespace-only alias would render " .col" and a comment token would swallow the SELECT list.
+    @Test
+    public void testBlankOrUnsafeTableAliasIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(Selection.builder(Account.class).tableAlias("  ").classAlias("acc").build()));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select(Selection.builder(Account.class).tableAlias(" ").build()));
+        assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(Selection.builder(Account.class).tableAlias("a -- x").classAlias("acc").build()));
+        assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(Selection.builder(Account.class).tableAlias("a\" x").build()));
+
+        // null / empty mean "no alias"; a plain alias still renders.
+        assertEquals(PSC.selectFrom(Selection.builder(Account.class).build()).build().query(),
+                PSC.selectFrom(Selection.builder(Account.class).tableAlias("").build()).build().query());
+        assertTrue(PSC.selectFrom(Selection.builder(Account.class).tableAlias("a").classAlias("acc").build()).build().query().endsWith("FROM account a"));
+    }
 }

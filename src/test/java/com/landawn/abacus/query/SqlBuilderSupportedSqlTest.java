@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.query.AbstractQueryBuilder.SP;
+import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.SubQuery;
@@ -129,7 +130,7 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
         assertSp("SELECT * FROM users WHERE deleted_at IS NULL", List.of(), PSC.select("*").from("users").where(Filters.isNull("deletedAt")).build());
 
         // 25. IS / IS NOT.
-        assertSp("SELECT * FROM users WHERE active IS true", List.of(), PSC.select("*").from("users").where(Filters.isTrue("active")).build());
+        assertSp("SELECT * FROM users WHERE active IS TRUE", List.of(), PSC.select("*").from("users").where(Filters.isTrue("active")).build());
 
         // 26. Null/empty/zero convenience predicate.
         assertSp("SELECT * FROM users WHERE (name IS NULL) OR (name = ?)", List.of(""),
@@ -322,7 +323,7 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
     @Test
     public void testNewConvenienceApiEdgeCases() {
         assertSp("SELECT DISTINCT status FROM users", List.of(), PSC.select("status").distinctOn(" ").from("users").build());
-        assertSp("SELECT * FROM users WHERE active IS false", List.of(), PSC.select("*").from("users").where(Filters.isFalse("active")).build());
+        assertSp("SELECT * FROM users WHERE active IS FALSE", List.of(), PSC.select("*").from("users").where(Filters.isFalse("active")).build());
         assertSp("UPDATE users SET status = ? WHERE id = ?", Arrays.asList(null, 7),
                 PSC.update("users").set("status", (Object) null).where(Filters.eq("id", 7)).build());
         assertSp("UPDATE users SET roles = ? WHERE id = ?", List.of(Set.of("ADMIN", "EDITOR"), 7),
@@ -423,9 +424,13 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
         assertSp("SELECT id FROM users WHERE status = :status UNION SELECT id FROM archive WHERE status = :status_2", List.of("ACTIVE", "OLD"),
                 NSC.select("id").from("users").where(Filters.eq("status", "ACTIVE")).append(Criteria.builder().union(criteriaSub).build()).build());
 
-        final SubQuery nullSub = PSC.select("id").from("items").where(Filters.in("code", Arrays.asList((Object) null))).toSubQuery();
-        assertSp("SELECT * FROM orders WHERE item_id IN (SELECT id FROM items WHERE code IN (?))", Arrays.asList((Object) null),
-                PSC.select("*").from("orders").where(Filters.in("itemId", nullSub)).build());
+        // A null IN element is rejected at construction (use an explicit IS NULL predicate); a non-null element
+        // still travels through the builder-backed sub-query into the parent's parameter list.
+        assertThrows(IllegalArgumentException.class, () -> Filters.in("code", Arrays.asList((Object) null)));
+
+        final SubQuery codeSub = PSC.select("id").from("items").where(Filters.in("code", Arrays.asList("X"))).toSubQuery();
+        assertSp("SELECT * FROM orders WHERE item_id IN (SELECT id FROM items WHERE code IN (?))", List.of("X"),
+                PSC.select("*").from("orders").where(Filters.in("itemId", codeSub)).build());
     }
 
     @Test
@@ -465,6 +470,179 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
         final SqlBuilder self = PSC.select("*");
         assertThrows(IllegalArgumentException.class, () -> self.from(self, "u"));
         assertSp("SELECT * FROM users", List.of(), self.from("users").build());
+    }
+
+    // A raw SubQuery(sql, bindings) carries positional bindings that must reach the parent's parameter
+    // list in placeholder order on every builder path (IN / NOT IN / EXISTS / scalar comparison / set operation).
+    @Test
+    public void testRawSubQueryBindingsAreMergedIntoParentParameters() {
+        final SubQuery raw = new SubQuery("SELECT id FROM orders WHERE x = ?", List.of(1));
+
+        assertSp("SELECT * FROM account WHERE (id IN (SELECT id FROM orders WHERE x = ?)) AND (status = ?)", List.of(1, 7),
+                PSC.select("*").from("account").where(Filters.and(Filters.in("id", raw), Filters.eq("status", 7))).build());
+        assertSp("SELECT * FROM account WHERE (status = ?) AND (id NOT IN (SELECT id FROM orders WHERE x = ?))", List.of(7, 1),
+                PSC.select("*").from("account").where(Filters.and(Filters.eq("status", 7), Filters.notIn("id", raw))).build());
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM orders WHERE x = ?)", List.of(1),
+                PSC.select("*").from("account").where(Filters.exists(raw)).build());
+        assertSp("SELECT * FROM account WHERE id = (SELECT id FROM orders WHERE x = ?)", List.of(1),
+                PSC.select("*").from("account").where(Filters.eq("id", raw)).build());
+        assertSp("SELECT id FROM users UNION SELECT id FROM orders WHERE x = ?", List.of(1),
+                PSC.select("id").from("users").append(Criteria.builder().union(raw).build()).build());
+        assertSp("id IN (SELECT id FROM orders WHERE x = ?)", List.of(1), PSC.renderCondition(Filters.in("id", raw)).build());
+
+        final SubQuery twoBindings = new SubQuery("SELECT id FROM orders WHERE x = ? AND y = ?", List.of("a", "b"));
+        assertSp("SELECT * FROM account WHERE (id IN (SELECT id FROM orders WHERE x = ? AND y = ?)) AND (status = ?)", List.of("a", "b", 7),
+                PSC.select("*").from("account").where(Filters.and(Filters.in("id", twoBindings), Filters.eq("status", 7))).build());
+    }
+
+    // Under NAMED_SQL / IBATIS_SQL the "?" placeholders of a bound raw SubQuery must be rewritten to unique
+    // generated names (in binding order) so the statement never mixes parameter styles; PSC keeps the "?".
+    @Test
+    public void testRawSubQueryBindingsAreRenamedUnderNamedAndIbatisPolicies() {
+        final SubQuery raw = new SubQuery("SELECT id FROM x WHERE y = ? AND z = ?", List.of(1, 2));
+        // The outer property is literally named "param" to prove the generated names stay collision-free.
+        final Condition cond = Filters.and(Filters.in("id", raw), Filters.exists(raw), Filters.eq("param", 7));
+        final List<Object> expectedParameters = List.of(1, 2, 1, 2, 7);
+
+        final SP nsc = NSC.select("*").from("account").where(cond).build();
+        assertEquals("SELECT * FROM account WHERE (id IN (SELECT id FROM x WHERE y = :param AND z = :param_2))"
+                + " AND (EXISTS (SELECT id FROM x WHERE y = :param_3 AND z = :param_4)) AND (param = :param_5)", nsc.query());
+        assertEquals(expectedParameters, nsc.parameters());
+        assertEquals(-1, nsc.query().indexOf('?'));
+        final ParsedSql nscParsed = ParsedSql.parse(nsc.query());
+        assertEquals(5, nscParsed.parameterCount());
+        assertEquals(List.of("param", "param_2", "param_3", "param_4", "param_5"), nscParsed.namedParameters());
+        assertEquals(5, Set.copyOf(nscParsed.namedParameters()).size());
+
+        final SP msc = MSC.select("*").from("account").where(cond).build();
+        assertEquals("SELECT * FROM account WHERE (id IN (SELECT id FROM x WHERE y = #{param} AND z = #{param_2}))"
+                + " AND (EXISTS (SELECT id FROM x WHERE y = #{param_3} AND z = #{param_4})) AND (param = #{param_5})", msc.query());
+        assertEquals(expectedParameters, msc.parameters());
+        assertEquals(-1, msc.query().indexOf('?'));
+        final ParsedSql mscParsed = ParsedSql.parse(msc.query());
+        assertEquals(5, mscParsed.parameterCount());
+        assertEquals(List.of("param", "param_2", "param_3", "param_4", "param_5"), mscParsed.namedParameters());
+
+        // "?" inside quoted text and comments is never a placeholder and must survive the rewrite verbatim.
+        final SubQuery tricky = new SubQuery("SELECT id FROM x WHERE k = 'a?' AND [w?] = ? /* ? */ -- ?\n AND z = ?", List.of("p", "q"));
+        final SP trickyNsc = NSC.select("*").from("account").where(Filters.in("id", tricky)).build();
+        assertEquals("SELECT * FROM account WHERE id IN (SELECT id FROM x WHERE k = 'a?' AND [w?] = :param /* ? */ -- ?\n AND z = :param_2)",
+                trickyNsc.query());
+        assertEquals(List.of("p", "q"), trickyNsc.parameters());
+        assertEquals(2, ParsedSql.parse(trickyNsc.query()).parameterCount());
+
+        // PSC control: positional placeholders are kept as-is.
+        final SP psc = PSC.select("*").from("account").where(cond).build();
+        assertEquals("SELECT * FROM account WHERE (id IN (SELECT id FROM x WHERE y = ? AND z = ?))"
+                + " AND (EXISTS (SELECT id FROM x WHERE y = ? AND z = ?)) AND (param = ?)", psc.query());
+        assertEquals(expectedParameters, psc.parameters());
+
+        // A PostgreSQL JSON "?" operator is not a placeholder for the SubQuery constructor, and the named
+        // rewrite follows the same ParsedSql classification: the operator stays verbatim and only the real
+        // binding is renamed. PSC renders everything untouched.
+        final SubQuery jsonOperator = new SubQuery("SELECT id FROM x WHERE data ? 'k' AND z = ?", List.of(5));
+        assertSp("SELECT * FROM account WHERE id IN (SELECT id FROM x WHERE data ? 'k' AND z = ?)", List.of(5),
+                PSC.select("*").from("account").where(Filters.in("id", jsonOperator)).build());
+        assertSp("SELECT * FROM account WHERE id IN (SELECT id FROM x WHERE data ? 'k' AND z = :param)", List.of(5),
+                NSC.select("*").from("account").where(Filters.in("id", jsonOperator)).build());
+    }
+
+    // The "?" placeholders of a raw SubQuery are located by ParsedSql, the classifier SubQuery(String, Collection)
+    // validated the binding count with, so a PostgreSQL JSON "?" operator is never rewritten and a "?" inside an
+    // array subscript is; the two scans can no longer disagree.
+    @Test
+    public void testRawSubQueryPlaceholderPositionsFollowParsedSqlClassification() {
+        final SubQuery raw = new SubQuery("SELECT arr[?] FROM t WHERE doc ? 'key'", List.of(2));
+
+        final SP nsc = NSC.select("*").from("account").where(Filters.in("id", raw)).build();
+        assertEquals("SELECT * FROM account WHERE id IN (SELECT arr[:param] FROM t WHERE doc ? 'key')", nsc.query());
+        assertEquals(List.of(2), nsc.parameters());
+        final ParsedSql nscParsed = ParsedSql.parse(nsc.query());
+        assertEquals(List.of("param"), nscParsed.namedParameters());
+        assertEquals(1, nscParsed.parameterCount());
+
+        final SP msc = MSC.select("*").from("account").where(Filters.in("id", raw)).build();
+        assertEquals("SELECT * FROM account WHERE id IN (SELECT arr[#{param}] FROM t WHERE doc ? 'key')", msc.query());
+        assertEquals(List.of(2), msc.parameters());
+        final ParsedSql mscParsed = ParsedSql.parse(msc.query());
+        assertEquals(List.of("param"), mscParsed.namedParameters());
+        assertEquals(1, mscParsed.parameterCount());
+
+        assertSp("SELECT * FROM account WHERE id IN (SELECT arr[2] FROM t WHERE doc ? 'key')", List.of(),
+                SCSB.select("*").from("account").where(Filters.in("id", raw)).build());
+
+        // A JSON operator ahead of a real binding: the operator is untouched, the binding is rewritten.
+        final SubQuery jsonOperatorFirst = new SubQuery("SELECT id FROM x WHERE data ? 'k' AND id = ?", List.of(5));
+        final SP jsonNsc = NSC.select("*").from("account").where(Filters.exists(jsonOperatorFirst)).build();
+        assertEquals("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE data ? 'k' AND id = :param)", jsonNsc.query());
+        assertEquals(List.of(5), jsonNsc.parameters());
+        assertEquals(List.of("param"), ParsedSql.parse(jsonNsc.query()).namedParameters());
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE data ? 'k' AND id = #{param})", List.of(5),
+                MSC.select("*").from("account").where(Filters.exists(jsonOperatorFirst)).build());
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE data ? 'k' AND id = 5)", List.of(),
+                SCSB.select("*").from("account").where(Filters.exists(jsonOperatorFirst)).build());
+
+        // PSC control: nothing is rewritten.
+        assertSp("SELECT * FROM account WHERE id IN (SELECT arr[?] FROM t WHERE doc ? 'key')", List.of(2),
+                PSC.select("*").from("account").where(Filters.in("id", raw)).build());
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE data ? 'k' AND id = ?)", List.of(5),
+                PSC.select("*").from("account").where(Filters.exists(jsonOperatorFirst)).build());
+
+        // "?" inside quoted literals, comments and bracket-quoted identifiers is still never rewritten, and
+        // leading whitespace in the raw text (ParsedSql trims it) does not shift the substituted positions.
+        final SubQuery tricky = new SubQuery("  SELECT id FROM x WHERE k = 'a?' AND [w?] = ? /* ? */ -- ?\n AND z = ? ", List.of("p", 2));
+        assertSp("SELECT * FROM account WHERE id IN (  SELECT id FROM x WHERE k = 'a?' AND [w?] = :param /* ? */ -- ?\n AND z = :param_2 )",
+                List.of("p", 2), NSC.select("*").from("account").where(Filters.in("id", tricky)).build());
+        assertSp("SELECT * FROM account WHERE id IN (  SELECT id FROM x WHERE k = 'a?' AND [w?] = 'p' /* ? */ -- ?\n AND z = 2 )", List.of(),
+                SCSB.select("*").from("account").where(Filters.in("id", tricky)).build());
+    }
+
+    // Under RAW_SQL ("inline values directly into the SQL string as literals") the positional bindings of a
+    // raw SubQuery are inlined in placeholder order with exactly the literal rendering a structured condition's
+    // value receives on the same builder, and nothing is bound. PSC keeps the "?" + bindings.
+    @Test
+    public void testRawSubQueryBindingsAreInlinedAsLiteralsUnderRawSql() {
+        final SqlExpression expr = SqlExpression.of("NOW()");
+        final List<Object> bindings = Arrays.asList(1, "O'Brien", null, expr);
+        final SubQuery raw = new SubQuery("SELECT id FROM orders WHERE x = ? AND y = ? AND z = ? AND t < ?", bindings);
+
+        final SP scsbIn = SCSB.select("*").from("account").where(Filters.in("id", raw)).build();
+        assertEquals("SELECT * FROM account WHERE id IN (SELECT id FROM orders WHERE x = 1 AND y = 'O''Brien' AND z = null AND t < NOW())", scsbIn.query());
+        assertEquals(List.of(), scsbIn.parameters());
+        assertEquals(-1, scsbIn.query().indexOf('?'));
+
+        final SP scsbExists = SCSB.select("*").from("account").where(Filters.and(Filters.exists(raw), Filters.eq("status", "A"))).build();
+        assertEquals("SELECT * FROM account WHERE (EXISTS (SELECT id FROM orders WHERE x = 1 AND y = 'O''Brien' AND z = null AND t < NOW()))"
+                + " AND (status = 'A')", scsbExists.query());
+        assertEquals(List.of(), scsbExists.parameters());
+
+        final SP lcsb = LCSB.select("*").from("account").where(Filters.notIn("id", raw)).build();
+        assertEquals("SELECT * FROM account WHERE id NOT IN (SELECT id FROM orders WHERE x = 1 AND y = 'O''Brien' AND z = null AND t < NOW())",
+                lcsb.query());
+        assertEquals(List.of(), lcsb.parameters());
+        assertEquals(-1, lcsb.query().indexOf('?'));
+
+        // The inlined literal text is exactly what a structured condition renders for the same value on the same builder.
+        assertEquals("x = 1", SCSB.renderCondition(Filters.eq("x", 1)).build().query());
+        assertEquals("y = 'O''Brien'", SCSB.renderCondition(Filters.eq("y", "O'Brien")).build().query());
+        assertEquals("t < NOW()", SCSB.renderCondition(Filters.lt("t", expr)).build().query());
+        assertEquals("y = 'O''Brien'", LCSB.renderCondition(Filters.eq("y", "O'Brien")).build().query());
+        assertEquals("UPDATE t SET z = null", SCSB.update("t").set("z", (Object) null).build().query());
+
+        // A "?" inside quoted text or a comment is never a placeholder and survives verbatim.
+        final SubQuery tricky = new SubQuery("SELECT id FROM x WHERE k = 'a?' AND [w?] = ? /* ? */ -- ?\n AND z = ?", List.of("p", 2));
+        assertSp("SELECT * FROM account WHERE id IN (SELECT id FROM x WHERE k = 'a?' AND [w?] = 'p' /* ? */ -- ?\n AND z = 2)", List.of(),
+                SCSB.select("*").from("account").where(Filters.in("id", tricky)).build());
+
+        // A PostgreSQL JSON "?" operator is not a placeholder (same ParsedSql classification as the SubQuery
+        // constructor): it stays verbatim and only the real binding is inlined.
+        final SubQuery jsonOperator = new SubQuery("SELECT id FROM x WHERE data ? 'k' AND z = ?", List.of(5));
+        assertSp("SELECT * FROM account WHERE id IN (SELECT id FROM x WHERE data ? 'k' AND z = 5)", List.of(),
+                SCSB.select("*").from("account").where(Filters.in("id", jsonOperator)).build());
+
+        // PSC control: positional placeholders and bindings are unchanged.
+        assertSp("SELECT * FROM account WHERE id IN (SELECT id FROM orders WHERE x = ? AND y = ? AND z = ? AND t < ?)", bindings,
+                PSC.select("*").from("account").where(Filters.in("id", raw)).build());
     }
 
     private static void assertSp(final String expectedSql, final List<?> expectedParameters, final SP actual) {

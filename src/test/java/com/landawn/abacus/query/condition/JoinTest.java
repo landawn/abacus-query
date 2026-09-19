@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -21,6 +22,9 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class JoinTest extends TestBase {
+    /** A column-to-column ON predicate: renders {@code ON a.id = b.id} and binds no parameters. */
+    private static final On ON_AB = Filters.on("a.id", "b.id");
+
     private static final class TestComposableWrapper extends ComposableCell {
         TestComposableWrapper(final Condition condition) {
             super(Operator.NOT, condition);
@@ -29,7 +33,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testConstructor_SimpleJoin() {
-        Join join = new Join("orders");
+        Join join = new Join("orders", ON_AB);
         assertNotNull(join);
         assertEquals(Operator.JOIN, join.operator());
     }
@@ -50,7 +54,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testGetJoinEntities() {
-        Join join = new Join(Arrays.asList("table1", "table2"), null);
+        Join join = new Join(Arrays.asList("table1", "table2"), Filters.on("table1.id", "table2.id"));
         List<String> entities = join.joinEntities();
         assertEquals(2, entities.size());
         assertTrue(entities.contains("table1"));
@@ -67,7 +71,8 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testGetCondition_Null() {
-        Join join = new Join("orders");
+        // Only the conditionless join types (CROSS/NATURAL) can be built without a predicate.
+        Join join = new TestJoin(Operator.CROSS_JOIN, "orders");
         assertNull(join.condition());
     }
 
@@ -80,20 +85,21 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testHasCondition_WithoutCondition() {
-        Join join = new Join("orders");
+        Join join = new TestJoin(Operator.CROSS_JOIN, "orders");
         assertFalse(join.hasCondition());
         assertNull(join.condition());
     }
 
     @Test
     public void testHasCondition_NullConditionPassedExplicitly() {
-        Join join = new Join(Arrays.asList("table1", "table2"), null);
+        Join join = new TestJoin(Operator.NATURAL_JOIN, Arrays.asList("table1", "table2"), null);
         assertFalse(join.hasCondition());
     }
 
     @Test
     public void testParameters_Empty() {
-        Join join = new Join("orders");
+        // A column-to-column ON predicate binds no parameters.
+        Join join = new Join("orders", ON_AB);
         assertTrue(join.parameters().isEmpty());
     }
 
@@ -107,7 +113,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testToString_Simple() {
-        Join join = new Join("orders");
+        Join join = new Join("orders", ON_AB);
         String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("JOIN"));
         assertTrue(result.contains("orders"));
@@ -129,21 +135,25 @@ public class JoinTest extends TestBase {
     }
 
     @Test
-    public void testHashCodeTracksMutableValueInJoinCondition() {
+    public void testHashCodeAndEqualsSnapshotMutableValueInJoinCondition() {
+        // Array values are snapshotted at construction: later external mutation of the source array
+        // changes neither equality nor the hash code, and two joins built from equal-content arrays are equal.
         final byte[] value = { 1 };
         final Join join = new Join("orders", Filters.eq("payload", value));
+        final int h = join.hashCode();
 
-        join.hashCode();
         value[0] = 2;
 
-        final Join equalAfterMutation = new Join("orders", Filters.eq("payload", new byte[] { 2 }));
-        assertEquals(join, equalAfterMutation);
-        assertEquals(join.hashCode(), equalAfterMutation.hashCode());
+        final Join sameContent = new Join("orders", Filters.eq("payload", new byte[] { 1 }));
+        assertEquals(join, sameContent);
+        assertEquals(h, join.hashCode());
+        assertEquals(join.hashCode(), sameContent.hashCode());
+        assertNotEquals(join, new Join("orders", Filters.eq("payload", new byte[] { 2 })));
     }
 
     @Test
     public void testEquals_SameObject() {
-        Join join = new Join("orders");
+        Join join = new Join("orders", ON_AB);
         assertEquals(join, join);
     }
 
@@ -156,14 +166,14 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testEquals_DifferentEntities() {
-        Join join1 = new Join("orders");
-        Join join2 = new Join("products");
+        Join join1 = new Join("orders", ON_AB);
+        Join join2 = new Join("products", ON_AB);
         assertNotEquals(join1, join2);
     }
 
     @Test
     public void testEquals_Null() {
-        Join join = new Join("orders");
+        Join join = new Join("orders", ON_AB);
         assertNotEquals(null, join);
     }
 
@@ -205,13 +215,13 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
-        Join join = new Join("products");
+        Join join = new Join("products", ON_AB);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.JOIN, join.operator());
         Assertions.assertEquals(1, join.joinEntities().size());
         Assertions.assertEquals("products", join.joinEntities().get(0));
-        Assertions.assertNull(join.condition());
+        Assertions.assertSame(ON_AB, join.condition());
     }
 
     @Test
@@ -226,6 +236,7 @@ public class JoinTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testConstructorWithInvalidJoinEntity() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join((String) null));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(""));
@@ -268,10 +279,11 @@ public class JoinTest extends TestBase {
             }
         };
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(inconsistentCollection, null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(inconsistentCollection, ON_AB));
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testConstructorRejectsBlankJoinEntitiesAndBlankExpressionCondition() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("   "));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", Filters.expr("   ")));
@@ -280,9 +292,10 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testProtectedConstructors() {
-        // Test protected constructors through a test subclass
-        TestJoin join1 = new TestJoin(Operator.LEFT_JOIN, "table1");
-        Assertions.assertEquals(Operator.LEFT_JOIN, join1.operator());
+        // Test protected constructors through a test subclass. The condition-less 2-arg form succeeds
+        // only for CROSS/NATURAL joins.
+        TestJoin join1 = new TestJoin(Operator.CROSS_JOIN, "table1");
+        Assertions.assertEquals(Operator.CROSS_JOIN, join1.operator());
         Assertions.assertEquals("table1", join1.joinEntities().get(0));
 
         Condition condition = Filters.eq("a", "b");
@@ -313,7 +326,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testParametersNoCondition() {
-        Join join = new Join("products");
+        Join join = new TestJoin(Operator.CROSS_JOIN, "products");
         List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
@@ -322,7 +335,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        Join join = new Join("orders");
+        Join join = new Join("orders", ON_AB);
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("JOIN"));
@@ -375,8 +388,10 @@ public class JoinTest extends TestBase {
         Condition condition = Filters.eq("t1.id", "t2.t1_id");
         Join join = new Join(entities, condition);
 
+        // Multiple entities render as a parenthesized CROSS JOIN tree (a standard joined-table operand).
         String result = join.toString();
-        Assertions.assertTrue(result.contains("t1, t2, t3"));
+        Assertions.assertTrue(result.contains("(t1 CROSS JOIN t2 CROSS JOIN t3)"));
+        Assertions.assertFalse(result.contains("t1, t2, t3"));
     }
 
     @Test
@@ -385,7 +400,7 @@ public class JoinTest extends TestBase {
         Join join1 = new Join("table", condition);
         Join join2 = new Join("table", condition);
         Join join3 = new Join("other", condition);
-        Join join4 = new Join("table");
+        Join join4 = new Join("table", Filters.eq("a", "c"));
 
         Assertions.assertEquals(join1, join1);
         Assertions.assertEquals(join1, join2);
@@ -397,8 +412,8 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testEqualsWithDifferentOperators() {
-        TestJoin join1 = new TestJoin(Operator.JOIN, "table");
-        TestJoin join2 = new TestJoin(Operator.LEFT_JOIN, "table");
+        TestJoin join1 = new TestJoin(Operator.CROSS_JOIN, "table");
+        TestJoin join2 = new TestJoin(Operator.NATURAL_JOIN, "table");
 
         Assertions.assertNotEquals(join1, join2);
     }
@@ -467,16 +482,16 @@ public class JoinTest extends TestBase {
     @Test
     public void testRegularJoinsUnaffectedByFix() {
         // Sanity check that the fix does not regress normal join rendering.
-        Join j1 = new Join("orders");
-        Assertions.assertEquals("JOIN orders", j1.toSql(NamingPolicy.NO_CHANGE));
+        Join j1 = new Join("orders", ON_AB);
+        Assertions.assertEquals("JOIN orders ON a.id = b.id", j1.toSql(NamingPolicy.NO_CHANGE));
 
         Join j2 = new Join("orders o", new Equal("c.id", "o.cid"));
         String r2 = j2.toSql(NamingPolicy.NO_CHANGE);
         Assertions.assertTrue(r2.startsWith("JOIN orders o"));
         Assertions.assertTrue(r2.contains("c.id"));
 
-        InnerJoin ij = new InnerJoin("orders o");
-        Assertions.assertEquals("INNER JOIN orders o", ij.toSql(NamingPolicy.NO_CHANGE));
+        InnerJoin ij = new InnerJoin("orders o", ON_AB);
+        Assertions.assertEquals("INNER JOIN orders o ON a.id = b.id", ij.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
@@ -496,10 +511,10 @@ public class JoinTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("t1", Filters.any(sub)));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("t1", Filters.all(sub)));
 
-        // On/Using instances (and a null condition) are still accepted.
+        // On/Using instances are still accepted; a null condition is rejected for a qualified JOIN.
         assertNotNull(new Join("t1", new On("a.id", "b.id")));
         assertNotNull(new Join("t1", new Using("id")));
-        assertNotNull(new Join("t1", null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("t1", null));
     }
 
     @Test
@@ -516,5 +531,84 @@ public class JoinTest extends TestBase {
 
         Assertions.assertDoesNotThrow(() -> new TestJoin(Operator.CROSS_JOIN, "b", null));
         Assertions.assertDoesNotThrow(() -> new TestJoin(Operator.NATURAL_JOIN, Arrays.asList("b", "c"), null));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testEntityValidationPrecedesJoinConditionPolicy() {
+        // A null/blank entity must be reported as such, not as a missing (or unexpected) join predicate,
+        // regardless of the condition supplied and of the join operator.
+        final String entityMessage = "must not be null, empty, or blank";
+        final String predicateMessage = "requires a non-null ON/USING predicate";
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new Join((String) null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+        Assertions.assertFalse(ex.getMessage().contains(predicateMessage), ex.getMessage());
+
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("   "));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+        Assertions.assertFalse(ex.getMessage().contains(predicateMessage), ex.getMessage());
+
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("", null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders", "  "), null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+
+        // CROSS/NATURAL with an (unexpected) condition and a blank entity: still the entity message first.
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new TestJoin(Operator.CROSS_JOIN, "   ", ON_AB));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+        Assertions.assertFalse(ex.getMessage().contains("derives its row combinations"), ex.getMessage());
+
+        // An empty entity collection is reported before the condition policy as well.
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(java.util.Collections.emptyList(), null));
+        Assertions.assertFalse(ex.getMessage().contains(predicateMessage), ex.getMessage());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testDeprecatedSingleArgConstructorAlwaysThrowsPredicateMessage() {
+        // The single-argument qualified-join constructor cannot succeed: a plain JOIN needs an ON/USING predicate.
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders"));
+        Assertions.assertTrue(ex.getMessage().contains("JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+        Assertions.assertTrue(ex.getMessage().contains("use CROSS JOIN for an unconditional join"), ex.getMessage());
+
+        // The protected condition-less form is rejected for every non-CROSS/NATURAL operator with the same message.
+        final IllegalArgumentException left = Assertions.assertThrows(IllegalArgumentException.class, () -> new TestJoin(Operator.LEFT_JOIN, "orders"));
+        Assertions.assertTrue(left.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"), left.getMessage());
+
+        // The advertised alternatives work.
+        Assertions.assertEquals("JOIN orders ON a.id = b.id", new Join("orders", ON_AB).toSql(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("CROSS JOIN orders", new CrossJoin("orders").toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        // Join.parameters() is not memoized: each call must hand out the join condition's fresh defensive copy.
+        final Join join = new Join("orders", Filters.eq("payload", new byte[] { 1 }));
+
+        final byte[] first = (byte[]) join.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) join.parameters().get(0)));
+        assertEquals("JOIN orders ON payload = '[1]'", join.toString());
+
+        // Date variant: mutating a returned Date must not leak into the next caller.
+        final Join dateJoin = new Join("orders", Filters.eq("created", new Date(1000L)));
+
+        final Date firstDate = (Date) dateJoin.parameters().get(0);
+        firstDate.setTime(5000L);
+
+        assertEquals(1000L, ((Date) dateJoin.parameters().get(0)).getTime());
+    }
+
+    @Test
+    public void testValidateJoinConditionMessageMatchesOnWording() {
+        // The Join rejection uses the same wording as On.validateOnCondition (a blank expression is not a predicate).
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new Join("orders", Filters.expr("  ")));
+
+        assertTrue(ex.getMessage().contains("use a predicate without clause, quantified, ON, or USING operators (a blank expression is not a predicate)"),
+                ex.getMessage());
+        assertFalse(ex.getMessage().contains("non-empty predicate"), ex.getMessage());
     }
 }

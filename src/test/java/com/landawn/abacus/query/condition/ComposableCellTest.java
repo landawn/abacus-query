@@ -63,15 +63,35 @@ public class ComposableCellTest extends TestBase {
 
     @Test
     public void testHashCodeTracksMutableValueInWrappedCondition() {
+        // The wrapped Binary snapshots the array at construction, so external mutation must not leak into
+        // the cell's rendering, equality, or hash code.
         final byte[] value = { 1 };
         final TestComposableCell condition = new TestComposableCell(Operator.NOT, new Binary("payload", Operator.EQUAL, value));
 
-        condition.hashCode();
+        final int originalHash = condition.hashCode();
         value[0] = 2;
 
-        final TestComposableCell equalAfterMutation = new TestComposableCell(Operator.NOT, new Binary("payload", Operator.EQUAL, new byte[] { 2 }));
-        assertEquals(condition, equalAfterMutation);
-        assertEquals(condition.hashCode(), equalAfterMutation.hashCode());
+        assertEquals("NOT (payload = '[1]')", condition.toString());
+
+        final TestComposableCell equalToSnapshot = new TestComposableCell(Operator.NOT, new Binary("payload", Operator.EQUAL, new byte[] { 1 }));
+        assertEquals(equalToSnapshot, condition);
+        assertEquals(equalToSnapshot.hashCode(), condition.hashCode());
+        assertEquals(originalHash, condition.hashCode());
+
+        final TestComposableCell builtFromMutatedValue = new TestComposableCell(Operator.NOT, new Binary("payload", Operator.EQUAL, new byte[] { 2 }));
+        assertNotEquals(builtFromMutatedValue, condition);
+    }
+
+    @Test
+    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        // ComposableCell.parameters() is not memoized: each call must hand out the wrapped condition's fresh defensive copy.
+        final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.eq("payload", new byte[] { 1 }));
+
+        final byte[] first = (byte[]) cell.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) cell.parameters().get(0)));
+        assertEquals("NOT (payload = '[1]')", cell.toString());
     }
 
     @Test

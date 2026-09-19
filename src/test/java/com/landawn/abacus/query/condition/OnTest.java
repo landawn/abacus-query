@@ -403,4 +403,21 @@ public class OnTest extends TestBase {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new On(Filters.some(sub)));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.on(Filters.any(sub)));
     }
+
+    @Test
+    public void testEmptyJunctionRendersBooleanIdentity() {
+        // An initialized empty junction is a complete predicate, so ON accepts it and renders its identity.
+        assertEquals("ON 1 = 1", new On(Filters.and()).toString());
+        assertEquals("ON 1 = 0", Filters.on(Filters.or()).toString());
+        assertTrue(new On(Filters.and()).parameters().isEmpty());
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new On(Filters.expr("  ")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new On(new And()));
+    }
+
+    @Test
+    public void testNullConditionMessageNamesCondition() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new On((Condition) null));
+        assertTrue(ex.getMessage().contains("condition"), ex.getMessage());
+    }
 }

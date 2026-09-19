@@ -73,8 +73,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      * @return a new {@link Not} condition wrapping this condition
      * @throws IllegalArgumentException if this condition is non-composable — a {@link Criteria}, a SQL clause,
      *                                  an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression}
-     *                                  or empty {@link Junction})
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public Not not() {
         // No pre-validation needed: the Not constructor runs the identical
@@ -99,8 +98,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
      *                                  is or contains a non-composable component — a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank
-     *                                  {@link SqlExpression} or empty {@link Junction})
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank
+     *                                  {@link SqlExpression}
      */
     public And and(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
@@ -127,8 +126,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
      *                                  is or contains a non-composable component — a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank
-     *                                  {@link SqlExpression} or empty {@link Junction})
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank
+     *                                  {@link SqlExpression}
      */
     public Or or(final Condition condition) {
         N.checkArgNotNull(condition, "condition");
@@ -162,8 +161,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
      *                                  is or contains a non-composable component — a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank
-     *                                  {@link SqlExpression} or empty {@link Junction})
+     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank
+     *                                  {@link SqlExpression}
      */
     public Or xor(final Condition condition) {
         N.checkArgNotNull(condition, "condition");

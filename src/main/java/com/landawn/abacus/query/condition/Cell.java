@@ -43,9 +43,6 @@ public abstract class Cell extends AbstractCondition {
 
     private final Condition condition;
 
-    /** Lazily memoized parameters (performance only). */
-    private transient ImmutableList<Object> cachedParameters;
-
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized Cell instance and should not be used
@@ -117,7 +114,9 @@ public abstract class Cell extends AbstractCondition {
 
     /**
      * Returns the parameters from the wrapped condition.
-     * This method delegates to the wrapped condition's parameters method.
+     * This method delegates to the wrapped condition's parameters method on every call (the result is
+     * not memoized here), so mutable parameter values such as arrays are defensively copied per caller
+     * exactly as the wrapped condition does.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -138,14 +137,7 @@ public abstract class Cell extends AbstractCondition {
      */
     @Override
     public ImmutableList<Object> parameters() {
-        ImmutableList<Object> result = cachedParameters;
-
-        if (result == null) {
-            result = (condition == null) ? ImmutableList.empty() : condition.parameters();
-            cachedParameters = result;
-        }
-
-        return result;
+        return (condition == null) ? ImmutableList.empty() : condition.parameters();
     }
 
     /**

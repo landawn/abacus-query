@@ -34,7 +34,10 @@ public class CrossJoinTest extends TestBase {
     public void testMultipleEntities() {
         CrossJoin join = new CrossJoin(Arrays.asList("sizes", "colors"));
         assertEquals(Arrays.asList("sizes", "colors"), join.joinEntities());
-        assertEquals("CROSS JOIN (sizes, colors)", join.toSql(NamingPolicy.NO_CHANGE));
+        // Multiple entities render as a parenthesized CROSS JOIN tree (a standard joined-table operand).
+        assertEquals("CROSS JOIN (sizes CROSS JOIN colors)", join.toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("CROSS JOIN (sizes CROSS JOIN colors CROSS JOIN styles)",
+                new CrossJoin(Arrays.asList("sizes", "colors", "styles")).toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test

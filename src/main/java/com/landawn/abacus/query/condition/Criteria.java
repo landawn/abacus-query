@@ -79,9 +79,6 @@ public class Criteria extends AbstractCondition {
 
     private final List<Condition> conditions;
 
-    /** Lazily memoized parameters (performance only). */
-    private transient ImmutableList<Object> cachedParameters;
-
     /** Lazily memoized unmodifiable JOIN view (performance only). */
     private transient ImmutableList<Join> cachedJoinsView;
 
@@ -160,7 +157,10 @@ public class Criteria extends AbstractCondition {
      * <pre>{@code
      * Criteria.builder().build().joins();   // returns [] (empty list)
      *
-     * Criteria c = Criteria.builder().join("orders").innerJoin("items").build();
+     * Criteria c = Criteria.builder()
+     *     .join("orders", Filters.on("users.id", "orders.user_id"))
+     *     .innerJoin("items", Filters.on("orders.id", "items.order_id"))
+     *     .build();
      * c.joins().size();                     // returns 2
      * c.joins().add(null);                  // throws UnsupportedOperationException (unmodifiable view)
      * }</pre>
@@ -343,7 +343,11 @@ public class Criteria extends AbstractCondition {
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
-     * Criteria c = Criteria.builder().join("o1").join("o2").where(Filters.eq("a", 1)).build();
+     * Criteria c = Criteria.builder()
+     *     .join("o1", Filters.on("a", "b"))
+     *     .join("o2", Filters.on("c", "d"))
+     *     .where(Filters.eq("a", 1))
+     *     .build();
      * c.findConditions(Operator.JOIN).size();    // returns 2 (JOINs accumulate)
      * c.findConditions(Operator.WHERE).size();   // returns 1
      * c.findConditions(Operator.HAVING);         // returns [] (no HAVING present)
@@ -369,6 +373,9 @@ public class Criteria extends AbstractCondition {
     /**
      * Collects parameters from all conditions in SQL clause order:
      * JOIN, WHERE, GROUP BY, HAVING, set operations, ORDER BY, LIMIT.
+     * The list is built afresh on every call (it is not memoized here), so mutable parameter values
+     * such as arrays or {@code Date}s come from the constituent conditions' own per-call defensive
+     * copies and are never shared between callers.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -383,14 +390,7 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public ImmutableList<Object> parameters() {
-        ImmutableList<Object> result = cachedParameters;
-
-        if (result == null) {
-            result = computeParameters();
-            cachedParameters = result;
-        }
-
-        return result;
+        return computeParameters();
     }
 
     /**
@@ -955,21 +955,29 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a plain JOIN (no explicit type keyword) to this criteria, without an explicit condition.
+         * Adds a plain JOIN (no explicit type keyword) to this criteria, without a join condition.
+         *
+         * <p>This overload always throws {@link IllegalArgumentException}: a qualified join requires an
+         * {@code ON}/{@code USING} predicate, so a condition-less plain {@code JOIN} cannot be built.
+         * Use {@link #join(String, Condition)} to supply the predicate, or {@link #crossJoin(String)} for an
+         * unconditional join.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria criteria = Criteria.builder()
-         *     .join("orders")
-         *     .where(Filters.expr("users.id = orders.user_id"))
-         *     .build();
-         * // SQL: JOIN orders WHERE users.id = orders.user_id
+         * Criteria.builder().join("orders");   // throws IllegalArgumentException
+         *
+         * // Supply the join predicate instead:
+         * Criteria c = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN orders ON users.id = orders.user_id"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+         * @return this Builder instance for method chaining (never reached; this overload always throws)
+         * @throws IllegalArgumentException always, because a qualified join requires an {@code ON}/{@code USING} predicate
+         * @deprecated always throws {@link IllegalArgumentException}; use {@link #join(String, Condition)} or
+         *             {@link #crossJoin(String)} instead.
          */
+        @Deprecated
         public Builder join(final String joinEntity) {
             addConditions(new Join(joinEntity));
 
@@ -989,10 +997,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
-         *                                  is not valid for a JOIN
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
+         *                                  {@code joinCondition} is not valid for a JOIN
          */
         public Builder join(final String joinEntity, final Condition joinCondition) {
             addConditions(new Join(joinEntity, joinCondition));
@@ -1002,7 +1011,7 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a plain JOIN (no explicit type keyword) with multiple entities and a condition to this criteria.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         * Multiple entities are combined as a parenthesized {@code CROSS JOIN} tree; a single entity is rendered bare.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1010,7 +1019,7 @@ public class Criteria extends AbstractCondition {
          * Criteria c = Criteria.builder()
          *     .join(tables, new On("id", "order_id"))
          *     .build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN (orders, order_items) ON id = order_id"
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN (orders CROSS JOIN order_items) ON id = order_id"
          *
          * // A single-element collection is rendered without parentheses.
          * Criteria c2 = Criteria.builder().join(Arrays.asList("orders"), new On("a", "b")).build();
@@ -1018,10 +1027,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder join(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new Join(joinEntities, joinCondition));
@@ -1030,24 +1040,29 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds an INNER JOIN to this criteria.
+         * Adds an INNER JOIN to this criteria, without a join condition.
+         *
+         * <p>This overload always throws {@link IllegalArgumentException}: a qualified join requires an
+         * {@code ON}/{@code USING} predicate, so a condition-less {@code INNER JOIN} cannot be built.
+         * Use {@link #innerJoin(String, Condition)} to supply the predicate, or {@link #crossJoin(String)} for an
+         * unconditional join.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria c = Criteria.builder()
-         *     .innerJoin("orders")
-         *     .where(Filters.expr("users.id = orders.user_id"))
-         *     .build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders WHERE users.id = orders.user_id"
+         * Criteria.builder().innerJoin("orders");   // throws IllegalArgumentException
          *
-         * Criteria bare = Criteria.builder().innerJoin("orders").build();
-         * bare.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders"
+         * // Supply the join predicate instead:
+         * Criteria c = Criteria.builder().innerJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON users.id = orders.user_id"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+         * @return this Builder instance for method chaining (never reached; this overload always throws)
+         * @throws IllegalArgumentException always, because a qualified join requires an {@code ON}/{@code USING} predicate
+         * @deprecated always throws {@link IllegalArgumentException}; use {@link #innerJoin(String, Condition)} or
+         *             {@link #crossJoin(String)} instead.
          */
+        @Deprecated
         public Builder innerJoin(final String joinEntity) {
             addConditions(new InnerJoin(joinEntity));
 
@@ -1070,10 +1085,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
-         *                                  is not valid for a JOIN
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
+         *                                  {@code joinCondition} is not valid for a JOIN
          */
         public Builder innerJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new InnerJoin(joinEntity, joinCondition));
@@ -1083,14 +1099,14 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds an INNER JOIN with multiple entities and a condition.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         * Multiple entities are combined as a parenthesized {@code CROSS JOIN} tree; a single entity is rendered bare.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
          *     .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"))
          *     .build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN (orders, order_items) ON id = order_id"
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN (orders CROSS JOIN order_items) ON id = order_id"
          *
          * // A single-element collection is rendered without parentheses.
          * Criteria c2 = Criteria.builder().innerJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
@@ -1098,10 +1114,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder innerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new InnerJoin(joinEntities, joinCondition));
@@ -1110,21 +1127,29 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a LEFT JOIN to this criteria.
+         * Adds a LEFT JOIN to this criteria, without a join condition.
+         *
+         * <p>This overload always throws {@link IllegalArgumentException}: a qualified join requires an
+         * {@code ON}/{@code USING} predicate, so a condition-less {@code LEFT JOIN} cannot be built.
+         * Use {@link #leftJoin(String, Condition)} to supply the predicate, or {@link #crossJoin(String)} for an
+         * unconditional join.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria c = Criteria.builder().leftJoin("orders").build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders"
+         * Criteria.builder().leftJoin("orders");   // throws IllegalArgumentException
          *
-         * Criteria c2 = Criteria.builder().leftJoin("orders").where(Filters.eq("a", 1)).build();
-         * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders WHERE a = 1"
+         * // Supply the join predicate instead:
+         * Criteria c = Criteria.builder().leftJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON users.id = orders.user_id"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+         * @return this Builder instance for method chaining (never reached; this overload always throws)
+         * @throws IllegalArgumentException always, because a qualified join requires an {@code ON}/{@code USING} predicate
+         * @deprecated always throws {@link IllegalArgumentException}; use {@link #leftJoin(String, Condition)} or
+         *             {@link #crossJoin(String)} instead.
          */
+        @Deprecated
         public Builder leftJoin(final String joinEntity) {
             addConditions(new LeftJoin(joinEntity));
 
@@ -1146,10 +1171,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
-         *                                  is not valid for a JOIN
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
+         *                                  {@code joinCondition} is not valid for a JOIN
          */
         public Builder leftJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new LeftJoin(joinEntity, joinCondition));
@@ -1159,14 +1185,14 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a LEFT JOIN with multiple entities and a condition.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         * Multiple entities are combined as a parenthesized {@code CROSS JOIN} tree; a single entity is rendered bare.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
          *     .leftJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
          *     .build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN (orders, items) ON a = b"
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN (orders CROSS JOIN items) ON a = b"
          *
          * // A single-element collection is rendered without parentheses.
          * Criteria c2 = Criteria.builder().leftJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
@@ -1174,10 +1200,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder leftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new LeftJoin(joinEntities, joinCondition));
@@ -1186,21 +1213,29 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a RIGHT JOIN to this criteria.
+         * Adds a RIGHT JOIN to this criteria, without a join condition.
+         *
+         * <p>This overload always throws {@link IllegalArgumentException}: a qualified join requires an
+         * {@code ON}/{@code USING} predicate, so a condition-less {@code RIGHT JOIN} cannot be built.
+         * Use {@link #rightJoin(String, Condition)} to supply the predicate, or {@link #crossJoin(String)} for an
+         * unconditional join.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria c = Criteria.builder().rightJoin("orders").build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders"
+         * Criteria.builder().rightJoin("orders");   // throws IllegalArgumentException
          *
-         * Criteria c2 = Criteria.builder().rightJoin("orders").where(Filters.eq("a", 1)).build();
-         * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders WHERE a = 1"
+         * // Supply the join predicate instead:
+         * Criteria c = Criteria.builder().rightJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON users.id = orders.user_id"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+         * @return this Builder instance for method chaining (never reached; this overload always throws)
+         * @throws IllegalArgumentException always, because a qualified join requires an {@code ON}/{@code USING} predicate
+         * @deprecated always throws {@link IllegalArgumentException}; use {@link #rightJoin(String, Condition)} or
+         *             {@link #crossJoin(String)} instead.
          */
+        @Deprecated
         public Builder rightJoin(final String joinEntity) {
             addConditions(new RightJoin(joinEntity));
 
@@ -1222,10 +1257,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
-         *                                  is not valid for a JOIN
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
+         *                                  {@code joinCondition} is not valid for a JOIN
          */
         public Builder rightJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new RightJoin(joinEntity, joinCondition));
@@ -1235,14 +1271,14 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a RIGHT JOIN with multiple entities and a condition.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         * Multiple entities are combined as a parenthesized {@code CROSS JOIN} tree; a single entity is rendered bare.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
          *     .rightJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
          *     .build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN (orders, items) ON a = b"
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN (orders CROSS JOIN items) ON a = b"
          *
          * // A single-element collection is rendered without parentheses.
          * Criteria c2 = Criteria.builder().rightJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
@@ -1250,10 +1286,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder rightJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new RightJoin(joinEntities, joinCondition));
@@ -1262,21 +1299,29 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Adds a FULL JOIN to this criteria.
+         * Adds a FULL JOIN to this criteria, without a join condition.
+         *
+         * <p>This overload always throws {@link IllegalArgumentException}: a qualified join requires an
+         * {@code ON}/{@code USING} predicate, so a condition-less {@code FULL JOIN} cannot be built.
+         * Use {@link #fullJoin(String, Condition)} to supply the predicate, or {@link #crossJoin(String)} for an
+         * unconditional join.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
-         * Criteria c = Criteria.builder().fullJoin("orders").build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders"
+         * Criteria.builder().fullJoin("orders");   // throws IllegalArgumentException
          *
-         * Criteria c2 = Criteria.builder().fullJoin("orders").where(Filters.eq("a", 1)).build();
-         * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders WHERE a = 1"
+         * // Supply the join predicate instead:
+         * Criteria c = Criteria.builder().fullJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON users.id = orders.user_id"
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+         * @return this Builder instance for method chaining (never reached; this overload always throws)
+         * @throws IllegalArgumentException always, because a qualified join requires an {@code ON}/{@code USING} predicate
+         * @deprecated always throws {@link IllegalArgumentException}; use {@link #fullJoin(String, Condition)} or
+         *             {@link #crossJoin(String)} instead.
          */
+        @Deprecated
         public Builder fullJoin(final String joinEntity) {
             addConditions(new FullJoin(joinEntity));
 
@@ -1298,10 +1343,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntity the table or entity to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join (equivalent to the single-argument overload)
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or if {@code joinCondition}
-         *                                  is not valid for a JOIN
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
+         *                                  {@code joinCondition} is not valid for a JOIN
          */
         public Builder fullJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new FullJoin(joinEntity, joinCondition));
@@ -1311,14 +1357,14 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a FULL JOIN with multiple entities and a condition.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         * Multiple entities are combined as a parenthesized {@code CROSS JOIN} tree; a single entity is rendered bare.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder()
          *     .fullJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
          *     .build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN (orders, items) ON a = b"
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN (orders CROSS JOIN items) ON a = b"
          *
          * // A single-element collection is rendered without parentheses.
          * Criteria c2 = Criteria.builder().fullJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
@@ -1326,10 +1372,11 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param joinEntities the collection of tables/entities to join
-         * @param joinCondition the join condition; {@code null} produces a condition-less join
+         * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, or if {@code joinCondition} is not valid for a JOIN
+         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is not valid for a JOIN
          */
         public Builder fullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new FullJoin(joinEntities, joinCondition));
@@ -1361,12 +1408,12 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a conditionless CROSS JOIN for multiple entities.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         * Multiple entities are combined as a parenthesized {@code CROSS JOIN} tree; a single entity is rendered bare.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder().crossJoin(Arrays.asList("colors", "sizes")).build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN (colors, sizes)"
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN (colors CROSS JOIN sizes)"
          *
          * // A single-element collection is rendered without parentheses.
          * Criteria c2 = Criteria.builder().crossJoin(Arrays.asList("colors")).build();
@@ -1407,12 +1454,12 @@ public class Criteria extends AbstractCondition {
 
         /**
          * Adds a conditionless NATURAL JOIN for multiple entities.
-         * Multiple entities are rendered as a parenthesized, comma-separated list; a single entity is rendered bare.
+         * Multiple entities are combined as a parenthesized {@code CROSS JOIN} tree; a single entity is rendered bare.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria c = Criteria.builder().naturalJoin(Arrays.asList("employees", "departments")).build();
-         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (employees, departments)"
+         * c.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (employees CROSS JOIN departments)"
          *
          * // A single-element collection is rendered without parentheses.
          * Criteria c2 = Criteria.builder().naturalJoin(Arrays.asList("employees")).build();
@@ -1450,7 +1497,7 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
          *                                  with an operator other than {@code WHERE}
          */
@@ -1492,7 +1539,7 @@ public class Criteria extends AbstractCondition {
          *                                  the clause keyword
          */
         public Builder where(final String expr) {
-            N.checkArgNotEmpty(expr, "expr");
+            N.checkArgNotBlank(expr, "expr");
 
             addConditions(new Where(Filters.expr(expr)));
 
@@ -1646,9 +1693,10 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
-         *                                  with an operator other than {@code GROUP_BY}
+         *                                  with an operator other than {@code GROUP_BY}. An empty {@link Junction} is
+         *                                  accepted and renders its Boolean identity (for example {@code GROUP BY 1 = 1})
          */
         public Builder groupBy(final Condition condition) {
             N.checkArgNotNull(condition, "condition");
@@ -1724,9 +1772,12 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to group by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
+         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the two property names
+         *                                  are equal (duplicate property name), or if any sort direction is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+            checkNoDuplicatePropName(propName, propName2);
+
             groupBy(N.asMap(propName, direction, propName2, direction2));
 
             return this;
@@ -1750,10 +1801,13 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to group by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
+         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if any two property names
+         *                                  are equal (duplicate property name), or if any sort direction is {@code null}
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
+            checkNoDuplicatePropName(propName, propName2, propName3);
+
             groupBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
 
             return this;
@@ -1862,7 +1916,7 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
          *                                  with an operator other than {@code HAVING}
          */
@@ -1906,7 +1960,7 @@ public class Criteria extends AbstractCondition {
          *                                  the clause keyword
          */
         public Builder having(final String expr) {
-            N.checkArgNotEmpty(expr, "expr");
+            N.checkArgNotBlank(expr, "expr");
 
             addConditions(new Having(Filters.expr(expr)));
 
@@ -2064,9 +2118,10 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
-         *                                  {@link SqlExpression} or empty {@link Junction}), is an {@code ANY}/{@code ALL}/{@code SOME}
+         *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
-         *                                  with an operator other than {@code ORDER_BY}
+         *                                  with an operator other than {@code ORDER_BY}. An empty {@link Junction} is
+         *                                  accepted and renders its Boolean identity (for example {@code ORDER BY 1 = 0})
          */
         public Builder orderBy(final Condition condition) {
             N.checkArgNotNull(condition, "condition");
@@ -2143,9 +2198,12 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to order by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
+         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the two property names
+         *                                  are equal (duplicate property name), or if any sort direction is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+            checkNoDuplicatePropName(propName, propName2);
+
             orderBy(N.asMap(propName, direction, propName2, direction2));
 
             return this;
@@ -2169,10 +2227,13 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to order by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
+         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if any two property names
+         *                                  are equal (duplicate property name), or if any sort direction is {@code null}
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
+            checkNoDuplicatePropName(propName, propName2, propName3);
+
             orderBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
 
             return this;
@@ -2272,13 +2333,15 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().limit((Limit) null);   // throws IllegalArgumentException
          * }</pre>
          *
-         * @param condition the LIMIT condition (must not be {@code null}); its operator must be
+         * @param limit the LIMIT condition (must not be {@code null}); its operator must be
          *             {@link Operator#LIMIT}, which is guaranteed for any {@link Limit} instance
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code condition} is {@code null}
+         * @throws IllegalArgumentException if {@code limit} is {@code null}
          */
-        public Builder limit(final Limit condition) {
-            addConditions(condition);
+        public Builder limit(final Limit limit) {
+            N.checkArgNotNull(limit, "limit");
+
+            addConditions(limit);
 
             return this;
         }
@@ -2347,14 +2410,14 @@ public class Criteria extends AbstractCondition {
          * Criteria c = Criteria.builder().limit("10 OFFSET 20").build();
          * c.toSql(NamingPolicy.NO_CHANGE);   // returns " LIMIT 10 OFFSET 20"
          *
-         * // Placeholder form for parameterized queries.
-         * Criteria c2 = Criteria.builder().limit("? OFFSET ?").build();
-         * c2.toSql(NamingPolicy.NO_CHANGE);   // returns " LIMIT ? OFFSET ?"
+         * // Placeholders are not accepted: each count or offset must be a non-negative integer literal.
+         * Criteria.builder().limit("? OFFSET ?");   // throws IllegalArgumentException
          * }</pre>
          *
          * @param expr the LIMIT expression as a string (must not be {@code null}, empty, or blank)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or not an accepted limit form
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, not an accepted limit form,
+         *                                  or contains a placeholder
          */
         public Builder limit(final String expr) {
             addConditions(Filters.limit(expr));
@@ -2523,7 +2586,7 @@ public class Criteria extends AbstractCondition {
          *         is a nested {@link Criteria}, uses an
          *         {@code ON}/{@code USING} operator, is an {@code ANY}/{@code ALL}/{@code SOME} quantified operand,
          *         is a standalone {@link SubQuery},
-         *         is an empty predicate (a blank {@link SqlExpression} or empty {@link Junction}), or reports a routed
+         *         is an empty predicate (a blank {@link SqlExpression}), or reports a routed
          *         operator without being the corresponding clause type
          */
         public Builder add(final Condition condition) {
@@ -2603,6 +2666,29 @@ public class Criteria extends AbstractCondition {
             }
 
             return expectedType.cast(cond);
+        }
+
+        /**
+         * Rejects a repeated property name in the fixed-arity {@code groupBy}/{@code orderBy} overloads.
+         * Those overloads are backed by a map keyed on the property name, so a repeated name would otherwise
+         * collapse silently (keeping only the last sort direction). {@code null} names are left to the
+         * clause constructor's own validation.
+         *
+         * @param propNames the property names supplied to the overload, in call order
+         * @throws IllegalArgumentException if any two of the given names are equal
+         */
+        private static void checkNoDuplicatePropName(final String... propNames) {
+            for (int i = 0; i < propNames.length; i++) {
+                if (propNames[i] == null) {
+                    continue;
+                }
+
+                for (int j = i + 1; j < propNames.length; j++) {
+                    if (propNames[i].equals(propNames[j])) {
+                        throw new IllegalArgumentException("Duplicate property name: " + propNames[i]);
+                    }
+                }
+            }
         }
 
         /**

@@ -258,4 +258,15 @@ public class HavingTest extends TestBase {
             new Having(null);
         });
     }
+
+    @Test
+    public void testEmptyJunctionRendersBooleanIdentity() {
+        // An initialized empty junction is a complete predicate, so HAVING accepts it and renders its identity.
+        assertEquals("HAVING 1 = 0", new Having(Filters.or()).toString());
+        assertEquals("HAVING 1 = 1", Filters.having(Filters.and()).toString());
+        assertTrue(new Having(Filters.and()).parameters().isEmpty());
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Having(Filters.expr("  ")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Having(new Or()));
+    }
 }

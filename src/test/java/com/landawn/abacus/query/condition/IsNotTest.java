@@ -27,8 +27,15 @@ public class IsNotTest extends TestBase {
 
         assertEquals("deletedAt", nullCondition.propName());
         assertEquals(Operator.IS_NOT, nullCondition.operator());
-        assertEquals(Boolean.FALSE, booleanCondition.propValue());
+        // A Boolean is normalized to the SQL keyword expression at construction.
+        assertEquals(SqlExpression.of("FALSE"), booleanCondition.propValue());
         assertEquals(unknown, expressionCondition.propValue());
+    }
+
+    @Test
+    public void testConstructorRejectsBlankExpression() {
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("status", Filters.expr("")));
+        assertThrows(IllegalArgumentException.class, () -> new IsNot("status", Filters.expr("   ")));
     }
 
     @Test
@@ -57,11 +64,17 @@ public class IsNotTest extends TestBase {
 
     @Test
     public void testBooleanRendersLiteralAndIsReportedAsParameter() {
+        // `x IS NOT ?` is not valid SQL, so a Boolean is rendered as the TRUE/FALSE keyword and never bound.
         final IsNot condition = new IsNot("enabled", false);
 
-        assertEquals("enabled IS NOT false", condition.toString());
-        assertEquals(List.of(false), condition.parameters());
-        assertEquals(Boolean.FALSE, condition.propValueAs(Boolean.class));
+        assertEquals("enabled IS NOT FALSE", condition.toString());
+        assertTrue(condition.parameters().isEmpty());
+        assertEquals(SqlExpression.of("FALSE"), condition.propValueAs(SqlExpression.class));
+
+        final IsNot trueCondition = new IsNot("enabled", true);
+        assertEquals("enabled IS NOT TRUE", trueCondition.toString());
+        assertTrue(trueCondition.parameters().isEmpty());
+        assertEquals(List.of(), Filters.isNot("enabled", true).parameters());
     }
 
     @Test

@@ -952,6 +952,121 @@ public final class QueryUtil {
     }
 
     /**
+     * Converts a SQL identifier (a column or property name, optionally qualified such as
+     * {@code t.firstName}) with the given naming policy while preserving the leading and trailing
+     * underscore runs of every dot-separated segment.
+     *
+     * <p>{@link NamingPolicy#convert(String)} treats leading and trailing {@code '_'} runs as
+     * separators and drops them, which would silently rename a column literally called
+     * {@code _id}, {@code _1} or {@code t.__v}. This helper splits the leading and trailing underscore
+     * runs off each dot-separated segment, converts what is left with {@code namingPolicy} (as one
+     * qualified name, so segments without such runs render exactly as {@code namingPolicy.convert}
+     * renders the whole identifier), and re-attaches the runs unchanged. An all-underscore identifier
+     * or segment is returned as-is. Internal underscore runs are <i>not</i> preserved: they follow the
+     * naming policy (abacus-common 8.0.0 collapses {@code a__b} to {@code a_b} under
+     * {@link NamingPolicy#SNAKE_CASE}), because keeping them would defeat snake-to-camel conversion.</p>
+     *
+     * <p>Every rendering path that converts an identifier goes through this method: the
+     * {@code SqlExpression.toSql(NamingPolicy)} literal path, the structured conditions
+     * ({@code Binary}, {@code AbstractIn}, {@code AbstractBetween}, {@code AbstractInSubQuery},
+     * {@code SubQuery}) and the query builders ({@code AbstractQueryBuilder}). A plain column name
+     * therefore renders identically through {@code Condition.toSql(NamingPolicy)} and through a builder.
+     * The one exception is a column literally named after a registered SQL keyword (for example
+     * {@code TRUE}): {@code SqlExpression} and the builders leave registered keywords untouched, while the
+     * structured conditions do not consult the keyword registry and convert such a name like any other.</p>
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * QueryUtil.convertIdentifier("firstName", NamingPolicy.SNAKE_CASE);            // "first_name"
+     * QueryUtil.convertIdentifier("_firstName", NamingPolicy.SNAKE_CASE);           // "_first_name"
+     * QueryUtil.convertIdentifier("firstName_", NamingPolicy.SNAKE_CASE);           // "first_name_"
+     * QueryUtil.convertIdentifier("__x", NamingPolicy.SNAKE_CASE);                  // "__x"
+     * QueryUtil.convertIdentifier("_firstName", NamingPolicy.SCREAMING_SNAKE_CASE); // "_FIRST_NAME"
+     * QueryUtil.convertIdentifier("_1", NamingPolicy.SNAKE_CASE);                   // "_1"
+     * QueryUtil.convertIdentifier("__", NamingPolicy.SNAKE_CASE);                   // "__" (all underscores, returned as-is)
+     * QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE);                // "t.__v" (runs preserved per segment)
+     * QueryUtil.convertIdentifier("acc._id", NamingPolicy.SCREAMING_SNAKE_CASE);    // "ACC._ID"
+     * QueryUtil.convertIdentifier("a__b", NamingPolicy.SNAKE_CASE);                 // "a_b" (internal runs follow the policy)
+     * QueryUtil.convertIdentifier("_firstName", NamingPolicy.NO_CHANGE);            // "_firstName"
+     * QueryUtil.convertIdentifier("", NamingPolicy.SNAKE_CASE);                     // ""
+     * }</pre>
+     *
+     * @param identifier the identifier to convert; {@code null} and empty strings are returned as-is
+     * @param namingPolicy the naming policy to apply to the parts between the underscore runs;
+     *                     {@code null} and {@link NamingPolicy#NO_CHANGE} return {@code identifier} as-is
+     * @return the converted identifier with the leading and trailing underscore runs of every
+     *         dot-separated segment preserved
+     */
+    public static String convertIdentifier(final String identifier, final NamingPolicy namingPolicy) {
+        if (Strings.isEmpty(identifier) || namingPolicy == null || namingPolicy == NamingPolicy.NO_CHANGE) {
+            return identifier;
+        }
+
+        final int len = identifier.length();
+
+        if (identifier.charAt(0) != '_' && identifier.charAt(len - 1) != '_' && !identifier.contains("._") && !identifier.contains("_.")) {
+            return namingPolicy.convert(identifier); // no segment starts or ends with '_': nothing to preserve
+        }
+
+        final String[] segments = identifier.split("\\.", -1);
+        final int segmentCount = segments.length;
+        final String[] leadingRuns = new String[segmentCount];
+        final String[] middles = new String[segmentCount];
+        final String[] trailingRuns = new String[segmentCount];
+        boolean hasMiddle = false;
+
+        for (int i = 0; i < segmentCount; i++) {
+            final String segment = segments[i];
+            final int segmentLen = segment.length();
+            int start = 0;
+
+            while (start < segmentLen && segment.charAt(start) == '_') {
+                start++;
+            }
+
+            int end = segmentLen;
+
+            while (end > start && segment.charAt(end - 1) == '_') {
+                end--;
+            }
+
+            leadingRuns[i] = segment.substring(0, start); // the whole segment when it is all underscores (or empty)
+            middles[i] = segment.substring(start, end);
+            trailingRuns[i] = segment.substring(end);
+            hasMiddle |= end > start;
+        }
+
+        if (!hasMiddle) {
+            return identifier; // only underscores and dots: nothing to convert
+        }
+
+        // Convert the middles as ONE qualified name so that segments without edge runs render exactly as
+        // NamingPolicy.convert renders the whole identifier; fall back to per-segment conversion if the
+        // policy did not keep the dot structure.
+        String[] converted = namingPolicy.convert(String.join(".", middles)).split("\\.", -1);
+
+        if (converted.length != segmentCount) {
+            converted = new String[segmentCount];
+
+            for (int i = 0; i < segmentCount; i++) {
+                converted[i] = middles[i].isEmpty() ? middles[i] : namingPolicy.convert(middles[i]);
+            }
+        }
+
+        final StringBuilder sb = new StringBuilder(len + 8);
+
+        for (int i = 0; i < segmentCount; i++) {
+            if (i > 0) {
+                sb.append('.');
+            }
+
+            sb.append(leadingRuns[i]).append(converted[i]).append(trailingRuns[i]);
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * Returns the table alias from the {@code @Table} annotation on the entity class.
      * The alias can be used in SQL queries to reference the table with a shorter name.
      *

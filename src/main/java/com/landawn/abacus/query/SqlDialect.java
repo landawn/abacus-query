@@ -156,7 +156,9 @@ public class SqlDialect {
      */
     public enum SqlPolicy {
         /**
-         * Inline values directly into the SQL string as literals.
+         * Inline values directly into the SQL string as literals. The positional bindings of a raw
+         * sub-query ({@code SubQuery(String, Collection)}) are inlined the same way, replacing its
+         * {@code ?} placeholders, so the built statement carries no parameters.
          *
          * <p><b>&#9888;&#65039;</b> Use only for trusted values; parameterized or named policies are preferred for user input.</p>
          */

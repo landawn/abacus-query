@@ -1551,12 +1551,16 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
-    public void testAppendRejectsEmptyJunction() {
-        // A junction without sub-conditions cannot be rendered as SQL. It is now rejected by the
-        // implicit-WHERE predicate validation in append(Condition) before any SQL is emitted.
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").append(new Junction(Operator.OR)));
+    public void testAppendRendersEmptyJunctionAsBooleanIdentity() {
+        // A junction without sub-conditions is a complete predicate through its Boolean identity
+        // (1 = 1 for AND, 1 = 0 for OR), exactly as Junction.toSql renders it; append(Condition) adds
+        // the implicit WHERE keyword as for any other predicate.
+        assertEquals("SELECT * FROM users WHERE 1 = 0", PSC.select("*").from("users").append(new Junction(Operator.OR)).build().query());
+        assertEquals("SELECT * FROM users WHERE 1 = 1", PSC.select("*").from("users").append(new Junction(Operator.AND)).build().query());
 
-        assertTrue(ex.getMessage().contains("use a non-empty predicate"), ex.getMessage());
+        // A blank raw expression is still not a predicate.
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").append(Filters.expr(" ")));
+        assertTrue(ex.getMessage().contains("a blank expression is not a predicate"), ex.getMessage());
     }
 
     @Test
@@ -2841,12 +2845,10 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testEmptyConditions() {
-        // Test handling of empty conditions
-        assertThrows(IllegalArgumentException.class, () -> PSC.select("*")
-                .from("users")
-                .where(Filters.and()) // Empty AND
-                .build()
-                .query());
+        // An empty junction renders as its Boolean identity (neutral element) instead of being rejected.
+        assertEquals("SELECT * FROM users WHERE 1 = 1", PSC.select("*").from("users").where(Filters.and()).build().query());
+        assertEquals("SELECT * FROM users WHERE 1 = 0", PSC.select("*").from("users").where(Filters.or()).build().query());
+        assertEquals("1 = 1", PSC.renderCondition(Filters.and()).build().query());
     }
 
     @Test
@@ -12031,12 +12033,13 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         public void testSelectFromMultipleEntities() {
+            // The join predicate between the two comma-listed entity references belongs in WHERE: a qualified
+            // JOIN whose "table" is a predicate can never be completed with on()/using().
             String sql = Dsl.MLC.selectFrom(Account.class, "a", "account", Account.class, "a2", "account2")
-                    .innerJoin("a.id = a2.parentId")
-                    .where(Filters.gt("a.createdDate", new Date()))
+                    .where(Filters.and(Filters.expr("a.id = a2.parentId"), Filters.gt("a.createdDate", new Date())))
                     .build()
                     .query();
-            Assertions.assertTrue(sql.contains("FROM"));
+            Assertions.assertTrue(sql.contains("FROM account a, account a2 WHERE (a.id = a2.parentId) AND (a.createdDate > #{createdDate})"), sql);
             Assertions.assertTrue(sql.contains("account."));
             Assertions.assertTrue(sql.contains("account2."));
         }
@@ -12045,10 +12048,10 @@ public class SqlBuilderTest extends TestBase {
         public void testSelectFromMultipleEntitiesWithExclusions() {
             Set<String> accountExcludes = new HashSet<>(Arrays.asList("sensitiveData"));
             String sql = Dsl.MLC.selectFrom(Account.class, "a", "account", accountExcludes, Account.class, "a2", "account2", null)
-                    .innerJoin("a.id = a2.parentId")
+                    .where(Filters.expr("a.id = a2.parentId"))
                     .build()
                     .query();
-            Assertions.assertTrue(sql.contains("FROM"));
+            Assertions.assertTrue(sql.endsWith("FROM account a, account a2 WHERE a.id = a2.parentId"), sql);
             Assertions.assertFalse(sql.contains("sensitiveData"));
         }
 
@@ -13792,6 +13795,25 @@ public class SqlBuilderTest extends TestBase {
                 .includeSubEntityProperties(includeSubEntityProperties)
                 .excludedPropNames(excludedPropNames)
                 .build();
+    }
+
+    // An unsafe Selection table alias is rejected with a message that names it as a TABLE alias (it was
+    // previously reported as "Column alias for 'Account table alias'").
+    @Test
+    public void testUnsafeSelectionTableAliasIsReportedAsTableAlias() {
+        final List<Selection> blankAlias = Arrays.asList(Selection.builder(Account.class).tableAlias(" ").build());
+        final IllegalArgumentException blank = assertThrows(IllegalArgumentException.class, () -> PSC.select(blankAlias));
+        assertTrue(blank.getMessage().startsWith("Table alias for 'Account' must not be"), blank.getMessage());
+        assertFalse(blank.getMessage().contains("Column alias"), blank.getMessage());
+
+        final List<Selection> commentAlias = Arrays.asList(Selection.builder(Account.class).tableAlias("a--").build());
+        final IllegalArgumentException comment = assertThrows(IllegalArgumentException.class, () -> PSC.select(commentAlias));
+        assertTrue(comment.getMessage().startsWith("Table alias for 'Account' must not be"), comment.getMessage());
+
+        // The class alias keeps its column-alias wording and a safe table alias still renders.
+        final List<Selection> badClassAlias = Arrays.asList(Selection.builder(Account.class).tableAlias("a").classAlias("x'y").build());
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> PSC.select(badClassAlias)).getMessage().startsWith("Column alias for 'Account'"));
+        assertNotNull(PSC.select(Arrays.asList(Selection.builder(Account.class).tableAlias("a").classAlias("acc").build())).from("test_account a").build().query());
     }
 
     private static Condition unsupportedCondition() {

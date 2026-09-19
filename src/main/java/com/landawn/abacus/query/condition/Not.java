@@ -120,7 +120,8 @@ public class Not extends ComposableCell {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is non-composable —
      *             a {@link Criteria}, a {@link Clause} condition (for example {@link Where}, {@link Having}, or
      *             {@link OrderBy}), an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *             quantified-subquery operand, a standalone {@link SubQuery}, or an empty predicate (a blank {@link SqlExpression} or empty {@link Junction})
+     *             quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}.
+     *             An empty {@link Junction} is accepted and negates its Boolean identity (for example {@code NOT (1 = 1)})
      */
     public Not(final Condition condition) {
         super(Operator.NOT, validateComposableOperand(condition, "not"));

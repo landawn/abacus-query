@@ -1295,8 +1295,49 @@ public class SqlExpressionTest extends TestBase {
 
     @Test
     public void testNamingPolicyConvertsUnderscoreLeadingIdentifiers() {
+        // Leading/trailing underscore runs are preserved and only the part between them is converted
+        // (QueryUtil.convertIdentifier), even though NamingPolicy.convert itself drops such runs.
         assertEquals("_first_name", SqlExpression.of("_firstName").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("_FIRST_NAME = OTHER_VALUE", SqlExpression.of("_firstName = otherValue").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("first_name_ = other_value", SqlExpression.of("firstName_ = otherValue").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_firstName", SqlExpression.of("_firstName").toSql(NamingPolicy.CAMEL_CASE));
+    }
+
+    @Test
+    public void testNamingPolicyKeepsUnderscoreOnlyPrefixedIdentifiers() {
+        // "_1" must NOT collapse to "1" (which would turn "_1 = 1" into an always-true predicate),
+        // and "__x" must keep both underscores.
+        assertEquals("_1 = 1", SqlExpression.of("_1 = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("_1", SqlExpression.of("_1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("__x", SqlExpression.of("__x").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("__x = 1", SqlExpression.of("__x = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("__X = 1", SqlExpression.of("__x = 1").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("__", SqlExpression.of("__").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testStaticHelpersRejectNullOrBlankExpr() {
+        // the expr/column side must never render as the text "null"
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.equal(null, 1));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.notEqual(" ", 1));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.greaterThan("", 1));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.between(null, 1, 2));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.like(null, "a%"));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNull(null));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNull(" "));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNotNull(""));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.count(null));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.upper(""));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.concat("a", null));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.log(" ", "100"));
+        assertThrows(IllegalArgumentException.class, () -> SqlExpression.lpad("id", 10, " "));
+
+        // a null VALUE is still meaningful and renders the documented null-aware forms
+        assertEquals("middle_name IS NULL", SqlExpression.equal("middle_name", null));
+        assertEquals("email IS NOT NULL", SqlExpression.notEqual("email", null));
+        // pre-quoted literal arguments (including the empty literal '') remain valid
+        assertEquals("REPLACE(phone, '-', '')", SqlExpression.replace("phone", "'-'", "''"));
+        assertEquals("COUNT(*)", SqlExpression.count("*"));
     }
 
     @Test

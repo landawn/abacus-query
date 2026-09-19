@@ -91,12 +91,14 @@ public class NotIn extends AbstractIn {
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param values the collection of values that the property should NOT match
-     *               (must not be {@code null}, empty, or contain {@code null}); the collection is copied internally to prevent external modifications.
-     *               A condition-valued element must not be query-structural or quantified
+     *               (must not be {@code null}, empty, or contain {@code null}); the collection is copied internally to prevent external modifications,
+     *               and array, {@code Date} and {@code Calendar} elements are snapshotted at construction.
+     *               A condition-valued element must be a non-blank {@link SqlExpression} or a scalar {@link SubQuery}
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, if {@code values} is
-     *                                  {@code null}/empty or contains {@code null}, or if a condition-valued element is or contains a
-     *                                  {@link Criteria}, SQL clause, JOIN, or {@code ON}/{@code USING} connector,
-     *                                  or is/contains an {@link All}, {@link Any}, or {@link Some} quantified operand
+     *                                  {@code null}/empty or contains {@code null}, or if any element is a
+     *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
+     *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
+     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected)
      */
     public NotIn(final String propName, final Collection<?> values) {
         super(propName, Operator.NOT_IN, values);
@@ -129,16 +131,16 @@ public class NotIn extends AbstractIn {
      * @param valueRows the collection of value rows (must not be {@code null} or empty); each row must be
      *               non-{@code null} and resolve to exactly {@code propNames.size()} values. A row may be a
      *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean. Map rows
-     *               must contain every requested property key; condition-valued elements
-     *               must not be query-structural or quantified
+     *               must contain every requested property key; a condition-valued element must be a
+     *               non-blank {@link SqlExpression} or a scalar {@link SubQuery}
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map row is missing a requested key, if a row element is {@code null},
-     *                                  if a bean row does not expose a requested property, or if a condition-valued row
-     *                                  element is or contains a {@link Criteria}, SQL clause, JOIN, or
-     *                                  {@code ON}/{@code USING} connector, or is/contains an {@link All},
-     *                                  {@link Any}, or {@link Some} quantified operand
+     *                                  if a bean row does not expose a requested property, or if any row element is a
+     *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
+     *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
+     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected)
      */
     public NotIn(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.NOT_IN, valueRows);

@@ -1474,4 +1474,231 @@ public class ParsedSqlTest extends TestBase {
         Assertions.assertTrue(parsed.parameterizedSql().contains("SELECT"));
         Assertions.assertTrue(parsed.parameterizedSql().contains("? FROM users"));
     }
+
+    @Test
+    public void testParse_NamedAndIbatisMarkersInsideSubscriptWithLiteralAreBound() {
+        // The tokenizer keeps "ARRAY['a', :id]" as ONE token; a quoted literal inside the subscript must not
+        // make the named/iBatis scanners skip the whole token (the positional scanner already handled it).
+        ParsedSql named = ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY['a', :id]");
+        assertEquals("SELECT * FROM t WHERE tags @> ARRAY['a', ?]", named.parameterizedSql());
+        assertEquals(1, named.parameterCount());
+        assertEquals(List.of("id"), named.namedParameters());
+
+        ParsedSql namedFirst = ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY[:id, 'a'] AND id = :id2");
+        assertEquals("SELECT * FROM t WHERE tags @> ARRAY[?, 'a'] AND id = ?", namedFirst.parameterizedSql());
+        assertEquals(List.of("id", "id2"), namedFirst.namedParameters());
+
+        ParsedSql ibatis = ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY['a', #{id}]");
+        assertEquals("SELECT * FROM t WHERE tags @> ARRAY['a', ?]", ibatis.parameterizedSql());
+        assertEquals(List.of("id"), ibatis.namedParameters());
+
+        // literal content inside the subscript is still not a marker
+        ParsedSql literalOnly = ParsedSql.parse("SELECT * FROM t WHERE tags @> ARRAY[':notparam', '#{nope}']");
+        assertEquals("SELECT * FROM t WHERE tags @> ARRAY[':notparam', '#{nope}']", literalOnly.parameterizedSql());
+        assertEquals(0, literalOnly.parameterCount());
+
+        // the mixed-style guard must see the marker
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ? FROM t WHERE tags @> ARRAY['a', :id]"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE arr = ARRAY[:a, 'x'] AND id = ?"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE arr = ARRAY['x', #{a}] AND id = :b"));
+    }
+
+    @Test
+    public void testParse_StandaloneSubscriptWithInnerWhitespaceBindsNamedParameter() {
+        // "[ :ids ]" binds exactly like "[ ? ]" does; the whitespace after '[' is skipped for both styles.
+        ParsedSql spacedInner = ParsedSql.parse("SELECT * FROM t WHERE arr = array [ :ids ]");
+        assertEquals("SELECT * FROM t WHERE arr = array [ ? ]", spacedInner.parameterizedSql());
+        assertEquals(1, spacedInner.parameterCount());
+        assertEquals(List.of("ids"), spacedInner.namedParameters());
+
+        // a standalone "[#{...}]" stays a bracket-quoted identifier (pinned by
+        // testParse_BracketQuotedIdentifiersDoNotCreateParameters), with or without inner whitespace
+        ParsedSql ibatisSpaced = ParsedSql.parse("SELECT * FROM t WHERE arr = array [ #{ids} ]");
+        assertEquals("SELECT * FROM t WHERE arr = array [ #{ids} ]", ibatisSpaced.parameterizedSql());
+        assertEquals(0, ibatisSpaced.parameterCount());
+    }
+
+    @Test
+    public void testParse_ChainedSubscriptIsInspectedLikeTheFirstGroup() {
+        // Regression: the tokenizer emits the second bracket group of "x['a', :b]['c', :d]" as a standalone
+        // literal-first "[...]" token, which used to be treated as a bracket-quoted identifier, so :d was
+        // left verbatim and "x[?]['c', ?]" emitted both '?' with parameterCount() == 1. The same holds when
+        // the groups are separated by whitespace or a comment, which does not break the subscript chain.
+        ParsedSql named = ParsedSql.parse("SELECT x['a', :b]['c', :d] FROM t");
+        assertEquals("SELECT x['a', ?]['c', ?] FROM t", named.parameterizedSql());
+        assertEquals(2, named.parameterCount());
+        assertEquals(List.of("b", "d"), named.namedParameters());
+
+        ParsedSql positional = ParsedSql.parse("SELECT x[?]['c', ?] FROM t");
+        assertEquals("SELECT x[?]['c', ?] FROM t", positional.parameterizedSql());
+        assertEquals(2, positional.parameterCount());
+
+        ParsedSql ibatis = ParsedSql.parse("SELECT x[#{a}]['c', #{b}] FROM t");
+        assertEquals("SELECT x[?]['c', ?] FROM t", ibatis.parameterizedSql());
+        assertEquals(2, ibatis.parameterCount());
+        assertEquals(List.of("a", "b"), ibatis.namedParameters());
+
+        // a literal-only first group still chains
+        ParsedSql literalFirst = ParsedSql.parse("SELECT x[1]['c', :d] FROM t");
+        assertEquals("SELECT x[1]['c', ?] FROM t", literalFirst.parameterizedSql());
+        assertEquals(List.of("d"), literalFirst.namedParameters());
+
+        // already-working shapes are unchanged
+        assertEquals(3, ParsedSql.parse("SELECT arr[?][?][?] FROM t").parameterCount());
+        assertEquals(List.of("a", "b"), ParsedSql.parse("SELECT x[:a][:b] FROM t").namedParameters());
+
+        // literal content inside a chained group is never a parameter
+        ParsedSql literalOnly = ParsedSql.parse("SELECT x[1][':nope', '#{nope}', '?'] FROM t");
+        assertEquals("SELECT x[1][':nope', '#{nope}', '?'] FROM t", literalOnly.parameterizedSql());
+        assertEquals(0, literalOnly.parameterCount());
+
+        // Whitespace and comments between the groups do NOT break the chain: "x[?] ['c', ?]" is the same
+        // PostgreSQL expression as "x[?]['c', ?]", so both placeholders are counted and parameterCount()
+        // matches the number of '?' actually emitted into parameterizedSql().
+        ParsedSql spacedChain = ParsedSql.parse("SELECT x[?] ['c', ?] FROM t");
+        assertEquals("SELECT x[?] ['c', ?] FROM t", spacedChain.parameterizedSql());
+        assertEquals(2, spacedChain.parameterCount());
+        assertEquals(2, spacedChain.parameterizedSql().chars().filter(c -> c == '?').count());
+
+        ParsedSql spacedNamedChain = ParsedSql.parse("SELECT x[:a] ['c', :b] FROM t");
+        assertEquals("SELECT x[?] ['c', ?] FROM t", spacedNamedChain.parameterizedSql());
+        assertEquals(List.of("a", "b"), spacedNamedChain.namedParameters());
+
+        // A comment between the groups behaves like whitespace.
+        assertEquals(2, ParsedSql.parse("SELECT x[?] /* c */ ['c', ?] FROM t").parameterCount());
+
+        // The chain root must be a real subscript: a bracket group after a bracket-QUOTED IDENTIFIER is a
+        // SQL Server column with a bracketed alias, so it keeps the standalone reading and stays literal.
+        ParsedSql bracketedAlias = ParsedSql.parse("SELECT [a] [b:c] FROM t WHERE id = :id");
+        assertEquals("SELECT [a] [b:c] FROM t WHERE id = ?", bracketedAlias.parameterizedSql());
+        assertEquals(List.of("id"), bracketedAlias.namedParameters());
+
+        ParsedSql qualifiedBracketedAlias = ParsedSql.parse("SELECT t.[a] [b:c] FROM t WHERE id = :id");
+        assertEquals("SELECT t.[a] [b:c] FROM t WHERE id = ?", qualifiedBracketedAlias.parameterizedSql());
+        assertEquals(List.of("id"), qualifiedBracketedAlias.namedParameters());
+
+        assertEquals("SELECT [a],[b:c] FROM t", ParsedSql.parse("SELECT [a],[b:c] FROM t").parameterizedSql());
+        assertEquals("SELECT [db].[schema].[t:col] FROM x", ParsedSql.parse("SELECT [db].[schema].[t:col] FROM x").parameterizedSql());
+        assertEquals("INSERT INTO [t]([a],[b]) VALUES (?, ?)", ParsedSql.parse("INSERT INTO [t]([a],[b]) VALUES (?, ?)").parameterizedSql());
+        assertEquals(2, ParsedSql.parse("INSERT INTO [t]([a],[b]) VALUES (?, ?)").parameterCount());
+
+        // the mixed-style guard sees the chained marker
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT x[?]['c', :d] FROM t"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT x[:a]['c', #{b}] FROM t"));
+
+        // the documented bracket-identifier exceptions are untouched
+        assertEquals("SELECT t.[:name] FROM t", ParsedSql.parse("SELECT t.[:name] FROM t").parameterizedSql());
+        assertEquals(0, ParsedSql.parse("SELECT t.[:name] FROM t").parameterCount());
+        assertEquals("SELECT [#{ids}] FROM t", ParsedSql.parse("SELECT [#{ids}] FROM t").parameterizedSql());
+        assertEquals(0, ParsedSql.parse("SELECT [#{ids}] FROM t").parameterCount());
+    }
+
+    @Test
+    public void testParse_EscapedQuoteInsideSubscriptLiteralDoesNotEndTheLiteral() {
+        // Where a literal inside a subscript ends depends on the dialect once it contains a backslash: under
+        // MySQL / PostgreSQL E'' semantics "\'" is an escaped quote, under standard-conforming strings "'a\'"
+        // is a complete literal. Committing to either reading corrupts the other dialect, so the scanners
+        // evaluate a subscript token under BOTH readings and bind only when they agree; a token on which they
+        // disagree is left verbatim (nothing bound, nothing counted) so the leftover marker fails loudly at
+        // the driver. The E prefix does not change the rule (by design, fail-safe): under the standard
+        // reading E'it\'s ...' ends at its first \', so the readings disagree and the token stays verbatim.
+        ParsedSql escaped = ParsedSql.parse("SELECT ARRAY[E'it\\'s :literal', :id] FROM t");
+        assertEquals("SELECT ARRAY[E'it\\'s :literal', :id] FROM t", escaped.parameterizedSql());
+        assertEquals(List.of(), escaped.namedParameters());
+        assertEquals(0, escaped.parameterCount());
+
+        // Agree cases: no backslash, doubled quotes, or an escaped backslash right before the closing quote
+        // (both readings: the pair is consumed / is two ordinary characters, then the quote closes).
+        ParsedSql doubled = ParsedSql.parse("SELECT ARRAY['it''s :x', :id] FROM t");
+        assertEquals("SELECT ARRAY['it''s :x', ?] FROM t", doubled.parameterizedSql());
+        assertEquals(List.of("id"), doubled.namedParameters());
+        assertEquals(1, doubled.parameterCount());
+
+        ParsedSql trailingBackslash = ParsedSql.parse("SELECT ARRAY['a\\\\', :id] FROM t");
+        assertEquals("SELECT ARRAY['a\\\\', ?] FROM t", trailingBackslash.parameterizedSql());
+        assertEquals(List.of("id"), trailingBackslash.namedParameters());
+        assertEquals(1, ParsedSql.parse("SELECT ARRAY['a\\\\', ?] FROM t").parameterCount());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT ARRAY['a\\\\', #{id}] FROM t").namedParameters());
+
+        ParsedSql escapedBackslash = ParsedSql.parse("SELECT ARRAY[E'a\\\\b', ?] FROM t");
+        assertEquals("SELECT ARRAY[E'a\\\\b', ?] FROM t", escapedBackslash.parameterizedSql());
+        assertEquals(1, escapedBackslash.parameterCount());
+        assertEquals(1, escapedBackslash.positionalParameterOffsets().length);
+        assertEquals("SELECT ARRAY[E'a\\\\b', ?] FROM t".lastIndexOf('?'), escapedBackslash.positionalParameterOffsets()[0]);
+
+        // Double-quoted and backtick-quoted identifiers escape by doubling only (never ambiguous).
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT ARRAY[\"a\"\"b :x\", :id] FROM t").namedParameters());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT ARRAY[`a``b :x`, :id] FROM t").namedParameters());
+
+        // Disagree cases, one per marker kind: verbatim, count 0, no names, no positional offsets.
+        ParsedSql namedDisagree = ParsedSql.parse("SELECT ARRAY['\\'' , :id] FROM t");
+        assertEquals("SELECT ARRAY['\\'' , :id] FROM t", namedDisagree.parameterizedSql());
+        assertEquals(List.of(), namedDisagree.namedParameters());
+        assertEquals(0, namedDisagree.parameterCount());
+
+        ParsedSql ibatisDisagree = ParsedSql.parse("SELECT ARRAY['a\\'', #{id}] FROM t");
+        assertEquals("SELECT ARRAY['a\\'', #{id}] FROM t", ibatisDisagree.parameterizedSql());
+        assertEquals(List.of(), ibatisDisagree.namedParameters());
+        assertEquals(0, ibatisDisagree.parameterCount());
+
+        ParsedSql positionalDisagree = ParsedSql.parse("SELECT ARRAY['a\\'', ?] FROM t");
+        assertEquals("SELECT ARRAY['a\\'', ?] FROM t", positionalDisagree.parameterizedSql());
+        assertEquals(0, positionalDisagree.parameterCount());
+        assertEquals(0, positionalDisagree.positionalParameterOffsets().length);
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY[E'a\\'?', ?] FROM t").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY[E'it\\'s ?', ?, ?] FROM t").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY[E'a\\'#{x}', #{id}] FROM t").parameterCount());
+
+        // A disagreeing subscript next to an ordinary top-level binding: the tokenizer closes the bracket
+        // group under the backslash reading, so ":id" outside it is its own token and is bound alone while
+        // the ambiguous group stays verbatim.
+        ParsedSql mixed = ParsedSql.parse("SELECT ARRAY['a\\'', :x] FROM t WHERE id = :id");
+        assertEquals("SELECT ARRAY['a\\'', :x] FROM t WHERE id = ?", mixed.parameterizedSql());
+        assertEquals(List.of("id"), mixed.namedParameters());
+        assertEquals(1, mixed.parameterCount());
+
+        // Each group of a chained subscript is judged on its own.
+        ParsedSql chained = ParsedSql.parse("SELECT arr['a\\'', :x]['b', :y] FROM t");
+        assertEquals("SELECT arr['a\\'', :x]['b', ?] FROM t", chained.parameterizedSql());
+        assertEquals(List.of("y"), chained.namedParameters());
+
+        // The mixed-style guard is unchanged for unambiguous tokens; an ambiguous token contributes no
+        // marker to it, so the "?" it holds verbatim cannot clash with a named binding elsewhere.
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY['it''s :literal', ?] FROM t WHERE id = :id"));
+        ParsedSql verbatimQuestionMark = ParsedSql.parse("SELECT ARRAY[E'it\\'s :literal', ?] FROM t WHERE id = :id");
+        assertEquals("SELECT ARRAY[E'it\\'s :literal', ?] FROM t WHERE id = ?", verbatimQuestionMark.parameterizedSql());
+        assertEquals(List.of("id"), verbatimQuestionMark.namedParameters());
+        assertEquals(1, verbatimQuestionMark.parameterCount());
+    }
+
+    @Test
+    public void testPositionalParameterOffsetsMatchCountedPlaceholders() {
+        // The offsets point at exactly the '?' characters parameterCount() counted, in the ORIGINAL text:
+        // not the JSON operator, not the '?' in a literal, a comment or a bracket-quoted identifier, but the
+        // one inside an array subscript.
+        final String sql = "SELECT arr[?] FROM t WHERE doc ? 'key' AND k = 'a?' AND [w?] = ? /* ? */ -- ?\n AND z = ?";
+        final ParsedSql parsed = ParsedSql.parse(sql);
+        assertEquals(3, parsed.parameterCount());
+
+        final int[] offsets = parsed.positionalParameterOffsets();
+        assertEquals(3, offsets.length);
+        assertEquals(sql.indexOf("arr[?]") + 4, offsets[0]);
+        assertEquals(sql.indexOf("[w?] = ?") + 7, offsets[1]);
+        assertEquals(sql.lastIndexOf('?'), offsets[2]);
+
+        for (final int offset : offsets) {
+            assertEquals('?', sql.charAt(offset));
+        }
+
+        // Fresh array on every call; whitespace runs collapsed by the tokenizer do not shift the offsets.
+        assertEquals(false, offsets == parsed.positionalParameterOffsets());
+        final String spaced = "SELECT  *\tFROM t\n WHERE  a = ?  AND b = ?";
+        final int[] spacedOffsets = ParsedSql.parse(spaced).positionalParameterOffsets();
+        assertEquals(2, spacedOffsets.length);
+        assertEquals(spaced.indexOf('?'), spacedOffsets[0]);
+        assertEquals(spaced.lastIndexOf('?'), spacedOffsets[1]);
+
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE name = :name").positionalParameterOffsets().length);
+        assertEquals(0, ParsedSql.parse("SELECT [what?] FROM t").positionalParameterOffsets().length);
+    }
 }

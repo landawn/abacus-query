@@ -299,4 +299,17 @@ public class WhereTest extends TestBase {
         Assertions.assertEquals(Operator.WHERE, where.operator());
         Assertions.assertEquals(isNullCondition, where.condition());
     }
+
+    @Test
+    public void testEmptyJunctionRendersBooleanIdentity() {
+        // An initialized empty junction is a complete predicate, so WHERE accepts it and renders its identity.
+        assertEquals("WHERE 1 = 1", new Where(Filters.and()).toString());
+        assertEquals("WHERE 1 = 0", Filters.where(Filters.or()).toString());
+        assertEquals("WHERE ((1 = 1) OR (id = 1))", new Where(Filters.or(Filters.and(), Filters.eq("id", 1))).toString());
+        assertTrue(new Where(Filters.and()).parameters().isEmpty());
+
+        // A blank SqlExpression and an uninitialized junction stay rejected.
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("  ")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(new And()));
+    }
 }

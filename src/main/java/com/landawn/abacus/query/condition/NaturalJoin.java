@@ -106,9 +106,10 @@ public class NaturalJoin extends Join {
      * Creates a NATURAL JOIN clause with multiple tables/entities.
      * The rendered SQL is {@code NATURAL JOIN (t1 CROSS JOIN t2 ...)}; a single-element collection renders
      * bare, without the parentheses.
-     * Because most databases do not accept a comma-separated list after {@code NATURAL JOIN}, this
-     * form is rarely directly executable and is provided mainly for symmetry with the other join
-     * subclasses. Prefer chaining individual {@link NaturalJoin} clauses for portable SQL.
+     * The parenthesized {@code CROSS JOIN} tree is a standard joined-table operand; note that the natural
+     * join then matches on all column names shared between the left side and the combined columns of the
+     * listed tables, and a name shared by two listed tables makes the join ambiguous on most databases.
+     * Prefer chaining individual {@link NaturalJoin} clauses.
      *
      * <p>Because a NATURAL JOIN derives its join predicate implicitly, no condition is needed; this is
      * a convenience for joining the supplied entities without an explicit condition.</p>

@@ -3,7 +3,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -19,9 +18,12 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class RightJoinTest extends TestBase {
+    /** A column-to-column ON predicate: renders {@code ON a.id = b.id} and binds no parameters. */
+    private static final On ON_AB = Filters.on("a.id", "b.id");
+
     @Test
     public void testConstructor_Simple() {
-        RightJoin join = new RightJoin("departments");
+        RightJoin join = new RightJoin("departments", ON_AB);
         assertNotNull(join);
         assertEquals(Operator.RIGHT_JOIN, join.operator());
     }
@@ -46,7 +48,7 @@ public class RightJoinTest extends TestBase {
     @Test
     public void testGetJoinEntities() {
         List<String> entities = Arrays.asList("table1", "table2");
-        RightJoin join = new RightJoin(entities, null);
+        RightJoin join = new RightJoin(entities, Filters.on("table1.id", "table2.id"));
         List<String> result = join.joinEntities();
         assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
@@ -62,14 +64,19 @@ public class RightJoinTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testGetCondition_Null() {
-        RightJoin join = new RightJoin("customers");
-        assertNull(join.condition());
+        // A RIGHT JOIN can no longer be condition-less: the single-argument form always throws.
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new RightJoin("customers"));
+        assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new RightJoin("customers", null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new RightJoin(Arrays.asList("customers", "orders"), null));
     }
 
     @Test
     public void testParameters_Empty() {
-        RightJoin join = new RightJoin("orders");
+        // A column-to-column ON predicate binds no parameters.
+        RightJoin join = new RightJoin("orders", ON_AB);
         assertTrue(join.parameters().isEmpty());
     }
 
@@ -83,7 +90,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testToString_Simple() {
-        RightJoin join = new RightJoin("departments");
+        RightJoin join = new RightJoin("departments", ON_AB);
         String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("RIGHT JOIN"));
         assertTrue(result.contains("departments"));
@@ -106,7 +113,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        RightJoin join = new RightJoin("orders");
+        RightJoin join = new RightJoin("orders", ON_AB);
         assertEquals(join, join);
     }
 
@@ -119,14 +126,14 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testEquals_DifferentEntities() {
-        RightJoin join1 = new RightJoin("orders");
-        RightJoin join2 = new RightJoin("products");
+        RightJoin join1 = new RightJoin("orders", ON_AB);
+        RightJoin join2 = new RightJoin("products", ON_AB);
         assertNotEquals(join1, join2);
     }
 
     @Test
     public void testEquals_Null() {
-        RightJoin join = new RightJoin("orders");
+        RightJoin join = new RightJoin("orders", ON_AB);
         assertNotEquals(null, join);
     }
 
@@ -161,13 +168,13 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithEntityOnly() {
-        RightJoin join = Filters.rightJoin("customers");
+        RightJoin join = Filters.rightJoin("customers", ON_AB);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.RIGHT_JOIN, join.operator());
         Assertions.assertEquals(1, join.joinEntities().size());
         Assertions.assertTrue(join.joinEntities().contains("customers"));
-        Assertions.assertNull(join.condition());
+        Assertions.assertSame(ON_AB, join.condition());
     }
 
     @Test
@@ -183,8 +190,8 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testConstructorRejectsInvalidEntities() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin((String) null));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(""));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin((String) null, ON_AB));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("", ON_AB));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(Arrays.asList("products", null), Filters.on("a", "b")));
         Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(Arrays.asList("products", ""), Filters.on("a", "b")));
     }
@@ -222,7 +229,8 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testParametersNoCondition() {
-        RightJoin join = Filters.rightJoin("products");
+        // No bound parameters when the predicate compares columns only.
+        RightJoin join = Filters.rightJoin("products", ON_AB);
 
         List<Object> params = join.parameters();
         Assertions.assertNotNull(params);
@@ -231,7 +239,7 @@ public class RightJoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        RightJoin join = Filters.rightJoin("suppliers");
+        RightJoin join = Filters.rightJoin("suppliers", ON_AB);
 
         String result = join.toString();
         Assertions.assertTrue(result.contains("RIGHT JOIN"));
@@ -253,9 +261,9 @@ public class RightJoinTest extends TestBase {
     public void testEquals() {
         On condition = Filters.on("a.id", "b.a_id");
 
-        RightJoin join1 = Filters.rightJoin("tableB");
-        RightJoin join2 = Filters.rightJoin("tableB");
-        RightJoin join3 = Filters.rightJoin("tableC");
+        RightJoin join1 = Filters.rightJoin("tableB", ON_AB);
+        RightJoin join2 = Filters.rightJoin("tableB", ON_AB);
+        RightJoin join3 = Filters.rightJoin("tableC", ON_AB);
         RightJoin join4 = Filters.rightJoin("tableB", condition);
 
         Assertions.assertTrue(join1.equals(join1));
@@ -310,5 +318,30 @@ public class RightJoinTest extends TestBase {
         // Gets all departments and locations, even without employees
         Assertions.assertEquals(2, join.joinEntities().size());
         Assertions.assertEquals(joinCondition, join.condition());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testEntityValidationPrecedesPredicateCheck() {
+        // A null/blank entity is reported as such, not as a missing join predicate.
+        final String entityMessage = "must not be null, empty, or blank";
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new RightJoin((String) null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+        Assertions.assertFalse(ex.getMessage().contains("requires a non-null ON/USING predicate"), ex.getMessage());
+
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new RightJoin("   ", null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testDeprecatedSingleArgConstructorAlwaysThrows() {
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new RightJoin("orders"));
+        Assertions.assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+
+        // The advertised alternatives work.
+        Assertions.assertEquals("RIGHT JOIN orders ON a.id = b.id", new RightJoin("orders", ON_AB).toSql(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("CROSS JOIN orders", new CrossJoin("orders").toSql(NamingPolicy.NO_CHANGE));
     }
 }

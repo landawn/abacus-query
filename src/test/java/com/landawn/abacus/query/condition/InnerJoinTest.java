@@ -3,7 +3,6 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -19,9 +18,12 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class InnerJoinTest extends TestBase {
+    /** A column-to-column ON predicate: renders {@code ON a.id = b.id} and binds no parameters. */
+    private static final On ON_AB = Filters.on("a.id", "b.id");
+
     @Test
     public void testConstructor_Simple() {
-        InnerJoin join = new InnerJoin("orders");
+        InnerJoin join = new InnerJoin("orders", ON_AB);
         assertNotNull(join);
         assertEquals(Operator.INNER_JOIN, join.operator());
     }
@@ -46,7 +48,7 @@ public class InnerJoinTest extends TestBase {
     @Test
     public void testGetJoinEntities() {
         List<String> entities = Arrays.asList("table1", "table2");
-        InnerJoin join = new InnerJoin(entities, null);
+        InnerJoin join = new InnerJoin(entities, Filters.on("table1.id", "table2.id"));
         List<String> result = join.joinEntities();
         assertEquals(2, result.size());
         assertTrue(result.contains("table1"));
@@ -62,14 +64,19 @@ public class InnerJoinTest extends TestBase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testGetCondition_Null() {
-        InnerJoin join = new InnerJoin("orders");
-        assertNull(join.condition());
+        // An INNER JOIN can no longer be condition-less: the single-argument form always throws.
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new InnerJoin("orders"));
+        assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new InnerJoin("orders", null));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new InnerJoin(Arrays.asList("orders", "items"), null));
     }
 
     @Test
     public void testParameters_Empty() {
-        InnerJoin join = new InnerJoin("orders");
+        // A column-to-column ON predicate binds no parameters.
+        InnerJoin join = new InnerJoin("orders", ON_AB);
         assertTrue(join.parameters().isEmpty());
     }
 
@@ -83,7 +90,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testToString_Simple() {
-        InnerJoin join = new InnerJoin("orders");
+        InnerJoin join = new InnerJoin("orders", ON_AB);
         String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("INNER JOIN"));
         assertTrue(result.contains("orders"));
@@ -106,7 +113,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testEquals_SameObject() {
-        InnerJoin join = new InnerJoin("orders");
+        InnerJoin join = new InnerJoin("orders", ON_AB);
         assertEquals(join, join);
     }
 
@@ -119,14 +126,14 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testEquals_DifferentEntities() {
-        InnerJoin join1 = new InnerJoin("orders");
-        InnerJoin join2 = new InnerJoin("products");
+        InnerJoin join1 = new InnerJoin("orders", ON_AB);
+        InnerJoin join2 = new InnerJoin("products", ON_AB);
         assertNotEquals(join1, join2);
     }
 
     @Test
     public void testEquals_Null() {
-        InnerJoin join = new InnerJoin("orders");
+        InnerJoin join = new InnerJoin("orders", ON_AB);
         assertNotEquals(null, join);
     }
 
@@ -139,7 +146,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testWithAlias() {
-        InnerJoin join = new InnerJoin("order_details od");
+        InnerJoin join = new InnerJoin("order_details od", ON_AB);
         String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("order_details od"));
     }
@@ -162,18 +169,18 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testConstructorWithJoinEntity() {
-        InnerJoin join = new InnerJoin("products");
+        InnerJoin join = new InnerJoin("products", ON_AB);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals(Operator.INNER_JOIN, join.operator());
         Assertions.assertEquals(1, join.joinEntities().size());
         Assertions.assertEquals("products", join.joinEntities().get(0));
-        Assertions.assertNull(join.condition());
+        Assertions.assertSame(ON_AB, join.condition());
     }
 
     @Test
     public void testConstructorWithJoinEntityAndAlias() {
-        InnerJoin join = new InnerJoin("customers c");
+        InnerJoin join = new InnerJoin("customers c", ON_AB);
 
         Assertions.assertNotNull(join);
         Assertions.assertEquals("customers c", join.joinEntities().get(0));
@@ -227,7 +234,8 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testParametersNoCondition() {
-        InnerJoin join = new InnerJoin("products");
+        // No bound parameters when the predicate compares columns only.
+        InnerJoin join = new InnerJoin("products", ON_AB);
         List<Object> params = join.parameters();
 
         Assertions.assertNotNull(params);
@@ -236,7 +244,7 @@ public class InnerJoinTest extends TestBase {
 
     @Test
     public void testToString() {
-        InnerJoin join = new InnerJoin("products");
+        InnerJoin join = new InnerJoin("products", ON_AB);
         String result = join.toString();
 
         Assertions.assertTrue(result.contains("INNER JOIN"));
@@ -273,7 +281,7 @@ public class InnerJoinTest extends TestBase {
         InnerJoin join1 = new InnerJoin("table", condition);
         InnerJoin join2 = new InnerJoin("table", condition);
         InnerJoin join3 = new InnerJoin("other", condition);
-        InnerJoin join4 = new InnerJoin("table");
+        InnerJoin join4 = new InnerJoin("table", Filters.eq("a", "c"));
 
         Assertions.assertEquals(join1, join1);
         Assertions.assertEquals(join1, join2);
@@ -314,5 +322,30 @@ public class InnerJoinTest extends TestBase {
         Assertions.assertTrue(result.contains("products p"));
         Assertions.assertTrue(result.contains("categories c"));
         Assertions.assertTrue(result.contains("suppliers s"));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testEntityValidationPrecedesPredicateCheck() {
+        // A null/blank entity is reported as such, not as a missing join predicate.
+        final String entityMessage = "must not be null, empty, or blank";
+
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new InnerJoin((String) null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+        Assertions.assertFalse(ex.getMessage().contains("requires a non-null ON/USING predicate"), ex.getMessage());
+
+        ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new InnerJoin("   ", null));
+        Assertions.assertTrue(ex.getMessage().contains(entityMessage), ex.getMessage());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testDeprecatedSingleArgConstructorAlwaysThrows() {
+        final IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> new InnerJoin("orders"));
+        Assertions.assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"), ex.getMessage());
+
+        // The advertised alternatives work.
+        Assertions.assertEquals("INNER JOIN orders ON a.id = b.id", new InnerJoin("orders", ON_AB).toSql(NamingPolicy.NO_CHANGE));
+        Assertions.assertEquals("CROSS JOIN orders", new CrossJoin("orders").toSql(NamingPolicy.NO_CHANGE));
     }
 }

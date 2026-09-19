@@ -528,4 +528,48 @@ public class JunctionTest extends TestBase {
     public void testTrustedConstructorStillRejectsNonJunctionOperator() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.EQUAL, new java.util.ArrayList<Condition>(), true));
     }
+
+    /**
+     * Initialized empty junctions are complete predicates (Boolean identities) and therefore compose
+     * everywhere a predicate is accepted: nested in another junction, as the receiver or operand of
+     * and()/or()/xor()/not(), and inside clauses. Only the uninitialized (null-operator) junction stays rejected.
+     */
+    @Test
+    public void testNestedEmptyJunctionsAreAcceptedEverywhere() {
+        assertEquals("((1 = 0))", Filters.and(Filters.or()).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("((1 = 1) OR (id = 1))", Filters.or(Filters.and(), Filters.eq("id", 1)).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("((1 = 1) OR (id = 1))", Filters.and().or(Filters.eq("id", 1)).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("((id = 1) AND (1 = 0))", Filters.eq("id", 1).and(Filters.or()).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("NOT (1 = 1)", Filters.and().not().toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("NOT (1 = 0)", new Not(Filters.or()).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("WHERE 1 = 1", new Where(Filters.and()).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("WHERE ((id = 1) AND (1 = 0))", new Where(Filters.and(Filters.eq("id", 1), Filters.or())).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("HAVING 1 = 0", new Having(Filters.or()).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("ON 1 = 1", new On(Filters.and()).toSql(NamingPolicy.NO_CHANGE));
+        Assertions.assertNotNull(Filters.and().xor(Filters.eq("id", 1)));
+
+        // A blank SqlExpression is still an empty predicate and stays rejected in every position.
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.expr("  ")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.eq("id", 1).or(Filters.expr("")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr(" ")));
+        // Uninitialized junctions (null operator) stay rejected.
+        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.and(new Or()));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(new And()));
+    }
+
+    /**
+     * Junction.parameters() is not memoized: each call must hand out the child conditions' fresh defensive
+     * array copies, so a caller mutating a returned array cannot affect later callers.
+     */
+    @Test
+    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        final Junction junction = new Junction(Operator.AND, Filters.eq("payload", new byte[] { 1 }), Filters.eq("id", 7));
+
+        final byte[] first = (byte[]) junction.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) junction.parameters().get(0)));
+        assertEquals(7, junction.parameters().get(1));
+        assertEquals("((payload = '[1]') AND (id = 7))", junction.toSql(NamingPolicy.NO_CHANGE));
+    }
 }

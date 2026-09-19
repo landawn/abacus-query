@@ -59,8 +59,9 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testGetPropValue_Null() {
-        NotLike condition = new NotLike("field", null);
-        assertNull(condition.propValue());
+        // A null pattern is rejected at construction: `x NOT LIKE NULL` can never be true under three-valued logic.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new NotLike("field", null));
+        assertEquals("propValue must not be null for NOT LIKE; use an IS NULL/IS NOT NULL condition instead", ex.getMessage());
     }
 
     @Test
@@ -275,10 +276,8 @@ public class NotLikeTest extends TestBase {
 
     @Test
     public void testWithNullValue() {
-        NotLike notLike = Filters.notLike("name", null);
-
-        Assertions.assertNull(notLike.propValue());
-        Assertions.assertTrue(notLike.parameters().size() == 1);
+        IllegalArgumentException ex = Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.notLike("name", null));
+        Assertions.assertEquals("propValue must not be null for NOT LIKE; use an IS NULL/IS NOT NULL condition instead", ex.getMessage());
     }
 
     @Test

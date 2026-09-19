@@ -111,15 +111,17 @@ public class SubQuery extends AbstractCondition {
     /** The complete query text of a raw SQL or builder-backed subquery; {@code null} for structured subqueries. */
     final String sql;
 
-    /** Bindings captured for raw SQL or trusted builder snapshots; empty for structured subqueries. */
+    /** Bindings captured for raw SQL or trusted builder snapshots (array/{@code Date}/{@code Calendar} bindings
+     *  are snapshotted at construction); empty for structured subqueries. */
     private final ImmutableList<Object> rawParameters;
+
+    /** {@code true} when {@link #rawParameters} holds an array/{@code Date}/{@code Calendar} binding, so
+     *  {@link #parameters()} must hand out fresh defensive copies on every call. Evaluated once at construction. */
+    private final boolean rebuildParametersPerCall;
 
     /** The trailing condition or clause for a structured subquery; a predicate is normalized to a
      *  {@link Where}. {@code null} for raw SQL, builder-backed snapshots, or structured subqueries without clauses. */
     private Condition condition;
-
-    /** Lazily memoized parameters (performance only). */
-    private transient ImmutableList<Object> cachedParameters;
 
     /** Lazily memoized unmodifiable view of {@link #propNames} (performance only). */
     private transient ImmutableList<String> cachedPropNamesView;
@@ -134,6 +136,7 @@ public class SubQuery extends AbstractCondition {
         entityClass = null;
         sql = null;
         rawParameters = ImmutableList.empty();
+        rebuildParametersPerCall = false;
     }
 
     /**
@@ -182,9 +185,16 @@ public class SubQuery extends AbstractCondition {
     }
 
     /**
-     * Creates a raw subquery with positional JDBC bindings. The SQL is retained verbatim and the
-     * bindings are defensively copied in placeholder encounter order. Markers inside quoted text and
-     * comments, and PostgreSQL JSON {@code ?} operators, are not counted as placeholders.
+     * Creates a raw subquery with positional JDBC bindings. The SQL is retained verbatim and the binding
+     * list is copied in placeholder encounter order, so later changes to the supplied collection have no
+     * effect. The individual binding values are snapshotted the same way condition values are: arrays are
+     * deep-copied and {@code Date}/{@code Calendar} values cloned at construction, while every other binding
+     * is kept by reference. A later mutation of the caller's array or date therefore never changes this
+     * subquery: {@link #parameters()} exposes defensive copies, and {@link #equals(Object)}/{@link #hashCode()}
+     * are content-based <i>and</i> stable (array bindings are compared element-wise via
+     * {@link N#deepEquals(Object, Object)}/{@link N#deepHashCode(Object)}, every other binding through its own
+     * {@code equals}/{@code hashCode}), so the subquery stays findable in a {@code HashSet}. Markers inside
+     * quoted text and comments, and PostgreSQL JSON {@code ?} operators, are not counted as placeholders.
      *
      * <p>Named ({@code :name}) and MyBatis ({@code #{name}}) markers are deliberately rejected because
      * a raw fragment has no generated-name metadata for collision-safe composition. Use a builder-backed
@@ -192,10 +202,11 @@ public class SubQuery extends AbstractCondition {
      *
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
      * @param parameters positional binding values in placeholder encounter order (must not be {@code null});
-     *                   individual binding values may be {@code null}
+     *                   individual binding values may be {@code null}; array/{@code Date}/{@code Calendar}
+     *                   bindings are snapshotted, all others kept by reference
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters}
-     *         is {@code null}; the SQL contains a named/MyBatis placeholder; or the number of positional
-     *         placeholders differs from the number of bindings
+     *         is {@code null}; the SQL contains a named/MyBatis placeholder; the number of positional
+     *         placeholders differs from the number of bindings; or an object-array binding contains a cycle
      */
     public SubQuery(final String sql, final Collection<?> parameters) {
         this(Strings.EMPTY, sql, parameters, true);
@@ -259,11 +270,15 @@ public class SubQuery extends AbstractCondition {
         propNames = null;
         condition = null;
         this.sql = sql;
-        rawParameters = copyRawParameters(parameters);
+
+        final List<Object> bindings = copyRawParameters(parameters);
 
         if (validateBindings) {
-            validateRawBindings(sql, rawParameters);
+            validateRawBindings(sql, bindings);
         }
+
+        rawParameters = snapshotRawParameters(bindings);
+        rebuildParametersPerCall = containsSnapshotMutableValue(rawParameters);
     }
 
     /**
@@ -328,6 +343,7 @@ public class SubQuery extends AbstractCondition {
 
         sql = null;
         rawParameters = ImmutableList.empty();
+        rebuildParametersPerCall = false;
     }
 
     /**
@@ -402,6 +418,7 @@ public class SubQuery extends AbstractCondition {
 
         sql = null;
         rawParameters = ImmutableList.empty();
+        rebuildParametersPerCall = false;
     }
 
     /**
@@ -550,14 +567,51 @@ public class SubQuery extends AbstractCondition {
         return result;
     }
 
-    private static ImmutableList<Object> copyRawParameters(final Collection<?> parameters) {
+    private static List<Object> copyRawParameters(final Collection<?> parameters) {
         if (parameters == null) {
             throw new IllegalArgumentException("Raw subquery parameters must not be null");
         }
 
         final List<Object> copy = new ArrayList<>(parameters.size());
         copy.addAll(parameters);
-        return ImmutableList.wrap(copy);
+        return copy;
+    }
+
+    /**
+     * Snapshots the already-validated raw bindings the way condition values are snapshotted: arrays are
+     * deep-copied and {@code Date}/{@code Calendar} values cloned via {@link #snapshotMutableValue(Object)};
+     * every other binding is kept by reference. The caller's later mutation of a bound array or date therefore
+     * never changes this subquery's {@link #parameters()}, {@link #equals(Object)}, or {@link #hashCode()}.
+     *
+     * @param bindings the copied, validated bindings in placeholder order (never {@code null})
+     * @return an immutable list of snapshotted bindings
+     * @throws IllegalArgumentException if an object-array binding contains a direct or indirect cycle
+     */
+    private static ImmutableList<Object> snapshotRawParameters(final List<Object> bindings) {
+        final List<Object> snapshot = new ArrayList<>(bindings.size());
+
+        for (final Object binding : bindings) {
+            snapshot.add(snapshotMutableValue(binding));
+        }
+
+        return ImmutableList.wrap(snapshot);
+    }
+
+    /**
+     * Detects whether any captured raw binding is an array, {@code Date}, or {@code Calendar}, in which case
+     * {@link #parameters()} must return fresh defensive copies on every call (mirrors {@code Binary}).
+     *
+     * @param bindings the captured raw bindings (never {@code null})
+     * @return {@code true} if at least one binding is a known mutable JDK value
+     */
+    private static boolean containsSnapshotMutableValue(final List<Object> bindings) {
+        for (final Object binding : bindings) {
+            if (isSnapshotMutableValue(binding)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void validateRawBindings(final String sql, final Collection<?> parameters) {
@@ -570,8 +624,8 @@ public class SubQuery extends AbstractCondition {
         }
 
         if (parsedSql.parameterCount() != parameters.size()) {
-            throw new IllegalArgumentException("Raw subquery placeholder count (" + parsedSql.parameterCount() + ") does not match binding count ("
-                    + parameters.size() + ")");
+            throw new IllegalArgumentException(
+                    "Raw subquery placeholder count (" + parsedSql.parameterCount() + ") does not match binding count (" + parameters.size() + ")");
         }
     }
 
@@ -633,6 +687,13 @@ public class SubQuery extends AbstractCondition {
      * Returns this subquery's parameter values. Structured subqueries collect them from their condition;
      * raw subqueries return their captured positional bindings, and builder-backed snapshots retain
      * the values captured from their source builder.
+     * For a structured subquery the list is built afresh on every call (it is not memoized here), so
+     * mutable parameter values such as arrays or {@code Date}s come from the condition's own per-call
+     * defensive copies and are never shared between callers. Raw bindings were snapshotted at construction
+     * (see {@link #SubQuery(String, java.util.Collection)}); when any of them is an array, {@code Date}, or
+     * {@code Calendar}, a fresh list holding fresh defensive copies of those bindings is built on every call,
+     * so mutating a returned element never affects this subquery or a later call. A raw subquery whose bindings
+     * are all scalars returns the same immutable list each time.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -661,18 +722,16 @@ public class SubQuery extends AbstractCondition {
      * // returns ["active"]
      * }</pre>
      *
-     * @return an immutable list of parameter values, or an empty immutable list when none were captured
+     * @return an immutable list of parameter values (array/{@code Date}/{@code Calendar} raw bindings are
+     *         defensive copies), or an empty immutable list when none were captured
      */
     @Override
     public ImmutableList<Object> parameters() {
-        ImmutableList<Object> result = cachedParameters;
-
-        if (result == null) {
-            result = sql == null ? (condition == null ? ImmutableList.empty() : condition.parameters()) : rawParameters;
-            cachedParameters = result;
+        if (sql == null) {
+            return condition == null ? ImmutableList.empty() : condition.parameters();
         }
 
-        return result;
+        return rebuildParametersPerCall ? snapshotRawParameters(rawParameters) : rawParameters;
     }
 
     /**
@@ -732,9 +791,9 @@ public class SubQuery extends AbstractCondition {
                         }
 
                         if (propToColumnNameMap == null) {
-                            sb.append(effectiveNamingPolicy.convert(propName));
+                            sb.append(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy));
                         } else {
-                            sb.append(propToColumnNameMap.getOrDefault(propName, effectiveNamingPolicy.convert(propName)));
+                            sb.append(propToColumnNameMap.getOrDefault(propName, QueryUtil.convertIdentifier(propName, effectiveNamingPolicy)));
                         }
                     }
                 } else {
@@ -752,7 +811,7 @@ public class SubQuery extends AbstractCondition {
                     sb.append(_SPACE);
                     sb.append(SK.FROM);
                     sb.append(_SPACE);
-                    sb.append(effectiveNamingPolicy.convert(entityName));
+                    sb.append(QueryUtil.convertIdentifier(entityName, effectiveNamingPolicy));
                 }
 
                 if (condition != null) {
@@ -783,7 +842,10 @@ public class SubQuery extends AbstractCondition {
      * and condition. Specialized builder-backed snapshots additionally incorporate their retained
      * parameters, SQL policy, and placeholder metadata.
      * It is recomputed on every call because a structured subquery condition may contain retained
-     * mutable parameter values; caching would preserve a stale transitive hash.
+     * mutable parameter values; caching would preserve a stale transitive hash. Captured raw bindings
+     * are hashed by content (array bindings element-wise via {@link N#deepHashCode(Object)}), consistent
+     * with {@link #equals(Object)}; because array/{@code Date}/{@code Calendar} bindings were snapshotted at
+     * construction, the hash is stable even if the caller later mutates the originals.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -804,17 +866,59 @@ public class SubQuery extends AbstractCondition {
         h = (h * 31) + ((entityClass == null) ? 0 : entityClass.hashCode());
         h = (h * 31) + ((propNames == null) ? 0 : propNames.hashCode());
         h = (h * 31) + ((condition == null) ? 0 : condition.hashCode());
-        h = (h * 31) + rawParameters.hashCode();
+        h = (h * 31) + deepRawParametersHashCode(rawParameters);
 
         return h == 0 ? 1 : h;
+    }
+
+    /**
+     * Hashes captured raw bindings by content: array bindings contribute their element-wise
+     * {@link N#deepHashCode(Object)} so that the result pairs with {@link #deepRawParametersEquals(List, List)}.
+     *
+     * @param bindings the captured raw bindings (never {@code null})
+     * @return the order-sensitive content hash of the bindings
+     */
+    private static int deepRawParametersHashCode(final List<Object> bindings) {
+        int h = 1;
+
+        for (final Object binding : bindings) {
+            h = (h * 31) + N.deepHashCode(binding);
+        }
+
+        return h;
+    }
+
+    /**
+     * Compares two captured raw-binding lists by content: same size, and each pair of bindings equal
+     * via {@link N#deepEquals(Object, Object)} (element-wise for arrays, {@code equals} otherwise).
+     *
+     * @param left the first binding list (never {@code null})
+     * @param right the second binding list (never {@code null})
+     * @return {@code true} if both lists hold content-equal bindings in the same order
+     */
+    private static boolean deepRawParametersEquals(final List<Object> left, final List<Object> right) {
+        if (left.size() != right.size()) {
+            return false;
+        }
+
+        for (int i = 0, size = left.size(); i < size; i++) {
+            if (!N.deepEquals(left.get(i), right.get(i))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
      * Checks if this subquery is equal to another object.
      * Two subqueries are equal only when they have the exact same runtime class and all of their identity
      * fields are equal: the entity name, the entity class, the selected properties, the stored SQL string,
-     * the condition, and captured raw bindings. Builder-backed snapshots additionally compare SQL policy,
-     * and placeholder metadata. The entity name
+     * the condition, and captured raw bindings. Raw bindings are compared by content (array bindings
+     * element-wise via {@link N#deepEquals(Object, Object)}, other bindings through their own {@code equals});
+     * since array/{@code Date}/{@code Calendar} bindings are snapshotted at construction, the result does not
+     * change when the caller later mutates the originals.
+     * Builder-backed snapshots additionally compare SQL policy and placeholder metadata. The entity name
      * participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their
      * SQL and their entity name match.
      *
@@ -858,6 +962,6 @@ public class SubQuery extends AbstractCondition {
 
         final SubQuery other = (SubQuery) obj;
         return N.equals(sql, other.sql) && N.equals(entityName, other.entityName) && N.equals(entityClass, other.entityClass)
-                && N.equals(propNames, other.propNames) && N.equals(condition, other.condition) && N.equals(rawParameters, other.rawParameters);
+                && N.equals(propNames, other.propNames) && N.equals(condition, other.condition) && deepRawParametersEquals(rawParameters, other.rawParameters);
     }
 }
