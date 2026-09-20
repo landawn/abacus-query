@@ -1,0 +1,127 @@
+Sep 20, 2026 9:40:00 AM com.landawn.abacus.logging.LoggerFactory getLogger
+INFO: Initialized with JDK Logger
+Sep 20, 2026 9:40:00 AM com.landawn.abacus.logging.LoggerFactory getLogger
+INFO: Initialized with JDK Logger
+version=current fork=1 java=25+37-LTS-3491 cp=C:\Users\haiyangl\Landawn\abacus-query\.audit\parsed-sql-tuning\harness;C:\Users\haiyangl\Landawn\abacus-query\.audit\parsed-sql-tuning\final.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/abacus-common-8.0.0.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/apiguardian-api-1.1.2.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/byte-buddy-1.17.7.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/byte-buddy-agent-1.17.7.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/jakarta.activation-api-2.1.4.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/jakarta.xml.bind-api-4.0.5.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/jspecify-1.0.0.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/junit-jupiter-api-6.1.1.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/junit-jupiter-engine-6.1.1.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/junit-platform-commons-6.1.1.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/junit-platform-engine-6.1.1.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/junit-platform-launcher-6.1.1.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/junit-platform-suite-6.1.1.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/junit-platform-suite-api-6.1.1.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/junit-platform-suite-engine-6.1.1.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/lombok-1.18.46.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/mockito-core-5.23.0.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/objenesis-3.3.jar;C:/Users/haiyangl/Landawn/abacus-query/.audit/p3-validation/lib/opentest4j-1.3.0.jar processors=16 maxHeap=1073741824
+check no_parameters/0 expected=0 actual=0 names=0 semantic_match=true
+check where_positional/2 expected=2 actual=2 names=0 semantic_match=true
+check where_positional/16 expected=16 actual=16 names=0 semantic_match=true
+check join_positional/4 expected=4 actual=4 names=0 semantic_match=true
+check where_named/2 expected=2 actual=2 names=2 semantic_match=true
+check where_named/16 expected=16 actual=16 names=16 semantic_match=true
+check join_named/4 expected=4 actual=4 names=4 semantic_match=true
+check where_mybatis/2 expected=2 actual=2 names=2 semantic_match=true
+check where_mybatis/16 expected=16 actual=16 names=16 semantic_match=true
+check join_mybatis/4 expected=4 actual=4 names=4 semantic_match=true
+check where_positional/128 expected=128 actual=128 names=0 semantic_match=true
+check quoted_and_comments/2 expected=2 actual=2 names=0 semantic_match=true
+check json_operator/1 expected=1 actual=1 names=0 semantic_match=true
+check jdbc_escape/1 expected=1 actual=1 names=0 semantic_match=true
+check json_constructor/1 expected=1 actual=1 names=0 semantic_match=true
+check geometric_cast/1 expected=1 actual=1 names=0 semantic_match=true
+check array_named/256 expected=256 actual=256 names=256 semantic_match=true
+check array_named/1024 expected=1024 actual=1024 names=1024 semantic_match=true
+check array_named/4096 expected=4096 actual=4096 names=4096 semantic_match=true
+check array_named/8192 expected=8192 actual=8192 names=8192 semantic_match=true
+check array_mybatis/256 expected=256 actual=256 names=256 semantic_match=true
+check array_mybatis/1024 expected=1024 actual=1024 names=1024 semantic_match=true
+check array_mybatis/4096 expected=4096 actual=4096 names=4096 semantic_match=true
+check array_mybatis/8192 expected=8192 actual=8192 names=8192 semantic_match=true
+check array_positional/256 expected=256 actual=256 names=0 semantic_match=true
+check array_positional/1024 expected=1024 actual=1024 names=0 semantic_match=true
+check array_positional/4096 expected=4096 actual=4096 names=0 semantic_match=true
+check array_positional/8192 expected=8192 actual=8192 names=0 semantic_match=true
+check bare_concat/256 expected=256 actual=256 names=0 semantic_match=true
+check bare_concat/1024 expected=1024 actual=1024 names=0 semantic_match=true
+check bare_concat/4096 expected=4096 actual=4096 names=0 semantic_match=true
+check bare_concat/8192 expected=8192 actual=8192 names=0 semantic_match=true
+check deep_unary/256 expected=1 actual=1 names=0 semantic_match=true
+check deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true
+check deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true
+check deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true
+Sep 20, 2026 9:40:03 AM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 1000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1262)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:587)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:546)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:248)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:556)
+	at ParserBenchmark.measure(ParserBenchmark.java:131)
+	at ParserBenchmark.main(ParserBenchmark.java:93)
+
+Sep 20, 2026 9:40:03 AM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 2000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1262)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:587)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:546)
+	at com.landawn.abacus.query.SqlParser.tokenize(SqlParser.java:798)
+	at com.landawn.abacus.query.SqlParser.tokenize(SqlParser.java:790)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:217)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:556)
+	at ParserBenchmark.measure(ParserBenchmark.java:131)
+	at ParserBenchmark.main(ParserBenchmark.java:93)
+
+Sep 20, 2026 9:40:04 AM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 3000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1262)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:587)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:546)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:248)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:556)
+	at ParserBenchmark.measure(ParserBenchmark.java:131)
+	at ParserBenchmark.main(ParserBenchmark.java:104)
+
+Sep 20, 2026 9:40:05 AM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 4000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1262)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:587)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:546)
+	at com.landawn.abacus.query.SqlParser.tokenize(SqlParser.java:798)
+	at com.landawn.abacus.query.SqlParser.tokenize(SqlParser.java:790)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:217)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:556)
+	at ParserBenchmark.measure(ParserBenchmark.java:131)
+	at ParserBenchmark.main(ParserBenchmark.java:104)
+
+Sep 20, 2026 9:40:06 AM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 5000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1262)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:587)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:546)
+	at com.landawn.abacus.query.SqlParser.tokenize(SqlParser.java:798)
+	at com.landawn.abacus.query.SqlParser.tokenize(SqlParser.java:790)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:217)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:556)
+	at ParserBenchmark.measure(ParserBenchmark.java:131)
+	at ParserBenchmark.main(ParserBenchmark.java:104)
+
+Sep 20, 2026 9:40:07 AM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 6000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1262)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:587)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:546)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:248)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:556)
+	at ParserBenchmark.measure(ParserBenchmark.java:131)
+	at ParserBenchmark.main(ParserBenchmark.java:104)
+
+Sep 20, 2026 9:40:08 AM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 7000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1262)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:587)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:546)
+	at com.landawn.abacus.query.SqlParser.tokenize(SqlParser.java:798)
+	at com.landawn.abacus.query.SqlParser.tokenize(SqlParser.java:790)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:217)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:556)
+	at ParserBenchmark.measure(ParserBenchmark.java:131)
+	at ParserBenchmark.main(ParserBenchmark.java:104)
+
+complete sink=2000000

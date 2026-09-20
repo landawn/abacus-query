@@ -16,6 +16,7 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -382,9 +383,8 @@ public final class SqlParser {
         private final int maxSeparatorLength;
         private final boolean[] asciiSeparators;
         private final Set<Character> nonAsciiSingleCharSeparators;
-        private final String[][] multiCharSeparatorsByLength;
-        private final boolean[] multiCharSeparatorFirstChars;
-        private final boolean hasNonAsciiMultiCharFirstChar;
+        private final String[][] asciiMultiCharSeparators;
+        private final Map<Character, String[]> nonAsciiMultiCharSeparators;
 
         /**
          * Separators containing characters with case variants, ordered with the same Unicode comparison
@@ -419,39 +419,29 @@ public final class SqlParser {
             asciiSeparators = ascii;
             nonAsciiSingleCharSeparators = Collections.unmodifiableSet(nonAscii);
 
-            @SuppressWarnings("unchecked")
-            final List<String>[] buckets = new List[maxLength + 1];
-            final boolean[] firstChars = new boolean[128];
-            boolean nonAsciiFirstChar = false;
+            final Map<Character, List<String>> buckets = new HashMap<>();
 
             for (final String separator : separators) {
-                if (separator.length() > 1) {
-                    final int length = separator.length();
-
-                    if (buckets[length] == null) {
-                        buckets[length] = new ArrayList<>();
-                    }
-
-                    buckets[length].add(separator);
-
-                    final char first = separator.charAt(0);
-
-                    if (first < 128) {
-                        firstChars[first] = true;
-                    } else {
-                        nonAsciiFirstChar = true;
-                    }
+                if (separator.length() > 1 && !crossesQuotedRegionBoundary(separator)) {
+                    buckets.computeIfAbsent(separator.charAt(0), key -> new ArrayList<>()).add(separator);
                 }
             }
 
-            multiCharSeparatorsByLength = new String[maxLength + 1][];
-
-            for (int length = 0; length <= maxLength; length++) {
-                multiCharSeparatorsByLength[length] = buckets[length] == null ? EMPTY_STRING_ARRAY : buckets[length].toArray(new String[0]);
+            // Index by the first character, then longest match. An '=' no longer probes unrelated
+            // PostgreSQL operators. Quote-crossing spellings can never match and are excluded once,
+            // rather than rechecking their lexical boundary on every token/scanner invocation.
+            asciiMultiCharSeparators = new String[128][];
+            final Map<Character, String[]> nonAsciiMulti = new HashMap<>();
+            for (final Map.Entry<Character, List<String>> entry : buckets.entrySet()) {
+                entry.getValue().sort(Comparator.comparingInt(String::length).reversed());
+                final String[] candidates = entry.getValue().toArray(EMPTY_STRING_ARRAY);
+                if (entry.getKey() < 128) {
+                    asciiMultiCharSeparators[entry.getKey()] = candidates;
+                } else {
+                    nonAsciiMulti.put(entry.getKey(), candidates);
+                }
             }
-
-            multiCharSeparatorFirstChars = firstChars;
-            hasNonAsciiMultiCharFirstChar = nonAsciiFirstChar;
+            nonAsciiMultiCharSeparators = Collections.unmodifiableMap(nonAsciiMulti);
 
             Set<String> caseInsensitive = null;
 
@@ -802,7 +792,9 @@ public final class SqlParser {
 
     private static List<String> tokenize(final String sql, final TokenizerConfig tokenizerConfig) {
         final int sqlLength = sql.length();
-        final HashScanMemo memo = new HashScanMemo(sql);
+        // Only '#' context checks consult this memo, including comment-boundary lookahead.
+        // If the source has no '#', none of those helpers can reach it.
+        final HashScanMemo memo = sql.indexOf('#') >= 0 ? new HashScanMemo(sql) : null;
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -811,45 +803,20 @@ public final class SqlParser {
             String temp = "";
             char quoteChar = 0;
             int keepComments = -1;
-            // Forward-running backslash parity: true if the char at the current `index` is
-            // immediately preceded by an ODD number of consecutive backslashes. Maintained while
-            // consuming a quoted region so the closing-quote escape decision is identical to the
-            // previous O(n) backward backslash scan, without the O(n^2) worst case.
-            boolean bsEscaped = false;
-
             for (int index = 0; index < sqlLength; index++) {
                 char ch = sql.charAt(index);
 
                 if (quoteChar != 0) {
-                    // is it in a quoted identifier?
-                    sb.append(ch);
-
-                    // end in quote.
-                    if (ch == quoteChar) {
-                        if (bsEscaped) {
-                            // Escaped closing quote: stays in the string. The quote char itself
-                            // is not a backslash, so the run parity resets to even. Checked before
-                            // the doubled-quote case so an escaped quote immediately followed by
-                            // another quote is not mis-read as a doubled-quote pair.
-                            bsEscaped = false;
-                        } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
-                            sb.append(sql.charAt(++index));
-                            // Two quote chars consumed (non-backslash) -> run parity is even.
-                            bsEscaped = false;
-                        } else {
-                            // Even count (including 0) of preceding backslashes -> quote NOT escaped.
-                            tokens.add(sb.toString());
-                            sb.setLength(0);
-
-                            quoteChar = 0;
-                            bsEscaped = false;
-                        }
-                    } else if (ch == '\\' && quoteChar != ']') {
-                        // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
-                        bsEscaped = !bsEscaped;
-                    } else {
-                        bsEscaped = false;
+                    // Copy quoted text as a range instead of appending every character. The
+                    // quote-end rule preserves doubled delimiters, odd backslash runs and truncation.
+                    final int close = quotedTokenEndIndex(sql, index, quoteChar);
+                    sb.append(sql, index, close < sqlLength ? close + 1 : sqlLength);
+                    index = close;
+                    if (close < sqlLength) {
+                        tokens.add(sb.toString());
+                        sb.setLength(0);
                     }
+                    quoteChar = 0;
                 } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
                     // Line comment (-- ...): always discarded (unlike block comments, the "Keep
                     // comments" marker does not preserve these). Skip to the end of the line.
@@ -953,7 +920,6 @@ public final class SqlParser {
                     // quote character was registered as a separator, the quoted region is one token.
                     sb.append(ch);
                     quoteChar = ch == '[' ? ']' : ch;
-                    bsEscaped = false;
                 } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null) {
                     // Multi-character operator (e.g. >=, <>, ->>, :=). Matched before the single-character
                     // separator lookup (same effective precedence as before, when isSeparator matched it
@@ -992,6 +958,29 @@ public final class SqlParser {
         } finally {
             Objectory.recycle(sb);
         }
+    }
+
+    /** Finds a quoted token's closing delimiter, or the source length for an unterminated token. */
+    private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote) {
+        for (int close = sql.indexOf(quote, fromIndex); close >= 0; close = sql.indexOf(quote, close + 1)) {
+            if (quote != ']') {
+                int backslashStart = close;
+                while (backslashStart > fromIndex && sql.charAt(backslashStart - 1) == '\\') {
+                    backslashStart--;
+                }
+                // Only the consecutive run immediately before this candidate matters. Runs for
+                // distinct quote candidates do not overlap, so total scanning remains linear.
+                if (((close - backslashStart) & 1) != 0) {
+                    continue;
+                }
+            }
+            if (close + 1 < sql.length() && sql.charAt(close + 1) == quote) {
+                close++;
+            } else {
+                return close;
+            }
+        }
+        return sql.length();
     }
 
     /**
@@ -2664,43 +2653,18 @@ public final class SqlParser {
     }
 
     private static String matchMultiCharSeparator(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
-        if (index < len) {
-            final char first = str.charAt(index);
-
-            // Fast reject: no configured multi-character separator starts with this character.
-            if (first < 128 ? !tokenizerConfig.multiCharSeparatorFirstChars[first] : !tokenizerConfig.hasNonAsciiMultiCharFirstChar) {
-                return null;
-            }
+        if (index >= len) {
+            return null;
         }
 
-        final String[][] byLen = tokenizerConfig.multiCharSeparatorsByLength;
-        int maxLen = Math.min(tokenizerConfig.maxSeparatorLength, len - index);
-
-        if (maxLen > byLen.length - 1) {
-            maxLen = byLen.length - 1;
+        final char first = str.charAt(index);
+        final String[] candidates = first < 128 ? tokenizerConfig.asciiMultiCharSeparators[first] : tokenizerConfig.nonAsciiMultiCharSeparators.get(first);
+        if (candidates == null) {
+            return null;
         }
 
-        // Longest match first, identical to the previous substring + Set.contains probe order,
-        // but compares characters directly so no String is allocated per probe.
-        for (int sepLen = maxLen; sepLen > 1; sepLen--) {
-            final String[] candidates = byLen[sepLen];
-
-            outer: for (int ci = 0, cn = candidates.length; ci < cn; ci++) {
-                final String candidate = candidates[ci];
-
-                for (int k = 0; k < sepLen; k++) {
-                    if (str.charAt(index + k) != candidate.charAt(k)) {
-                        continue outer;
-                    }
-                }
-
-                // A separator may begin outside a quoted region but must not consume the region's
-                // opening delimiter. Otherwise, for example, a configured "N'" separator would split
-                // N'text' before the quote scanners ever see the opening single quote.
-                if (crossesQuotedRegionBoundary(candidate)) {
-                    continue;
-                }
-
+        for (final String candidate : candidates) {
+            if (candidate.length() <= len - index && str.startsWith(candidate, index)) {
                 return candidate;
             }
         }

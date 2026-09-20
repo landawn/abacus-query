@@ -2,10 +2,10 @@
   "library": {
     "name": "abacus-query",
     "version": "4.9.3",
-    "generated_at": "2026-09-19",
+    "generated_at": "2026-09-20",
     "java_target": "17",
     "source": {
-      "git_sha": "d59a14566256f9898dabfab204d74aec93eb49b3"
+      "git_sha": "417ab8a8a4c038b041b63592c99ee215ac7da686"
     }
   },
   "packages": [
@@ -1399,9 +1399,11 @@
               ],
               "javadoc_summary": "Adds an ON clause for a composite join condition, joining the given expressions with AND.",
               "returns": "this SqlBuilder instance for method chaining",
-              "contract": [],
+              "contract": [
+                "When there are multiple elements, each expression is enclosed in parentheses before the fragments are combined with AND, preserving the precedence of any OR within an expression."
+              ],
               "examples": [
-                "String sql = PSC.select(\"*\")\n                .from(\"users u\")\n                .join(\"orders o\")\n                .on(\"u.id = o.user_id\", \"u.tenant_id = o.tenant_id\")\n                .build().query();\n// Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id AND u.tenant_id = o.tenant_id"
+                "String sql = PSC.select(\"*\")\n                .from(\"users u\")\n                .join(\"orders o\")\n                .on(\"u.id = o.user_id\", \"u.tenant_id = o.tenant_id\")\n                .build().query();\n// Output: SELECT * FROM users u JOIN orders o ON (u.id = o.user_id) AND (u.tenant_id = o.tenant_id)"
               ],
               "see_also": []
             },
@@ -1425,7 +1427,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, or if a condition other than an explicit On/Using has a null operator or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example ON 1 = 1)"
+                  "condition": "if condition is null, or if a condition other than an explicit On/Using has a null operator or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example ON 1 = 1). A Using connector is rendered like #using(String), so it is also rejected when a column maps to a qualified name, which USING (...) does not accept"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -1460,7 +1462,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or contains a SQL comment token"
+                  "condition": "if expr is null, empty, or blank, contains a SQL comment token, or renders a qualified column name (a dot outside a quoted identifier), which USING (...) does not accept"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -1495,7 +1497,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, or contains a null, empty, or blank element"
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or renders a qualified column name (a dot outside a quoted identifier), which USING (...) does not accept"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -1530,7 +1532,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, or contains a null, empty, or blank element"
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or renders a qualified column name (a dot outside a quoted identifier), which USING (...) does not accept"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -2806,7 +2808,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, if a predicate position contains a non-predicate condition, if a generic clause uses an operator that requires a dedicated builder method or condition type, or if a set-operation operand (standalone or carried by a Criteria) is not a complete, lexically SELECT-only SELECT query"
+                  "condition": "if condition is null, if a predicate position contains a non-predicate condition, if a generic clause uses an operator that requires a dedicated builder method or condition type, or if a set-operation operand (standalone or carried by a Criteria) is not a complete, lexically SELECT-only SELECT query or requires explicit branch isolation"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -2816,7 +2818,7 @@
               "javadoc_summary": "Appends a condition to the SQL statement.",
               "returns": "this SqlBuilder instance for method chaining",
               "contract": [
-                "method: it must follow a SELECT segment completed by from(...), must precede ORDER BY, pagination, and FOR UPDATE, its operand must be a complete, lexically SELECT-only SELECT sub-query (a syntactic check, not a read-only guarantee), and afterwards only compound-result clauses (ORDER BY, pagination, FOR UPDATE) may follow."
+                "method: it must follow a SELECT segment completed by from(...), must precede ORDER BY, pagination, and FOR UPDATE, its operand must be a complete, lexically SELECT-only SELECT sub-query (a syntactic check, not a read-only guarantee)."
               ],
               "examples": [
                 "String sql = PSC.select(\"*\")\n                .from(\"users\")\n                .append(Filters.and(Filters.greaterThan(\"age\", 18), Filters.lessThan(\"age\", 65)))\n                .build().query();\n// Output: SELECT * FROM users WHERE (age > ?) AND (age < ?)"
@@ -3059,18 +3061,18 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)"
+                  "condition": "if sqlBuilder is null, is this same builder instance, has generated parameter placeholders under a different SQL policy, requires explicit branch isolation, or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after the child has been consumed by build()"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
+                  "condition": "if this builder or sqlBuilder is closed; if this builder is not building a SELECT query, its current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
                 }
               ],
               "javadoc_summary": "Adds a UNION clause with another SQL query.",
               "returns": "this SqlBuilder instance for method chaining",
               "contract": [],
               "examples": [
-                "SqlBuilder query1 = PSC.select(\"id\", \"name\").from(\"users\");\nSqlBuilder query2 = PSC.select(\"id\", \"name\").from(\"customers\");\nString sql = query1.union(query2).build().query();\n// Output: SELECT id, name FROM users UNION SELECT id, name FROM customers"
+                "SqlBuilder query1 = PSC.select(\"id\", \"name\").from(\"users\");\nSqlBuilder query2 = PSC.select(\"id\", \"name\").from(\"customers\");\nString sql = query1.union(query2).build().query();\n// Output: SELECT id, name FROM users UNION SELECT id, name FROM customers\n\n// Sort and limit the combined result:\nString combined = PSC.select(\"id\").from(\"users\")\n        .union(PSC.select(\"id\").from(\"customers\")).orderBy(\"id\").limit(5).build().query();\n\n// Keep the child's ordering and limit inside that branch:\nSqlBuilder child = PSC.select(\"id\").from(\"customers\").orderBy(\"id\").limit(5);\nString isolated = PSC.select(\"id\").from(\"users\")\n        .union(PSC.select(\"id\").from(child, \"branch\")).build().query();"
               ],
               "see_also": []
             },
@@ -3103,7 +3105,9 @@
               ],
               "javadoc_summary": "Adds a UNION clause with a SQL query string.",
               "returns": "this SqlBuilder instance for method chaining",
-              "contract": [],
+              "contract": [
+                "The query text is appended without adding branch isolation; callers must supply any grouping required by their database for branch-local clauses or nested set operations."
+              ],
               "examples": [
                 "String sql = PSC.select(\"id\", \"name\")\n                .from(\"users\")\n                .union(\"SELECT id, name FROM customers\")\n                .build().query();\n// Output: SELECT id, name FROM users UNION SELECT id, name FROM customers"
               ],
@@ -3164,11 +3168,11 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)"
+                  "condition": "if sqlBuilder is null, is this same builder instance, has generated parameter placeholders under a different SQL policy, requires explicit branch isolation, or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after the child has been consumed by build()"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
+                  "condition": "if this builder or sqlBuilder is closed; if this builder is not building a SELECT query, its current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
                 }
               ],
               "javadoc_summary": "Adds a UNION ALL clause with another SQL query.",
@@ -3208,7 +3212,9 @@
               ],
               "javadoc_summary": "Adds a UNION ALL clause with a SQL query string.",
               "returns": "this SqlBuilder instance for method chaining",
-              "contract": [],
+              "contract": [
+                "The query text is appended without adding branch isolation; callers must supply any grouping required by their database for branch-local clauses or nested set operations."
+              ],
               "examples": [
                 "String sql = PSC.select(\"id\", \"name\")\n                .from(\"users\")\n                .unionAll(\"SELECT id, name FROM customers\")\n                .build().query();\n// Output: SELECT id, name FROM users UNION ALL SELECT id, name FROM customers"
               ],
@@ -3269,11 +3275,11 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)"
+                  "condition": "if sqlBuilder is null, is this same builder instance, has generated parameter placeholders under a different SQL policy, requires explicit branch isolation, or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after the child has been consumed by build()"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
+                  "condition": "if this builder or sqlBuilder is closed; if this builder is not building a SELECT query, its current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
                 }
               ],
               "javadoc_summary": "Adds an INTERSECT clause with another SQL query.",
@@ -3313,7 +3319,9 @@
               ],
               "javadoc_summary": "Adds an INTERSECT clause with a SQL query string.",
               "returns": "this SqlBuilder instance for method chaining",
-              "contract": [],
+              "contract": [
+                "The query text is appended without adding branch isolation; callers must supply any grouping required by their database for branch-local clauses or nested set operations."
+              ],
               "examples": [
                 "String sql = PSC.select(\"id\", \"name\")\n                .from(\"users\")\n                .intersect(\"SELECT id, name FROM premium_users\")\n                .build().query();\n// Output: SELECT id, name FROM users INTERSECT SELECT id, name FROM premium_users"
               ],
@@ -3374,11 +3382,11 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)"
+                  "condition": "if sqlBuilder is null, is this same builder instance, has generated parameter placeholders under a different SQL policy, requires explicit branch isolation, or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after the child has been consumed by build()"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
+                  "condition": "if this builder or sqlBuilder is closed; if this builder is not building a SELECT query, its current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
                 }
               ],
               "javadoc_summary": "Adds an EXCEPT clause with another SQL query.",
@@ -3418,7 +3426,9 @@
               ],
               "javadoc_summary": "Adds an EXCEPT clause with a SQL query string.",
               "returns": "this SqlBuilder instance for method chaining",
-              "contract": [],
+              "contract": [
+                "The query text is appended without adding branch isolation; callers must supply any grouping required by their database for branch-local clauses or nested set operations."
+              ],
               "examples": [
                 "String sql = PSC.select(\"id\", \"name\")\n                .from(\"users\")\n                .except(\"SELECT id, name FROM inactive_users\")\n                .build().query();\n// Output: SELECT id, name FROM users EXCEPT SELECT id, name FROM inactive_users"
               ],
@@ -3479,11 +3489,11 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sqlBuilder is null, is this same builder instance, or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by build() when this is thrown)"
+                  "condition": "if sqlBuilder is null, is this same builder instance, has generated parameter placeholders under a different SQL policy, requires explicit branch isolation, or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after the child has been consumed by build()"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder is closed, is not building a SELECT query, the current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
+                  "condition": "if this builder or sqlBuilder is closed; if this builder is not building a SELECT query, its current SELECT segment has not been completed by from(...), or ORDER BY, pagination, or FOR UPDATE has already been added"
                 }
               ],
               "javadoc_summary": "Adds a MINUS clause with another SQL query (Oracle syntax).",
@@ -3523,7 +3533,9 @@
               ],
               "javadoc_summary": "Adds a MINUS clause with a SQL query string (Oracle syntax).",
               "returns": "this SqlBuilder instance for method chaining",
-              "contract": [],
+              "contract": [
+                "The query text is appended without adding branch isolation; callers must supply any grouping required by their database for branch-local clauses or nested set operations."
+              ],
               "examples": [
                 "String sql = PSC.select(\"id\", \"name\")\n                .from(\"users\")\n                .minus(\"SELECT id, name FROM inactive_users\")\n                .build().query();\n// Output: SELECT id, name FROM users MINUS SELECT id, name FROM inactive_users"
               ],
@@ -4030,7 +4042,9 @@
               ],
               "javadoc_summary": "Generates the final SQL string and its parameters as an SP pair, then releases resources.",
               "returns": "an SP (SQL-Parameters) pair containing the SQL string and parameter list",
-              "contract": [],
+              "contract": [
+                "Once final rendering begins, the builder is closed even if rendering fails."
+              ],
               "examples": [
                 "// Get SQL and parameters together\nSP sqlPair = PSC.select(\"*\")\n                .from(\"account\")\n                .where(Filters.equal(\"status\", \"ACTIVE\"))\n                .build();\n// sqlPair.query() returns: \"SELECT * FROM account WHERE status = ?\"\n// sqlPair.parameters() returns: [\"ACTIVE\"]\n\n// Get just the SQL string\nString sql = PSC.select(\"*\")\n                .from(\"users\")\n                .where(Filters.equal(\"status\", \"ACTIVE\"))\n                .build()\n                .query();\n// Output: SELECT * FROM users WHERE status = ?"
               ],
@@ -4282,7 +4296,7 @@
             "public"
           ],
           "javadoc_summary": "Represents a SQL string and its associated parameters.",
-          "thread_safety": "thread-safe",
+          "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
           "constructors": [
@@ -4912,7 +4926,7 @@
               "javadoc_summary": "Creates a DELETE FROM statement for a table.",
               "returns": "a new SqlBuilder instance configured for DELETE operation",
               "contract": [
-                "Property names in WHERE conditions will be rendered according to this DSL's naming policy if an entity class is associated."
+                "Property names in WHERE conditions are rendered according to this DSL's naming policy, even when no entity class is associated."
               ],
               "examples": [
                 "String sql = PSC.deleteFrom(\"account\")\n                .where(Filters.equal(\"status\", \"inactive\"))\n                .build().query();\n// Output: DELETE FROM account WHERE status = ?"
@@ -6367,7 +6381,7 @@
             "final"
           ],
           "javadoc_summary": "Entry point for fluently creating dynamic SQL queries programmatically.",
-          "thread_safety": "unspecified",
+          "thread_safety": "not-thread-safe",
           "nullability": "unspecified",
           "type_params": [],
           "constructors": [],
@@ -6990,7 +7004,7 @@
               "javadoc_summary": "Appends a raw, database-specific SQL clause or fragment verbatim to the end of the query.",
               "returns": "this builder instance for method chaining",
               "contract": [
-                "The supplied text is emitted unchanged (preceded by a separating space when needed; see below) and is not validated, escaped, or interpreted in any way — whatever you pass becomes the literal tail of the generated SQL.",
+                "The supplied text is emitted unchanged (preceded by a separating space when needed; see below) and is not parsed, escaped, or interpreted after non-blank validation — whatever you pass becomes the literal tail of the generated SQL.",
                 "Use it for any trailing clause that has no typed builder method, such as locking hints (for example \"FOR UPDATE\") or other vendor-specific suffixes, or for raw pagination/row-limiting syntax when the typed methods do not fit the dialect.",
                 "A single separating space is inserted before textToAppend when, and only when, it is needed: that is, when this builder's trailing buffer is empty or does not already end with a space, and textToAppend does not already begin with one.",
                 "Consequently, either orderBy().append(...) or a trailing append(\"ORDER BY ...\") can order a combined set-operation result; prefer the typed form when it is sufficient."
@@ -7036,7 +7050,7 @@
               "javadoc_summary": "Conditionally appends a raw SQL clause or fragment verbatim to the end of the query.",
               "returns": "this builder instance for method chaining",
               "contract": [
-                "When b is true this behaves exactly like #append(String) (a single separating space is inserted only when needed, then the text is emitted unchanged with no validation, escaping, or interpretation); when b is false the builder is left unchanged and textToAppend is not inspected."
+                "When b is true this behaves exactly like #append(String) (a single separating space is inserted only when needed, then the text is emitted unchanged after non-blank validation, without escaping or interpretation); when b is false the builder is left unchanged and textToAppend is not inspected."
               ],
               "examples": [
                 "builder.appendIf(paged, \"LIMIT 10 OFFSET 20\")\n       .appendIf(locked, \"FOR UPDATE\");"
@@ -7087,7 +7101,8 @@
               "javadoc_summary": "Appends one of two raw SQL clauses verbatim to the end of the query based on a boolean condition.",
               "returns": "this builder instance for method chaining",
               "contract": [
-                "Always appends something, choosing between the two options; the chosen text is emitted exactly as #append(String) would emit it (a single separating space is inserted only when needed, with no validation, escaping, or interpretation)."
+                "Always appends something, choosing between the two options; the chosen text is emitted exactly as #append(String) would emit it (a single separating space is inserted only when needed, without SQL parsing, escaping, or interpretation).",
+                "Both alternatives must be non-blank, including the alternative that is not selected."
               ],
               "examples": [
                 "builder.appendIfOrElse(smallPage, \"LIMIT 10\", \"LIMIT 100\");"
@@ -9229,7 +9244,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank; if operator is not a valid binary comparison/membership operator (e.g. a structural operator); if propValue is null for any operator other than EQUAL, NOT_EQUAL, NOT_EQUAL_ANSI, IS or IS_NOT; if an IS/IS_NOT operand is not null, a Boolean, or an SqlExpression; if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, or a Condition, or the collection or array contains a null element; if a condition-valued operand is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector) or a blank SqlExpression; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank; if operator is not a valid binary comparison/membership operator (e.g. a structural operator); if propValue is null for any operator other than EQUAL, NOT_EQUAL, NOT_EQUAL_ANSI, IS or IS_NOT; if an IS/IS_NOT operand is not null, a Boolean, or an SqlExpression; if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, or a Condition, or the collection or array contains a null element; if a condition-valued operand is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector) or a blank SqlExpression; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison"
                 },
                 {
                   "type": "java.lang.NullPointerException",
@@ -9320,7 +9335,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates an equality condition (=) for the specified property and value.",
@@ -9392,7 +9407,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates an equality condition (=) for the specified property and value.",
@@ -9458,7 +9473,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if props is null or empty, or any property name key is null, empty, or blank"
+                  "condition": "if props is null or empty, or any property name key is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an OR condition from a map where each entry represents a property-value equality check across <b>different</b> columns/properties.",
@@ -9492,10 +9507,10 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null, is a map (use #anyEqual(Map)), or its class declares no selectable property"
+                  "condition": "if entity is null, is a map (use #anyEqual(Map)), or its class declares no selectable property; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
-              "javadoc_summary": "Creates an OR condition from an entity object using all its properties.",
+              "javadoc_summary": "Creates an OR condition from an entity object using its selectable top-level properties.",
               "returns": "an Or condition",
               "contract": [],
               "examples": [
@@ -9530,7 +9545,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null or is a map, or if includedPropNames is null, empty, or contains a null, empty, blank, or unreadable name"
+                  "condition": "if entity is null or is a map, or if includedPropNames is null, empty, or contains a null, empty, blank, or unreadable name; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an OR condition from an entity object using only the specified properties.",
@@ -9580,7 +9595,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any property name is null, empty, or blank"
+                  "condition": "if any property name is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an OR condition with two property-value pairs across <b>different</b> columns/properties.",
@@ -9642,7 +9657,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any property name is null, empty, or blank"
+                  "condition": "if any property name is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an OR condition with three property-value pairs across <b>different</b> columns/properties.",
@@ -9674,7 +9689,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if props is null or empty, or any property name key is null, empty, or blank"
+                  "condition": "if props is null or empty, or any property name key is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an AND condition from a map where each entry represents a property-value equality check across <b>different</b> columns/properties.",
@@ -9706,10 +9721,10 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null, is a map (use #allEqual(Map)), or its class declares no selectable property"
+                  "condition": "if entity is null, is a map (use #allEqual(Map)), or its class declares no selectable property; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
-              "javadoc_summary": "Creates an AND condition from an entity object using all its properties.",
+              "javadoc_summary": "Creates an AND condition from an entity object using its selectable top-level properties.",
               "returns": "an And condition",
               "contract": [],
               "examples": [
@@ -9744,7 +9759,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null or is a map, or if includedPropNames is null, empty, or contains a null, empty, blank, or unreadable name"
+                  "condition": "if entity is null or is a map, or if includedPropNames is null, empty, or contains a null, empty, blank, or unreadable name; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an AND condition from an entity object using only the specified properties.",
@@ -9794,7 +9809,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any property name is null, empty, or blank"
+                  "condition": "if any property name is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an AND condition with two property-value pairs across <b>different</b> columns/properties.",
@@ -9856,7 +9871,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any property name is null, empty, or blank"
+                  "condition": "if any property name is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an AND condition with three property-value pairs across <b>different</b> columns/properties.",
@@ -9888,7 +9903,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entitiesOrPropMaps is null or empty, if all elements are null, if maps and entities are mixed, if a map is empty, if a map key is not a non-blank String, if the first entity class declares no selectable property, or if a selected property is unreadable from an entity"
+                  "condition": "if entitiesOrPropMaps is null or empty, if all elements are null, if maps and entities are mixed, if a map is empty, if a map key is not a non-blank String, if the first entity class declares no selectable property, or if a selected property is unreadable from an entity; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an OR of per-row AND-of-equals conditions &mdash; i.e. a \"match any row\" filter, where a row matches when all of its columns equal the given values.",
@@ -9933,7 +9948,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entities or includedPropNames is null or empty, all entities are null, an element is a map, or a property name is null, empty, blank, or not readable"
+                  "condition": "if entities or includedPropNames is null or empty, all entities are null, an element is a map, or a property name is null, empty, blank, or not readable; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column"
                 }
               ],
               "javadoc_summary": "Creates an OR of per-row AND-of-equals conditions &mdash; a \"match any row\" filter &mdash; using only the specified properties of each entity.",
@@ -9980,7 +9995,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a BETWEEN-like condition using greater-than (gt) and less-than (lt) comparisons.",
@@ -10056,7 +10071,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a BETWEEN-like condition using greater-than-or-equal (ge) and less-than (lt) comparisons.",
@@ -10132,7 +10147,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a BETWEEN-like condition using greater-than-or-equal (ge) and less-than-or-equal (le) comparisons.",
@@ -10208,7 +10223,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if minValue or maxValue is null or a blank SqlExpression, or if either is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a BETWEEN-like condition using greater-than (gt) and less-than-or-equal (le) comparisons.",
@@ -10412,7 +10427,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a not-equal condition (!=) for the specified property and value.",
@@ -10484,7 +10499,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a not-equal condition (!=) for the specified property and value.",
@@ -10556,7 +10571,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a greater-than condition (>) for the specified property and value.",
@@ -10628,7 +10643,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a greater-than condition (>) for the specified property and value.",
@@ -10700,7 +10715,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a greater-than-or-equal condition (>=) for the specified property and value.",
@@ -10772,7 +10787,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a greater-than-or-equal condition (>=) for the specified property and value.",
@@ -10844,7 +10859,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a less-than condition (<) for the specified property and value.",
@@ -10916,7 +10931,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a less-than condition (<) for the specified property and value.",
@@ -10988,7 +11003,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a less-than-or-equal condition (<=) for the specified property and value.",
@@ -11060,7 +11075,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null or a blank SqlExpression, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or a nested All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a less-than-or-equal condition (<=) for the specified property and value.",
@@ -11138,7 +11153,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if either bound is null or a blank SqlExpression, or if either bound is any other Condition than an SqlExpression or a scalar SubQuery (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or an All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if either bound is null or a blank SqlExpression, or if either bound is any other Condition than an SqlExpression or a scalar SubQuery (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or an All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a Between condition for the specified property and range values.",
@@ -11216,7 +11231,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if either bound is null or a blank SqlExpression, or if either bound is any other Condition than an SqlExpression or a scalar SubQuery (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or an All/Any/Some operand)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if either bound is null or a blank SqlExpression, or if either bound is any other Condition than an SqlExpression or a scalar SubQuery (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector, or an All/Any/Some operand)"
                 }
               ],
               "javadoc_summary": "Creates a NotBetween condition for the specified property and range values.",
@@ -11326,7 +11341,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null, a blank SqlExpression, or an All/Any/Some operand, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null, a blank SqlExpression, or an All/Any/Some operand, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector)"
                 }
               ],
               "javadoc_summary": "Creates a Like condition with a non-string operand such as an expression or subquery.",
@@ -11436,7 +11451,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if propValue is null, a blank SqlExpression, or an All/Any/Some operand, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if propValue is null, a blank SqlExpression, or an All/Any/Some operand, or if propValue is any other Condition (an ordinary predicate, Criteria, clause, JOIN or ON/USING connector)"
                 }
               ],
               "javadoc_summary": "Creates a NotLike condition with a non-string operand such as an expression or subquery.",
@@ -12056,7 +12071,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, or if propValue is not null, a Boolean, or an SqlExpression"
+                  "condition": "if propName is null, empty, or blank, or if propValue is a blank SqlExpression or is not null, a Boolean, or an SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates an Is condition (SQL IS predicate) for the specified property and value.",
@@ -12161,7 +12176,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, or if propValue is not null, a Boolean, or an SqlExpression"
+                  "condition": "if propName is null, empty, or blank, or if propValue is a blank SqlExpression or is not null, a Boolean, or an SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates an IsNot condition (SQL IS NOT predicate) for the specified property and value.",
@@ -12683,7 +12698,9 @@
               ],
               "javadoc_summary": "Creates a GroupBy clause with the specified property names.",
               "returns": "a GroupBy clause",
-              "contract": [],
+              "contract": [
+                "Use an OrderBy clause when the result rows require a defined order."
+              ],
               "examples": [
                 "GroupBy groupBy = Filters.groupBy(\"department\", \"role\");\n// Results in SQL like: GROUP BY department, role"
               ],
@@ -12715,7 +12732,9 @@
               ],
               "javadoc_summary": "Creates a GroupBy clause with properties from a collection.",
               "returns": "a GroupBy clause",
-              "contract": [],
+              "contract": [
+                "Use an OrderBy clause when the result rows require a defined order."
+              ],
               "examples": [
                 "List<String> columns = Arrays.asList(\"country\", \"city\");\nGroupBy groupBy = Filters.groupBy(columns);\n// Results in SQL like: GROUP BY country, city"
               ],
@@ -14777,7 +14796,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates an IN condition with an array of object values.",
@@ -14815,7 +14834,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates an IN condition with a collection of values.",
@@ -14853,7 +14872,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates a row value constructor IN condition.",
@@ -15276,7 +15295,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates a NOT IN condition with an array of object values.",
@@ -15314,7 +15333,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates a NOT IN condition with a collection of values.",
@@ -15352,7 +15371,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates a row value constructor NOT IN condition.",
@@ -16153,7 +16172,7 @@
               "returns": "a raw SubQuery carrying an immutable binding snapshot",
               "contract": [
                 "The complete SQL is retained verbatim; parameters is defensively copied and must have exactly one value for each positional ?",
-                "Use SqlBuilder#toSubQuery() when a named SQL policy is required.",
+                "When this subquery is embedded in a SqlBuilder, those placeholders are converted to the builder's named or MyBatis parameter style, or their values are inlined for a raw-SQL policy.",
                 "As with every raw SQL API, the SQL structure itself must not come from untrusted input."
               ],
               "examples": [
@@ -16404,7 +16423,7 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Returns the total number of parameters (named or positional) in the SQL.",
-              "returns": "the number of parameters in the SQL; this can be smaller than the number of ? characters in #parameterizedSql() when a bracket-quoted identifier such as [what?] is preserved verbatim",
+              "returns": "the number of parameters in the SQL; this can be smaller than the number of ? characters in #parameterizedSql() when an operator or quoted text such as [what?] contains a question mark",
               "contract": [],
               "examples": [
                 "ParsedSql parsed = ParsedSql.parse(\"INSERT INTO users (name, email, age) VALUES (:name, :email, :age)\");\nint count = parsed.parameterCount();\n// Returns: 3\n\nParsedSql parsed2 = ParsedSql.parse(\"SELECT * FROM users\");\nint count2 = parsed2.parameterCount();\n// Returns: 0"
@@ -16525,9 +16544,9 @@
                 }
               ],
               "javadoc_summary": "Returns column information keyed by both property names and mapped column names.",
-              "returns": "an immutable map containing property-name keys and, when a mapped column name is not already a property-name key, an additional column-name key. Each value contains the mapped column name and whether that column name has no dot.",
+              "returns": "an immutable map containing property-name keys and, when a mapped column name is not already a property-name key, an additional column-name key. Each value contains the mapped column name and whether that column name is a single unqualified identifier.",
               "contract": [
-                "The ColumnInfo#isUnqualified() flag describes the mapped column value: it is true when the column name contains no '.' character."
+                "The ColumnInfo#isUnqualified() flag describes the mapped column value: it is true only when the column name is one bare identifier, so query builders may still prepend a table alias or sub-entity qualifier to it."
               ],
               "examples": [
                 "// Get property-to-column details\nImmutableMap<String, QueryUtil.ColumnInfo> columnInfoMap =\n    QueryUtil.propToColumnInfoMap(User.class, NamingPolicy.SNAKE_CASE);\n\nQueryUtil.ColumnInfo result = columnInfoMap.get(\"firstName\");\nString columnName = result.columnName(); // \"first_name\"\nboolean unqualified = result.isUnqualified(); // true\n\n// Nested property example\nQueryUtil.ColumnInfo nested = columnInfoMap.get(\"address.street\");\nString nestedColumn = nested.columnName(); // e.g. \"addr.street\"\nboolean nestedUnqualified = nested.isUnqualified(); // false"
@@ -17502,7 +17521,7 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Builds an immutable selection, defensively copying its property collections.",
+              "javadoc_summary": "Builds an immutable selection, defensively copying its property collections, including immutable wrappers over mutable backing collections.",
               "returns": "the new selection",
               "contract": [],
               "examples": [],
@@ -18268,7 +18287,8 @@
               "javadoc_summary": "Creates a SqlMapper instance by loading SQL definitions from the supplied input stream.",
               "returns": "a new SqlMapper instance loaded with SQL definitions from the stream",
               "contract": [
-                "The stream content must contain a <sqlMapper> root element."
+                "The stream content must contain a <sqlMapper> root element.",
+                "The stream is consumed and must not be reused after this call returns."
               ],
               "examples": [
                 "try (InputStream is = new FileInputStream(\"sql/queries.xml\")) {\n    SqlMapper mapper = SqlMapper.loadFrom(is);\n}"
@@ -18482,7 +18502,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null or blank (blank is rejected by ParsedSql#parse(String)), or if the id is null/empty, contains whitespace, exceeds #MAX_ID_LENGTH characters, or already exists"
+                  "condition": "if ParsedSql#parse(String) rejects sql (including null/blank SQL, mixed parameter styles, or malformed parameters), or if the id is null/empty, contains whitespace, exceeds #MAX_ID_LENGTH characters, or already exists"
                 }
               ],
               "javadoc_summary": "Adds a SQL string with the specified identifier and no attributes.",
@@ -18524,7 +18544,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null or blank (blank is rejected by ParsedSql#parse(String)); if the id is null/empty, contains whitespace, exceeds #MAX_ID_LENGTH characters, or already exists; or if attributes contains a null/empty/invalid or namespace-qualified XML attribute name, or a null value"
+                  "condition": "if ParsedSql#parse(String) rejects sql (including null/blank SQL, mixed parameter styles, or malformed parameters); if the id is null/empty, contains whitespace, exceeds #MAX_ID_LENGTH characters, or already exists; or if attributes contains a null/empty/invalid or namespace-qualified XML attribute name, or a null value"
                 }
               ],
               "javadoc_summary": "Adds a SQL string with the specified identifier and attributes.",
@@ -19084,7 +19104,7 @@
               ],
               "type": "SqlOperation",
               "value": "new SqlOperation(SK.MERGE)",
-              "javadoc_summary": "MERGE operation for upserting (inserting or updating) records.",
+              "javadoc_summary": "MERGE operation for conditionally inserting, updating, or deleting records, depending on the database dialect.",
               "nullability": "unspecified"
             },
             {
@@ -20608,7 +20628,7 @@
               "returns": "an immutable list containing [minValue, maxValue], or their respective parameters spliced in where a bound is itself a Condition; known mutable JDK bounds are returned as defensive copies",
               "contract": [
                 "If either bound is a Condition (typically a SubQuery), its parameters are spliced in place of the bound itself.",
-                "Usage Examples: The result is memoized only when both bounds are plain scalars (neither an array, Date, Calendar nor a nested Condition); otherwise a fresh list, holding fresh defensive copies of any array/Date/Calendar values (including those spliced in from a nested condition), is built on every call, so mutating a returned element never affects this condition or a later call."
+                "Usage Examples: The result is memoized only when both bounds are plain scalars (neither an array, Date, Calendar nor a nested Condition); otherwise a fresh list, holding fresh defensive copies of any array/Date/Calendar values (including those spliced in from a nested condition), is built on every call."
               ],
               "examples": [
                 "// Literal bounds -> [min, max]\nBetween between = new Between(\"age\", 18, 65);\nList<Object> p1 = between.parameters();   // [18, 65]\n\n// A Condition bound has its parameters spliced in\nSubQuery sub = Filters.subQuery(\"config\", Arrays.asList(\"minAge\"), Filters.eq(\"active\", true));\nBetween subBound = new Between(\"age\", sub, 65);\nList<Object> p2 = subBound.parameters();   // [true, 65]"
@@ -20817,7 +20837,7 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Returns the values used by this IN or NOT IN condition.",
-              "returns": "an immutable list of the values (or value tuples), or an empty immutable list for an uninitialized instance; array, Date and Calendar elements in the list are defensive copies (a fresh list is built on every call when any element is an array, Date, Calendar or nested Condition; the memoized view is reused only when every element is a plain scalar), so mutating a returned element never affects this condition",
+              "returns": "an immutable list of the values (or value tuples), or an empty immutable list for an uninitialized instance; array, Date and Calendar elements in the list are defensive copies (a fresh list is built on every call when any element is an array, Date, Calendar or nested Condition; the memoized view is reused only when every element is a plain scalar), so mutating one of these defensive copies never affects this condition. Other mutable values remain shared by reference",
               "contract": [],
               "examples": [
                 "In inCond = new In(\"status\", Arrays.asList(\"active\", \"pending\"));\nList<?> values = inCond.values();   // [\"active\", \"pending\"]"
@@ -20855,7 +20875,7 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Returns the parameter values for this condition, flattened in declaration order.",
-              "returns": "an immutable list of parameter values, or an empty immutable list for an uninitialized instance (e.g. created via the no-arg constructor for deserialization); array, Date and Calendar values in the list are defensive copies (the list is rebuilt on every call in that case rather than memoized), so mutating a returned element never affects this condition or a later call",
+              "returns": "an immutable list of parameter values, or an empty immutable list for an uninitialized instance (e.g. created via the no-arg constructor for deserialization); array, Date and Calendar values in the list are defensive copies (the list is rebuilt on every call in that case rather than memoized), so mutating one of these defensive copies never affects this condition or a later call. Other mutable values remain shared by reference",
               "contract": [
                 "Usage Examples: The result is memoized only when every membership value is a plain scalar (neither an array, Date, Calendar nor a nested Condition); otherwise a fresh list, holding fresh defensive copies of any array/Date/Calendar values (including those spliced in from a nested condition), is built on every call."
               ],
@@ -21345,7 +21365,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank; either bound is null; or a bound is another predicate, query clause, JOIN, ON/USING connector, or quantified All/Any/Some operand"
+                  "condition": "if propName is null, empty, or blank; either bound is null; or a bound is another predicate, query clause, JOIN, ON/USING connector, blank SqlExpression, or quantified All/Any/Some operand; or if a structured subquery bound has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -21384,14 +21404,14 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against; may be a literal value, null only for equality and IS/IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values or explicit scalar expressions. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is(\"x\", true) equals Filters.isTrue(\"x\").",
+                  "javadoc": "the value to compare against; may be a literal value, null only for equality and IS/IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values or explicit scalar expressions. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN. Every structured subquery with a known, non-wildcard projection must select exactly one column; raw SQL and wildcard projection arity are left to the database. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is(\"x\", true) equals Filters.isTrue(\"x\").",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank; if operator is not one of the operators listed above; or if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, a SqlExpression, or a SubQuery; if a value that must be non-null is null; if IS/IS NOT receives an arbitrary literal; if a condition-valued operand is an ordinary predicate or query clause or a blank SqlExpression; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison"
+                  "condition": "if propName is null, empty, or blank; if operator is not one of the operators listed above; or if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, a SqlExpression, or a SubQuery; if a value that must be non-null is null; if IS/IS NOT receives an arbitrary literal; if a condition-valued operand is an ordinary predicate or query clause or a blank SqlExpression; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison; or if a scalar SubQuery has a known, non-wildcard projection with multiple columns"
                 },
                 {
                   "type": "java.lang.NullPointerException",
@@ -21433,7 +21453,9 @@
               "throws": [],
               "javadoc_summary": "Returns the property value without an unchecked generic cast.",
               "returns": "the property value, which may be null",
-              "contract": [],
+              "contract": [
+                "A collection used as a scalar value by another operator retains its concrete type and identity; callers must not mutate that collection while the condition is in use."
+              ],
               "examples": [],
               "see_also": []
             },
@@ -21499,7 +21521,8 @@
                 "If the operator is null (only possible for an uninitialized instance), an empty list is returned.",
                 "If the operator is IN or NOT IN and the value is a Collection, each element is added as a parameter; any element that is itself a Condition has its own parameters spliced in.",
                 "If the value is a Condition (e.g., a subquery), the subquery's own parameters are returned.",
-                "Usage Examples: The result is memoized only when every operand is a plain scalar (neither an array, Date, Calendar nor a nested Condition); otherwise a fresh list, holding fresh defensive copies of any array/Date/Calendar values (including those spliced in from a nested condition), is built on every call, so mutating a returned element never affects this condition or a later call."
+                "Usage Examples: The result is memoized only when every operand is a plain scalar (neither an array, Date, Calendar nor a nested Condition); otherwise a fresh list, holding fresh defensive copies of any array/Date/Calendar values (including those spliced in from a nested condition), is built on every call.",
+                "Other mutable scalar values, including collections used outside IN/NOT IN, are retained by reference and must not be mutated while in use."
               ],
               "examples": [
                 "// Literal value -> single-element list\nBinary eq = new Equal(\"age\", 25);\nList<Object> p1 = eq.parameters();   // [25]\n\n// Null value with = or != -> empty list (rendered as IS NULL / IS NOT NULL)\nBinary nullEq = new Equal(\"name\", (Object) null);\nList<Object> p2 = nullEq.parameters();   // [] (empty)\n\n// Subquery value -> the subquery's own parameters\nSubQuery sub = Filters.subQuery(\"users\", Arrays.asList(\"id\"), Filters.eq(\"active\", true));\nBinary eqSub = new Equal(\"userId\", sub);\nList<Object> p3 = eqSub.parameters();   // [true] (the subquery's params)"
@@ -22344,7 +22367,7 @@
                 {
                   "name": "namingPolicy",
                   "type": "NamingPolicy",
-                  "javadoc": "the naming policy to apply to property names within each clause; null is treated as NamingPolicy#NO_CHANGE by the standard clause implementations",
+                  "javadoc": "the naming policy to apply to property names within each clause; null is normalized to NamingPolicy#NO_CHANGE before rendering each clause",
                   "nullability": "unspecified"
                 }
               ],
@@ -24905,7 +24928,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, or if propValue is an ordinary predicate or query clause (any Condition other than an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand), or a blank SqlExpression"
+                  "condition": "if propName is null, empty, or blank, or if propValue is an ordinary predicate or query clause (any Condition other than an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand), or a blank SqlExpression; or if a structured subquery has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -25140,7 +25163,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression"
+                  "condition": "if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression; or if a structured subquery has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -25180,7 +25203,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression"
+                  "condition": "if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression; or if a structured subquery has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -25390,7 +25413,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null/empty/blank, if values is null/empty or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected)"
+                  "condition": "if propName is null/empty/blank, if values is null/empty or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
                 }
               ]
             },
@@ -25414,7 +25437,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected)"
+                  "condition": "if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
                 }
               ]
             }
@@ -26092,7 +26115,7 @@
                 {
                   "name": "namingPolicy",
                   "type": "NamingPolicy",
-                  "javadoc": "the naming policy passed through to the join condition's Condition#toSql(NamingPolicy) method; if null, the nested condition treats it as NamingPolicy#NO_CHANGE",
+                  "javadoc": "the naming policy passed through to the join condition's Condition#toSql(NamingPolicy) method; if null, it is normalized to NamingPolicy#NO_CHANGE before delegation",
                   "nullability": "unspecified"
                 }
               ],
@@ -26458,7 +26481,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression"
+                  "condition": "if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression; or if a structured subquery has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -26498,7 +26521,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression"
+                  "condition": "if propName is null, empty, or blank; propValue is null, an ordinary predicate or query clause, or a blank SqlExpression; or if a structured subquery has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -26538,7 +26561,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, or propValue is null, an ordinary predicate or query clause, or a quantified All/Any/Some operand"
+                  "condition": "if propName is null, empty, or blank, or propValue is null, an ordinary predicate or query clause, a blank SqlExpression, or a quantified All/Any/Some operand; or if a structured subquery has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -27904,13 +27927,13 @@
                 {
                   "name": "minValue",
                   "type": "Object",
-                  "javadoc": "the lower bound of the excluded range (a value equal to this boundary is itself excluded, per SQL NOT BETWEEN). Can be numeric, date, string, or any comparable type.",
+                  "javadoc": "the lower bound of the excluded range (this boundary is excluded when the bounds are ordered). Can be numeric, date, string, or any comparable type.",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "maxValue",
                   "type": "Object",
-                  "javadoc": "the upper bound of the excluded range (a value equal to this boundary is itself excluded, per SQL NOT BETWEEN). Can be numeric, date, string, or any comparable type.",
+                  "javadoc": "the upper bound of the excluded range (this boundary is excluded when the bounds are ordered). Can be numeric, date, string, or any comparable type.",
                   "nullability": "unspecified"
                 }
               ],
@@ -29153,7 +29176,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank; either bound is null; or a bound is another predicate, query clause, JOIN, ON/USING connector, or quantified All/Any/Some operand"
+                  "condition": "if propName is null, empty, or blank; either bound is null; or a bound is another predicate, query clause, JOIN, ON/USING connector, blank SqlExpression, or quantified All/Any/Some operand; or if a structured subquery bound has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -29193,7 +29216,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, or if propValue is an ordinary predicate or query clause (any Condition other than an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand), or a blank SqlExpression"
+                  "condition": "if propName is null, empty, or blank, or if propValue is an ordinary predicate or query clause (any Condition other than an SqlExpression, a scalar SubQuery, or a direct All/Any/Some operand), or a blank SqlExpression; or if a structured subquery has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -29287,7 +29310,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null/empty/blank, if values is null/empty or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected)"
+                  "condition": "if propName is null/empty/blank, if values is null/empty or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
                 }
               ]
             },
@@ -29311,7 +29334,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected)"
+                  "condition": "if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
                 }
               ]
             }
@@ -29415,7 +29438,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, or propValue is null, an ordinary predicate or query clause, or a quantified All/Any/Some operand"
+                  "condition": "if propName is null, empty, or blank, or propValue is null, an ordinary predicate or query clause, a blank SqlExpression, or a quantified All/Any/Some operand; or if a structured subquery has a known, non-wildcard projection with a column count other than one"
                 }
               ]
             }
@@ -31156,7 +31179,7 @@
               "javadoc_summary": "Creates a NOT BETWEEN expression for the given expression with min and max values.",
               "returns": "a SQL representation of the NOT BETWEEN expression",
               "contract": [
-                "A value satisfies NOT BETWEEN min AND max when it is strictly less than min or strictly greater than max, so both ends of the range are excluded."
+                "A value satisfies NOT BETWEEN min AND max when it is strictly less than min or strictly greater than max."
               ],
               "examples": [
                 "String expr = SqlExpression.notBetween(\"age\", 18, 65);\n// Returns: \"age NOT BETWEEN 18 AND 65\"\n\nString expr2 = SqlExpression.notBetween(\"price\", 10.0, 50.0);\n// Returns: \"price NOT BETWEEN 10.0 AND 50.0\""
@@ -31820,7 +31843,7 @@
               "returns": "the SQL representation of the value",
               "contract": [
                 "Some database modes assign non-standard meanings to backslash characters (for example MySQL without NO_BACKSLASH_ESCAPES), where a copied backslash can escape the closing quote; prefer a parameterized builder for such values Number values must render as decimal, integer, or scientific-notation literals; NaN/infinite Float/Double values and non-numeric custom text are rejected.",
-                "SqlExpression objects return their literal SQL text (or \"null\" if the literal is null) SubQuery instances render their toString() wrapped in parentheses; other Conditions use their toString() verbatim Other objects are converted via N#stringOf(Object), then quoted and escaped Usage Examples:"
+                "SqlExpression objects return their literal SQL text (or \"null\" if the literal is null) Condition values render through Condition#toSql(NamingPolicy) with NamingPolicy#NO_CHANGE; SubQuery SQL is wrapped in parentheses."
               ],
               "examples": [
                 "SqlExpression.renderValue(\"text\");                         // returns \"'text'\"\nSqlExpression.renderValue(\"O'Brien\");                      // returns \"'O''Brien'\" (single quote doubled)\nSqlExpression.renderValue(\"say \\\"hi\\\"\");                   // returns \"'say \\\"hi\\\"'\" (double quote left as-is)\nSqlExpression.renderValue(123);                            // returns \"123\"\nSqlExpression.renderValue(45.67);                          // returns \"45.67\"\nSqlExpression.renderValue(null);                           // returns \"null\"\nSqlExpression.renderValue(true);                           // returns \"true\"\nSqlExpression.renderValue(false);                          // returns \"false\"\nSqlExpression.renderValue(new SqlExpression(\"COUNT(*)\"));  // returns \"COUNT(*)\" (the expression's literal)\nSqlExpression.renderValue(Double.NaN);                     // throws IllegalArgumentException"
@@ -33399,7 +33422,9 @@
               "throws": [],
               "javadoc_summary": "Converts this subquery to its SQL representation.",
               "returns": "SQL representation of the subquery",
-              "contract": [],
+              "contract": [
+                "Render the subquery through a SqlBuilder when condition identifiers must also resolve against entity column mappings."
+              ],
               "examples": [
                 "// Raw SQL subquery: SQL returned as-is, naming policy is ignored\nSubQuery raw = Filters.subQuery(\"SELECT user_id FROM users\");\nString rawStr = raw.toSql(NamingPolicy.SNAKE_CASE);\n// returns \"SELECT user_id FROM users\"\n\n// Structured subquery with NO_CHANGE: names rendered verbatim\nSubQuery sq = Filters.subQuery(\"users\", Arrays.asList(\"id\", \"name\"), Filters.equal(\"status\", \"active\"));\nString s1 = sq.toSql(NamingPolicy.NO_CHANGE);\n// returns \"SELECT id, name FROM users WHERE status = 'active'\"\n\n// Structured subquery with SNAKE_CASE: props, entity, and condition are all converted\nSubQuery sq2 = Filters.subQuery(\"userAccount\", Arrays.asList(\"firstName\", \"lastName\"),\n                                Filters.equal(\"isActive\", true));\nString s2 = sq2.toSql(NamingPolicy.SNAKE_CASE);\n// returns \"SELECT first_name, last_name FROM user_account WHERE is_active = true\"\n\n// null naming policy behaves like NO_CHANGE\nSubQuery sq3 = Filters.subQuery(\"users\", Arrays.asList(\"id\"), (Condition) null);\nString s3 = sq3.toSql((NamingPolicy) null);\n// returns \"SELECT id FROM users\""
               ],

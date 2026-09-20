@@ -160,9 +160,6 @@ public final class ParsedSql {
 
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
-    private static final Set<String> OP_SQL_PREFIX_SET = Set.of(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL, SK.VALUES, "EXPLAIN",
-            "REPLACE");
-
     private static final int FACTOR = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
     private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = PoolFactory.createKeyedObjectPool(1000 * FACTOR, EVICT_TIME);
@@ -224,12 +221,12 @@ public final class ParsedSql {
         final String firstOpWord = resolveFirstOpWord(words);
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && isOpSqlPrefixWord(firstOpWord);
 
-        final List<String> namedParameterList = new ArrayList<>();
-        // Every counted positional marker as (token index, offset within that token), resolved to
-        // original-text offsets after the scan so callers that rewrite the raw text (the query builders'
-        // raw sub-query renaming) substitute exactly the markers counted here and nothing else.
-        final IntList questionMarkTokenIndexes = new IntList();
-        final IntList questionMarkTokenOffsets = new IntList();
+        List<String> namedParameterList = null;
+        // Ordinary bindings record their token once; bracket groups retain the scanner's owned
+        // offset array. This avoids a token-index entry per array element and preserves source
+        // positions for raw sub-query rewriting when operators/quoted '?' require token alignment.
+        IntList questionMarkTokenIndexes = null;
+        int[][] subscriptParameterOffsets = null;
         int paramCount = 0;
         int type = 0; // Bit flags: QUESTION_MARK_TYPE, NAMED_PARAMETER_TYPE, IBATIS_PARAMETER_TYPE
         // Remembers where a positional marker came from so a mixed-style rejection can explain the
@@ -240,7 +237,9 @@ public final class ParsedSql {
         // "x['a', :b]['c', :d]", "x[?] ['c', ?]") is a chained subscript: the tokenizer emits it as a
         // standalone "[...]" token, but it is inspected exactly like that first group. Computed up front in
         // one pass so the per-token lookup below stays O(1).
-        final boolean[] chainedSubscripts = isOpSqlPrefix ? markChainedSubscriptTokens(words) : null;
+        // Without an opening bracket there cannot be a chain. Avoid its scan and per-token array
+        // for ordinary SQL; quoted/commented brackets may cause harmless extra work, never a bypass.
+        final boolean[] chainedSubscripts = isOpSqlPrefix && this.sql.indexOf('[') >= 0 ? markChainedSubscriptTokens(words) : null;
         // Classify the original tokens once, before named/MyBatis conversion changes their text or joins
         // split bindings. The same forward state machine handles bracket interiors below.
         final int[] positionalTokenIndexes = isOpSqlPrefix && this.sql.indexOf('?') >= 0 ? new QuestionMarkClassifier(words, null).classify()
@@ -253,7 +252,7 @@ public final class ParsedSql {
                 String word = words.get(i);
 
                 if (isOpSqlPrefix) {
-                    final boolean chainedSubscript = chainedSubscripts[i];
+                    final boolean chainedSubscript = chainedSubscripts != null && chainedSubscripts[i];
 
                     if (word.indexOf('?') >= 0 && (chainedSubscript || isParameterSubscriptToken(word))) {
                         // Positional placeholders embedded in a subscript-shaped token ("ARRAY[?]", "arr[?, ?]",
@@ -263,12 +262,11 @@ public final class ParsedSql {
                         // reaches the mixed-style guard.
                         final int[] embedded = findSubscriptPositionalParameterIndexes(word, word.indexOf('[') + 1);
 
-                        for (final int offsetInToken : embedded) {
-                            questionMarkTokenIndexes.add(i);
-                            questionMarkTokenOffsets.add(offsetInToken);
-                        }
-
                         if (embedded.length > 0) {
+                            if (subscriptParameterOffsets == null) {
+                                subscriptParameterOffsets = new int[size][];
+                            }
+                            subscriptParameterOffsets[i] = embedded;
                             paramCount += embedded.length;
                             type |= QUESTION_MARK_TYPE;
                             questionMarkFromSubscript = true;
@@ -281,8 +279,10 @@ public final class ParsedSql {
 
                     if (positionalTokenCursor < positionalTokenIndexes.length && positionalTokenIndexes[positionalTokenCursor] == i) {
                         positionalTokenCursor++;
+                        if (questionMarkTokenIndexes == null) {
+                            questionMarkTokenIndexes = new IntList();
+                        }
                         questionMarkTokenIndexes.add(i);
-                        questionMarkTokenOffsets.add(0);
                         paramCount++;
                         type |= QUESTION_MARK_TYPE;
                     } else if (mayContainIbatisParameter(word, chainedSubscript)) {
@@ -338,6 +338,9 @@ public final class ParsedSql {
                                     : null;
 
                             if (Strings.isNotEmpty(namedParameter)) {
+                                if (namedParameterList == null) {
+                                    namedParameterList = new ArrayList<>();
+                                }
                                 namedParameterList.add(namedParameter);
                                 rebuilt.append(SK.QUESTION_MARK);
                                 paramCount++;
@@ -386,6 +389,9 @@ public final class ParsedSql {
                                 rebuilt.append(word, copiedFrom, parameterStartIndex);
 
                                 final int parameterEndIndex = findNamedParameterEndIndex(word, parameterStartIndex + 1);
+                                if (namedParameterList == null) {
+                                    namedParameterList = new ArrayList<>();
+                                }
                                 namedParameterList.add(word.substring(parameterStartIndex + 1, parameterEndIndex));
                                 rebuilt.append(SK.QUESTION_MARK);
                                 paramCount++;
@@ -422,9 +428,16 @@ public final class ParsedSql {
             }
             parameterizedSql = endIdx == tmpSql.length() ? tmpSql : tmpSql.substring(0, endIdx);
             parameterCount = paramCount;
-            namedParameters = isOpSqlPrefix ? ImmutableList.wrap(namedParameterList) : ImmutableList.empty();
-            positionalParameterOffsets = questionMarkTokenIndexes.isEmpty() ? N.EMPTY_INT_ARRAY
-                    : resolvePositionalParameterOffsets(this.sql, words, questionMarkTokenIndexes, questionMarkTokenOffsets);
+            namedParameters = namedParameterList == null ? ImmutableList.empty() : ImmutableList.wrap(namedParameterList);
+            if ((type & QUESTION_MARK_TYPE) == 0) {
+                positionalParameterOffsets = N.EMPTY_INT_ARRAY;
+            } else {
+                // Bracket scanners already supply every inner offset. Align their containing tokens
+                // directly; rediscovering their markers character by character would duplicate that work.
+                final int[] directOffsets = subscriptParameterOffsets == null ? allQuestionMarkOffsets(this.sql, paramCount) : null;
+                positionalParameterOffsets = directOffsets != null ? directOffsets
+                        : resolvePositionalParameterOffsets(this.sql, words, questionMarkTokenIndexes, null, subscriptParameterOffsets, paramCount);
+            }
         } finally {
             Objectory.recycle(sb);
         }
@@ -683,10 +696,42 @@ public final class ParsedSql {
     }
 
     /**
+     * If classification counted every question mark in the source, their literal offsets are already
+     * the answer. Any extra mark (operator, quoted text, metadata or comment) forces token alignment.
+     * This is a consequence of classification, not a competing rule for deciding what binds.
+     */
+    private static int[] allQuestionMarkOffsets(final String sql, final int count) {
+        final int[] offsets = new int[count];
+        // Dense binding lists benefit from one character loop instead of many tiny indexOf calls.
+        if (count > sql.length() / 4) {
+            int marker = 0;
+            for (int index = 0, len = sql.length(); index < len; index++) {
+                if (sql.charAt(index) == '?') {
+                    if (marker == count) {
+                        return null;
+                    }
+                    offsets[marker++] = index;
+                }
+            }
+            return marker == count ? offsets : null;
+        }
+        int index = -1;
+        for (int i = 0; i < count; i++) {
+            index = sql.indexOf('?', index + 1);
+            if (index < 0) {
+                return null;
+            }
+            offsets[i] = index;
+        }
+        return sql.indexOf('?', index + 1) < 0 ? offsets : null;
+    }
+
+    /**
      * Maps each counted positional marker, recorded as (token index, offset within the token), to its offset in
      * {@code sql}. The tokenizer drops comments and collapses whitespace runs, so the token stream is walked
      * alongside the original text: whitespace and comments are skipped, then each non-blank token must be found
-     * verbatim at the cursor. Returns {@code null} if a token cannot be located (never expected, guarded anyway).
+     * verbatim at the cursor. A null token-offset list denotes zero offsets (ordinary markers).
+     * Returns {@code null} if a token cannot be located (never expected, guarded anyway).
      *
      * <p>A token is accepted at the cursor only when the cursor does not open a comment the tokenizer discarded,
      * because the openers share their first character with ordinary operator tokens: without that guard the token
@@ -697,7 +742,14 @@ public final class ParsedSql {
      */
     private static int[] resolvePositionalParameterOffsets(final String sql, final List<String> words, final IntList questionMarkTokenIndexes,
             final IntList questionMarkTokenOffsets) {
-        final int markerCount = questionMarkTokenIndexes.size();
+        return resolvePositionalParameterOffsets(sql, words, questionMarkTokenIndexes, questionMarkTokenOffsets, null, questionMarkTokenIndexes.size());
+    }
+
+    /** Aligns ordinary token positions and sparse bracket-offset arrays in the same source walk. */
+    private static int[] resolvePositionalParameterOffsets(final String sql, final List<String> words, final IntList questionMarkTokenIndexes,
+            final IntList questionMarkTokenOffsets, final int[][] subscriptOffsets, final int markerCount) {
+        final int ordinaryCount = questionMarkTokenIndexes == null ? 0 : questionMarkTokenIndexes.size();
+        int ordinary = 0;
         final int[] offsets = new int[markerCount];
         final int len = sql.length();
         int cursor = 0;
@@ -744,9 +796,14 @@ public final class ParsedSql {
                 }
             }
 
-            while (marker < markerCount && questionMarkTokenIndexes.get(marker) == i) {
-                offsets[marker] = cursor + questionMarkTokenOffsets.get(marker);
-                marker++;
+            if (subscriptOffsets != null && subscriptOffsets[i] != null) {
+                for (final int offset : subscriptOffsets[i]) {
+                    offsets[marker++] = cursor + offset;
+                }
+            }
+            while (ordinary < ordinaryCount && questionMarkTokenIndexes.get(ordinary) == i) {
+                offsets[marker++] = cursor + (questionMarkTokenOffsets == null ? 0 : questionMarkTokenOffsets.get(ordinary));
+                ordinary++;
             }
 
             cursor += word.length();
@@ -765,19 +822,16 @@ public final class ParsedSql {
         return text.startsWith("--", index) || text.startsWith("#", index) || text.startsWith("/*", index);
     }
 
-    /**
-     * Equivalent to {@code OP_SQL_PREFIX_SET.contains(word.toUpperCase(Locale.ROOT))} but without
-     * allocating a temporary upper-cased String. All entries of {@code OP_SQL_PREFIX_SET} are
-     * uppercase ASCII keywords, so a case-insensitive scan yields the identical result.
-     */
+    /** Recognizes SQL statement prefixes without a temporary upper-cased string or a set iterator. */
     private static boolean isOpSqlPrefixWord(final String word) {
-        for (final String prefix : OP_SQL_PREFIX_SET) {
-            if (prefix.equalsIgnoreCase(word)) {
-                return true;
-            }
-        }
-
-        return false;
+        return switch (word.length()) {
+            case 4 -> "WITH".equalsIgnoreCase(word) || "CALL".equalsIgnoreCase(word);
+            case 5 -> "MERGE".equalsIgnoreCase(word);
+            case 6 -> "SELECT".equalsIgnoreCase(word) || "INSERT".equalsIgnoreCase(word) || "UPDATE".equalsIgnoreCase(word) || "DELETE".equalsIgnoreCase(word)
+                    || "VALUES".equalsIgnoreCase(word);
+            case 7 -> "EXPLAIN".equalsIgnoreCase(word) || "REPLACE".equalsIgnoreCase(word);
+            default -> false;
+        };
     }
 
     private static String resolveFirstOpWord(final List<String> words) {
@@ -1167,19 +1221,17 @@ public final class ParsedSql {
             return N.EMPTY_INT_ARRAY;
         }
 
-        IntList markerIndexes = null;
+        int count = 0;
 
         for (final int index : hashIndexes) {
             if (index + 1 < token.length() && token.charAt(index + 1) == '{') {
-                if (markerIndexes == null) {
-                    markerIndexes = new IntList();
-                }
-
-                markerIndexes.add(index);
+                // The scanner owns this fresh array. Compact it in place instead of allocating
+                // another growable list, especially for a large ARRAY of MyBatis bindings.
+                hashIndexes[count++] = index;
             }
         }
 
-        return markerIndexes == null ? N.EMPTY_INT_ARRAY : markerIndexes.toArray();
+        return count == hashIndexes.length ? hashIndexes : count == 0 ? N.EMPTY_INT_ARRAY : Arrays.copyOf(hashIndexes, count);
     }
 
     private static boolean isQuoteChar(final char ch) {
@@ -1267,6 +1319,11 @@ public final class ParsedSql {
      */
     private static int[] findUnambiguousUnquotedMarkerIndexes(final String token, final int fromIndex, final char marker) {
         final int[] withBackslashEscapes = collectUnquotedMarkerIndexes(token, fromIndex, marker, true);
+        // Both quote interpretations are identical without a backslash. Keep the second reading
+        // for every potentially ambiguous token, but avoid another scan/list for ordinary markers.
+        if (token.indexOf('\\', fromIndex) < 0) {
+            return withBackslashEscapes;
+        }
         final int[] doubledQuoteOnly = collectUnquotedMarkerIndexes(token, fromIndex, marker, false);
 
         return Arrays.equals(withBackslashEscapes, doubledQuoteOnly) ? withBackslashEscapes : null;
@@ -1343,10 +1400,15 @@ public final class ParsedSql {
         return afterMarkerIndex >= token.length() || !isNamedParameterIdentifierPart(namedParameterCodePointAt(token, afterMarkerIndex));
     }
 
-    private static boolean precededByQuote(final String token, final int bracketIndex, final char quote) {
-        final int quoteIndex = token.indexOf(quote);
-
-        return quoteIndex >= 0 && quoteIndex < bracketIndex;
+    private static boolean precededByQuote(final String token, final int boundaryIndex, final char quote) {
+        // Only the prefix can affect the boundary's role. Searching the full token repeatedly
+        // rescans arbitrarily large array contents even when the prefix is just "ARRAY".
+        for (int index = 0; index < boundaryIndex; index++) {
+            if (token.charAt(index) == quote) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1452,9 +1514,20 @@ public final class ParsedSql {
      * <p>Lexical words and their source offsets are collected in a forward pass, then adjacent operands are
      * inspected once. No marker rescans a prefix or suffix of the expression, so compact sums such as
      * {@code ARRAY[?+?+...]} take linear time as well as comma-separated arrays. The preliminary marker
-     * agreement check and the two classification readings add only a fixed number of forward scans.</p>
+     * agreement check and the two classification readings are needed only when backslashes can change
+     * quote boundaries. Plain comma-separated bindings need neither tokenization nor operand checks.</p>
      */
     private static int[] findSubscriptPositionalParameterIndexes(final String token, final int fromIndex) {
+        final int[] commaSeparated = commaSeparatedSubscriptBindings(token, fromIndex);
+        if (commaSeparated != null) {
+            return commaSeparated;
+        }
+        // The lexer itself skips quotes, comments and complete MyBatis bindings. If backslashes
+        // cannot change any quote boundary, one classification also replaces the agreement probe.
+        if (token.indexOf('\\', fromIndex) < 0) {
+            return collectSubscriptPositionalParameterIndexes(token, fromIndex, true);
+        }
+
         if (findUnquotedQuestionMarkIndexes(token, fromIndex).length == 0) {
             return N.EMPTY_INT_ARRAY;
         }
@@ -1463,6 +1536,38 @@ public final class ParsedSql {
         final int[] doubledQuoteOnly = collectSubscriptPositionalParameterIndexes(token, fromIndex, false);
 
         return Arrays.equals(withBackslashEscapes, doubledQuoteOnly) ? withBackslashEscapes : N.EMPTY_INT_ARRAY;
+    }
+
+    /**
+     * A subscript containing only comma-separated '?' values has no operator or quoting ambiguity.
+     * Stop at the first other character and let the shared classifier handle the entire expression.
+     * In particular, never treat adjacent '??', nested groups or a trailing comma as this simple form.
+     */
+    private static int[] commaSeparatedSubscriptBindings(final String token, final int fromIndex) {
+        int count = 0;
+        boolean expectsValue = true;
+        for (int index = fromIndex, len = token.length(); index < len; index++) {
+            final char ch = token.charAt(index);
+            if (expectsValue && ch == '?') {
+                count++;
+                expectsValue = false;
+            } else if (!expectsValue && ch == ',') {
+                expectsValue = true;
+            } else if (!expectsValue && ch == ']' && index == len - 1) {
+                // Validate before allocating: the successful scan gives an exact capacity and
+                // proves that every '?' in the bracket interior is a binding.
+                final int[] offsets = new int[count];
+                for (int cursor = fromIndex, marker = 0; cursor < index; cursor++) {
+                    if (token.charAt(cursor) == '?') {
+                        offsets[marker++] = cursor;
+                    }
+                }
+                return offsets;
+            } else if (!Character.isWhitespace(ch)) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1555,6 +1660,7 @@ public final class ParsedSql {
         private int[] classify() {
             IntList indexes = null;
             boolean previousIsOperand = false;
+            boolean previousOperandUnknown = false;
             String previousWord = Strings.EMPTY;
             int depth = 0;
             int[] jsonDepths = null;
@@ -1574,6 +1680,7 @@ public final class ParsedSql {
                     // are metadata, so parentheses or question marks there cannot change SQL operand state.
                     i = bindingEnd;
                     previousIsOperand = true;
+                    previousOperandUnknown = false;
                     previousWord = word;
                     continue;
                 }
@@ -1614,10 +1721,20 @@ public final class ParsedSql {
                         && (wordOffsets == null || wordOffsets.get(i + 1) == wordOffsets.get(i) + word.length())) {
                     previousWord = words.get(++i);
                     previousIsOperand = false;
+                    previousOperandUnknown = false;
                     continue;
                 }
 
                 if (bareMarker || compactMarker) {
+                    // Only a question-mark token needs its predecessor's operand classification.
+                    // Defer the keyword checks across ordinary SQL words, and reject complete
+                    // separators first (e.g. '=' before a binding). Explicit binding/escape state
+                    // above remains authoritative; comments and whitespace never replace it.
+                    if (previousOperandUnknown) {
+                        previousIsOperand = (previousWord.equals(")") || previousWord.equals("]")
+                                || subscriptSeparatorLength(previousWord, 0) != previousWord.length()) && canPrecedeJsonQuestionOperator(previousWord);
+                        previousOperandUnknown = false;
+                    }
                     final int next = nextNonCommentWord(words, i + 1);
                     final boolean jsonClause = jsonDepthCount > 0 && jsonDepths[jsonDepthCount - 1] == depth && startsSqlJsonClause(next);
                     final boolean binaryOperator = previousIsOperand && next >= 0 && !jsonClause && canFollowJsonQuestionOperator(words.get(next));
@@ -1636,8 +1753,7 @@ public final class ParsedSql {
                     // of a compact binding, expects another operand. This also distinguishes "? ? ?".
                     previousIsOperand = bareMarker && placeholder;
                 } else {
-                    previousIsOperand = canPrecedeJsonQuestionOperator(word)
-                            && (word.equals(")") || word.equals("]") || subscriptSeparatorLength(word, 0) != word.length());
+                    previousOperandUnknown = true;
                 }
 
                 previousWord = word;
@@ -2000,12 +2116,11 @@ public final class ParsedSql {
         // sub-expression. A token that begins with operator punctuation ("=", "<>", "+", "||", "->>",
         // "~*", "(", ",", ...) is an operator, so the "?" after it is a positional placeholder. Checking
         // the leading character covers every operator spelling instead of enumerating them.
-        if (!(first == ')' || first == ']' || first == '?' || first == '_' || first == '"' || first == '`' || first == '\'' || first == '$' || first == '.'
-                || first == _PREFIX_OF_NAMED_PARAMETER || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || startsWithSqlExpressionWord(word))) {
-            return false;
-        }
-
-        return !isSqlExpressionBoundaryWord(word) && !isPlaceholderLeadingKeyword(word);
+        // Punctuation-led operands cannot be SQL keywords. Only word operands need the keyword
+        // checks; quoted values and closing groups are common around JSON existence operators.
+        return first == ')' || first == ']' || first == '?' || first == '_' || first == '"' || first == '`' || first == '\'' || first == '$' || first == '.'
+                || first == _PREFIX_OF_NAMED_PARAMETER || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)
+                || (startsWithSqlExpressionWord(word) && !isSqlExpressionBoundaryWord(word) && !isPlaceholderLeadingKeyword(word));
     }
 
     /**
@@ -2016,16 +2131,23 @@ public final class ParsedSql {
      * identifier-like word ({@code DAY}, {@code ESCAPE}, an alias) would be dropped from the parameter count.
      */
     private static boolean isPlaceholderLeadingKeyword(final String word) {
-        return "SELECT".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word)
-                || "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word)
-                || "VALUES".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word)
-                || "WHEN".equalsIgnoreCase(word) || "CASE".equalsIgnoreCase(word) || "INTERVAL".equalsIgnoreCase(word) || "ILIKE".equalsIgnoreCase(word)
-                || "RLIKE".equalsIgnoreCase(word) || "REGEXP".equalsIgnoreCase(word) || "TO".equalsIgnoreCase(word) || "ESCAPE".equalsIgnoreCase(word)
-                || "ZONE".equalsIgnoreCase(word) || "DIV".equalsIgnoreCase(word) || "MOD".equalsIgnoreCase(word);
+        // Length dispatch avoids testing every keyword for identifiers, punctuation and quoted text.
+        return switch (word.length()) {
+            case 2 -> "ON".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word) || "TO".equalsIgnoreCase(word);
+            case 3 -> "AND".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "DIV".equalsIgnoreCase(word)
+                    || "MOD".equalsIgnoreCase(word);
+            case 4 -> "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word) || "WHEN".equalsIgnoreCase(word) || "CASE".equalsIgnoreCase(word)
+                    || "ZONE".equalsIgnoreCase(word);
+            case 5 -> "WHERE".equalsIgnoreCase(word) || "ILIKE".equalsIgnoreCase(word) || "RLIKE".equalsIgnoreCase(word);
+            case 6 -> "SELECT".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "VALUES".equalsIgnoreCase(word) || "REGEXP".equalsIgnoreCase(word)
+                    || "ESCAPE".equalsIgnoreCase(word);
+            case 8 -> "INTERVAL".equalsIgnoreCase(word);
+            default -> false;
+        };
     }
 
     private static boolean canFollowJsonQuestionOperator(final String word) {
-        if (Strings.isEmpty(word) || isSqlExpressionBoundaryWord(word)) {
+        if (Strings.isEmpty(word)) {
             return false;
         }
 
@@ -2038,21 +2160,29 @@ public final class ParsedSql {
         return word.equals(SK.QUESTION_MARK) || isCompactQuestionMarkOperator(word) || firstChar == '\'' || firstChar == '"' || firstChar == '`'
                 || firstChar == '(' || firstChar == '['
                 || (firstChar == _PREFIX_OF_NAMED_PARAMETER && word.length() >= 2 && isNamedParameterIdentifierStart(namedParameterCodePointAt(word, 1)))
-                || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || startsWithSqlExpressionWord(word);
+                || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || (startsWithSqlExpressionWord(word) && !isSqlExpressionBoundaryWord(word));
     }
 
     private static boolean isSqlExpressionBoundaryWord(final String word) {
-        return "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "FROM".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word)
-                || "GROUP".equalsIgnoreCase(word) || "ORDER".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "LIMIT".equalsIgnoreCase(word)
-                || "OFFSET".equalsIgnoreCase(word) || "FETCH".equalsIgnoreCase(word) || "FOR".equalsIgnoreCase(word) || "RETURNING".equalsIgnoreCase(word)
-                || "UNION".equalsIgnoreCase(word) || "INTERSECT".equalsIgnoreCase(word) || "EXCEPT".equalsIgnoreCase(word) || "MINUS".equalsIgnoreCase(word)
-                || "JOIN".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word) || "USING".equalsIgnoreCase(word) || "AS".equalsIgnoreCase(word)
-                || "WHEN".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word) || "END".equalsIgnoreCase(word)
-                || "IS".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word) || "LIKE".equalsIgnoreCase(word) || "BETWEEN".equalsIgnoreCase(word)
-                || "NOT".equalsIgnoreCase(word) || "BY".equalsIgnoreCase(word) || "ASC".equalsIgnoreCase(word) || "DESC".equalsIgnoreCase(word)
-                || "NULLS".equalsIgnoreCase(word) || "FIRST".equalsIgnoreCase(word) || "LAST".equalsIgnoreCase(word) || "ROW".equalsIgnoreCase(word)
-                || "ROWS".equalsIgnoreCase(word) || "ONLY".equalsIgnoreCase(word) || "TOP".equalsIgnoreCase(word) || "NEXT".equalsIgnoreCase(word)
-                || "DISTINCT".equalsIgnoreCase(word) || "ALL".equalsIgnoreCase(word) || "ANY".equalsIgnoreCase(word) || "SOME".equalsIgnoreCase(word);
+        // Length dispatch avoids testing every keyword for identifiers, punctuation and quoted text.
+        return switch (word.length()) {
+            case 2 -> "OR".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word) || "AS".equalsIgnoreCase(word) || "IS".equalsIgnoreCase(word)
+                    || "IN".equalsIgnoreCase(word) || "BY".equalsIgnoreCase(word);
+            case 3 -> "AND".equalsIgnoreCase(word) || "FOR".equalsIgnoreCase(word) || "END".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word)
+                    || "ASC".equalsIgnoreCase(word) || "ROW".equalsIgnoreCase(word) || "TOP".equalsIgnoreCase(word) || "ALL".equalsIgnoreCase(word)
+                    || "ANY".equalsIgnoreCase(word);
+            case 4 -> "FROM".equalsIgnoreCase(word) || "JOIN".equalsIgnoreCase(word) || "WHEN".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word)
+                    || "ELSE".equalsIgnoreCase(word) || "LIKE".equalsIgnoreCase(word) || "DESC".equalsIgnoreCase(word) || "LAST".equalsIgnoreCase(word)
+                    || "ROWS".equalsIgnoreCase(word) || "ONLY".equalsIgnoreCase(word) || "NEXT".equalsIgnoreCase(word) || "SOME".equalsIgnoreCase(word);
+            case 5 -> "WHERE".equalsIgnoreCase(word) || "GROUP".equalsIgnoreCase(word) || "ORDER".equalsIgnoreCase(word) || "LIMIT".equalsIgnoreCase(word)
+                    || "FETCH".equalsIgnoreCase(word) || "UNION".equalsIgnoreCase(word) || "MINUS".equalsIgnoreCase(word) || "USING".equalsIgnoreCase(word)
+                    || "NULLS".equalsIgnoreCase(word) || "FIRST".equalsIgnoreCase(word);
+            case 6 -> "HAVING".equalsIgnoreCase(word) || "OFFSET".equalsIgnoreCase(word) || "EXCEPT".equalsIgnoreCase(word);
+            case 7 -> "BETWEEN".equalsIgnoreCase(word);
+            case 8 -> "DISTINCT".equalsIgnoreCase(word);
+            case 9 -> "RETURNING".equalsIgnoreCase(word) || "INTERSECT".equalsIgnoreCase(word);
+            default -> false;
+        };
     }
 
     private static boolean isCommentOrSpaceToken(final String word) {

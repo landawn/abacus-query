@@ -22,6 +22,126 @@ import com.landawn.abacus.util.Strings;
 
 @Tag("2025")
 public class ParsedSqlTest extends TestBase {
+
+    @Test
+    public void testParse_QuotePrefixesAndSparseOffsetFallbackAcrossSeveralGroups() {
+        // Prefix-only quote checks must leave prefixed literals opaque. Extra literal markers force
+        // the sparse ordinary/group positions to merge back into their original source order.
+        final String sql = "SELECT ?, N'ARRAY[?]', ARRAY['?', ?], arr[?][?], '?' FROM t WHERE id = ?";
+        final ParsedSql parsed = ParsedSql.parse(sql);
+        final int arrayMarker = sql.indexOf(", ?]") + 2;
+        final int chained = sql.indexOf("arr[");
+        assertEquals(5, parsed.parameterCount());
+        assertArrayEquals(new int[] { sql.indexOf('?'), arrayMarker, chained + 4, chained + 7, sql.lastIndexOf('?') },
+                parsed.positionalParameterOffsets());
+        assertEquals(sql, parsed.parameterizedSql());
+        for (final String marker : List.of(":id", "#{id}")) {
+            final String namedSql = "SELECT N'ARRAY[" + marker + "]', ARRAY['" + marker + "', " + marker + "]";
+            final ParsedSql named = ParsedSql.parse(namedSql);
+            assertEquals(1, named.parameterCount(), namedSql);
+            assertEquals(List.of("id"), named.namedParameters(), namedSql);
+            assertEquals("SELECT N'ARRAY[" + marker + "]', ARRAY['" + marker + "', ?]", named.parameterizedSql(), namedSql);
+        }
+    }
+
+    @Test
+    public void testParse_KeywordLengthDispatchKeepsIdentifierOperands() {
+        // An identifier sharing a keyword's length or prefix is still a JSON-operator operand.
+        for (final String column : List.of("id", "key", "name", "order_id", "oncall", "intervals", "selection", "returning_value")) {
+            final String sql = "SELECT doc ? " + column + " FROM t WHERE id = ?";
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+            assertArrayEquals(new int[] { sql.lastIndexOf('?') }, parsed.positionalParameterOffsets(), sql);
+        }
+        for (final String sql : List.of("SELECT INTERVAL ? DAY", "SELECT * FROM t WHERE name ILIKE ? ESCAPE '!'",
+                "SELECT * FROM t WHERE name SIMILAR TO ?", "SELECT CURRENT_TIMESTAMP AT TIME ZONE ?")) {
+            assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+    }
+
+
+    @Test
+    public void testParse_PositionalOffsetsRetainSourceLocationsWithoutSpecialSyntax() {
+        // The direct-offset shortcut must retain original spacing and the trimmed source's indexes.
+        for (final String body : List.of("?", "? + ?", "?::int, ?", "ARRAY[? ,\t?], ?", "arr[?][?], ?")) {
+            final String source = "SELECT " + body + " FROM t /* no binding here */ WHERE id = ?";
+            final ParsedSql parsed = ParsedSql.parse("  " + source + "  ");
+            final int[] expected = java.util.stream.IntStream.range(0, source.length()).filter(i -> source.charAt(i) == '?').toArray();
+            assertEquals(expected.length, parsed.parameterCount(), source);
+            assertArrayEquals(expected, parsed.positionalParameterOffsets(), source);
+            final int[] returned = parsed.positionalParameterOffsets();
+            returned[0] = -1;
+            assertArrayEquals(expected, parsed.positionalParameterOffsets(), "Cached offsets must remain immutable");
+        }
+    }
+
+    @Test
+    public void testParse_PositionalOffsetsExcludeExtraSourceQuestionMarks() {
+        // Equal raw/classified counts are the shortcut's proof. An extra '?' must force alignment,
+        // whether it is before or after the bindings and whether the binding list is sparse or dense.
+        for (final int count : new int[] { 1, 64 }) {
+            final String array = "ARRAY[" + String.join(",", java.util.Collections.nCopies(count, "?")) + "]";
+            for (final String extra : List.of("'?'", "doc ? 'k'", "doc ?? 'k'", "?- line '{1,0,0}'", "[what?]")) {
+                for (final boolean before : new boolean[] { false, true }) {
+                    final String sql = "SELECT " + (before ? extra + ", " + array : array + ", " + extra) + " FROM t /* ? */ WHERE id = ?";
+                    final int start = sql.indexOf("ARRAY[");
+                    final int[] expected = new int[count + 1];
+                    for (int i = 0; i < count; i++) {
+                        expected[i] = start + "ARRAY[".length() + 2 * i;
+                    }
+                    expected[count] = sql.lastIndexOf('?');
+                    final ParsedSql parsed = ParsedSql.parse(sql);
+                    assertEquals(count + 1, parsed.parameterCount(), sql);
+                    assertArrayEquals(expected, parsed.positionalParameterOffsets(), sql);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testParse_CommaSeparatedBindingsRetainAllOffsetsAcrossGroups() {
+        // A large first group donates its offset array; later markers must append without losing it.
+        for (final String prefix : List.of("ARRAY", "arr", "ARRAY ")) {
+            final String sql = "SELECT " + prefix + "[ ? ,\t? ,\n? ], arr[?][?], ARRAY["
+                    + String.join(", ", java.util.Collections.nCopies(2048, "?")) + "] FROM t WHERE id = ?";
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            final int[] expected = java.util.stream.IntStream.range(0, sql.length()).filter(i -> sql.charAt(i) == '?').toArray();
+            assertEquals(2054, parsed.parameterCount(), sql);
+            assertArrayEquals(expected, parsed.positionalParameterOffsets(), sql);
+            assertEquals(sql, parsed.parameterizedSql(), sql);
+        }
+    }
+
+    @Test
+    public void testParse_CommaBindingShortcutFallsBackForExpressionSyntax() {
+        // Commas alone do not establish a simple binding list: quoted text, comments, operators
+        // and nested expressions still require the complete classifier.
+        for (final String expression : List.of("?, doc ?? 'k', ?", "?, doc ? 'k', ?", "?, '?', ?", "?, COALESCE(?, 0)",
+                "? /* ? */ , ?", "? -- ?\n, ?", "? + ?", "JSON_OBJECT('k' VALUE ? NULL ON NULL), ?")) {
+            final String sql = "SELECT ARRAY[" + expression + "] FROM t";
+            assertEquals(2, ParsedSql.parse(sql).parameterCount(), sql);
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql + " WHERE id = :id"), sql);
+        }
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY[??]").parameterCount());
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[?, :id]"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[?, #{id}]"));
+    }
+
+    @Test
+    public void testParse_DeferredOperandChecksKeepQuestionMarkContexts() {
+        for (final String expression : List.of("doc /* gap */ ? 'k'", "(doc) ? 'k'", "doc ? :key", "doc ? #{key}",
+                "?- CAST(:key AS line)", "JSON_OBJECT('k' VALUE :key NULL ON NULL)")) {
+            final ParsedSql parsed = ParsedSql.parse("SELECT " + expression + " FROM t");
+            final boolean named = expression.contains(":key") || expression.contains("#{key}");
+            assertEquals(named ? 1 : 0, parsed.parameterCount(), expression);
+            assertEquals(named ? List.of("key") : List.of(), parsed.namedParameters(), expression);
+            assertArrayEquals(new int[0], parsed.positionalParameterOffsets(), expression);
+        }
+        for (final String expression : List.of("? + ?", "? || ?", "? /* gap */ + ?", "COALESCE(?, ?)", "?- ?::line, ?")) {
+            assertEquals(2, ParsedSql.parse("SELECT " + expression).parameterCount(), expression);
+        }
+    }
+
     @Test
     public void testParse_StandaloneSubscriptsRejectMixedParameterStyles() {
         for (final String sql : List.of("SELECT ARRAY [?, :id]", "SELECT ARRAY [ :id, ? ]", "SELECT ARRAY [?, #{id}]",

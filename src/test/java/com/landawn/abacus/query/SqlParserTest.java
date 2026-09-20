@@ -18,6 +18,63 @@ import com.landawn.abacus.TestBase;
 
 @Tag("2025")
 public class SqlParserTest extends TestBase {
+
+    @Test
+    public void testTokenizerSeparatorBucketsKeepLongestMatchesAndUnicode() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
+                .withSeparator("~>").withSeparator("~>>").withSeparator("~>>>")
+                .withSeparator("π>").withSeparator("π>>").withSeparator("😀>").withSeparator("😀>>")
+                .withSeparator(" +").withSeparator(" ++").build());
+        for (final String separator : List.of("~>", "~>>", "~>>>", "π>", "π>>", "😀>", "😀>>", " +", " ++")) {
+            // A shorter candidate shares the same first character; suffix truncation must still find it.
+            for (final String suffix : List.of("y", "")) {
+                final String sql = "x" + separator + suffix;
+                assertEquals(suffix.isEmpty() ? List.of("x", separator) : List.of("x", separator, "y"), tokenizer.tokenize(sql), sql);
+                assertEquals(separator, tokenizer.nextToken(sql, 1), sql);
+                assertEquals(1 + separator.length(), tokenizer.nextTokenEndIndex(sql, 1), sql);
+                assertEquals(1, tokenizer.indexOfToken(sql, separator, 0, true), sql);
+                assertEquals(1, tokenizer.indexOfToken(sql, separator, 0, false), sql);
+            }
+        }
+    }
+
+    @Test
+    public void testTokenizerQuoteCrossingCandidateDoesNotHideShorterSeparator() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
+                .withSeparator("~").withSeparator("~'").withSeparator("~[").build());
+        for (final String quoted : List.of("'text'", "[text]")) {
+            final String sql = "x~" + quoted;
+            assertEquals(List.of("x", "~", quoted), tokenizer.tokenize(sql), sql);
+            assertEquals("~", tokenizer.nextToken(sql, 1), sql);
+            assertEquals(2, tokenizer.nextTokenEndIndex(sql, 1), sql);
+            assertEquals(1, tokenizer.indexOfToken(sql, "~", 0, true), sql);
+        }
+    }
+
+    @Test
+    public void testTokenizerBulkQuotedTextPreservesEscapeParityAndDoubledDelimiters() {
+        for (final char opening : new char[] { '\'', '"', (char) 96, '[' }) {
+            final char closing = opening == '[' ? ']' : opening;
+            for (int backslashes = 0; backslashes <= 8; backslashes++) {
+                // Odd runs escape ordinary quotes; brackets always close, even after a backslash.
+                final boolean escaped = opening != '[' && (backslashes & 1) != 0;
+                final String quoted = opening + "a" + "\\".repeat(backslashes) + closing + (escaped ? "b" + closing : "");
+                final String sql = "SELECT " + quoted + " FROM t";
+                assertEquals(List.of("SELECT", " ", quoted, " ", "FROM", " ", "t"), SqlParser.tokenize(sql), sql);
+                assertEquals(quoted, SqlParser.nextToken(sql, 7), sql);
+                assertEquals(7 + quoted.length(), SqlParser.nextTokenEndIndex(sql, 7), sql);
+            }
+            final String doubled = opening + "a" + closing + closing + "b" + closing;
+            assertEquals(List.of(doubled, " ", "x"), SqlParser.tokenize(doubled + " x"), doubled);
+            assertEquals(doubled, SqlParser.nextToken(doubled + " x", 0), doubled);
+            for (final String incomplete : List.of(opening + "tail", opening + "tail\\", opening + "a" + closing + closing)) {
+                assertEquals(List.of(incomplete), SqlParser.tokenize(incomplete), incomplete);
+                assertEquals(incomplete, SqlParser.nextToken(incomplete, 0), incomplete);
+                assertEquals(incomplete.length(), SqlParser.nextTokenEndIndex(incomplete, 0), incomplete);
+            }
+        }
+    }
+
     @Test
     public void testParseSimpleSelect() {
         String sql = "SELECT * FROM users";

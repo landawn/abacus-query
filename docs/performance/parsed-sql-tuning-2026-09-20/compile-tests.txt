@@ -1,0 +1,19 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by lombok.permit.Permit
+WARNING: Please consider reporting this to the maintainers of class lombok.permit.Permit
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+C:\Users\haiyangl\Landawn\abacus-query\src\test\java\com\landawn\abacus\query\condition\JunctionTest.java:134: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+                Filters.in("city", new String[] { "NYC", "LA" }));
+                                   ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\test\java\com\landawn\abacus\query\condition\WhereTest.java:285: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        Condition inCondition = Filters.in("status", new String[] { "active", "pending", "approved" });
+                                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+2 warnings

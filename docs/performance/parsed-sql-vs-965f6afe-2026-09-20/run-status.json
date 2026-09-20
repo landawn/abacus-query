@@ -1,0 +1,125 @@
+{
+  "started": "2026-09-20T15:37:49.205Z",
+  "completed": [
+    {
+      "version": "baseline",
+      "fork": 1,
+      "code": 0,
+      "started": "2026-09-20T15:37:49.206Z",
+      "finished": "2026-09-20T15:38:02.528Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "current",
+      "fork": 1,
+      "code": 0,
+      "started": "2026-09-20T15:38:02.528Z",
+      "finished": "2026-09-20T15:38:11.391Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "baseline_common8",
+      "fork": 1,
+      "code": 0,
+      "started": "2026-09-20T15:38:11.392Z",
+      "finished": "2026-09-20T15:38:25.901Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "current",
+      "fork": 2,
+      "code": 0,
+      "started": "2026-09-20T15:38:25.902Z",
+      "finished": "2026-09-20T15:38:34.390Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "baseline_common8",
+      "fork": 2,
+      "code": 0,
+      "started": "2026-09-20T15:38:34.391Z",
+      "finished": "2026-09-20T15:38:47.482Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "baseline",
+      "fork": 2,
+      "code": 0,
+      "started": "2026-09-20T15:38:47.483Z",
+      "finished": "2026-09-20T15:39:01.039Z",
+      "rows": 360,
+      "tail": "ary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\nSep 20, 2026 8:39:01 AM com.landawn.abacus.pool.AbstractPool lambda$initShutdownHook$0\r\nWARNING: Starting pool shutdown: com.landawn.abacus.pool.GenericKeyedObjectPool\r\n"
+    },
+    {
+      "version": "baseline_common8",
+      "fork": 3,
+      "code": 0,
+      "started": "2026-09-20T15:39:01.039Z",
+      "finished": "2026-09-20T15:39:14.546Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "baseline",
+      "fork": 3,
+      "code": 0,
+      "started": "2026-09-20T15:39:14.547Z",
+      "finished": "2026-09-20T15:39:28.478Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "current",
+      "fork": 3,
+      "code": 0,
+      "started": "2026-09-20T15:39:28.479Z",
+      "finished": "2026-09-20T15:39:37.911Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "current",
+      "fork": 4,
+      "code": 0,
+      "started": "2026-09-20T15:39:37.911Z",
+      "finished": "2026-09-20T15:39:47.899Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "baseline",
+      "fork": 4,
+      "code": 0,
+      "started": "2026-09-20T15:39:47.900Z",
+      "finished": "2026-09-20T15:40:02.005Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "baseline",
+      "fork": 5,
+      "code": 0,
+      "started": "2026-09-20T15:40:02.006Z",
+      "finished": "2026-09-20T15:40:16.390Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    },
+    {
+      "version": "current",
+      "fork": 5,
+      "code": 0,
+      "started": "2026-09-20T15:40:16.391Z",
+      "finished": "2026-09-20T15:40:25.176Z",
+      "rows": 360,
+      "tail": "c_match=true\r\ncheck deep_unary/1024 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/4096 expected=1 actual=1 names=0 semantic_match=true\r\ncheck deep_unary/8192 expected=1 actual=1 names=0 semantic_match=true\r\ncomplete sink=2000000\r\n"
+    }
+  ],
+  "active": null,
+  "error": null,
+  "finished": "2026-09-20T15:40:25.177Z"
+}

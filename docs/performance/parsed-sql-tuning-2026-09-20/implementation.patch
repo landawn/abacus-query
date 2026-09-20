@@ -1,0 +1,925 @@
+diff --git a/src/main/java/com/landawn/abacus/query/ParsedSql.java b/src/main/java/com/landawn/abacus/query/ParsedSql.java
+index 824cccd..1a8c22a 100644
+--- a/src/main/java/com/landawn/abacus/query/ParsedSql.java
++++ b/src/main/java/com/landawn/abacus/query/ParsedSql.java
+@@ -160,9 +160,6 @@ public final class ParsedSql {
+ 
+     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
+ 
+-    private static final Set<String> OP_SQL_PREFIX_SET = Set.of(SK.SELECT, SK.INSERT, SK.UPDATE, SK.DELETE, SK.WITH, SK.MERGE, SK.CALL, SK.VALUES, "EXPLAIN",
+-            "REPLACE");
+-
+     private static final int FACTOR = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
+ 
+     private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = PoolFactory.createKeyedObjectPool(1000 * FACTOR, EVICT_TIME);
+@@ -224,12 +221,12 @@ public final class ParsedSql {
+         final String firstOpWord = resolveFirstOpWord(words);
+         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && isOpSqlPrefixWord(firstOpWord);
+ 
+-        final List<String> namedParameterList = new ArrayList<>();
+-        // Every counted positional marker as (token index, offset within that token), resolved to
+-        // original-text offsets after the scan so callers that rewrite the raw text (the query builders'
+-        // raw sub-query renaming) substitute exactly the markers counted here and nothing else.
+-        final IntList questionMarkTokenIndexes = new IntList();
+-        final IntList questionMarkTokenOffsets = new IntList();
++        List<String> namedParameterList = null;
++        // Ordinary bindings record their token once; bracket groups retain the scanner's owned
++        // offset array. This avoids a token-index entry per array element and preserves source
++        // positions for raw sub-query rewriting when operators/quoted '?' require token alignment.
++        IntList questionMarkTokenIndexes = null;
++        int[][] subscriptParameterOffsets = null;
+         int paramCount = 0;
+         int type = 0; // Bit flags: QUESTION_MARK_TYPE, NAMED_PARAMETER_TYPE, IBATIS_PARAMETER_TYPE
+         // Remembers where a positional marker came from so a mixed-style rejection can explain the
+@@ -240,7 +237,9 @@ public final class ParsedSql {
+         // "x['a', :b]['c', :d]", "x[?] ['c', ?]") is a chained subscript: the tokenizer emits it as a
+         // standalone "[...]" token, but it is inspected exactly like that first group. Computed up front in
+         // one pass so the per-token lookup below stays O(1).
+-        final boolean[] chainedSubscripts = isOpSqlPrefix ? markChainedSubscriptTokens(words) : null;
++        // Without an opening bracket there cannot be a chain. Avoid its scan and per-token array
++        // for ordinary SQL; quoted/commented brackets may cause harmless extra work, never a bypass.
++        final boolean[] chainedSubscripts = isOpSqlPrefix && this.sql.indexOf('[') >= 0 ? markChainedSubscriptTokens(words) : null;
+         // Classify the original tokens once, before named/MyBatis conversion changes their text or joins
+         // split bindings. The same forward state machine handles bracket interiors below.
+         final int[] positionalTokenIndexes = isOpSqlPrefix && this.sql.indexOf('?') >= 0 ? new QuestionMarkClassifier(words, null).classify()
+@@ -253,7 +252,7 @@ public final class ParsedSql {
+                 String word = words.get(i);
+ 
+                 if (isOpSqlPrefix) {
+-                    final boolean chainedSubscript = chainedSubscripts[i];
++                    final boolean chainedSubscript = chainedSubscripts != null && chainedSubscripts[i];
+ 
+                     if (word.indexOf('?') >= 0 && (chainedSubscript || isParameterSubscriptToken(word))) {
+                         // Positional placeholders embedded in a subscript-shaped token ("ARRAY[?]", "arr[?, ?]",
+@@ -263,12 +262,11 @@ public final class ParsedSql {
+                         // reaches the mixed-style guard.
+                         final int[] embedded = findSubscriptPositionalParameterIndexes(word, word.indexOf('[') + 1);
+ 
+-                        for (final int offsetInToken : embedded) {
+-                            questionMarkTokenIndexes.add(i);
+-                            questionMarkTokenOffsets.add(offsetInToken);
+-                        }
+-
+                         if (embedded.length > 0) {
++                            if (subscriptParameterOffsets == null) {
++                                subscriptParameterOffsets = new int[size][];
++                            }
++                            subscriptParameterOffsets[i] = embedded;
+                             paramCount += embedded.length;
+                             type |= QUESTION_MARK_TYPE;
+                             questionMarkFromSubscript = true;
+@@ -281,8 +279,10 @@ public final class ParsedSql {
+ 
+                     if (positionalTokenCursor < positionalTokenIndexes.length && positionalTokenIndexes[positionalTokenCursor] == i) {
+                         positionalTokenCursor++;
++                        if (questionMarkTokenIndexes == null) {
++                            questionMarkTokenIndexes = new IntList();
++                        }
+                         questionMarkTokenIndexes.add(i);
+-                        questionMarkTokenOffsets.add(0);
+                         paramCount++;
+                         type |= QUESTION_MARK_TYPE;
+                     } else if (mayContainIbatisParameter(word, chainedSubscript)) {
+@@ -338,6 +338,9 @@ public final class ParsedSql {
+                                     : null;
+ 
+                             if (Strings.isNotEmpty(namedParameter)) {
++                                if (namedParameterList == null) {
++                                    namedParameterList = new ArrayList<>();
++                                }
+                                 namedParameterList.add(namedParameter);
+                                 rebuilt.append(SK.QUESTION_MARK);
+                                 paramCount++;
+@@ -386,6 +389,9 @@ public final class ParsedSql {
+                                 rebuilt.append(word, copiedFrom, parameterStartIndex);
+ 
+                                 final int parameterEndIndex = findNamedParameterEndIndex(word, parameterStartIndex + 1);
++                                if (namedParameterList == null) {
++                                    namedParameterList = new ArrayList<>();
++                                }
+                                 namedParameterList.add(word.substring(parameterStartIndex + 1, parameterEndIndex));
+                                 rebuilt.append(SK.QUESTION_MARK);
+                                 paramCount++;
+@@ -422,9 +428,16 @@ public final class ParsedSql {
+             }
+             parameterizedSql = endIdx == tmpSql.length() ? tmpSql : tmpSql.substring(0, endIdx);
+             parameterCount = paramCount;
+-            namedParameters = isOpSqlPrefix ? ImmutableList.wrap(namedParameterList) : ImmutableList.empty();
+-            positionalParameterOffsets = questionMarkTokenIndexes.isEmpty() ? N.EMPTY_INT_ARRAY
+-                    : resolvePositionalParameterOffsets(this.sql, words, questionMarkTokenIndexes, questionMarkTokenOffsets);
++            namedParameters = namedParameterList == null ? ImmutableList.empty() : ImmutableList.wrap(namedParameterList);
++            if ((type & QUESTION_MARK_TYPE) == 0) {
++                positionalParameterOffsets = N.EMPTY_INT_ARRAY;
++            } else {
++                // Bracket scanners already supply every inner offset. Align their containing tokens
++                // directly; rediscovering their markers character by character would duplicate that work.
++                final int[] directOffsets = subscriptParameterOffsets == null ? allQuestionMarkOffsets(this.sql, paramCount) : null;
++                positionalParameterOffsets = directOffsets != null ? directOffsets
++                        : resolvePositionalParameterOffsets(this.sql, words, questionMarkTokenIndexes, null, subscriptParameterOffsets, paramCount);
++            }
+         } finally {
+             Objectory.recycle(sb);
+         }
+@@ -682,11 +695,43 @@ public final class ParsedSql {
+         return positionalParameterOffsets.clone();
+     }
+ 
++    /**
++     * If classification counted every question mark in the source, their literal offsets are already
++     * the answer. Any extra mark (operator, quoted text, metadata or comment) forces token alignment.
++     * This is a consequence of classification, not a competing rule for deciding what binds.
++     */
++    private static int[] allQuestionMarkOffsets(final String sql, final int count) {
++        final int[] offsets = new int[count];
++        // Dense binding lists benefit from one character loop instead of many tiny indexOf calls.
++        if (count > sql.length() / 4) {
++            int marker = 0;
++            for (int index = 0, len = sql.length(); index < len; index++) {
++                if (sql.charAt(index) == '?') {
++                    if (marker == count) {
++                        return null;
++                    }
++                    offsets[marker++] = index;
++                }
++            }
++            return marker == count ? offsets : null;
++        }
++        int index = -1;
++        for (int i = 0; i < count; i++) {
++            index = sql.indexOf('?', index + 1);
++            if (index < 0) {
++                return null;
++            }
++            offsets[i] = index;
++        }
++        return sql.indexOf('?', index + 1) < 0 ? offsets : null;
++    }
++
+     /**
+      * Maps each counted positional marker, recorded as (token index, offset within the token), to its offset in
+      * {@code sql}. The tokenizer drops comments and collapses whitespace runs, so the token stream is walked
+      * alongside the original text: whitespace and comments are skipped, then each non-blank token must be found
+-     * verbatim at the cursor. Returns {@code null} if a token cannot be located (never expected, guarded anyway).
++     * verbatim at the cursor. A null token-offset list denotes zero offsets (ordinary markers).
++     * Returns {@code null} if a token cannot be located (never expected, guarded anyway).
+      *
+      * <p>A token is accepted at the cursor only when the cursor does not open a comment the tokenizer discarded,
+      * because the openers share their first character with ordinary operator tokens: without that guard the token
+@@ -697,7 +742,14 @@ public final class ParsedSql {
+      */
+     private static int[] resolvePositionalParameterOffsets(final String sql, final List<String> words, final IntList questionMarkTokenIndexes,
+             final IntList questionMarkTokenOffsets) {
+-        final int markerCount = questionMarkTokenIndexes.size();
++        return resolvePositionalParameterOffsets(sql, words, questionMarkTokenIndexes, questionMarkTokenOffsets, null, questionMarkTokenIndexes.size());
++    }
++
++    /** Aligns ordinary token positions and sparse bracket-offset arrays in the same source walk. */
++    private static int[] resolvePositionalParameterOffsets(final String sql, final List<String> words, final IntList questionMarkTokenIndexes,
++            final IntList questionMarkTokenOffsets, final int[][] subscriptOffsets, final int markerCount) {
++        final int ordinaryCount = questionMarkTokenIndexes == null ? 0 : questionMarkTokenIndexes.size();
++        int ordinary = 0;
+         final int[] offsets = new int[markerCount];
+         final int len = sql.length();
+         int cursor = 0;
+@@ -744,9 +796,14 @@ public final class ParsedSql {
+                 }
+             }
+ 
+-            while (marker < markerCount && questionMarkTokenIndexes.get(marker) == i) {
+-                offsets[marker] = cursor + questionMarkTokenOffsets.get(marker);
+-                marker++;
++            if (subscriptOffsets != null && subscriptOffsets[i] != null) {
++                for (final int offset : subscriptOffsets[i]) {
++                    offsets[marker++] = cursor + offset;
++                }
++            }
++            while (ordinary < ordinaryCount && questionMarkTokenIndexes.get(ordinary) == i) {
++                offsets[marker++] = cursor + (questionMarkTokenOffsets == null ? 0 : questionMarkTokenOffsets.get(ordinary));
++                ordinary++;
+             }
+ 
+             cursor += word.length();
+@@ -765,19 +822,16 @@ public final class ParsedSql {
+         return text.startsWith("--", index) || text.startsWith("#", index) || text.startsWith("/*", index);
+     }
+ 
+-    /**
+-     * Equivalent to {@code OP_SQL_PREFIX_SET.contains(word.toUpperCase(Locale.ROOT))} but without
+-     * allocating a temporary upper-cased String. All entries of {@code OP_SQL_PREFIX_SET} are
+-     * uppercase ASCII keywords, so a case-insensitive scan yields the identical result.
+-     */
++    /** Recognizes SQL statement prefixes without a temporary upper-cased string or a set iterator. */
+     private static boolean isOpSqlPrefixWord(final String word) {
+-        for (final String prefix : OP_SQL_PREFIX_SET) {
+-            if (prefix.equalsIgnoreCase(word)) {
+-                return true;
+-            }
+-        }
+-
+-        return false;
++        return switch (word.length()) {
++            case 4 -> "WITH".equalsIgnoreCase(word) || "CALL".equalsIgnoreCase(word);
++            case 5 -> "MERGE".equalsIgnoreCase(word);
++            case 6 -> "SELECT".equalsIgnoreCase(word) || "INSERT".equalsIgnoreCase(word) || "UPDATE".equalsIgnoreCase(word)
++                    || "DELETE".equalsIgnoreCase(word) || "VALUES".equalsIgnoreCase(word);
++            case 7 -> "EXPLAIN".equalsIgnoreCase(word) || "REPLACE".equalsIgnoreCase(word);
++            default -> false;
++        };
+     }
+ 
+     private static String resolveFirstOpWord(final List<String> words) {
+@@ -1167,19 +1221,17 @@ public final class ParsedSql {
+             return N.EMPTY_INT_ARRAY;
+         }
+ 
+-        IntList markerIndexes = null;
++        int count = 0;
+ 
+         for (final int index : hashIndexes) {
+             if (index + 1 < token.length() && token.charAt(index + 1) == '{') {
+-                if (markerIndexes == null) {
+-                    markerIndexes = new IntList();
+-                }
+-
+-                markerIndexes.add(index);
++                // The scanner owns this fresh array. Compact it in place instead of allocating
++                // another growable list, especially for a large ARRAY of MyBatis bindings.
++                hashIndexes[count++] = index;
+             }
+         }
+ 
+-        return markerIndexes == null ? N.EMPTY_INT_ARRAY : markerIndexes.toArray();
++        return count == hashIndexes.length ? hashIndexes : count == 0 ? N.EMPTY_INT_ARRAY : Arrays.copyOf(hashIndexes, count);
+     }
+ 
+     private static boolean isQuoteChar(final char ch) {
+@@ -1267,6 +1319,11 @@ public final class ParsedSql {
+      */
+     private static int[] findUnambiguousUnquotedMarkerIndexes(final String token, final int fromIndex, final char marker) {
+         final int[] withBackslashEscapes = collectUnquotedMarkerIndexes(token, fromIndex, marker, true);
++        // Both quote interpretations are identical without a backslash. Keep the second reading
++        // for every potentially ambiguous token, but avoid another scan/list for ordinary markers.
++        if (token.indexOf('\\', fromIndex) < 0) {
++            return withBackslashEscapes;
++        }
+         final int[] doubledQuoteOnly = collectUnquotedMarkerIndexes(token, fromIndex, marker, false);
+ 
+         return Arrays.equals(withBackslashEscapes, doubledQuoteOnly) ? withBackslashEscapes : null;
+@@ -1343,10 +1400,15 @@ public final class ParsedSql {
+         return afterMarkerIndex >= token.length() || !isNamedParameterIdentifierPart(namedParameterCodePointAt(token, afterMarkerIndex));
+     }
+ 
+-    private static boolean precededByQuote(final String token, final int bracketIndex, final char quote) {
+-        final int quoteIndex = token.indexOf(quote);
+-
+-        return quoteIndex >= 0 && quoteIndex < bracketIndex;
++    private static boolean precededByQuote(final String token, final int boundaryIndex, final char quote) {
++        // Only the prefix can affect the boundary's role. Searching the full token repeatedly
++        // rescans arbitrarily large array contents even when the prefix is just "ARRAY".
++        for (int index = 0; index < boundaryIndex; index++) {
++            if (token.charAt(index) == quote) {
++                return true;
++            }
++        }
++        return false;
+     }
+ 
+     /**
+@@ -1452,9 +1514,20 @@ public final class ParsedSql {
+      * <p>Lexical words and their source offsets are collected in a forward pass, then adjacent operands are
+      * inspected once. No marker rescans a prefix or suffix of the expression, so compact sums such as
+      * {@code ARRAY[?+?+...]} take linear time as well as comma-separated arrays. The preliminary marker
+-     * agreement check and the two classification readings add only a fixed number of forward scans.</p>
++     * agreement check and the two classification readings are needed only when backslashes can change
++     * quote boundaries. Plain comma-separated bindings need neither tokenization nor operand checks.</p>
+      */
+     private static int[] findSubscriptPositionalParameterIndexes(final String token, final int fromIndex) {
++        final int[] commaSeparated = commaSeparatedSubscriptBindings(token, fromIndex);
++        if (commaSeparated != null) {
++            return commaSeparated;
++        }
++        // The lexer itself skips quotes, comments and complete MyBatis bindings. If backslashes
++        // cannot change any quote boundary, one classification also replaces the agreement probe.
++        if (token.indexOf('\\', fromIndex) < 0) {
++            return collectSubscriptPositionalParameterIndexes(token, fromIndex, true);
++        }
++
+         if (findUnquotedQuestionMarkIndexes(token, fromIndex).length == 0) {
+             return N.EMPTY_INT_ARRAY;
+         }
+@@ -1465,6 +1538,38 @@ public final class ParsedSql {
+         return Arrays.equals(withBackslashEscapes, doubledQuoteOnly) ? withBackslashEscapes : N.EMPTY_INT_ARRAY;
+     }
+ 
++    /**
++     * A subscript containing only comma-separated '?' values has no operator or quoting ambiguity.
++     * Stop at the first other character and let the shared classifier handle the entire expression.
++     * In particular, never treat adjacent '??', nested groups or a trailing comma as this simple form.
++     */
++    private static int[] commaSeparatedSubscriptBindings(final String token, final int fromIndex) {
++        int count = 0;
++        boolean expectsValue = true;
++        for (int index = fromIndex, len = token.length(); index < len; index++) {
++            final char ch = token.charAt(index);
++            if (expectsValue && ch == '?') {
++                count++;
++                expectsValue = false;
++            } else if (!expectsValue && ch == ',') {
++                expectsValue = true;
++            } else if (!expectsValue && ch == ']' && index == len - 1) {
++                // Validate before allocating: the successful scan gives an exact capacity and
++                // proves that every '?' in the bracket interior is a binding.
++                final int[] offsets = new int[count];
++                for (int cursor = fromIndex, marker = 0; cursor < index; cursor++) {
++                    if (token.charAt(cursor) == '?') {
++                        offsets[marker++] = cursor;
++                    }
++                }
++                return offsets;
++            } else if (!Character.isWhitespace(ch)) {
++                return null;
++            }
++        }
++        return null;
++    }
++
+     /**
+      * Scans a bracket interior using SqlParser's default separators and this class's shared quote rules.
+      * SqlParser itself keeps brackets opaque and uses a single escape reading, so invoking its next-token
+@@ -1555,6 +1660,7 @@ public final class ParsedSql {
+         private int[] classify() {
+             IntList indexes = null;
+             boolean previousIsOperand = false;
++            boolean previousOperandUnknown = false;
+             String previousWord = Strings.EMPTY;
+             int depth = 0;
+             int[] jsonDepths = null;
+@@ -1574,6 +1680,7 @@ public final class ParsedSql {
+                     // are metadata, so parentheses or question marks there cannot change SQL operand state.
+                     i = bindingEnd;
+                     previousIsOperand = true;
++                    previousOperandUnknown = false;
+                     previousWord = word;
+                     continue;
+                 }
+@@ -1614,10 +1721,20 @@ public final class ParsedSql {
+                         && (wordOffsets == null || wordOffsets.get(i + 1) == wordOffsets.get(i) + word.length())) {
+                     previousWord = words.get(++i);
+                     previousIsOperand = false;
++                    previousOperandUnknown = false;
+                     continue;
+                 }
+ 
+                 if (bareMarker || compactMarker) {
++                    // Only a question-mark token needs its predecessor's operand classification.
++                    // Defer the keyword checks across ordinary SQL words, and reject complete
++                    // separators first (e.g. '=' before a binding). Explicit binding/escape state
++                    // above remains authoritative; comments and whitespace never replace it.
++                    if (previousOperandUnknown) {
++                        previousIsOperand = (previousWord.equals(")") || previousWord.equals("]")
++                                || subscriptSeparatorLength(previousWord, 0) != previousWord.length()) && canPrecedeJsonQuestionOperator(previousWord);
++                        previousOperandUnknown = false;
++                    }
+                     final int next = nextNonCommentWord(words, i + 1);
+                     final boolean jsonClause = jsonDepthCount > 0 && jsonDepths[jsonDepthCount - 1] == depth && startsSqlJsonClause(next);
+                     final boolean binaryOperator = previousIsOperand && next >= 0 && !jsonClause && canFollowJsonQuestionOperator(words.get(next));
+@@ -1636,8 +1753,7 @@ public final class ParsedSql {
+                     // of a compact binding, expects another operand. This also distinguishes "? ? ?".
+                     previousIsOperand = bareMarker && placeholder;
+                 } else {
+-                    previousIsOperand = canPrecedeJsonQuestionOperator(word)
+-                            && (word.equals(")") || word.equals("]") || subscriptSeparatorLength(word, 0) != word.length());
++                    previousOperandUnknown = true;
+                 }
+ 
+                 previousWord = word;
+@@ -2000,12 +2116,11 @@ public final class ParsedSql {
+         // sub-expression. A token that begins with operator punctuation ("=", "<>", "+", "||", "->>",
+         // "~*", "(", ",", ...) is an operator, so the "?" after it is a positional placeholder. Checking
+         // the leading character covers every operator spelling instead of enumerating them.
+-        if (!(first == ')' || first == ']' || first == '?' || first == '_' || first == '"' || first == '`' || first == '\'' || first == '$' || first == '.'
+-                || first == _PREFIX_OF_NAMED_PARAMETER || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || startsWithSqlExpressionWord(word))) {
+-            return false;
+-        }
+-
+-        return !isSqlExpressionBoundaryWord(word) && !isPlaceholderLeadingKeyword(word);
++        // Punctuation-led operands cannot be SQL keywords. Only word operands need the keyword
++        // checks; quoted values and closing groups are common around JSON existence operators.
++        return first == ')' || first == ']' || first == '?' || first == '_' || first == '"' || first == '`' || first == '\'' || first == '$'
++                || first == '.' || first == _PREFIX_OF_NAMED_PARAMETER || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER)
++                || (startsWithSqlExpressionWord(word) && !isSqlExpressionBoundaryWord(word) && !isPlaceholderLeadingKeyword(word));
+     }
+ 
+     /**
+@@ -2016,16 +2131,23 @@ public final class ParsedSql {
+      * identifier-like word ({@code DAY}, {@code ESCAPE}, an alias) would be dropped from the parameter count.
+      */
+     private static boolean isPlaceholderLeadingKeyword(final String word) {
+-        return "SELECT".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word)
+-                || "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word)
+-                || "VALUES".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word)
+-                || "WHEN".equalsIgnoreCase(word) || "CASE".equalsIgnoreCase(word) || "INTERVAL".equalsIgnoreCase(word) || "ILIKE".equalsIgnoreCase(word)
+-                || "RLIKE".equalsIgnoreCase(word) || "REGEXP".equalsIgnoreCase(word) || "TO".equalsIgnoreCase(word) || "ESCAPE".equalsIgnoreCase(word)
+-                || "ZONE".equalsIgnoreCase(word) || "DIV".equalsIgnoreCase(word) || "MOD".equalsIgnoreCase(word);
++        // Length dispatch avoids testing every keyword for identifiers, punctuation and quoted text.
++        return switch (word.length()) {
++            case 2 -> "ON".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word) || "TO".equalsIgnoreCase(word);
++            case 3 -> "AND".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word) || "SET".equalsIgnoreCase(word) || "DIV".equalsIgnoreCase(word)
++                    || "MOD".equalsIgnoreCase(word);
++            case 4 -> "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word) || "WHEN".equalsIgnoreCase(word) || "CASE".equalsIgnoreCase(word)
++                    || "ZONE".equalsIgnoreCase(word);
++            case 5 -> "WHERE".equalsIgnoreCase(word) || "ILIKE".equalsIgnoreCase(word) || "RLIKE".equalsIgnoreCase(word);
++            case 6 -> "SELECT".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "VALUES".equalsIgnoreCase(word)
++                    || "REGEXP".equalsIgnoreCase(word) || "ESCAPE".equalsIgnoreCase(word);
++            case 8 -> "INTERVAL".equalsIgnoreCase(word);
++            default -> false;
++        };
+     }
+ 
+     private static boolean canFollowJsonQuestionOperator(final String word) {
+-        if (Strings.isEmpty(word) || isSqlExpressionBoundaryWord(word)) {
++        if (Strings.isEmpty(word)) {
+             return false;
+         }
+ 
+@@ -2038,21 +2160,31 @@ public final class ParsedSql {
+         return word.equals(SK.QUESTION_MARK) || isCompactQuestionMarkOperator(word) || firstChar == '\'' || firstChar == '"' || firstChar == '`'
+                 || firstChar == '(' || firstChar == '['
+                 || (firstChar == _PREFIX_OF_NAMED_PARAMETER && word.length() >= 2 && isNamedParameterIdentifierStart(namedParameterCodePointAt(word, 1)))
+-                || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || startsWithSqlExpressionWord(word);
++                || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || (startsWithSqlExpressionWord(word) && !isSqlExpressionBoundaryWord(word));
+     }
+ 
+     private static boolean isSqlExpressionBoundaryWord(final String word) {
+-        return "AND".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "FROM".equalsIgnoreCase(word) || "WHERE".equalsIgnoreCase(word)
+-                || "GROUP".equalsIgnoreCase(word) || "ORDER".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "LIMIT".equalsIgnoreCase(word)
+-                || "OFFSET".equalsIgnoreCase(word) || "FETCH".equalsIgnoreCase(word) || "FOR".equalsIgnoreCase(word) || "RETURNING".equalsIgnoreCase(word)
+-                || "UNION".equalsIgnoreCase(word) || "INTERSECT".equalsIgnoreCase(word) || "EXCEPT".equalsIgnoreCase(word) || "MINUS".equalsIgnoreCase(word)
+-                || "JOIN".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word) || "USING".equalsIgnoreCase(word) || "AS".equalsIgnoreCase(word)
+-                || "WHEN".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word) || "END".equalsIgnoreCase(word)
+-                || "IS".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word) || "LIKE".equalsIgnoreCase(word) || "BETWEEN".equalsIgnoreCase(word)
+-                || "NOT".equalsIgnoreCase(word) || "BY".equalsIgnoreCase(word) || "ASC".equalsIgnoreCase(word) || "DESC".equalsIgnoreCase(word)
+-                || "NULLS".equalsIgnoreCase(word) || "FIRST".equalsIgnoreCase(word) || "LAST".equalsIgnoreCase(word) || "ROW".equalsIgnoreCase(word)
+-                || "ROWS".equalsIgnoreCase(word) || "ONLY".equalsIgnoreCase(word) || "TOP".equalsIgnoreCase(word) || "NEXT".equalsIgnoreCase(word)
+-                || "DISTINCT".equalsIgnoreCase(word) || "ALL".equalsIgnoreCase(word) || "ANY".equalsIgnoreCase(word) || "SOME".equalsIgnoreCase(word);
++        // Length dispatch avoids testing every keyword for identifiers, punctuation and quoted text.
++        return switch (word.length()) {
++            case 2 -> "OR".equalsIgnoreCase(word) || "ON".equalsIgnoreCase(word) || "AS".equalsIgnoreCase(word) || "IS".equalsIgnoreCase(word)
++                    || "IN".equalsIgnoreCase(word) || "BY".equalsIgnoreCase(word);
++            case 3 -> "AND".equalsIgnoreCase(word) || "FOR".equalsIgnoreCase(word) || "END".equalsIgnoreCase(word) || "NOT".equalsIgnoreCase(word)
++                    || "ASC".equalsIgnoreCase(word) || "ROW".equalsIgnoreCase(word) || "TOP".equalsIgnoreCase(word) || "ALL".equalsIgnoreCase(word)
++                    || "ANY".equalsIgnoreCase(word);
++            case 4 -> "FROM".equalsIgnoreCase(word) || "JOIN".equalsIgnoreCase(word) || "WHEN".equalsIgnoreCase(word) || "THEN".equalsIgnoreCase(word)
++                    || "ELSE".equalsIgnoreCase(word) || "LIKE".equalsIgnoreCase(word) || "DESC".equalsIgnoreCase(word)
++                    || "LAST".equalsIgnoreCase(word) || "ROWS".equalsIgnoreCase(word) || "ONLY".equalsIgnoreCase(word)
++                    || "NEXT".equalsIgnoreCase(word) || "SOME".equalsIgnoreCase(word);
++            case 5 -> "WHERE".equalsIgnoreCase(word) || "GROUP".equalsIgnoreCase(word) || "ORDER".equalsIgnoreCase(word)
++                    || "LIMIT".equalsIgnoreCase(word) || "FETCH".equalsIgnoreCase(word) || "UNION".equalsIgnoreCase(word)
++                    || "MINUS".equalsIgnoreCase(word) || "USING".equalsIgnoreCase(word) || "NULLS".equalsIgnoreCase(word)
++                    || "FIRST".equalsIgnoreCase(word);
++            case 6 -> "HAVING".equalsIgnoreCase(word) || "OFFSET".equalsIgnoreCase(word) || "EXCEPT".equalsIgnoreCase(word);
++            case 7 -> "BETWEEN".equalsIgnoreCase(word);
++            case 8 -> "DISTINCT".equalsIgnoreCase(word);
++            case 9 -> "RETURNING".equalsIgnoreCase(word) || "INTERSECT".equalsIgnoreCase(word);
++            default -> false;
++        };
+     }
+ 
+     private static boolean isCommentOrSpaceToken(final String word) {
+diff --git a/src/main/java/com/landawn/abacus/query/SqlParser.java b/src/main/java/com/landawn/abacus/query/SqlParser.java
+index 7e8f2a4..75318d8 100644
+--- a/src/main/java/com/landawn/abacus/query/SqlParser.java
++++ b/src/main/java/com/landawn/abacus/query/SqlParser.java
+@@ -16,6 +16,7 @@ package com.landawn.abacus.query;
+ 
+ import java.util.ArrayList;
+ import java.util.Collections;
++import java.util.Comparator;
+ import java.util.HashMap;
+ import java.util.LinkedHashSet;
+ import java.util.List;
+@@ -382,9 +383,8 @@ public final class SqlParser {
+         private final int maxSeparatorLength;
+         private final boolean[] asciiSeparators;
+         private final Set<Character> nonAsciiSingleCharSeparators;
+-        private final String[][] multiCharSeparatorsByLength;
+-        private final boolean[] multiCharSeparatorFirstChars;
+-        private final boolean hasNonAsciiMultiCharFirstChar;
++        private final String[][] asciiMultiCharSeparators;
++        private final Map<Character, String[]> nonAsciiMultiCharSeparators;
+ 
+         /**
+          * Separators containing characters with case variants, ordered with the same Unicode comparison
+@@ -419,39 +419,29 @@ public final class SqlParser {
+             asciiSeparators = ascii;
+             nonAsciiSingleCharSeparators = Collections.unmodifiableSet(nonAscii);
+ 
+-            @SuppressWarnings("unchecked")
+-            final List<String>[] buckets = new List[maxLength + 1];
+-            final boolean[] firstChars = new boolean[128];
+-            boolean nonAsciiFirstChar = false;
++            final Map<Character, List<String>> buckets = new HashMap<>();
+ 
+             for (final String separator : separators) {
+-                if (separator.length() > 1) {
+-                    final int length = separator.length();
+-
+-                    if (buckets[length] == null) {
+-                        buckets[length] = new ArrayList<>();
+-                    }
+-
+-                    buckets[length].add(separator);
+-
+-                    final char first = separator.charAt(0);
+-
+-                    if (first < 128) {
+-                        firstChars[first] = true;
+-                    } else {
+-                        nonAsciiFirstChar = true;
+-                    }
++                if (separator.length() > 1 && !crossesQuotedRegionBoundary(separator)) {
++                    buckets.computeIfAbsent(separator.charAt(0), key -> new ArrayList<>()).add(separator);
+                 }
+             }
+ 
+-            multiCharSeparatorsByLength = new String[maxLength + 1][];
+-
+-            for (int length = 0; length <= maxLength; length++) {
+-                multiCharSeparatorsByLength[length] = buckets[length] == null ? EMPTY_STRING_ARRAY : buckets[length].toArray(new String[0]);
++            // Index by the first character, then longest match. An '=' no longer probes unrelated
++            // PostgreSQL operators. Quote-crossing spellings can never match and are excluded once,
++            // rather than rechecking their lexical boundary on every token/scanner invocation.
++            asciiMultiCharSeparators = new String[128][];
++            final Map<Character, String[]> nonAsciiMulti = new HashMap<>();
++            for (final Map.Entry<Character, List<String>> entry : buckets.entrySet()) {
++                entry.getValue().sort(Comparator.comparingInt(String::length).reversed());
++                final String[] candidates = entry.getValue().toArray(EMPTY_STRING_ARRAY);
++                if (entry.getKey() < 128) {
++                    asciiMultiCharSeparators[entry.getKey()] = candidates;
++                } else {
++                    nonAsciiMulti.put(entry.getKey(), candidates);
++                }
+             }
+-
+-            multiCharSeparatorFirstChars = firstChars;
+-            hasNonAsciiMultiCharFirstChar = nonAsciiFirstChar;
++            nonAsciiMultiCharSeparators = Collections.unmodifiableMap(nonAsciiMulti);
+ 
+             Set<String> caseInsensitive = null;
+ 
+@@ -802,7 +792,9 @@ public final class SqlParser {
+ 
+     private static List<String> tokenize(final String sql, final TokenizerConfig tokenizerConfig) {
+         final int sqlLength = sql.length();
+-        final HashScanMemo memo = new HashScanMemo(sql);
++        // Only '#' context checks consult this memo, including comment-boundary lookahead.
++        // If the source has no '#', none of those helpers can reach it.
++        final HashScanMemo memo = sql.indexOf('#') >= 0 ? new HashScanMemo(sql) : null;
+         final StringBuilder sb = Objectory.createStringBuilder();
+ 
+         try {
+@@ -811,45 +803,20 @@ public final class SqlParser {
+             String temp = "";
+             char quoteChar = 0;
+             int keepComments = -1;
+-            // Forward-running backslash parity: true if the char at the current `index` is
+-            // immediately preceded by an ODD number of consecutive backslashes. Maintained while
+-            // consuming a quoted region so the closing-quote escape decision is identical to the
+-            // previous O(n) backward backslash scan, without the O(n^2) worst case.
+-            boolean bsEscaped = false;
+-
+             for (int index = 0; index < sqlLength; index++) {
+                 char ch = sql.charAt(index);
+ 
+                 if (quoteChar != 0) {
+-                    // is it in a quoted identifier?
+-                    sb.append(ch);
+-
+-                    // end in quote.
+-                    if (ch == quoteChar) {
+-                        if (bsEscaped) {
+-                            // Escaped closing quote: stays in the string. The quote char itself
+-                            // is not a backslash, so the run parity resets to even. Checked before
+-                            // the doubled-quote case so an escaped quote immediately followed by
+-                            // another quote is not mis-read as a doubled-quote pair.
+-                            bsEscaped = false;
+-                        } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+-                            sb.append(sql.charAt(++index));
+-                            // Two quote chars consumed (non-backslash) -> run parity is even.
+-                            bsEscaped = false;
+-                        } else {
+-                            // Even count (including 0) of preceding backslashes -> quote NOT escaped.
+-                            tokens.add(sb.toString());
+-                            sb.setLength(0);
+-
+-                            quoteChar = 0;
+-                            bsEscaped = false;
+-                        }
+-                    } else if (ch == '\\' && quoteChar != ']') {
+-                        // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
+-                        bsEscaped = !bsEscaped;
+-                    } else {
+-                        bsEscaped = false;
++                    // Copy quoted text as a range instead of appending every character. The
++                    // quote-end rule preserves doubled delimiters, odd backslash runs and truncation.
++                    final int close = quotedTokenEndIndex(sql, index, quoteChar);
++                    sb.append(sql, index, close < sqlLength ? close + 1 : sqlLength);
++                    index = close;
++                    if (close < sqlLength) {
++                        tokens.add(sb.toString());
++                        sb.setLength(0);
+                     }
++                    quoteChar = 0;
+                 } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+                     // Line comment (-- ...): always discarded (unlike block comments, the "Keep
+                     // comments" marker does not preserve these). Skip to the end of the line.
+@@ -953,7 +920,6 @@ public final class SqlParser {
+                     // quote character was registered as a separator, the quoted region is one token.
+                     sb.append(ch);
+                     quoteChar = ch == '[' ? ']' : ch;
+-                    bsEscaped = false;
+                 } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null) {
+                     // Multi-character operator (e.g. >=, <>, ->>, :=). Matched before the single-character
+                     // separator lookup (same effective precedence as before, when isSeparator matched it
+@@ -994,6 +960,29 @@ public final class SqlParser {
+         }
+     }
+ 
++    /** Finds a quoted token's closing delimiter, or the source length for an unterminated token. */
++    private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote) {
++        for (int close = sql.indexOf(quote, fromIndex); close >= 0; close = sql.indexOf(quote, close + 1)) {
++            if (quote != ']') {
++                int backslashStart = close;
++                while (backslashStart > fromIndex && sql.charAt(backslashStart - 1) == '\\') {
++                    backslashStart--;
++                }
++                // Only the consecutive run immediately before this candidate matters. Runs for
++                // distinct quote candidates do not overlap, so total scanning remains linear.
++                if (((close - backslashStart) & 1) != 0) {
++                    continue;
++                }
++            }
++            if (close + 1 < sql.length() && sql.charAt(close + 1) == quote) {
++                close++;
++            } else {
++                return close;
++            }
++        }
++        return sql.length();
++    }
++
+     /**
+      * Finds the index of a specific token within a SQL statement, searching from the beginning
+      * using case-insensitive matching. This is a convenience overload of
+@@ -2664,43 +2653,19 @@ public final class SqlParser {
+     }
+ 
+     private static String matchMultiCharSeparator(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
+-        if (index < len) {
+-            final char first = str.charAt(index);
+-
+-            // Fast reject: no configured multi-character separator starts with this character.
+-            if (first < 128 ? !tokenizerConfig.multiCharSeparatorFirstChars[first] : !tokenizerConfig.hasNonAsciiMultiCharFirstChar) {
+-                return null;
+-            }
++        if (index >= len) {
++            return null;
+         }
+ 
+-        final String[][] byLen = tokenizerConfig.multiCharSeparatorsByLength;
+-        int maxLen = Math.min(tokenizerConfig.maxSeparatorLength, len - index);
+-
+-        if (maxLen > byLen.length - 1) {
+-            maxLen = byLen.length - 1;
++        final char first = str.charAt(index);
++        final String[] candidates = first < 128 ? tokenizerConfig.asciiMultiCharSeparators[first]
++                : tokenizerConfig.nonAsciiMultiCharSeparators.get(first);
++        if (candidates == null) {
++            return null;
+         }
+ 
+-        // Longest match first, identical to the previous substring + Set.contains probe order,
+-        // but compares characters directly so no String is allocated per probe.
+-        for (int sepLen = maxLen; sepLen > 1; sepLen--) {
+-            final String[] candidates = byLen[sepLen];
+-
+-            outer: for (int ci = 0, cn = candidates.length; ci < cn; ci++) {
+-                final String candidate = candidates[ci];
+-
+-                for (int k = 0; k < sepLen; k++) {
+-                    if (str.charAt(index + k) != candidate.charAt(k)) {
+-                        continue outer;
+-                    }
+-                }
+-
+-                // A separator may begin outside a quoted region but must not consume the region's
+-                // opening delimiter. Otherwise, for example, a configured "N'" separator would split
+-                // N'text' before the quote scanners ever see the opening single quote.
+-                if (crossesQuotedRegionBoundary(candidate)) {
+-                    continue;
+-                }
+-
++        for (final String candidate : candidates) {
++            if (candidate.length() <= len - index && str.startsWith(candidate, index)) {
+                 return candidate;
+             }
+         }
+diff --git a/src/test/java/com/landawn/abacus/query/ParsedSqlTest.java b/src/test/java/com/landawn/abacus/query/ParsedSqlTest.java
+index f597a2e..0480a14 100644
+--- a/src/test/java/com/landawn/abacus/query/ParsedSqlTest.java
++++ b/src/test/java/com/landawn/abacus/query/ParsedSqlTest.java
+@@ -22,6 +22,126 @@ import com.landawn.abacus.util.Strings;
+ 
+ @Tag("2025")
+ public class ParsedSqlTest extends TestBase {
++
++    @Test
++    public void testParse_QuotePrefixesAndSparseOffsetFallbackAcrossSeveralGroups() {
++        // Prefix-only quote checks must leave prefixed literals opaque. Extra literal markers force
++        // the sparse ordinary/group positions to merge back into their original source order.
++        final String sql = "SELECT ?, N'ARRAY[?]', ARRAY['?', ?], arr[?][?], '?' FROM t WHERE id = ?";
++        final ParsedSql parsed = ParsedSql.parse(sql);
++        final int arrayMarker = sql.indexOf(", ?]") + 2;
++        final int chained = sql.indexOf("arr[");
++        assertEquals(5, parsed.parameterCount());
++        assertArrayEquals(new int[] { sql.indexOf('?'), arrayMarker, chained + 4, chained + 7, sql.lastIndexOf('?') },
++                parsed.positionalParameterOffsets());
++        assertEquals(sql, parsed.parameterizedSql());
++        for (final String marker : List.of(":id", "#{id}")) {
++            final String namedSql = "SELECT N'ARRAY[" + marker + "]', ARRAY['" + marker + "', " + marker + "]";
++            final ParsedSql named = ParsedSql.parse(namedSql);
++            assertEquals(1, named.parameterCount(), namedSql);
++            assertEquals(List.of("id"), named.namedParameters(), namedSql);
++            assertEquals("SELECT N'ARRAY[" + marker + "]', ARRAY['" + marker + "', ?]", named.parameterizedSql(), namedSql);
++        }
++    }
++
++    @Test
++    public void testParse_KeywordLengthDispatchKeepsIdentifierOperands() {
++        // An identifier sharing a keyword's length or prefix is still a JSON-operator operand.
++        for (final String column : List.of("id", "key", "name", "order_id", "oncall", "intervals", "selection", "returning_value")) {
++            final String sql = "SELECT doc ? " + column + " FROM t WHERE id = ?";
++            final ParsedSql parsed = ParsedSql.parse(sql);
++            assertEquals(1, parsed.parameterCount(), sql);
++            assertArrayEquals(new int[] { sql.lastIndexOf('?') }, parsed.positionalParameterOffsets(), sql);
++        }
++        for (final String sql : List.of("SELECT INTERVAL ? DAY", "SELECT * FROM t WHERE name ILIKE ? ESCAPE '!'",
++                "SELECT * FROM t WHERE name SIMILAR TO ?", "SELECT CURRENT_TIMESTAMP AT TIME ZONE ?")) {
++            assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
++        }
++    }
++
++
++    @Test
++    public void testParse_PositionalOffsetsRetainSourceLocationsWithoutSpecialSyntax() {
++        // The direct-offset shortcut must retain original spacing and the trimmed source's indexes.
++        for (final String body : List.of("?", "? + ?", "?::int, ?", "ARRAY[? ,\t?], ?", "arr[?][?], ?")) {
++            final String source = "SELECT " + body + " FROM t /* no binding here */ WHERE id = ?";
++            final ParsedSql parsed = ParsedSql.parse("  " + source + "  ");
++            final int[] expected = java.util.stream.IntStream.range(0, source.length()).filter(i -> source.charAt(i) == '?').toArray();
++            assertEquals(expected.length, parsed.parameterCount(), source);
++            assertArrayEquals(expected, parsed.positionalParameterOffsets(), source);
++            final int[] returned = parsed.positionalParameterOffsets();
++            returned[0] = -1;
++            assertArrayEquals(expected, parsed.positionalParameterOffsets(), "Cached offsets must remain immutable");
++        }
++    }
++
++    @Test
++    public void testParse_PositionalOffsetsExcludeExtraSourceQuestionMarks() {
++        // Equal raw/classified counts are the shortcut's proof. An extra '?' must force alignment,
++        // whether it is before or after the bindings and whether the binding list is sparse or dense.
++        for (final int count : new int[] { 1, 64 }) {
++            final String array = "ARRAY[" + String.join(",", java.util.Collections.nCopies(count, "?")) + "]";
++            for (final String extra : List.of("'?'", "doc ? 'k'", "doc ?? 'k'", "?- line '{1,0,0}'", "[what?]")) {
++                for (final boolean before : new boolean[] { false, true }) {
++                    final String sql = "SELECT " + (before ? extra + ", " + array : array + ", " + extra) + " FROM t /* ? */ WHERE id = ?";
++                    final int start = sql.indexOf("ARRAY[");
++                    final int[] expected = new int[count + 1];
++                    for (int i = 0; i < count; i++) {
++                        expected[i] = start + "ARRAY[".length() + 2 * i;
++                    }
++                    expected[count] = sql.lastIndexOf('?');
++                    final ParsedSql parsed = ParsedSql.parse(sql);
++                    assertEquals(count + 1, parsed.parameterCount(), sql);
++                    assertArrayEquals(expected, parsed.positionalParameterOffsets(), sql);
++                }
++            }
++        }
++    }
++
++    @Test
++    public void testParse_CommaSeparatedBindingsRetainAllOffsetsAcrossGroups() {
++        // A large first group donates its offset array; later markers must append without losing it.
++        for (final String prefix : List.of("ARRAY", "arr", "ARRAY ")) {
++            final String sql = "SELECT " + prefix + "[ ? ,\t? ,\n? ], arr[?][?], ARRAY["
++                    + String.join(", ", java.util.Collections.nCopies(2048, "?")) + "] FROM t WHERE id = ?";
++            final ParsedSql parsed = ParsedSql.parse(sql);
++            final int[] expected = java.util.stream.IntStream.range(0, sql.length()).filter(i -> sql.charAt(i) == '?').toArray();
++            assertEquals(2054, parsed.parameterCount(), sql);
++            assertArrayEquals(expected, parsed.positionalParameterOffsets(), sql);
++            assertEquals(sql, parsed.parameterizedSql(), sql);
++        }
++    }
++
++    @Test
++    public void testParse_CommaBindingShortcutFallsBackForExpressionSyntax() {
++        // Commas alone do not establish a simple binding list: quoted text, comments, operators
++        // and nested expressions still require the complete classifier.
++        for (final String expression : List.of("?, doc ?? 'k', ?", "?, doc ? 'k', ?", "?, '?', ?", "?, COALESCE(?, 0)",
++                "? /* ? */ , ?", "? -- ?\n, ?", "? + ?", "JSON_OBJECT('k' VALUE ? NULL ON NULL), ?")) {
++            final String sql = "SELECT ARRAY[" + expression + "] FROM t";
++            assertEquals(2, ParsedSql.parse(sql).parameterCount(), sql);
++            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql + " WHERE id = :id"), sql);
++        }
++        assertEquals(0, ParsedSql.parse("SELECT ARRAY[??]").parameterCount());
++        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[?, :id]"));
++        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[?, #{id}]"));
++    }
++
++    @Test
++    public void testParse_DeferredOperandChecksKeepQuestionMarkContexts() {
++        for (final String expression : List.of("doc /* gap */ ? 'k'", "(doc) ? 'k'", "doc ? :key", "doc ? #{key}",
++                "?- CAST(:key AS line)", "JSON_OBJECT('k' VALUE :key NULL ON NULL)")) {
++            final ParsedSql parsed = ParsedSql.parse("SELECT " + expression + " FROM t");
++            final boolean named = expression.contains(":key") || expression.contains("#{key}");
++            assertEquals(named ? 1 : 0, parsed.parameterCount(), expression);
++            assertEquals(named ? List.of("key") : List.of(), parsed.namedParameters(), expression);
++            assertArrayEquals(new int[0], parsed.positionalParameterOffsets(), expression);
++        }
++        for (final String expression : List.of("? + ?", "? || ?", "? /* gap */ + ?", "COALESCE(?, ?)", "?- ?::line, ?")) {
++            assertEquals(2, ParsedSql.parse("SELECT " + expression).parameterCount(), expression);
++        }
++    }
++
+     @Test
+     public void testParse_StandaloneSubscriptsRejectMixedParameterStyles() {
+         for (final String sql : List.of("SELECT ARRAY [?, :id]", "SELECT ARRAY [ :id, ? ]", "SELECT ARRAY [?, #{id}]",
+diff --git a/src/test/java/com/landawn/abacus/query/SqlParserTest.java b/src/test/java/com/landawn/abacus/query/SqlParserTest.java
+index 99c632a..a1be2bf 100644
+--- a/src/test/java/com/landawn/abacus/query/SqlParserTest.java
++++ b/src/test/java/com/landawn/abacus/query/SqlParserTest.java
+@@ -18,6 +18,63 @@ import com.landawn.abacus.TestBase;
+ 
+ @Tag("2025")
+ public class SqlParserTest extends TestBase {
++
++    @Test
++    public void testTokenizerSeparatorBucketsKeepLongestMatchesAndUnicode() {
++        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
++                .withSeparator("~>").withSeparator("~>>").withSeparator("~>>>")
++                .withSeparator("π>").withSeparator("π>>").withSeparator("😀>").withSeparator("😀>>")
++                .withSeparator(" +").withSeparator(" ++").build());
++        for (final String separator : List.of("~>", "~>>", "~>>>", "π>", "π>>", "😀>", "😀>>", " +", " ++")) {
++            // A shorter candidate shares the same first character; suffix truncation must still find it.
++            for (final String suffix : List.of("y", "")) {
++                final String sql = "x" + separator + suffix;
++                assertEquals(suffix.isEmpty() ? List.of("x", separator) : List.of("x", separator, "y"), tokenizer.tokenize(sql), sql);
++                assertEquals(separator, tokenizer.nextToken(sql, 1), sql);
++                assertEquals(1 + separator.length(), tokenizer.nextTokenEndIndex(sql, 1), sql);
++                assertEquals(1, tokenizer.indexOfToken(sql, separator, 0, true), sql);
++                assertEquals(1, tokenizer.indexOfToken(sql, separator, 0, false), sql);
++            }
++        }
++    }
++
++    @Test
++    public void testTokenizerQuoteCrossingCandidateDoesNotHideShorterSeparator() {
++        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
++                .withSeparator("~").withSeparator("~'").withSeparator("~[").build());
++        for (final String quoted : List.of("'text'", "[text]")) {
++            final String sql = "x~" + quoted;
++            assertEquals(List.of("x", "~", quoted), tokenizer.tokenize(sql), sql);
++            assertEquals("~", tokenizer.nextToken(sql, 1), sql);
++            assertEquals(2, tokenizer.nextTokenEndIndex(sql, 1), sql);
++            assertEquals(1, tokenizer.indexOfToken(sql, "~", 0, true), sql);
++        }
++    }
++
++    @Test
++    public void testTokenizerBulkQuotedTextPreservesEscapeParityAndDoubledDelimiters() {
++        for (final char opening : new char[] { '\'', '"', (char) 96, '[' }) {
++            final char closing = opening == '[' ? ']' : opening;
++            for (int backslashes = 0; backslashes <= 8; backslashes++) {
++                // Odd runs escape ordinary quotes; brackets always close, even after a backslash.
++                final boolean escaped = opening != '[' && (backslashes & 1) != 0;
++                final String quoted = opening + "a" + "\\".repeat(backslashes) + closing + (escaped ? "b" + closing : "");
++                final String sql = "SELECT " + quoted + " FROM t";
++                assertEquals(List.of("SELECT", " ", quoted, " ", "FROM", " ", "t"), SqlParser.tokenize(sql), sql);
++                assertEquals(quoted, SqlParser.nextToken(sql, 7), sql);
++                assertEquals(7 + quoted.length(), SqlParser.nextTokenEndIndex(sql, 7), sql);
++            }
++            final String doubled = opening + "a" + closing + closing + "b" + closing;
++            assertEquals(List.of(doubled, " ", "x"), SqlParser.tokenize(doubled + " x"), doubled);
++            assertEquals(doubled, SqlParser.nextToken(doubled + " x", 0), doubled);
++            for (final String incomplete : List.of(opening + "tail", opening + "tail\\", opening + "a" + closing + closing)) {
++                assertEquals(List.of(incomplete), SqlParser.tokenize(incomplete), incomplete);
++                assertEquals(incomplete, SqlParser.nextToken(incomplete, 0), incomplete);
++                assertEquals(incomplete.length(), SqlParser.nextTokenEndIndex(incomplete, 0), incomplete);
++            }
++        }
++    }
++
+     @Test
+     public void testParseSimpleSelect() {
+         String sql = "SELECT * FROM users";

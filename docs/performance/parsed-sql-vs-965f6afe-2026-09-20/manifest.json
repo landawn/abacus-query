@@ -1,0 +1,104 @@
+{
+  "date": "2026-09-20",
+  "baseline_commit": "965f6afef86d928fbff63589fb3d59edc322574e",
+  "current_commit": "417ab8a8a4c038b041b63592c99ee215ac7da686",
+  "production_worktree_matches_current_commit": true,
+  "sources": {
+    "baseline": {
+      "java_sources": 81,
+      "source_fingerprint_lf": "19aa4ec35f9255420279fa1384c3fbfee8e0748712acf7f994bb6c0726e08c7b",
+      "components_sha256_lf": {
+        "com/landawn/abacus/query/ParsedSql.java": "484bafcd0ebf7e28130ccc5e5e882baf40fd89f53b864c92374622073dab8eeb",
+        "com/landawn/abacus/query/SqlOperation.java": "9e875139f3f8f023f245eeadc4b88c58cbfebe38736fc5056d55d5f63eb071e1",
+        "com/landawn/abacus/query/SqlParser.java": "43be3c724257ccc29749b8026c04f24d2b1b3bdbcedd116900939a8b89896934"
+      },
+      "jar_sha256": "19d9594ab09d27474c7dce7ea89a5d36a90859eb766b2b087eafd0085cbe8038"
+    },
+    "current": {
+      "java_sources": 81,
+      "source_fingerprint_lf": "3cbcb05df56189a82887fa739ec9d92cb5741294842962fbb7c6993c80da4b2a",
+      "components_sha256_lf": {
+        "com/landawn/abacus/query/ParsedSql.java": "10039d76464d11220d498e260b5974150aae5e642f100f07a9c40f98d2a4aed1",
+        "com/landawn/abacus/query/SqlOperation.java": "86bafb5423f1e737ac68e6a37a9ee3138ca1e2b39393366a130df901b94b324b",
+        "com/landawn/abacus/query/SqlParser.java": "b4fa9cf29cb7866541df6c49121753dba169d83705bd4662a5cf225fc149197d"
+      },
+      "jar_sha256": "6b51333f50e948111bac43a76815acf1f1f05847a9dc0f8643dd9b7a1f58c6ab"
+    }
+  },
+  "baseline_common": {
+    "version": "7.9.3",
+    "sha256": "29cc4f2c3d33cae76d592801bf734464ba77ca500785cfa5a8224801e32291a7"
+  },
+  "current_common": {
+    "version": "8.0.0",
+    "sha256": "da600a20fba1ccf18670d43afab9867b722754510df0545e34712eee979307a1"
+  },
+  "jvm": "Oracle JDK 25+37-LTS-3491",
+  "compiler_release": 17,
+  "lombok": "1.18.46",
+  "flags": [
+    "-Xms512m",
+    "-Xmx1024m",
+    "-XX:+UseG1GC"
+  ],
+  "os": "Windows_NT 10.0.26100 x64",
+  "cpu": "AMD Ryzen 7 PRO 7840U w/ Radeon 780M Graphics  ",
+  "logical_processors": 16,
+  "total_memory_bytes": 64065466368,
+  "run_order": [
+    [
+      "baseline",
+      1
+    ],
+    [
+      "current",
+      1
+    ],
+    [
+      "baseline_common8",
+      1
+    ],
+    [
+      "current",
+      2
+    ],
+    [
+      "baseline_common8",
+      2
+    ],
+    [
+      "baseline",
+      2
+    ],
+    [
+      "baseline_common8",
+      3
+    ],
+    [
+      "baseline",
+      3
+    ],
+    [
+      "current",
+      3
+    ],
+    [
+      "current",
+      4
+    ],
+    [
+      "baseline",
+      4
+    ],
+    [
+      "baseline",
+      5
+    ],
+    [
+      "current",
+      5
+    ]
+  ],
+  "harness_sha256_lf": "03d58a546f258f1b67cbf149b34d0b164b1065f564f90ee3a37fc12aafe69daa",
+  "current_source_rechecked_after_measurement": true
+}
