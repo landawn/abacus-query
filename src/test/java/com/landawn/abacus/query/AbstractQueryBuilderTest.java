@@ -45,6 +45,124 @@ import com.landawn.abacus.util.Throwables;
 
 @Tag("2025")
 public class AbstractQueryBuilderTest extends TestBase {
+
+    @Test
+    public void testParameterNameSanitizationPreservesCornerCases() {
+        // Returning valid names directly must retain the old normalization of every other shape.
+        final String[][] cases = { { "firstName", "firstName" }, { " u.id ", "id" }, { "COUNT(*)", "COUNT" },
+                { "___", "param" }, { "_leading", "_leading" }, { "trailing__", "trailing" }, { "1abc", "p1abc" },
+                { "  ", "param" }, { "a@#$b", "a_b" }, { "éclair", "éclair" }, { "猫名", "猫名" },
+                { "u.col_", "col" }, { "..", "param" }, { "", "" } };
+        for (final String[] item : cases) {
+            assertEquals(item[1], AbstractQueryBuilder.sanitizeNamedParameterName(item[0]), item[0]);
+        }
+        assertNull(AbstractQueryBuilder.sanitizeNamedParameterName(null));
+    }
+
+    @Test
+    public void testEmptyCheckpointRestoresPartiallyRenderedParametersAcrossPolicies() {
+        for (final Dsl dsl : new Dsl[] { PSC, NSC, MSC, SCSB }) {
+            final SqlBuilder builder = dsl.update("users");
+            final Map<String, Object> rejected = new LinkedHashMap<>();
+            rejected.put("id", 1);
+            rejected.put("bad--column", 2);
+            // Rendering fails after the first binding. An empty snapshot must still remove
+            // all SQL, names, parameters, and the lazy UPDATE initialization before retry.
+            assertThrows(IllegalArgumentException.class, () -> builder.set(rejected));
+            assertTrue(builder._parameters.isEmpty());
+            assertTrue(builder._namedParameterNameOccurrences.isEmpty());
+            assertTrue(builder._generatedNamedParameterNames.isEmpty());
+            assertTrue(builder._renderedNamedParameterTokens.isEmpty());
+            final AbstractQueryBuilder.SP actual = builder.set("id", 3).where(Filters.eq("id", 4)).build();
+            final AbstractQueryBuilder.SP expected = dsl.update("users").set("id", 3).where(Filters.eq("id", 4)).build();
+            assertEquals(expected.query(), actual.query());
+            assertEquals(expected.parameters(), actual.parameters());
+        }
+    }
+
+    @Test
+    public void testCheckpointRestoresPrefixModifiedByCustomNamedRenderer() {
+        final Dsl dsl = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+            if (name.equals("fail")) {
+                sb.insert(0, "damaged prefix ");
+                throw new IllegalStateException("renderer failed");
+            }
+            sb.append(':').append(name);
+        }).build());
+        final SqlBuilder builder = dsl.update("users").set("id", 1);
+        // Named renderers receive the live buffer; rollback must restore overwritten text,
+        // not merely truncate it, and retain already emitted name occurrences.
+        assertThrows(IllegalStateException.class, () -> builder.set("fail", 9));
+        final AbstractQueryBuilder.SP actual = builder.set("id", 2).build();
+        assertEquals("UPDATE users SET id = :id, id = :id_2", actual.query());
+        assertEquals(Arrays.asList(1, 2), actual.parameters());
+    }
+
+
+    @Test
+    public void testCompactCheckpointsCopyValuesAndRestoreNestedMutations() {
+        final SqlBuilder builder = NSC.update("users").set("id", 1);
+        final String originalSql = builder._sb.toString();
+        builder._aliasPropColumnNameMap = new java.util.HashMap<>();
+        builder._aliasPropColumnNameMap.put("u", Collections.emptyMap());
+        builder._namedParameterNameOccurrences.put(null, null);
+        // A snapshot of live Map.Entry objects would follow these in-place value changes.
+        // Nested failures must restore their own starting state before the outer rollback.
+        assertThrows(IllegalStateException.class, () -> builder.mutateAtomically(() -> {
+            builder._parameters.set(0, 9);
+            builder._namedParameterNameOccurrences.put("id", 9);
+            builder._namedParameterNameOccurrences.put(null, 7);
+            builder._renderedNamedParameterTokens.put("id", "changed");
+            builder._generatedNamedParameterNames.add("id_9");
+            builder.calledOpSet.add("temporary");
+            builder._sb.replace(0, 6, "BROKEN");
+            builder._aliasPropColumnNameMap.clear();
+            assertThrows(IllegalArgumentException.class, () -> builder.mutateAtomically(() -> {
+                builder._parameters.clear();
+                builder._namedParameterNameOccurrences.put("id", 10);
+                builder._renderedNamedParameterTokens.clear();
+                builder._generatedNamedParameterNames.clear();
+                builder.calledOpSet.clear();
+                throw new IllegalArgumentException("inner");
+            }));
+            assertEquals(Integer.valueOf(9), builder._namedParameterNameOccurrences.get("id"));
+            assertEquals(List.of(9), builder._parameters);
+            assertEquals("changed", builder._renderedNamedParameterTokens.get("id"));
+            throw new IllegalStateException("outer");
+        }));
+        assertEquals(originalSql, builder._sb.toString());
+        assertEquals(Collections.singletonMap("u", Collections.emptyMap()), builder._aliasPropColumnNameMap);
+        assertEquals(List.of(1), builder._parameters);
+        assertEquals(Integer.valueOf(1), builder._namedParameterNameOccurrences.get("id"));
+        assertTrue(builder._namedParameterNameOccurrences.containsKey(null));
+        assertNull(builder._namedParameterNameOccurrences.get(null));
+        assertEquals(":id", builder._renderedNamedParameterTokens.get("id"));
+        assertEquals(Set.of("id"), builder._generatedNamedParameterNames);
+        assertTrue(builder.calledOpSet.isEmpty());
+        builder._namedParameterNameOccurrences.remove(null);
+        assertEquals("UPDATE users SET id = :id, id = :id_2", builder.set("id", 2).build().query());
+    }
+
+    @Test
+    public void testLazyValidationLabelsPreserveIndexedDiagnostics() {
+        final String suffix = " must not be null, empty, or blank";
+        assertEquals("columns[1]" + suffix, assertThrows(IllegalArgumentException.class,
+                () -> AbstractQueryBuilder.checkSqlFragmentsNotBlank(new String[] { "id", "\t " }, "columns")).getMessage());
+        assertEquals("columns[2]" + suffix, assertThrows(IllegalArgumentException.class,
+                () -> AbstractQueryBuilder.checkSqlFragmentsNotBlank(Arrays.asList("id", "name", null), "columns")).getMessage());
+        assertEquals("Key in props" + suffix, assertThrows(IllegalArgumentException.class,
+                () -> AbstractQueryBuilder.checkSqlFragmentKeysNotBlank(Collections.singletonMap(" ", 1), "props")).getMessage());
+    }
+
+    @Test
+    public void testCamelIdentityPathPreservesAcronymAndDigitBoundaries() {
+        for (final String name : Arrays.asList(null, "", "firstName", "columnName42", "aB", "aB2", "a2B", "abc1Xy", "iPhone",
+                "fooBAR", "URLValue", "_firstName_", "t.firstName", "éclair", "猫名", "class")) {
+            final String expected = AbstractQueryBuilder.sqlKeyWords.contains(name) ? name : QueryUtil.convertIdentifier(name, NamingPolicy.CAMEL_CASE);
+            assertEquals(expected, AbstractQueryBuilder.normalizeColumnName(name, NamingPolicy.CAMEL_CASE), name);
+        }
+    }
+
     private static final class TestClause extends Clause {
         TestClause(final Operator operator, final Condition condition) {
             super(operator, condition);

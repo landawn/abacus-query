@@ -1,0 +1,10 @@
+{
+  "cases": 108800,
+  "before": "cases=108800 sha256=b611e5465c4f02ebc6adca9c3bdddc841de2921f5345ec95078bd5d2d5cc5cf1",
+  "current": "cases=108800 sha256=b611e5465c4f02ebc6adca9c3bdddc841de2921f5345ec95078bd5d2d5cc5cf1",
+  "equivalent": true,
+  "queryCases": 28800,
+  "sanitizerCases": 20000,
+  "namingPolicyCases": 60000,
+  "activeBuildersAfterRun": 0
+}

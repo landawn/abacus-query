@@ -1,0 +1,1028 @@
+diff --git a/src/main/java/com/landawn/abacus/query/AbstractQueryBuilder.java b/src/main/java/com/landawn/abacus/query/AbstractQueryBuilder.java
+index 479343f..6e9bdfe 100644
+--- a/src/main/java/com/landawn/abacus/query/AbstractQueryBuilder.java
++++ b/src/main/java/com/landawn/abacus/query/AbstractQueryBuilder.java
+@@ -1143,7 +1143,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         N.checkArgNotEmpty(values, argName);
+ 
+         for (int i = 0; i < values.length; i++) {
+-            checkSqlFragmentNotBlank(values[i], argName + "[" + i + "]");
++            // The indexed argument label is only needed when validation fails.
++            if (Strings.isBlank(values[i])) {
++                checkSqlFragmentNotBlank(values[i], argName + "[" + i + "]");
++            }
+         }
+     }
+ 
+@@ -1161,7 +1164,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         int i = 0;
+ 
+         for (final String value : values) {
+-            checkSqlFragmentNotBlank(value, argName + "[" + i++ + "]");
++            if (Strings.isBlank(value)) {
++                checkSqlFragmentNotBlank(value, argName + "[" + i + "]");
++            }
++            i++;
+         }
+     }
+ 
+@@ -1196,7 +1202,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+                 throw new IllegalArgumentException(argName + " keys must be non-blank strings, but found: " + entry.getKey());
+             }
+ 
+-            checkSqlFragmentNotBlank((String) entry.getKey(), "Key in " + argName);
++            final String key = (String) entry.getKey();
++            if (Strings.isBlank(key)) {
++                checkSqlFragmentNotBlank(key, "Key in " + argName);
++            }
+         }
+     }
+ 
+@@ -4854,6 +4863,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+      * rendering can update several correlated collections. If rendering fails, restore all builder
+      * state that such a mutation can change so the caller may retry with a valid clause. Raw
+      * {@link #append(String)} deliberately remains an unstructured escape hatch and is not wrapped.
++     *
++     * @param mutation the structured-clause rendering operation
++     * @return this builder after successful rendering
+      */
+     @SuppressWarnings("unchecked")
+     protected This mutateAtomically(final Runnable mutation) {
+@@ -4872,13 +4884,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+ 
+     /** Snapshot of the mutable state touched while initializing or rendering a structured clause. */
+     private static final class MutationCheckpoint {
++        private static final Object[] EMPTY_SNAPSHOT = new Object[0];
++
+         private final String sql;
+-        private final List<Object> parameters;
+-        private final Map<String, Integer> namedParameterNameOccurrences;
+-        private final Set<String> generatedNamedParameterNames;
+-        private final Map<String, String> renderedNamedParameterTokens;
+-        private final Set<String> calledOperations;
+-        private final Map<String, Map<String, ColumnInfo>> aliasPropColumnNameMap;
++        private final Object[] parameters;
++        private final Object[] namedParameterNameOccurrences;
++        private final Object[] generatedNamedParameterNames;
++        private final Object[] renderedNamedParameterTokens;
++        private final Object[] calledOperations;
++        private final Object[] aliasPropColumnNameMap;
+         private final OperationType operation;
+         private final Class<?> entityClass;
+         private final BeanInfo entityInfo;
+@@ -4902,12 +4916,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         /** Captures a snapshot of the mutable state that structured-clause rendering may change. */
+         MutationCheckpoint(final AbstractQueryBuilder<?> builder) {
+             sql = builder._sb.toString();
+-            parameters = new ArrayList<>(builder._parameters);
+-            namedParameterNameOccurrences = new HashMap<>(builder._namedParameterNameOccurrences);
+-            generatedNamedParameterNames = new HashSet<>(builder._generatedNamedParameterNames);
+-            renderedNamedParameterTokens = new HashMap<>(builder._renderedNamedParameterTokens);
+-            calledOperations = new HashSet<>(builder.calledOpSet);
+-            aliasPropColumnNameMap = builder._aliasPropColumnNameMap == null ? null : new HashMap<>(builder._aliasPropColumnNameMap);
++            parameters = snapshot(builder._parameters);
++            namedParameterNameOccurrences = snapshot(builder._namedParameterNameOccurrences);
++            generatedNamedParameterNames = snapshot(builder._generatedNamedParameterNames);
++            renderedNamedParameterTokens = snapshot(builder._renderedNamedParameterTokens);
++            calledOperations = snapshot(builder.calledOpSet);
++            aliasPropColumnNameMap = builder._aliasPropColumnNameMap == null ? null : snapshot(builder._aliasPropColumnNameMap);
+             operation = builder._op;
+             entityClass = builder._entityClass;
+             entityInfo = builder._entityInfo;
+@@ -4934,18 +4948,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+             builder._sb.setLength(0);
+             builder._sb.append(sql);
+ 
+-            builder._parameters.clear();
+-            builder._parameters.addAll(parameters);
+-            builder._namedParameterNameOccurrences.clear();
+-            builder._namedParameterNameOccurrences.putAll(namedParameterNameOccurrences);
+-            builder._generatedNamedParameterNames.clear();
+-            builder._generatedNamedParameterNames.addAll(generatedNamedParameterNames);
+-            builder._renderedNamedParameterTokens.clear();
+-            builder._renderedNamedParameterTokens.putAll(renderedNamedParameterTokens);
+-            builder.calledOpSet.clear();
+-            builder.calledOpSet.addAll(calledOperations);
+-
+-            builder._aliasPropColumnNameMap = aliasPropColumnNameMap == null ? null : new HashMap<>(aliasPropColumnNameMap);
++            restore(builder._parameters, parameters);
++            restore(builder._namedParameterNameOccurrences, namedParameterNameOccurrences);
++            restore(builder._generatedNamedParameterNames, generatedNamedParameterNames);
++            restore(builder._renderedNamedParameterTokens, renderedNamedParameterTokens);
++            restore(builder.calledOpSet, calledOperations);
++
++            builder._aliasPropColumnNameMap = aliasPropColumnNameMap == null ? null : new HashMap<>();
++            if (aliasPropColumnNameMap != null) {
++                restore(builder._aliasPropColumnNameMap, aliasPropColumnNameMap);
++            }
+             builder._op = operation;
+             builder._entityClass = entityClass;
+             builder._entityInfo = entityInfo;
+@@ -4966,6 +4978,42 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+             builder._hasSetOperation = hasSetOperation;
+             builder._setListStarted = setListStarted;
+         }
++
++        // Checkpoints are read once, only on failure: flat snapshots avoid allocating a second
++        // hash table and one node per entry on every successful clause. Copy keys AND values;
++        // saving Map.Entry instances would retain live nodes whose values can subsequently change.
++        private static Object[] snapshot(final Map<?, ?> values) {
++            if (values.isEmpty()) {
++                return EMPTY_SNAPSHOT;
++            }
++            final Object[] result = new Object[values.size() * 2];
++            int i = 0;
++            for (final Map.Entry<?, ?> entry : values.entrySet()) {
++                result[i++] = entry.getKey();
++                result[i++] = entry.getValue();
++            }
++            return result;
++        }
++
++        private static Object[] snapshot(final Collection<?> values) {
++            return values.isEmpty() ? EMPTY_SNAPSHOT : values.toArray();
++        }
++
++        @SuppressWarnings("unchecked")
++        private static <K, V> void restore(final Map<K, V> target, final Object[] values) {
++            target.clear();
++            for (int i = 0; i < values.length; i += 2) {
++                target.put((K) values[i], (V) values[i + 1]);
++            }
++        }
++
++        @SuppressWarnings("unchecked")
++        private static <T> void restore(final Collection<T> target, final Object[] values) {
++            target.clear();
++            for (final Object value : values) {
++                target.add((T) value);
++            }
++        }
+     }
+ 
+     /**
+@@ -5065,13 +5113,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+      */
+     private String findAlreadyEmittedLaterClause(final String op) {
+         if (SK.WHERE.equals(op)) {
+-            return firstCalledClause(SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
++            return firstCalledClause(1);
+         } else if (SK.GROUP_BY.equals(op)) {
+-            return firstCalledClause(SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
++            return firstCalledClause(2);
+         } else if (SK.HAVING.equals(op)) {
+-            return firstCalledClause(SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
++            return firstCalledClause(3);
+         } else if (SK.ORDER_BY.equals(op)) {
+-            return firstCalledClause(SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT, SK.FOR_UPDATE);
++            return firstCalledClause(4);
+         } else if (SK.LIMIT.equals(op) || SK.OFFSET.equals(op) || SK.FETCH_FIRST.equals(op) || SK.FETCH_NEXT.equals(op)) {
+             return calledOpSet.contains(SK.FOR_UPDATE) ? SK.FOR_UPDATE : null;
+         }
+@@ -5079,9 +5127,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         return null;
+     }
+ 
+-    /** Returns the first of {@code clauses} that has already been emitted, or {@code null} when none has. */
+-    private String firstCalledClause(final String... clauses) {
+-        for (final String clause : clauses) {
++    // One shared order avoids allocating a varargs array at every clause check. Pagination
++    // retains its dialect-specific rules; this order only identifies an already-emitted later clause.
++    private static final String[] CLAUSE_ORDER = { SK.WHERE, SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT,
++            SK.FOR_UPDATE };
++
++    /** Returns the first recorded clause at or after the given index in SQL clause order. */
++    private String firstCalledClause(final int firstIndex) {
++        for (int i = firstIndex; i < CLAUSE_ORDER.length; i++) {
++            final String clause = CLAUSE_ORDER[i];
+             if (calledOpSet.contains(clause)) {
+                 return clause;
+             }
+@@ -7294,8 +7348,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+             throw new IllegalStateException("set() requires an UPDATE builder, but current operation is: " + _op);
+         }
+ 
+-        final String laterClause = firstCalledClause(SK.WHERE, SK.GROUP_BY, SK.HAVING, SK.ORDER_BY, SK.LIMIT, SK.OFFSET, SK.FETCH_FIRST, SK.FETCH_NEXT,
+-                SK.FOR_UPDATE);
++        final String laterClause = firstCalledClause(0);
+ 
+         if (laterClause != null) {
+             throw new IllegalStateException("set() must be called before the '" + laterClause + "' clause");
+@@ -7722,7 +7775,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+      * @param propValue the value to render into the SQL string
+      */
+     protected void setParameterForRawSql(final Object propValue) {
+-        if (Filters.QME.equals(propValue)) {
++        // These final JDK wrapper types always produce valid decimal literals. Append their
++        // primitive values directly; arbitrary Number implementations still need validation.
++        if (propValue instanceof Integer || propValue instanceof Short || propValue instanceof Byte) {
++            _sb.append(((Number) propValue).intValue());
++        } else if (propValue instanceof Long) {
++            _sb.append(((Long) propValue).longValue());
++        } else if (Filters.QME.equals(propValue)) {
+             _hasGeneratedParameterPlaceholder = true;
+             _sb.append(SK._QUESTION_MARK);
+         } else if (propValue instanceof Condition) {
+@@ -8015,6 +8074,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+             }
+         }
+ 
++        // Most names are already valid. Preserve Unicode letter/digit semantics and the
++        // historical removal of trailing underscores before reusing the original text.
++        if (!name.isEmpty() && !Character.isDigit(name.charAt(0)) && name.charAt(name.length() - 1) != '_') {
++            int i = 0;
++            for (; i < name.length(); i++) {
++                final char ch = name.charAt(i);
++                if (!(Character.isLetterOrDigit(ch) || ch == '_')) {
++                    break;
++                }
++            }
++            if (i == name.length()) {
++                return name;
++            }
++        }
++
+         final StringBuilder sb = new StringBuilder(name.length());
+ 
+         for (int i = 0, len = name.length(); i < len; i++) {
+@@ -8049,33 +8123,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+      * @param propValue the value to bind to the parameter
+      */
+     protected void setParameter(final String propName, final Object propValue) {
+-        switch (_sqlPolicy) {
+-            case RAW_SQL: {
+-                setParameterForRawSql(propValue);
+-
+-                break;
+-            }
+-
+-            case PARAMETERIZED_SQL: {
+-                setParameterForParameterizedSql(propValue);
+-
+-                break;
+-            }
+-
+-            case NAMED_SQL: {
+-                setParameterForNamedSql(propName, propValue);
+-
+-                break;
+-            }
+-
+-            case IBATIS_SQL: {
+-                setParameterForIbatisNamedSql(propName, propValue);
+-
+-                break;
+-            }
++        appendParameter(propName, propValue);
++    }
+ 
+-            default:
+-                throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy);
++    // INSERT values share policy dispatch without newly invoking the overridable generic
++    // setParameter hook; the existing policy-specific setter hooks remain in use.
++    private void appendParameter(final String propName, final Object propValue) {
++        switch (_sqlPolicy) {
++            case RAW_SQL -> setParameterForRawSql(propValue);
++            case PARAMETERIZED_SQL -> setParameterForParameterizedSql(propValue);
++            case NAMED_SQL -> setParameterForNamedSql(propName, propValue);
++            case IBATIS_SQL -> setParameterForIbatisNamedSql(propName, propValue);
++            default -> throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy);
+         }
+     }
+ 
+@@ -8106,65 +8165,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+      * @param rowIndex zero-based row index in batch insert mode; negative for single-row insert
+      */
+     protected void appendInsertProps(final Map<String, Object> props, final Collection<String> propNames, final int rowIndex) {
+-        switch (_sqlPolicy) {
+-            case RAW_SQL: {
+-                int i = 0;
+-                for (final String propName : propNames) {
+-                    if (i++ > 0) {
+-                        _sb.append(_COMMA_SPACE);
+-                    }
+-
+-                    final Object propValue = props.get(propName);
+-                    setParameterForRawSql(propValue);
+-                }
+-
+-                break;
+-            }
+-
+-            case PARAMETERIZED_SQL: {
+-                int i = 0;
+-                for (final String propName : propNames) {
+-                    if (i++ > 0) {
+-                        _sb.append(_COMMA_SPACE);
+-                    }
+-
+-                    final Object propValue = props.get(propName);
+-                    setParameterForParameterizedSql(propValue);
+-                }
+-
+-                break;
+-            }
+-
+-            case NAMED_SQL: {
+-                int i = 0;
+-                for (final String propName : propNames) {
+-                    if (i++ > 0) {
+-                        _sb.append(_COMMA_SPACE);
+-                    }
+-
+-                    final String namedPropName = rowIndex >= 0 ? propName + "_" + rowIndex : propName;
+-                    setParameterForNamedSql(namedPropName, props.get(propName));
+-                }
+-
+-                break;
+-            }
+-
+-            case IBATIS_SQL: {
+-                int i = 0;
+-                for (final String propName : propNames) {
+-                    if (i++ > 0) {
+-                        _sb.append(_COMMA_SPACE);
+-                    }
+-
+-                    final String namedPropName = rowIndex >= 0 ? propName + "_" + rowIndex : propName;
+-                    setParameterForIbatisNamedSql(namedPropName, props.get(propName));
+-                }
+-
+-                break;
++        final boolean indexedNames = rowIndex >= 0 && (_sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL);
++        int i = 0;
++        for (final String propName : propNames) {
++            if (i++ > 0) {
++                _sb.append(_COMMA_SPACE);
+             }
+-
+-            default:
+-                throw new UnsupportedOperationException("SQL policy not supported: " + _sqlPolicy);
++            appendParameter(indexedNames ? propName + "_" + rowIndex : propName, props.get(propName));
+         }
+     }
+ 
+@@ -8225,7 +8232,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+             // expression (for example, "aB-cD") as one identifier. Digit-leading tokens (for example
+             // "2faCode") also fall through to the tokenizer, which passes them through unconverted, again
+             // mirroring SqlExpression.toSql; the simple-column pattern alone would admit them here.
+-            final boolean matched = expr.indexOf('-') < 0 && isIdentifierStart(expr.charAt(0)) && QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(expr).matches();
++            final boolean matched = isSimpleColumnName(expr);
+ 
+             if (matched) {
+                 if (isFromAppendColumn) {
+@@ -8253,6 +8260,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         }
+     }
+ 
++    /** Same ASCII identifier shape as the short-expression fast path, without a Matcher allocation. */
++    private static boolean isSimpleColumnName(final String expr) {
++        if (!isIdentifierStart(expr.charAt(0))) {
++            return false;
++        }
++        for (int i = 1; i < expr.length(); i++) {
++            final char ch = expr.charAt(i);
++            if (!(isIdentifierStart(ch) || (ch >= '0' && ch <= '9'))) {
++                return false;
++            }
++        }
++        return true;
++    }
++
+     // The three predicates below mirror their namesakes in SqlExpression.toSql. As noted where
+     // sqlKeyWords is declared, SqlExpression and this builder are two independent rendering paths for the
+     // same expression text, so a guard added to one must be added to the other or the same fragment
+@@ -8470,30 +8491,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         ColumnInfo tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
+ 
+         if (tp != null) {
+-            if (tp.isUnqualified() && tableAlias != null && !tableAlias.isEmpty()) {
+-                _sb.append(tableAlias).append(SK._PERIOD);
+-            }
+-
+-            _sb.append(tp.columnName());
+-
+-            if (isForSelect && (Strings.isNotEmpty(propAlias) || withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
+-                _sb.append(_SPACE_AS_SPACE);
+-
+-                if (quotePropAlias) {
+-                    _sb.append(_identifierQuote);
+-                }
+-
+-                if (withClassAlias) {
+-                    _sb.append(classAlias).append(SK._PERIOD);
+-                }
+-
+-                _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
+-
+-                if (quotePropAlias) {
+-                    _sb.append(_identifierQuote);
+-                }
+-            }
+-
++            appendMappedColumn(tp, tableAlias, propName, propAlias, withClassAlias, classAlias, isForSelect, quotePropAlias);
+             return;
+         }
+ 
+@@ -8553,30 +8551,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+                     tp = newPropColumnNameMap.get(newPropName);
+ 
+                     if (tp != null) {
+-                        if (tp.isUnqualified()) {
+-                            _sb.append(propTableAlias).append(SK._PERIOD);
+-                        }
+-
+-                        _sb.append(tp.columnName());
+-
+-                        if (isForSelect && (Strings.isNotEmpty(propAlias) || withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
+-                            _sb.append(_SPACE_AS_SPACE);
+-
+-                            if (quotePropAlias) {
+-                                _sb.append(_identifierQuote);
+-                            }
+-
+-                            if (withClassAlias) {
+-                                _sb.append(classAlias).append(SK._PERIOD);
+-                            }
+-
+-                            _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
+-
+-                            if (quotePropAlias) {
+-                                _sb.append(_identifierQuote);
+-                            }
+-                        }
+-
++                        appendMappedColumn(tp, propTableAlias, propName, propAlias, withClassAlias, classAlias, isForSelect, quotePropAlias);
+                         return;
+                     }
+                 }
+@@ -8649,6 +8624,34 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         }
+     }
+ 
++    /** Shared rendering for direct and table-alias property mappings. */
++    private void appendMappedColumn(final ColumnInfo column, final String tableAlias, final String propName, final String propAlias,
++            final boolean withClassAlias, final String classAlias, final boolean isForSelect, final boolean quotePropAlias) {
++        if (column.isUnqualified() && tableAlias != null && !tableAlias.isEmpty()) {
++            _sb.append(tableAlias).append(SK._PERIOD);
++        }
++
++        _sb.append(column.columnName());
++
++        if (isForSelect && (Strings.isNotEmpty(propAlias) || withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
++            _sb.append(_SPACE_AS_SPACE);
++
++            if (quotePropAlias) {
++                _sb.append(_identifierQuote);
++            }
++
++            if (withClassAlias) {
++                _sb.append(classAlias).append(SK._PERIOD);
++            }
++
++            _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
++
++            if (quotePropAlias) {
++                _sb.append(_identifierQuote);
++            }
++        }
++    }
++
+     /**
+      * Checks whether the specified entity class has sub-entity properties that should be included in the query.
+      *
+@@ -8810,9 +8813,34 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         // identifier "class" (any case) to "clazz" -- a bean-property convention that has no place in a
+         // SQL column name and that SqlExpression.toSql never applied. The shared helper keeps both paths
+         // equal and restores the leading/trailing underscores that NamingPolicy.convert strips.
++        if (namingPolicy == NamingPolicy.CAMEL_CASE && isPlainCamelIdentifier(word)) {
++            return word;
++        }
+         return QueryUtil.convertIdentifier(word, namingPolicy);
+     }
+ 
++    /**
++     * Conservative identity check: lower camel ASCII words with isolated capitals already have
++     * the requested spelling. Acronyms, separators, digit/capital boundaries, and Unicode still
++     * use the shared converter; no global cache or retained identifier strings are needed.
++     */
++    private static boolean isPlainCamelIdentifier(final String word) {
++        if (word == null || word.isEmpty() || word.charAt(0) < 'a' || word.charAt(0) > 'z') {
++            return false;
++        }
++        for (int i = 1; i < word.length(); i++) {
++            final char ch = word.charAt(i);
++            if ((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')) {
++                continue;
++            }
++            if (ch < 'A' || ch > 'Z' || word.charAt(i - 1) < 'a' || word.charAt(i - 1) > 'z' || i + 1 == word.length()
++                    || word.charAt(i + 1) < 'a' || word.charAt(i + 1) > 'z') {
++                return false;
++            }
++        }
++        return true;
++    }
++
+     /**
+      * Normalizes a column name using the property-to-column-name mapping, with support for table alias resolution.
+      * Falls back to the static naming policy conversion if no mapping is found.
+@@ -8955,7 +8983,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+                 final Map<String, Object> propsMap = (Map<String, Object>) props;
+ 
+                 for (final Object propName : propsMap.keySet()) {
+-                    N.checkArgument(propName instanceof String, "All keys in batch INSERT maps must be String: " + propName);
++                    if (!(propName instanceof String)) {
++                        throw new IllegalArgumentException("All keys in batch INSERT maps must be String: " + propName);
++                    }
+                     checkSqlFragmentNotBlank((String) propName, "Batch INSERT map key");
+                 }
+ 
+@@ -8965,9 +8995,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+                 } else {
+                     // All rows in a batch INSERT must share the same column set; otherwise extra keys are silently
+                     // dropped and missing keys produce stray NULL parameters, leading to data loss / corruption.
+-                    N.checkArgument(propsMap.keySet().equals(expectedKeys),
+-                            "All non-null Maps in propsList must have the same key set for batch INSERT. Expected: " + expectedKeys + ", current: "
+-                                    + propsMap.keySet());
++                    // Build diagnostic strings only on failure; rendering both key sets on every
++                    // valid row otherwise costs more than copying the row itself.
++                    if (!propsMap.keySet().equals(expectedKeys)) {
++                        throw new IllegalArgumentException("All non-null Maps in propsList must have the same key set for batch INSERT. Expected: "
++                                + expectedKeys + ", current: " + propsMap.keySet());
++                    }
+                 }
+ 
+                 newPropsList.add(new LinkedHashMap<>(propsMap));
+@@ -8991,8 +9024,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+             }
+ 
+             final Class<?> currentEntityClass = entity.getClass();
+-            N.checkArgument(currentEntityClass == entityClass, "All non-null bean entities in propsList must have the same runtime class. Expected: "
+-                    + entityClass.getName() + ", current: " + currentEntityClass.getName());
++            if (currentEntityClass != entityClass) {
++                throw new IllegalArgumentException("All non-null bean entities in propsList must have the same runtime class. Expected: "
++                        + entityClass.getName() + ", current: " + currentEntityClass.getName());
++            }
+ 
+             final Map<String, Object> props = N.newLinkedHashMap(propNames.size());
+ 
+@@ -9004,15 +9039,36 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
+         }
+ 
+         final ImmutableList<String> idPropNameList = firstEntityBeanInfo.idPropNameList;
+-        final boolean removeDefaultIdValues = N.size(idPropNameList) <= 1
+-                || Stream.of(newPropsList).allMatch(map -> Stream.of(idPropNameList).allMatch(idPropName -> isDefaultIdPropValue(map.get(idPropName))));
+-
+-        final List<String> nullPropToRemove = Stream.of(propNames).filter(propName -> Stream.of(newPropsList).allMatch(map -> {
+-            final Object propValue = map.get(propName);
++        boolean removeDefaultIdValues = idPropNameList.size() <= 1;
++        if (!removeDefaultIdValues) {
++            removeDefaultIdValues = true;
++            outer: for (final Map<String, Object> props : newPropsList) {
++                for (final String idPropName : idPropNameList) {
++                    if (!isDefaultIdPropValue(props.get(idPropName))) {
++                        removeDefaultIdValues = false;
++                        break outer;
++                    }
++                }
++            }
++        }
+ 
+-            return propValue == null
+-                    || (removeDefaultIdValues && !idPropNameList.isEmpty() && idPropNameList.contains(propName) && isDefaultIdPropValue(propValue));
+-        })).toList();
++        // A column disappears only when every row is null/default. Resolve its ID status once
++        // and stop at the first retained value, avoiding a stream and captured lambda per column.
++        final List<String> nullPropToRemove = new ArrayList<>();
++        for (final String propName : propNames) {
++            final boolean defaultIdMayBeRemoved = removeDefaultIdValues && idPropNameList.contains(propName);
++            boolean remove = true;
++            for (final Map<String, Object> props : newPropsList) {
++                final Object value = props.get(propName);
++                if (value != null && !(defaultIdMayBeRemoved && isDefaultIdPropValue(value))) {
++                    remove = false;
++                    break;
++                }
++            }
++            if (remove) {
++                nullPropToRemove.add(propName);
++            }
++        }
+ 
+         if (N.notEmpty(nullPropToRemove)) {
+             for (final Map<String, Object> props : newPropsList) {
+diff --git a/src/main/java/com/landawn/abacus/query/Dsl.java b/src/main/java/com/landawn/abacus/query/Dsl.java
+index 074eeb6..760ebdd 100644
+--- a/src/main/java/com/landawn/abacus/query/Dsl.java
++++ b/src/main/java/com/landawn/abacus/query/Dsl.java
+@@ -534,8 +534,13 @@ public final class Dsl {
+             instance._op = OperationType.ADD;
+             instance.setEntityClass(entity.getClass());
+ 
+-            // Map and bean inputs were already defensively snapshotted and filtered above.
+-            SqlBuilder.parseInsertEntity(instance, entitySnapshot, Collections.emptySet());
++            // This factory owns the validated map snapshot; hand it over instead of copying it
++            // again. The protected parseInsertEntity helper still snapshots caller-owned maps.
++            if (entitySnapshot instanceof Map) {
++                instance._props = (Map<String, Object>) entitySnapshot;
++            } else {
++                SqlBuilder.parseInsertEntity(instance, entitySnapshot, Collections.emptySet());
++            }
+ 
+             return instance;
+         } catch (final RuntimeException | Error e) {
+diff --git a/src/main/java/com/landawn/abacus/query/SqlBuilder.java b/src/main/java/com/landawn/abacus/query/SqlBuilder.java
+index db1c6de..76721f0 100644
+--- a/src/main/java/com/landawn/abacus/query/SqlBuilder.java
++++ b/src/main/java/com/landawn/abacus/query/SqlBuilder.java
+@@ -345,15 +345,18 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
+ 
+         // Strip any table-alias prefix (e.g. "ord.orderDate" -> "orderDate") so the
+         // synthesized "minX"/"maxX" parameter names remain valid identifiers.
+-        final String cap = Strings.capitalize(sanitizeNamedParameterName(propName));
++        // The built-in positional/raw setters do not use parameter names. Subclasses keep
++        // the original min/max names because an overridden setter may inspect them.
++        final boolean needsNames = _sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL || getClass() != SqlBuilder.class;
++        final String cap = needsNames ? Strings.capitalize(sanitizeNamedParameterName(propName)) : null;
+ 
+-        setParameter("min" + cap, minValue);
++        setParameter(needsNames ? "min" + cap : propName, minValue);
+ 
+         _sb.append(_SPACE);
+         _sb.append(SK.AND);
+         _sb.append(_SPACE);
+ 
+-        setParameter("max" + cap, maxValue);
++        setParameter(needsNames ? "max" + cap : propName, maxValue);
+     }
+ 
+     /**
+@@ -379,7 +382,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
+         _sb.append(operator.toString());
+         _sb.append(SK.SPACE_PARENTHESIS_L);
+ 
+-        if (values != null) {
++        if (values != null && !appendPositionalInValues(propName, values)) {
+             final boolean indexedParamName = _sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL;
+ 
+             for (int i = 0, len = values.size(); i < len; i++) {
+@@ -398,6 +401,41 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
+         _sb.append(SK._PARENTHESIS_R);
+     }
+ 
++    /**
++     * Copies runs of ordinary positional bindings together, rendering expressions in their original
++     * position between runs. Subclasses retain individual setter calls so their hooks still run.
++     */
++    private boolean appendPositionalInValues(final String propName, final List<?> values) {
++        final int size = values.size();
++        if (size <= 16 || _sqlPolicy != SqlPolicy.PARAMETERIZED_SQL || getClass() != SqlBuilder.class) {
++            return false;
++        }
++        int start = 0;
++        while (start < size) {
++            if (start > 0) {
++                _sb.append(_COMMA_SPACE);
++            }
++            final Object value = values.get(start);
++            if (value instanceof Condition) {
++                setParameter(propName, value);
++                start++;
++                continue;
++            }
++            int end = start + 1;
++            while (end < size && !(values.get(end) instanceof Condition)) {
++                end++;
++            }
++            _sb.append('?');
++            for (int i = start + 1; i < end; i++) {
++                _sb.append(", ?");
++            }
++            _hasGeneratedParameterPlaceholder = true;
++            _parameters.addAll(start == 0 && end == size ? values : values.subList(start, end));
++            start = end;
++        }
++        return true;
++    }
++
+     /**
+      * Renders a row value constructor IN / NOT IN clause, e.g.
+      * {@code (p1, p2) IN ((?, ?), (?, ?))} — or {@code (p1) IN ((?), (?))} for a single property.
+diff --git a/src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java b/src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java
+index 8f2b83b..5e433c8 100644
+--- a/src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java
++++ b/src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java
+@@ -45,6 +45,124 @@ import com.landawn.abacus.util.Throwables;
+ 
+ @Tag("2025")
+ public class AbstractQueryBuilderTest extends TestBase {
++
++    @Test
++    public void testParameterNameSanitizationPreservesCornerCases() {
++        // Returning valid names directly must retain the old normalization of every other shape.
++        final String[][] cases = { { "firstName", "firstName" }, { " u.id ", "id" }, { "COUNT(*)", "COUNT" },
++                { "___", "param" }, { "_leading", "_leading" }, { "trailing__", "trailing" }, { "1abc", "p1abc" },
++                { "  ", "param" }, { "a@#$b", "a_b" }, { "éclair", "éclair" }, { "猫名", "猫名" },
++                { "u.col_", "col" }, { "..", "param" }, { "", "" } };
++        for (final String[] item : cases) {
++            assertEquals(item[1], AbstractQueryBuilder.sanitizeNamedParameterName(item[0]), item[0]);
++        }
++        assertNull(AbstractQueryBuilder.sanitizeNamedParameterName(null));
++    }
++
++    @Test
++    public void testEmptyCheckpointRestoresPartiallyRenderedParametersAcrossPolicies() {
++        for (final Dsl dsl : new Dsl[] { PSC, NSC, MSC, SCSB }) {
++            final SqlBuilder builder = dsl.update("users");
++            final Map<String, Object> rejected = new LinkedHashMap<>();
++            rejected.put("id", 1);
++            rejected.put("bad--column", 2);
++            // Rendering fails after the first binding. An empty snapshot must still remove
++            // all SQL, names, parameters, and the lazy UPDATE initialization before retry.
++            assertThrows(IllegalArgumentException.class, () -> builder.set(rejected));
++            assertTrue(builder._parameters.isEmpty());
++            assertTrue(builder._namedParameterNameOccurrences.isEmpty());
++            assertTrue(builder._generatedNamedParameterNames.isEmpty());
++            assertTrue(builder._renderedNamedParameterTokens.isEmpty());
++            final AbstractQueryBuilder.SP actual = builder.set("id", 3).where(Filters.eq("id", 4)).build();
++            final AbstractQueryBuilder.SP expected = dsl.update("users").set("id", 3).where(Filters.eq("id", 4)).build();
++            assertEquals(expected.query(), actual.query());
++            assertEquals(expected.parameters(), actual.parameters());
++        }
++    }
++
++    @Test
++    public void testCheckpointRestoresPrefixModifiedByCustomNamedRenderer() {
++        final Dsl dsl = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
++            if (name.equals("fail")) {
++                sb.insert(0, "damaged prefix ");
++                throw new IllegalStateException("renderer failed");
++            }
++            sb.append(':').append(name);
++        }).build());
++        final SqlBuilder builder = dsl.update("users").set("id", 1);
++        // Named renderers receive the live buffer; rollback must restore overwritten text,
++        // not merely truncate it, and retain already emitted name occurrences.
++        assertThrows(IllegalStateException.class, () -> builder.set("fail", 9));
++        final AbstractQueryBuilder.SP actual = builder.set("id", 2).build();
++        assertEquals("UPDATE users SET id = :id, id = :id_2", actual.query());
++        assertEquals(Arrays.asList(1, 2), actual.parameters());
++    }
++
++
++    @Test
++    public void testCompactCheckpointsCopyValuesAndRestoreNestedMutations() {
++        final SqlBuilder builder = NSC.update("users").set("id", 1);
++        final String originalSql = builder._sb.toString();
++        builder._aliasPropColumnNameMap = new java.util.HashMap<>();
++        builder._aliasPropColumnNameMap.put("u", Collections.emptyMap());
++        builder._namedParameterNameOccurrences.put(null, null);
++        // A snapshot of live Map.Entry objects would follow these in-place value changes.
++        // Nested failures must restore their own starting state before the outer rollback.
++        assertThrows(IllegalStateException.class, () -> builder.mutateAtomically(() -> {
++            builder._parameters.set(0, 9);
++            builder._namedParameterNameOccurrences.put("id", 9);
++            builder._namedParameterNameOccurrences.put(null, 7);
++            builder._renderedNamedParameterTokens.put("id", "changed");
++            builder._generatedNamedParameterNames.add("id_9");
++            builder.calledOpSet.add("temporary");
++            builder._sb.replace(0, 6, "BROKEN");
++            builder._aliasPropColumnNameMap.clear();
++            assertThrows(IllegalArgumentException.class, () -> builder.mutateAtomically(() -> {
++                builder._parameters.clear();
++                builder._namedParameterNameOccurrences.put("id", 10);
++                builder._renderedNamedParameterTokens.clear();
++                builder._generatedNamedParameterNames.clear();
++                builder.calledOpSet.clear();
++                throw new IllegalArgumentException("inner");
++            }));
++            assertEquals(Integer.valueOf(9), builder._namedParameterNameOccurrences.get("id"));
++            assertEquals(List.of(9), builder._parameters);
++            assertEquals("changed", builder._renderedNamedParameterTokens.get("id"));
++            throw new IllegalStateException("outer");
++        }));
++        assertEquals(originalSql, builder._sb.toString());
++        assertEquals(Collections.singletonMap("u", Collections.emptyMap()), builder._aliasPropColumnNameMap);
++        assertEquals(List.of(1), builder._parameters);
++        assertEquals(Integer.valueOf(1), builder._namedParameterNameOccurrences.get("id"));
++        assertTrue(builder._namedParameterNameOccurrences.containsKey(null));
++        assertNull(builder._namedParameterNameOccurrences.get(null));
++        assertEquals(":id", builder._renderedNamedParameterTokens.get("id"));
++        assertEquals(Set.of("id"), builder._generatedNamedParameterNames);
++        assertTrue(builder.calledOpSet.isEmpty());
++        builder._namedParameterNameOccurrences.remove(null);
++        assertEquals("UPDATE users SET id = :id, id = :id_2", builder.set("id", 2).build().query());
++    }
++
++    @Test
++    public void testLazyValidationLabelsPreserveIndexedDiagnostics() {
++        final String suffix = " must not be null, empty, or blank";
++        assertEquals("columns[1]" + suffix, assertThrows(IllegalArgumentException.class,
++                () -> AbstractQueryBuilder.checkSqlFragmentsNotBlank(new String[] { "id", "\t " }, "columns")).getMessage());
++        assertEquals("columns[2]" + suffix, assertThrows(IllegalArgumentException.class,
++                () -> AbstractQueryBuilder.checkSqlFragmentsNotBlank(Arrays.asList("id", "name", null), "columns")).getMessage());
++        assertEquals("Key in props" + suffix, assertThrows(IllegalArgumentException.class,
++                () -> AbstractQueryBuilder.checkSqlFragmentKeysNotBlank(Collections.singletonMap(" ", 1), "props")).getMessage());
++    }
++
++    @Test
++    public void testCamelIdentityPathPreservesAcronymAndDigitBoundaries() {
++        for (final String name : Arrays.asList(null, "", "firstName", "columnName42", "aB", "aB2", "a2B", "abc1Xy", "iPhone",
++                "fooBAR", "URLValue", "_firstName_", "t.firstName", "éclair", "猫名", "class")) {
++            final String expected = AbstractQueryBuilder.sqlKeyWords.contains(name) ? name : QueryUtil.convertIdentifier(name, NamingPolicy.CAMEL_CASE);
++            assertEquals(expected, AbstractQueryBuilder.normalizeColumnName(name, NamingPolicy.CAMEL_CASE), name);
++        }
++    }
++
+     private static final class TestClause extends Clause {
+         TestClause(final Operator operator, final Condition condition) {
+             super(operator, condition);
+diff --git a/src/test/java/com/landawn/abacus/query/SqlBuilderTest.java b/src/test/java/com/landawn/abacus/query/SqlBuilderTest.java
+index f4ebc29..1f9a0ba 100644
+--- a/src/test/java/com/landawn/abacus/query/SqlBuilderTest.java
++++ b/src/test/java/com/landawn/abacus/query/SqlBuilderTest.java
+@@ -58,6 +58,184 @@ import com.landawn.abacus.util.NamingPolicy;
+ 
+ @Tag("2025")
+ public class SqlBuilderTest extends TestBase {
++
++    @Test
++    public void testOwnedInsertSnapshotStillIsolatesCallerMapsBeansAndExclusions() {
++        final Map<String, Object> input = new LinkedHashMap<>();
++        input.put("firstName", "before");
++        input.put("optional", null);
++        input.put("lastName", "excluded");
++        final Set<String> excluded = new java.util.HashSet<>(Collections.singleton("lastName"));
++        // Force the Object overload whose factory creates the owned snapshot.
++        final SqlBuilder builder = NSC.insert((Object) input, excluded);
++        input.clear();
++        input.put("bad--column", "after");
++        excluded.add("firstName");
++        final SP result = builder.into("users").build();
++        assertEquals("INSERT INTO users (first_name, optional) VALUES (:firstName, :optional)", result.query());
++        assertEquals(Arrays.asList("before", null), result.parameters());
++
++        final BatchEntityWithId bean = new BatchEntityWithId();
++        bean.setName("before");
++        bean.setOtherId(7);
++        final SqlBuilder beanBuilder = NSC.insert(bean);
++        bean.setName("after");
++        bean.setOtherId(9);
++        final SP beanResult = beanBuilder.into("users").build();
++        assertEquals("INSERT INTO users (other_id, name) VALUES (:otherId, :name)", beanResult.query());
++        assertEquals(Arrays.asList(7L, "before"), beanResult.parameters());
++    }
++
++    @Test
++    public void testMixedLargeInPreservesSubQueryAndMarkerPositionsBetweenRuns() {
++        final List<Object> values = new ArrayList<>();
++        for (int i = 0; i < 32; i++) {
++            values.add(i);
++        }
++        values.set(0, Filters.QME);
++        values.set(5, new SubQuery("SELECT value FROM archive WHERE id = ?", Collections.singletonList(100)));
++        values.set(16, SqlExpression.of("42"));
++        values.set(31, Filters.QME);
++        final SP result = PSC.select("id").from("users").where(Filters.in("id", values)).build();
++        final List<Object> expectedBindings = new ArrayList<>();
++        final List<String> rendered = new ArrayList<>();
++        for (int i = 0; i < 32; i++) {
++            if (i == 5) {
++                rendered.add("(SELECT value FROM archive WHERE id = ?)");
++                expectedBindings.add(100);
++            } else if (i == 16) {
++                rendered.add("42");
++            } else {
++                rendered.add("?");
++                if (i != 0 && i != 31) {
++                    expectedBindings.add(i);
++                }
++            }
++        }
++        assertEquals("SELECT id FROM users WHERE id IN (" + String.join(", ", rendered) + ")", result.query());
++        assertEquals(expectedBindings, result.parameters());
++
++        final SqlBuilder literals = PSC.select("id").from("users").where(Filters.in("id", Collections.nCopies(32, SqlExpression.of("42"))));
++        assertFalse(literals._hasGeneratedParameterPlaceholder);
++        assertTrue(literals.build().parameters().isEmpty());
++        final SqlBuilder markers = PSC.select("id").from("users").where(Filters.in("id", Collections.nCopies(32, Filters.QME)));
++        assertTrue(markers._hasGeneratedParameterPlaceholder);
++        assertTrue(markers.build().parameters().isEmpty());
++    }
++
++    @Test
++    public void testSharedInsertDispatchPreservesPolicySetterHooks() {
++        class RecordingBuilder extends SqlBuilder {
++            int genericCalls;
++            int policyCalls;
++            RecordingBuilder(final SqlDialect dialect) {
++                super(dialect);
++                _isForConditionOnly = true;
++            }
++            @Override
++            protected void setParameter(final String name, final Object value) {
++                genericCalls++;
++                super.setParameter(name, value);
++            }
++            @Override
++            protected void setParameterForParameterizedSql(final Object value) {
++                policyCalls++;
++                super.setParameterForParameterizedSql(value);
++            }
++            @Override
++            protected void setParameterForRawSql(final Object value) {
++                policyCalls++;
++                super.setParameterForRawSql(value);
++            }
++            @Override
++            protected void setParameterForNamedSql(final String name, final Object value) {
++                policyCalls++;
++                super.setParameterForNamedSql(name, value);
++            }
++            @Override
++            protected void setParameterForIbatisNamedSql(final String name, final Object value) {
++                policyCalls++;
++                super.setParameterForIbatisNamedSql(name, value);
++            }
++        }
++        final Dsl[] dsls = { PSC, NSC, MSC, SCSB };
++        final String[] expected = { "?, ?", ":id_3, :firstName_3", "#{id_3}, #{firstName_3}", "1, 'A'" };
++        final Map<String, Object> values = new LinkedHashMap<>();
++        values.put("id", 1);
++        values.put("firstName", "A");
++        for (int i = 0; i < dsls.length; i++) {
++            final RecordingBuilder builder = new RecordingBuilder(dsls[i].sqlDialect());
++            builder.appendInsertProps(values, values.keySet(), 3);
++            assertEquals(0, builder.genericCalls);
++            assertEquals(2, builder.policyCalls);
++            assertEquals(expected[i], builder.build().query());
++        }
++    }
++
++    @Test
++    public void testLargePositionalInKeepsExpressionBindingsAndRejectsNulls() {
++        for (final int size : new int[] { 16, 17, 256 }) {
++            final List<Object> values = new ArrayList<>();
++            for (int i = 0; i < size; i++) {
++                values.add(i);
++            }
++            final SP simple = PSC.select("id").from("users").where(Filters.in("id", values)).build();
++            assertEquals(values, simple.parameters());
++            assertEquals("SELECT id FROM users WHERE id IN (" + String.join(", ", Collections.nCopies(size, "?")) + ")", simple.query());
++            values.set(3, null);
++            assertThrows(IllegalArgumentException.class, () -> Filters.in("id", values));
++            values.set(3, 3);
++            // Expressions and QME must bypass bulk binding, including when found at the end.
++            values.set(size - 1, Filters.QME);
++            values.set(size - 2, SqlExpression.of("42"));
++            final SP mixed = PSC.select("id").from("users").where(Filters.in("id", values)).build();
++            assertEquals(values.subList(0, size - 2), mixed.parameters());
++            assertTrue(mixed.query().endsWith(", 42, ?)"));
++        }
++    }
++
++    @Test
++    public void testIntegralRawValuesMatchValidatedLiteralRendering() {
++        final Object[] numbers = { Byte.MIN_VALUE, Byte.MAX_VALUE, Short.MIN_VALUE, Short.MAX_VALUE,
++                Integer.MIN_VALUE, Integer.MAX_VALUE, Long.MIN_VALUE, Long.MAX_VALUE, 0, 0L,
++                new java.math.BigInteger("123456789012345678901234567890"), new java.math.BigDecimal("1.2300"), 1.25d };
++        for (final Object value : numbers) {
++            assertEquals("UPDATE users SET value = " + SqlExpression.renderValue(value), SCSB.update("users").set("value", value).build().query());
++        }
++        // Non-finite floating point and arbitrary Number text still go through validation.
++        for (final Object value : new Object[] { Double.NaN, Double.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY }) {
++            final SqlBuilder builder = SCSB.update("users");
++            assertThrows(IllegalArgumentException.class, () -> builder.set("value", value));
++            assertEquals("UPDATE users SET value = 1", builder.set("value", 1).build().query());
++        }
++    }
++
++    @Test
++    public void testBuilderSubclassStillObservesBetweenNamesAndEveryInValue() {
++        class RecordingBuilder extends SqlBuilder {
++            final List<String> names = new ArrayList<>();
++            RecordingBuilder(final SqlDialect dialect) {
++                super(dialect);
++                _isForConditionOnly = true;
++            }
++            @Override
++            protected void setParameter(final String name, final Object value) {
++                names.add(name);
++                super.setParameter(name, value);
++            }
++        }
++        for (final Dsl dsl : new Dsl[] { PSC, NSC, MSC, SCSB }) {
++            final RecordingBuilder builder = new RecordingBuilder(dsl.sqlDialect());
++            builder.appendCondition(Filters.between("u.createdAt", 1, 9));
++            assertEquals(Arrays.asList("minCreatedAt", "maxCreatedAt"), builder.names);
++            builder.build();
++        }
++        final RecordingBuilder builder = new RecordingBuilder(PSC.sqlDialect());
++        builder.appendCondition(Filters.in("id", java.util.stream.IntStream.range(0, 32).boxed().toList()));
++        assertEquals(Collections.nCopies(32, "id"), builder.names);
++        assertEquals(32, builder.build().parameters().size());
++    }
++
+     // Basic SELECT tests
+     @Test
+     public void testSelectAll() {

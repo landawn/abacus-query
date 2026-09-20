@@ -534,8 +534,13 @@ public final class Dsl {
             instance._op = OperationType.ADD;
             instance.setEntityClass(entity.getClass());
 
-            // Map and bean inputs were already defensively snapshotted and filtered above.
-            SqlBuilder.parseInsertEntity(instance, entitySnapshot, Collections.emptySet());
+            // This factory owns the validated map snapshot; hand it over instead of copying it
+            // again. The protected parseInsertEntity helper still snapshots caller-owned maps.
+            if (entitySnapshot instanceof Map) {
+                instance._props = (Map<String, Object>) entitySnapshot;
+            } else {
+                SqlBuilder.parseInsertEntity(instance, entitySnapshot, Collections.emptySet());
+            }
 
             return instance;
         } catch (final RuntimeException | Error e) {

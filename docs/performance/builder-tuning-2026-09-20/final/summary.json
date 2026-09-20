@@ -1,0 +1,6779 @@
+{
+  "samples": 25380,
+  "cases": [
+    {
+      "case": "custom_handler_union",
+      "baseline": {
+        "version": "baseline",
+        "case": "custom_handler_union",
+        "forks": 5,
+        "median_ns": 10760.466,
+        "min_fork_ns": 10105.606,
+        "max_fork_ns": 13543.461,
+        "bytes_per_op": 16536,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "custom_handler_union",
+        "forks": 5,
+        "median_ns": 4822.042,
+        "min_fork_ns": 4612.769,
+        "max_fork_ns": 5398.826,
+        "bytes_per_op": 7296,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "custom_handler_union",
+        "forks": 5,
+        "median_ns": 4847.37,
+        "min_fork_ns": 4596.536,
+        "max_fork_ns": 4932.952,
+        "bytes_per_op": 9368,
+        "equivalent_results": true
+      },
+      "speedup": 2.2315164405453123,
+      "percent_less_time": 55.18742403907042,
+      "allocation_change": -9240
+    },
+    {
+      "case": "custom_handler_where",
+      "baseline": {
+        "version": "baseline",
+        "case": "custom_handler_where",
+        "forks": 5,
+        "median_ns": 6444.66,
+        "min_fork_ns": 5871.817,
+        "max_fork_ns": 6805.591,
+        "bytes_per_op": 10616,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "custom_handler_where",
+        "forks": 5,
+        "median_ns": 4275.391,
+        "min_fork_ns": 3973.476,
+        "max_fork_ns": 5328.743,
+        "bytes_per_op": 6968,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "custom_handler_where",
+        "forks": 5,
+        "median_ns": 5658.526,
+        "min_fork_ns": 5600.307,
+        "max_fork_ns": 6631.604,
+        "bytes_per_op": 11424,
+        "equivalent_results": true
+      },
+      "speedup": 1.5073849385939204,
+      "percent_less_time": 33.65994482253525,
+      "allocation_change": -3648
+    },
+    {
+      "case": "mybatis_batch_4",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_batch_4",
+        "forks": 5,
+        "median_ns": 2949.837,
+        "min_fork_ns": 2839.492,
+        "max_fork_ns": 3951.783,
+        "bytes_per_op": 8784,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_batch_4",
+        "forks": 5,
+        "median_ns": 1924.891,
+        "min_fork_ns": 1887.296,
+        "max_fork_ns": 2188.183,
+        "bytes_per_op": 4536,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_batch_4",
+        "forks": 5,
+        "median_ns": 2842.356,
+        "min_fork_ns": 2821.672,
+        "max_fork_ns": 2869.815,
+        "bytes_per_op": 8848,
+        "equivalent_results": true
+      },
+      "speedup": 1.5324696307479229,
+      "percent_less_time": 34.74585205894427,
+      "allocation_change": -4248
+    },
+    {
+      "case": "mybatis_batch_64",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_batch_64",
+        "forks": 5,
+        "median_ns": 34955.064,
+        "min_fork_ns": 34335.968,
+        "max_fork_ns": 45729.794,
+        "bytes_per_op": 118896,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_batch_64",
+        "forks": 5,
+        "median_ns": 21247.491,
+        "min_fork_ns": 20762.779,
+        "max_fork_ns": 22601.33,
+        "bytes_per_op": 52248,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_batch_64",
+        "forks": 5,
+        "median_ns": 34007.251,
+        "min_fork_ns": 32674.224,
+        "max_fork_ns": 35042.902,
+        "bytes_per_op": 117040,
+        "equivalent_results": true
+      },
+      "speedup": 1.645138430697535,
+      "percent_less_time": 39.21484166071044,
+      "allocation_change": -66648
+    },
+    {
+      "case": "mybatis_batch_beans",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_batch_beans",
+        "forks": 5,
+        "median_ns": 7896.239,
+        "min_fork_ns": 7673.961,
+        "max_fork_ns": 8408.211,
+        "bytes_per_op": 22080,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_batch_beans",
+        "forks": 5,
+        "median_ns": 5756.538,
+        "min_fork_ns": 5498.565,
+        "max_fork_ns": 6109.411,
+        "bytes_per_op": 14120,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_batch_beans",
+        "forks": 5,
+        "median_ns": 7644.41,
+        "min_fork_ns": 7262.457,
+        "max_fork_ns": 7785.676,
+        "bytes_per_op": 22744,
+        "equivalent_results": true
+      },
+      "speedup": 1.3716992748071846,
+      "percent_less_time": 27.097723359184034,
+      "allocation_change": -7960
+    },
+    {
+      "case": "mybatis_between",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_between",
+        "forks": 5,
+        "median_ns": 1397.963,
+        "min_fork_ns": 1260.458,
+        "max_fork_ns": 1575.19,
+        "bytes_per_op": 3544,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_between",
+        "forks": 5,
+        "median_ns": 1085.388,
+        "min_fork_ns": 1039.052,
+        "max_fork_ns": 1212.468,
+        "bytes_per_op": 2344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_between",
+        "forks": 5,
+        "median_ns": 1243.595,
+        "min_fork_ns": 1152.54,
+        "max_fork_ns": 1464.422,
+        "bytes_per_op": 3592,
+        "equivalent_results": true
+      },
+      "speedup": 1.287984573258595,
+      "percent_less_time": 22.359318522736306,
+      "allocation_change": -1200
+    },
+    {
+      "case": "mybatis_condition_only",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_condition_only",
+        "forks": 5,
+        "median_ns": 5407.207,
+        "min_fork_ns": 4979.361,
+        "max_fork_ns": 5875.318,
+        "bytes_per_op": 7960,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_condition_only",
+        "forks": 5,
+        "median_ns": 3542.957,
+        "min_fork_ns": 3365.065,
+        "max_fork_ns": 3980.479,
+        "bytes_per_op": 4784,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_condition_only",
+        "forks": 5,
+        "median_ns": 4793.338,
+        "min_fork_ns": 4703.566,
+        "max_fork_ns": 5449.95,
+        "bytes_per_op": 8728,
+        "equivalent_results": true
+      },
+      "speedup": 1.5261847660019583,
+      "percent_less_time": 34.47713394364226,
+      "allocation_change": -3176
+    },
+    {
+      "case": "mybatis_delete",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_delete",
+        "forks": 5,
+        "median_ns": 468.73,
+        "min_fork_ns": 428.766,
+        "max_fork_ns": 511.814,
+        "bytes_per_op": 1808,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_delete",
+        "forks": 5,
+        "median_ns": 348.663,
+        "min_fork_ns": 344.743,
+        "max_fork_ns": 417.441,
+        "bytes_per_op": 1232,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_delete",
+        "forks": 5,
+        "median_ns": 455.273,
+        "min_fork_ns": 440.615,
+        "max_fork_ns": 469.456,
+        "bytes_per_op": 1848,
+        "equivalent_results": true
+      },
+      "speedup": 1.3443640420692762,
+      "percent_less_time": 25.615386256480278,
+      "allocation_change": -576
+    },
+    {
+      "case": "mybatis_derived",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_derived",
+        "forks": 5,
+        "median_ns": 11095.264,
+        "min_fork_ns": 10673.54,
+        "max_fork_ns": 12505.171,
+        "bytes_per_op": 17144,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_derived",
+        "forks": 5,
+        "median_ns": 4223.953,
+        "min_fork_ns": 4058.092,
+        "max_fork_ns": 4291.627,
+        "bytes_per_op": 7208,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_derived",
+        "forks": 5,
+        "median_ns": 4426.534,
+        "min_fork_ns": 4388.01,
+        "max_fork_ns": 4515.297,
+        "bytes_per_op": 9456,
+        "equivalent_results": true
+      },
+      "speedup": 2.6267489245263853,
+      "percent_less_time": 61.930126223224605,
+      "allocation_change": -9936
+    },
+    {
+      "case": "mybatis_group_order",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_group_order",
+        "forks": 5,
+        "median_ns": 3799.454,
+        "min_fork_ns": 3312.098,
+        "max_fork_ns": 5347.193,
+        "bytes_per_op": 7264,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_group_order",
+        "forks": 5,
+        "median_ns": 1812.623,
+        "min_fork_ns": 1758.942,
+        "max_fork_ns": 1984.483,
+        "bytes_per_op": 3608,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_group_order",
+        "forks": 5,
+        "median_ns": 2581.248,
+        "min_fork_ns": 2500.236,
+        "max_fork_ns": 2827.498,
+        "bytes_per_op": 7088,
+        "equivalent_results": true
+      },
+      "speedup": 2.096108236516915,
+      "percent_less_time": 52.292539928105455,
+      "allocation_change": -3656
+    },
+    {
+      "case": "mybatis_in_1024",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_in_1024",
+        "forks": 5,
+        "median_ns": 105055.357,
+        "min_fork_ns": 94515.152,
+        "max_fork_ns": 112825.352,
+        "bytes_per_op": 256896,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_in_1024",
+        "forks": 5,
+        "median_ns": 81474.231,
+        "min_fork_ns": 79499.576,
+        "max_fork_ns": 84836.396,
+        "bytes_per_op": 182240,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_in_1024",
+        "forks": 5,
+        "median_ns": 97123.558,
+        "min_fork_ns": 94298.113,
+        "max_fork_ns": 111311.616,
+        "bytes_per_op": 256976,
+        "equivalent_results": true
+      },
+      "speedup": 1.2894304826270775,
+      "percent_less_time": 22.44638129210298,
+      "allocation_change": -74656
+    },
+    {
+      "case": "mybatis_in_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_in_16",
+        "forks": 5,
+        "median_ns": 2130.67,
+        "min_fork_ns": 1920.222,
+        "max_fork_ns": 2377.302,
+        "bytes_per_op": 6128,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_in_16",
+        "forks": 5,
+        "median_ns": 1533.788,
+        "min_fork_ns": 1437.736,
+        "max_fork_ns": 1590.08,
+        "bytes_per_op": 4048,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_in_16",
+        "forks": 5,
+        "median_ns": 1848.226,
+        "min_fork_ns": 1716.356,
+        "max_fork_ns": 2150.694,
+        "bytes_per_op": 6208,
+        "equivalent_results": true
+      },
+      "speedup": 1.3891554765065315,
+      "percent_less_time": 28.013817249973016,
+      "allocation_change": -2080
+    },
+    {
+      "case": "mybatis_in_17",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_in_17",
+        "forks": 5,
+        "median_ns": 2187.655,
+        "min_fork_ns": 1922.922,
+        "max_fork_ns": 2776.852,
+        "bytes_per_op": 6344,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_in_17",
+        "forks": 5,
+        "median_ns": 1659.488,
+        "min_fork_ns": 1563.075,
+        "max_fork_ns": 1742.611,
+        "bytes_per_op": 4192,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_in_17",
+        "forks": 5,
+        "median_ns": 1895.942,
+        "min_fork_ns": 1855.299,
+        "max_fork_ns": 2317.927,
+        "bytes_per_op": 6424,
+        "equivalent_results": true
+      },
+      "speedup": 1.3182710570971288,
+      "percent_less_time": 24.14306643414982,
+      "allocation_change": -2152
+    },
+    {
+      "case": "mybatis_in_256",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_in_256",
+        "forks": 5,
+        "median_ns": 25801.734,
+        "min_fork_ns": 22034.928,
+        "max_fork_ns": 29846.599,
+        "bytes_per_op": 66616,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_in_256",
+        "forks": 5,
+        "median_ns": 18320.019,
+        "min_fork_ns": 17615.761,
+        "max_fork_ns": 19054.513,
+        "bytes_per_op": 47256,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_in_256",
+        "forks": 5,
+        "median_ns": 21195.842,
+        "min_fork_ns": 20550.617,
+        "max_fork_ns": 24636.15,
+        "bytes_per_op": 66696,
+        "equivalent_results": true
+      },
+      "speedup": 1.40839013321984,
+      "percent_less_time": 28.996946484294426,
+      "allocation_change": -19360
+    },
+    {
+      "case": "mybatis_in_expression",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_in_expression",
+        "forks": 5,
+        "median_ns": 24656.677,
+        "min_fork_ns": 21643.938,
+        "max_fork_ns": 29037.857,
+        "bytes_per_op": 66656,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_in_expression",
+        "forks": 5,
+        "median_ns": 19146.904,
+        "min_fork_ns": 17956.553,
+        "max_fork_ns": 23491.238,
+        "bytes_per_op": 48432,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_in_expression",
+        "forks": 5,
+        "median_ns": 22766.631,
+        "min_fork_ns": 21441.212,
+        "max_fork_ns": 25843.602,
+        "bytes_per_op": 67800,
+        "equivalent_results": true
+      },
+      "speedup": 1.2877631287021651,
+      "percent_less_time": 22.345967382384902,
+      "allocation_change": -18224
+    },
+    {
+      "case": "mybatis_insert_entity",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_insert_entity",
+        "forks": 5,
+        "median_ns": 882.38,
+        "min_fork_ns": 837.102,
+        "max_fork_ns": 1051.786,
+        "bytes_per_op": 2456,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_insert_entity",
+        "forks": 5,
+        "median_ns": 736.263,
+        "min_fork_ns": 698.708,
+        "max_fork_ns": 818.104,
+        "bytes_per_op": 1568,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_insert_entity",
+        "forks": 5,
+        "median_ns": 877.996,
+        "min_fork_ns": 870.446,
+        "max_fork_ns": 915.673,
+        "bytes_per_op": 2456,
+        "equivalent_results": true
+      },
+      "speedup": 1.198457616368064,
+      "percent_less_time": 16.55941884448876,
+      "allocation_change": -888
+    },
+    {
+      "case": "mybatis_insert_placeholders",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_insert_placeholders",
+        "forks": 5,
+        "median_ns": 977.862,
+        "min_fork_ns": 954.975,
+        "max_fork_ns": 1287.151,
+        "bytes_per_op": 2584,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_insert_placeholders",
+        "forks": 5,
+        "median_ns": 696.896,
+        "min_fork_ns": 665.695,
+        "max_fork_ns": 707.173,
+        "bytes_per_op": 1616,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_insert_placeholders",
+        "forks": 5,
+        "median_ns": 988.029,
+        "min_fork_ns": 951.873,
+        "max_fork_ns": 1124.291,
+        "bytes_per_op": 2736,
+        "equivalent_results": true
+      },
+      "speedup": 1.4031677610432547,
+      "percent_less_time": 28.732684161977872,
+      "allocation_change": -968
+    },
+    {
+      "case": "mybatis_insert_values",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_insert_values",
+        "forks": 5,
+        "median_ns": 1138.197,
+        "min_fork_ns": 1092.5,
+        "max_fork_ns": 1277.15,
+        "bytes_per_op": 2744,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_insert_values",
+        "forks": 5,
+        "median_ns": 791.21,
+        "min_fork_ns": 762.384,
+        "max_fork_ns": 859.537,
+        "bytes_per_op": 1840,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_insert_values",
+        "forks": 5,
+        "median_ns": 1094.321,
+        "min_fork_ns": 1077.371,
+        "max_fork_ns": 1155.298,
+        "bytes_per_op": 2872,
+        "equivalent_results": true
+      },
+      "speedup": 1.4385523438783634,
+      "percent_less_time": 30.485671636808032,
+      "allocation_change": -904
+    },
+    {
+      "case": "mybatis_join_on",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_join_on",
+        "forks": 5,
+        "median_ns": 1825.127,
+        "min_fork_ns": 1675.944,
+        "max_fork_ns": 2209.621,
+        "bytes_per_op": 4128,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_join_on",
+        "forks": 5,
+        "median_ns": 1227.551,
+        "min_fork_ns": 1194.12,
+        "max_fork_ns": 1562.371,
+        "bytes_per_op": 2648,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_join_on",
+        "forks": 5,
+        "median_ns": 1408.386,
+        "min_fork_ns": 1354.741,
+        "max_fork_ns": 1539.997,
+        "bytes_per_op": 4192,
+        "equivalent_results": true
+      },
+      "speedup": 1.4868033996143541,
+      "percent_less_time": 32.74161195357912,
+      "allocation_change": -1480
+    },
+    {
+      "case": "mybatis_join_using",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_join_using",
+        "forks": 5,
+        "median_ns": 971.835,
+        "min_fork_ns": 935.814,
+        "max_fork_ns": 1069.792,
+        "bytes_per_op": 3352,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_join_using",
+        "forks": 5,
+        "median_ns": 781.336,
+        "min_fork_ns": 764.408,
+        "max_fork_ns": 848.534,
+        "bytes_per_op": 1976,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_join_using",
+        "forks": 5,
+        "median_ns": 968.591,
+        "min_fork_ns": 957.885,
+        "max_fork_ns": 1026.504,
+        "bytes_per_op": 3520,
+        "equivalent_results": true
+      },
+      "speedup": 1.243811881188119,
+      "percent_less_time": 19.60199004975125,
+      "allocation_change": -1376
+    },
+    {
+      "case": "mybatis_late_modifier",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_late_modifier",
+        "forks": 5,
+        "median_ns": 826.835,
+        "min_fork_ns": 755.848,
+        "max_fork_ns": 883.658,
+        "bytes_per_op": 2656,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_late_modifier",
+        "forks": 5,
+        "median_ns": 606.713,
+        "min_fork_ns": 588.106,
+        "max_fork_ns": 650.942,
+        "bytes_per_op": 1656,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_late_modifier",
+        "forks": 5,
+        "median_ns": 740.058,
+        "min_fork_ns": 723.865,
+        "max_fork_ns": 783.259,
+        "bytes_per_op": 2736,
+        "equivalent_results": true
+      },
+      "speedup": 1.362810752365616,
+      "percent_less_time": 26.622240229308147,
+      "allocation_change": -1000
+    },
+    {
+      "case": "mybatis_mixed_literals",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_mixed_literals",
+        "forks": 5,
+        "median_ns": 1576.289,
+        "min_fork_ns": 1454.485,
+        "max_fork_ns": 1931.374,
+        "bytes_per_op": 3432,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_mixed_literals",
+        "forks": 5,
+        "median_ns": 1106.348,
+        "min_fork_ns": 1019.464,
+        "max_fork_ns": 1257.257,
+        "bytes_per_op": 2080,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_mixed_literals",
+        "forks": 5,
+        "median_ns": 1380.024,
+        "min_fork_ns": 1353.782,
+        "max_fork_ns": 1464.583,
+        "bytes_per_op": 3608,
+        "equivalent_results": true
+      },
+      "speedup": 1.4247677945818134,
+      "percent_less_time": 29.813124369960075,
+      "allocation_change": -1352
+    },
+    {
+      "case": "mybatis_naming_CAMEL_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 5013.078,
+        "min_fork_ns": 4732.422,
+        "max_fork_ns": 7029.523,
+        "bytes_per_op": 8024,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 3142.243,
+        "min_fork_ns": 3001.767,
+        "max_fork_ns": 3323.471,
+        "bytes_per_op": 3568,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 5713.632,
+        "min_fork_ns": 5512.738,
+        "max_fork_ns": 6418.617,
+        "bytes_per_op": 9504,
+        "equivalent_results": true
+      },
+      "speedup": 1.5953820248784072,
+      "percent_less_time": 37.3190881929226,
+      "allocation_change": -4456
+    },
+    {
+      "case": "mybatis_naming_KEBAB_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 5910.708,
+        "min_fork_ns": 5585.653,
+        "max_fork_ns": 8057.333,
+        "bytes_per_op": 8984,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 4224.582,
+        "min_fork_ns": 4038.002,
+        "max_fork_ns": 4630.677,
+        "bytes_per_op": 5336,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 5799.493,
+        "min_fork_ns": 5474.275,
+        "max_fork_ns": 6273.966,
+        "bytes_per_op": 9792,
+        "equivalent_results": true
+      },
+      "speedup": 1.3991225640785288,
+      "percent_less_time": 28.526633357628217,
+      "allocation_change": -3648
+    },
+    {
+      "case": "mybatis_naming_NO_CHANGE",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 4867.503,
+        "min_fork_ns": 4696.329,
+        "max_fork_ns": 5746.161,
+        "bytes_per_op": 8024,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 2989.304,
+        "min_fork_ns": 2824.41,
+        "max_fork_ns": 3370.188,
+        "bytes_per_op": 3568,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 4568.184,
+        "min_fork_ns": 4208.869,
+        "max_fork_ns": 4803.234,
+        "bytes_per_op": 8024,
+        "equivalent_results": true
+      },
+      "speedup": 1.6283064552818982,
+      "percent_less_time": 38.58649907354962,
+      "allocation_change": -4456
+    },
+    {
+      "case": "mybatis_naming_SCREAMING_SNAKE_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 6013.195,
+        "min_fork_ns": 5500.174,
+        "max_fork_ns": 7135.79,
+        "bytes_per_op": 9000,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 4205.861,
+        "min_fork_ns": 3970.043,
+        "max_fork_ns": 4362.753,
+        "bytes_per_op": 5352,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 5622.679,
+        "min_fork_ns": 5458.425,
+        "max_fork_ns": 6407.222,
+        "bytes_per_op": 9808,
+        "equivalent_results": true
+      },
+      "speedup": 1.429717957868793,
+      "percent_less_time": 30.05613488336899,
+      "allocation_change": -3648
+    },
+    {
+      "case": "mybatis_naming_UPPER_CAMEL_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 6268.348,
+        "min_fork_ns": 5875.9,
+        "max_fork_ns": 7563.356,
+        "bytes_per_op": 8984,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 4432.069,
+        "min_fork_ns": 4261.551,
+        "max_fork_ns": 4647.89,
+        "bytes_per_op": 5064,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 5907.463,
+        "min_fork_ns": 5795.64,
+        "max_fork_ns": 6525.589,
+        "bytes_per_op": 9520,
+        "equivalent_results": true
+      },
+      "speedup": 1.4143164287379097,
+      "percent_less_time": 29.294464825501066,
+      "allocation_change": -3920
+    },
+    {
+      "case": "mybatis_nested",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_nested",
+        "forks": 5,
+        "median_ns": 1424.752,
+        "min_fork_ns": 1314.605,
+        "max_fork_ns": 1553.036,
+        "bytes_per_op": 3416,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_nested",
+        "forks": 5,
+        "median_ns": 1051.346,
+        "min_fork_ns": 983.903,
+        "max_fork_ns": 1125.996,
+        "bytes_per_op": 2024,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_nested",
+        "forks": 5,
+        "median_ns": 1310.148,
+        "min_fork_ns": 1291.55,
+        "max_fork_ns": 1381.309,
+        "bytes_per_op": 3584,
+        "equivalent_results": true
+      },
+      "speedup": 1.3551694684718447,
+      "percent_less_time": 26.208491021595336,
+      "allocation_change": -1392
+    },
+    {
+      "case": "mybatis_pagination",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_pagination",
+        "forks": 5,
+        "median_ns": 1197.185,
+        "min_fork_ns": 1116.528,
+        "max_fork_ns": 1417.471,
+        "bytes_per_op": 3808,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_pagination",
+        "forks": 5,
+        "median_ns": 908.041,
+        "min_fork_ns": 883.69,
+        "max_fork_ns": 1063.848,
+        "bytes_per_op": 2152,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_pagination",
+        "forks": 5,
+        "median_ns": 1163.053,
+        "min_fork_ns": 1145.402,
+        "max_fork_ns": 1510.596,
+        "bytes_per_op": 3928,
+        "equivalent_results": true
+      },
+      "speedup": 1.318426150361052,
+      "percent_less_time": 24.151989876251367,
+      "allocation_change": -1656
+    },
+    {
+      "case": "mybatis_raw_expression",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_raw_expression",
+        "forks": 5,
+        "median_ns": 1576.788,
+        "min_fork_ns": 1536.748,
+        "max_fork_ns": 1794.916,
+        "bytes_per_op": 2624,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_raw_expression",
+        "forks": 5,
+        "median_ns": 966.882,
+        "min_fork_ns": 921.089,
+        "max_fork_ns": 1228.554,
+        "bytes_per_op": 1744,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_raw_expression",
+        "forks": 5,
+        "median_ns": 1014.665,
+        "min_fork_ns": 1006.584,
+        "max_fork_ns": 1050.118,
+        "bytes_per_op": 2616,
+        "equivalent_results": true
+      },
+      "speedup": 1.6307967259706977,
+      "percent_less_time": 38.68027914976522,
+      "allocation_change": -880
+    },
+    {
+      "case": "mybatis_repeated_names",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_repeated_names",
+        "forks": 5,
+        "median_ns": 27068.082,
+        "min_fork_ns": 24207.042,
+        "max_fork_ns": 28113.916,
+        "bytes_per_op": 52872,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_repeated_names",
+        "forks": 5,
+        "median_ns": 18154.649,
+        "min_fork_ns": 17976.376,
+        "max_fork_ns": 20845.814,
+        "bytes_per_op": 30536,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_repeated_names",
+        "forks": 5,
+        "median_ns": 24051.57,
+        "min_fork_ns": 22984.633,
+        "max_fork_ns": 25832.566,
+        "bytes_per_op": 58032,
+        "equivalent_results": true
+      },
+      "speedup": 1.490972477628182,
+      "percent_less_time": 32.92968079526284,
+      "allocation_change": -22336
+    },
+    {
+      "case": "mybatis_retry_rollback",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_retry_rollback",
+        "forks": 5,
+        "median_ns": 4720.513,
+        "min_fork_ns": 3968.399,
+        "max_fork_ns": 4953.781,
+        "bytes_per_op": 7568,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_retry_rollback",
+        "forks": 5,
+        "median_ns": 3374.892,
+        "min_fork_ns": 3249.319,
+        "max_fork_ns": 3658.954,
+        "bytes_per_op": 4784,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_retry_rollback",
+        "forks": 5,
+        "median_ns": 4251.794,
+        "min_fork_ns": 3963.868,
+        "max_fork_ns": 4328.392,
+        "bytes_per_op": 7736,
+        "equivalent_results": true
+      },
+      "speedup": 1.3987152774073957,
+      "percent_less_time": 28.505821295270238,
+      "allocation_change": -2784
+    },
+    {
+      "case": "mybatis_row_in",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_row_in",
+        "forks": 5,
+        "median_ns": 1408.279,
+        "min_fork_ns": 1199.178,
+        "max_fork_ns": 1594.188,
+        "bytes_per_op": 3608,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_row_in",
+        "forks": 5,
+        "median_ns": 1027.174,
+        "min_fork_ns": 983.108,
+        "max_fork_ns": 1071.554,
+        "bytes_per_op": 2272,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_row_in",
+        "forks": 5,
+        "median_ns": 1258.121,
+        "min_fork_ns": 1241.121,
+        "max_fork_ns": 1353.934,
+        "bytes_per_op": 3736,
+        "equivalent_results": true
+      },
+      "speedup": 1.3710228257335175,
+      "percent_less_time": 27.061754098442147,
+      "allocation_change": -1336
+    },
+    {
+      "case": "mybatis_select_columns",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_select_columns",
+        "forks": 5,
+        "median_ns": 834.493,
+        "min_fork_ns": 796.203,
+        "max_fork_ns": 978.158,
+        "bytes_per_op": 1952,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_select_columns",
+        "forks": 5,
+        "median_ns": 626.83,
+        "min_fork_ns": 589.629,
+        "max_fork_ns": 698.673,
+        "bytes_per_op": 1216,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_select_columns",
+        "forks": 5,
+        "median_ns": 820.188,
+        "min_fork_ns": 789.858,
+        "max_fork_ns": 823.17,
+        "bytes_per_op": 2104,
+        "equivalent_results": true
+      },
+      "speedup": 1.3312907805944196,
+      "percent_less_time": 24.88493013122938,
+      "allocation_change": -736
+    },
+    {
+      "case": "mybatis_select_entity",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_select_entity",
+        "forks": 5,
+        "median_ns": 605.451,
+        "min_fork_ns": 579.641,
+        "max_fork_ns": 720.241,
+        "bytes_per_op": 2000,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_select_entity",
+        "forks": 5,
+        "median_ns": 551.431,
+        "min_fork_ns": 500.299,
+        "max_fork_ns": 582.221,
+        "bytes_per_op": 1304,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_select_entity",
+        "forks": 5,
+        "median_ns": 587.327,
+        "min_fork_ns": 569.525,
+        "max_fork_ns": 602.916,
+        "bytes_per_op": 1992,
+        "equivalent_results": true
+      },
+      "speedup": 1.0979632991253665,
+      "percent_less_time": 8.922274469775415,
+      "allocation_change": -696
+    },
+    {
+      "case": "mybatis_select_expressions",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_select_expressions",
+        "forks": 5,
+        "median_ns": 2129.243,
+        "min_fork_ns": 2031.443,
+        "max_fork_ns": 2757.328,
+        "bytes_per_op": 2728,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_select_expressions",
+        "forks": 5,
+        "median_ns": 1430.366,
+        "min_fork_ns": 1356.068,
+        "max_fork_ns": 1715.572,
+        "bytes_per_op": 1936,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_select_expressions",
+        "forks": 5,
+        "median_ns": 1539.303,
+        "min_fork_ns": 1524.524,
+        "max_fork_ns": 1666.387,
+        "bytes_per_op": 2512,
+        "equivalent_results": true
+      },
+      "speedup": 1.488600120528592,
+      "percent_less_time": 32.82279195000288,
+      "allocation_change": -792
+    },
+    {
+      "case": "mybatis_select_star",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_select_star",
+        "forks": 5,
+        "median_ns": 302.424,
+        "min_fork_ns": 281.756,
+        "max_fork_ns": 338.934,
+        "bytes_per_op": 1424,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_select_star",
+        "forks": 5,
+        "median_ns": 219.124,
+        "min_fork_ns": 206.351,
+        "max_fork_ns": 241.785,
+        "bytes_per_op": 880,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_select_star",
+        "forks": 5,
+        "median_ns": 245.888,
+        "min_fork_ns": 231.656,
+        "max_fork_ns": 250.767,
+        "bytes_per_op": 1240,
+        "equivalent_results": true
+      },
+      "speedup": 1.3801500520253371,
+      "percent_less_time": 27.544110255799804,
+      "allocation_change": -544
+    },
+    {
+      "case": "mybatis_subquery_raw",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_subquery_raw",
+        "forks": 5,
+        "median_ns": 627.525,
+        "min_fork_ns": 616.948,
+        "max_fork_ns": 745.318,
+        "bytes_per_op": 2272,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_subquery_raw",
+        "forks": 5,
+        "median_ns": 496.425,
+        "min_fork_ns": 483.496,
+        "max_fork_ns": 534.018,
+        "bytes_per_op": 1344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_subquery_raw",
+        "forks": 5,
+        "median_ns": 636.539,
+        "min_fork_ns": 621.216,
+        "max_fork_ns": 651.312,
+        "bytes_per_op": 2352,
+        "equivalent_results": true
+      },
+      "speedup": 1.2640882308505816,
+      "percent_less_time": 20.89159794430501,
+      "allocation_change": -928
+    },
+    {
+      "case": "mybatis_subquery_structured",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_subquery_structured",
+        "forks": 5,
+        "median_ns": 1824.135,
+        "min_fork_ns": 1655.328,
+        "max_fork_ns": 1993.288,
+        "bytes_per_op": 5232,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_subquery_structured",
+        "forks": 5,
+        "median_ns": 1394.324,
+        "min_fork_ns": 1307.715,
+        "max_fork_ns": 1641.711,
+        "bytes_per_op": 3312,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_subquery_structured",
+        "forks": 5,
+        "median_ns": 1655.03,
+        "min_fork_ns": 1605.298,
+        "max_fork_ns": 1756.466,
+        "bytes_per_op": 5384,
+        "equivalent_results": true
+      },
+      "speedup": 1.3082576216144883,
+      "percent_less_time": 23.5624556296546,
+      "allocation_change": -1920
+    },
+    {
+      "case": "mybatis_union_builder",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_union_builder",
+        "forks": 5,
+        "median_ns": 10981.28,
+        "min_fork_ns": 10494.318,
+        "max_fork_ns": 12835.632,
+        "bytes_per_op": 16648,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_union_builder",
+        "forks": 5,
+        "median_ns": 4190.271,
+        "min_fork_ns": 4037.889,
+        "max_fork_ns": 4511.317,
+        "bytes_per_op": 6816,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_union_builder",
+        "forks": 5,
+        "median_ns": 4237.217,
+        "min_fork_ns": 4173.374,
+        "max_fork_ns": 4398.718,
+        "bytes_per_op": 8912,
+        "equivalent_results": true
+      },
+      "speedup": 2.6206610503234757,
+      "percent_less_time": 61.841688764879876,
+      "allocation_change": -9832
+    },
+    {
+      "case": "mybatis_union_raw",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_union_raw",
+        "forks": 5,
+        "median_ns": 3276.134,
+        "min_fork_ns": 3135.812,
+        "max_fork_ns": 4084.226,
+        "bytes_per_op": 5200,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_union_raw",
+        "forks": 5,
+        "median_ns": 1081.448,
+        "min_fork_ns": 1065.709,
+        "max_fork_ns": 1253.445,
+        "bytes_per_op": 1472,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_union_raw",
+        "forks": 5,
+        "median_ns": 1133.536,
+        "min_fork_ns": 1082.349,
+        "max_fork_ns": 1265.943,
+        "bytes_per_op": 1968,
+        "equivalent_results": true
+      },
+      "speedup": 3.029395773074618,
+      "percent_less_time": 66.9901170098659,
+      "allocation_change": -3728
+    },
+    {
+      "case": "mybatis_update_chain_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_update_chain_16",
+        "forks": 5,
+        "median_ns": 14041.124,
+        "min_fork_ns": 13362.741,
+        "max_fork_ns": 15783.935,
+        "bytes_per_op": 39936,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_update_chain_16",
+        "forks": 5,
+        "median_ns": 8480.221,
+        "min_fork_ns": 8129.364,
+        "max_fork_ns": 8848.826,
+        "bytes_per_op": 21304,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_update_chain_16",
+        "forks": 5,
+        "median_ns": 13600.999,
+        "min_fork_ns": 13513.097,
+        "max_fork_ns": 15085.374,
+        "bytes_per_op": 40744,
+        "equivalent_results": true
+      },
+      "speedup": 1.6557497735023652,
+      "percent_less_time": 39.60440061636091,
+      "allocation_change": -18632
+    },
+    {
+      "case": "mybatis_update_map",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_update_map",
+        "forks": 5,
+        "median_ns": 1726.039,
+        "min_fork_ns": 1571.085,
+        "max_fork_ns": 2022.775,
+        "bytes_per_op": 4200,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_update_map",
+        "forks": 5,
+        "median_ns": 1141.776,
+        "min_fork_ns": 1114.128,
+        "max_fork_ns": 1204.003,
+        "bytes_per_op": 2512,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_update_map",
+        "forks": 5,
+        "median_ns": 1574.822,
+        "min_fork_ns": 1552.267,
+        "max_fork_ns": 1979.85,
+        "bytes_per_op": 4368,
+        "equivalent_results": true
+      },
+      "speedup": 1.5117142066394809,
+      "percent_less_time": 33.849930389753645,
+      "allocation_change": -1688
+    },
+    {
+      "case": "mybatis_where_128",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_where_128",
+        "forks": 5,
+        "median_ns": 45273.031,
+        "min_fork_ns": 42117.593,
+        "max_fork_ns": 51482.628,
+        "bytes_per_op": 58208,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_where_128",
+        "forks": 5,
+        "median_ns": 30167.352,
+        "min_fork_ns": 28745.063,
+        "max_fork_ns": 31033.242,
+        "bytes_per_op": 34848,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_where_128",
+        "forks": 5,
+        "median_ns": 42769.414,
+        "min_fork_ns": 40465.302,
+        "max_fork_ns": 45267.532,
+        "bytes_per_op": 64392,
+        "equivalent_results": true
+      },
+      "speedup": 1.5007293646455946,
+      "percent_less_time": 33.36573378530808,
+      "allocation_change": -23360
+    },
+    {
+      "case": "mybatis_where_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_where_16",
+        "forks": 5,
+        "median_ns": 6140.875,
+        "min_fork_ns": 5639.167,
+        "max_fork_ns": 6615.11,
+        "bytes_per_op": 8984,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_where_16",
+        "forks": 5,
+        "median_ns": 4100.848,
+        "min_fork_ns": 3902.487,
+        "max_fork_ns": 4197.132,
+        "bytes_per_op": 5336,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_where_16",
+        "forks": 5,
+        "median_ns": 5486.086,
+        "min_fork_ns": 5205.187,
+        "max_fork_ns": 6561.581,
+        "bytes_per_op": 9792,
+        "equivalent_results": true
+      },
+      "speedup": 1.497464670721763,
+      "percent_less_time": 33.220461253485865,
+      "allocation_change": -3648
+    },
+    {
+      "case": "mybatis_where_eq",
+      "baseline": {
+        "version": "baseline",
+        "case": "mybatis_where_eq",
+        "forks": 5,
+        "median_ns": 1051.105,
+        "min_fork_ns": 976.763,
+        "max_fork_ns": 1380.007,
+        "bytes_per_op": 2960,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "mybatis_where_eq",
+        "forks": 5,
+        "median_ns": 771.435,
+        "min_fork_ns": 725.999,
+        "max_fork_ns": 830.735,
+        "bytes_per_op": 1816,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "mybatis_where_eq",
+        "forks": 5,
+        "median_ns": 974.381,
+        "min_fork_ns": 953.042,
+        "max_fork_ns": 991.631,
+        "bytes_per_op": 3112,
+        "equivalent_results": true
+      },
+      "speedup": 1.362532164083818,
+      "percent_less_time": 26.607237145670513,
+      "allocation_change": -1144
+    },
+    {
+      "case": "named_batch_4",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_batch_4",
+        "forks": 5,
+        "median_ns": 2965.767,
+        "min_fork_ns": 2931.627,
+        "max_fork_ns": 3833.275,
+        "bytes_per_op": 9736,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_batch_4",
+        "forks": 5,
+        "median_ns": 2080.008,
+        "min_fork_ns": 2015.329,
+        "max_fork_ns": 2788.21,
+        "bytes_per_op": 5616,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_batch_4",
+        "forks": 5,
+        "median_ns": 2979.228,
+        "min_fork_ns": 2905.449,
+        "max_fork_ns": 3115.899,
+        "bytes_per_op": 9800,
+        "equivalent_results": true
+      },
+      "speedup": 1.4258440352152493,
+      "percent_less_time": 29.866102090959945,
+      "allocation_change": -4120
+    },
+    {
+      "case": "named_batch_64",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_batch_64",
+        "forks": 5,
+        "median_ns": 38395.802,
+        "min_fork_ns": 36684.547,
+        "max_fork_ns": 40732.081,
+        "bytes_per_op": 134912,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_batch_64",
+        "forks": 5,
+        "median_ns": 23398.113,
+        "min_fork_ns": 22470.447,
+        "max_fork_ns": 26946.734,
+        "bytes_per_op": 70312,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_batch_64",
+        "forks": 5,
+        "median_ns": 36531.81,
+        "min_fork_ns": 35737.622,
+        "max_fork_ns": 37881.502,
+        "bytes_per_op": 133056,
+        "equivalent_results": true
+      },
+      "speedup": 1.6409785695111396,
+      "percent_less_time": 39.06075200616984,
+      "allocation_change": -64600
+    },
+    {
+      "case": "named_batch_beans",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_batch_beans",
+        "forks": 5,
+        "median_ns": 8413.684,
+        "min_fork_ns": 8115.919,
+        "max_fork_ns": 9248.989,
+        "bytes_per_op": 26064,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_batch_beans",
+        "forks": 5,
+        "median_ns": 6567.244,
+        "min_fork_ns": 6206.921,
+        "max_fork_ns": 6789.6,
+        "bytes_per_op": 18616,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_batch_beans",
+        "forks": 5,
+        "median_ns": 8478.292,
+        "min_fork_ns": 8008.605,
+        "max_fork_ns": 8904.937,
+        "bytes_per_op": 26728,
+        "equivalent_results": true
+      },
+      "speedup": 1.2811590371851571,
+      "percent_less_time": 21.945678016906744,
+      "allocation_change": -7448
+    },
+    {
+      "case": "named_between",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_between",
+        "forks": 5,
+        "median_ns": 1370.572,
+        "min_fork_ns": 1273.876,
+        "max_fork_ns": 1641.862,
+        "bytes_per_op": 3800,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_between",
+        "forks": 5,
+        "median_ns": 1114.81,
+        "min_fork_ns": 1092.838,
+        "max_fork_ns": 1176.32,
+        "bytes_per_op": 2600,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_between",
+        "forks": 5,
+        "median_ns": 1248.338,
+        "min_fork_ns": 1228.176,
+        "max_fork_ns": 1361.208,
+        "bytes_per_op": 3848,
+        "equivalent_results": true
+      },
+      "speedup": 1.2294220539822929,
+      "percent_less_time": 18.660967829490172,
+      "allocation_change": -1200
+    },
+    {
+      "case": "named_condition_only",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_condition_only",
+        "forks": 5,
+        "median_ns": 5638.139,
+        "min_fork_ns": 5460.149,
+        "max_fork_ns": 6488.601,
+        "bytes_per_op": 9560,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_condition_only",
+        "forks": 5,
+        "median_ns": 3733.22,
+        "min_fork_ns": 3573.513,
+        "max_fork_ns": 3916.847,
+        "bytes_per_op": 6384,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_condition_only",
+        "forks": 5,
+        "median_ns": 5009.895,
+        "min_fork_ns": 4935.066,
+        "max_fork_ns": 6156.208,
+        "bytes_per_op": 10328,
+        "equivalent_results": true
+      },
+      "speedup": 1.5102616508001137,
+      "percent_less_time": 33.78630785796519,
+      "allocation_change": -3176
+    },
+    {
+      "case": "named_delete",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_delete",
+        "forks": 5,
+        "median_ns": 466.6,
+        "min_fork_ns": 446.114,
+        "max_fork_ns": 639.413,
+        "bytes_per_op": 1960,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_delete",
+        "forks": 5,
+        "median_ns": 375.91,
+        "min_fork_ns": 358.755,
+        "max_fork_ns": 400.766,
+        "bytes_per_op": 1384,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_delete",
+        "forks": 5,
+        "median_ns": 484.074,
+        "min_fork_ns": 453.021,
+        "max_fork_ns": 503.355,
+        "bytes_per_op": 2000,
+        "equivalent_results": true
+      },
+      "speedup": 1.2412545556117156,
+      "percent_less_time": 19.436348049721385,
+      "allocation_change": -576
+    },
+    {
+      "case": "named_derived",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_derived",
+        "forks": 5,
+        "median_ns": 10635.161,
+        "min_fork_ns": 9949.3,
+        "max_fork_ns": 13198.567,
+        "bytes_per_op": 17800,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_derived",
+        "forks": 5,
+        "median_ns": 4355.735,
+        "min_fork_ns": 3920.15,
+        "max_fork_ns": 4463.255,
+        "bytes_per_op": 7256,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_derived",
+        "forks": 5,
+        "median_ns": 4427.652,
+        "min_fork_ns": 4417.019,
+        "max_fork_ns": 4648.785,
+        "bytes_per_op": 9536,
+        "equivalent_results": true
+      },
+      "speedup": 2.441645554653807,
+      "percent_less_time": 59.04401447237142,
+      "allocation_change": -10544
+    },
+    {
+      "case": "named_dialect_DB2",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_dialect_DB2",
+        "forks": 5,
+        "median_ns": 1364.51,
+        "min_fork_ns": 1336.829,
+        "max_fork_ns": 1875.723,
+        "bytes_per_op": 4320,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_dialect_DB2",
+        "forks": 5,
+        "median_ns": 1075.365,
+        "min_fork_ns": 1019.554,
+        "max_fork_ns": 1119.557,
+        "bytes_per_op": 2584,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_dialect_DB2",
+        "forks": 5,
+        "median_ns": 1349.537,
+        "min_fork_ns": 1333.136,
+        "max_fork_ns": 1498.783,
+        "bytes_per_op": 4392,
+        "equivalent_results": true
+      },
+      "speedup": 1.268880798612564,
+      "percent_less_time": 21.190390689698134,
+      "allocation_change": -1736
+    },
+    {
+      "case": "named_dialect_Microsoft_SQL_Server",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_dialect_Microsoft_SQL_Server",
+        "forks": 5,
+        "median_ns": 1553.963,
+        "min_fork_ns": 1503.743,
+        "max_fork_ns": 2113.585,
+        "bytes_per_op": 4320,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_dialect_Microsoft_SQL_Server",
+        "forks": 5,
+        "median_ns": 1209.261,
+        "min_fork_ns": 1135.708,
+        "max_fork_ns": 1342.095,
+        "bytes_per_op": 2584,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_dialect_Microsoft_SQL_Server",
+        "forks": 5,
+        "median_ns": 1521.151,
+        "min_fork_ns": 1491.668,
+        "max_fork_ns": 1652.085,
+        "bytes_per_op": 4392,
+        "equivalent_results": true
+      },
+      "speedup": 1.2850517795579284,
+      "percent_less_time": 22.182124027406058,
+      "allocation_change": -1736
+    },
+    {
+      "case": "named_dialect_MySQL",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_dialect_MySQL",
+        "forks": 5,
+        "median_ns": 1309.549,
+        "min_fork_ns": 1301.229,
+        "max_fork_ns": 1700.625,
+        "bytes_per_op": 4144,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_dialect_MySQL",
+        "forks": 5,
+        "median_ns": 1031.321,
+        "min_fork_ns": 1009.401,
+        "max_fork_ns": 1112.308,
+        "bytes_per_op": 2408,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_dialect_MySQL",
+        "forks": 5,
+        "median_ns": 1311.386,
+        "min_fork_ns": 1265.467,
+        "max_fork_ns": 1380.673,
+        "bytes_per_op": 4216,
+        "equivalent_results": true
+      },
+      "speedup": 1.2697782746593933,
+      "percent_less_time": 21.2460931206087,
+      "allocation_change": -1736
+    },
+    {
+      "case": "named_dialect_Oracle",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_dialect_Oracle",
+        "forks": 5,
+        "median_ns": 1373.393,
+        "min_fork_ns": 1359.142,
+        "max_fork_ns": 1622.507,
+        "bytes_per_op": 4272,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_dialect_Oracle",
+        "forks": 5,
+        "median_ns": 1021.794,
+        "min_fork_ns": 1007.229,
+        "max_fork_ns": 1253.113,
+        "bytes_per_op": 2584,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_dialect_Oracle",
+        "forks": 5,
+        "median_ns": 1364.842,
+        "min_fork_ns": 1304.325,
+        "max_fork_ns": 1385.373,
+        "bytes_per_op": 4392,
+        "equivalent_results": true
+      },
+      "speedup": 1.3440996913272147,
+      "percent_less_time": 25.600756666154556,
+      "allocation_change": -1688
+    },
+    {
+      "case": "named_dialect_PostgreSQL",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_dialect_PostgreSQL",
+        "forks": 5,
+        "median_ns": 1407.83,
+        "min_fork_ns": 1323.768,
+        "max_fork_ns": 1712.03,
+        "bytes_per_op": 4144,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_dialect_PostgreSQL",
+        "forks": 5,
+        "median_ns": 1072.573,
+        "min_fork_ns": 1042.859,
+        "max_fork_ns": 1143.575,
+        "bytes_per_op": 2408,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_dialect_PostgreSQL",
+        "forks": 5,
+        "median_ns": 1338.949,
+        "min_fork_ns": 1320.824,
+        "max_fork_ns": 1484.489,
+        "bytes_per_op": 4216,
+        "equivalent_results": true
+      },
+      "speedup": 1.3125726640517708,
+      "percent_less_time": 23.813741715974224,
+      "allocation_change": -1736
+    },
+    {
+      "case": "named_group_order",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_group_order",
+        "forks": 5,
+        "median_ns": 3964.89,
+        "min_fork_ns": 3830.553,
+        "max_fork_ns": 4475.48,
+        "bytes_per_op": 7688,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_group_order",
+        "forks": 5,
+        "median_ns": 1932.244,
+        "min_fork_ns": 1905.263,
+        "max_fork_ns": 2053.124,
+        "bytes_per_op": 3936,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_group_order",
+        "forks": 5,
+        "median_ns": 2730.537,
+        "min_fork_ns": 2679.127,
+        "max_fork_ns": 3000.896,
+        "bytes_per_op": 7512,
+        "equivalent_results": true
+      },
+      "speedup": 2.051961346496612,
+      "percent_less_time": 51.266138530955466,
+      "allocation_change": -3752
+    },
+    {
+      "case": "named_in_1024",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_in_1024",
+        "forks": 5,
+        "median_ns": 130085.714,
+        "min_fork_ns": 122906.612,
+        "max_fork_ns": 149375,
+        "bytes_per_op": 353216,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_in_1024",
+        "forks": 5,
+        "median_ns": 93163.303,
+        "min_fork_ns": 90150.515,
+        "max_fork_ns": 104992.735,
+        "bytes_per_op": 278560,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_in_1024",
+        "forks": 5,
+        "median_ns": 123917.877,
+        "min_fork_ns": 115966.286,
+        "max_fork_ns": 130974.566,
+        "bytes_per_op": 353296,
+        "equivalent_results": true
+      },
+      "speedup": 1.39631925673567,
+      "percent_less_time": 28.383140519181072,
+      "allocation_change": -74656
+    },
+    {
+      "case": "named_in_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_in_16",
+        "forks": 5,
+        "median_ns": 2196.227,
+        "min_fork_ns": 2125.852,
+        "max_fork_ns": 3108.208,
+        "bytes_per_op": 7600,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_in_16",
+        "forks": 5,
+        "median_ns": 1744.93,
+        "min_fork_ns": 1667.542,
+        "max_fork_ns": 2008.148,
+        "bytes_per_op": 5520,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_in_16",
+        "forks": 5,
+        "median_ns": 2140.493,
+        "min_fork_ns": 2043.684,
+        "max_fork_ns": 2302.899,
+        "bytes_per_op": 7680,
+        "equivalent_results": true
+      },
+      "speedup": 1.2586332976107923,
+      "percent_less_time": 20.548741090971014,
+      "allocation_change": -2080
+    },
+    {
+      "case": "named_in_17",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_in_17",
+        "forks": 5,
+        "median_ns": 2312.441,
+        "min_fork_ns": 2233.001,
+        "max_fork_ns": 3105.427,
+        "bytes_per_op": 7888,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_in_17",
+        "forks": 5,
+        "median_ns": 1802.982,
+        "min_fork_ns": 1756.45,
+        "max_fork_ns": 1876.65,
+        "bytes_per_op": 5736,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_in_17",
+        "forks": 5,
+        "median_ns": 2230.071,
+        "min_fork_ns": 2115.169,
+        "max_fork_ns": 2405.596,
+        "bytes_per_op": 7968,
+        "equivalent_results": true
+      },
+      "speedup": 1.2825646623205333,
+      "percent_less_time": 22.031221553328272,
+      "allocation_change": -2152
+    },
+    {
+      "case": "named_in_256",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_in_256",
+        "forks": 5,
+        "median_ns": 27110.313,
+        "min_fork_ns": 26047.826,
+        "max_fork_ns": 31070.439,
+        "bytes_per_op": 90712,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_in_256",
+        "forks": 5,
+        "median_ns": 21698.242,
+        "min_fork_ns": 20768.522,
+        "max_fork_ns": 22307.889,
+        "bytes_per_op": 71352,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_in_256",
+        "forks": 5,
+        "median_ns": 25293.154,
+        "min_fork_ns": 24654.598,
+        "max_fork_ns": 28231.701,
+        "bytes_per_op": 90792,
+        "equivalent_results": true
+      },
+      "speedup": 1.249424400373081,
+      "percent_less_time": 19.963144652737874,
+      "allocation_change": -19360
+    },
+    {
+      "case": "named_in_expression",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_in_expression",
+        "forks": 5,
+        "median_ns": 27734.888,
+        "min_fork_ns": 26819.526,
+        "max_fork_ns": 35998.201,
+        "bytes_per_op": 90680,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_in_expression",
+        "forks": 5,
+        "median_ns": 23887.141,
+        "min_fork_ns": 22633.138,
+        "max_fork_ns": 26063.393,
+        "bytes_per_op": 72456,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_in_expression",
+        "forks": 5,
+        "median_ns": 26656.606,
+        "min_fork_ns": 25784.655,
+        "max_fork_ns": 29410.306,
+        "bytes_per_op": 91824,
+        "equivalent_results": true
+      },
+      "speedup": 1.1610802649006844,
+      "percent_less_time": 13.873310034639408,
+      "allocation_change": -18224
+    },
+    {
+      "case": "named_insert_entity",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_insert_entity",
+        "forks": 5,
+        "median_ns": 939.934,
+        "min_fork_ns": 929.709,
+        "max_fork_ns": 1211.184,
+        "bytes_per_op": 2760,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_insert_entity",
+        "forks": 5,
+        "median_ns": 764.629,
+        "min_fork_ns": 758.197,
+        "max_fork_ns": 826.294,
+        "bytes_per_op": 1904,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_insert_entity",
+        "forks": 5,
+        "median_ns": 926.059,
+        "min_fork_ns": 880.67,
+        "max_fork_ns": 961.976,
+        "bytes_per_op": 2760,
+        "equivalent_results": true
+      },
+      "speedup": 1.2292680502570528,
+      "percent_less_time": 18.650777607789482,
+      "allocation_change": -856
+    },
+    {
+      "case": "named_insert_placeholders",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_insert_placeholders",
+        "forks": 5,
+        "median_ns": 979.277,
+        "min_fork_ns": 918.241,
+        "max_fork_ns": 1393.94,
+        "bytes_per_op": 2888,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_insert_placeholders",
+        "forks": 5,
+        "median_ns": 724.659,
+        "min_fork_ns": 667.038,
+        "max_fork_ns": 772.025,
+        "bytes_per_op": 1952,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_insert_placeholders",
+        "forks": 5,
+        "median_ns": 990.05,
+        "min_fork_ns": 971.766,
+        "max_fork_ns": 1110.43,
+        "bytes_per_op": 3040,
+        "equivalent_results": true
+      },
+      "speedup": 1.3513625029151644,
+      "percent_less_time": 26.000610654595178,
+      "allocation_change": -936
+    },
+    {
+      "case": "named_insert_values",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_insert_values",
+        "forks": 5,
+        "median_ns": 1140.738,
+        "min_fork_ns": 1105.847,
+        "max_fork_ns": 1355.547,
+        "bytes_per_op": 3048,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_insert_values",
+        "forks": 5,
+        "median_ns": 851.322,
+        "min_fork_ns": 797.429,
+        "max_fork_ns": 905.969,
+        "bytes_per_op": 2176,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_insert_values",
+        "forks": 5,
+        "median_ns": 1130.615,
+        "min_fork_ns": 1087.698,
+        "max_fork_ns": 1182.413,
+        "bytes_per_op": 3176,
+        "equivalent_results": true
+      },
+      "speedup": 1.3399606729298668,
+      "percent_less_time": 25.370944073047454,
+      "allocation_change": -872
+    },
+    {
+      "case": "named_join_on",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_join_on",
+        "forks": 5,
+        "median_ns": 1731.295,
+        "min_fork_ns": 1627.116,
+        "max_fork_ns": 2243.307,
+        "bytes_per_op": 4288,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_join_on",
+        "forks": 5,
+        "median_ns": 1267.609,
+        "min_fork_ns": 1143.578,
+        "max_fork_ns": 1286.966,
+        "bytes_per_op": 2808,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_join_on",
+        "forks": 5,
+        "median_ns": 1396.497,
+        "min_fork_ns": 1376.714,
+        "max_fork_ns": 1493.099,
+        "bytes_per_op": 4352,
+        "equivalent_results": true
+      },
+      "speedup": 1.3657957619423657,
+      "percent_less_time": 26.782610704703714,
+      "allocation_change": -1480
+    },
+    {
+      "case": "named_join_using",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_join_using",
+        "forks": 5,
+        "median_ns": 996.201,
+        "min_fork_ns": 964.234,
+        "max_fork_ns": 1166.035,
+        "bytes_per_op": 3512,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_join_using",
+        "forks": 5,
+        "median_ns": 828.034,
+        "min_fork_ns": 789.716,
+        "max_fork_ns": 896.973,
+        "bytes_per_op": 2136,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_join_using",
+        "forks": 5,
+        "median_ns": 984.7,
+        "min_fork_ns": 972.965,
+        "max_fork_ns": 1147.842,
+        "bytes_per_op": 3680,
+        "equivalent_results": true
+      },
+      "speedup": 1.2030919020233468,
+      "percent_less_time": 16.880830274211732,
+      "allocation_change": -1376
+    },
+    {
+      "case": "named_late_modifier",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_late_modifier",
+        "forks": 5,
+        "median_ns": 792.421,
+        "min_fork_ns": 755.611,
+        "max_fork_ns": 948.595,
+        "bytes_per_op": 2816,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_late_modifier",
+        "forks": 5,
+        "median_ns": 623.622,
+        "min_fork_ns": 604.985,
+        "max_fork_ns": 751.134,
+        "bytes_per_op": 1816,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_late_modifier",
+        "forks": 5,
+        "median_ns": 795.929,
+        "min_fork_ns": 746.367,
+        "max_fork_ns": 825.883,
+        "bytes_per_op": 2896,
+        "equivalent_results": true
+      },
+      "speedup": 1.27067518464711,
+      "percent_less_time": 21.301681808028828,
+      "allocation_change": -1000
+    },
+    {
+      "case": "named_mixed_literals",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_mixed_literals",
+        "forks": 5,
+        "median_ns": 1576.534,
+        "min_fork_ns": 1497.181,
+        "max_fork_ns": 1966.79,
+        "bytes_per_op": 3768,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_mixed_literals",
+        "forks": 5,
+        "median_ns": 1140.162,
+        "min_fork_ns": 1101.576,
+        "max_fork_ns": 1472.086,
+        "bytes_per_op": 2416,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_mixed_literals",
+        "forks": 5,
+        "median_ns": 1440.218,
+        "min_fork_ns": 1377.673,
+        "max_fork_ns": 1791.319,
+        "bytes_per_op": 3944,
+        "equivalent_results": true
+      },
+      "speedup": 1.3827280684674634,
+      "percent_less_time": 27.679200067997268,
+      "allocation_change": -1352
+    },
+    {
+      "case": "named_naming_CAMEL_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 5031.847,
+        "min_fork_ns": 4989.585,
+        "max_fork_ns": 5640.851,
+        "bytes_per_op": 9624,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 3474.356,
+        "min_fork_ns": 3369.386,
+        "max_fork_ns": 3668.308,
+        "bytes_per_op": 5168,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 6118.229,
+        "min_fork_ns": 5843.265,
+        "max_fork_ns": 7152.212,
+        "bytes_per_op": 11104,
+        "equivalent_results": true
+      },
+      "speedup": 1.4482819262044533,
+      "percent_less_time": 30.952670063298815,
+      "allocation_change": -4456
+    },
+    {
+      "case": "named_naming_KEBAB_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 6144.584,
+        "min_fork_ns": 5896.059,
+        "max_fork_ns": 8238.979,
+        "bytes_per_op": 10584,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 4339.008,
+        "min_fork_ns": 4166.37,
+        "max_fork_ns": 5283.088,
+        "bytes_per_op": 6936,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 5964.936,
+        "min_fork_ns": 5823.641,
+        "max_fork_ns": 7147.74,
+        "bytes_per_op": 11392,
+        "equivalent_results": true
+      },
+      "speedup": 1.4161264510229066,
+      "percent_less_time": 29.38483711834683,
+      "allocation_change": -3648
+    },
+    {
+      "case": "named_naming_NO_CHANGE",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 4928.042,
+        "min_fork_ns": 4858.716,
+        "max_fork_ns": 6999.662,
+        "bytes_per_op": 9624,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 3016.21,
+        "min_fork_ns": 2934.182,
+        "max_fork_ns": 3253.245,
+        "bytes_per_op": 5168,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 4762.6,
+        "min_fork_ns": 4517.645,
+        "max_fork_ns": 5353.578,
+        "bytes_per_op": 9624,
+        "equivalent_results": true
+      },
+      "speedup": 1.633852417437778,
+      "percent_less_time": 38.7949615689152,
+      "allocation_change": -4456
+    },
+    {
+      "case": "named_naming_SCREAMING_SNAKE_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 6171.375,
+        "min_fork_ns": 6031.151,
+        "max_fork_ns": 8264.422,
+        "bytes_per_op": 10600,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 4379.058,
+        "min_fork_ns": 4002.241,
+        "max_fork_ns": 4627.749,
+        "bytes_per_op": 6952,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 5920.12,
+        "min_fork_ns": 5694.119,
+        "max_fork_ns": 7255.98,
+        "bytes_per_op": 11408,
+        "equivalent_results": true
+      },
+      "speedup": 1.4092928205107125,
+      "percent_less_time": 29.042425715501007,
+      "allocation_change": -3648
+    },
+    {
+      "case": "named_naming_UPPER_CAMEL_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 6314.777,
+        "min_fork_ns": 5997.521,
+        "max_fork_ns": 7969.488,
+        "bytes_per_op": 10584,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 4616.645,
+        "min_fork_ns": 4396.429,
+        "max_fork_ns": 4851.966,
+        "bytes_per_op": 6664,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 6282.447,
+        "min_fork_ns": 6109.309,
+        "max_fork_ns": 7981.679,
+        "bytes_per_op": 11120,
+        "equivalent_results": true
+      },
+      "speedup": 1.3678281522620863,
+      "percent_less_time": 26.891400915661777,
+      "allocation_change": -3920
+    },
+    {
+      "case": "named_nested",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_nested",
+        "forks": 5,
+        "median_ns": 1434.201,
+        "min_fork_ns": 1405.831,
+        "max_fork_ns": 1670.836,
+        "bytes_per_op": 3648,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_nested",
+        "forks": 5,
+        "median_ns": 1086.446,
+        "min_fork_ns": 1011.688,
+        "max_fork_ns": 1199.268,
+        "bytes_per_op": 2256,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_nested",
+        "forks": 5,
+        "median_ns": 1323.155,
+        "min_fork_ns": 1278.785,
+        "max_fork_ns": 1595.01,
+        "bytes_per_op": 3816,
+        "equivalent_results": true
+      },
+      "speedup": 1.320084937493442,
+      "percent_less_time": 24.247298670130625,
+      "allocation_change": -1392
+    },
+    {
+      "case": "named_pagination",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_pagination",
+        "forks": 5,
+        "median_ns": 1256.323,
+        "min_fork_ns": 1209.281,
+        "max_fork_ns": 1457.119,
+        "bytes_per_op": 4072,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_pagination",
+        "forks": 5,
+        "median_ns": 986.101,
+        "min_fork_ns": 928.917,
+        "max_fork_ns": 1031.398,
+        "bytes_per_op": 2384,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_pagination",
+        "forks": 5,
+        "median_ns": 1243.117,
+        "min_fork_ns": 1215.492,
+        "max_fork_ns": 1406.359,
+        "bytes_per_op": 4192,
+        "equivalent_results": true
+      },
+      "speedup": 1.2740307534420918,
+      "percent_less_time": 21.508959081382738,
+      "allocation_change": -1688
+    },
+    {
+      "case": "named_raw_expression",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_raw_expression",
+        "forks": 5,
+        "median_ns": 1529.139,
+        "min_fork_ns": 1454.403,
+        "max_fork_ns": 2051.381,
+        "bytes_per_op": 2624,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_raw_expression",
+        "forks": 5,
+        "median_ns": 942.916,
+        "min_fork_ns": 899.772,
+        "max_fork_ns": 1026.064,
+        "bytes_per_op": 1744,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_raw_expression",
+        "forks": 5,
+        "median_ns": 1018.316,
+        "min_fork_ns": 1010.674,
+        "max_fork_ns": 1043.407,
+        "bytes_per_op": 2616,
+        "equivalent_results": true
+      },
+      "speedup": 1.6217128567125807,
+      "percent_less_time": 38.336802605910904,
+      "allocation_change": -880
+    },
+    {
+      "case": "named_repeated_names",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_repeated_names",
+        "forks": 5,
+        "median_ns": 27233.643,
+        "min_fork_ns": 25627.248,
+        "max_fork_ns": 34781.338,
+        "bytes_per_op": 64920,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_repeated_names",
+        "forks": 5,
+        "median_ns": 19908.189,
+        "min_fork_ns": 19689.6,
+        "max_fork_ns": 20708.92,
+        "bytes_per_op": 42584,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_repeated_names",
+        "forks": 5,
+        "median_ns": 26322.317,
+        "min_fork_ns": 25060.646,
+        "max_fork_ns": 29098.777,
+        "bytes_per_op": 70080,
+        "equivalent_results": true
+      },
+      "speedup": 1.36796184725793,
+      "percent_less_time": 26.898546037340655,
+      "allocation_change": -22336
+    },
+    {
+      "case": "named_retry_rollback",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_retry_rollback",
+        "forks": 5,
+        "median_ns": 4697.998,
+        "min_fork_ns": 4326.425,
+        "max_fork_ns": 5213.084,
+        "bytes_per_op": 8264,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_retry_rollback",
+        "forks": 5,
+        "median_ns": 3489.66,
+        "min_fork_ns": 3276.506,
+        "max_fork_ns": 4199.915,
+        "bytes_per_op": 5304,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_retry_rollback",
+        "forks": 5,
+        "median_ns": 4590.874,
+        "min_fork_ns": 4442.642,
+        "max_fork_ns": 4945.015,
+        "bytes_per_op": 8432,
+        "equivalent_results": true
+      },
+      "speedup": 1.3462623865935364,
+      "percent_less_time": 25.72027489156019,
+      "allocation_change": -2960
+    },
+    {
+      "case": "named_row_in",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_row_in",
+        "forks": 5,
+        "median_ns": 1382.476,
+        "min_fork_ns": 1336.595,
+        "max_fork_ns": 1568.226,
+        "bytes_per_op": 4016,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_row_in",
+        "forks": 5,
+        "median_ns": 1088.208,
+        "min_fork_ns": 1025.561,
+        "max_fork_ns": 1152.559,
+        "bytes_per_op": 2680,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_row_in",
+        "forks": 5,
+        "median_ns": 1316.779,
+        "min_fork_ns": 1308.432,
+        "max_fork_ns": 1383.81,
+        "bytes_per_op": 4144,
+        "equivalent_results": true
+      },
+      "speedup": 1.270415214738359,
+      "percent_less_time": 21.285577471145977,
+      "allocation_change": -1336
+    },
+    {
+      "case": "named_select_columns",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_select_columns",
+        "forks": 5,
+        "median_ns": 829.085,
+        "min_fork_ns": 801.959,
+        "max_fork_ns": 978.123,
+        "bytes_per_op": 1952,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_select_columns",
+        "forks": 5,
+        "median_ns": 618.864,
+        "min_fork_ns": 594.324,
+        "max_fork_ns": 631.134,
+        "bytes_per_op": 1216,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_select_columns",
+        "forks": 5,
+        "median_ns": 821.121,
+        "min_fork_ns": 785.832,
+        "max_fork_ns": 831.993,
+        "bytes_per_op": 2104,
+        "equivalent_results": true
+      },
+      "speedup": 1.33968852607358,
+      "percent_less_time": 25.355783785739703,
+      "allocation_change": -736
+    },
+    {
+      "case": "named_select_entity",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_select_entity",
+        "forks": 5,
+        "median_ns": 591.489,
+        "min_fork_ns": 584.624,
+        "max_fork_ns": 687.286,
+        "bytes_per_op": 2000,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_select_entity",
+        "forks": 5,
+        "median_ns": 544.837,
+        "min_fork_ns": 481.283,
+        "max_fork_ns": 563.485,
+        "bytes_per_op": 1304,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_select_entity",
+        "forks": 5,
+        "median_ns": 574.072,
+        "min_fork_ns": 555.521,
+        "max_fork_ns": 675.34,
+        "bytes_per_op": 1992,
+        "equivalent_results": true
+      },
+      "speedup": 1.0856256091271335,
+      "percent_less_time": 7.887213456209674,
+      "allocation_change": -696
+    },
+    {
+      "case": "named_select_expressions",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_select_expressions",
+        "forks": 5,
+        "median_ns": 2155.324,
+        "min_fork_ns": 2129.048,
+        "max_fork_ns": 2817.996,
+        "bytes_per_op": 2728,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_select_expressions",
+        "forks": 5,
+        "median_ns": 1438.099,
+        "min_fork_ns": 1389.117,
+        "max_fork_ns": 1898.932,
+        "bytes_per_op": 1936,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_select_expressions",
+        "forks": 5,
+        "median_ns": 1535.364,
+        "min_fork_ns": 1514.167,
+        "max_fork_ns": 1645.927,
+        "bytes_per_op": 2512,
+        "equivalent_results": true
+      },
+      "speedup": 1.4987313112657752,
+      "percent_less_time": 33.27689943600127,
+      "allocation_change": -792
+    },
+    {
+      "case": "named_select_star",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_select_star",
+        "forks": 5,
+        "median_ns": 301.444,
+        "min_fork_ns": 280.007,
+        "max_fork_ns": 328.765,
+        "bytes_per_op": 1424,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_select_star",
+        "forks": 5,
+        "median_ns": 217.822,
+        "min_fork_ns": 207.707,
+        "max_fork_ns": 278.138,
+        "bytes_per_op": 880,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_select_star",
+        "forks": 5,
+        "median_ns": 247.348,
+        "min_fork_ns": 231.31,
+        "max_fork_ns": 258.42,
+        "bytes_per_op": 1240,
+        "equivalent_results": true
+      },
+      "speedup": 1.3839006160993839,
+      "percent_less_time": 27.740475842942637,
+      "allocation_change": -544
+    },
+    {
+      "case": "named_subquery_raw",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_subquery_raw",
+        "forks": 5,
+        "median_ns": 637.687,
+        "min_fork_ns": 598.692,
+        "max_fork_ns": 804.289,
+        "bytes_per_op": 2272,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_subquery_raw",
+        "forks": 5,
+        "median_ns": 506.011,
+        "min_fork_ns": 493.871,
+        "max_fork_ns": 530.164,
+        "bytes_per_op": 1344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_subquery_raw",
+        "forks": 5,
+        "median_ns": 629.207,
+        "min_fork_ns": 625.79,
+        "max_fork_ns": 645.844,
+        "bytes_per_op": 2352,
+        "equivalent_results": true
+      },
+      "speedup": 1.2602235919772495,
+      "percent_less_time": 20.649001783006394,
+      "allocation_change": -928
+    },
+    {
+      "case": "named_subquery_structured",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_subquery_structured",
+        "forks": 5,
+        "median_ns": 1813.761,
+        "min_fork_ns": 1706.035,
+        "max_fork_ns": 1966.41,
+        "bytes_per_op": 5488,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_subquery_structured",
+        "forks": 5,
+        "median_ns": 1501.599,
+        "min_fork_ns": 1443.485,
+        "max_fork_ns": 1597.209,
+        "bytes_per_op": 3568,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_subquery_structured",
+        "forks": 5,
+        "median_ns": 1725.355,
+        "min_fork_ns": 1680.267,
+        "max_fork_ns": 1942.605,
+        "bytes_per_op": 5640,
+        "equivalent_results": true
+      },
+      "speedup": 1.2078863931049502,
+      "percent_less_time": 17.210757095339467,
+      "allocation_change": -1920
+    },
+    {
+      "case": "named_union_builder",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_union_builder",
+        "forks": 5,
+        "median_ns": 10683.608,
+        "min_fork_ns": 9910.509,
+        "max_fork_ns": 11907.32,
+        "bytes_per_op": 17272,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_union_builder",
+        "forks": 5,
+        "median_ns": 4338.309,
+        "min_fork_ns": 3970.251,
+        "max_fork_ns": 4633.747,
+        "bytes_per_op": 6840,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_union_builder",
+        "forks": 5,
+        "median_ns": 4295.994,
+        "min_fork_ns": 4113.966,
+        "max_fork_ns": 4650.828,
+        "bytes_per_op": 8912,
+        "equivalent_results": true
+      },
+      "speedup": 2.4626203435486036,
+      "percent_less_time": 59.392847435061256,
+      "allocation_change": -10432
+    },
+    {
+      "case": "named_union_raw",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_union_raw",
+        "forks": 5,
+        "median_ns": 3248.274,
+        "min_fork_ns": 3145.67,
+        "max_fork_ns": 4280.621,
+        "bytes_per_op": 5200,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_union_raw",
+        "forks": 5,
+        "median_ns": 1072.349,
+        "min_fork_ns": 1067.8,
+        "max_fork_ns": 1244.111,
+        "bytes_per_op": 1472,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_union_raw",
+        "forks": 5,
+        "median_ns": 1119.324,
+        "min_fork_ns": 1083.959,
+        "max_fork_ns": 1183.351,
+        "bytes_per_op": 1968,
+        "equivalent_results": true
+      },
+      "speedup": 3.0291201838207527,
+      "percent_less_time": 66.9871137718062,
+      "allocation_change": -3728
+    },
+    {
+      "case": "named_update_chain_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_update_chain_16",
+        "forks": 5,
+        "median_ns": 17135.48,
+        "min_fork_ns": 16041.444,
+        "max_fork_ns": 20204.541,
+        "bytes_per_op": 47000,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_update_chain_16",
+        "forks": 5,
+        "median_ns": 9642.593,
+        "min_fork_ns": 9630.955,
+        "max_fork_ns": 10736.09,
+        "bytes_per_op": 24072,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_update_chain_16",
+        "forks": 5,
+        "median_ns": 16270.182,
+        "min_fork_ns": 15663.643,
+        "max_fork_ns": 17646.74,
+        "bytes_per_op": 47808,
+        "equivalent_results": true
+      },
+      "speedup": 1.777061419060205,
+      "percent_less_time": 43.72732482544988,
+      "allocation_change": -22928
+    },
+    {
+      "case": "named_update_map",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_update_map",
+        "forks": 5,
+        "median_ns": 1778.837,
+        "min_fork_ns": 1729.787,
+        "max_fork_ns": 2187.045,
+        "bytes_per_op": 4752,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_update_map",
+        "forks": 5,
+        "median_ns": 1218.358,
+        "min_fork_ns": 1185.963,
+        "max_fork_ns": 1251.728,
+        "bytes_per_op": 2976,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_update_map",
+        "forks": 5,
+        "median_ns": 1677.161,
+        "min_fork_ns": 1659.068,
+        "max_fork_ns": 1840.073,
+        "bytes_per_op": 4920,
+        "equivalent_results": true
+      },
+      "speedup": 1.4600281690603254,
+      "percent_less_time": 31.508170787992384,
+      "allocation_change": -1776
+    },
+    {
+      "case": "named_where_128",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_where_128",
+        "forks": 5,
+        "median_ns": 48434.163,
+        "min_fork_ns": 46351.591,
+        "max_fork_ns": 51284.848,
+        "bytes_per_op": 71280,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_where_128",
+        "forks": 5,
+        "median_ns": 32865.635,
+        "min_fork_ns": 32559.621,
+        "max_fork_ns": 38373.502,
+        "bytes_per_op": 47920,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_where_128",
+        "forks": 5,
+        "median_ns": 44603.766,
+        "min_fork_ns": 41899.113,
+        "max_fork_ns": 51210,
+        "bytes_per_op": 77464,
+        "equivalent_results": true
+      },
+      "speedup": 1.473702333759868,
+      "percent_less_time": 32.14369163352735,
+      "allocation_change": -23360
+    },
+    {
+      "case": "named_where_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_where_16",
+        "forks": 5,
+        "median_ns": 6429.854,
+        "min_fork_ns": 5728.671,
+        "max_fork_ns": 6926.904,
+        "bytes_per_op": 10584,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_where_16",
+        "forks": 5,
+        "median_ns": 4447.697,
+        "min_fork_ns": 4083.297,
+        "max_fork_ns": 4559.781,
+        "bytes_per_op": 6936,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_where_16",
+        "forks": 5,
+        "median_ns": 5927.224,
+        "min_fork_ns": 5725.187,
+        "max_fork_ns": 6658.94,
+        "bytes_per_op": 11392,
+        "equivalent_results": true
+      },
+      "speedup": 1.4456591804702523,
+      "percent_less_time": 30.82740292392331,
+      "allocation_change": -3648
+    },
+    {
+      "case": "named_where_eq",
+      "baseline": {
+        "version": "baseline",
+        "case": "named_where_eq",
+        "forks": 5,
+        "median_ns": 1036.665,
+        "min_fork_ns": 981.913,
+        "max_fork_ns": 1466.614,
+        "bytes_per_op": 3120,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "named_where_eq",
+        "forks": 5,
+        "median_ns": 771.092,
+        "min_fork_ns": 743.786,
+        "max_fork_ns": 805.302,
+        "bytes_per_op": 1976,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "named_where_eq",
+        "forks": 5,
+        "median_ns": 1006.306,
+        "min_fork_ns": 981.368,
+        "max_fork_ns": 1045.92,
+        "bytes_per_op": 3272,
+        "equivalent_results": true
+      },
+      "speedup": 1.3444115617851047,
+      "percent_less_time": 25.61801546304737,
+      "allocation_change": -1144
+    },
+    {
+      "case": "positional_batch_4",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_batch_4",
+        "forks": 5,
+        "median_ns": 1937.929,
+        "min_fork_ns": 1855.599,
+        "max_fork_ns": 2206.819,
+        "bytes_per_op": 5968,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_batch_4",
+        "forks": 5,
+        "median_ns": 1254.015,
+        "min_fork_ns": 1115.78,
+        "max_fork_ns": 1306.381,
+        "bytes_per_op": 2840,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_batch_4",
+        "forks": 5,
+        "median_ns": 1875.461,
+        "min_fork_ns": 1709.919,
+        "max_fork_ns": 1948.209,
+        "bytes_per_op": 6032,
+        "equivalent_results": true
+      },
+      "speedup": 1.545379441234754,
+      "percent_less_time": 35.290972992302606,
+      "allocation_change": -3128
+    },
+    {
+      "case": "positional_batch_64",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_batch_64",
+        "forks": 5,
+        "median_ns": 18058.062,
+        "min_fork_ns": 16651.442,
+        "max_fork_ns": 24599.265,
+        "bytes_per_op": 72176,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_batch_64",
+        "forks": 5,
+        "median_ns": 9723.676,
+        "min_fork_ns": 8710.345,
+        "max_fork_ns": 10506.955,
+        "bytes_per_op": 23448,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_batch_64",
+        "forks": 5,
+        "median_ns": 18200,
+        "min_fork_ns": 17622.757,
+        "max_fork_ns": 18992.094,
+        "bytes_per_op": 70320,
+        "equivalent_results": true
+      },
+      "speedup": 1.8571229646072127,
+      "percent_less_time": 46.15326938184175,
+      "allocation_change": -48728
+    },
+    {
+      "case": "positional_batch_beans",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_batch_beans",
+        "forks": 5,
+        "median_ns": 4286.256,
+        "min_fork_ns": 3855.867,
+        "max_fork_ns": 4864.628,
+        "bytes_per_op": 10464,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_batch_beans",
+        "forks": 5,
+        "median_ns": 2940.349,
+        "min_fork_ns": 2788.534,
+        "max_fork_ns": 3096.854,
+        "bytes_per_op": 6984,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_batch_beans",
+        "forks": 5,
+        "median_ns": 4715.664,
+        "min_fork_ns": 4341.253,
+        "max_fork_ns": 5659.765,
+        "bytes_per_op": 11128,
+        "equivalent_results": true
+      },
+      "speedup": 1.4577371597725304,
+      "percent_less_time": 31.400527639972974,
+      "allocation_change": -3480
+    },
+    {
+      "case": "positional_between",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_between",
+        "forks": 5,
+        "median_ns": 1146.702,
+        "min_fork_ns": 1087.224,
+        "max_fork_ns": 1286.01,
+        "bytes_per_op": 3056,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_between",
+        "forks": 5,
+        "median_ns": 759.334,
+        "min_fork_ns": 741.819,
+        "max_fork_ns": 795.099,
+        "bytes_per_op": 1736,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_between",
+        "forks": 5,
+        "median_ns": 1025.052,
+        "min_fork_ns": 1003.869,
+        "max_fork_ns": 1103.03,
+        "bytes_per_op": 3104,
+        "equivalent_results": true
+      },
+      "speedup": 1.5101417821406655,
+      "percent_less_time": 33.781052095487766,
+      "allocation_change": -1320
+    },
+    {
+      "case": "positional_condition_only",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_condition_only",
+        "forks": 5,
+        "median_ns": 3798.859,
+        "min_fork_ns": 3728.127,
+        "max_fork_ns": 4919.003,
+        "bytes_per_op": 4872,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_condition_only",
+        "forks": 5,
+        "median_ns": 2692.352,
+        "min_fork_ns": 2575.018,
+        "max_fork_ns": 2997.638,
+        "bytes_per_op": 3104,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_condition_only",
+        "forks": 5,
+        "median_ns": 3614.87,
+        "min_fork_ns": 3534.047,
+        "max_fork_ns": 3724.729,
+        "bytes_per_op": 5640,
+        "equivalent_results": true
+      },
+      "speedup": 1.4109815507036227,
+      "percent_less_time": 29.127351133590373,
+      "allocation_change": -1768
+    },
+    {
+      "case": "positional_delete",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_delete",
+        "forks": 5,
+        "median_ns": 340.099,
+        "min_fork_ns": 339.323,
+        "max_fork_ns": 508.298,
+        "bytes_per_op": 1504,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_delete",
+        "forks": 5,
+        "median_ns": 286.867,
+        "min_fork_ns": 274.527,
+        "max_fork_ns": 300.104,
+        "bytes_per_op": 1000,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_delete",
+        "forks": 5,
+        "median_ns": 365.069,
+        "min_fork_ns": 356.213,
+        "max_fork_ns": 391.169,
+        "bytes_per_op": 1544,
+        "equivalent_results": true
+      },
+      "speedup": 1.1855633446858647,
+      "percent_less_time": 15.651913119415218,
+      "allocation_change": -504
+    },
+    {
+      "case": "positional_derived",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_derived",
+        "forks": 5,
+        "median_ns": 9326.505,
+        "min_fork_ns": 9216.044,
+        "max_fork_ns": 11413.069,
+        "bytes_per_op": 15296,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_derived",
+        "forks": 5,
+        "median_ns": 3537.585,
+        "min_fork_ns": 3239.685,
+        "max_fork_ns": 3579.667,
+        "bytes_per_op": 5480,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_derived",
+        "forks": 5,
+        "median_ns": 3569.88,
+        "min_fork_ns": 3524.094,
+        "max_fork_ns": 3986.149,
+        "bytes_per_op": 7464,
+        "equivalent_results": true
+      },
+      "speedup": 2.6364044962877213,
+      "percent_less_time": 62.06955338575382,
+      "allocation_change": -9816
+    },
+    {
+      "case": "positional_dialect_DB2",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_dialect_DB2",
+        "forks": 5,
+        "median_ns": 1123.416,
+        "min_fork_ns": 1070.849,
+        "max_fork_ns": 1582.429,
+        "bytes_per_op": 3544,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_dialect_DB2",
+        "forks": 5,
+        "median_ns": 845.495,
+        "min_fork_ns": 821.278,
+        "max_fork_ns": 943.192,
+        "bytes_per_op": 2032,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_dialect_DB2",
+        "forks": 5,
+        "median_ns": 1031.379,
+        "min_fork_ns": 1011.178,
+        "max_fork_ns": 1108.583,
+        "bytes_per_op": 3616,
+        "equivalent_results": true
+      },
+      "speedup": 1.328708034938113,
+      "percent_less_time": 24.738921290065296,
+      "allocation_change": -1512
+    },
+    {
+      "case": "positional_dialect_Microsoft_SQL_Server",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_dialect_Microsoft_SQL_Server",
+        "forks": 5,
+        "median_ns": 1316.173,
+        "min_fork_ns": 1229.545,
+        "max_fork_ns": 1594.891,
+        "bytes_per_op": 3544,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_dialect_Microsoft_SQL_Server",
+        "forks": 5,
+        "median_ns": 1027.754,
+        "min_fork_ns": 995.169,
+        "max_fork_ns": 1061.289,
+        "bytes_per_op": 2032,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_dialect_Microsoft_SQL_Server",
+        "forks": 5,
+        "median_ns": 1214.453,
+        "min_fork_ns": 1209.391,
+        "max_fork_ns": 1318.99,
+        "bytes_per_op": 3616,
+        "equivalent_results": true
+      },
+      "speedup": 1.280630384313756,
+      "percent_less_time": 21.913456665651097,
+      "allocation_change": -1512
+    },
+    {
+      "case": "positional_dialect_MySQL",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_dialect_MySQL",
+        "forks": 5,
+        "median_ns": 1060.987,
+        "min_fork_ns": 1006.132,
+        "max_fork_ns": 1295.717,
+        "bytes_per_op": 3360,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_dialect_MySQL",
+        "forks": 5,
+        "median_ns": 803.432,
+        "min_fork_ns": 781.599,
+        "max_fork_ns": 807.057,
+        "bytes_per_op": 1848,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_dialect_MySQL",
+        "forks": 5,
+        "median_ns": 970.286,
+        "min_fork_ns": 962.014,
+        "max_fork_ns": 1033.867,
+        "bytes_per_op": 3432,
+        "equivalent_results": true
+      },
+      "speedup": 1.320568511087435,
+      "percent_less_time": 24.275038242692894,
+      "allocation_change": -1512
+    },
+    {
+      "case": "positional_dialect_Oracle",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_dialect_Oracle",
+        "forks": 5,
+        "median_ns": 1109.627,
+        "min_fork_ns": 1057.243,
+        "max_fork_ns": 1551.552,
+        "bytes_per_op": 3496,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_dialect_Oracle",
+        "forks": 5,
+        "median_ns": 850.13,
+        "min_fork_ns": 830.973,
+        "max_fork_ns": 892.832,
+        "bytes_per_op": 2032,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_dialect_Oracle",
+        "forks": 5,
+        "median_ns": 1041.85,
+        "min_fork_ns": 1021.995,
+        "max_fork_ns": 1260.588,
+        "bytes_per_op": 3616,
+        "equivalent_results": true
+      },
+      "speedup": 1.305243903873525,
+      "percent_less_time": 23.385966635635214,
+      "allocation_change": -1464
+    },
+    {
+      "case": "positional_dialect_PostgreSQL",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_dialect_PostgreSQL",
+        "forks": 5,
+        "median_ns": 1106.676,
+        "min_fork_ns": 1058.624,
+        "max_fork_ns": 1529.647,
+        "bytes_per_op": 3360,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_dialect_PostgreSQL",
+        "forks": 5,
+        "median_ns": 856.754,
+        "min_fork_ns": 782.754,
+        "max_fork_ns": 894.4,
+        "bytes_per_op": 1848,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_dialect_PostgreSQL",
+        "forks": 5,
+        "median_ns": 1025.166,
+        "min_fork_ns": 1015.957,
+        "max_fork_ns": 1105.24,
+        "bytes_per_op": 3432,
+        "equivalent_results": true
+      },
+      "speedup": 1.2917080048648737,
+      "percent_less_time": 22.58312279294029,
+      "allocation_change": -1512
+    },
+    {
+      "case": "positional_group_order",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_group_order",
+        "forks": 5,
+        "median_ns": 3156.65,
+        "min_fork_ns": 3054.729,
+        "max_fork_ns": 3658.885,
+        "bytes_per_op": 6336,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_group_order",
+        "forks": 5,
+        "median_ns": 1596.987,
+        "min_fork_ns": 1515.127,
+        "max_fork_ns": 1629.748,
+        "bytes_per_op": 3112,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_group_order",
+        "forks": 5,
+        "median_ns": 2169.419,
+        "min_fork_ns": 2119.723,
+        "max_fork_ns": 2314.499,
+        "bytes_per_op": 6160,
+        "equivalent_results": true
+      },
+      "speedup": 1.9766284885224488,
+      "percent_less_time": 49.40880363676683,
+      "allocation_change": -3224
+    },
+    {
+      "case": "positional_in_1024",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_in_1024",
+        "forks": 5,
+        "median_ns": 14876.8,
+        "min_fork_ns": 14026.563,
+        "max_fork_ns": 16677.007,
+        "bytes_per_op": 28504,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_in_1024",
+        "forks": 5,
+        "median_ns": 6167.882,
+        "min_fork_ns": 5682.574,
+        "max_fork_ns": 7040.358,
+        "bytes_per_op": 20800,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_in_1024",
+        "forks": 5,
+        "median_ns": 14356.337,
+        "min_fork_ns": 14163.1,
+        "max_fork_ns": 15276.263,
+        "bytes_per_op": 28584,
+        "equivalent_results": true
+      },
+      "speedup": 2.411978698684573,
+      "percent_less_time": 58.5402640352764,
+      "allocation_change": -7704
+    },
+    {
+      "case": "positional_in_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_in_16",
+        "forks": 5,
+        "median_ns": 873.842,
+        "min_fork_ns": 844.248,
+        "max_fork_ns": 1036.635,
+        "bytes_per_op": 2656,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_in_16",
+        "forks": 5,
+        "median_ns": 708.108,
+        "min_fork_ns": 695.313,
+        "max_fork_ns": 720.582,
+        "bytes_per_op": 1728,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_in_16",
+        "forks": 5,
+        "median_ns": 812.545,
+        "min_fork_ns": 799.964,
+        "max_fork_ns": 831.029,
+        "bytes_per_op": 2736,
+        "equivalent_results": true
+      },
+      "speedup": 1.2340518677941783,
+      "percent_less_time": 18.966128888288736,
+      "allocation_change": -928
+    },
+    {
+      "case": "positional_in_17",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_in_17",
+        "forks": 5,
+        "median_ns": 862.471,
+        "min_fork_ns": 817.539,
+        "max_fork_ns": 1205.638,
+        "bytes_per_op": 2672,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_in_17",
+        "forks": 5,
+        "median_ns": 610.58,
+        "min_fork_ns": 598.147,
+        "max_fork_ns": 675.504,
+        "bytes_per_op": 1680,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_in_17",
+        "forks": 5,
+        "median_ns": 844.916,
+        "min_fork_ns": 817.235,
+        "max_fork_ns": 873.574,
+        "bytes_per_op": 2752,
+        "equivalent_results": true
+      },
+      "speedup": 1.4125438108028432,
+      "percent_less_time": 29.20573561313945,
+      "allocation_change": -992
+    },
+    {
+      "case": "positional_in_256",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_in_256",
+        "forks": 5,
+        "median_ns": 4430.321,
+        "min_fork_ns": 4339.742,
+        "max_fork_ns": 5431.48,
+        "bytes_per_op": 9576,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_in_256",
+        "forks": 5,
+        "median_ns": 2133.107,
+        "min_fork_ns": 2108.402,
+        "max_fork_ns": 2440.022,
+        "bytes_per_op": 6208,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_in_256",
+        "forks": 5,
+        "median_ns": 4338.984,
+        "min_fork_ns": 4114.174,
+        "max_fork_ns": 4676.232,
+        "bytes_per_op": 9656,
+        "equivalent_results": true
+      },
+      "speedup": 2.076933318394248,
+      "percent_less_time": 51.852089272989474,
+      "allocation_change": -3368
+    },
+    {
+      "case": "positional_in_expression",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_in_expression",
+        "forks": 5,
+        "median_ns": 4469.849,
+        "min_fork_ns": 4291.536,
+        "max_fork_ns": 6313.242,
+        "bytes_per_op": 9760,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_in_expression",
+        "forks": 5,
+        "median_ns": 3172.937,
+        "min_fork_ns": 3107.25,
+        "max_fork_ns": 4182.138,
+        "bytes_per_op": 7536,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_in_expression",
+        "forks": 5,
+        "median_ns": 5010.766,
+        "min_fork_ns": 4837.008,
+        "max_fork_ns": 5290.946,
+        "bytes_per_op": 10904,
+        "equivalent_results": true
+      },
+      "speedup": 1.408741806093219,
+      "percent_less_time": 29.014671412837444,
+      "allocation_change": -2224
+    },
+    {
+      "case": "positional_insert_entity",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_insert_entity",
+        "forks": 5,
+        "median_ns": 611.561,
+        "min_fork_ns": 601.979,
+        "max_fork_ns": 701.973,
+        "bytes_per_op": 1816,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_insert_entity",
+        "forks": 5,
+        "median_ns": 559.198,
+        "min_fork_ns": 536.676,
+        "max_fork_ns": 581.627,
+        "bytes_per_op": 1192,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_insert_entity",
+        "forks": 5,
+        "median_ns": 632.18,
+        "min_fork_ns": 607.29,
+        "max_fork_ns": 633.862,
+        "bytes_per_op": 1816,
+        "equivalent_results": true
+      },
+      "speedup": 1.0936394622298364,
+      "percent_less_time": 8.562187582268987,
+      "allocation_change": -624
+    },
+    {
+      "case": "positional_insert_placeholders",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_insert_placeholders",
+        "forks": 5,
+        "median_ns": 720.045,
+        "min_fork_ns": 654.621,
+        "max_fork_ns": 1095.758,
+        "bytes_per_op": 1944,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_insert_placeholders",
+        "forks": 5,
+        "median_ns": 479.903,
+        "min_fork_ns": 453.326,
+        "max_fork_ns": 503.795,
+        "bytes_per_op": 1208,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_insert_placeholders",
+        "forks": 5,
+        "median_ns": 697.668,
+        "min_fork_ns": 668.447,
+        "max_fork_ns": 763.677,
+        "bytes_per_op": 2096,
+        "equivalent_results": true
+      },
+      "speedup": 1.5003969552180334,
+      "percent_less_time": 33.35097111986056,
+      "allocation_change": -736
+    },
+    {
+      "case": "positional_insert_values",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_insert_values",
+        "forks": 5,
+        "median_ns": 838.444,
+        "min_fork_ns": 798.553,
+        "max_fork_ns": 978.739,
+        "bytes_per_op": 2104,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_insert_values",
+        "forks": 5,
+        "median_ns": 632.41,
+        "min_fork_ns": 596.292,
+        "max_fork_ns": 640.723,
+        "bytes_per_op": 1464,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_insert_values",
+        "forks": 5,
+        "median_ns": 805.27,
+        "min_fork_ns": 792.381,
+        "max_fork_ns": 848.29,
+        "bytes_per_op": 2232,
+        "equivalent_results": true
+      },
+      "speedup": 1.3257918122736831,
+      "percent_less_time": 24.573376397231062,
+      "allocation_change": -640
+    },
+    {
+      "case": "positional_join_on",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_join_on",
+        "forks": 5,
+        "median_ns": 1617.415,
+        "min_fork_ns": 1564.02,
+        "max_fork_ns": 2016.116,
+        "bytes_per_op": 3832,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_join_on",
+        "forks": 5,
+        "median_ns": 1140.165,
+        "min_fork_ns": 1064.684,
+        "max_fork_ns": 1248.115,
+        "bytes_per_op": 2424,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_join_on",
+        "forks": 5,
+        "median_ns": 1319.229,
+        "min_fork_ns": 1297.018,
+        "max_fork_ns": 1353.665,
+        "bytes_per_op": 3896,
+        "equivalent_results": true
+      },
+      "speedup": 1.4185797669635536,
+      "percent_less_time": 29.506960180287678,
+      "allocation_change": -1408
+    },
+    {
+      "case": "positional_join_using",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_join_using",
+        "forks": 5,
+        "median_ns": 875.6,
+        "min_fork_ns": 855.365,
+        "max_fork_ns": 1126.849,
+        "bytes_per_op": 3056,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_join_using",
+        "forks": 5,
+        "median_ns": 718.772,
+        "min_fork_ns": 681.963,
+        "max_fork_ns": 878.446,
+        "bytes_per_op": 1752,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_join_using",
+        "forks": 5,
+        "median_ns": 868.598,
+        "min_fork_ns": 852.355,
+        "max_fork_ns": 990.309,
+        "bytes_per_op": 3224,
+        "equivalent_results": true
+      },
+      "speedup": 1.2181887997863021,
+      "percent_less_time": 17.91091822750114,
+      "allocation_change": -1304
+    },
+    {
+      "case": "positional_late_modifier",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_late_modifier",
+        "forks": 5,
+        "median_ns": 670.595,
+        "min_fork_ns": 665.323,
+        "max_fork_ns": 808.13,
+        "bytes_per_op": 2360,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_late_modifier",
+        "forks": 5,
+        "median_ns": 515.057,
+        "min_fork_ns": 507.977,
+        "max_fork_ns": 562.406,
+        "bytes_per_op": 1432,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_late_modifier",
+        "forks": 5,
+        "median_ns": 637.481,
+        "min_fork_ns": 627.104,
+        "max_fork_ns": 745.256,
+        "bytes_per_op": 2440,
+        "equivalent_results": true
+      },
+      "speedup": 1.3019821107178429,
+      "percent_less_time": 23.194029183038943,
+      "allocation_change": -928
+    },
+    {
+      "case": "positional_mixed_literals",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_mixed_literals",
+        "forks": 5,
+        "median_ns": 1228.332,
+        "min_fork_ns": 1136.162,
+        "max_fork_ns": 1378.971,
+        "bytes_per_op": 2800,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_mixed_literals",
+        "forks": 5,
+        "median_ns": 885.535,
+        "min_fork_ns": 847.056,
+        "max_fork_ns": 929.079,
+        "bytes_per_op": 1696,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_mixed_literals",
+        "forks": 5,
+        "median_ns": 1143.401,
+        "min_fork_ns": 1102.65,
+        "max_fork_ns": 1224.073,
+        "bytes_per_op": 2976,
+        "equivalent_results": true
+      },
+      "speedup": 1.3871072289632822,
+      "percent_less_time": 27.907520116711126,
+      "allocation_change": -1104
+    },
+    {
+      "case": "positional_naming_CAMEL_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 3342.193,
+        "min_fork_ns": 3197.355,
+        "max_fork_ns": 4967.212,
+        "bytes_per_op": 4928,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 2297.417,
+        "min_fork_ns": 2192.654,
+        "max_fork_ns": 2566.476,
+        "bytes_per_op": 1880,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 4438.574,
+        "min_fork_ns": 4337.099,
+        "max_fork_ns": 5049.406,
+        "bytes_per_op": 6408,
+        "equivalent_results": true
+      },
+      "speedup": 1.4547611513277738,
+      "percent_less_time": 31.260193531612334,
+      "allocation_change": -3048
+    },
+    {
+      "case": "positional_naming_KEBAB_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 4363.935,
+        "min_fork_ns": 4215.393,
+        "max_fork_ns": 5459.47,
+        "bytes_per_op": 5888,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 3271.232,
+        "min_fork_ns": 3017.715,
+        "max_fork_ns": 3330.548,
+        "bytes_per_op": 3648,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 4294.949,
+        "min_fork_ns": 4120.515,
+        "max_fork_ns": 4771.317,
+        "bytes_per_op": 6696,
+        "equivalent_results": true
+      },
+      "speedup": 1.334034088685853,
+      "percent_less_time": 25.039396782949343,
+      "allocation_change": -2240
+    },
+    {
+      "case": "positional_naming_NO_CHANGE",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 3243.822,
+        "min_fork_ns": 3140.544,
+        "max_fork_ns": 4586.205,
+        "bytes_per_op": 4928,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 1984.222,
+        "min_fork_ns": 1890.152,
+        "max_fork_ns": 2114.867,
+        "bytes_per_op": 1880,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 3183.55,
+        "min_fork_ns": 3069.573,
+        "max_fork_ns": 3695.898,
+        "bytes_per_op": 4928,
+        "equivalent_results": true
+      },
+      "speedup": 1.634808000314481,
+      "percent_less_time": 38.830737321591634,
+      "allocation_change": -3048
+    },
+    {
+      "case": "positional_naming_SCREAMING_SNAKE_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 4547.047,
+        "min_fork_ns": 4254.18,
+        "max_fork_ns": 5483.249,
+        "bytes_per_op": 5904,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 3205.333,
+        "min_fork_ns": 2981.979,
+        "max_fork_ns": 3314.831,
+        "bytes_per_op": 3664,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 4214.201,
+        "min_fork_ns": 4119.682,
+        "max_fork_ns": 4423.319,
+        "bytes_per_op": 6712,
+        "equivalent_results": true
+      },
+      "speedup": 1.4185880218997524,
+      "percent_less_time": 29.507370387858312,
+      "allocation_change": -2240
+    },
+    {
+      "case": "positional_naming_UPPER_CAMEL_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 4541.279,
+        "min_fork_ns": 4324.624,
+        "max_fork_ns": 4974.043,
+        "bytes_per_op": 5888,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 3415.341,
+        "min_fork_ns": 3097.179,
+        "max_fork_ns": 3647.914,
+        "bytes_per_op": 3376,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 4593.569,
+        "min_fork_ns": 4369.263,
+        "max_fork_ns": 4879.377,
+        "bytes_per_op": 6424,
+        "equivalent_results": true
+      },
+      "speedup": 1.329670741516001,
+      "percent_less_time": 24.7934117238778,
+      "allocation_change": -2512
+    },
+    {
+      "case": "positional_nested",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_nested",
+        "forks": 5,
+        "median_ns": 1214.983,
+        "min_fork_ns": 1158.059,
+        "max_fork_ns": 1637.627,
+        "bytes_per_op": 2952,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_nested",
+        "forks": 5,
+        "median_ns": 946.145,
+        "min_fork_ns": 850.17,
+        "max_fork_ns": 1285.515,
+        "bytes_per_op": 1704,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_nested",
+        "forks": 5,
+        "median_ns": 1126.257,
+        "min_fork_ns": 1109.116,
+        "max_fork_ns": 1177.575,
+        "bytes_per_op": 3120,
+        "equivalent_results": true
+      },
+      "speedup": 1.2841403801742861,
+      "percent_less_time": 22.12689395654095,
+      "allocation_change": -1248
+    },
+    {
+      "case": "positional_pagination",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_pagination",
+        "forks": 5,
+        "median_ns": 988.238,
+        "min_fork_ns": 954.367,
+        "max_fork_ns": 1141.463,
+        "bytes_per_op": 3288,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_pagination",
+        "forks": 5,
+        "median_ns": 759.301,
+        "min_fork_ns": 692.793,
+        "max_fork_ns": 786.495,
+        "bytes_per_op": 1824,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_pagination",
+        "forks": 5,
+        "median_ns": 944.168,
+        "min_fork_ns": 917.958,
+        "max_fork_ns": 977.905,
+        "bytes_per_op": 3408,
+        "equivalent_results": true
+      },
+      "speedup": 1.3015102047804494,
+      "percent_less_time": 23.166180616410216,
+      "allocation_change": -1464
+    },
+    {
+      "case": "positional_raw_expression",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_raw_expression",
+        "forks": 5,
+        "median_ns": 1571.028,
+        "min_fork_ns": 1495.408,
+        "max_fork_ns": 2145.053,
+        "bytes_per_op": 2624,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_raw_expression",
+        "forks": 5,
+        "median_ns": 953.534,
+        "min_fork_ns": 918.369,
+        "max_fork_ns": 1092.081,
+        "bytes_per_op": 1744,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_raw_expression",
+        "forks": 5,
+        "median_ns": 1036.94,
+        "min_fork_ns": 998.837,
+        "max_fork_ns": 1129.469,
+        "bytes_per_op": 2616,
+        "equivalent_results": true
+      },
+      "speedup": 1.64758466924095,
+      "percent_less_time": 39.30509195253045,
+      "allocation_change": -880
+    },
+    {
+      "case": "positional_repeated_names",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_repeated_names",
+        "forks": 5,
+        "median_ns": 16276.412,
+        "min_fork_ns": 14877.764,
+        "max_fork_ns": 18273.609,
+        "bytes_per_op": 30360,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_repeated_names",
+        "forks": 5,
+        "median_ns": 11671.124,
+        "min_fork_ns": 11613.535,
+        "max_fork_ns": 12742.122,
+        "bytes_per_op": 17240,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_repeated_names",
+        "forks": 5,
+        "median_ns": 15317.945,
+        "min_fork_ns": 14991.926,
+        "max_fork_ns": 15831.971,
+        "bytes_per_op": 35520,
+        "equivalent_results": true
+      },
+      "speedup": 1.394588216182092,
+      "percent_less_time": 28.294245685105544,
+      "allocation_change": -13120
+    },
+    {
+      "case": "positional_retry_rollback",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_retry_rollback",
+        "forks": 5,
+        "median_ns": 3191.668,
+        "min_fork_ns": 2970.528,
+        "max_fork_ns": 4283.854,
+        "bytes_per_op": 5872,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_retry_rollback",
+        "forks": 5,
+        "median_ns": 2542.841,
+        "min_fork_ns": 2469.078,
+        "max_fork_ns": 2784.418,
+        "bytes_per_op": 3864,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_retry_rollback",
+        "forks": 5,
+        "median_ns": 3101.773,
+        "min_fork_ns": 2994.799,
+        "max_fork_ns": 3200.534,
+        "bytes_per_op": 6040,
+        "equivalent_results": true
+      },
+      "speedup": 1.2551583052184545,
+      "percent_less_time": 20.328774797378678,
+      "allocation_change": -2008
+    },
+    {
+      "case": "positional_row_in",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_row_in",
+        "forks": 5,
+        "median_ns": 982.059,
+        "min_fork_ns": 909.561,
+        "max_fork_ns": 1081.812,
+        "bytes_per_op": 2624,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_row_in",
+        "forks": 5,
+        "median_ns": 720.487,
+        "min_fork_ns": 704.019,
+        "max_fork_ns": 763.028,
+        "bytes_per_op": 1608,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_row_in",
+        "forks": 5,
+        "median_ns": 901.468,
+        "min_fork_ns": 884.369,
+        "max_fork_ns": 977.553,
+        "bytes_per_op": 2752,
+        "equivalent_results": true
+      },
+      "speedup": 1.3630488822143911,
+      "percent_less_time": 26.635059604361857,
+      "allocation_change": -1016
+    },
+    {
+      "case": "positional_select_columns",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_select_columns",
+        "forks": 5,
+        "median_ns": 849.344,
+        "min_fork_ns": 797.387,
+        "max_fork_ns": 1147.228,
+        "bytes_per_op": 1952,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_select_columns",
+        "forks": 5,
+        "median_ns": 609.281,
+        "min_fork_ns": 591.286,
+        "max_fork_ns": 685.515,
+        "bytes_per_op": 1216,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_select_columns",
+        "forks": 5,
+        "median_ns": 808.76,
+        "min_fork_ns": 779.979,
+        "max_fork_ns": 836.418,
+        "bytes_per_op": 2104,
+        "equivalent_results": true
+      },
+      "speedup": 1.3940103170786553,
+      "percent_less_time": 28.264519440886147,
+      "allocation_change": -736
+    },
+    {
+      "case": "positional_select_entity",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_select_entity",
+        "forks": 5,
+        "median_ns": 605.194,
+        "min_fork_ns": 584.824,
+        "max_fork_ns": 692.105,
+        "bytes_per_op": 2000,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_select_entity",
+        "forks": 5,
+        "median_ns": 543.741,
+        "min_fork_ns": 496.929,
+        "max_fork_ns": 565.45,
+        "bytes_per_op": 1304,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_select_entity",
+        "forks": 5,
+        "median_ns": 587.19,
+        "min_fork_ns": 567.961,
+        "max_fork_ns": 601.982,
+        "bytes_per_op": 1992,
+        "equivalent_results": true
+      },
+      "speedup": 1.1130188821516125,
+      "percent_less_time": 10.15426458292712,
+      "allocation_change": -696
+    },
+    {
+      "case": "positional_select_expressions",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_select_expressions",
+        "forks": 5,
+        "median_ns": 2095.419,
+        "min_fork_ns": 1977.03,
+        "max_fork_ns": 2660.402,
+        "bytes_per_op": 2728,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_select_expressions",
+        "forks": 5,
+        "median_ns": 1427.483,
+        "min_fork_ns": 1409.548,
+        "max_fork_ns": 1675.69,
+        "bytes_per_op": 1936,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_select_expressions",
+        "forks": 5,
+        "median_ns": 1563.411,
+        "min_fork_ns": 1479.594,
+        "max_fork_ns": 1597.906,
+        "bytes_per_op": 2512,
+        "equivalent_results": true
+      },
+      "speedup": 1.467911701925697,
+      "percent_less_time": 31.87601143255836,
+      "allocation_change": -792
+    },
+    {
+      "case": "positional_select_star",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_select_star",
+        "forks": 5,
+        "median_ns": 288.214,
+        "min_fork_ns": 279.209,
+        "max_fork_ns": 349.615,
+        "bytes_per_op": 1424,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_select_star",
+        "forks": 5,
+        "median_ns": 223.134,
+        "min_fork_ns": 213.399,
+        "max_fork_ns": 246.444,
+        "bytes_per_op": 880,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_select_star",
+        "forks": 5,
+        "median_ns": 246.177,
+        "min_fork_ns": 242.187,
+        "max_fork_ns": 248.479,
+        "bytes_per_op": 1240,
+        "equivalent_results": true
+      },
+      "speedup": 1.2916633054577071,
+      "percent_less_time": 22.58044369808545,
+      "allocation_change": -544
+    },
+    {
+      "case": "positional_subquery_raw",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_subquery_raw",
+        "forks": 5,
+        "median_ns": 631.621,
+        "min_fork_ns": 604.072,
+        "max_fork_ns": 818.284,
+        "bytes_per_op": 2272,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_subquery_raw",
+        "forks": 5,
+        "median_ns": 496.156,
+        "min_fork_ns": 473.135,
+        "max_fork_ns": 529.704,
+        "bytes_per_op": 1344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_subquery_raw",
+        "forks": 5,
+        "median_ns": 637.642,
+        "min_fork_ns": 618.764,
+        "max_fork_ns": 671.108,
+        "bytes_per_op": 2352,
+        "equivalent_results": true
+      },
+      "speedup": 1.2730290473157635,
+      "percent_less_time": 21.447196974134798,
+      "allocation_change": -928
+    },
+    {
+      "case": "positional_subquery_structured",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_subquery_structured",
+        "forks": 5,
+        "median_ns": 1450.369,
+        "min_fork_ns": 1408.039,
+        "max_fork_ns": 2173.988,
+        "bytes_per_op": 4704,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_subquery_structured",
+        "forks": 5,
+        "median_ns": 1119.366,
+        "min_fork_ns": 1095.279,
+        "max_fork_ns": 1245.451,
+        "bytes_per_op": 2856,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_subquery_structured",
+        "forks": 5,
+        "median_ns": 1428.539,
+        "min_fork_ns": 1390.639,
+        "max_fork_ns": 1465.569,
+        "bytes_per_op": 4856,
+        "equivalent_results": true
+      },
+      "speedup": 1.2957057834524186,
+      "percent_less_time": 22.8219853016715,
+      "allocation_change": -1848
+    },
+    {
+      "case": "positional_union_builder",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_union_builder",
+        "forks": 5,
+        "median_ns": 5343.386,
+        "min_fork_ns": 5094.046,
+        "max_fork_ns": 6104.57,
+        "bytes_per_op": 9768,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_union_builder",
+        "forks": 5,
+        "median_ns": 2322.927,
+        "min_fork_ns": 2111.907,
+        "max_fork_ns": 2464.243,
+        "bytes_per_op": 3968,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_union_builder",
+        "forks": 5,
+        "median_ns": 2447.164,
+        "min_fork_ns": 2340.274,
+        "max_fork_ns": 2991.895,
+        "bytes_per_op": 5920,
+        "equivalent_results": true
+      },
+      "speedup": 2.300281498299344,
+      "percent_less_time": 56.52705980814412,
+      "allocation_change": -5800
+    },
+    {
+      "case": "positional_union_raw",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_union_raw",
+        "forks": 5,
+        "median_ns": 3282.281,
+        "min_fork_ns": 3122.763,
+        "max_fork_ns": 4082.443,
+        "bytes_per_op": 5200,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_union_raw",
+        "forks": 5,
+        "median_ns": 1078.544,
+        "min_fork_ns": 1048.023,
+        "max_fork_ns": 1229.508,
+        "bytes_per_op": 1472,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_union_raw",
+        "forks": 5,
+        "median_ns": 1130.773,
+        "min_fork_ns": 1122.664,
+        "max_fork_ns": 1162.751,
+        "bytes_per_op": 1968,
+        "equivalent_results": true
+      },
+      "speedup": 3.043251828390867,
+      "percent_less_time": 67.14041241441547,
+      "allocation_change": -3728
+    },
+    {
+      "case": "positional_update_chain_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_update_chain_16",
+        "forks": 5,
+        "median_ns": 6484.615,
+        "min_fork_ns": 5760.505,
+        "max_fork_ns": 8722.888,
+        "bytes_per_op": 22360,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_update_chain_16",
+        "forks": 5,
+        "median_ns": 4965.21,
+        "min_fork_ns": 4694.639,
+        "max_fork_ns": 5125.252,
+        "bytes_per_op": 14560,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_update_chain_16",
+        "forks": 5,
+        "median_ns": 6344.572,
+        "min_fork_ns": 6176.702,
+        "max_fork_ns": 6740.096,
+        "bytes_per_op": 23168,
+        "equivalent_results": true
+      },
+      "speedup": 1.3060102191045293,
+      "percent_less_time": 23.43092072544013,
+      "allocation_change": -7800
+    },
+    {
+      "case": "positional_update_map",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_update_map",
+        "forks": 5,
+        "median_ns": 1089.092,
+        "min_fork_ns": 1038.098,
+        "max_fork_ns": 1317.986,
+        "bytes_per_op": 3024,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_update_map",
+        "forks": 5,
+        "median_ns": 784.647,
+        "min_fork_ns": 758.197,
+        "max_fork_ns": 789.954,
+        "bytes_per_op": 1872,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_update_map",
+        "forks": 5,
+        "median_ns": 1035.436,
+        "min_fork_ns": 1022.387,
+        "max_fork_ns": 1126.322,
+        "bytes_per_op": 3192,
+        "equivalent_results": true
+      },
+      "speedup": 1.3880025030363974,
+      "percent_less_time": 27.954020413335144,
+      "allocation_change": -1152
+    },
+    {
+      "case": "positional_where_128",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_where_128",
+        "forks": 5,
+        "median_ns": 33105.505,
+        "min_fork_ns": 30560.274,
+        "max_fork_ns": 37459.847,
+        "bytes_per_op": 32808,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_where_128",
+        "forks": 5,
+        "median_ns": 22768.75,
+        "min_fork_ns": 21291.934,
+        "max_fork_ns": 23689.804,
+        "bytes_per_op": 20712,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_where_128",
+        "forks": 5,
+        "median_ns": 30984.84,
+        "min_fork_ns": 29820.803,
+        "max_fork_ns": 33746.72,
+        "bytes_per_op": 38992,
+        "equivalent_results": true
+      },
+      "speedup": 1.4539886906395827,
+      "percent_less_time": 31.223674129121413,
+      "allocation_change": -12096
+    },
+    {
+      "case": "positional_where_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_where_16",
+        "forks": 5,
+        "median_ns": 4463.342,
+        "min_fork_ns": 4277.051,
+        "max_fork_ns": 5468.876,
+        "bytes_per_op": 5888,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_where_16",
+        "forks": 5,
+        "median_ns": 3083.938,
+        "min_fork_ns": 2938.194,
+        "max_fork_ns": 3345.809,
+        "bytes_per_op": 3648,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_where_16",
+        "forks": 5,
+        "median_ns": 4175.498,
+        "min_fork_ns": 4023.641,
+        "max_fork_ns": 4309.932,
+        "bytes_per_op": 6696,
+        "equivalent_results": true
+      },
+      "speedup": 1.4472865537504318,
+      "percent_less_time": 30.905182708383084,
+      "allocation_change": -2240
+    },
+    {
+      "case": "positional_where_eq",
+      "baseline": {
+        "version": "baseline",
+        "case": "positional_where_eq",
+        "forks": 5,
+        "median_ns": 923.863,
+        "min_fork_ns": 913.956,
+        "max_fork_ns": 1210.54,
+        "bytes_per_op": 2664,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "positional_where_eq",
+        "forks": 5,
+        "median_ns": 685.076,
+        "min_fork_ns": 657.285,
+        "max_fork_ns": 730.5,
+        "bytes_per_op": 1592,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "positional_where_eq",
+        "forks": 5,
+        "median_ns": 893.22,
+        "min_fork_ns": 853.05,
+        "max_fork_ns": 905.865,
+        "bytes_per_op": 2816,
+        "equivalent_results": true
+      },
+      "speedup": 1.3485554887340967,
+      "percent_less_time": 25.846581148936586,
+      "allocation_change": -1072
+    },
+    {
+      "case": "raw_batch_4",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_batch_4",
+        "forks": 5,
+        "median_ns": 2650.209,
+        "min_fork_ns": 2545.741,
+        "max_fork_ns": 3585.885,
+        "bytes_per_op": 7584,
+        "equivalent_results": false
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_batch_4",
+        "forks": 5,
+        "median_ns": 1342.972,
+        "min_fork_ns": 1277.646,
+        "max_fork_ns": 1431.492,
+        "bytes_per_op": 3304,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_batch_4",
+        "forks": 5,
+        "median_ns": 2326.528,
+        "min_fork_ns": 2209.39,
+        "max_fork_ns": 2458.901,
+        "bytes_per_op": 7456,
+        "equivalent_results": true
+      },
+      "speedup": 1.973391105696917,
+      "percent_less_time": 49.32580788911365,
+      "allocation_change": -4280
+    },
+    {
+      "case": "raw_batch_64",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_batch_64",
+        "forks": 5,
+        "median_ns": 28635.402,
+        "min_fork_ns": 27470.755,
+        "max_fork_ns": 33995.016,
+        "bytes_per_op": 97344,
+        "equivalent_results": false
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_batch_64",
+        "forks": 5,
+        "median_ns": 11983.127,
+        "min_fork_ns": 11507.9,
+        "max_fork_ns": 12553.351,
+        "bytes_per_op": 30184,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_batch_64",
+        "forks": 5,
+        "median_ns": 23535.231,
+        "min_fork_ns": 22964.92,
+        "max_fork_ns": 25683.439,
+        "bytes_per_op": 92416,
+        "equivalent_results": true
+      },
+      "speedup": 2.389643537951321,
+      "percent_less_time": 58.15275441217832,
+      "allocation_change": -67160
+    },
+    {
+      "case": "raw_batch_beans",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_batch_beans",
+        "forks": 5,
+        "median_ns": 6492.052,
+        "min_fork_ns": 6440.702,
+        "max_fork_ns": 9515.833,
+        "bytes_per_op": 16896,
+        "equivalent_results": false
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_batch_beans",
+        "forks": 5,
+        "median_ns": 3617.438,
+        "min_fork_ns": 3507.743,
+        "max_fork_ns": 3829.598,
+        "bytes_per_op": 8808,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_batch_beans",
+        "forks": 5,
+        "median_ns": 6083.405,
+        "min_fork_ns": 5313.704,
+        "max_fork_ns": 7313.835,
+        "bytes_per_op": 16792,
+        "equivalent_results": true
+      },
+      "speedup": 1.7946546699625534,
+      "percent_less_time": 44.27897373588504,
+      "allocation_change": -8088
+    },
+    {
+      "case": "raw_between",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_between",
+        "forks": 5,
+        "median_ns": 1251.412,
+        "min_fork_ns": 1232.943,
+        "max_fork_ns": 1403.285,
+        "bytes_per_op": 3384,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_between",
+        "forks": 5,
+        "median_ns": 737.155,
+        "min_fork_ns": 711.301,
+        "max_fork_ns": 759.677,
+        "bytes_per_op": 1648,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_between",
+        "forks": 5,
+        "median_ns": 1162.32,
+        "min_fork_ns": 1138.956,
+        "max_fork_ns": 1283.213,
+        "bytes_per_op": 3432,
+        "equivalent_results": true
+      },
+      "speedup": 1.6976239732485028,
+      "percent_less_time": 41.09414005938892,
+      "allocation_change": -1736
+    },
+    {
+      "case": "raw_condition_only",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_condition_only",
+        "forks": 5,
+        "median_ns": 4833.113,
+        "min_fork_ns": 4666.796,
+        "max_fork_ns": 5370.039,
+        "bytes_per_op": 7816,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_condition_only",
+        "forks": 5,
+        "median_ns": 2560.9,
+        "min_fork_ns": 2447.476,
+        "max_fork_ns": 2729.886,
+        "bytes_per_op": 2720,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_condition_only",
+        "forks": 5,
+        "median_ns": 4505.993,
+        "min_fork_ns": 4376.133,
+        "max_fork_ns": 4924.272,
+        "bytes_per_op": 8584,
+        "equivalent_results": true
+      },
+      "speedup": 1.8872712718185014,
+      "percent_less_time": 47.01344661298008,
+      "allocation_change": -5096
+    },
+    {
+      "case": "raw_delete",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_delete",
+        "forks": 5,
+        "median_ns": 432.534,
+        "min_fork_ns": 418.505,
+        "max_fork_ns": 581.183,
+        "bytes_per_op": 1624,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_delete",
+        "forks": 5,
+        "median_ns": 273.663,
+        "min_fork_ns": 244.617,
+        "max_fork_ns": 285.363,
+        "bytes_per_op": 912,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_delete",
+        "forks": 5,
+        "median_ns": 422.433,
+        "min_fork_ns": 405.178,
+        "max_fork_ns": 458.672,
+        "bytes_per_op": 1664,
+        "equivalent_results": true
+      },
+      "speedup": 1.5805351837844355,
+      "percent_less_time": 36.73029172273162,
+      "allocation_change": -712
+    },
+    {
+      "case": "raw_derived",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_derived",
+        "forks": 5,
+        "median_ns": 9578.52,
+        "min_fork_ns": 9008.799,
+        "max_fork_ns": 10675.216,
+        "bytes_per_op": 15848,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_derived",
+        "forks": 5,
+        "median_ns": 3385.887,
+        "min_fork_ns": 3296.878,
+        "max_fork_ns": 3480.849,
+        "bytes_per_op": 5216,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_derived",
+        "forks": 5,
+        "median_ns": 3640.23,
+        "min_fork_ns": 3600.104,
+        "max_fork_ns": 4003.036,
+        "bytes_per_op": 7632,
+        "equivalent_results": true
+      },
+      "speedup": 2.8289544216921594,
+      "percent_less_time": 64.65125092394233,
+      "allocation_change": -10632
+    },
+    {
+      "case": "raw_group_order",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_group_order",
+        "forks": 5,
+        "median_ns": 3306.579,
+        "min_fork_ns": 3163.015,
+        "max_fork_ns": 3931.449,
+        "bytes_per_op": 6432,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_group_order",
+        "forks": 5,
+        "median_ns": 1505.802,
+        "min_fork_ns": 1437.29,
+        "max_fork_ns": 1596.998,
+        "bytes_per_op": 2952,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_group_order",
+        "forks": 5,
+        "median_ns": 2237.445,
+        "min_fork_ns": 2162.241,
+        "max_fork_ns": 2380.346,
+        "bytes_per_op": 6256,
+        "equivalent_results": true
+      },
+      "speedup": 2.1958922886275887,
+      "percent_less_time": 54.46042571491563,
+      "allocation_change": -3480
+    },
+    {
+      "case": "raw_in_1024",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_in_1024",
+        "forks": 5,
+        "median_ns": 77428.975,
+        "min_fork_ns": 70023.333,
+        "max_fork_ns": 85581.667,
+        "bytes_per_op": 220248,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_in_1024",
+        "forks": 5,
+        "median_ns": 13464.107,
+        "min_fork_ns": 13134.115,
+        "max_fork_ns": 13926.698,
+        "bytes_per_op": 6328,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_in_1024",
+        "forks": 5,
+        "median_ns": 72276.712,
+        "min_fork_ns": 71393.421,
+        "max_fork_ns": 81147.26,
+        "bytes_per_op": 220328,
+        "equivalent_results": true
+      },
+      "speedup": 5.750769434616051,
+      "percent_less_time": 82.61102255324961,
+      "allocation_change": -213920
+    },
+    {
+      "case": "raw_in_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_in_16",
+        "forks": 5,
+        "median_ns": 1714.27,
+        "min_fork_ns": 1673.488,
+        "max_fork_ns": 2075.54,
+        "bytes_per_op": 5600,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_in_16",
+        "forks": 5,
+        "median_ns": 632.258,
+        "min_fork_ns": 592.912,
+        "max_fork_ns": 679.791,
+        "bytes_per_op": 1344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_in_16",
+        "forks": 5,
+        "median_ns": 1690.792,
+        "min_fork_ns": 1586.391,
+        "max_fork_ns": 2045.993,
+        "bytes_per_op": 5680,
+        "equivalent_results": true
+      },
+      "speedup": 2.7113456848311923,
+      "percent_less_time": 63.11794524783143,
+      "allocation_change": -4256
+    },
+    {
+      "case": "raw_in_17",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_in_17",
+        "forks": 5,
+        "median_ns": 1795.463,
+        "min_fork_ns": 1737.606,
+        "max_fork_ns": 2054.743,
+        "bytes_per_op": 5816,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_in_17",
+        "forks": 5,
+        "median_ns": 632.337,
+        "min_fork_ns": 622.929,
+        "max_fork_ns": 709.431,
+        "bytes_per_op": 1352,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_in_17",
+        "forks": 5,
+        "median_ns": 1728.451,
+        "min_fork_ns": 1677.906,
+        "max_fork_ns": 1860.291,
+        "bytes_per_op": 5896,
+        "equivalent_results": true
+      },
+      "speedup": 2.8394084167145053,
+      "percent_less_time": 64.7813962192482,
+      "allocation_change": -4464
+    },
+    {
+      "case": "raw_in_256",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_in_256",
+        "forks": 5,
+        "median_ns": 18590.665,
+        "min_fork_ns": 17805.556,
+        "max_fork_ns": 23647.416,
+        "bytes_per_op": 56640,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_in_256",
+        "forks": 5,
+        "median_ns": 3637.755,
+        "min_fork_ns": 3535.095,
+        "max_fork_ns": 4051.351,
+        "bytes_per_op": 2464,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_in_256",
+        "forks": 5,
+        "median_ns": 18104.766,
+        "min_fork_ns": 17626.258,
+        "max_fork_ns": 20487.709,
+        "bytes_per_op": 56720,
+        "equivalent_results": true
+      },
+      "speedup": 5.110477478554768,
+      "percent_less_time": 80.43235677690927,
+      "allocation_change": -54176
+    },
+    {
+      "case": "raw_in_expression",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_in_expression",
+        "forks": 5,
+        "median_ns": 18691.354,
+        "min_fork_ns": 17656.292,
+        "max_fork_ns": 25206.803,
+        "bytes_per_op": 56616,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_in_expression",
+        "forks": 5,
+        "median_ns": 4856.466,
+        "min_fork_ns": 4564.447,
+        "max_fork_ns": 4985.8,
+        "bytes_per_op": 3712,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_in_expression",
+        "forks": 5,
+        "median_ns": 18955.386,
+        "min_fork_ns": 18935.121,
+        "max_fork_ns": 20760.201,
+        "bytes_per_op": 57760,
+        "equivalent_results": true
+      },
+      "speedup": 3.8487562766834973,
+      "percent_less_time": 74.0175805348291,
+      "allocation_change": -52904
+    },
+    {
+      "case": "raw_insert_entity",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_insert_entity",
+        "forks": 5,
+        "median_ns": 848.693,
+        "min_fork_ns": 844.486,
+        "max_fork_ns": 1054.083,
+        "bytes_per_op": 2176,
+        "equivalent_results": false
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_insert_entity",
+        "forks": 5,
+        "median_ns": 622.104,
+        "min_fork_ns": 569.747,
+        "max_fork_ns": 662.085,
+        "bytes_per_op": 1264,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_insert_entity",
+        "forks": 5,
+        "median_ns": 814.483,
+        "min_fork_ns": 739.726,
+        "max_fork_ns": 894.974,
+        "bytes_per_op": 2128,
+        "equivalent_results": true
+      },
+      "speedup": 1.364230096575492,
+      "percent_less_time": 26.698582408479854,
+      "allocation_change": -912
+    },
+    {
+      "case": "raw_insert_placeholders",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_insert_placeholders",
+        "forks": 5,
+        "median_ns": 677.952,
+        "min_fork_ns": 660.084,
+        "max_fork_ns": 801.444,
+        "bytes_per_op": 1944,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_insert_placeholders",
+        "forks": 5,
+        "median_ns": 480.846,
+        "min_fork_ns": 470.309,
+        "max_fork_ns": 494.945,
+        "bytes_per_op": 1208,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_insert_placeholders",
+        "forks": 5,
+        "median_ns": 686.133,
+        "min_fork_ns": 670.743,
+        "max_fork_ns": 775.543,
+        "bytes_per_op": 2096,
+        "equivalent_results": true
+      },
+      "speedup": 1.409915024768845,
+      "percent_less_time": 29.073739733786464,
+      "allocation_change": -736
+    },
+    {
+      "case": "raw_insert_values",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_insert_values",
+        "forks": 5,
+        "median_ns": 1055.422,
+        "min_fork_ns": 1008.658,
+        "max_fork_ns": 1259.223,
+        "bytes_per_op": 2464,
+        "equivalent_results": false
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_insert_values",
+        "forks": 5,
+        "median_ns": 722.103,
+        "min_fork_ns": 643.46,
+        "max_fork_ns": 826.011,
+        "bytes_per_op": 1536,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_insert_values",
+        "forks": 5,
+        "median_ns": 960.583,
+        "min_fork_ns": 952.895,
+        "max_fork_ns": 1162.562,
+        "bytes_per_op": 2544,
+        "equivalent_results": true
+      },
+      "speedup": 1.461594814036225,
+      "percent_less_time": 31.581585375328547,
+      "allocation_change": -928
+    },
+    {
+      "case": "raw_join_on",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_join_on",
+        "forks": 5,
+        "median_ns": 1742.101,
+        "min_fork_ns": 1627.809,
+        "max_fork_ns": 2194.225,
+        "bytes_per_op": 3952,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_join_on",
+        "forks": 5,
+        "median_ns": 1115.875,
+        "min_fork_ns": 1008.65,
+        "max_fork_ns": 1226.244,
+        "bytes_per_op": 2336,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_join_on",
+        "forks": 5,
+        "median_ns": 1355.016,
+        "min_fork_ns": 1336.552,
+        "max_fork_ns": 1580.181,
+        "bytes_per_op": 4016,
+        "equivalent_results": true
+      },
+      "speedup": 1.5611972667189427,
+      "percent_less_time": 35.94659551885913,
+      "allocation_change": -1616
+    },
+    {
+      "case": "raw_join_using",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_join_using",
+        "forks": 5,
+        "median_ns": 931.948,
+        "min_fork_ns": 923.427,
+        "max_fork_ns": 1143.36,
+        "bytes_per_op": 3176,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_join_using",
+        "forks": 5,
+        "median_ns": 683.573,
+        "min_fork_ns": 660.981,
+        "max_fork_ns": 728.697,
+        "bytes_per_op": 1664,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_join_using",
+        "forks": 5,
+        "median_ns": 946.342,
+        "min_fork_ns": 920.32,
+        "max_fork_ns": 1006.081,
+        "bytes_per_op": 3344,
+        "equivalent_results": true
+      },
+      "speedup": 1.3633481720313705,
+      "percent_less_time": 26.651165086464058,
+      "allocation_change": -1512
+    },
+    {
+      "case": "raw_late_modifier",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_late_modifier",
+        "forks": 5,
+        "median_ns": 733.115,
+        "min_fork_ns": 719.957,
+        "max_fork_ns": 1027.857,
+        "bytes_per_op": 2480,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_late_modifier",
+        "forks": 5,
+        "median_ns": 493.548,
+        "min_fork_ns": 479.538,
+        "max_fork_ns": 522.76,
+        "bytes_per_op": 1344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_late_modifier",
+        "forks": 5,
+        "median_ns": 723.784,
+        "min_fork_ns": 692.742,
+        "max_fork_ns": 740.992,
+        "bytes_per_op": 2560,
+        "equivalent_results": true
+      },
+      "speedup": 1.4853975702464604,
+      "percent_less_time": 32.677956391562034,
+      "allocation_change": -1136
+    },
+    {
+      "case": "raw_mixed_literals",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_mixed_literals",
+        "forks": 5,
+        "median_ns": 1543.405,
+        "min_fork_ns": 1433.906,
+        "max_fork_ns": 1976.703,
+        "bytes_per_op": 3192,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_mixed_literals",
+        "forks": 5,
+        "median_ns": 1062.057,
+        "min_fork_ns": 962.504,
+        "max_fork_ns": 1174.984,
+        "bytes_per_op": 1864,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_mixed_literals",
+        "forks": 5,
+        "median_ns": 1455.471,
+        "min_fork_ns": 1349.022,
+        "max_fork_ns": 1599.204,
+        "bytes_per_op": 3368,
+        "equivalent_results": true
+      },
+      "speedup": 1.4532223788365408,
+      "percent_less_time": 31.187407064250795,
+      "allocation_change": -1328
+    },
+    {
+      "case": "raw_naming_CAMEL_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 4126.273,
+        "min_fork_ns": 3960.562,
+        "max_fork_ns": 5213.393,
+        "bytes_per_op": 7880,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 2342.222,
+        "min_fork_ns": 2244.969,
+        "max_fork_ns": 2791.393,
+        "bytes_per_op": 1504,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_naming_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 5372.111,
+        "min_fork_ns": 5161.887,
+        "max_fork_ns": 5982.353,
+        "bytes_per_op": 9360,
+        "equivalent_results": true
+      },
+      "speedup": 1.761691675682322,
+      "percent_less_time": 43.236378203768865,
+      "allocation_change": -6376
+    },
+    {
+      "case": "raw_naming_KEBAB_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 5381.087,
+        "min_fork_ns": 4889.697,
+        "max_fork_ns": 6436.756,
+        "bytes_per_op": 8840,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 3168.789,
+        "min_fork_ns": 2983.252,
+        "max_fork_ns": 3369.009,
+        "bytes_per_op": 3272,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_naming_KEBAB_CASE",
+        "forks": 5,
+        "median_ns": 5164.551,
+        "min_fork_ns": 5038.526,
+        "max_fork_ns": 5759.144,
+        "bytes_per_op": 9648,
+        "equivalent_results": true
+      },
+      "speedup": 1.698152511890189,
+      "percent_less_time": 41.112474115359966,
+      "allocation_change": -5568
+    },
+    {
+      "case": "raw_naming_NO_CHANGE",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 4239.38,
+        "min_fork_ns": 3889.687,
+        "max_fork_ns": 6719.149,
+        "bytes_per_op": 7880,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 1952.551,
+        "min_fork_ns": 1859.86,
+        "max_fork_ns": 2188.461,
+        "bytes_per_op": 1504,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_naming_NO_CHANGE",
+        "forks": 5,
+        "median_ns": 4059.625,
+        "min_fork_ns": 3927.511,
+        "max_fork_ns": 4216.454,
+        "bytes_per_op": 7880,
+        "equivalent_results": true
+      },
+      "speedup": 2.1712006498165732,
+      "percent_less_time": 53.942534049790304,
+      "allocation_change": -6376
+    },
+    {
+      "case": "raw_naming_SCREAMING_SNAKE_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 5339.805,
+        "min_fork_ns": 5290.884,
+        "max_fork_ns": 6676.186,
+        "bytes_per_op": 8856,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 3161.838,
+        "min_fork_ns": 2945.103,
+        "max_fork_ns": 3484.027,
+        "bytes_per_op": 3288,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_naming_SCREAMING_SNAKE_CASE",
+        "forks": 5,
+        "median_ns": 5148.476,
+        "min_fork_ns": 5066.766,
+        "max_fork_ns": 5543.742,
+        "bytes_per_op": 9664,
+        "equivalent_results": true
+      },
+      "speedup": 1.6888294087173346,
+      "percent_less_time": 40.787388303505466,
+      "allocation_change": -5568
+    },
+    {
+      "case": "raw_naming_UPPER_CAMEL_CASE",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 5400.599,
+        "min_fork_ns": 5204.418,
+        "max_fork_ns": 6266.19,
+        "bytes_per_op": 8840,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 3258.27,
+        "min_fork_ns": 3057.944,
+        "max_fork_ns": 3591.015,
+        "bytes_per_op": 3000,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_naming_UPPER_CAMEL_CASE",
+        "forks": 5,
+        "median_ns": 5510.018,
+        "min_fork_ns": 5167.128,
+        "max_fork_ns": 6677.489,
+        "bytes_per_op": 9376,
+        "equivalent_results": true
+      },
+      "speedup": 1.657505056364267,
+      "percent_less_time": 39.66835900980613,
+      "allocation_change": -5840
+    },
+    {
+      "case": "raw_nested",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_nested",
+        "forks": 5,
+        "median_ns": 1359.399,
+        "min_fork_ns": 1298.671,
+        "max_fork_ns": 1641.611,
+        "bytes_per_op": 3280,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_nested",
+        "forks": 5,
+        "median_ns": 883.481,
+        "min_fork_ns": 839.183,
+        "max_fork_ns": 937.96,
+        "bytes_per_op": 1616,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_nested",
+        "forks": 5,
+        "median_ns": 1261.077,
+        "min_fork_ns": 1226.511,
+        "max_fork_ns": 1423.021,
+        "bytes_per_op": 3448,
+        "equivalent_results": true
+      },
+      "speedup": 1.5386850424627128,
+      "percent_less_time": 35.009441672386096,
+      "allocation_change": -1664
+    },
+    {
+      "case": "raw_pagination",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_pagination",
+        "forks": 5,
+        "median_ns": 1030.388,
+        "min_fork_ns": 979.964,
+        "max_fork_ns": 1187.274,
+        "bytes_per_op": 3400,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_pagination",
+        "forks": 5,
+        "median_ns": 723.325,
+        "min_fork_ns": 676.495,
+        "max_fork_ns": 757.919,
+        "bytes_per_op": 1712,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_pagination",
+        "forks": 5,
+        "median_ns": 999.873,
+        "min_fork_ns": 990.01,
+        "max_fork_ns": 1077.261,
+        "bytes_per_op": 3520,
+        "equivalent_results": true
+      },
+      "speedup": 1.4245159506445926,
+      "percent_less_time": 29.80071584684604,
+      "allocation_change": -1688
+    },
+    {
+      "case": "raw_raw_expression",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_raw_expression",
+        "forks": 5,
+        "median_ns": 1572.455,
+        "min_fork_ns": 1486.561,
+        "max_fork_ns": 2104.546,
+        "bytes_per_op": 2624,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_raw_expression",
+        "forks": 5,
+        "median_ns": 962.15,
+        "min_fork_ns": 921.673,
+        "max_fork_ns": 987.597,
+        "bytes_per_op": 1744,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_raw_expression",
+        "forks": 5,
+        "median_ns": 1026.161,
+        "min_fork_ns": 1005.942,
+        "max_fork_ns": 1101.251,
+        "bytes_per_op": 2616,
+        "equivalent_results": true
+      },
+      "speedup": 1.6343137764381852,
+      "percent_less_time": 38.81223945995275,
+      "allocation_change": -880
+    },
+    {
+      "case": "raw_repeated_names",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_repeated_names",
+        "forks": 5,
+        "median_ns": 23071.884,
+        "min_fork_ns": 21270.552,
+        "max_fork_ns": 33231.507,
+        "bytes_per_op": 53896,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_repeated_names",
+        "forks": 5,
+        "median_ns": 11911.184,
+        "min_fork_ns": 11360.239,
+        "max_fork_ns": 12388.216,
+        "bytes_per_op": 14152,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_repeated_names",
+        "forks": 5,
+        "median_ns": 21756.757,
+        "min_fork_ns": 21508.325,
+        "max_fork_ns": 25104.564,
+        "bytes_per_op": 59056,
+        "equivalent_results": true
+      },
+      "speedup": 1.936993333324378,
+      "percent_less_time": 48.37359619179777,
+      "allocation_change": -39744
+    },
+    {
+      "case": "raw_retry_rollback",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_retry_rollback",
+        "forks": 5,
+        "median_ns": 3919.662,
+        "min_fork_ns": 3395.042,
+        "max_fork_ns": 4213.985,
+        "bytes_per_op": 6376,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_retry_rollback",
+        "forks": 5,
+        "median_ns": 2792.071,
+        "min_fork_ns": 2578.036,
+        "max_fork_ns": 3090.384,
+        "bytes_per_op": 3976,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_retry_rollback",
+        "forks": 5,
+        "median_ns": 3242.727,
+        "min_fork_ns": 3100.33,
+        "max_fork_ns": 3594.606,
+        "bytes_per_op": 6400,
+        "equivalent_results": true
+      },
+      "speedup": 1.4038547014026506,
+      "percent_less_time": 28.767556998537113,
+      "allocation_change": -2400
+    },
+    {
+      "case": "raw_row_in",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_row_in",
+        "forks": 5,
+        "median_ns": 1236.914,
+        "min_fork_ns": 1142.604,
+        "max_fork_ns": 1443.661,
+        "bytes_per_op": 3136,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_row_in",
+        "forks": 5,
+        "median_ns": 764.824,
+        "min_fork_ns": 724.023,
+        "max_fork_ns": 852.964,
+        "bytes_per_op": 1608,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_row_in",
+        "forks": 5,
+        "median_ns": 1120.265,
+        "min_fork_ns": 1074.739,
+        "max_fork_ns": 1195.053,
+        "bytes_per_op": 3168,
+        "equivalent_results": true
+      },
+      "speedup": 1.6172531196719768,
+      "percent_less_time": 38.16676017896151,
+      "allocation_change": -1528
+    },
+    {
+      "case": "raw_select_columns",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_select_columns",
+        "forks": 5,
+        "median_ns": 828.505,
+        "min_fork_ns": 784.311,
+        "max_fork_ns": 1055.236,
+        "bytes_per_op": 1952,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_select_columns",
+        "forks": 5,
+        "median_ns": 617.199,
+        "min_fork_ns": 572.458,
+        "max_fork_ns": 636.706,
+        "bytes_per_op": 1216,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_select_columns",
+        "forks": 5,
+        "median_ns": 810.935,
+        "min_fork_ns": 795.795,
+        "max_fork_ns": 824.972,
+        "bytes_per_op": 2104,
+        "equivalent_results": true
+      },
+      "speedup": 1.3423628359734867,
+      "percent_less_time": 25.50449303263107,
+      "allocation_change": -736
+    },
+    {
+      "case": "raw_select_entity",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_select_entity",
+        "forks": 5,
+        "median_ns": 583.952,
+        "min_fork_ns": 573.451,
+        "max_fork_ns": 689.722,
+        "bytes_per_op": 2000,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_select_entity",
+        "forks": 5,
+        "median_ns": 535.349,
+        "min_fork_ns": 491.819,
+        "max_fork_ns": 583.22,
+        "bytes_per_op": 1304,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_select_entity",
+        "forks": 5,
+        "median_ns": 583.353,
+        "min_fork_ns": 569.65,
+        "max_fork_ns": 682.892,
+        "bytes_per_op": 1992,
+        "equivalent_results": true
+      },
+      "speedup": 1.090787504973391,
+      "percent_less_time": 8.32311559854234,
+      "allocation_change": -696
+    },
+    {
+      "case": "raw_select_expressions",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_select_expressions",
+        "forks": 5,
+        "median_ns": 2105.168,
+        "min_fork_ns": 2031.902,
+        "max_fork_ns": 2625.192,
+        "bytes_per_op": 2728,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_select_expressions",
+        "forks": 5,
+        "median_ns": 1459.424,
+        "min_fork_ns": 1405.441,
+        "max_fork_ns": 1658.98,
+        "bytes_per_op": 1936,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_select_expressions",
+        "forks": 5,
+        "median_ns": 1511.899,
+        "min_fork_ns": 1488.249,
+        "max_fork_ns": 1647.049,
+        "bytes_per_op": 2512,
+        "equivalent_results": true
+      },
+      "speedup": 1.4424649724822944,
+      "percent_less_time": 30.674226475036683,
+      "allocation_change": -792
+    },
+    {
+      "case": "raw_select_star",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_select_star",
+        "forks": 5,
+        "median_ns": 307.761,
+        "min_fork_ns": 279.351,
+        "max_fork_ns": 345.616,
+        "bytes_per_op": 1424,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_select_star",
+        "forks": 5,
+        "median_ns": 218.99,
+        "min_fork_ns": 206.692,
+        "max_fork_ns": 224.957,
+        "bytes_per_op": 880,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_select_star",
+        "forks": 5,
+        "median_ns": 234.305,
+        "min_fork_ns": 229.67,
+        "max_fork_ns": 251.433,
+        "bytes_per_op": 1240,
+        "equivalent_results": true
+      },
+      "speedup": 1.405365541805562,
+      "percent_less_time": 28.844135546739192,
+      "allocation_change": -544
+    },
+    {
+      "case": "raw_subquery_raw",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_subquery_raw",
+        "forks": 5,
+        "median_ns": 638.401,
+        "min_fork_ns": 603.334,
+        "max_fork_ns": 989.75,
+        "bytes_per_op": 2272,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_subquery_raw",
+        "forks": 5,
+        "median_ns": 500.621,
+        "min_fork_ns": 484.641,
+        "max_fork_ns": 528.2,
+        "bytes_per_op": 1344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_subquery_raw",
+        "forks": 5,
+        "median_ns": 627.344,
+        "min_fork_ns": 622.371,
+        "max_fork_ns": 697.692,
+        "bytes_per_op": 2352,
+        "equivalent_results": true
+      },
+      "speedup": 1.275218179021655,
+      "percent_less_time": 21.5820463940376,
+      "allocation_change": -928
+    },
+    {
+      "case": "raw_subquery_structured",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_subquery_structured",
+        "forks": 5,
+        "median_ns": 1415.002,
+        "min_fork_ns": 1305.811,
+        "max_fork_ns": 1666.311,
+        "bytes_per_op": 4616,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_subquery_structured",
+        "forks": 5,
+        "median_ns": 1119.906,
+        "min_fork_ns": 1083.818,
+        "max_fork_ns": 1128.276,
+        "bytes_per_op": 2720,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_subquery_structured",
+        "forks": 5,
+        "median_ns": 1343.395,
+        "min_fork_ns": 1295.322,
+        "max_fork_ns": 1427.792,
+        "bytes_per_op": 4720,
+        "equivalent_results": true
+      },
+      "speedup": 1.2635006866647738,
+      "percent_less_time": 20.85481151263391,
+      "allocation_change": -1896
+    },
+    {
+      "case": "raw_union_builder",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_union_builder",
+        "forks": 5,
+        "median_ns": 5552.034,
+        "min_fork_ns": 5368.843,
+        "max_fork_ns": 6416.487,
+        "bytes_per_op": 10160,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_union_builder",
+        "forks": 5,
+        "median_ns": 2165.862,
+        "min_fork_ns": 2082.454,
+        "max_fork_ns": 2404.459,
+        "bytes_per_op": 3752,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_union_builder",
+        "forks": 5,
+        "median_ns": 2509.618,
+        "min_fork_ns": 2467.639,
+        "max_fork_ns": 2975.67,
+        "bytes_per_op": 6120,
+        "equivalent_results": true
+      },
+      "speedup": 2.5634292489549195,
+      "percent_less_time": 60.98975618665159,
+      "allocation_change": -6408
+    },
+    {
+      "case": "raw_union_raw",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_union_raw",
+        "forks": 5,
+        "median_ns": 3469.008,
+        "min_fork_ns": 3209.726,
+        "max_fork_ns": 3856.517,
+        "bytes_per_op": 5200,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_union_raw",
+        "forks": 5,
+        "median_ns": 1099.958,
+        "min_fork_ns": 1017.683,
+        "max_fork_ns": 1140.074,
+        "bytes_per_op": 1472,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_union_raw",
+        "forks": 5,
+        "median_ns": 1140.639,
+        "min_fork_ns": 1120.021,
+        "max_fork_ns": 1233.16,
+        "bytes_per_op": 1968,
+        "equivalent_results": true
+      },
+      "speedup": 3.1537640528092887,
+      "percent_less_time": 68.29185749931969,
+      "allocation_change": -3728
+    },
+    {
+      "case": "raw_update_chain_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_update_chain_16",
+        "forks": 5,
+        "median_ns": 8112.712,
+        "min_fork_ns": 7944.358,
+        "max_fork_ns": 9891.939,
+        "bytes_per_op": 25448,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_update_chain_16",
+        "forks": 5,
+        "median_ns": 4898.724,
+        "min_fork_ns": 4826.023,
+        "max_fork_ns": 5094.794,
+        "bytes_per_op": 13856,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_update_chain_16",
+        "forks": 5,
+        "median_ns": 8206.76,
+        "min_fork_ns": 7877.126,
+        "max_fork_ns": 8917.148,
+        "bytes_per_op": 26256,
+        "equivalent_results": true
+      },
+      "speedup": 1.6560867687177314,
+      "percent_less_time": 39.61669044827426,
+      "allocation_change": -11592
+    },
+    {
+      "case": "raw_update_map",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_update_map",
+        "forks": 5,
+        "median_ns": 1381.488,
+        "min_fork_ns": 1337.475,
+        "max_fork_ns": 1939.346,
+        "bytes_per_op": 3592,
+        "equivalent_results": false
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_update_map",
+        "forks": 5,
+        "median_ns": 825.581,
+        "min_fork_ns": 799.364,
+        "max_fork_ns": 942.001,
+        "bytes_per_op": 1960,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_update_map",
+        "forks": 5,
+        "median_ns": 1269.593,
+        "min_fork_ns": 1250.958,
+        "max_fork_ns": 1365.994,
+        "bytes_per_op": 3712,
+        "equivalent_results": true
+      },
+      "speedup": 1.6733524632955459,
+      "percent_less_time": 40.23972701898243,
+      "allocation_change": -1632
+    },
+    {
+      "case": "raw_where_128",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_where_128",
+        "forks": 5,
+        "median_ns": 39734.183,
+        "min_fork_ns": 38318.478,
+        "max_fork_ns": 48266.169,
+        "bytes_per_op": 56496,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_where_128",
+        "forks": 5,
+        "median_ns": 22231.488,
+        "min_fork_ns": 21640.779,
+        "max_fork_ns": 23327.165,
+        "bytes_per_op": 17776,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_where_128",
+        "forks": 5,
+        "median_ns": 37031.283,
+        "min_fork_ns": 36494.326,
+        "max_fork_ns": 39222.468,
+        "bytes_per_op": 62680,
+        "equivalent_results": true
+      },
+      "speedup": 1.7872930053085063,
+      "percent_less_time": 44.049464915385315,
+      "allocation_change": -38720
+    },
+    {
+      "case": "raw_where_16",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_where_16",
+        "forks": 5,
+        "median_ns": 5299.916,
+        "min_fork_ns": 4975.65,
+        "max_fork_ns": 7272.982,
+        "bytes_per_op": 8840,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_where_16",
+        "forks": 5,
+        "median_ns": 2997.95,
+        "min_fork_ns": 2869.453,
+        "max_fork_ns": 3653.331,
+        "bytes_per_op": 3272,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_where_16",
+        "forks": 5,
+        "median_ns": 5129.542,
+        "min_fork_ns": 4932.204,
+        "max_fork_ns": 5364.198,
+        "bytes_per_op": 9648,
+        "equivalent_results": true
+      },
+      "speedup": 1.7678466952417486,
+      "percent_less_time": 43.43400914278642,
+      "allocation_change": -5568
+    },
+    {
+      "case": "raw_where_eq",
+      "baseline": {
+        "version": "baseline",
+        "case": "raw_where_eq",
+        "forks": 5,
+        "median_ns": 1000.865,
+        "min_fork_ns": 980.808,
+        "max_fork_ns": 1225.816,
+        "bytes_per_op": 2784,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "raw_where_eq",
+        "forks": 5,
+        "median_ns": 639.163,
+        "min_fork_ns": 598.79,
+        "max_fork_ns": 686.228,
+        "bytes_per_op": 1504,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "raw_where_eq",
+        "forks": 5,
+        "median_ns": 951.988,
+        "min_fork_ns": 931.347,
+        "max_fork_ns": 981.686,
+        "bytes_per_op": 2936,
+        "equivalent_results": true
+      },
+      "speedup": 1.5658994653945864,
+      "percent_less_time": 36.138939817058244,
+      "allocation_change": -1280
+    }
+  ],
+  "shortestMedianBatchMs": 1.5156000299999999,
+  "longestMedianBatchMs": 33.324405345,
+  "latencyWins": 188,
+  "allocationLower": 188,
+  "allocationEqual": 0,
+  "allocationHigher": 0
+}

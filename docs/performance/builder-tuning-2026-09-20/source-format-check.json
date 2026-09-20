@@ -1,0 +1,32 @@
+[
+  {
+    "file": "src/main/java/com/landawn/abacus/query/AbstractQueryBuilder.java",
+    "bareLF": 0,
+    "bareCR": 0,
+    "bom": false
+  },
+  {
+    "file": "src/main/java/com/landawn/abacus/query/SqlBuilder.java",
+    "bareLF": 0,
+    "bareCR": 0,
+    "bom": false
+  },
+  {
+    "file": "src/main/java/com/landawn/abacus/query/Dsl.java",
+    "bareLF": 0,
+    "bareCR": 0,
+    "bom": false
+  },
+  {
+    "file": "src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java",
+    "bareLF": 0,
+    "bareCR": 0,
+    "bom": false
+  },
+  {
+    "file": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+    "bareLF": 0,
+    "bareCR": 0,
+    "bom": false
+  }
+]

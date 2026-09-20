@@ -1,0 +1,5 @@
+cases=108800 sha256=b611e5465c4f02ebc6adca9c3bdddc841de2921f5345ec95078bd5d2d5cc5cf1
+Sep 20, 2026 12:32:09 PM com.landawn.abacus.logging.LoggerFactory getLogger
+INFO: Initialized with JDK Logger
+Sep 20, 2026 12:32:09 PM com.landawn.abacus.logging.LoggerFactory getLogger
+INFO: Initialized with JDK Logger

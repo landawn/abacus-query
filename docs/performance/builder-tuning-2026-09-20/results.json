@@ -1,0 +1,55 @@
+{
+  "baselineCommit": "965f6afef86d928fbff63589fb3d59edc322574e",
+  "startingCommit": "cbc5e44a848c2932dc345a136c81582860f661ba",
+  "samples": 25380,
+  "cases": 188,
+  "baseline": {
+    "latencyWins": 188,
+    "allocationLower": 188,
+    "timeReductionPercent": [
+      7.887213456209674,
+      82.61102255324961
+    ],
+    "allocationReductionPercent": [
+      20.097044552271726,
+      97.12687515891177
+    ]
+  },
+  "starting": {
+    "latencyWins": 187,
+    "allocationLower": 188,
+    "exceptions": [
+      {
+        "case": "named_union_builder",
+        "timeReduction": -0.9849874092002997,
+        "allocationReduction": 23.249551166965887,
+        "before": {
+          "version": "before",
+          "case": "named_union_builder",
+          "forks": 5,
+          "median_ns": 4295.994,
+          "min_fork_ns": 4113.966,
+          "max_fork_ns": 4650.828,
+          "bytes_per_op": 8912,
+          "equivalent_results": true
+        },
+        "current": {
+          "version": "current",
+          "case": "named_union_builder",
+          "forks": 5,
+          "median_ns": 4338.309,
+          "min_fork_ns": 3970.251,
+          "max_fork_ns": 4633.747,
+          "bytes_per_op": 6840,
+          "equivalent_results": true
+        }
+      }
+    ]
+  },
+  "validation": {
+    "tests": 5300,
+    "differentialProbes": 108800,
+    "javadocWarnings": 1,
+    "sourceAndJarHashesUnchanged": true
+  }
+}

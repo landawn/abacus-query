@@ -1,0 +1,56 @@
+[
+  {
+    "version": "baseline",
+    "fork": 1,
+    "exit": 0,
+    "seconds": 82.987
+  },
+  {
+    "version": "current",
+    "fork": 1,
+    "exit": 0,
+    "seconds": 78.692
+  },
+  {
+    "version": "current",
+    "fork": 2,
+    "exit": 0,
+    "seconds": 85.629
+  },
+  {
+    "version": "baseline",
+    "fork": 2,
+    "exit": 0,
+    "seconds": 82.55
+  },
+  {
+    "version": "baseline",
+    "fork": 3,
+    "exit": 0,
+    "seconds": 86.789
+  },
+  {
+    "version": "current",
+    "fork": 3,
+    "exit": 0,
+    "seconds": 83.865
+  },
+  {
+    "version": "current",
+    "fork": 4,
+    "exit": 0,
+    "seconds": 87.654
+  },
+  {
+    "version": "baseline",
+    "fork": 4,
+    "exit": 0,
+    "seconds": 77.796
+  },
+  {
+    "version": "baseline",
+    "fork": 5,
+    "exit": 4294967295,
+    "seconds": 63.368
+  }
+]

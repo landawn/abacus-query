@@ -1,0 +1,1 @@
+This pilot used -Xms512m -Xmx1024m. The baseline completed, but the current JVM failed during warmup with native malloc failure. The JVM error log reports only 26 MB of system commit space available. This incomplete pair is excluded from final summaries; all comparison versions are rerun with -Xms128m -Xmx256m.

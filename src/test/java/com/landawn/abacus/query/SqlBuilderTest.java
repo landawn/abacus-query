@@ -58,6 +58,184 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class SqlBuilderTest extends TestBase {
+
+    @Test
+    public void testOwnedInsertSnapshotStillIsolatesCallerMapsBeansAndExclusions() {
+        final Map<String, Object> input = new LinkedHashMap<>();
+        input.put("firstName", "before");
+        input.put("optional", null);
+        input.put("lastName", "excluded");
+        final Set<String> excluded = new java.util.HashSet<>(Collections.singleton("lastName"));
+        // Force the Object overload whose factory creates the owned snapshot.
+        final SqlBuilder builder = NSC.insert((Object) input, excluded);
+        input.clear();
+        input.put("bad--column", "after");
+        excluded.add("firstName");
+        final SP result = builder.into("users").build();
+        assertEquals("INSERT INTO users (first_name, optional) VALUES (:firstName, :optional)", result.query());
+        assertEquals(Arrays.asList("before", null), result.parameters());
+
+        final BatchEntityWithId bean = new BatchEntityWithId();
+        bean.setName("before");
+        bean.setOtherId(7);
+        final SqlBuilder beanBuilder = NSC.insert(bean);
+        bean.setName("after");
+        bean.setOtherId(9);
+        final SP beanResult = beanBuilder.into("users").build();
+        assertEquals("INSERT INTO users (other_id, name) VALUES (:otherId, :name)", beanResult.query());
+        assertEquals(Arrays.asList(7L, "before"), beanResult.parameters());
+    }
+
+    @Test
+    public void testMixedLargeInPreservesSubQueryAndMarkerPositionsBetweenRuns() {
+        final List<Object> values = new ArrayList<>();
+        for (int i = 0; i < 32; i++) {
+            values.add(i);
+        }
+        values.set(0, Filters.QME);
+        values.set(5, new SubQuery("SELECT value FROM archive WHERE id = ?", Collections.singletonList(100)));
+        values.set(16, SqlExpression.of("42"));
+        values.set(31, Filters.QME);
+        final SP result = PSC.select("id").from("users").where(Filters.in("id", values)).build();
+        final List<Object> expectedBindings = new ArrayList<>();
+        final List<String> rendered = new ArrayList<>();
+        for (int i = 0; i < 32; i++) {
+            if (i == 5) {
+                rendered.add("(SELECT value FROM archive WHERE id = ?)");
+                expectedBindings.add(100);
+            } else if (i == 16) {
+                rendered.add("42");
+            } else {
+                rendered.add("?");
+                if (i != 0 && i != 31) {
+                    expectedBindings.add(i);
+                }
+            }
+        }
+        assertEquals("SELECT id FROM users WHERE id IN (" + String.join(", ", rendered) + ")", result.query());
+        assertEquals(expectedBindings, result.parameters());
+
+        final SqlBuilder literals = PSC.select("id").from("users").where(Filters.in("id", Collections.nCopies(32, SqlExpression.of("42"))));
+        assertFalse(literals._hasGeneratedParameterPlaceholder);
+        assertTrue(literals.build().parameters().isEmpty());
+        final SqlBuilder markers = PSC.select("id").from("users").where(Filters.in("id", Collections.nCopies(32, Filters.QME)));
+        assertTrue(markers._hasGeneratedParameterPlaceholder);
+        assertTrue(markers.build().parameters().isEmpty());
+    }
+
+    @Test
+    public void testSharedInsertDispatchPreservesPolicySetterHooks() {
+        class RecordingBuilder extends SqlBuilder {
+            int genericCalls;
+            int policyCalls;
+            RecordingBuilder(final SqlDialect dialect) {
+                super(dialect);
+                _isForConditionOnly = true;
+            }
+            @Override
+            protected void setParameter(final String name, final Object value) {
+                genericCalls++;
+                super.setParameter(name, value);
+            }
+            @Override
+            protected void setParameterForParameterizedSql(final Object value) {
+                policyCalls++;
+                super.setParameterForParameterizedSql(value);
+            }
+            @Override
+            protected void setParameterForRawSql(final Object value) {
+                policyCalls++;
+                super.setParameterForRawSql(value);
+            }
+            @Override
+            protected void setParameterForNamedSql(final String name, final Object value) {
+                policyCalls++;
+                super.setParameterForNamedSql(name, value);
+            }
+            @Override
+            protected void setParameterForIbatisNamedSql(final String name, final Object value) {
+                policyCalls++;
+                super.setParameterForIbatisNamedSql(name, value);
+            }
+        }
+        final Dsl[] dsls = { PSC, NSC, MSC, SCSB };
+        final String[] expected = { "?, ?", ":id_3, :firstName_3", "#{id_3}, #{firstName_3}", "1, 'A'" };
+        final Map<String, Object> values = new LinkedHashMap<>();
+        values.put("id", 1);
+        values.put("firstName", "A");
+        for (int i = 0; i < dsls.length; i++) {
+            final RecordingBuilder builder = new RecordingBuilder(dsls[i].sqlDialect());
+            builder.appendInsertProps(values, values.keySet(), 3);
+            assertEquals(0, builder.genericCalls);
+            assertEquals(2, builder.policyCalls);
+            assertEquals(expected[i], builder.build().query());
+        }
+    }
+
+    @Test
+    public void testLargePositionalInKeepsExpressionBindingsAndRejectsNulls() {
+        for (final int size : new int[] { 16, 17, 256 }) {
+            final List<Object> values = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                values.add(i);
+            }
+            final SP simple = PSC.select("id").from("users").where(Filters.in("id", values)).build();
+            assertEquals(values, simple.parameters());
+            assertEquals("SELECT id FROM users WHERE id IN (" + String.join(", ", Collections.nCopies(size, "?")) + ")", simple.query());
+            values.set(3, null);
+            assertThrows(IllegalArgumentException.class, () -> Filters.in("id", values));
+            values.set(3, 3);
+            // Expressions and QME must bypass bulk binding, including when found at the end.
+            values.set(size - 1, Filters.QME);
+            values.set(size - 2, SqlExpression.of("42"));
+            final SP mixed = PSC.select("id").from("users").where(Filters.in("id", values)).build();
+            assertEquals(values.subList(0, size - 2), mixed.parameters());
+            assertTrue(mixed.query().endsWith(", 42, ?)"));
+        }
+    }
+
+    @Test
+    public void testIntegralRawValuesMatchValidatedLiteralRendering() {
+        final Object[] numbers = { Byte.MIN_VALUE, Byte.MAX_VALUE, Short.MIN_VALUE, Short.MAX_VALUE,
+                Integer.MIN_VALUE, Integer.MAX_VALUE, Long.MIN_VALUE, Long.MAX_VALUE, 0, 0L,
+                new java.math.BigInteger("123456789012345678901234567890"), new java.math.BigDecimal("1.2300"), 1.25d };
+        for (final Object value : numbers) {
+            assertEquals("UPDATE users SET value = " + SqlExpression.renderValue(value), SCSB.update("users").set("value", value).build().query());
+        }
+        // Non-finite floating point and arbitrary Number text still go through validation.
+        for (final Object value : new Object[] { Double.NaN, Double.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY }) {
+            final SqlBuilder builder = SCSB.update("users");
+            assertThrows(IllegalArgumentException.class, () -> builder.set("value", value));
+            assertEquals("UPDATE users SET value = 1", builder.set("value", 1).build().query());
+        }
+    }
+
+    @Test
+    public void testBuilderSubclassStillObservesBetweenNamesAndEveryInValue() {
+        class RecordingBuilder extends SqlBuilder {
+            final List<String> names = new ArrayList<>();
+            RecordingBuilder(final SqlDialect dialect) {
+                super(dialect);
+                _isForConditionOnly = true;
+            }
+            @Override
+            protected void setParameter(final String name, final Object value) {
+                names.add(name);
+                super.setParameter(name, value);
+            }
+        }
+        for (final Dsl dsl : new Dsl[] { PSC, NSC, MSC, SCSB }) {
+            final RecordingBuilder builder = new RecordingBuilder(dsl.sqlDialect());
+            builder.appendCondition(Filters.between("u.createdAt", 1, 9));
+            assertEquals(Arrays.asList("minCreatedAt", "maxCreatedAt"), builder.names);
+            builder.build();
+        }
+        final RecordingBuilder builder = new RecordingBuilder(PSC.sqlDialect());
+        builder.appendCondition(Filters.in("id", java.util.stream.IntStream.range(0, 32).boxed().toList()));
+        assertEquals(Collections.nCopies(32, "id"), builder.names);
+        assertEquals(32, builder.build().parameters().size());
+    }
+
     // Basic SELECT tests
     @Test
     public void testSelectAll() {

@@ -345,15 +345,18 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
         // Strip any table-alias prefix (e.g. "ord.orderDate" -> "orderDate") so the
         // synthesized "minX"/"maxX" parameter names remain valid identifiers.
-        final String cap = Strings.capitalize(sanitizeNamedParameterName(propName));
+        // The built-in positional/raw setters do not use parameter names. Subclasses keep
+        // the original min/max names because an overridden setter may inspect them.
+        final boolean needsNames = _sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL || getClass() != SqlBuilder.class;
+        final String cap = needsNames ? Strings.capitalize(sanitizeNamedParameterName(propName)) : null;
 
-        setParameter("min" + cap, minValue);
+        setParameter(needsNames ? "min" + cap : propName, minValue);
 
         _sb.append(_SPACE);
         _sb.append(SK.AND);
         _sb.append(_SPACE);
 
-        setParameter("max" + cap, maxValue);
+        setParameter(needsNames ? "max" + cap : propName, maxValue);
     }
 
     /**
@@ -379,7 +382,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         _sb.append(operator.toString());
         _sb.append(SK.SPACE_PARENTHESIS_L);
 
-        if (values != null) {
+        if (values != null && !appendPositionalInValues(propName, values)) {
             final boolean indexedParamName = _sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL;
 
             for (int i = 0, len = values.size(); i < len; i++) {
@@ -396,6 +399,41 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         }
 
         _sb.append(SK._PARENTHESIS_R);
+    }
+
+    /**
+     * Copies runs of ordinary positional bindings together, rendering expressions in their original
+     * position between runs. Subclasses retain individual setter calls so their hooks still run.
+     */
+    private boolean appendPositionalInValues(final String propName, final List<?> values) {
+        final int size = values.size();
+        if (size <= 16 || _sqlPolicy != SqlPolicy.PARAMETERIZED_SQL || getClass() != SqlBuilder.class) {
+            return false;
+        }
+        int start = 0;
+        while (start < size) {
+            if (start > 0) {
+                _sb.append(_COMMA_SPACE);
+            }
+            final Object value = values.get(start);
+            if (value instanceof Condition) {
+                setParameter(propName, value);
+                start++;
+                continue;
+            }
+            int end = start + 1;
+            while (end < size && !(values.get(end) instanceof Condition)) {
+                end++;
+            }
+            _sb.append('?');
+            for (int i = start + 1; i < end; i++) {
+                _sb.append(", ?");
+            }
+            _hasGeneratedParameterPlaceholder = true;
+            _parameters.addAll(start == 0 && end == size ? values : values.subList(start, end));
+            start = end;
+        }
+        return true;
     }
 
     /**

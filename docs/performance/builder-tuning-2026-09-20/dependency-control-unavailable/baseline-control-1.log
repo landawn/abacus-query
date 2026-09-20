@@ -1,0 +1,13 @@
+Sep 20, 2026 1:03:47 PM com.landawn.abacus.logging.LoggerFactory getLogger
+INFO: Initialized with JDK Logger
+Sep 20, 2026 1:03:47 PM com.landawn.abacus.logging.LoggerFactory getLogger
+INFO: Initialized with JDK Logger
+Exception in thread "main" java.lang.NoClassDefFoundError: com/landawn/abacus/util/ObjectPool
+	at com.landawn.abacus.query.AbstractQueryBuilder.<clinit>(AbstractQueryBuilder.java:455)
+	at com.landawn.abacus.query.Dsl.select(Dsl.java:1028)
+	at BuilderBenchmark.result(BuilderBenchmark.java:88)
+	at BuilderBenchmark.main(BuilderBenchmark.java:152)
+Caused by: java.lang.ClassNotFoundException: com.landawn.abacus.util.ObjectPool
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:580)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:490)
+	... 4 more

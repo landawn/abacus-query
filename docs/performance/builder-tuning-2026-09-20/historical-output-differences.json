@@ -1,0 +1,32 @@
+[
+  {
+    "case": "raw_batch_beans",
+    "before": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example')\n[]",
+    "current": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example')\n[]"
+  },
+  {
+    "case": "raw_insert_values",
+    "before": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O\\'Brien', 'Example')\n[]",
+    "current": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O''Brien', 'Example')\n[]"
+  },
+  {
+    "case": "raw_insert_entity",
+    "before": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O\\'Brien', 'Example')\n[]",
+    "current": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O''Brien', 'Example')\n[]"
+  },
+  {
+    "case": "raw_batch_4",
+    "before": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example')\n[]",
+    "current": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example')\n[]"
+  },
+  {
+    "case": "raw_batch_64",
+    "before": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example'), (7, 'O\\'Brien', 'Example')\n[]",
+    "current": "INSERT INTO users (id, first_name, last_name) VALUES (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example'), (7, 'O''Brien', 'Example')\n[]"
+  },
+  {
+    "case": "raw_update_map",
+    "before": "UPDATE users SET id = 7, first_name = 'O\\'Brien', last_name = 'Example' WHERE id = 7\n[]",
+    "current": "UPDATE users SET id = 7, first_name = 'O''Brien', last_name = 'Example' WHERE id = 7\n[]"
+  }
+]
