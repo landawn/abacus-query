@@ -20,6 +20,181 @@ import com.landawn.abacus.TestBase;
 public class SqlParserTest extends TestBase {
 
     @Test
+    public void testLeadingVerbFastPathDoesNotBypassReadClassification() {
+        // Leading-verb predicates deliberately work on malformed tails; read/write gates still
+        // require complete lexical structure and inspect every statement and modifying clause.
+        assertTrue(SqlParser.isSelectQuery(" \tSeLeCt 'unfinished"));
+        assertTrue(SqlParser.isInsertQuery("insert 'unfinished"));
+        assertTrue(SqlParser.isUpdateQuery("update [unfinished"));
+        assertTrue(SqlParser.isDeleteQuery("delete \"unfinished"));
+        assertFalse(SqlParser.isSelectQuery("SELECTED 'unfinished"));
+        assertFalse(SqlParser.isSelectQuery("WITH c AS ('unfinished"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery(" \tSeLeCt 'unfinished"));
+        assertFalse(SqlParser.isReadOrInsertQuery("insert 'unfinished"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT id INTO copied FROM t"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1); DELETE FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT ';', [a;b] FROM t /* ; DELETE */"));
+        assertTrue(SqlParser.isSelectQuery("--x\nSELECT 1"));
+    }
+
+    @Test
+    public void testHashScannerShortcutsPreserveMarkersOperatorsAndTableContext() {
+        for (final String token : List.of("#{id}", "#>", "##")) {
+            assertEquals(List.of(token), SqlParser.tokenize(token));
+            assertEquals(token, SqlParser.nextToken(token, 0));
+            assertEquals(token.length(), SqlParser.nextTokenEndIndex(token, 0));
+            assertEquals(0, SqlParser.indexOfToken(token, token));
+        }
+        assertEquals(List.of(), SqlParser.tokenize("#t"));
+        assertEquals("x", SqlParser.nextToken(" # comment\nx", 0));
+        // Comment-boundary lookahead can be the first consumer of hash-identifier context.
+        assertEquals(List.of("FROM", " ", "#t"), SqlParser.tokenize("FROM/* gap */#t"));
+        assertEquals("#t", SqlParser.nextToken("FROM/* gap */#t", 4));
+        assertEquals(List.of("#{id}"), SqlParser.tokenize("\t#{id}"));
+    }
+
+    @Test
+    public void testDenseOperatorTokenStreamsKeepEverySourceToken() {
+        for (final int bindings : new int[] { 256, 1024, 4096, 8192 }) {
+            final String sql = "SELECT " + "?||".repeat(bindings - 1) + "? FROM t";
+            final List<String> tokens = SqlParser.tokenize(sql);
+            // A compact ?|| token carries a binding followed by concatenation. Growing the
+            // token list must preserve both its source text and every eventual binding.
+            assertEquals(bindings + 6, tokens.size());
+            assertEquals(sql, String.join("", tokens));
+            assertEquals(bindings, ParsedSql.parse(sql).parameterCount());
+            assertEquals(sql.indexOf("FROM"), SqlParser.indexOfToken(sql, "FROM"));
+        }
+    }
+
+    @Test
+    public void testTokenizerBuilderSnapshotsStayIndependentAfterRepeatedBuilds() {
+        final SqlParser.TokenizerConfig original = SqlParser.defaultTokenizerConfig();
+        final SqlParser.TokenizerConfig.Builder builder = original.toBuilder();
+        final SqlParser.TokenizerConfig unchanged = builder.build();
+        final SqlParser.TokenizerConfig first = builder.withSeparator("~>").withSeparator('~').build();
+        final SqlParser.TokenizerConfig second = builder.withSeparator("~>>").withoutSeparator('~').build();
+        final SqlParser.TokenizerConfig third = builder.withoutSeparator("~>").build();
+
+        // Building transfers ownership of the mutable set; a later mutation must copy it again.
+        assertEquals(original, unchanged);
+        assertFalse(original.separators().contains("~>"));
+        assertTrue(first.separators().contains("~"));
+        assertFalse(first.separators().contains("~>>"));
+        assertFalse(second.separators().contains("~"));
+        assertTrue(second.separators().contains("~>"));
+        assertFalse(third.separators().contains("~>"));
+        assertTrue(third.separators().contains("~>>"));
+        assertEquals(List.of("x", "~>", ">", "y"), SqlParser.tokenizer(first).tokenize("x~>>y"));
+        assertEquals(List.of("x", "~>>", "y"), SqlParser.tokenizer(second).tokenize("x~>>y"));
+        assertThrows(UnsupportedOperationException.class, () -> first.separators().add("bad"));
+        assertEquals(third, builder.build());
+    }
+
+    @Test
+    public void testTokenizerDerivedBucketsKeepUnicodeAndCaseVariantsIndependent() {
+        final SqlParser.TokenizerConfig first = SqlParser.TokenizerConfig.builder()
+                .withSeparator("π>").withSeparator("π>>").withSeparator("😀>").withSeparator("order by").build();
+        final SqlParser.TokenizerConfig second = first.toBuilder().withoutSeparator("π>>").withSeparator("😀>>").build();
+        final SqlParser.Tokenizer firstTokenizer = SqlParser.tokenizer(first);
+        final SqlParser.Tokenizer secondTokenizer = SqlParser.tokenizer(second);
+        assertEquals(List.of("x", "π>>", "y"), firstTokenizer.tokenize("xπ>>y"));
+        assertEquals(List.of("x", "π>", ">", "y"), secondTokenizer.tokenize("xπ>>y"));
+        assertEquals(List.of("x", "😀>", ">", "y"), firstTokenizer.tokenize("x😀>>y"));
+        assertEquals(List.of("x", "😀>>", "y"), secondTokenizer.tokenize("x😀>>y"));
+        // Case-insensitive composite fallback must survive a configuration rebuild, too.
+        for (final SqlParser.Tokenizer tokenizer : List.of(firstTokenizer, secondTokenizer)) {
+            assertEquals(2, tokenizer.indexOfToken("x ORDER /* c */ BY y order by z", "ORDER BY"));
+        }
+    }
+
+    @Test
+    public void testRangeScannersPreservePrefixedQuotesAndArbitrarySearchOffsets() {
+        for (final String quoted : List.of("N'it''s'", "E'it\\'s'", "\"a.b\"", "[a]]b]",
+                "prefix" + (char) 96 + "a" + (char) 96 + (char) 96 + "b" + (char) 96, "'unterminated")) {
+            final boolean unterminated = quoted.equals("'unterminated");
+            final String sql = "/* lead */ " + quoted + (unterminated ? "" : "tail /* gap */ WHERE x = 1");
+            final int start = sql.indexOf(quoted);
+            assertEquals(quoted, SqlParser.nextToken(sql, 0), sql);
+            assertEquals(start + quoted.length(), SqlParser.nextTokenEndIndex(sql, 0), sql);
+            assertEquals(start, SqlParser.indexOfToken(sql, quoted, 0, true), sql);
+            // A public search offset inside a quote is a lower bound, never a new lexical origin.
+            assertEquals(-1, SqlParser.indexOfToken(sql, quoted, start + 1, true), sql);
+            if (!unterminated) {
+                assertEquals("tail", SqlParser.nextToken(sql, start + quoted.length()), sql);
+                assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE", start + 1, false), sql);
+            }
+        }
+    }
+
+    @Test
+    public void testRangeScannersConsumeLineTerminatorsAndHandleEmptyTails() {
+        for (final String newline : List.of("\n", "\r", "\r\n")) {
+            final String sql = "/*/ body */ -- ignored" + newline + "word/* tail */ -- done";
+            assertEquals("word", SqlParser.nextToken(sql, -4), sql);
+            final int end = sql.indexOf("word") + 4;
+            assertEquals(end, SqlParser.nextTokenEndIndex(sql, -4), sql);
+            assertEquals("", SqlParser.nextToken(sql, end), sql);
+            assertEquals(sql.length(), SqlParser.nextTokenEndIndex(sql, end), sql);
+            assertEquals("", SqlParser.nextToken(sql, sql.length() + 10), sql);
+            assertEquals(sql.length(), SqlParser.nextTokenEndIndex(sql, sql.length() + 10), sql);
+        }
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
+                .withoutSeparator('\r').withoutSeparator('\n').build());
+        final String sql = "--ignored\r\nword";
+        // Extraction consumes the first comment terminator; tokenize reprocesses it. A custom
+        // configuration that removes newlines makes this existing distinction observable.
+        assertEquals(List.of("\r\nword"), tokenizer.tokenize(sql));
+        assertEquals("\nword", tokenizer.nextToken(sql, 0));
+        assertEquals(sql.length(), tokenizer.nextTokenEndIndex(sql, 0));
+        // Search trims target padding; neither the trimmed word nor the original target matches.
+        assertEquals(-1, tokenizer.indexOfToken(sql, "\nword", 0, true));
+    }
+
+    @Test
+    public void testRangeTokenizationKeepsLargeQuotedValuesAndUnclosedComments() {
+        final String quoted = "'" + "汉字 and text ".repeat(2048) + "''end'";
+        final String sql = "SELECT " + quoted + ", x";
+        assertEquals(List.of("SELECT", " ", quoted, ",", " ", "x"), SqlParser.tokenize(sql));
+        assertEquals(quoted, SqlParser.nextToken(sql, 6));
+        assertEquals(7 + quoted.length(), SqlParser.nextTokenEndIndex(sql, 6));
+        assertEquals(7, SqlParser.indexOfToken(sql, quoted));
+        assertEquals(List.of("SELECT", " ", "x", " ", "/* unfinished"), SqlParser.tokenize("-- Keep comments\nSELECT x /* unfinished"));
+        assertEquals(List.of("SELECT", " ", "x", " "), SqlParser.tokenize("SELECT x /* unfinished"));
+    }
+
+    @Test
+    public void testHashContextFastComparisonPreservesRootUppercaseSemantics() {
+        // ROOT uppercasing and equalsIgnoreCase differ for dotted capital I. Optimizing ASCII
+        // hash-context checks must retain the old non-ASCII rule, including dotless lowercase I.
+        assertEquals(List.of("SELECT", " ", "*", " ", "JOİN", " "), SqlParser.tokenize("SELECT * JOİN #t"));
+        assertEquals(List.of("SELECT", " ", "*", " ", "JOıN", " ", "#t"), SqlParser.tokenize("SELECT * JOıN #t"));
+        assertEquals(List.of("ınsert", " ", "#t"), SqlParser.tokenize("ınsert #t"));
+        assertEquals("", SqlParser.nextToken("JOİN #t", 4));
+        assertEquals("#t", SqlParser.nextToken("JOıN #t", 4));
+        assertEquals(-1, SqlParser.indexOfToken("JOİN #t", "#t"));
+        assertEquals(5, SqlParser.indexOfToken("JOıN #t", "#t"));
+    }
+
+    @Test
+    public void testClassifierOptimizationsPreserveIndependentLexicalModes() {
+        for (final String sql : List.of("SELECT 1", "SELECT 'C:\\'", "SELECT :into, #{call}", "SELECT 1 -- comment\n",
+                "WITH c AS (SELECT 'x') SELECT * FROM c")) {
+            assertTrue(SqlParser.isSelectQuery(sql), sql);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+        for (final String sql : List.of("SELECT 'a\\'; DELETE FROM t; -- '", "SELECT 1--x; DELETE FROM t", "SELECT 1 /*! DELETE FROM t */",
+                "WITH c AS (DELETE FROM t RETURNING id) SELECT * FROM c", "SELECT 1 /* unfinished", "SELECT 'unfinished")) {
+            assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+        assertFalse(SqlParser.isSyntacticallyReadQuery(" INSERT INTO t VALUES ('unclosed"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1)"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET id = 2"));
+    }
+
+    @Test
     public void testTokenizerSeparatorBucketsKeepLongestMatchesAndUnicode() {
         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
                 .withSeparator("~>").withSeparator("~>>").withSeparator("~>>>")

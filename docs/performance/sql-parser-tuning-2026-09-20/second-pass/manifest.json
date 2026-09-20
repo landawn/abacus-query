@@ -1,0 +1,701 @@
+{
+  "baselineCommit": "965f6afef86d928fbff63589fb3d59edc322574e",
+  "beforeCommit": "4986c32bdf620aac68d88f56178a766e8cd78683",
+  "java": "java version \"25\" 2025-09-16 LTS\r\nJava(TM) SE Runtime Environment (build 25+37-LTS-3491)\r\nJava HotSpot(TM) 64-Bit Server VM (build 25+37-LTS-3491, mixed mode, sharing)\r\n",
+  "productionSources": 81,
+  "sources": [
+    {
+      "path": "src/main/java/com/landawn/abacus/query/AbstractQueryBuilder.java",
+      "sha256": "cb5eac74be5d7062d8855fbbca2c1a664d2aa1e4935d2668adff57b31577d909"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/Dsl.java",
+      "sha256": "9a72ec78da51dbdd745817d864c0b94c5474ba88b4b74b3188e80f5df0b27824"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/DynamicQuery.java",
+      "sha256": "9a5fede3bf2c4bcf2899788fc9193a0a0986c332c8825d8a5757cedbc5fd9940"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/Filters.java",
+      "sha256": "878fa5dff39854625643054ed6bf62f95630c69769589f058b2c64c6b626170a"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/ParsedSql.java",
+      "sha256": "9bdfadcb8df5107fd1160bf8e03b9682234768c79f2b662dd07b79fff688a131"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/QueryUtil.java",
+      "sha256": "895bacde0d590229cda849150410bcd8490e1e512ccb9654944e800fcb423ad5"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/Selection.java",
+      "sha256": "ae38ac5426cdaea55a1de428a34c73bf6fb36ea2e6a83f32ef987d7bf6871770"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/SortDirection.java",
+      "sha256": "bb8124057e3c15ec913f3d82b7c9d1aab8fefe3b061accd6f04b9f9f7db08cb8"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/SqlBuilder.java",
+      "sha256": "5ad79381edd32f38ca9a4c0766da75a95bbba0f3b0c826102305140a320ac0ce"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/SqlDialect.java",
+      "sha256": "5a9c485f1d72a524a317329b25dbc739d68aea0d91aecd5c504f955bdaa79f1f"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/SqlMapper.java",
+      "sha256": "56e1790e7f331c9262551958b56573bdfc1b3651332f70ed822bf0b98601dfe0"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/SqlOperation.java",
+      "sha256": "cecbf5b082177a1b86e80aa7df0dfccd4e209822f0761744ee9f440ab7469941"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/SqlParser.java",
+      "sha256": "2eeb6bf2fe949aca345a5f43b3cc672e0ef07323030fca29efaed7a1c4d6ab6d"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/SubQuerySnapshot.java",
+      "sha256": "ac6bb857f30174f49cf409ecae102b2781ef82156cb85aa3ee2ce5c8414b96ae"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/AbstractBetween.java",
+      "sha256": "6d3f1432d3c96df89037d9b91a0d5fce8ab7e5c22a61787a494d122b0a759347"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/AbstractCondition.java",
+      "sha256": "cc6143a1b8a324f7acb318a25c24d66a2351951a9e82077295c0c62014f7e5a4"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/AbstractIn.java",
+      "sha256": "2508dd61c1d9c5590d4ac21e616208e848d01a1a647f25c4c4fd70ec818504a3"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/AbstractInSubQuery.java",
+      "sha256": "699d7577128519707996bdbbd1a7d1aa27e62688ea6bb1d43e08b064a7b58087"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/All.java",
+      "sha256": "88992cca7ceed8c1dc6753b9fc7cd007bac68ca43a0afa323d3c7cf81a81388f"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/And.java",
+      "sha256": "7a170952c87132012bf855209e83ab9692b12b0e88e0d6176a8ce3e36c693399"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Any.java",
+      "sha256": "9e114c785bbe86057f96c687e703ddf573b210081d5df07e034ca74b6ec06fcd"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Between.java",
+      "sha256": "3010e15c2422f1fe3a82dab90d54855b010a2d91daeb3f40095fb9b00fcf120c"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Binary.java",
+      "sha256": "6b95a15728cd84d4f7a823a55a2017a9aeb94dac0653a377a0ee651259203469"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Cell.java",
+      "sha256": "8dec1f3520262e02457cc464782ba026b2b38a3d1f5d8e69154ad0951945ec1e"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Clause.java",
+      "sha256": "7015376331c9a3cde34a11a2aa117548f03683d6f6b3a3d20e6f1e4e63343fc0"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/ComposableCell.java",
+      "sha256": "f947735acd5c94d337aadbda4483ed6071ea2fc4b630b6c7540d7915d6eff4ef"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/ComposableCondition.java",
+      "sha256": "3501164297cb6929fec99629e9785ab28aed8ea21a96939d7873409d239e3260"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Condition.java",
+      "sha256": "f3d58ef47d854a82aad8022c4161f2e7d1e1da5949a412b2da8312c3e1f30146"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Criteria.java",
+      "sha256": "98b18a4f9cda702dc74c97da27c08e9c5a0cb0d1bafdad00bb78238da4f13a18"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/CrossJoin.java",
+      "sha256": "483f8a8cc0d1b716acacce129c7576ab6ad22e90e5f5145f2137f61ed82cb799"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Equal.java",
+      "sha256": "5890631ffd2fb1ba3481e43d988d2d4f0676336abea2e49d787ec00742bb7175"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Except.java",
+      "sha256": "514d698304aab83f31ac9484b5dddf6e8910ded023069a896b0171fb49bdce6d"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Exists.java",
+      "sha256": "598393719a631eb689ad7f73ca2d86793feae3279d59868cec7e001acff46e62"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/FullJoin.java",
+      "sha256": "19a9b611096a0b1fb3f9326468cb86f886fb3d65a918a3eedbd3294390036a02"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/GreaterThan.java",
+      "sha256": "70b498cedc90f23e003a845f392376d32deb9b560d33f4102b744b94fe88abc2"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/GreaterThanOrEqual.java",
+      "sha256": "eb4e0a42a12ecb6cfef3004c3c8698834f618e7ec7f15fc4fb1762931244e6c6"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/GroupBy.java",
+      "sha256": "6d1f5160d713a7b0a873622498db41788dd5f6b1c5e9096f1027e6439ea8ac7f"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Having.java",
+      "sha256": "f51accafa220f9e7f02d1cbf969b330036cd32c3b9e98e20d6ecf54879d92c35"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/In.java",
+      "sha256": "03e948fb431d9e99cc914bb8d13f83215e998d024b666196c68051cb012c385d"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/InSubQuery.java",
+      "sha256": "10e5c83786ff41caccd6ae7d6ce5cbb2e58d6b1d0b863284a667e4348401aab3"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/InnerJoin.java",
+      "sha256": "66817441f869b3a50c8d206f1e2b4b5541d40eac70279db9d45e4d65d5497896"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Intersect.java",
+      "sha256": "07aed5a1df71c2c86958f4933f4f333bb37dd92f27518c3bc388e3e099fbc4ab"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Is.java",
+      "sha256": "33a2ea407981af1d9c5db3cac145c0fcce8700e602096c5e72af09df5e323964"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/IsInfinite.java",
+      "sha256": "903123788a3bee7cbf82c6e7b0769691c8a5393b32db425d2e0b6e7e1ba38d7c"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/IsNaN.java",
+      "sha256": "4351adf381ebe299aad4a2b67a3c28d7c4d760b93b015357dd93a5ae6c1a8e1b"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/IsNot.java",
+      "sha256": "ab1f90908db75cf1a9e7237d60d43b725a3ff1d8be69338f8c01332a117d008c"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/IsNotInfinite.java",
+      "sha256": "14e431b82e57264118c21af8cb6c53f96ad11c61601066f752307d025f0a8056"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/IsNotNaN.java",
+      "sha256": "fdefa2faac455a25f95f3710a7494bf3a8c2183b80abd280f567f232f8a36a2c"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/IsNotNull.java",
+      "sha256": "ec1a4dc9e87137aae9f33b68dac191820088f48c779ab1055471a2c13579567f"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/IsNull.java",
+      "sha256": "f8763746a182d1b5553f7464105c2753c83461efa39a610371e8c8836efdc837"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Join.java",
+      "sha256": "0ae62860751f5b4723560e44bdb67a44b69e0acd40e8900e9ce934c6e24f39db"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Junction.java",
+      "sha256": "58f36c2b4b0e90d6f0ada195911bb0d0528e4d0f4c6e4f76deae102b5f7f99bb"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/LeftJoin.java",
+      "sha256": "e5288f21f972b3d31f69b253c6790f0b4c22a60d0f348d3393edd943d1418e2b"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/LessThan.java",
+      "sha256": "5fe4df436720e9598ba304bf672c61210554c286836926c5c883dc86e3d0a143"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/LessThanOrEqual.java",
+      "sha256": "77e96355994a134efe4314602e29c5864145c63d78ce08283c009fc224c25ba3"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Like.java",
+      "sha256": "5de799fb863d2bd49424f96cdb2baefcbb2584fb8133f9e772faa40795d2ea79"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Limit.java",
+      "sha256": "84ba5ebde59d49f4397c8f6135f1b0da56333e821028c059628b293b40da7e85"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Minus.java",
+      "sha256": "814f39378f277d5c87505487229602a32d57ba4acbdef9683808f99775d367d8"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/NamedProperty.java",
+      "sha256": "1fcf6ce98cf537a0b1c419aee3295757af4b1e9191dadda00d32eee56d8a40c7"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/NaturalJoin.java",
+      "sha256": "8875ec776a3ced32ef1211a183f7e65b886ba7690db0bb8f270780a78c4328e6"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Not.java",
+      "sha256": "0a17d52271ee4348a45ee79bf7c7cfb2343bca7298c7e130b92b0401361d7303"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/NotBetween.java",
+      "sha256": "a6b87844b9ddf782fd5ad254e984e9d3b9c9a43a5a3ef9ef7faf1637d0da29db"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/NotEqual.java",
+      "sha256": "4652eae6f58d0a1dc8aa2487e3e1f90d362240f2c509e32a0a742ea68800b970"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/NotExists.java",
+      "sha256": "8bd69c3b782aa9732d041edd5f2f4fff15ef60e95ea3cd4b4391b87f611eeee1"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/NotIn.java",
+      "sha256": "aa971cd8fca1c93f79fe5a562492b37f48dd5a47395fe037969c3d81edb14db8"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/NotInSubQuery.java",
+      "sha256": "172ed438443bc4f2f5c195b1f7fd43678e9d3e8e41f6b976ebeb1eb671bb419c"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/NotLike.java",
+      "sha256": "26ca1274837b7313517a3442d14d53ec6cfc4ce229cce60ee8e3f3e630c4f2a7"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/On.java",
+      "sha256": "f8114dcb8b9dd239ca95d6c9788a75f2cbb9b4cb84af70097ca714c47ddb9f46"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Operator.java",
+      "sha256": "40ce7edb4969bc7690081b25ec166192fe1365ef8b392df735afdfacb58ab81b"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Or.java",
+      "sha256": "0379172169976bf6e8a87ef41794d7cf0e26e47e6d6f4f129099f573ec861639"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/OrderBy.java",
+      "sha256": "e21c244ac20d9c1b630f47a6fb08e9fa6f61bfb611f23e9f9cbf4dbd81631c0e"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/RightJoin.java",
+      "sha256": "2d60456c6f314b3e1a9e3e7863accd8f4090faead585b885b084148a24c2f709"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Some.java",
+      "sha256": "e7ddcfe447182873080208039bafcc39bb2b76b16d12d9be8da6b84e256d30f5"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/SqlExpression.java",
+      "sha256": "09bbbc0deca3d3f23a0acab1e9672d029aabea213524b6af4caf5f775e8f98bd"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/SubQuery.java",
+      "sha256": "0b612eb4d83f52f3e24bcbe1aacb11acc6ffc94d3acb00fa619fb86932d4a6bd"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Union.java",
+      "sha256": "0567ec5b1f89a5956133de02a8136ff517007a88497bd916be33bcddc70276ea"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/UnionAll.java",
+      "sha256": "0db152c06ad9d5ff0709b91576f61c3e808aa48274575f36448c3ec6435873f5"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Using.java",
+      "sha256": "0ac7449c0b80d6a43d62b0a39909fd783742c05a6c1707213acf941a8d6cb769"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/Where.java",
+      "sha256": "67c2b241cce2846f146eebc736e514ecd70f21efaf87de5b2c615e3e4247e7df"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/condition/package-info.java",
+      "sha256": "8f513f9522c46789e55ccc634f7f4ab3aff9bb31eed1e2c09c7f16fc829f7adb"
+    },
+    {
+      "path": "src/main/java/com/landawn/abacus/query/package-info.java",
+      "sha256": "b030a196ed2f8e37ee3ab2e49bb0e78cf7e32a869b6e7f042bac360277db09df"
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "before.jar",
+      "sha256": "0b434d4c492a2d65feaa82b9c909e673228d63f8bca802af7dffe13ead9120b9"
+    },
+    {
+      "file": "baseline.jar",
+      "sha256": "19d9594ab09d27474c7dce7ea89a5d36a90859eb766b2b087eafd0085cbe8038"
+    },
+    {
+      "file": "current.jar",
+      "sha256": "607790c96cb972fd7b88f03aca65f0bdfb831dfcf849b3cf8b9a1d395e1df7f7"
+    }
+  ],
+  "harnessSha256": "8cfb27e526471fb615da6da8e1b799f4c9b048b7c94569c1550bdfdaf39a724c",
+  "cases": 87,
+  "environment": {
+    "os": "win32 10.0.26100",
+    "cpu": "AMD Ryzen 7 PRO 7840U w/ Radeon 780M Graphics  ",
+    "logicalProcessors": 16,
+    "memoryBytes": 64065466368
+  },
+  "tests": [
+    {
+      "path": "src/test/java/com/landawn/abacus/AbacusQueryTestSuite.java",
+      "sha256": "18ef325a26cae3f0f64860d50384c388ca9a0868fab9c31a37fd52e2726becb5"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/CodeHelper.java",
+      "sha256": "abfbc00f76cf9a096bb72ba98d2f756394f4e3194e590cb1f17cb9f138511dae"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/Maven.java",
+      "sha256": "b51691660e0004567a26d5f91fbea27c4c871d7c7429b4a1a11b4af9d282a15c"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/TestBase.java",
+      "sha256": "cdd5841bf7694fe44428aea35ee88423aeb5b2150e7bb58a4dc9f600977a0873"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/AbstractQueryBuilderTest.java",
+      "sha256": "88295b8828c29edf86ff9cb0f15a76a0a7fa44bd88c811df230a348fb129fff2"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/DynamicQueryTest.java",
+      "sha256": "81dffee591e389a39f3b7a09a9fbc94f1e23913d9aa5576ebc621b16fad38eb7"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/FiltersTest.java",
+      "sha256": "e338768f9173202e000af803da8d2f618205bc264c25daac375beac34a2e921e"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/ParsedSqlTest.java",
+      "sha256": "16acb4e359a81420f9e974b3d332aa86cec952bf6d92c0e5f9fd44f505db2192"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/QueryUtilTest.java",
+      "sha256": "04878dbfbdfcbb70b555fa8a271a68d4c4f28af109a35e863d5272fa15803e31"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SKTest.java",
+      "sha256": "881cba8ef120cfee58ebf548e165540a97f016178dcc1990f460207d02191a9b"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SelectionTest.java",
+      "sha256": "935b3bdce52341699b195b068066870abdef82114716a03e4492b03b40535787"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SortDirectionTest.java",
+      "sha256": "cb640c5459c670756194dc2cd23ba146cf5ed96a8d5451c8127e6b33d38228aa"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SqlBuilderSupportedSqlTest.java",
+      "sha256": "c6b4a35534e997bb0b63592c2448c59603906a517cf83485aa783b3c60090613"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SqlBuilderTest.java",
+      "sha256": "0495f8a2abb46c823fb30d60332d1be3d1d5463722dfcff81f3715194c2b7e5b"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SqlDialectPaginationTest.java",
+      "sha256": "0937f9382b7a574034fdab8230e13b0b0efbf32ae4380321dcc7fadd5bb4855a"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SqlMapperTest.java",
+      "sha256": "3b02d818f34f765a46e235445feb9062e0982ec401673392a8bf7669126d5643"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SqlOperationTest.java",
+      "sha256": "41a5f4868f44cedc8360ecdd01a79cbf3db037190757fb5a3a9cbb1bf1b40186"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/SqlParserTest.java",
+      "sha256": "70cb314a486ac09bdef2ba01e113bb3793606f140ff15db4c9f9639a39ebdcea"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/AbstractBetweenTest.java",
+      "sha256": "b1e2b0c2e67a15562e90714d3b1681d436f9a277c349660e8a7aa89805ca3206"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/AbstractConditionTest.java",
+      "sha256": "379ed12542d7ea074507a1807b2747567d72a3820b846d405b4185dd514fe75d"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/AbstractInSubQueryTest.java",
+      "sha256": "efbe05466058f8096970cac62e20a27afa1c3cf6ed08892a680d3f41501db21b"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/AbstractInTest.java",
+      "sha256": "ac4e27bf368b6c47b263b5b41016deb58828fec59d8c795c6b93e8006410e415"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/AllTest.java",
+      "sha256": "3dd7bd7c47c29cb1655d2bfcc36ea44974d5c44f17693adc30d2b7e07ffe8915"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/AndTest.java",
+      "sha256": "dfd3e1275bb6bbd990680eca487f12db0e46b6be6f1319c6a7680e036d8fc184"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/AnyTest.java",
+      "sha256": "281fa3d84c00ff668ae84e31e441580d0ea1009e70caa512280bc20c7fa7f6bd"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/BetweenTest.java",
+      "sha256": "ee435e95e113c7083d7bfec199537a4a4932851ff47a97825694c4cb6e0a857b"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/BinaryTest.java",
+      "sha256": "571c2caa66ea3e6dbbd54b49907ed1f0b5b6a61a6195907bdb6a4b7afa98227f"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/CellTest.java",
+      "sha256": "a07fc744284514f5343a8d45f3aa73b5f097f9e71a8bae37e660fbf8bf2b804d"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/ClauseTest.java",
+      "sha256": "118b27d5e0f91156da13e1d52e01d61593fc5cd4c1526cf9c467cdc8a2a55507"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/ComposableCellTest.java",
+      "sha256": "4abca3fcc9cfe6e831477dfbe2f1869a212c82480dd59ee7e70129483c26ed81"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/ComposableConditionTest.java",
+      "sha256": "0207f8205ed5385a0a43f2eaf67402f018e2339703efd1bab011081f55fc550f"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/ConditionTest.java",
+      "sha256": "b93009f5e7d78a4feed9e6b159c311e31a68e6ca4b30efd69bbfbf1841eda1ee"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/CriteriaTest.java",
+      "sha256": "cde156d4ed0065d654b4a3f390567d86c43c1f1d835d67405c87addd9c1d401c"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/CrossJoinTest.java",
+      "sha256": "972ec3b2387a82e65bceaf2c8978e1a13c02a5e16aa97a326f86d0a6aac383b0"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/EqualTest.java",
+      "sha256": "f12bb3828a17647febc8421d2d6efbfb8b914872225a1376c44f8fab82335c48"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/ExceptTest.java",
+      "sha256": "4ae9b78d8a8aa6c940bbf729ab3843b20bf4e41ad6a5679dbbec550a6e355a28"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/ExistsTest.java",
+      "sha256": "cbaf7e836b36ae2e151688a54813f67dc9c34b97889efe673e42ba341a0db8ec"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/FullJoinTest.java",
+      "sha256": "d7abfdbfe92eff304168aac2c0a25f96eff4c59634f8f4ee87aa57886f4a2fd8"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/GreaterThanOrEqualTest.java",
+      "sha256": "bdb7394e2e264560f30463b0b97f21ceeeb414ab9e0cd0e1cd63ed3882ba91cb"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/GreaterThanTest.java",
+      "sha256": "b914dc41ef931877693d22b029b4416b2dd2b75615ffdbd3303fca7247dc72b1"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/GroupByTest.java",
+      "sha256": "b5a7380a1b860f508b1faa8871ae2724bb41d5b09e1f9a93bcd716b77f80e7f3"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/HavingTest.java",
+      "sha256": "941953f64bc52374aba6b1b09a28491ed4d9c51ec4c26c5b193640a8b7e611ec"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/InSubQueryTest.java",
+      "sha256": "a1358bb9d38786d499fd8e98c4e1e41d0a78ead95c233d61366704410dfe9954"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/InTest.java",
+      "sha256": "b596b8a07841342d0429a98515920b6ce93cfc5148a7a56288a3fa4e2457b4f5"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/InnerJoinTest.java",
+      "sha256": "64287167a1529add49083d74cb146f1d75a8cf0b3864cb855c5463bbcc05a072"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IntersectTest.java",
+      "sha256": "56a3972a5836d3d43858c0e911bea48e8a49888e95f58b4741bf98a2104ff6b7"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IsInfiniteTest.java",
+      "sha256": "0bd5cc2d23e45d1b636d91cfae66a2b737f85ecf1b14e36aab2f532f856ed7bc"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IsNaNTest.java",
+      "sha256": "b6c35c4fc56e6ebfd055dfb2e8ca38bb05c0ed4eaa3d92228cc759a569a56236"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IsNotInfiniteTest.java",
+      "sha256": "3765d9095faf847c91b2ea69851f1d099cda2a07ccf292c5f38a472221104c74"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IsNotNaNTest.java",
+      "sha256": "8b376544d9a219b46411a6df1fa8a4c6101eef118020c79c3970007444b9e6df"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IsNotNullTest.java",
+      "sha256": "469ecb70ebf0dab032dfbaffc43da1bb34dacad4e83608c50c2393867f591832"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IsNotTest.java",
+      "sha256": "a6417e2ba15aabe9d3af6d97d1d891bb839a73b47cbdb44cf8e41b36bac58a4b"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IsNullTest.java",
+      "sha256": "ebd2d84efecb853074b63d1ee0564a7b8a3ddb79fbb6abfb89d58e08d6c9042d"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/IsTest.java",
+      "sha256": "389c14bfc627151c8f06345a10da6dc13926567e025d8461e1dceadd8b96b3bf"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/JoinTest.java",
+      "sha256": "e121445dc57c568864b3dc8ebc4432f5860ca2277a955af9586178ec22bc7d0f"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/JunctionTest.java",
+      "sha256": "37d079c662c0cc791d589fe1f9a892046410b863caf4aac7660b0f9bf66d0882"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/LeftJoinTest.java",
+      "sha256": "7f3ad76da4d1e7f996f1f3ef8e02773a74b8d3d784c8a7c0ff62e1379265e00c"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/LessThanOrEqualTest.java",
+      "sha256": "d9a6f6f9d02cfe0ad942645fa1bf36421d0b484bcd7e0e3450681b45fe44affb"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/LessThanTest.java",
+      "sha256": "7ad9b2c50070cd994df266a3965051179d560db4ceecbb5652d72ce9e93c46ac"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/LikeTest.java",
+      "sha256": "1868919313d3f6576d2939760463719e366aed9de8358fa15daaa918e46f70bf"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/LimitTest.java",
+      "sha256": "940c005acf29170ed0ca919353ea5450bf84a8e9ffb97ed0ba4bf906865d5764"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/MinusTest.java",
+      "sha256": "d55fb8dc55e202bde95569b27facf1f5ed41c34f8734b58db5315a35c7fe6994"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NamedPropertyTest.java",
+      "sha256": "48c9a985ab92e0a07eb7f662e1447a826b8ea25a16cf8a430c82d396ccc33f12"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NaturalJoinTest.java",
+      "sha256": "bff41349073895e7e1bfed445097cc1a11b2f965fc277f96e6210d2e5db9a897"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NotBetweenTest.java",
+      "sha256": "ab9e3e0aaa4ecb69243da319c46b1ab1c17c2338593d633462d765bdd12abdb9"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NotEqualTest.java",
+      "sha256": "9048d653374355b3094559b027bbdea421da41338130f76b2c489e603e5cdf87"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NotExistsTest.java",
+      "sha256": "03ba4b754e23cd6762caff2207ab11712769ec6fee7aca7a73d902ac7ca007b6"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NotInSubQueryTest.java",
+      "sha256": "23961005c86f394fd8ddf5d9283c33b8f0ff0f539c1dc2cdf8ec25a5337ec213"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NotInTest.java",
+      "sha256": "a24da489e1f210a05f1466332a4ec3c2e7257ddbaf2d2435b026613449c80a0d"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NotLikeTest.java",
+      "sha256": "28d62ecc31b42243f7e11ca3f05e96660e6284094b54d58caf3715d10ebdc763"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/NotTest.java",
+      "sha256": "73186cb2a2b5a0f1da95a5e2934cd4580ada4ba38c0719f314a11edb7314ee3e"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/OnTest.java",
+      "sha256": "269092b43dbd64982a05bdeb341e7622ec2d764548053dcc58c969c1ee08b99f"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/OperatorTest.java",
+      "sha256": "9007a6544e2d2fb17a864cb0ea97caf1abd395c1129057d55c231e9713d1fdb5"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/OrTest.java",
+      "sha256": "258fb64f5e9aa7539cd0d8beb7f8e3546500a153cd001d4861bd1217e86facbb"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/OrderByTest.java",
+      "sha256": "1c21bc69c6407f76564ab10be6081cf70d21e4ca847226fa3fdb3a17356c2573"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/RightJoinTest.java",
+      "sha256": "9c8bebbdf142cb53fa08a5832dea4eb64038292d5f31727976474d40fce6e8a4"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/SomeTest.java",
+      "sha256": "081aeb7efbf654754b3433277b414590c946186b55c8ee7314df374f5dabfc67"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/SqlExpressionTest.java",
+      "sha256": "80fe3f787f38a91ead89065c39b886a1008f59cd5aa0da8c94bea1846ae60141"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/SubQueryTest.java",
+      "sha256": "88e5bcc06bcd865bf3ff91265a10a3daebc82bb9ca1606e789db50c66c8b85a2"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/UnionAllTest.java",
+      "sha256": "afbfce84e0985f7d7d5e6ef66f2f5babb3f95d374fc30588b0151b3affb45d0f"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/UnionTest.java",
+      "sha256": "960a820d52fb936cb308b4c8496f801e1449b18c773e6555690e4cbbf1c14f81"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/UsingTest.java",
+      "sha256": "a1b40d2d9737aae471b5e487d4f8b2f39c3a7ba197eff6af2279602239bb377a"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/condition/WhereTest.java",
+      "sha256": "e33f291b197a63368640cc50df2621e1ca167957d298fe3ecafa7a7af3b966c3"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/entity/Account.java",
+      "sha256": "2d97f544c82457fe04c5f752a2ce7723dbcbf9d23ba5719570e0127a92fde31f"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/entity/AccountContact.java",
+      "sha256": "4f69ad329df7b5592e0df4cddfee3e51d834f872a480e871ffe64e5c176100a3"
+    },
+    {
+      "path": "src/test/java/com/landawn/abacus/query/entity/AccountDevice.java",
+      "sha256": "d6f36272fe456e8168d7481ab154f482de2a88e83da6ed2cc8d1404f968b1db2"
+    }
+  ],
+  "parsedSqlClassUnchanged": true
+}

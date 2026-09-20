@@ -825,7 +825,7 @@ public final class SqlParser {
 
     private static List<String> tokenize(final String sql, final TokenizerConfig tokenizerConfig) {
         final int sqlLength = sql.length();
-        HashScanMemo memo = null;
+        final HashScanMemo memo = sql.indexOf('#') >= 0 ? new HashScanMemo(sql) : null;
         // Preserve the source-length estimate: capping it creates extra backing arrays for dense
         // operator streams, even when token strings themselves can be reused.
         final List<String> tokens = new ArrayList<>(Math.max(16, sqlLength / 4));
@@ -835,13 +835,8 @@ public final class SqlParser {
         for (int index = 0; index < sqlLength; index++) {
             final char ch = sql.charAt(index);
             String separator = null;
-            boolean hashWord = ch == '#' && index + 1 < sqlLength && sql.charAt(index + 1) == '{';
-            if (ch == '#' && !hashWord && hashIdentifierPrefixStart(sql, sqlLength, index) >= 0) {
-                if (memo == null) {
-                    memo = new HashScanMemo(sql);
-                }
-                hashWord = isLikelyHashPrefixedIdentifier(sql, sqlLength, index, tokenizerConfig, memo);
-            }
+            final boolean hashWord = ch == '#' && ((index + 1 < sqlLength && sql.charAt(index + 1) == '{')
+                    || isLikelyHashPrefixedIdentifier(sql, sqlLength, index, tokenizerConfig, memo));
 
             if ((ch == '-' && index + 1 < sqlLength && sql.charAt(index + 1) == '-')
                     || (ch == '#' && !hashWord && (separator = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) == null)) {
@@ -867,11 +862,6 @@ public final class SqlParser {
                 }
                 index = close < 0 ? sqlLength : close + 1;
                 if (keepComments == 0) {
-                    // Boundary lookahead can be the first hash-context probe in this scan.
-                    final int next = index + 1;
-                    if (memo == null && next < sqlLength && sql.charAt(next) == '#' && hashIdentifierPrefixStart(sql, sqlLength, next) >= 0) {
-                        memo = new HashScanMemo(sql);
-                    }
                     appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, tokens, tokenizerConfig, memo);
                 }
             } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
@@ -1133,8 +1123,8 @@ public final class SqlParser {
     }
 
     /** Compares source ranges without allocating the tokens preceding a match. */
-    private static int findToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive, final TokenizerConfig tokenizerConfig,
-            final HashScanMemo memo, final int scanFrom) {
+    private static int findToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
+            final TokenizerConfig tokenizerConfig, final HashScanMemo memo, final int scanFrom) {
         for (int index = scanFrom; index < sql.length();) {
             final long bounds = nextTokenBounds(sql, index, tokenizerConfig, memo, true);
             final int start = (int) (bounds >>> 32);
@@ -1314,14 +1304,15 @@ public final class SqlParser {
         for (int index = Math.max(0, fromIndex); index < len; index++) {
             final char ch = sql.charAt(index);
             String separator = null;
-            boolean hashWord = ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{';
-            if (ch == '#' && !hashWord && hashIdentifierPrefixStart(sql, len, index) >= 0) {
-                // Markers and punctuation operators need no context memo. Allocate only for a
-                // possible hash-prefixed name; callers scanning several tokens can share it.
+            boolean hashWord = false;
+            if (ch == '#') {
+                // Most scans never reach a '#'. Allocate its context memo only when needed; a
+                // caller scanning several tokens can supply a shared memo for the original SQL.
                 if (memo == null) {
                     memo = new HashScanMemo(sql);
                 }
-                hashWord = isLikelyHashPrefixedIdentifier(sql, len, index, tokenizerConfig, memo);
+                hashWord = index + 1 < len && sql.charAt(index + 1) == '{'
+                        || isLikelyHashPrefixedIdentifier(sql, len, index, tokenizerConfig, memo);
             }
             if ((ch == '-' && index + 1 < len && sql.charAt(index + 1) == '-')
                     || (ch == '#' && !hashWord && (separator = matchMultiCharSeparator(sql, len, index, tokenizerConfig)) == null)) {
@@ -1557,8 +1548,30 @@ public final class SqlParser {
      */
     private static boolean isLikelyHashPrefixedIdentifier(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig,
             final boolean lineCommentAware, final HashScanMemo memo) {
-        final int prefixStart = hashIdentifierPrefixStart(str, len, index);
-        if (prefixStart < 0) {
+        if (index >= len - 1) {
+            return false;
+        }
+
+        int prefixStart = index;
+        int identifierStart = index + 1;
+
+        if (str.charAt(identifierStart) == '#') {
+            // SQL Server global temp tables use a two-character prefix (##name). The prefix is an
+            // identifier only in the same table/target contexts as #name; elsewhere the configured
+            // ## operator must retain precedence.
+            identifierStart++;
+        } else if (index > 0 && str.charAt(index - 1) == '#') {
+            // The forward scanners visit both '#' characters separately after the first one has
+            // been classified as identifier text. Re-evaluate the pair from its real start so the
+            // second '#' is appended instead of being mistaken for a new hash comment.
+            if (index > 1 && str.charAt(index - 2) == '#') {
+                return false;
+            }
+
+            prefixStart--;
+        }
+
+        if (identifierStart >= len || !isIdentifierChar(str.charAt(identifierStart))) {
             return false;
         }
 
@@ -1575,38 +1588,6 @@ public final class SqlParser {
         memo.rememberHashIdentifierState(str, index, lineCommentAware, identifier);
 
         return identifier;
-    }
-
-    /** Returns a usable hash-name prefix, or -1 when no preceding identifier context is possible. */
-    private static int hashIdentifierPrefixStart(final String str, final int len, final int index) {
-        if (index >= len - 1) {
-            return -1;
-        }
-
-        int prefixStart = index;
-        int identifierStart = index + 1;
-
-        if (str.charAt(identifierStart) == '#') {
-            // SQL Server global temp tables use a two-character prefix (##name). The prefix is an
-            // identifier only in the same table/target contexts as #name; elsewhere the configured
-            // ## operator must retain precedence.
-            identifierStart++;
-        } else if (index > 0 && str.charAt(index - 1) == '#') {
-            // The forward scanners visit both '#' characters separately after the first one has
-            // been classified as identifier text. Re-evaluate the pair from its real start so the
-            // second '#' is appended instead of being mistaken for a new hash comment.
-            if (index > 1 && str.charAt(index - 2) == '#') {
-                return -1;
-            }
-
-            prefixStart--;
-        }
-
-        if (identifierStart >= len || !isIdentifierChar(str.charAt(identifierStart))) {
-            return -1;
-        }
-
-        return prefixStart == 0 ? -1 : prefixStart;
     }
 
     /**
@@ -2846,17 +2827,20 @@ public final class SqlParser {
      * whitespace requirement after {@code --}.
      */
     private static boolean isAcceptedQueryUnderEveryLexicalMode(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert) {
-        // The leading unquoted verb is invariant across quote/comment modes. Resolve it once,
-        // but keep validating the tail under every applicable mode before accepting a statement.
+        // A leading unquoted verb cannot change with later quoting/comment conventions. Reject
+        // an excluded verb before masking the rest (especially long INSERT text in a read-only check).
+        // WITH, leading comments and parentheses still take the complete multi-mode path below.
         int first = 0;
-        boolean knownAllowedLeadingVerb = false;
         while (first < sql.length() && Character.isWhitespace(sql.charAt(first))) {
             first++;
         }
-        if (first < sql.length() && Character.isLetter(sql.charAt(first))) {
+        // Allowed ASCII initials need no duplicate keyword scan. Other initials, including
+        // Unicode case variants, still use the complete comparison before an early rejection.
+        if (first < sql.length() && (sql.charAt(first) | 32) != 's' && (sql.charAt(first) | 32) != 'w'
+                && !(allowInsert && (sql.charAt(first) | 32) == 'i') && Character.isLetter(sql.charAt(first))) {
             final int end = identifierEnd(sql, first);
-            knownAllowedLeadingVerb = matchesToken(sql, first, end, "SELECT", false) || allowInsert && matchesToken(sql, first, end, "INSERT", false);
-            if (!knownAllowedLeadingVerb && !matchesToken(sql, first, end, "WITH", false)) {
+            if (!matchesToken(sql, first, end, "SELECT", false) && !(allowInsert && matchesToken(sql, first, end, "INSERT", false))
+                    && !matchesToken(sql, first, end, "WITH", false)) {
                 return false;
             }
         }
@@ -2879,8 +2863,7 @@ public final class SqlParser {
                 if (maskedSql != null) {
                     hasValidMode = true;
 
-                    if (!isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules, maskedSql == sql ? memo : hashScanMemo(maskedSql),
-                            knownAllowedLeadingVerb)) {
+                    if (!isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules, maskedSql == sql ? memo : hashScanMemo(maskedSql))) {
                         return false;
                     }
                 }
@@ -2895,22 +2878,18 @@ public final class SqlParser {
      * classification scanners on the same masked text prevents them from choosing inconsistent quote modes.
      */
     private static boolean isAcceptedMaskedQuery(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert,
-            final boolean mysqlCommentRules, final HashScanMemo memo, final boolean knownAllowedLeadingVerb) {
-        if (!knownAllowedLeadingVerb) {
-            final int leading = getLeadingQueryKeywordIndex(sql, tokenizerConfig, memo);
-            if (leading < 0) {
-                return false;
-            }
-            final int end = identifierEnd(sql, leading);
-            if (!(matchesToken(sql, leading, end, "SELECT", false) || allowInsert && matchesToken(sql, leading, end, "INSERT", false))) {
-                return false;
-            }
+            final boolean mysqlCommentRules, final HashScanMemo memo) {
+        final int leading = getLeadingQueryKeywordIndex(sql, tokenizerConfig, memo);
+        if (leading < 0) {
+            return false;
+        }
+        final int end = identifierEnd(sql, leading);
+        if (!(matchesToken(sql, leading, end, "SELECT", false) || allowInsert && matchesToken(sql, leading, end, "INSERT", false))) {
+            return false;
         }
 
-        // Masking already proved lexical completeness. Without a semicolon there cannot be a
-        // second statement, and the first statement's leading verb was validated just above.
         if (containsExecutableBlockComment(sql, tokenizerConfig, mysqlCommentRules, memo)
-                || sql.indexOf(';') >= 0 && !hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, allowInsert, memo)) {
+                || !hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, allowInsert, memo)) {
             return false;
         }
 
@@ -2931,8 +2910,8 @@ public final class SqlParser {
         // false-positiving while still rejecting those verbs at the start of a statement or CTE.
         if (allowInsert) {
             return !containsAnyQueryKeyword(collectQueryStartKeywords(sql, tokenizerConfig, memo), "UPDATE", "DELETE", "MERGE", "REPLACE", "TRUNCATE", "DROP",
-                    "ALTER", "CREATE") && !containsProcedureInvocation(sql, tokenizerConfig, memo) && !containsSelectIntoClause(sql, tokenizerConfig, memo)
-                    && !containsTokenSequence(sql, tokenizerConfig, memo, "INSERT", "OVERWRITE");
+                    "ALTER", "CREATE") && !containsProcedureInvocation(sql, tokenizerConfig, memo)
+                    && !containsSelectIntoClause(sql, tokenizerConfig, memo) && !containsTokenSequence(sql, tokenizerConfig, memo, "INSERT", "OVERWRITE");
         }
 
         return !containsMutationQueryKeyword(sql, tokenizerConfig, memo) && !containsSelectIntoClause(sql, tokenizerConfig, memo);
@@ -3272,8 +3251,7 @@ public final class SqlParser {
                 if (Character.isLetter(ch)) {
                     final int end = identifierEnd(sql, index);
 
-                    if (matchesToken(sql, index, end, "CALL", false) || matchesToken(sql, index, end, "EXEC", false)
-                            || matchesToken(sql, index, end, "EXECUTE", false)) {
+                    if (matchesToken(sql, index, end, "CALL", false) || matchesToken(sql, index, end, "EXEC", false) || matchesToken(sql, index, end, "EXECUTE", false)) {
                         return true;
                     }
 
@@ -3727,19 +3705,6 @@ public final class SqlParser {
      * query predicates such as {@link #isSelectQuery(String)}.
      */
     private static String getLeadingQueryKeywordAcrossLexicalModes(final String sql, final TokenizerConfig tokenizerConfig) {
-        // These predicates identify the leading verb even when the tail is malformed. An
-        // initial unquoted word cannot change across lexical modes; WITH still needs its CTE body,
-        // and leading comments/parentheses still use the full mode resolution below.
-        int first = 0;
-        while (first < sql.length() && Character.isWhitespace(sql.charAt(first))) {
-            first++;
-        }
-        if (first < sql.length() && Character.isLetter(sql.charAt(first))) {
-            final int end = identifierEnd(sql, first);
-            if (!matchesToken(sql, first, end, "WITH", false)) {
-                return tokenText(sql, first, end);
-            }
-        }
         String resolvedKeyword = null;
         boolean hasValidMode = false;
         final HashScanMemo memo = hashScanMemo(sql);

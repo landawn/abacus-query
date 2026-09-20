@@ -1,0 +1,1 @@
+This intermediate run was intentionally stopped after the ParsedSql guard exposed higher allocation for dense concatenation. The next JVM failed to find the deliberately paused harness class. These incomplete data are not included in the final summary.

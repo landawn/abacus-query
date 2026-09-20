@@ -1,0 +1,4287 @@
+{
+  "samples": 11718,
+  "cases": [
+    {
+      "case": "classify_delete",
+      "baseline": {
+        "version": "baseline",
+        "case": "classify_delete",
+        "forks": 5,
+        "median_ns": 422.37,
+        "min_fork_ns": 385.525,
+        "max_fork_ns": 600.173,
+        "bytes_per_op": 960,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "classify_delete",
+        "forks": 5,
+        "median_ns": 21.204,
+        "min_fork_ns": 20.161,
+        "max_fork_ns": 25.309,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "classify_delete",
+        "forks": 1,
+        "median_ns": 432.001,
+        "min_fork_ns": 432.001,
+        "max_fork_ns": 432.001,
+        "bytes_per_op": 1200,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "classify_delete",
+        "forks": 3,
+        "median_ns": 392.19,
+        "min_fork_ns": 387.51,
+        "max_fork_ns": 397.719,
+        "bytes_per_op": 960,
+        "equivalent_results": true
+      },
+      "speedup": 19.919354838709676,
+      "percent_less_time": 94.97975708502024,
+      "allocation_change": -912
+    },
+    {
+      "case": "classify_insert",
+      "baseline": {
+        "version": "baseline",
+        "case": "classify_insert",
+        "forks": 5,
+        "median_ns": 391.675,
+        "min_fork_ns": 374.393,
+        "max_fork_ns": 403.458,
+        "bytes_per_op": 896,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "classify_insert",
+        "forks": 5,
+        "median_ns": 22.062,
+        "min_fork_ns": 20.154,
+        "max_fork_ns": 25.946,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "classify_insert",
+        "forks": 1,
+        "median_ns": 389.494,
+        "min_fork_ns": 389.494,
+        "max_fork_ns": 389.494,
+        "bytes_per_op": 1136,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "classify_insert",
+        "forks": 3,
+        "median_ns": 379.967,
+        "min_fork_ns": 372.356,
+        "max_fork_ns": 396.355,
+        "bytes_per_op": 896,
+        "equivalent_results": true
+      },
+      "speedup": 17.753376847067354,
+      "percent_less_time": 94.36726878151529,
+      "allocation_change": -848
+    },
+    {
+      "case": "classify_replace",
+      "baseline": {
+        "version": "baseline",
+        "case": "classify_replace",
+        "forks": 5,
+        "median_ns": 131.903,
+        "min_fork_ns": 126.437,
+        "max_fork_ns": 136.193,
+        "bytes_per_op": 192,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "classify_replace",
+        "forks": 5,
+        "median_ns": 65.82,
+        "min_fork_ns": 62.22,
+        "max_fork_ns": 78.037,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "classify_replace",
+        "forks": 1,
+        "median_ns": 126.925,
+        "min_fork_ns": 126.925,
+        "max_fork_ns": 126.925,
+        "bytes_per_op": 240,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "classify_replace",
+        "forks": 3,
+        "median_ns": 130.831,
+        "min_fork_ns": 124.146,
+        "max_fork_ns": 135.115,
+        "bytes_per_op": 192,
+        "equivalent_results": true
+      },
+      "speedup": 2.003995745973868,
+      "percent_less_time": 50.09969447245324,
+      "allocation_change": -192
+    },
+    {
+      "case": "classify_update",
+      "baseline": {
+        "version": "baseline",
+        "case": "classify_update",
+        "forks": 5,
+        "median_ns": 366.04,
+        "min_fork_ns": 359.599,
+        "max_fork_ns": 377.32,
+        "bytes_per_op": 864,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "classify_update",
+        "forks": 5,
+        "median_ns": 21.872,
+        "min_fork_ns": 19.547,
+        "max_fork_ns": 24.68,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "classify_update",
+        "forks": 1,
+        "median_ns": 374.428,
+        "min_fork_ns": 374.428,
+        "max_fork_ns": 374.428,
+        "bytes_per_op": 1104,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "classify_update",
+        "forks": 3,
+        "median_ns": 354.092,
+        "min_fork_ns": 347.993,
+        "max_fork_ns": 359.887,
+        "bytes_per_op": 864,
+        "equivalent_results": true
+      },
+      "speedup": 16.735552304316023,
+      "percent_less_time": 94.02469675445306,
+      "allocation_change": -816
+    },
+    {
+      "case": "config_custom",
+      "baseline": {
+        "version": "baseline",
+        "case": "config_custom",
+        "forks": 5,
+        "median_ns": 2936.147,
+        "min_fork_ns": 2880.22,
+        "max_fork_ns": 3335.943,
+        "bytes_per_op": 10288,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "config_custom",
+        "forks": 5,
+        "median_ns": 2436.334,
+        "min_fork_ns": 2298.371,
+        "max_fork_ns": 2686.702,
+        "bytes_per_op": 6704,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "config_custom",
+        "forks": 1,
+        "median_ns": 4816.826,
+        "min_fork_ns": 4816.826,
+        "max_fork_ns": 4816.826,
+        "bytes_per_op": 13560,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "config_custom",
+        "forks": 3,
+        "median_ns": 3001.983,
+        "min_fork_ns": 2868.469,
+        "max_fork_ns": 3071.13,
+        "bytes_per_op": 10288,
+        "equivalent_results": true
+      },
+      "speedup": 1.2051496223424212,
+      "percent_less_time": 17.022751245084123,
+      "allocation_change": -3584
+    },
+    {
+      "case": "config_default",
+      "baseline": {
+        "version": "baseline",
+        "case": "config_default",
+        "forks": 5,
+        "median_ns": 2959.981,
+        "min_fork_ns": 2679.552,
+        "max_fork_ns": 3846.24,
+        "bytes_per_op": 9880,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "config_default",
+        "forks": 5,
+        "median_ns": 8.275,
+        "min_fork_ns": 7.784,
+        "max_fork_ns": 8.599,
+        "bytes_per_op": 24,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "config_default",
+        "forks": 1,
+        "median_ns": 4658.155,
+        "min_fork_ns": 4658.155,
+        "max_fork_ns": 4658.155,
+        "bytes_per_op": 12528,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "config_default",
+        "forks": 3,
+        "median_ns": 2786.216,
+        "min_fork_ns": 2719.551,
+        "max_fork_ns": 3060.228,
+        "bytes_per_op": 9880,
+        "equivalent_results": true
+      },
+      "speedup": 357.7016314199396,
+      "percent_less_time": 99.72043739469949,
+      "allocation_change": -9856
+    },
+    {
+      "case": "end_custom",
+      "baseline": {
+        "version": "baseline",
+        "case": "end_custom",
+        "forks": 5,
+        "median_ns": 129.214,
+        "min_fork_ns": 121.826,
+        "max_fork_ns": 141.962,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "end_custom",
+        "forks": 5,
+        "median_ns": 14.133,
+        "min_fork_ns": 13.625,
+        "max_fork_ns": 15.154,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "end_custom",
+        "forks": 1,
+        "median_ns": 19.276,
+        "min_fork_ns": 19.276,
+        "max_fork_ns": 19.276,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "end_custom",
+        "forks": 3,
+        "median_ns": 116.713,
+        "min_fork_ns": 116.121,
+        "max_fork_ns": 122.002,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 9.142715630085616,
+      "percent_less_time": 89.06233070719891,
+      "allocation_change": 0
+    },
+    {
+      "case": "end_empty",
+      "baseline": {
+        "version": "baseline",
+        "case": "end_empty",
+        "forks": 5,
+        "median_ns": 44.798,
+        "min_fork_ns": 44.042,
+        "max_fork_ns": 57.203,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "end_empty",
+        "forks": 5,
+        "median_ns": 34.079,
+        "min_fork_ns": 32.479,
+        "max_fork_ns": 42.805,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "end_empty",
+        "forks": 1,
+        "median_ns": 39.259,
+        "min_fork_ns": 39.259,
+        "max_fork_ns": 39.259,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "end_empty",
+        "forks": 3,
+        "median_ns": 41.455,
+        "min_fork_ns": 39.733,
+        "max_fork_ns": 45.551,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 1.3145338771677573,
+      "percent_less_time": 23.927407473547923,
+      "allocation_change": 0
+    },
+    {
+      "case": "end_hash",
+      "baseline": {
+        "version": "baseline",
+        "case": "end_hash",
+        "forks": 5,
+        "median_ns": 480.021,
+        "min_fork_ns": 469.66,
+        "max_fork_ns": 482.887,
+        "bytes_per_op": 288,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "end_hash",
+        "forks": 5,
+        "median_ns": 106.456,
+        "min_fork_ns": 97.888,
+        "max_fork_ns": 118.502,
+        "bytes_per_op": 200,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "end_hash",
+        "forks": 1,
+        "median_ns": 162.411,
+        "min_fork_ns": 162.411,
+        "max_fork_ns": 162.411,
+        "bytes_per_op": 344,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "end_hash",
+        "forks": 3,
+        "median_ns": 476.802,
+        "min_fork_ns": 340.298,
+        "max_fork_ns": 500.148,
+        "bytes_per_op": 288,
+        "equivalent_results": true
+      },
+      "speedup": 4.509102352145487,
+      "percent_less_time": 77.82263692630113,
+      "allocation_change": -88
+    },
+    {
+      "case": "end_hash_operator",
+      "baseline": {
+        "version": "baseline",
+        "case": "end_hash_operator",
+        "forks": 5,
+        "median_ns": 181.199,
+        "min_fork_ns": 173.773,
+        "max_fork_ns": 184.237,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "end_hash_operator",
+        "forks": 5,
+        "median_ns": 27.769,
+        "min_fork_ns": 26.092,
+        "max_fork_ns": 29.766,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "end_hash_operator",
+        "forks": 1,
+        "median_ns": 34.412,
+        "min_fork_ns": 34.412,
+        "max_fork_ns": 34.412,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "end_hash_operator",
+        "forks": 3,
+        "median_ns": 166.881,
+        "min_fork_ns": 114.393,
+        "max_fork_ns": 175.746,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 6.525225971406965,
+      "percent_less_time": 84.67486023653552,
+      "allocation_change": 0
+    },
+    {
+      "case": "end_mybatis_single",
+      "baseline": {
+        "version": "baseline",
+        "case": "end_mybatis_single",
+        "forks": 5,
+        "median_ns": 36.368,
+        "min_fork_ns": 34.761,
+        "max_fork_ns": 37.275,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "end_mybatis_single",
+        "forks": 5,
+        "median_ns": 20.312,
+        "min_fork_ns": 19.301,
+        "max_fork_ns": 22.521,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "end_mybatis_single",
+        "forks": 1,
+        "median_ns": 30.552,
+        "min_fork_ns": 30.552,
+        "max_fork_ns": 30.552,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "end_mybatis_single",
+        "forks": 3,
+        "median_ns": 29.434,
+        "min_fork_ns": 27.843,
+        "max_fork_ns": 35.009,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 1.7904686884600236,
+      "percent_less_time": 44.14870215574132,
+      "allocation_change": 0
+    },
+    {
+      "case": "end_quote",
+      "baseline": {
+        "version": "baseline",
+        "case": "end_quote",
+        "forks": 5,
+        "median_ns": 10522.402,
+        "min_fork_ns": 7892.843,
+        "max_fork_ns": 14962.678,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "end_quote",
+        "forks": 5,
+        "median_ns": 146.148,
+        "min_fork_ns": 140.595,
+        "max_fork_ns": 163.034,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "end_quote",
+        "forks": 1,
+        "median_ns": 10872.529,
+        "min_fork_ns": 10872.529,
+        "max_fork_ns": 10872.529,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "end_quote",
+        "forks": 3,
+        "median_ns": 12153.143,
+        "min_fork_ns": 10864.982,
+        "max_fork_ns": 12298.413,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 71.99826203574459,
+      "percent_less_time": 98.61107758475679,
+      "allocation_change": 0
+    },
+    {
+      "case": "end_trivia",
+      "baseline": {
+        "version": "baseline",
+        "case": "end_trivia",
+        "forks": 5,
+        "median_ns": 93.25,
+        "min_fork_ns": 92.253,
+        "max_fork_ns": 104.587,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "end_trivia",
+        "forks": 5,
+        "median_ns": 61.275,
+        "min_fork_ns": 58.606,
+        "max_fork_ns": 62.717,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "end_trivia",
+        "forks": 1,
+        "median_ns": 77.37,
+        "min_fork_ns": 77.37,
+        "max_fork_ns": 77.37,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "end_trivia",
+        "forks": 3,
+        "median_ns": 79.52,
+        "min_fork_ns": 76.739,
+        "max_fork_ns": 93.825,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 1.521827825377397,
+      "percent_less_time": 34.28954423592493,
+      "allocation_change": 0
+    },
+    {
+      "case": "end_word",
+      "baseline": {
+        "version": "baseline",
+        "case": "end_word",
+        "forks": 5,
+        "median_ns": 47.806,
+        "min_fork_ns": 46.188,
+        "max_fork_ns": 52.223,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "end_word",
+        "forks": 5,
+        "median_ns": 27.345,
+        "min_fork_ns": 26.662,
+        "max_fork_ns": 28.387,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "end_word",
+        "forks": 1,
+        "median_ns": 36.136,
+        "min_fork_ns": 36.136,
+        "max_fork_ns": 36.136,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "end_word",
+        "forks": 3,
+        "median_ns": 37.096,
+        "min_fork_ns": 36.613,
+        "max_fork_ns": 46.195,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 1.748253794112269,
+      "percent_less_time": 42.80006693720454,
+      "allocation_change": 0
+    },
+    {
+      "case": "index_composite",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_composite",
+        "forks": 5,
+        "median_ns": 2570.023,
+        "min_fork_ns": 2368.733,
+        "max_fork_ns": 2751.251,
+        "bytes_per_op": 2256,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_composite",
+        "forks": 5,
+        "median_ns": 466.149,
+        "min_fork_ns": 430.443,
+        "max_fork_ns": 491.767,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_composite",
+        "forks": 1,
+        "median_ns": 862.821,
+        "min_fork_ns": 862.821,
+        "max_fork_ns": 862.821,
+        "bytes_per_op": 1416,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_composite",
+        "forks": 3,
+        "median_ns": 2307.732,
+        "min_fork_ns": 2243.286,
+        "max_fork_ns": 2333.401,
+        "bytes_per_op": 2256,
+        "equivalent_results": true
+      },
+      "speedup": 5.5133079766340805,
+      "percent_less_time": 81.86206893868265,
+      "allocation_change": -2256
+    },
+    {
+      "case": "index_composite_comments",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_composite_comments",
+        "forks": 5,
+        "median_ns": 745.496,
+        "min_fork_ns": 666.109,
+        "max_fork_ns": 791.064,
+        "bytes_per_op": 792,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_composite_comments",
+        "forks": 5,
+        "median_ns": 149.217,
+        "min_fork_ns": 148.071,
+        "max_fork_ns": 154.811,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_composite_comments",
+        "forks": 1,
+        "median_ns": 452.845,
+        "min_fork_ns": 452.845,
+        "max_fork_ns": 452.845,
+        "bytes_per_op": 720,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_composite_comments",
+        "forks": 3,
+        "median_ns": 647.192,
+        "min_fork_ns": 597.378,
+        "max_fork_ns": 692.024,
+        "bytes_per_op": 792,
+        "equivalent_results": true
+      },
+      "speedup": 4.996052728576502,
+      "percent_less_time": 79.98419843969651,
+      "allocation_change": -792
+    },
+    {
+      "case": "index_custom_composite",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_custom_composite",
+        "forks": 5,
+        "median_ns": 1377.532,
+        "min_fork_ns": 1158.865,
+        "max_fork_ns": 1502.538,
+        "bytes_per_op": 792,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_custom_composite",
+        "forks": 5,
+        "median_ns": 391.065,
+        "min_fork_ns": 385.148,
+        "max_fork_ns": 401.184,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_custom_composite",
+        "forks": 1,
+        "median_ns": 773.194,
+        "min_fork_ns": 773.194,
+        "max_fork_ns": 773.194,
+        "bytes_per_op": 888,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_custom_composite",
+        "forks": 3,
+        "median_ns": 1152.543,
+        "min_fork_ns": 1081.087,
+        "max_fork_ns": 1169.246,
+        "bytes_per_op": 792,
+        "equivalent_results": true
+      },
+      "speedup": 3.5225141600501195,
+      "percent_less_time": 71.61118580185433,
+      "allocation_change": -792
+    },
+    {
+      "case": "index_custom_separator",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_custom_separator",
+        "forks": 5,
+        "median_ns": 1713.488,
+        "min_fork_ns": 1453.366,
+        "max_fork_ns": 2155.984,
+        "bytes_per_op": 968,
+        "equivalent_results": false
+      },
+      "current": {
+        "version": "current",
+        "case": "index_custom_separator",
+        "forks": 5,
+        "median_ns": 92.143,
+        "min_fork_ns": 89.168,
+        "max_fork_ns": 97.849,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_custom_separator",
+        "forks": 1,
+        "median_ns": 122.801,
+        "min_fork_ns": 122.801,
+        "max_fork_ns": 122.801,
+        "bytes_per_op": 216,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_custom_separator",
+        "forks": 3,
+        "median_ns": 1629.662,
+        "min_fork_ns": 1472.836,
+        "max_fork_ns": 1691.754,
+        "bytes_per_op": 968,
+        "equivalent_results": false
+      },
+      "speedup": 18.595964967496176,
+      "percent_less_time": 94.62248933170235,
+      "allocation_change": -920
+    },
+    {
+      "case": "index_early",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_early",
+        "forks": 5,
+        "median_ns": 199.585,
+        "min_fork_ns": 195.243,
+        "max_fork_ns": 223.266,
+        "bytes_per_op": 120,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_early",
+        "forks": 5,
+        "median_ns": 67.342,
+        "min_fork_ns": 62.571,
+        "max_fork_ns": 85.928,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_early",
+        "forks": 1,
+        "median_ns": 158.962,
+        "min_fork_ns": 158.962,
+        "max_fork_ns": 158.962,
+        "bytes_per_op": 264,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_early",
+        "forks": 3,
+        "median_ns": 179.197,
+        "min_fork_ns": 164.25,
+        "max_fork_ns": 189.191,
+        "bytes_per_op": 120,
+        "equivalent_results": true
+      },
+      "speedup": 2.9637521903121384,
+      "percent_less_time": 66.25898739885263,
+      "allocation_change": -120
+    },
+    {
+      "case": "index_from_inside_quote",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_from_inside_quote",
+        "forks": 5,
+        "median_ns": 409.803,
+        "min_fork_ns": 384.489,
+        "max_fork_ns": 447.101,
+        "bytes_per_op": 464,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_from_inside_quote",
+        "forks": 5,
+        "median_ns": 141.617,
+        "min_fork_ns": 141.166,
+        "max_fork_ns": 147.416,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_from_inside_quote",
+        "forks": 1,
+        "median_ns": 352.877,
+        "min_fork_ns": 352.877,
+        "max_fork_ns": 352.877,
+        "bytes_per_op": 464,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_from_inside_quote",
+        "forks": 3,
+        "median_ns": 373.381,
+        "min_fork_ns": 349.208,
+        "max_fork_ns": 373.887,
+        "bytes_per_op": 464,
+        "equivalent_results": true
+      },
+      "speedup": 2.8937415705741545,
+      "percent_less_time": 65.4426639141246,
+      "allocation_change": -464
+    },
+    {
+      "case": "index_hash",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_hash",
+        "forks": 5,
+        "median_ns": 125244.231,
+        "min_fork_ns": 122778.358,
+        "max_fork_ns": 135395.42,
+        "bytes_per_op": 128880,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_hash",
+        "forks": 5,
+        "median_ns": 7002.859,
+        "min_fork_ns": 6678.755,
+        "max_fork_ns": 8228.178,
+        "bytes_per_op": 632,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_hash",
+        "forks": 1,
+        "median_ns": 10095.155,
+        "min_fork_ns": 10095.155,
+        "max_fork_ns": 10095.155,
+        "bytes_per_op": 16304,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_hash",
+        "forks": 3,
+        "median_ns": 122266.48,
+        "min_fork_ns": 121326.012,
+        "max_fork_ns": 125697.143,
+        "bytes_per_op": 128880,
+        "equivalent_results": true
+      },
+      "speedup": 17.884728365943108,
+      "percent_less_time": 94.40863747249165,
+      "allocation_change": -128248
+    },
+    {
+      "case": "index_late",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_late",
+        "forks": 5,
+        "median_ns": 105481.938,
+        "min_fork_ns": 95733.632,
+        "max_fork_ns": 126834.978,
+        "bytes_per_op": 64616,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_late",
+        "forks": 5,
+        "median_ns": 16317.891,
+        "min_fork_ns": 16231.088,
+        "max_fork_ns": 19509.698,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_late",
+        "forks": 1,
+        "median_ns": 24897.281,
+        "min_fork_ns": 24897.281,
+        "max_fork_ns": 24897.281,
+        "bytes_per_op": 32560,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_late",
+        "forks": 3,
+        "median_ns": 95663.598,
+        "min_fork_ns": 95602.336,
+        "max_fork_ns": 98837.281,
+        "bytes_per_op": 64616,
+        "equivalent_results": true
+      },
+      "speedup": 6.464189398004926,
+      "percent_less_time": 84.53015624343193,
+      "allocation_change": -64616
+    },
+    {
+      "case": "index_missing",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_missing",
+        "forks": 5,
+        "median_ns": 58874.091,
+        "min_fork_ns": 49388.914,
+        "max_fork_ns": 63756.659,
+        "bytes_per_op": 50728,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_missing",
+        "forks": 5,
+        "median_ns": 16702.446,
+        "min_fork_ns": 16176.499,
+        "max_fork_ns": 18184.394,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_missing",
+        "forks": 1,
+        "median_ns": 24559.669,
+        "min_fork_ns": 24559.669,
+        "max_fork_ns": 24559.669,
+        "bytes_per_op": 32152,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_missing",
+        "forks": 3,
+        "median_ns": 48370.386,
+        "min_fork_ns": 48321.889,
+        "max_fork_ns": 50994.157,
+        "bytes_per_op": 50728,
+        "equivalent_results": true
+      },
+      "speedup": 3.5248783920630546,
+      "percent_less_time": 71.63022695331296,
+      "allocation_change": -50728
+    },
+    {
+      "case": "index_near_matches",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_near_matches",
+        "forks": 5,
+        "median_ns": 2933950,
+        "min_fork_ns": 2726540,
+        "max_fork_ns": 3299657.143,
+        "bytes_per_op": 3275376,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_near_matches",
+        "forks": 5,
+        "median_ns": 16619.175,
+        "min_fork_ns": 15884.153,
+        "max_fork_ns": 18446.538,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_near_matches",
+        "forks": 1,
+        "median_ns": 52474.757,
+        "min_fork_ns": 52474.757,
+        "max_fork_ns": 52474.757,
+        "bytes_per_op": 80544,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_near_matches",
+        "forks": 3,
+        "median_ns": 2698412.5,
+        "min_fork_ns": 2640288.889,
+        "max_fork_ns": 2792400,
+        "bytes_per_op": 3275376,
+        "equivalent_results": true
+      },
+      "speedup": 176.54005087496822,
+      "percent_less_time": 99.43355629782376,
+      "allocation_change": -3275376
+    },
+    {
+      "case": "index_quoted",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_quoted",
+        "forks": 5,
+        "median_ns": 53191.406,
+        "min_fork_ns": 48196.887,
+        "max_fork_ns": 59144,
+        "bytes_per_op": 17664,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_quoted",
+        "forks": 5,
+        "median_ns": 3518.525,
+        "min_fork_ns": 3468.522,
+        "max_fork_ns": 6626.577,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_quoted",
+        "forks": 1,
+        "median_ns": 63164.024,
+        "min_fork_ns": 63164.024,
+        "max_fork_ns": 63164.024,
+        "bytes_per_op": 17736,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_quoted",
+        "forks": 3,
+        "median_ns": 54230.352,
+        "min_fork_ns": 53910.714,
+        "max_fork_ns": 54269.697,
+        "bytes_per_op": 17664,
+        "equivalent_results": true
+      },
+      "speedup": 15.117529646655914,
+      "percent_less_time": 93.38516263322688,
+      "allocation_change": -17664
+    },
+    {
+      "case": "index_sensitive",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_sensitive",
+        "forks": 5,
+        "median_ns": 471.71,
+        "min_fork_ns": 437.829,
+        "max_fork_ns": 564.539,
+        "bytes_per_op": 480,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_sensitive",
+        "forks": 5,
+        "median_ns": 195.897,
+        "min_fork_ns": 195.263,
+        "max_fork_ns": 205.476,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_sensitive",
+        "forks": 1,
+        "median_ns": 403.095,
+        "min_fork_ns": 403.095,
+        "max_fork_ns": 403.095,
+        "bytes_per_op": 528,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_sensitive",
+        "forks": 3,
+        "median_ns": 430.061,
+        "min_fork_ns": 412.559,
+        "max_fork_ns": 440.39,
+        "bytes_per_op": 480,
+        "equivalent_results": true
+      },
+      "speedup": 2.407949075279356,
+      "percent_less_time": 58.47088253376015,
+      "allocation_change": -480
+    },
+    {
+      "case": "index_whitespace",
+      "baseline": {
+        "version": "baseline",
+        "case": "index_whitespace",
+        "forks": 5,
+        "median_ns": 106.986,
+        "min_fork_ns": 98.623,
+        "max_fork_ns": 115.563,
+        "bytes_per_op": 72,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "index_whitespace",
+        "forks": 5,
+        "median_ns": 46.172,
+        "min_fork_ns": 43.212,
+        "max_fork_ns": 51.698,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "index_whitespace",
+        "forks": 1,
+        "median_ns": 83.848,
+        "min_fork_ns": 83.848,
+        "max_fork_ns": 83.848,
+        "bytes_per_op": 120,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "index_whitespace",
+        "forks": 3,
+        "median_ns": 96.192,
+        "min_fork_ns": 94.349,
+        "max_fork_ns": 101.531,
+        "bytes_per_op": 72,
+        "equivalent_results": true
+      },
+      "speedup": 2.3171186000173267,
+      "percent_less_time": 56.842951414203725,
+      "allocation_change": -72
+    },
+    {
+      "case": "next_custom",
+      "baseline": {
+        "version": "baseline",
+        "case": "next_custom",
+        "forks": 5,
+        "median_ns": 243.868,
+        "min_fork_ns": 239.198,
+        "max_fork_ns": 266.996,
+        "bytes_per_op": 48,
+        "equivalent_results": false
+      },
+      "current": {
+        "version": "current",
+        "case": "next_custom",
+        "forks": 5,
+        "median_ns": 21.5,
+        "min_fork_ns": 20.435,
+        "max_fork_ns": 30.613,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "next_custom",
+        "forks": 1,
+        "median_ns": 37.32,
+        "min_fork_ns": 37.32,
+        "max_fork_ns": 37.32,
+        "bytes_per_op": 96,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "next_custom",
+        "forks": 3,
+        "median_ns": 238.192,
+        "min_fork_ns": 129.665,
+        "max_fork_ns": 242.195,
+        "bytes_per_op": 48,
+        "equivalent_results": false
+      },
+      "speedup": 11.342697674418604,
+      "percent_less_time": 91.18375514622666,
+      "allocation_change": 0
+    },
+    {
+      "case": "next_empty",
+      "baseline": {
+        "version": "baseline",
+        "case": "next_empty",
+        "forks": 5,
+        "median_ns": 64.6,
+        "min_fork_ns": 59.96,
+        "max_fork_ns": 74.718,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "next_empty",
+        "forks": 5,
+        "median_ns": 34.494,
+        "min_fork_ns": 33.093,
+        "max_fork_ns": 34.838,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "next_empty",
+        "forks": 1,
+        "median_ns": 64.799,
+        "min_fork_ns": 64.799,
+        "max_fork_ns": 64.799,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "next_empty",
+        "forks": 3,
+        "median_ns": 60.357,
+        "min_fork_ns": 57.505,
+        "max_fork_ns": 65.034,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 1.8727894706325736,
+      "percent_less_time": 46.60371517027863,
+      "allocation_change": 0
+    },
+    {
+      "case": "next_hash",
+      "baseline": {
+        "version": "baseline",
+        "case": "next_hash",
+        "forks": 5,
+        "median_ns": 506.434,
+        "min_fork_ns": 490.736,
+        "max_fork_ns": 548.031,
+        "bytes_per_op": 336,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "next_hash",
+        "forks": 5,
+        "median_ns": 117.551,
+        "min_fork_ns": 102.03,
+        "max_fork_ns": 149.221,
+        "bytes_per_op": 248,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "next_hash",
+        "forks": 1,
+        "median_ns": 191.865,
+        "min_fork_ns": 191.865,
+        "max_fork_ns": 191.865,
+        "bytes_per_op": 392,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "next_hash",
+        "forks": 3,
+        "median_ns": 471.087,
+        "min_fork_ns": 365.333,
+        "max_fork_ns": 492.854,
+        "bytes_per_op": 336,
+        "equivalent_results": true
+      },
+      "speedup": 4.308206650730321,
+      "percent_less_time": 76.78848576517375,
+      "allocation_change": -88
+    },
+    {
+      "case": "next_hash_operator",
+      "baseline": {
+        "version": "baseline",
+        "case": "next_hash_operator",
+        "forks": 5,
+        "median_ns": 249.648,
+        "min_fork_ns": 241.647,
+        "max_fork_ns": 274.13,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "next_hash_operator",
+        "forks": 5,
+        "median_ns": 27.666,
+        "min_fork_ns": 26.957,
+        "max_fork_ns": 29.371,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "next_hash_operator",
+        "forks": 1,
+        "median_ns": 55.738,
+        "min_fork_ns": 55.738,
+        "max_fork_ns": 55.738,
+        "bytes_per_op": 96,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "next_hash_operator",
+        "forks": 3,
+        "median_ns": 245.891,
+        "min_fork_ns": 129.797,
+        "max_fork_ns": 252.066,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "speedup": 9.02363912383431,
+      "percent_less_time": 88.91799653912709,
+      "allocation_change": -48
+    },
+    {
+      "case": "next_mybatis_single",
+      "baseline": {
+        "version": "baseline",
+        "case": "next_mybatis_single",
+        "forks": 5,
+        "median_ns": 63.188,
+        "min_fork_ns": 59.793,
+        "max_fork_ns": 66.72,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "next_mybatis_single",
+        "forks": 5,
+        "median_ns": 20.997,
+        "min_fork_ns": 19.598,
+        "max_fork_ns": 23.778,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "next_mybatis_single",
+        "forks": 1,
+        "median_ns": 49.9,
+        "min_fork_ns": 49.9,
+        "max_fork_ns": 49.9,
+        "bytes_per_op": 96,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "next_mybatis_single",
+        "forks": 3,
+        "median_ns": 55.784,
+        "min_fork_ns": 46.086,
+        "max_fork_ns": 62.192,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "speedup": 3.0093822927084823,
+      "percent_less_time": 66.77058935240869,
+      "allocation_change": -48
+    },
+    {
+      "case": "next_quote",
+      "baseline": {
+        "version": "baseline",
+        "case": "next_quote",
+        "forks": 5,
+        "median_ns": 20253.984,
+        "min_fork_ns": 18194.743,
+        "max_fork_ns": 21946.476,
+        "bytes_per_op": 8760,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "next_quote",
+        "forks": 5,
+        "median_ns": 1020.026,
+        "min_fork_ns": 980.112,
+        "max_fork_ns": 1077.21,
+        "bytes_per_op": 8760,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "next_quote",
+        "forks": 1,
+        "median_ns": 20882.893,
+        "min_fork_ns": 20882.893,
+        "max_fork_ns": 20882.893,
+        "bytes_per_op": 8808,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "next_quote",
+        "forks": 3,
+        "median_ns": 19216.081,
+        "min_fork_ns": 19183.209,
+        "max_fork_ns": 19494.026,
+        "bytes_per_op": 8760,
+        "equivalent_results": true
+      },
+      "speedup": 19.85634091680016,
+      "percent_less_time": 94.96382538862478,
+      "allocation_change": 0
+    },
+    {
+      "case": "next_trivia",
+      "baseline": {
+        "version": "baseline",
+        "case": "next_trivia",
+        "forks": 5,
+        "median_ns": 125.252,
+        "min_fork_ns": 118.93,
+        "max_fork_ns": 172.218,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "next_trivia",
+        "forks": 5,
+        "median_ns": 67.012,
+        "min_fork_ns": 65.267,
+        "max_fork_ns": 80.785,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "next_trivia",
+        "forks": 1,
+        "median_ns": 108.255,
+        "min_fork_ns": 108.255,
+        "max_fork_ns": 108.255,
+        "bytes_per_op": 96,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "next_trivia",
+        "forks": 3,
+        "median_ns": 111.107,
+        "min_fork_ns": 95.083,
+        "max_fork_ns": 119.241,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "speedup": 1.8690980719871066,
+      "percent_less_time": 46.498259508830195,
+      "allocation_change": 0
+    },
+    {
+      "case": "next_word",
+      "baseline": {
+        "version": "baseline",
+        "case": "next_word",
+        "forks": 5,
+        "median_ns": 76.715,
+        "min_fork_ns": 74.07,
+        "max_fork_ns": 81.242,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "next_word",
+        "forks": 5,
+        "median_ns": 35.583,
+        "min_fork_ns": 33.91,
+        "max_fork_ns": 39.435,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "next_word",
+        "forks": 1,
+        "median_ns": 53.746,
+        "min_fork_ns": 53.746,
+        "max_fork_ns": 53.746,
+        "bytes_per_op": 96,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "next_word",
+        "forks": 3,
+        "median_ns": 62.604,
+        "min_fork_ns": 55.381,
+        "max_fork_ns": 74.089,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "speedup": 2.1559452547564852,
+      "percent_less_time": 53.61663299224402,
+      "allocation_change": 0
+    },
+    {
+      "case": "read_comments",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_comments",
+        "forks": 5,
+        "median_ns": 20384.483,
+        "min_fork_ns": 19348.062,
+        "max_fork_ns": 25719.487,
+        "bytes_per_op": 16448,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_comments",
+        "forks": 5,
+        "median_ns": 10053.608,
+        "min_fork_ns": 9714.306,
+        "max_fork_ns": 11004.426,
+        "bytes_per_op": 6680,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_comments",
+        "forks": 1,
+        "median_ns": 29067.742,
+        "min_fork_ns": 29067.742,
+        "max_fork_ns": 29067.742,
+        "bytes_per_op": 29200,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_comments",
+        "forks": 3,
+        "median_ns": 19701.667,
+        "min_fork_ns": 18124.758,
+        "max_fork_ns": 20393.188,
+        "bytes_per_op": 16448,
+        "equivalent_results": true
+      },
+      "speedup": 2.027578855272654,
+      "percent_less_time": 50.68009328468129,
+      "allocation_change": -9768
+    },
+    {
+      "case": "read_cte",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_cte",
+        "forks": 5,
+        "median_ns": 15396.14,
+        "min_fork_ns": 14977.632,
+        "max_fork_ns": 17135.112,
+        "bytes_per_op": 20064,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_cte",
+        "forks": 5,
+        "median_ns": 2995.03,
+        "min_fork_ns": 2915.463,
+        "max_fork_ns": 3488.513,
+        "bytes_per_op": 3720,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_cte",
+        "forks": 1,
+        "median_ns": 16841.634,
+        "min_fork_ns": 16841.634,
+        "max_fork_ns": 16841.634,
+        "bytes_per_op": 24368,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_cte",
+        "forks": 3,
+        "median_ns": 15432.523,
+        "min_fork_ns": 15071.788,
+        "max_fork_ns": 15686.981,
+        "bytes_per_op": 20064,
+        "equivalent_results": true
+      },
+      "speedup": 5.140562865814365,
+      "percent_less_time": 80.54687733418896,
+      "allocation_change": -16344
+    },
+    {
+      "case": "read_executable_comment",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_executable_comment",
+        "forks": 5,
+        "median_ns": 117.556,
+        "min_fork_ns": 112.401,
+        "max_fork_ns": 142.029,
+        "bytes_per_op": 248,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_executable_comment",
+        "forks": 5,
+        "median_ns": 83.749,
+        "min_fork_ns": 77.967,
+        "max_fork_ns": 88.317,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_executable_comment",
+        "forks": 1,
+        "median_ns": 115.758,
+        "min_fork_ns": 115.758,
+        "max_fork_ns": 115.758,
+        "bytes_per_op": 344,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_executable_comment",
+        "forks": 3,
+        "median_ns": 112.733,
+        "min_fork_ns": 112.153,
+        "max_fork_ns": 113.656,
+        "bytes_per_op": 248,
+        "equivalent_results": true
+      },
+      "speedup": 1.4036704915879592,
+      "percent_less_time": 28.758208853652732,
+      "allocation_change": -248
+    },
+    {
+      "case": "read_hash",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_hash",
+        "forks": 5,
+        "median_ns": 1510444.444,
+        "min_fork_ns": 1484246.154,
+        "max_fork_ns": 1660823.077,
+        "bytes_per_op": 1534112,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_hash",
+        "forks": 5,
+        "median_ns": 11412.037,
+        "min_fork_ns": 10962.078,
+        "max_fork_ns": 15266.762,
+        "bytes_per_op": 2360,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_hash",
+        "forks": 1,
+        "median_ns": 63696.573,
+        "min_fork_ns": 63696.573,
+        "max_fork_ns": 63696.573,
+        "bytes_per_op": 85464,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_hash",
+        "forks": 3,
+        "median_ns": 1458655.556,
+        "min_fork_ns": 1435855.556,
+        "max_fork_ns": 1531685.714,
+        "bytes_per_op": 1534112,
+        "equivalent_results": true
+      },
+      "speedup": 132.35537564415537,
+      "percent_less_time": 99.24445834169323,
+      "allocation_change": -1531752
+    },
+    {
+      "case": "read_insert",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert",
+        "forks": 5,
+        "median_ns": 95.344,
+        "min_fork_ns": 94.537,
+        "max_fork_ns": 105.976,
+        "bytes_per_op": 224,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert",
+        "forks": 5,
+        "median_ns": 13.055,
+        "min_fork_ns": 12.543,
+        "max_fork_ns": 13.908,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert",
+        "forks": 1,
+        "median_ns": 101.329,
+        "min_fork_ns": 101.329,
+        "max_fork_ns": 101.329,
+        "bytes_per_op": 320,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert",
+        "forks": 3,
+        "median_ns": 94.476,
+        "min_fork_ns": 93.774,
+        "max_fork_ns": 98.005,
+        "bytes_per_op": 224,
+        "equivalent_results": true
+      },
+      "speedup": 7.30325545767905,
+      "percent_less_time": 86.3074760865917,
+      "allocation_change": -224
+    },
+    {
+      "case": "read_insert_comments",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_comments",
+        "forks": 5,
+        "median_ns": 36793.44,
+        "min_fork_ns": 35240.888,
+        "max_fork_ns": 50776.658,
+        "bytes_per_op": 33664,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_comments",
+        "forks": 5,
+        "median_ns": 15686.804,
+        "min_fork_ns": 15394.408,
+        "max_fork_ns": 16108.576,
+        "bytes_per_op": 6840,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_comments",
+        "forks": 1,
+        "median_ns": 43368.638,
+        "min_fork_ns": 43368.638,
+        "max_fork_ns": 43368.638,
+        "bytes_per_op": 46416,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_comments",
+        "forks": 3,
+        "median_ns": 35588.519,
+        "min_fork_ns": 33446.449,
+        "max_fork_ns": 35628.904,
+        "bytes_per_op": 33664,
+        "equivalent_results": true
+      },
+      "speedup": 2.345502627558807,
+      "percent_less_time": 57.36521510356194,
+      "allocation_change": -26824
+    },
+    {
+      "case": "read_insert_cte",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_cte",
+        "forks": 5,
+        "median_ns": 24715.035,
+        "min_fork_ns": 23517.935,
+        "max_fork_ns": 25487.118,
+        "bytes_per_op": 34976,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_cte",
+        "forks": 5,
+        "median_ns": 4157.701,
+        "min_fork_ns": 4084.4,
+        "max_fork_ns": 4522.394,
+        "bytes_per_op": 3800,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_cte",
+        "forks": 1,
+        "median_ns": 24749.823,
+        "min_fork_ns": 24749.823,
+        "max_fork_ns": 24749.823,
+        "bytes_per_op": 38512,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_cte",
+        "forks": 3,
+        "median_ns": 23749.317,
+        "min_fork_ns": 23202.928,
+        "max_fork_ns": 24754.557,
+        "bytes_per_op": 34976,
+        "equivalent_results": true
+      },
+      "speedup": 5.944399320682272,
+      "percent_less_time": 83.1774423948823,
+      "allocation_change": -31176
+    },
+    {
+      "case": "read_insert_executable_comment",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_executable_comment",
+        "forks": 5,
+        "median_ns": 122.996,
+        "min_fork_ns": 110.663,
+        "max_fork_ns": 129.58,
+        "bytes_per_op": 248,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_executable_comment",
+        "forks": 5,
+        "median_ns": 79.713,
+        "min_fork_ns": 78.803,
+        "max_fork_ns": 84.034,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_executable_comment",
+        "forks": 1,
+        "median_ns": 119.123,
+        "min_fork_ns": 119.123,
+        "max_fork_ns": 119.123,
+        "bytes_per_op": 344,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_executable_comment",
+        "forks": 3,
+        "median_ns": 114.985,
+        "min_fork_ns": 114.692,
+        "max_fork_ns": 116.801,
+        "bytes_per_op": 248,
+        "equivalent_results": true
+      },
+      "speedup": 1.542985460338966,
+      "percent_less_time": 35.190575303261895,
+      "allocation_change": -248
+    },
+    {
+      "case": "read_insert_hash",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_hash",
+        "forks": 5,
+        "median_ns": 2528544.444,
+        "min_fork_ns": 2491212.5,
+        "max_fork_ns": 2705271.429,
+        "bytes_per_op": 2562784,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_hash",
+        "forks": 5,
+        "median_ns": 14901.853,
+        "min_fork_ns": 13846.708,
+        "max_fork_ns": 16894.605,
+        "bytes_per_op": 2440,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_hash",
+        "forks": 1,
+        "median_ns": 79363.91,
+        "min_fork_ns": 79363.91,
+        "max_fork_ns": 79363.91,
+        "bytes_per_op": 98072,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_hash",
+        "forks": 3,
+        "median_ns": 2452833.333,
+        "min_fork_ns": 2339233.333,
+        "max_fork_ns": 2476366.667,
+        "bytes_per_op": 2562784,
+        "equivalent_results": true
+      },
+      "speedup": 169.67986759767393,
+      "percent_less_time": 99.41065489137986,
+      "allocation_change": -2560344
+    },
+    {
+      "case": "read_insert_insert",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_insert",
+        "forks": 5,
+        "median_ns": 4883.096,
+        "min_fork_ns": 4736.885,
+        "max_fork_ns": 4989.671,
+        "bytes_per_op": 7168,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_insert",
+        "forks": 5,
+        "median_ns": 991.719,
+        "min_fork_ns": 949.789,
+        "max_fork_ns": 993.373,
+        "bytes_per_op": 656,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_insert",
+        "forks": 1,
+        "median_ns": 5530.371,
+        "min_fork_ns": 5530.371,
+        "max_fork_ns": 5530.371,
+        "bytes_per_op": 8368,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_insert",
+        "forks": 3,
+        "median_ns": 4580.066,
+        "min_fork_ns": 4553.149,
+        "max_fork_ns": 4725.428,
+        "bytes_per_op": 7168,
+        "equivalent_results": true
+      },
+      "speedup": 4.9238705722084575,
+      "percent_less_time": 79.69077404990604,
+      "allocation_change": -6512
+    },
+    {
+      "case": "read_insert_large",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_large",
+        "forks": 5,
+        "median_ns": 314572.464,
+        "min_fork_ns": 309446.154,
+        "max_fork_ns": 340910.526,
+        "bytes_per_op": 357376,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_large",
+        "forks": 5,
+        "median_ns": 65325.073,
+        "min_fork_ns": 62072.947,
+        "max_fork_ns": 68419.938,
+        "bytes_per_op": 27280,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_large",
+        "forks": 1,
+        "median_ns": 354292.5,
+        "min_fork_ns": 354292.5,
+        "max_fork_ns": 354292.5,
+        "bytes_per_op": 453200,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_large",
+        "forks": 3,
+        "median_ns": 310736.986,
+        "min_fork_ns": 307839.344,
+        "max_fork_ns": 316273.846,
+        "bytes_per_op": 357376,
+        "equivalent_results": true
+      },
+      "speedup": 4.815493493593188,
+      "percent_less_time": 79.2336963733736,
+      "allocation_change": -330096
+    },
+    {
+      "case": "read_insert_literal",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_literal",
+        "forks": 5,
+        "median_ns": 6119.608,
+        "min_fork_ns": 5993.122,
+        "max_fork_ns": 7375.412,
+        "bytes_per_op": 7424,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_literal",
+        "forks": 5,
+        "median_ns": 1200.01,
+        "min_fork_ns": 1104.087,
+        "max_fork_ns": 1244.331,
+        "bytes_per_op": 752,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_literal",
+        "forks": 1,
+        "median_ns": 6488.944,
+        "min_fork_ns": 6488.944,
+        "max_fork_ns": 6488.944,
+        "bytes_per_op": 8048,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_literal",
+        "forks": 3,
+        "median_ns": 6084.13,
+        "min_fork_ns": 5739.65,
+        "max_fork_ns": 6460.515,
+        "bytes_per_op": 7424,
+        "equivalent_results": true
+      },
+      "speedup": 5.0996308364096965,
+      "percent_less_time": 80.39073744592791,
+      "allocation_change": -6672
+    },
+    {
+      "case": "read_insert_multiple",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_multiple",
+        "forks": 5,
+        "median_ns": 3924.47,
+        "min_fork_ns": 3858.309,
+        "max_fork_ns": 4251.442,
+        "bytes_per_op": 6208,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_multiple",
+        "forks": 5,
+        "median_ns": 898.216,
+        "min_fork_ns": 821.256,
+        "max_fork_ns": 998.503,
+        "bytes_per_op": 664,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_multiple",
+        "forks": 1,
+        "median_ns": 4216.868,
+        "min_fork_ns": 4216.868,
+        "max_fork_ns": 4216.868,
+        "bytes_per_op": 7216,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_multiple",
+        "forks": 3,
+        "median_ns": 3813.692,
+        "min_fork_ns": 3681.857,
+        "max_fork_ns": 4000.647,
+        "bytes_per_op": 6208,
+        "equivalent_results": true
+      },
+      "speedup": 4.369182913686686,
+      "percent_less_time": 77.11242537208845,
+      "allocation_change": -5544
+    },
+    {
+      "case": "read_insert_mutation",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_mutation",
+        "forks": 5,
+        "median_ns": 327.284,
+        "min_fork_ns": 319.053,
+        "max_fork_ns": 342.148,
+        "bytes_per_op": 520,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_mutation",
+        "forks": 5,
+        "median_ns": 242.895,
+        "min_fork_ns": 237.043,
+        "max_fork_ns": 262.18,
+        "bytes_per_op": 200,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_mutation",
+        "forks": 1,
+        "median_ns": 305.876,
+        "min_fork_ns": 305.876,
+        "max_fork_ns": 305.876,
+        "bytes_per_op": 712,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_mutation",
+        "forks": 3,
+        "median_ns": 331.342,
+        "min_fork_ns": 312.136,
+        "max_fork_ns": 333.574,
+        "bytes_per_op": 520,
+        "equivalent_results": true
+      },
+      "speedup": 1.3474299594474979,
+      "percent_less_time": 25.784639640190164,
+      "allocation_change": -320
+    },
+    {
+      "case": "read_insert_mysql_dash",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_mysql_dash",
+        "forks": 5,
+        "median_ns": 336.454,
+        "min_fork_ns": 329.657,
+        "max_fork_ns": 427.964,
+        "bytes_per_op": 544,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_mysql_dash",
+        "forks": 5,
+        "median_ns": 288.638,
+        "min_fork_ns": 276.029,
+        "max_fork_ns": 308.141,
+        "bytes_per_op": 400,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_mysql_dash",
+        "forks": 1,
+        "median_ns": 314.584,
+        "min_fork_ns": 314.584,
+        "max_fork_ns": 314.584,
+        "bytes_per_op": 736,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_mysql_dash",
+        "forks": 3,
+        "median_ns": 333.241,
+        "min_fork_ns": 332.354,
+        "max_fork_ns": 337.028,
+        "bytes_per_op": 544,
+        "equivalent_results": true
+      },
+      "speedup": 1.1656607931041651,
+      "percent_less_time": 14.211749600242541,
+      "allocation_change": -144
+    },
+    {
+      "case": "read_insert_quoted_large",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_quoted_large",
+        "forks": 5,
+        "median_ns": 383618.966,
+        "min_fork_ns": 371341.667,
+        "max_fork_ns": 396029.31,
+        "bytes_per_op": 110528,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_quoted_large",
+        "forks": 5,
+        "median_ns": 9921.423,
+        "min_fork_ns": 9588.206,
+        "max_fork_ns": 10273.721,
+        "bytes_per_op": 26816,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_quoted_large",
+        "forks": 1,
+        "median_ns": 466114.583,
+        "min_fork_ns": 466114.583,
+        "max_fork_ns": 466114.583,
+        "bytes_per_op": 251280,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_quoted_large",
+        "forks": 3,
+        "median_ns": 358916.667,
+        "min_fork_ns": 356520.635,
+        "max_fork_ns": 380769.492,
+        "bytes_per_op": 110528,
+        "equivalent_results": true
+      },
+      "speedup": 38.665720229850095,
+      "percent_less_time": 97.41372979979306,
+      "allocation_change": -83712
+    },
+    {
+      "case": "read_insert_simple",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_simple",
+        "forks": 5,
+        "median_ns": 12116.445,
+        "min_fork_ns": 11787.225,
+        "max_fork_ns": 12704.712,
+        "bytes_per_op": 16928,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_simple",
+        "forks": 5,
+        "median_ns": 2275.764,
+        "min_fork_ns": 2253.927,
+        "max_fork_ns": 2343.525,
+        "bytes_per_op": 1424,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_simple",
+        "forks": 1,
+        "median_ns": 13334.871,
+        "min_fork_ns": 13334.871,
+        "max_fork_ns": 13334.871,
+        "bytes_per_op": 20816,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_simple",
+        "forks": 3,
+        "median_ns": 11747.298,
+        "min_fork_ns": 11294.729,
+        "max_fork_ns": 11860.145,
+        "bytes_per_op": 16928,
+        "equivalent_results": true
+      },
+      "speedup": 5.324121921253697,
+      "percent_less_time": 81.21756010116829,
+      "allocation_change": -15504
+    },
+    {
+      "case": "read_insert_upsert",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_insert_upsert",
+        "forks": 5,
+        "median_ns": 2063.528,
+        "min_fork_ns": 1992.512,
+        "max_fork_ns": 2306.12,
+        "bytes_per_op": 2696,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_insert_upsert",
+        "forks": 5,
+        "median_ns": 804.285,
+        "min_fork_ns": 788.786,
+        "max_fork_ns": 897.521,
+        "bytes_per_op": 64,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_insert_upsert",
+        "forks": 1,
+        "median_ns": 2427.294,
+        "min_fork_ns": 2427.294,
+        "max_fork_ns": 2427.294,
+        "bytes_per_op": 3368,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_insert_upsert",
+        "forks": 3,
+        "median_ns": 2017.748,
+        "min_fork_ns": 1972.856,
+        "max_fork_ns": 2019.83,
+        "bytes_per_op": 2696,
+        "equivalent_results": true
+      },
+      "speedup": 2.565667642688848,
+      "percent_less_time": 61.02379032414389,
+      "allocation_change": -2632
+    },
+    {
+      "case": "read_large",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_large",
+        "forks": 5,
+        "median_ns": 164774.444,
+        "min_fork_ns": 160618.792,
+        "max_fork_ns": 202353.571,
+        "bytes_per_op": 140992,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_large",
+        "forks": 5,
+        "median_ns": 43989.429,
+        "min_fork_ns": 42652.39,
+        "max_fork_ns": 46353.493,
+        "bytes_per_op": 27200,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_large",
+        "forks": 1,
+        "median_ns": 210236.364,
+        "min_fork_ns": 210236.364,
+        "max_fork_ns": 210236.364,
+        "bytes_per_op": 236816,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_large",
+        "forks": 3,
+        "median_ns": 154116.667,
+        "min_fork_ns": 150359.355,
+        "max_fork_ns": 159693.182,
+        "bytes_per_op": 140992,
+        "equivalent_results": true
+      },
+      "speedup": 3.7457736493919938,
+      "percent_less_time": 73.3032453746286,
+      "allocation_change": -113792
+    },
+    {
+      "case": "read_literal",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_literal",
+        "forks": 5,
+        "median_ns": 3661.268,
+        "min_fork_ns": 3562.164,
+        "max_fork_ns": 4043.987,
+        "bytes_per_op": 4032,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_literal",
+        "forks": 5,
+        "median_ns": 719.328,
+        "min_fork_ns": 697.921,
+        "max_fork_ns": 818.952,
+        "bytes_per_op": 672,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_literal",
+        "forks": 1,
+        "median_ns": 4384.738,
+        "min_fork_ns": 4384.738,
+        "max_fork_ns": 4384.738,
+        "bytes_per_op": 5424,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_literal",
+        "forks": 3,
+        "median_ns": 3627.468,
+        "min_fork_ns": 3527.382,
+        "max_fork_ns": 3955.162,
+        "bytes_per_op": 4032,
+        "equivalent_results": true
+      },
+      "speedup": 5.0898449664130965,
+      "percent_less_time": 80.3530361612425,
+      "allocation_change": -3360
+    },
+    {
+      "case": "read_multiple",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_multiple",
+        "forks": 5,
+        "median_ns": 2499.866,
+        "min_fork_ns": 2410.256,
+        "max_fork_ns": 2592.406,
+        "bytes_per_op": 4352,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_multiple",
+        "forks": 5,
+        "median_ns": 557.7,
+        "min_fork_ns": 516.031,
+        "max_fork_ns": 762.476,
+        "bytes_per_op": 584,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_multiple",
+        "forks": 1,
+        "median_ns": 2847.356,
+        "min_fork_ns": 2847.356,
+        "max_fork_ns": 2847.356,
+        "bytes_per_op": 5360,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_multiple",
+        "forks": 3,
+        "median_ns": 2481.252,
+        "min_fork_ns": 2455.289,
+        "max_fork_ns": 2733.07,
+        "bytes_per_op": 4352,
+        "equivalent_results": true
+      },
+      "speedup": 4.482456517841133,
+      "percent_less_time": 77.69080422710657,
+      "allocation_change": -3768
+    },
+    {
+      "case": "read_mutation",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_mutation",
+        "forks": 5,
+        "median_ns": 313.753,
+        "min_fork_ns": 304.038,
+        "max_fork_ns": 395.844,
+        "bytes_per_op": 520,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_mutation",
+        "forks": 5,
+        "median_ns": 245.311,
+        "min_fork_ns": 231.506,
+        "max_fork_ns": 286.448,
+        "bytes_per_op": 200,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_mutation",
+        "forks": 1,
+        "median_ns": 294.887,
+        "min_fork_ns": 294.887,
+        "max_fork_ns": 294.887,
+        "bytes_per_op": 712,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_mutation",
+        "forks": 3,
+        "median_ns": 324.767,
+        "min_fork_ns": 313.559,
+        "max_fork_ns": 327.993,
+        "bytes_per_op": 520,
+        "equivalent_results": true
+      },
+      "speedup": 1.2790009416618089,
+      "percent_less_time": 21.813974687094618,
+      "allocation_change": -320
+    },
+    {
+      "case": "read_mysql_dash",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_mysql_dash",
+        "forks": 5,
+        "median_ns": 335.145,
+        "min_fork_ns": 327.785,
+        "max_fork_ns": 414.785,
+        "bytes_per_op": 544,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_mysql_dash",
+        "forks": 5,
+        "median_ns": 295.296,
+        "min_fork_ns": 276.922,
+        "max_fork_ns": 306.532,
+        "bytes_per_op": 400,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_mysql_dash",
+        "forks": 1,
+        "median_ns": 312.838,
+        "min_fork_ns": 312.838,
+        "max_fork_ns": 312.838,
+        "bytes_per_op": 736,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_mysql_dash",
+        "forks": 3,
+        "median_ns": 329.76,
+        "min_fork_ns": 322.791,
+        "max_fork_ns": 330.076,
+        "bytes_per_op": 544,
+        "equivalent_results": true
+      },
+      "speedup": 1.1349459525357608,
+      "percent_less_time": 11.890077429172441,
+      "allocation_change": -144
+    },
+    {
+      "case": "read_quoted_large",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_quoted_large",
+        "forks": 5,
+        "median_ns": 278495.89,
+        "min_fork_ns": 261193.103,
+        "max_fork_ns": 286177.465,
+        "bytes_per_op": 107904,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_quoted_large",
+        "forks": 5,
+        "median_ns": 9837.728,
+        "min_fork_ns": 9260.969,
+        "max_fork_ns": 10979.226,
+        "bytes_per_op": 26736,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_quoted_large",
+        "forks": 1,
+        "median_ns": 364452.459,
+        "min_fork_ns": 364452.459,
+        "max_fork_ns": 364452.459,
+        "bytes_per_op": 248656,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_quoted_large",
+        "forks": 3,
+        "median_ns": 279018.571,
+        "min_fork_ns": 265117.333,
+        "max_fork_ns": 284264.474,
+        "bytes_per_op": 107904,
+        "equivalent_results": true
+      },
+      "speedup": 28.308964224259913,
+      "percent_less_time": 96.46755002380824,
+      "allocation_change": -81168
+    },
+    {
+      "case": "read_simple",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_simple",
+        "forks": 5,
+        "median_ns": 6027.513,
+        "min_fork_ns": 5923.045,
+        "max_fork_ns": 7498.23,
+        "bytes_per_op": 7392,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_simple",
+        "forks": 5,
+        "median_ns": 1466.016,
+        "min_fork_ns": 1418.588,
+        "max_fork_ns": 1648.738,
+        "bytes_per_op": 1344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_simple",
+        "forks": 1,
+        "median_ns": 7467.608,
+        "min_fork_ns": 7467.608,
+        "max_fork_ns": 7467.608,
+        "bytes_per_op": 11280,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_simple",
+        "forks": 3,
+        "median_ns": 5928.576,
+        "min_fork_ns": 5724.905,
+        "max_fork_ns": 5965.928,
+        "bytes_per_op": 7392,
+        "equivalent_results": true
+      },
+      "speedup": 4.111491961888547,
+      "percent_less_time": 75.6779288572252,
+      "allocation_change": -6048
+    },
+    {
+      "case": "read_upsert",
+      "baseline": {
+        "version": "baseline",
+        "case": "read_upsert",
+        "forks": 5,
+        "median_ns": 146.211,
+        "min_fork_ns": 144.103,
+        "max_fork_ns": 153.561,
+        "bytes_per_op": 344,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "read_upsert",
+        "forks": 5,
+        "median_ns": 13.258,
+        "min_fork_ns": 12.296,
+        "max_fork_ns": 18.813,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "read_upsert",
+        "forks": 1,
+        "median_ns": 160.846,
+        "min_fork_ns": 160.846,
+        "max_fork_ns": 160.846,
+        "bytes_per_op": 440,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "read_upsert",
+        "forks": 3,
+        "median_ns": 147.571,
+        "min_fork_ns": 144.722,
+        "max_fork_ns": 151.903,
+        "bytes_per_op": 344,
+        "equivalent_results": true
+      },
+      "speedup": 11.028133956856239,
+      "percent_less_time": 90.93228279678,
+      "allocation_change": -344
+    },
+    {
+      "case": "select_ambiguous",
+      "baseline": {
+        "version": "baseline",
+        "case": "select_ambiguous",
+        "forks": 5,
+        "median_ns": 473.732,
+        "min_fork_ns": 434.847,
+        "max_fork_ns": 476.674,
+        "bytes_per_op": 1056,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "select_ambiguous",
+        "forks": 5,
+        "median_ns": 21.85,
+        "min_fork_ns": 18.512,
+        "max_fork_ns": 24.752,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "select_ambiguous",
+        "forks": 1,
+        "median_ns": 453.435,
+        "min_fork_ns": 453.435,
+        "max_fork_ns": 453.435,
+        "bytes_per_op": 1296,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "select_ambiguous",
+        "forks": 3,
+        "median_ns": 444.493,
+        "min_fork_ns": 437.107,
+        "max_fork_ns": 463.449,
+        "bytes_per_op": 1056,
+        "equivalent_results": true
+      },
+      "speedup": 21.681098398169336,
+      "percent_less_time": 95.38768755330018,
+      "allocation_change": -1008
+    },
+    {
+      "case": "select_cte",
+      "baseline": {
+        "version": "baseline",
+        "case": "select_cte",
+        "forks": 5,
+        "median_ns": 2623.925,
+        "min_fork_ns": 2565.411,
+        "max_fork_ns": 2782.111,
+        "bytes_per_op": 4896,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "select_cte",
+        "forks": 5,
+        "median_ns": 643.021,
+        "min_fork_ns": 607.315,
+        "max_fork_ns": 686.763,
+        "bytes_per_op": 1080,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "select_cte",
+        "forks": 1,
+        "median_ns": 2551.422,
+        "min_fork_ns": 2551.422,
+        "max_fork_ns": 2551.422,
+        "bytes_per_op": 4944,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "select_cte",
+        "forks": 3,
+        "median_ns": 2634.318,
+        "min_fork_ns": 2624.858,
+        "max_fork_ns": 2748.183,
+        "bytes_per_op": 4896,
+        "equivalent_results": true
+      },
+      "speedup": 4.080621006156876,
+      "percent_less_time": 75.49392608401536,
+      "allocation_change": -3816
+    },
+    {
+      "case": "select_parenthesized",
+      "baseline": {
+        "version": "baseline",
+        "case": "select_parenthesized",
+        "forks": 5,
+        "median_ns": 452.02,
+        "min_fork_ns": 440.401,
+        "max_fork_ns": 477.78,
+        "bytes_per_op": 896,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "select_parenthesized",
+        "forks": 5,
+        "median_ns": 105.352,
+        "min_fork_ns": 87.918,
+        "max_fork_ns": 112.306,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "select_parenthesized",
+        "forks": 1,
+        "median_ns": 455.727,
+        "min_fork_ns": 455.727,
+        "max_fork_ns": 455.727,
+        "bytes_per_op": 1136,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "select_parenthesized",
+        "forks": 3,
+        "median_ns": 449.582,
+        "min_fork_ns": 439.549,
+        "max_fork_ns": 452.431,
+        "bytes_per_op": 896,
+        "equivalent_results": true
+      },
+      "speedup": 4.290568759966588,
+      "percent_less_time": 76.69306667846556,
+      "allocation_change": -848
+    },
+    {
+      "case": "select_quotes",
+      "baseline": {
+        "version": "baseline",
+        "case": "select_quotes",
+        "forks": 5,
+        "median_ns": 424.005,
+        "min_fork_ns": 416.013,
+        "max_fork_ns": 448.958,
+        "bytes_per_op": 960,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "select_quotes",
+        "forks": 5,
+        "median_ns": 21.177,
+        "min_fork_ns": 19.455,
+        "max_fork_ns": 26.608,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "select_quotes",
+        "forks": 1,
+        "median_ns": 452.415,
+        "min_fork_ns": 452.415,
+        "max_fork_ns": 452.415,
+        "bytes_per_op": 1200,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "select_quotes",
+        "forks": 3,
+        "median_ns": 436.868,
+        "min_fork_ns": 413.4,
+        "max_fork_ns": 449.729,
+        "bytes_per_op": 960,
+        "equivalent_results": true
+      },
+      "speedup": 20.021957784388725,
+      "percent_less_time": 95.005483425903,
+      "allocation_change": -912
+    },
+    {
+      "case": "select_simple",
+      "baseline": {
+        "version": "baseline",
+        "case": "select_simple",
+        "forks": 5,
+        "median_ns": 629.033,
+        "min_fork_ns": 614.07,
+        "max_fork_ns": 654.696,
+        "bytes_per_op": 1440,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "select_simple",
+        "forks": 5,
+        "median_ns": 21.959,
+        "min_fork_ns": 18.446,
+        "max_fork_ns": 25.292,
+        "bytes_per_op": 48,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "select_simple",
+        "forks": 1,
+        "median_ns": 646.021,
+        "min_fork_ns": 646.021,
+        "max_fork_ns": 646.021,
+        "bytes_per_op": 1680,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "select_simple",
+        "forks": 3,
+        "median_ns": 622.635,
+        "min_fork_ns": 606.67,
+        "max_fork_ns": 634.586,
+        "bytes_per_op": 1440,
+        "equivalent_results": true
+      },
+      "speedup": 28.645794435083566,
+      "percent_less_time": 96.50908616877017,
+      "allocation_change": -1392
+    },
+    {
+      "case": "tokenize_array",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_array",
+        "forks": 5,
+        "median_ns": 11686.937,
+        "min_fork_ns": 11335.01,
+        "max_fork_ns": 12412.389,
+        "bytes_per_op": 4248,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_array",
+        "forks": 5,
+        "median_ns": 653.713,
+        "min_fork_ns": 517.689,
+        "max_fork_ns": 745.17,
+        "bytes_per_op": 4248,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_array",
+        "forks": 1,
+        "median_ns": 2897.929,
+        "min_fork_ns": 2897.929,
+        "max_fork_ns": 2897.929,
+        "bytes_per_op": 4248,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_array",
+        "forks": 3,
+        "median_ns": 11573.514,
+        "min_fork_ns": 10913.002,
+        "max_fork_ns": 12030.841,
+        "bytes_per_op": 4248,
+        "equivalent_results": true
+      },
+      "speedup": 17.877779698430352,
+      "percent_less_time": 94.40646424294064,
+      "allocation_change": 0
+    },
+    {
+      "case": "tokenize_backslashes",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_backslashes",
+        "forks": 5,
+        "median_ns": 388.756,
+        "min_fork_ns": 349.907,
+        "max_fork_ns": 404.372,
+        "bytes_per_op": 488,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_backslashes",
+        "forks": 5,
+        "median_ns": 219.957,
+        "min_fork_ns": 205.315,
+        "max_fork_ns": 233.523,
+        "bytes_per_op": 344,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_backslashes",
+        "forks": 1,
+        "median_ns": 279.357,
+        "min_fork_ns": 279.357,
+        "max_fork_ns": 279.357,
+        "bytes_per_op": 488,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_backslashes",
+        "forks": 3,
+        "median_ns": 359.065,
+        "min_fork_ns": 314.914,
+        "max_fork_ns": 379.861,
+        "bytes_per_op": 488,
+        "equivalent_results": true
+      },
+      "speedup": 1.7674181771891777,
+      "percent_less_time": 43.42029447777011,
+      "allocation_change": -144
+    },
+    {
+      "case": "tokenize_comments",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_comments",
+        "forks": 5,
+        "median_ns": 3357.327,
+        "min_fork_ns": 3195.916,
+        "max_fork_ns": 6239.72,
+        "bytes_per_op": 2464,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_comments",
+        "forks": 5,
+        "median_ns": 1331.982,
+        "min_fork_ns": 1230.606,
+        "max_fork_ns": 1529.63,
+        "bytes_per_op": 736,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_comments",
+        "forks": 1,
+        "median_ns": 1294.942,
+        "min_fork_ns": 1294.942,
+        "max_fork_ns": 1294.942,
+        "bytes_per_op": 2464,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_comments",
+        "forks": 3,
+        "median_ns": 3222.125,
+        "min_fork_ns": 2864.347,
+        "max_fork_ns": 3309.365,
+        "bytes_per_op": 2464,
+        "equivalent_results": true
+      },
+      "speedup": 2.520549827249918,
+      "percent_less_time": 60.32611658024375,
+      "allocation_change": -1728
+    },
+    {
+      "case": "tokenize_custom",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_custom",
+        "forks": 5,
+        "median_ns": 1506.248,
+        "min_fork_ns": 1396.854,
+        "max_fork_ns": 2308.936,
+        "bytes_per_op": 600,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_custom",
+        "forks": 5,
+        "median_ns": 338.603,
+        "min_fork_ns": 319.833,
+        "max_fork_ns": 391.64,
+        "bytes_per_op": 392,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_custom",
+        "forks": 1,
+        "median_ns": 396.736,
+        "min_fork_ns": 396.736,
+        "max_fork_ns": 396.736,
+        "bytes_per_op": 632,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_custom",
+        "forks": 3,
+        "median_ns": 1369.514,
+        "min_fork_ns": 1342.769,
+        "max_fork_ns": 1379.513,
+        "bytes_per_op": 600,
+        "equivalent_results": true
+      },
+      "speedup": 4.448418944900075,
+      "percent_less_time": 77.520102931257,
+      "allocation_change": -208
+    },
+    {
+      "case": "tokenize_dense_concat_1024",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_dense_concat_1024",
+        "forks": 5,
+        "median_ns": 41323.748,
+        "min_fork_ns": 40491.192,
+        "max_fork_ns": 67934.862,
+        "bytes_per_op": 7960,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_dense_concat_1024",
+        "forks": 5,
+        "median_ns": 16842.347,
+        "min_fork_ns": 15741.951,
+        "max_fork_ns": 17590.472,
+        "bytes_per_op": 7864,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_dense_concat_1024",
+        "forks": 1,
+        "median_ns": 17471.611,
+        "min_fork_ns": 17471.611,
+        "max_fork_ns": 17471.611,
+        "bytes_per_op": 7960,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_dense_concat_1024",
+        "forks": 3,
+        "median_ns": 41001.86,
+        "min_fork_ns": 39941.299,
+        "max_fork_ns": 42789.401,
+        "bytes_per_op": 7960,
+        "equivalent_results": true
+      },
+      "speedup": 2.453562321213308,
+      "percent_less_time": 59.24293459538084,
+      "allocation_change": -96
+    },
+    {
+      "case": "tokenize_dense_concat_256",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_dense_concat_256",
+        "forks": 5,
+        "median_ns": 10880.214,
+        "min_fork_ns": 10425.36,
+        "max_fork_ns": 16309.372,
+        "bytes_per_op": 2200,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_dense_concat_256",
+        "forks": 5,
+        "median_ns": 4290.866,
+        "min_fork_ns": 4110.439,
+        "max_fork_ns": 4906.563,
+        "bytes_per_op": 2104,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_dense_concat_256",
+        "forks": 1,
+        "median_ns": 4613.805,
+        "min_fork_ns": 4613.805,
+        "max_fork_ns": 4613.805,
+        "bytes_per_op": 2200,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_dense_concat_256",
+        "forks": 3,
+        "median_ns": 10632.709,
+        "min_fork_ns": 10508.371,
+        "max_fork_ns": 11804.149,
+        "bytes_per_op": 2200,
+        "equivalent_results": true
+      },
+      "speedup": 2.5356685573494953,
+      "percent_less_time": 60.5626690798545,
+      "allocation_change": -96
+    },
+    {
+      "case": "tokenize_dense_concat_4096",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_dense_concat_4096",
+        "forks": 5,
+        "median_ns": 163181.102,
+        "min_fork_ns": 159162.222,
+        "max_fork_ns": 358889.147,
+        "bytes_per_op": 31000,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_dense_concat_4096",
+        "forks": 5,
+        "median_ns": 67042.378,
+        "min_fork_ns": 60907.67,
+        "max_fork_ns": 71387.5,
+        "bytes_per_op": 30904,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_dense_concat_4096",
+        "forks": 1,
+        "median_ns": 68121.384,
+        "min_fork_ns": 68121.384,
+        "max_fork_ns": 68121.384,
+        "bytes_per_op": 31000,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_dense_concat_4096",
+        "forks": 3,
+        "median_ns": 164410.687,
+        "min_fork_ns": 163169.767,
+        "max_fork_ns": 164563.158,
+        "bytes_per_op": 31000,
+        "equivalent_results": true
+      },
+      "speedup": 2.4339993130911917,
+      "percent_less_time": 58.915354058584555,
+      "allocation_change": -96
+    },
+    {
+      "case": "tokenize_dense_concat_8192",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_dense_concat_8192",
+        "forks": 5,
+        "median_ns": 330880,
+        "min_fork_ns": 321987.5,
+        "max_fork_ns": 591903.077,
+        "bytes_per_op": 61720,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_dense_concat_8192",
+        "forks": 5,
+        "median_ns": 130703.012,
+        "min_fork_ns": 124462.069,
+        "max_fork_ns": 137031.056,
+        "bytes_per_op": 61624,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_dense_concat_8192",
+        "forks": 1,
+        "median_ns": 133626.452,
+        "min_fork_ns": 133626.452,
+        "max_fork_ns": 133626.452,
+        "bytes_per_op": 61720,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_dense_concat_8192",
+        "forks": 3,
+        "median_ns": 329932.308,
+        "min_fork_ns": 313230.909,
+        "max_fork_ns": 335663.636,
+        "bytes_per_op": 61720,
+        "equivalent_results": true
+      },
+      "speedup": 2.5315407421521394,
+      "percent_less_time": 60.49836436170213,
+      "allocation_change": -96
+    },
+    {
+      "case": "tokenize_hash_identifiers",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_hash_identifiers",
+        "forks": 5,
+        "median_ns": 63204.886,
+        "min_fork_ns": 60182.258,
+        "max_fork_ns": 66409.953,
+        "bytes_per_op": 65528,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_hash_identifiers",
+        "forks": 5,
+        "median_ns": 7483.198,
+        "min_fork_ns": 6896.807,
+        "max_fork_ns": 8394.2,
+        "bytes_per_op": 1984,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_hash_identifiers",
+        "forks": 1,
+        "median_ns": 8891.29,
+        "min_fork_ns": 8891.29,
+        "max_fork_ns": 8891.29,
+        "bytes_per_op": 16576,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_hash_identifiers",
+        "forks": 3,
+        "median_ns": 58913.333,
+        "min_fork_ns": 58881.395,
+        "max_fork_ns": 58944.345,
+        "bytes_per_op": 65528,
+        "equivalent_results": true
+      },
+      "speedup": 8.446239963181517,
+      "percent_less_time": 88.16041215547799,
+      "allocation_change": -63544
+    },
+    {
+      "case": "tokenize_hash_operator",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_hash_operator",
+        "forks": 5,
+        "median_ns": 109.883,
+        "min_fork_ns": 95.204,
+        "max_fork_ns": 119.789,
+        "bytes_per_op": 104,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_hash_operator",
+        "forks": 5,
+        "median_ns": 35.63,
+        "min_fork_ns": 32.475,
+        "max_fork_ns": 36.8,
+        "bytes_per_op": 104,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_hash_operator",
+        "forks": 1,
+        "median_ns": 38,
+        "min_fork_ns": 38,
+        "max_fork_ns": 38,
+        "bytes_per_op": 152,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_hash_operator",
+        "forks": 3,
+        "median_ns": 109.961,
+        "min_fork_ns": 109.448,
+        "max_fork_ns": 112.818,
+        "bytes_per_op": 104,
+        "equivalent_results": true
+      },
+      "speedup": 3.084002245298905,
+      "percent_less_time": 67.57460207675436,
+      "allocation_change": 0
+    },
+    {
+      "case": "tokenize_hash_rows",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_hash_rows",
+        "forks": 5,
+        "median_ns": 1922554.545,
+        "min_fork_ns": 1798283.333,
+        "max_fork_ns": 2485275,
+        "bytes_per_op": 331144,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_hash_rows",
+        "forks": 5,
+        "median_ns": 11180.69,
+        "min_fork_ns": 9512.629,
+        "max_fork_ns": 12435.101,
+        "bytes_per_op": 2624,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_hash_rows",
+        "forks": 1,
+        "median_ns": 9851.665,
+        "min_fork_ns": 9851.665,
+        "max_fork_ns": 9851.665,
+        "bytes_per_op": 5768,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_hash_rows",
+        "forks": 3,
+        "median_ns": 1921818.182,
+        "min_fork_ns": 1266731.25,
+        "max_fork_ns": 1967890.909,
+        "bytes_per_op": 331144,
+        "equivalent_results": true
+      },
+      "speedup": 171.95312140842827,
+      "percent_less_time": 99.41844614868911,
+      "allocation_change": -328520
+    },
+    {
+      "case": "tokenize_keep_comments",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_keep_comments",
+        "forks": 5,
+        "median_ns": 4253.954,
+        "min_fork_ns": 4106.829,
+        "max_fork_ns": 5974.271,
+        "bytes_per_op": 3504,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_keep_comments",
+        "forks": 5,
+        "median_ns": 1530.42,
+        "min_fork_ns": 1324.741,
+        "max_fork_ns": 1598.816,
+        "bytes_per_op": 1776,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_keep_comments",
+        "forks": 1,
+        "median_ns": 2491.467,
+        "min_fork_ns": 2491.467,
+        "max_fork_ns": 2491.467,
+        "bytes_per_op": 3504,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_keep_comments",
+        "forks": 3,
+        "median_ns": 4107.05,
+        "min_fork_ns": 3928.388,
+        "max_fork_ns": 4351.653,
+        "bytes_per_op": 3504,
+        "equivalent_results": true
+      },
+      "speedup": 2.7795990643091435,
+      "percent_less_time": 64.02358840739697,
+      "allocation_change": -1728
+    },
+    {
+      "case": "tokenize_large",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_large",
+        "forks": 5,
+        "median_ns": 53628.535,
+        "min_fork_ns": 50332.933,
+        "max_fork_ns": 74859.126,
+        "bytes_per_op": 38120,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_large",
+        "forks": 5,
+        "median_ns": 25115.924,
+        "min_fork_ns": 23816.714,
+        "max_fork_ns": 25471.817,
+        "bytes_per_op": 25832,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_large",
+        "forks": 1,
+        "median_ns": 25980.712,
+        "min_fork_ns": 25980.712,
+        "max_fork_ns": 25980.712,
+        "bytes_per_op": 38120,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_large",
+        "forks": 3,
+        "median_ns": 50759.045,
+        "min_fork_ns": 48440.506,
+        "max_fork_ns": 52869.175,
+        "bytes_per_op": 38120,
+        "equivalent_results": true
+      },
+      "speedup": 2.1352403757870904,
+      "percent_less_time": 53.16686536374713,
+      "allocation_change": -12288
+    },
+    {
+      "case": "tokenize_long_quote",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_long_quote",
+        "forks": 5,
+        "median_ns": 50753.01,
+        "min_fork_ns": 45387.062,
+        "max_fork_ns": 51447.283,
+        "bytes_per_op": 17672,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_long_quote",
+        "forks": 5,
+        "median_ns": 1647.494,
+        "min_fork_ns": 1591.271,
+        "max_fork_ns": 1760.703,
+        "bytes_per_op": 17624,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_long_quote",
+        "forks": 1,
+        "median_ns": 11439.386,
+        "min_fork_ns": 11439.386,
+        "max_fork_ns": 11439.386,
+        "bytes_per_op": 17672,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_long_quote",
+        "forks": 3,
+        "median_ns": 48641.93,
+        "min_fork_ns": 43691.068,
+        "max_fork_ns": 48782.488,
+        "bytes_per_op": 17672,
+        "equivalent_results": true
+      },
+      "speedup": 30.806188065024823,
+      "percent_less_time": 96.75389893131462,
+      "allocation_change": -48
+    },
+    {
+      "case": "tokenize_mybatis",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_mybatis",
+        "forks": 5,
+        "median_ns": 5427.473,
+        "min_fork_ns": 5174.309,
+        "max_fork_ns": 7128.52,
+        "bytes_per_op": 5752,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_mybatis",
+        "forks": 5,
+        "median_ns": 2879.327,
+        "min_fork_ns": 2722.218,
+        "max_fork_ns": 2926.514,
+        "bytes_per_op": 3448,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_mybatis",
+        "forks": 1,
+        "median_ns": 3480.09,
+        "min_fork_ns": 3480.09,
+        "max_fork_ns": 3480.09,
+        "bytes_per_op": 5800,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_mybatis",
+        "forks": 3,
+        "median_ns": 5163.972,
+        "min_fork_ns": 5074.458,
+        "max_fork_ns": 5629.069,
+        "bytes_per_op": 5752,
+        "equivalent_results": true
+      },
+      "speedup": 1.8849797192191091,
+      "percent_less_time": 46.94903134478974,
+      "allocation_change": -2304
+    },
+    {
+      "case": "tokenize_mybatis_single",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_mybatis_single",
+        "forks": 5,
+        "median_ns": 71.91,
+        "min_fork_ns": 67.086,
+        "max_fork_ns": 76.929,
+        "bytes_per_op": 152,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_mybatis_single",
+        "forks": 5,
+        "median_ns": 35.316,
+        "min_fork_ns": 33.499,
+        "max_fork_ns": 37.339,
+        "bytes_per_op": 104,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_mybatis_single",
+        "forks": 1,
+        "median_ns": 66.876,
+        "min_fork_ns": 66.876,
+        "max_fork_ns": 66.876,
+        "bytes_per_op": 200,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_mybatis_single",
+        "forks": 3,
+        "median_ns": 72.128,
+        "min_fork_ns": 67.89,
+        "max_fork_ns": 72.557,
+        "bytes_per_op": 152,
+        "equivalent_results": true
+      },
+      "speedup": 2.036187563710499,
+      "percent_less_time": 50.88861076345431,
+      "allocation_change": -48
+    },
+    {
+      "case": "tokenize_simple",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_simple",
+        "forks": 5,
+        "median_ns": 1214.867,
+        "min_fork_ns": 1171.2,
+        "max_fork_ns": 1877.078,
+        "bytes_per_op": 1216,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_simple",
+        "forks": 5,
+        "median_ns": 651.689,
+        "min_fork_ns": 598.785,
+        "max_fork_ns": 677.249,
+        "bytes_per_op": 976,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_simple",
+        "forks": 1,
+        "median_ns": 708.385,
+        "min_fork_ns": 708.385,
+        "max_fork_ns": 708.385,
+        "bytes_per_op": 1216,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_simple",
+        "forks": 3,
+        "median_ns": 1137.548,
+        "min_fork_ns": 1082.52,
+        "max_fork_ns": 1194.293,
+        "bytes_per_op": 1216,
+        "equivalent_results": true
+      },
+      "speedup": 1.864182148233283,
+      "percent_less_time": 46.35717325435624,
+      "allocation_change": -240
+    },
+    {
+      "case": "tokenize_tiny",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_tiny",
+        "forks": 5,
+        "median_ns": 111.639,
+        "min_fork_ns": 105.657,
+        "max_fork_ns": 113.363,
+        "bytes_per_op": 200,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_tiny",
+        "forks": 5,
+        "median_ns": 67.875,
+        "min_fork_ns": 61.29,
+        "max_fork_ns": 69.008,
+        "bytes_per_op": 152,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_tiny",
+        "forks": 1,
+        "median_ns": 98.785,
+        "min_fork_ns": 98.785,
+        "max_fork_ns": 98.785,
+        "bytes_per_op": 200,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_tiny",
+        "forks": 3,
+        "median_ns": 113.416,
+        "min_fork_ns": 97.114,
+        "max_fork_ns": 119.303,
+        "bytes_per_op": 200,
+        "equivalent_results": true
+      },
+      "speedup": 1.6447734806629835,
+      "percent_less_time": 39.201354365409934,
+      "allocation_change": -48
+    },
+    {
+      "case": "tokenize_unicode",
+      "baseline": {
+        "version": "baseline",
+        "case": "tokenize_unicode",
+        "forks": 5,
+        "median_ns": 828.023,
+        "min_fork_ns": 807.333,
+        "max_fork_ns": 897.099,
+        "bytes_per_op": 1088,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "tokenize_unicode",
+        "forks": 5,
+        "median_ns": 408.434,
+        "min_fork_ns": 377.308,
+        "max_fork_ns": 441.883,
+        "bytes_per_op": 848,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "tokenize_unicode",
+        "forks": 1,
+        "median_ns": 556.861,
+        "min_fork_ns": 556.861,
+        "max_fork_ns": 556.861,
+        "bytes_per_op": 1168,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "tokenize_unicode",
+        "forks": 3,
+        "median_ns": 772.846,
+        "min_fork_ns": 707.041,
+        "max_fork_ns": 788.705,
+        "bytes_per_op": 1088,
+        "equivalent_results": true
+      },
+      "speedup": 2.0273116341930395,
+      "percent_less_time": 50.6735924002111,
+      "allocation_change": -240
+    },
+    {
+      "case": "walk_bounds_comments",
+      "baseline": {
+        "version": "baseline",
+        "case": "walk_bounds_comments",
+        "forks": 5,
+        "median_ns": 3401.389,
+        "min_fork_ns": 3255.788,
+        "max_fork_ns": 3507.245,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "walk_bounds_comments",
+        "forks": 5,
+        "median_ns": 977.165,
+        "min_fork_ns": 945.22,
+        "max_fork_ns": 1071.797,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "walk_bounds_comments",
+        "forks": 1,
+        "median_ns": 1378.795,
+        "min_fork_ns": 1378.795,
+        "max_fork_ns": 1378.795,
+        "bytes_per_op": 1920,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "walk_bounds_comments",
+        "forks": 3,
+        "median_ns": 3015.468,
+        "min_fork_ns": 2992.261,
+        "max_fork_ns": 3229.316,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 3.4808747754985085,
+      "percent_less_time": 71.27158934188357,
+      "allocation_change": 0
+    },
+    {
+      "case": "walk_bounds_hash",
+      "baseline": {
+        "version": "baseline",
+        "case": "walk_bounds_hash",
+        "forks": 5,
+        "median_ns": 125620.548,
+        "min_fork_ns": 121519.88,
+        "max_fork_ns": 126718.405,
+        "bytes_per_op": 127008,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "walk_bounds_hash",
+        "forks": 5,
+        "median_ns": 19262.212,
+        "min_fork_ns": 18778.501,
+        "max_fork_ns": 20413.193,
+        "bytes_per_op": 7584,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "walk_bounds_hash",
+        "forks": 1,
+        "median_ns": 23756.925,
+        "min_fork_ns": 23756.925,
+        "max_fork_ns": 23756.925,
+        "bytes_per_op": 43968,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "walk_bounds_hash",
+        "forks": 3,
+        "median_ns": 116205.464,
+        "min_fork_ns": 115299.441,
+        "max_fork_ns": 119888.889,
+        "bytes_per_op": 127008,
+        "equivalent_results": true
+      },
+      "speedup": 6.521605514465317,
+      "percent_less_time": 84.66635251423995,
+      "allocation_change": -119424
+    },
+    {
+      "case": "walk_bounds_large",
+      "baseline": {
+        "version": "baseline",
+        "case": "walk_bounds_large",
+        "forks": 5,
+        "median_ns": 46332.159,
+        "min_fork_ns": 44619.444,
+        "max_fork_ns": 55275.73,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "walk_bounds_large",
+        "forks": 5,
+        "median_ns": 17226.511,
+        "min_fork_ns": 16857.563,
+        "max_fork_ns": 19025.514,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "walk_bounds_large",
+        "forks": 1,
+        "median_ns": 21515.09,
+        "min_fork_ns": 21515.09,
+        "max_fork_ns": 21515.09,
+        "bytes_per_op": 24768,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "walk_bounds_large",
+        "forks": 3,
+        "median_ns": 43216.795,
+        "min_fork_ns": 39370.778,
+        "max_fork_ns": 44693.671,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 2.689584617569977,
+      "percent_less_time": 62.81953750525634,
+      "allocation_change": 0
+    },
+    {
+      "case": "walk_bounds_simple",
+      "baseline": {
+        "version": "baseline",
+        "case": "walk_bounds_simple",
+        "forks": 5,
+        "median_ns": 995.84,
+        "min_fork_ns": 968.223,
+        "max_fork_ns": 1041.835,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "walk_bounds_simple",
+        "forks": 5,
+        "median_ns": 438.788,
+        "min_fork_ns": 433.074,
+        "max_fork_ns": 460.595,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "walk_bounds_simple",
+        "forks": 1,
+        "median_ns": 556.042,
+        "min_fork_ns": 556.042,
+        "max_fork_ns": 556.042,
+        "bytes_per_op": 816,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "walk_bounds_simple",
+        "forks": 3,
+        "median_ns": 834.034,
+        "min_fork_ns": 793.665,
+        "max_fork_ns": 947.215,
+        "bytes_per_op": 0,
+        "equivalent_results": true
+      },
+      "speedup": 2.2695242349380567,
+      "percent_less_time": 55.93790167095116,
+      "allocation_change": 0
+    },
+    {
+      "case": "walk_tokens_comments",
+      "baseline": {
+        "version": "baseline",
+        "case": "walk_tokens_comments",
+        "forks": 5,
+        "median_ns": 9056.016,
+        "min_fork_ns": 8888.629,
+        "max_fork_ns": 12664.599,
+        "bytes_per_op": 1920,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "walk_tokens_comments",
+        "forks": 5,
+        "median_ns": 2039.228,
+        "min_fork_ns": 1968.264,
+        "max_fork_ns": 2085.301,
+        "bytes_per_op": 192,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "walk_tokens_comments",
+        "forks": 1,
+        "median_ns": 3638.948,
+        "min_fork_ns": 3638.948,
+        "max_fork_ns": 3638.948,
+        "bytes_per_op": 5760,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "walk_tokens_comments",
+        "forks": 3,
+        "median_ns": 8354.083,
+        "min_fork_ns": 6882.245,
+        "max_fork_ns": 8917.472,
+        "bytes_per_op": 1920,
+        "equivalent_results": true
+      },
+      "speedup": 4.4409041068482775,
+      "percent_less_time": 77.4820627525393,
+      "allocation_change": -1728
+    },
+    {
+      "case": "walk_tokens_hash",
+      "baseline": {
+        "version": "baseline",
+        "case": "walk_tokens_hash",
+        "forks": 5,
+        "median_ns": 249135.714,
+        "min_fork_ns": 240855.814,
+        "max_fork_ns": 321942.424,
+        "bytes_per_op": 255456,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "walk_tokens_hash",
+        "forks": 5,
+        "median_ns": 37585.467,
+        "min_fork_ns": 36211.911,
+        "max_fork_ns": 44515.939,
+        "bytes_per_op": 15936,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "walk_tokens_hash",
+        "forks": 1,
+        "median_ns": 49760.798,
+        "min_fork_ns": 49760.798,
+        "max_fork_ns": 49760.798,
+        "bytes_per_op": 89376,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "walk_tokens_hash",
+        "forks": 3,
+        "median_ns": 234264.912,
+        "min_fork_ns": 230314.286,
+        "max_fork_ns": 256183.051,
+        "bytes_per_op": 255456,
+        "equivalent_results": true
+      },
+      "speedup": 6.628511866035881,
+      "percent_less_time": 84.91365754168831,
+      "allocation_change": -239520
+    },
+    {
+      "case": "walk_tokens_large",
+      "baseline": {
+        "version": "baseline",
+        "case": "walk_tokens_large",
+        "forks": 5,
+        "median_ns": 128026.241,
+        "min_fork_ns": 127507.453,
+        "max_fork_ns": 138655.556,
+        "bytes_per_op": 25792,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "walk_tokens_large",
+        "forks": 5,
+        "median_ns": 37193.233,
+        "min_fork_ns": 35649.412,
+        "max_fork_ns": 46488.81,
+        "bytes_per_op": 13504,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "walk_tokens_large",
+        "forks": 1,
+        "median_ns": 51164.341,
+        "min_fork_ns": 51164.341,
+        "max_fork_ns": 51164.341,
+        "bytes_per_op": 75328,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "walk_tokens_large",
+        "forks": 3,
+        "median_ns": 116740.761,
+        "min_fork_ns": 96387.727,
+        "max_fork_ns": 120283.14,
+        "bytes_per_op": 25792,
+        "equivalent_results": true
+      },
+      "speedup": 3.442191782575072,
+      "percent_less_time": 70.94874245350996,
+      "allocation_change": -12288
+    },
+    {
+      "case": "walk_tokens_simple",
+      "baseline": {
+        "version": "baseline",
+        "case": "walk_tokens_simple",
+        "forks": 5,
+        "median_ns": 2732.822,
+        "min_fork_ns": 2670.233,
+        "max_fork_ns": 2971.301,
+        "bytes_per_op": 816,
+        "equivalent_results": true
+      },
+      "current": {
+        "version": "current",
+        "case": "walk_tokens_simple",
+        "forks": 5,
+        "median_ns": 939.682,
+        "min_fork_ns": 927.319,
+        "max_fork_ns": 965.797,
+        "bytes_per_op": 576,
+        "equivalent_results": true
+      },
+      "before": {
+        "version": "before",
+        "case": "walk_tokens_simple",
+        "forks": 1,
+        "median_ns": 1401.003,
+        "min_fork_ns": 1401.003,
+        "max_fork_ns": 1401.003,
+        "bytes_per_op": 2448,
+        "equivalent_results": true
+      },
+      "control": {
+        "version": "baseline-control",
+        "case": "walk_tokens_simple",
+        "forks": 3,
+        "median_ns": 2278.424,
+        "min_fork_ns": 2170.189,
+        "max_fork_ns": 2446.373,
+        "bytes_per_op": 816,
+        "equivalent_results": true
+      },
+      "speedup": 2.908241298652097,
+      "percent_less_time": 65.61495772501831,
+      "allocation_change": -240
+    }
+  ],
+  "latencyWins": 93,
+  "allocationLower": 76,
+  "allocationEqual": 17,
+  "allocationHigher": 0
+}

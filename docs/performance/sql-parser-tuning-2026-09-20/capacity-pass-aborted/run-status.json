@@ -1,0 +1,38 @@
+[
+  {
+    "version": "baseline",
+    "fork": 1,
+    "exit": 0,
+    "seconds": 36.353
+  },
+  {
+    "version": "current",
+    "fork": 1,
+    "exit": 0,
+    "seconds": 35.543
+  },
+  {
+    "version": "current",
+    "fork": 2,
+    "exit": 0,
+    "seconds": 34.66
+  },
+  {
+    "version": "baseline",
+    "fork": 2,
+    "exit": 0,
+    "seconds": 36.607
+  },
+  {
+    "version": "baseline",
+    "fork": 3,
+    "exit": 0,
+    "seconds": 36.553
+  },
+  {
+    "version": "current",
+    "fork": 3,
+    "exit": 1,
+    "seconds": 0.11
+  }
+]

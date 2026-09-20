@@ -1,0 +1,87 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by lombok.permit.Permit
+WARNING: Please consider reporting this to the maintainers of class lombok.permit.Permit
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3638: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return in(propName, Array.box(values));
+                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3656: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return in(propName, Array.box(values));
+                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3674: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return in(propName, Array.box(values));
+                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3692: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return in(propName, Array.box(values));
+                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3710: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return in(propName, Array.box(values));
+                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3728: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return in(propName, Array.box(values));
+                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3746: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return in(propName, Array.box(values));
+                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3764: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return in(propName, Array.box(values));
+                                     ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3908: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return notIn(propName, Array.box(values));
+                                        ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3926: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return notIn(propName, Array.box(values));
+                                        ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3944: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return notIn(propName, Array.box(values));
+                                        ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3962: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return notIn(propName, Array.box(values));
+                                        ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3980: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return notIn(propName, Array.box(values));
+                                        ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:3998: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return notIn(propName, Array.box(values));
+                                        ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:4016: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return notIn(propName, Array.box(values));
+                                        ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+C:\Users\haiyangl\Landawn\abacus-query\src\main\java\com\landawn\abacus\query\Filters.java:4034: warning: non-varargs call of varargs method with inexact argument type for last parameter;
+        return notIn(propName, Array.box(values));
+                                        ^
+  cast to Object for a varargs call
+  cast to Object[] for a non-varargs call and to suppress this warning
+Note: Some input files use unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+16 warnings

@@ -1,0 +1,2090 @@
+diff --git a/src/main/java/com/landawn/abacus/query/SqlParser.java b/src/main/java/com/landawn/abacus/query/SqlParser.java
+index 480e346..b5a10d3 100644
+--- a/src/main/java/com/landawn/abacus/query/SqlParser.java
++++ b/src/main/java/com/landawn/abacus/query/SqlParser.java
+@@ -26,7 +26,6 @@ import java.util.Set;
+ import java.util.TreeSet;
+ 
+ import com.landawn.abacus.util.N;
+-import com.landawn.abacus.util.Objectory;
+ import com.landawn.abacus.util.SK;
+ import com.landawn.abacus.util.Strings;
+ 
+@@ -134,8 +133,8 @@ public final class SqlParser {
+ 
+     private static final char FORM_FEED = '\f';
+ 
+-    private static final Set<String> hashIdentifierContextKeywords = N.asSet(SK.FROM, SK.JOIN, SK.INTO, SK.UPDATE, "TABLE");
+-    private static final Set<String> hashIdentifierDmlTargetKeywords = N.asSet("INSERT", "UPDATE", "DELETE", "MERGE");
++    private static final String[] hashIdentifierContextKeywords = { SK.FROM, SK.JOIN, SK.INTO, SK.UPDATE, "TABLE" };
++    private static final String[] hashIdentifierDmlTargetKeywords = { "INSERT", "UPDATE", "DELETE", "MERGE" };
+ 
+     private static final String[] EMPTY_STRING_ARRAY = new String[0];
+ 
+@@ -379,6 +378,8 @@ public final class SqlParser {
+      * leading whitespace.</p>
+      */
+     public static final class TokenizerConfig {
++        private static final Comparator<String> LONGEST_SEPARATOR_FIRST = Comparator.comparingInt(String::length).reversed();
++
+         private final Set<String> separators;
+         private final int maxSeparatorLength;
+         private final boolean[] asciiSeparators;
+@@ -395,53 +396,71 @@ public final class SqlParser {
+         private final Set<String> caseInsensitiveSeparators;
+ 
+         private TokenizerConfig(final Set<String> configuredSeparators) {
+-            separators = Collections.unmodifiableSet(new LinkedHashSet<>(configuredSeparators));
++            // Both callers transfer exclusive ownership; builders copy on their next mutation.
++            separators = Collections.unmodifiableSet(configuredSeparators);
+ 
+             int maxLength = 1;
+             final boolean[] ascii = new boolean[128];
+-            final Set<Character> nonAscii = new LinkedHashSet<>();
+-
++            final int[] counts = new int[128];
++            Set<Character> nonAscii = null;
++            Map<Character, List<String>> nonAsciiBuckets = null;
+             for (final String separator : separators) {
+                 maxLength = Math.max(maxLength, separator.length());
+-
++                final char first = separator.charAt(0);
+                 if (separator.length() == 1) {
+-                    final char ch = separator.charAt(0);
+-
+-                    if (ch < 128) {
+-                        ascii[ch] = true;
++                    if (first < 128) {
++                        ascii[first] = true;
++                    } else {
++                        if (nonAscii == null) {
++                            nonAscii = new LinkedHashSet<>();
++                        }
++                        nonAscii.add(first);
++                    }
++                } else if (!crossesQuotedRegionBoundary(separator)) {
++                    if (first < 128) {
++                        counts[first]++;
+                     } else {
+-                        nonAscii.add(ch);
++                        if (nonAsciiBuckets == null) {
++                            nonAsciiBuckets = new HashMap<>();
++                        }
++                        nonAsciiBuckets.computeIfAbsent(first, key -> new ArrayList<>()).add(separator);
+                     }
+                 }
+             }
+-
+             maxSeparatorLength = maxLength;
+             asciiSeparators = ascii;
+-            nonAsciiSingleCharSeparators = Collections.unmodifiableSet(nonAscii);
+-
+-            final Map<Character, List<String>> buckets = new HashMap<>();
++            nonAsciiSingleCharSeparators = nonAscii == null ? Collections.emptySet() : Collections.unmodifiableSet(nonAscii);
+ 
++            // Count then fill exact-size buckets: no temporary map/list per ASCII operator family.
++            // Quote-crossing spellings cannot match; longest remaining spelling wins in each bucket.
++            asciiMultiCharSeparators = new String[128][];
++            for (int i = 0; i < counts.length; i++) {
++                if (counts[i] > 0) {
++                    asciiMultiCharSeparators[i] = new String[counts[i]];
++                }
++            }
+             for (final String separator : separators) {
+-                if (separator.length() > 1 && !crossesQuotedRegionBoundary(separator)) {
+-                    buckets.computeIfAbsent(separator.charAt(0), key -> new ArrayList<>()).add(separator);
++                final char first = separator.charAt(0);
++                if (first < 128 && separator.length() > 1 && !crossesQuotedRegionBoundary(separator)) {
++                    asciiMultiCharSeparators[first][--counts[first]] = separator;
+                 }
+             }
+-
+-            // Index by the first character, then longest match. An '=' no longer probes unrelated
+-            // PostgreSQL operators. Quote-crossing spellings can never match and are excluded once,
+-            // rather than rechecking their lexical boundary on every token/scanner invocation.
+-            asciiMultiCharSeparators = new String[128][];
+-            final Map<Character, String[]> nonAsciiMulti = new HashMap<>();
+-            for (final Map.Entry<Character, List<String>> entry : buckets.entrySet()) {
+-                entry.getValue().sort(Comparator.comparingInt(String::length).reversed());
+-                final String[] candidates = entry.getValue().toArray(EMPTY_STRING_ARRAY);
+-                if (entry.getKey() < 128) {
+-                    asciiMultiCharSeparators[entry.getKey()] = candidates;
+-                } else {
++            for (final String[] candidates : asciiMultiCharSeparators) {
++                if (candidates != null && candidates.length > 1) {
++                    java.util.Arrays.sort(candidates, LONGEST_SEPARATOR_FIRST);
++                }
++            }
++            if (nonAsciiBuckets == null) {
++                nonAsciiMultiCharSeparators = Collections.emptyMap();
++            } else {
++                final Map<Character, String[]> nonAsciiMulti = new HashMap<>();
++                for (final Map.Entry<Character, List<String>> entry : nonAsciiBuckets.entrySet()) {
++                    final String[] candidates = entry.getValue().toArray(EMPTY_STRING_ARRAY);
++                    java.util.Arrays.sort(candidates, LONGEST_SEPARATOR_FIRST);
+                     nonAsciiMulti.put(entry.getKey(), candidates);
+                 }
++                nonAsciiMultiCharSeparators = Collections.unmodifiableMap(nonAsciiMulti);
+             }
+-            nonAsciiMultiCharSeparators = Collections.unmodifiableMap(nonAsciiMulti);
+ 
+             Set<String> caseInsensitive = null;
+ 
+@@ -463,7 +482,8 @@ public final class SqlParser {
+             for (int i = 0, len = separator.length(); i < len;) {
+                 final int codePoint = separator.codePointAt(i);
+ 
+-                if (codePoint != Character.toUpperCase(codePoint) || codePoint != Character.toLowerCase(codePoint)) {
++                if (codePoint < 128 ? codePoint >= 'A' && codePoint <= 'Z' || codePoint >= 'a' && codePoint <= 'z'
++                        : codePoint != Character.toUpperCase(codePoint) || codePoint != Character.toLowerCase(codePoint)) {
+                     return true;
+                 }
+ 
+@@ -498,7 +518,7 @@ public final class SqlParser {
+ 
+         /**
+          * Creates a builder initialized with this configuration's separators.
+-         * The builder owns a defensive copy, so subsequent changes do not mutate this configuration.
++         * The builder copies separators on its first change, so subsequent changes do not mutate this configuration.
+          *
+          * @return a new builder initialized from this configuration
+          */
+@@ -559,10 +579,18 @@ public final class SqlParser {
+          * for the defaults or {@link TokenizerConfig#toBuilder()} to derive a modified configuration.
+          */
+         public static final class Builder {
+-            private final Set<String> separators;
++            private TokenizerConfig base;
++            private Set<String> separators;
+ 
+             private Builder(final TokenizerConfig base) {
+-                separators = new LinkedHashSet<>(base.separators);
++                this.base = base;
++            }
++
++            private Set<String> mutableSeparators() {
++                if (separators == null) {
++                    separators = new LinkedHashSet<>(base.separators);
++                }
++                return separators;
+             }
+ 
+             /**
+@@ -572,7 +600,7 @@ public final class SqlParser {
+              * @return this builder
+              */
+             public Builder withSeparator(final char separator) {
+-                separators.add(String.valueOf(separator));
++                mutableSeparators().add(String.valueOf(separator));
+                 return this;
+             }
+ 
+@@ -585,7 +613,7 @@ public final class SqlParser {
+              */
+             public Builder withSeparator(final String separator) {
+                 N.checkArgNotEmpty(separator, "separator");
+-                separators.add(separator);
++                mutableSeparators().add(separator);
+                 return this;
+             }
+ 
+@@ -596,7 +624,7 @@ public final class SqlParser {
+              * @return this builder
+              */
+             public Builder withoutSeparator(final char separator) {
+-                separators.remove(String.valueOf(separator));
++                mutableSeparators().remove(String.valueOf(separator));
+                 return this;
+             }
+ 
+@@ -609,17 +637,22 @@ public final class SqlParser {
+              */
+             public Builder withoutSeparator(final String separator) {
+                 N.checkArgNotEmpty(separator, "separator");
+-                separators.remove(separator);
++                mutableSeparators().remove(separator);
+                 return this;
+             }
+ 
+             /**
+              * Builds the immutable configuration.
+              *
+-             * @return a new tokenizer configuration
++             * @return an immutable tokenizer configuration; an unchanged builder may reuse its previous result
+              */
+             public TokenizerConfig build() {
+-                return new TokenizerConfig(separators);
++                if (separators != null) {
++                    base = new TokenizerConfig(separators);
++                    // The built configuration now owns this set. A later edit must copy it.
++                    separators = null;
++                }
++                return base;
+             }
+         }
+     }
+@@ -792,178 +825,122 @@ public final class SqlParser {
+ 
+     private static List<String> tokenize(final String sql, final TokenizerConfig tokenizerConfig) {
+         final int sqlLength = sql.length();
+-        // Only '#' context checks consult this memo, including comment-boundary lookahead.
+-        // If the source has no '#', none of those helpers can reach it.
+-        final HashScanMemo memo = sql.indexOf('#') >= 0 ? new HashScanMemo(sql) : null;
+-        final StringBuilder sb = Objectory.createStringBuilder();
+-
+-        try {
+-            final List<String> tokens = new ArrayList<>(Math.max(16, sqlLength / 4));
+-
+-            String temp = "";
+-            char quoteChar = 0;
+-            int keepComments = -1;
+-            for (int index = 0; index < sqlLength; index++) {
+-                char ch = sql.charAt(index);
+-
+-                if (quoteChar != 0) {
+-                    // Copy quoted text as a range instead of appending every character. The
+-                    // quote-end rule preserves doubled delimiters, odd backslash runs and truncation.
+-                    final int close = quotedTokenEndIndex(sql, index, quoteChar);
+-                    sb.append(sql, index, close < sqlLength ? close + 1 : sqlLength);
+-                    index = close;
+-                    if (close < sqlLength) {
+-                        tokens.add(sb.toString());
+-                        sb.setLength(0);
+-                    }
+-                    quoteChar = 0;
+-                } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+-                    // Line comment (-- ...): always discarded (unlike block comments, the "Keep
+-                    // comments" marker does not preserve these). Skip to the end of the line.
+-                    if (!sb.isEmpty()) {
+-                        tokens.add(sb.toString());
+-                        sb.setLength(0);
+-                    }
+-
+-                    while (++index < sqlLength) {
+-                        ch = sql.charAt(index);
+-
+-                        if (ch == ENTER || ch == ENTER_2) {
+-                            index--; // back up so the newline is reprocessed by the outer loop as whitespace
+-                            break;
+-                        }
+-                    }
+-                } else if (ch == '#') {
+-                    // Classify the '#' ONCE per position. Previously the (potentially expensive,
+-                    // backward-scanning) hash-prefixed-identifier check ran twice for the same index:
+-                    // once via isHashCommentStart and again via isSeparator. The sub-checks below are
+-                    // ordered exactly as the isHashCommentStart + isSeparator pair resolved them.
+-                    if (index < sqlLength - 1 && sql.charAt(index + 1) == '{') {
+-                        // iBatis/MyBatis #{...} parameter marker: '#' is part of the token.
+-                        sb.append(ch);
+-                    } else if (isLikelyHashPrefixedIdentifier(sql, sqlLength, index, tokenizerConfig, memo)) {
+-                        // Hash-prefixed identifier (e.g. a temp table after a table-context keyword or
+-                        // in an INSERT/DELETE/MERGE target position):
+-                        // '#' is part of the token.
+-                        sb.append(ch);
+-                    } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null) {
+-                        // '#'-leading operator such as #>, #>> or ##.
+-                        if (!sb.isEmpty()) {
+-                            tokens.add(sb.toString());
+-                            sb.setLength(0);
+-                        }
+-
+-                        tokens.add(temp);
+-                        index += temp.length() - 1;
+-                    } else { // MySQL hash line comment: always discarded. Skip to the end of the line.
+-                        if (!sb.isEmpty()) {
+-                            tokens.add(sb.toString());
+-                            sb.setLength(0);
+-                        }
+-
+-                        while (++index < sqlLength) {
+-                            ch = sql.charAt(index);
+-
+-                            if (ch == ENTER || ch == ENTER_2) {
+-                                index--; // back up so the newline is reprocessed by the outer loop as whitespace
+-                                break;
+-                            }
+-                        }
+-                    }
+-                } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+-                    if (!sb.isEmpty()) {
+-                        tokens.add(sb.toString());
+-                        sb.setLength(0);
+-                    }
+-
+-                    if (keepComments == -1) {
+-                        keepComments = Strings.startsWithIgnoreCase(sql, KEEP_COMMENTS) ? 1 : 0;
+-                    }
+-
+-                    if (keepComments == 1) {
+-                        sb.append(ch);
+-                        // Consume the opening '*' so a comment body that starts with '/'
+-                        // (e.g. "/*/path*/") is not mistaken for the closing "*/".
+-                        sb.append(sql.charAt(++index));
+-
+-                        while (++index < sqlLength) {
+-                            ch = sql.charAt(index);
+-                            sb.append(ch);
+-
+-                            if (ch == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+-                                sb.append(sql.charAt(++index));
+-
+-                                tokens.add(sb.toString());
+-                                sb.setLength(0);
+-
+-                                break;
+-                            }
+-                        }
+-                    } else {
+-                        // Consume the opening '*' so a comment body that starts with '/'
+-                        // (e.g. "/*/path*/") is not mistaken for the closing "*/".
+-                        index++;
+-
+-                        while (++index < sqlLength) {
+-                            ch = sql.charAt(index);
+-
+-                            if (ch == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+-                                index++;
+-                                break;
+-                            }
+-                        }
+-
+-                        appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, tokens, tokenizerConfig, memo);
+-                    }
+-                } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+-                    // SQL lexical structure takes precedence over configured separators: even if a
+-                    // quote character was registered as a separator, the quoted region is one token.
+-                    sb.append(ch);
+-                    quoteChar = ch == '[' ? ']' : ch;
+-                } else if ((temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null) {
+-                    // Multi-character operator (e.g. >=, <>, ->>, :=). Matched before the single-character
+-                    // separator lookup (same effective precedence as before, when isSeparator matched it
+-                    // and this branch re-matched it) so the match is computed only once.
+-                    if (!sb.isEmpty()) {
+-                        tokens.add(sb.toString());
+-                        sb.setLength(0);
+-                    }
++        HashScanMemo memo = null;
++        // Preserve the source-length estimate: capping it creates extra backing arrays for dense
++        // operator streams, even when token strings themselves can be reused.
++        final List<String> tokens = new ArrayList<>(Math.max(16, sqlLength / 4));
++        int tokenStart = -1;
++        int keepComments = -1;
++
++        for (int index = 0; index < sqlLength; index++) {
++            final char ch = sql.charAt(index);
++            String separator = null;
++            boolean hashWord = ch == '#' && index + 1 < sqlLength && sql.charAt(index + 1) == '{';
++            if (ch == '#' && !hashWord && hashIdentifierPrefixStart(sql, sqlLength, index) >= 0) {
++                if (memo == null) {
++                    memo = new HashScanMemo(sql);
++                }
++                hashWord = isLikelyHashPrefixedIdentifier(sql, sqlLength, index, tokenizerConfig, memo);
++            }
+ 
+-                    tokens.add(temp);
+-                    index += temp.length() - 1;
+-                } else if (tokenizerConfig.isSingleCharSeparator(ch)) {
+-                    if (!sb.isEmpty()) {
+-                        tokens.add(sb.toString());
+-                        sb.setLength(0);
++            if ((ch == '-' && index + 1 < sqlLength && sql.charAt(index + 1) == '-')
++                    || (ch == '#' && !hashWord && (separator = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) == null)) {
++                if (tokenStart >= 0) {
++                    tokens.add(tokenText(sql, tokenStart, index));
++                    tokenStart = -1;
++                }
++                // Line comments are never retained, including under the Keep comments marker.
++                index = lineCommentEnd(sql, index + 1);
++                index--; // Reprocess the newline, including with custom whitespace separators.
++            } else if (ch == '/' && index + 1 < sqlLength && sql.charAt(index + 1) == '*') {
++                if (tokenStart >= 0) {
++                    tokens.add(tokenText(sql, tokenStart, index));
++                    tokenStart = -1;
++                }
++                if (keepComments == -1) {
++                    keepComments = Strings.startsWithIgnoreCase(sql, KEEP_COMMENTS) ? 1 : 0;
++                }
++                // Search after the opener: the '/' in "/*/" is not a closing delimiter.
++                final int close = sql.indexOf("*/", index + 2);
++                if (keepComments == 1) {
++                    tokens.add(sql.substring(index, close < 0 ? sqlLength : close + 2));
++                }
++                index = close < 0 ? sqlLength : close + 1;
++                if (keepComments == 0) {
++                    // Boundary lookahead can be the first hash-context probe in this scan.
++                    final int next = index + 1;
++                    if (memo == null && next < sqlLength && sql.charAt(next) == '#' && hashIdentifierPrefixStart(sql, sqlLength, next) >= 0) {
++                        memo = new HashScanMemo(sql);
+                     }
+-
+-                    if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
+-                        if (!tokens.isEmpty() && !tokens.get(tokens.size() - 1).equals(SK.SPACE)) {
+-                            tokens.add(SK.SPACE);
+-                        }
+-                    } else {
+-                        tokens.add(String.valueOf(ch));
++                    appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, tokens, tokenizerConfig, memo);
++                }
++            } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
++                // Retain prefixes such as N'...' in the same token. Quotes take precedence over
++                // configured separators and a closing quote ends the token even before an adjacent word.
++                if (tokenStart < 0) {
++                    tokenStart = index;
++                }
++                index = quotedTokenEndIndex(sql, index + 1, ch == '[' ? ']' : ch);
++                tokens.add(tokenText(sql, tokenStart, index < sqlLength ? index + 1 : sqlLength));
++                tokenStart = -1;
++            } else if (!hashWord && (separator != null || (separator = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null
++                    || tokenizerConfig.isSingleCharSeparator(ch))) {
++                if (tokenStart >= 0) {
++                    tokens.add(tokenText(sql, tokenStart, index));
++                    tokenStart = -1;
++                }
++                if (separator != null) {
++                    tokens.add(separator);
++                    index += separator.length() - 1;
++                } else if (isTokenWhitespace(ch)) {
++                    if (!tokens.isEmpty() && !tokens.get(tokens.size() - 1).equals(SK.SPACE)) {
++                        tokens.add(SK.SPACE);
+                     }
+                 } else {
+-                    sb.append(ch);
++                    tokens.add(singleCharToken(ch));
+                 }
++            } else if (tokenStart < 0) {
++                tokenStart = index;
+             }
++        }
++        if (tokenStart >= 0) {
++            tokens.add(tokenText(sql, tokenStart, sqlLength));
++        }
++        return tokens;
++    }
+ 
+-            if (!sb.isEmpty()) {
+-                tokens.add(sb.toString());
+-                sb.setLength(0);
+-            }
++    // Single-character separators are immutable. Reuse their text across calls instead of allocating
++    // a String and backing array for every comma, parenthesis or placeholder in token-dense SQL.
++    private static final String[] ASCII_TOKENS = asciiTokens();
+ 
+-            return tokens;
+-        } finally {
+-            Objectory.recycle(sb);
++    private static String[] asciiTokens() {
++        final String[] tokens = new String[128];
++        for (int i = 0; i < tokens.length; i++) {
++            tokens[i] = String.valueOf((char) i);
+         }
++        return tokens;
++    }
++
++    private static String singleCharToken(final char ch) {
++        return ch < ASCII_TOKENS.length ? ASCII_TOKENS[ch] : String.valueOf(ch);
++    }
++
++    private static String tokenText(final String sql, final int start, final int end) {
++        return end - start == 1 ? singleCharToken(sql.charAt(start)) : sql.substring(start, end);
++    }
++
++    private static boolean isTokenWhitespace(final char ch) {
++        return ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED;
+     }
+ 
+     /** Finds a quoted token's closing delimiter, or the source length for an unterminated token. */
+     private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote) {
++        return quotedTokenEndIndex(sql, fromIndex, quote, quote != ']');
++    }
++
++    private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote, final boolean backslashEscapes) {
+         for (int close = sql.indexOf(quote, fromIndex); close >= 0; close = sql.indexOf(quote, close + 1)) {
+-            if (quote != ']') {
++            if (backslashEscapes) {
+                 int backslashStart = close;
+                 while (backslashStart > fromIndex && sql.charAt(backslashStart - 1) == '\\') {
+                     backslashStart--;
+@@ -1091,31 +1068,22 @@ public final class SqlParser {
+ 
+     private static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
+             final TokenizerConfig tokenizerConfig) {
+-        return indexOfToken(sql, token, fromIndex, caseSensitive, tokenizerConfig, new HashScanMemo(sql), 0);
+-    }
+-
+-    /**
+-     * Resumes only at a proven token boundary: an arbitrary public {@code fromIndex} may sit inside a
+-     * quoted token or comment. Keep the original SQL and memo when resuming, because hash-prefixed
+-     * identifiers still depend on the clause context preceding that boundary.
+-     */
+-    private static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
+-            final TokenizerConfig tokenizerConfig, final HashScanMemo memo, final int scanFrom) {
++        final HashScanMemo memo = sql.indexOf('#') >= 0 ? new HashScanMemo(sql) : null;
+         final String trimmedToken = token.trim();
++        String searchToken = token;
+         String[] componentTokens = null;
+ 
+         // A configured separator is searched for exactly as the tokenizer emits it, before any whitespace
+         // normalization. A separator that begins with whitespace (" ->") is one token to tokenize(...) and
+         // nextToken(...), so trimming it here would instead look for a "->" token that is never produced.
+         if (tokenizerConfig.isConfiguredSeparator(token, caseSensitive)) {
+-            componentTokens = new String[] { token };
++            searchToken = token;
+         } else if (!trimmedToken.isEmpty() && ((!token.equals(trimmedToken) && tokenizerConfig.isConfiguredSeparator(trimmedToken, caseSensitive))
+-                || (trimmedToken.equals(nextToken(trimmedToken, 0, tokenizerConfig))
+-                        && nextTokenEndIndex(trimmedToken, 0, tokenizerConfig) == trimmedToken.length()))) {
++                || nextTokenBounds(trimmedToken, 0, tokenizerConfig, null, false) == tokenBounds(0, trimmedToken.length()))) {
+             // Normalize padding before recognizing a separator in another case, too. Otherwise padded
+             // " ORDER BY " cannot find the single token emitted for a configured "order by" separator.
+             // Quoted tokens and configurations that remove space from the separator set also stay whole.
+-            componentTokens = new String[] { trimmedToken };
++            searchToken = trimmedToken;
+         } else {
+             componentTokens = compositeTokens.get(token);
+ 
+@@ -1127,245 +1095,105 @@ public final class SqlParser {
+         // Component splitting trims surrounding whitespace. Use the normalized single component for comparisons
+         // as well; otherwise a padded target such as "  WHERE  " is classified as one token above
+         // but can never match because the scanner produces "WHERE" without the padding.
+-        final String searchToken = N.len(componentTokens) == 1 ? componentTokens[0] : token;
+-
+-        //noinspection IfStatementWithIdenticalBranches
+-        if (N.len(componentTokens) <= 1) {
+-            final StringBuilder sb = Objectory.createStringBuilder();
+-
+-            try {
+-                int result = N.INDEX_NOT_FOUND;
+-                final int sqlLength = sql.length();
+-                final int startIndex = Math.max(0, fromIndex);
+-                String temp = "";
+-                char quoteChar = 0;
+-                // Forward-running backslash parity (see tokenize()): true if the char at the current
+-                // `index` is preceded by an ODD number of consecutive backslashes.
+-                boolean bsEscaped = false;
+-
+-                // Public searches start at zero to honor quotes/comments before fromIndex. Composite
+-                // retries already know a token boundary and can resume there without rescanning prefixes.
+-                for (int index = scanFrom; index < sqlLength; index++) {
+-                    final char ch = sql.charAt(index);
+-
+-                    // is it in a quoted identifier?
+-                    if (quoteChar != 0) {
+-                        sb.append(ch);
+-
+-                        // end in quote.
+-                        if (ch == quoteChar) {
+-                            if (bsEscaped) {
+-                                // Escaped closing quote: stays in the string. Checked before the
+-                                // doubled-quote case so an escaped quote immediately followed by
+-                                // another quote is not mis-read as a doubled-quote pair.
+-                                bsEscaped = false;
+-                            } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+-                                sb.append(sql.charAt(++index));
+-                                bsEscaped = false;
+-                            } else {
+-                                // Even count (including 0) of preceding backslashes -> NOT escaped.
+-                                temp = sb.toString();
+-
+-                                // Anchor the start index on the scanned token (temp) rather than the
+-                                // search string, so the reported position is the true start of the
+-                                // matched text independent of how the comparison below is evaluated.
+-                                final int matchStart = index - temp.length() + 1;
+-
+-                                if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
+-                                    result = matchStart;
+-
+-                                    break;
+-                                }
+-
+-                                sb.setLength(0);
+-                                quoteChar = 0;
+-                                bsEscaped = false;
+-                            }
+-                        } else if (ch == '\\' && quoteChar != ']') {
+-                            // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
+-                            bsEscaped = !bsEscaped;
+-                        } else {
+-                            bsEscaped = false;
+-                        }
+-                    } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+-                        // Skip single-line comment (-- ...)
+-                        if (!sb.isEmpty()) {
+-                            temp = sb.toString();
+-                            final int matchStart = index - temp.length();
+-
+-                            if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
+-                                result = matchStart;
+-                                break;
+-                            }
+-                            sb.setLength(0);
+-                        }
+-                        while (++index < sqlLength) {
+-                            final char cc = sql.charAt(index);
+-                            if (cc == ENTER || cc == ENTER_2) {
+-                                break;
+-                            }
+-                        }
+-                    } else if (isHashCommentStartAtTokenBoundary(sql, sqlLength, index, tokenizerConfig, memo)) {
+-                        // Skip MySQL single-line comment (# ...)
+-                        if (!sb.isEmpty()) {
+-                            temp = sb.toString();
+-                            final int matchStart = index - temp.length();
+-
+-                            if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
+-                                result = matchStart;
+-                                break;
+-                            }
+-                            sb.setLength(0);
+-                        }
+-                        while (++index < sqlLength) {
+-                            final char cc = sql.charAt(index);
+-                            if (cc == ENTER || cc == ENTER_2) {
+-                                break;
+-                            }
+-                        }
+-                    } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+-                        // Skip block comment (/* ... */)
+-                        if (!sb.isEmpty()) {
+-                            temp = sb.toString();
+-                            final int matchStart = index - temp.length();
+-
+-                            if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
+-                                result = matchStart;
+-                                break;
+-                            }
+-                            sb.setLength(0);
+-                        }
+-                        // Consume the opening '*' so a comment body that starts with '/'
+-                        // (e.g. "/*/x*/") is not mistaken for the closing "*/".
+-                        index++;
+-                        while (++index < sqlLength) {
+-                            final char cc = sql.charAt(index);
+-                            if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+-                                index++;
+-                                break;
+-                            }
+-                        }
+-                    } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+-                        // Quoted regions remain whole even when their opening character is configured
+-                        // as a separator.
+-                        sb.append(ch);
+-                        quoteChar = ch == '[' ? ']' : ch;
+-                        bsEscaped = false;
+-                    } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig, memo)) {
+-                        if (!sb.isEmpty()) {
+-                            temp = sb.toString();
+-                            final int matchStart = index - temp.length();
+-
+-                            if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
+-                                result = matchStart;
+-
+-                                break;
+-                            }
+-
+-                            sb.setLength(0);
+-                        }
+-
+-                        // The longest configured separator wins, so this must run before whitespace is
+-                        // skipped: a separator spelled with a leading blank (" ->") starts on a whitespace
+-                        // character, and skipping it first would split the separator and leave "->" behind.
+-                        temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
+-
+-                        if (temp != null) {
+-                            if (index >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
+-                                result = index;
+-
+-                                break;
+-                            }
++        if (componentTokens != null && componentTokens.length == 1) {
++            searchToken = componentTokens[0];
++        }
+ 
+-                            index += temp.length() - 1;
+-                        } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
+-                            // Whitespace is normally skipped, but an explicit single-character separator
+-                            // search must still find it. Longer configured separators retain precedence.
+-                            if (index >= startIndex && searchToken.length() == 1 && searchToken.charAt(0) == ch) {
+-                                result = index;
+-                                break;
+-                            }
+-                            continue;
+-                        } else if (index >= startIndex
+-                                && (searchToken.equals(String.valueOf(ch)) || (!caseSensitive && searchToken.equalsIgnoreCase(String.valueOf(ch))))) {
+-                            result = index;
++        if (componentTokens == null || componentTokens.length <= 1) {
++            final int sqlLength = sql.length();
++            final int startIndex = Math.max(0, fromIndex);
++            // Public fromIndex can be inside a quote/comment: scan from zero, then filter starts.
++            final int result = findToken(sql, searchToken, startIndex, caseSensitive, tokenizerConfig, memo, 0);
++            // Separator recognition is case-sensitive even when search is not. A letter-bearing
++            // separator such as "order by" can therefore appear as separate ORDER/BY tokens in SQL.
++            // Keep whitespace-prefixed separators verbatim, and avoid this extra scan for the default
++            // punctuation-only configuration. A composite match must precede any whole-token match.
++            if (!caseSensitive && result != startIndex && !tokenizerConfig.caseInsensitiveSeparators.isEmpty() && searchToken.equals(trimmedToken)
++                    && tokenizerConfig.caseInsensitiveSeparators.contains(searchToken)) {
++                String[] separatedTokens = compositeTokens.get(searchToken);
+ 
+-                            break;
+-                        }
+-                    } else {
+-                        sb.append(ch);
+-                    }
++                if (separatedTokens == null) {
++                    separatedTokens = splitTokenComponents(searchToken);
+                 }
+ 
+-                if (result < 0 && !sb.isEmpty()) {
+-                    temp = sb.toString();
+-                    final int matchStart = sqlLength - temp.length();
++                if (separatedTokens.length > 1) {
++                    final int compositeResult = indexOfCompositeToken(sql, separatedTokens, fromIndex, result < 0 ? sqlLength : result, caseSensitive,
++                            tokenizerConfig, memo);
+ 
+-                    if (matchStart >= startIndex && (searchToken.equals(temp) || (!caseSensitive && searchToken.equalsIgnoreCase(temp)))) {
+-                        result = matchStart;
++                    if (compositeResult >= 0) {
++                        return compositeResult;
+                     }
+                 }
++            }
+ 
+-                // Separator recognition is case-sensitive even when search is not. A letter-bearing
+-                // separator such as "order by" can therefore appear as separate ORDER/BY tokens in SQL.
+-                // Keep whitespace-prefixed separators verbatim, and avoid this extra scan for the default
+-                // punctuation-only configuration. A composite match must precede any whole-token match.
+-                if (!caseSensitive && result != startIndex && !tokenizerConfig.caseInsensitiveSeparators.isEmpty() && searchToken.equals(trimmedToken)
+-                        && tokenizerConfig.caseInsensitiveSeparators.contains(searchToken)) {
+-                    String[] separatedTokens = compositeTokens.get(searchToken);
++            return result;
++        }
+ 
+-                    if (separatedTokens == null) {
+-                        separatedTokens = splitTokenComponents(searchToken);
+-                    }
++        return indexOfCompositeToken(sql, componentTokens, fromIndex, sql.length(), caseSensitive, tokenizerConfig, memo);
++    }
+ 
+-                    if (separatedTokens.length > 1) {
+-                        final int compositeResult = indexOfCompositeToken(sql, separatedTokens, fromIndex, result < 0 ? sqlLength : result, caseSensitive,
+-                                tokenizerConfig, memo);
++    /** Compares source ranges without allocating the tokens preceding a match. */
++    private static int findToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
++            final TokenizerConfig tokenizerConfig, final HashScanMemo memo, final int scanFrom) {
++        for (int index = scanFrom; index < sql.length();) {
++            final long bounds = nextTokenBounds(sql, index, tokenizerConfig, memo, true);
++            final int start = (int) (bounds >>> 32);
++            final int end = (int) bounds;
++            if (start == end) {
++                break;
++            }
++            if (start >= fromIndex && matchesToken(sql, start, end, token, caseSensitive)) {
++                return start;
++            }
++            index = end;
++        }
++        return N.INDEX_NOT_FOUND;
++    }
+ 
+-                        if (compositeResult >= 0) {
+-                            return compositeResult;
+-                        }
++    private static boolean matchesToken(final String sql, final int start, final int end, final String token, final boolean caseSensitive) {
++        return end - start == token.length() && sql.regionMatches(!caseSensitive, start, token, 0, token.length());
++    }
++
++    private static boolean matchesAnyToken(final String sql, final int start, final int end, final String[] tokens) {
++        for (int i = start; i < end; i++) {
++            if (sql.charAt(i) > 127) {
++                // Preserve ROOT-uppercase matching for hash context, which differs from Unicode
++                // equalsIgnoreCase for letters such as dotted capital I. ASCII needs no copy.
++                final String upper = sql.substring(start, end).toUpperCase(Locale.ROOT);
++                for (final String token : tokens) {
++                    if (token.equals(upper)) {
++                        return true;
+                     }
+                 }
+-
+-                return result;
+-            } finally {
+-                Objectory.recycle(sb);
++                return false;
+             }
+         }
+-
+-        return indexOfCompositeToken(sql, componentTokens, fromIndex, sql.length(), caseSensitive, tokenizerConfig, memo);
++        for (final String token : tokens) {
++            if (matchesToken(sql, start, end, token, false)) {
++                return true;
++            }
++        }
++        return false;
+     }
+ 
+     /** Finds a composite token starting before {@code toIndex}, reusing the caller's lexical memo. */
+     private static int indexOfCompositeToken(final String sql, final String[] componentTokens, final int fromIndex, final int toIndex,
+             final boolean caseSensitive, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+-        int result = indexOfToken(sql, componentTokens[0], fromIndex, caseSensitive, tokenizerConfig, memo, 0);
++        int result = findToken(sql, componentTokens[0], Math.max(0, fromIndex), caseSensitive, tokenizerConfig, memo, 0);
+ 
+         while (result >= 0 && result < toIndex) {
+             int tmpIndex = result + componentTokens[0].length();
+             boolean matched = true;
+ 
+             for (int i = 1; i < componentTokens.length; i++) {
+-                final String nextToken = nextToken(sql, tmpIndex, tokenizerConfig, memo);
+-
+-                if (Strings.isNotEmpty(nextToken)
+-                        && (nextToken.equals(componentTokens[i]) || (!caseSensitive && nextToken.equalsIgnoreCase(componentTokens[i])))) {
+-                    // Use indexOfToken to skip whitespace and block/line comments between component tokens.
+-                    // Resume here too: candidates that fail on a later component must not rescan prefixes for each earlier match.
+-                    final int componentTokenPos = indexOfToken(sql, componentTokens[i], tmpIndex, caseSensitive, tokenizerConfig, memo, tmpIndex);
+-
+-                    if (componentTokenPos < 0) {
+-                        matched = false;
+-                        break;
+-                    }
+-
+-                    tmpIndex = componentTokenPos + componentTokens[i].length();
+-                } else {
++                final long bounds = nextTokenBounds(sql, tmpIndex, tokenizerConfig, memo, false);
++                final int start = (int) (bounds >>> 32);
++                final int end = (int) bounds;
++                if (start == end || !matchesToken(sql, start, end, componentTokens[i], caseSensitive)) {
+                     matched = false;
+-
+                     break;
+                 }
++                tmpIndex = end;
+             }
+ 
+             if (matched) {
+@@ -1375,7 +1203,7 @@ public final class SqlParser {
+             // The first component ends at a known token boundary. Resume the scan there, keeping
+             // overlapping candidates while avoiding quadratic prefix scans on repeated near-matches.
+             final int nextStart = result + componentTokens[0].length();
+-            result = indexOfToken(sql, componentTokens[0], nextStart, caseSensitive, tokenizerConfig, memo, nextStart);
++            result = findToken(sql, componentTokens[0], nextStart, caseSensitive, tokenizerConfig, memo, nextStart);
+         }
+ 
+         return N.INDEX_NOT_FOUND;
+@@ -1417,118 +1245,14 @@ public final class SqlParser {
+     }
+ 
+     private static String nextToken(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig) {
+-        return nextToken(sql, fromIndex, tokenizerConfig, new HashScanMemo(sql));
++        return nextToken(sql, fromIndex, tokenizerConfig, null);
+     }
+ 
+     private static String nextToken(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+-        final int sqlLength = sql.length();
+-        final StringBuilder sb = Objectory.createStringBuilder();
+-
+-        try {
+-            String temp = "";
+-            char quoteChar = 0;
+-            // Forward-running backslash parity (see tokenize()): true if the char at the current
+-            // `index` is preceded by an ODD number of consecutive backslashes.
+-            boolean bsEscaped = false;
+-
+-            for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
+-                final char ch = sql.charAt(index);
+-
+-                // is it in a quoted identifier?
+-                if (quoteChar != 0) {
+-                    sb.append(ch);
+-
+-                    // end in quote.
+-                    if (ch == quoteChar) {
+-                        if (bsEscaped) {
+-                            // Escaped closing quote: stays in the string. Checked before the
+-                            // doubled-quote case so an escaped quote immediately followed by
+-                            // another quote is not mis-read as a doubled-quote pair.
+-                            bsEscaped = false;
+-                        } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+-                            sb.append(sql.charAt(++index));
+-                            bsEscaped = false;
+-                        } else {
+-                            // Even count (including 0) of preceding backslashes -> NOT escaped.
+-                            break;
+-                        }
+-                    } else if (ch == '\\' && quoteChar != ']') {
+-                        // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
+-                        bsEscaped = !bsEscaped;
+-                    } else {
+-                        bsEscaped = false;
+-                    }
+-                } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+-                    // Skip single-line comment (-- ...)
+-                    if (!sb.isEmpty()) {
+-                        break;
+-                    }
+-                    while (++index < sqlLength) {
+-                        final char cc = sql.charAt(index);
+-                        if (cc == ENTER || cc == ENTER_2) {
+-                            break;
+-                        }
+-                    }
+-                } else if (isHashCommentStartAtTokenBoundary(sql, sqlLength, index, tokenizerConfig, memo)) {
+-                    // Skip MySQL single-line comment (# ...)
+-                    if (!sb.isEmpty()) {
+-                        break;
+-                    }
+-                    while (++index < sqlLength) {
+-                        final char cc = sql.charAt(index);
+-                        if (cc == ENTER || cc == ENTER_2) {
+-                            break;
+-                        }
+-                    }
+-                } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+-                    // Skip block comment (/* ... */)
+-                    if (!sb.isEmpty()) {
+-                        break;
+-                    }
+-                    // Consume the opening '*' so a comment body that starts with '/'
+-                    // (e.g. "/*/x*/") is not mistaken for the closing "*/".
+-                    index++;
+-                    while (++index < sqlLength) {
+-                        final char cc = sql.charAt(index);
+-                        if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+-                            index++;
+-                            break;
+-                        }
+-                    }
+-                } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+-                    // Quoted regions remain whole even when their opening character is configured
+-                    // as a separator.
+-                    sb.append(ch);
+-                    quoteChar = ch == '[' ? ']' : ch;
+-                    bsEscaped = false;
+-                } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig, memo)) {
+-                    if (!sb.isEmpty()) {
+-                        break;
+-                    }
+-
+-                    // Matched before whitespace is skipped: a configured separator may begin with a blank
+-                    // (" ->"), and skipping that blank first would emit "->" instead of the whole separator.
+-                    temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
+-
+-                    if (temp != null) {
+-                        sb.append(temp);
+-                    } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
+-                        // skip white char
+-                        continue;
+-                    } else {
+-                        sb.append(ch);
+-                    }
+-
+-                    break;
+-                } else {
+-                    sb.append(ch);
+-                }
+-            }
+-
+-            return (sb.isEmpty()) ? "" : sb.toString();
+-        } finally {
+-            Objectory.recycle(sb);
+-        }
++        final long bounds = nextTokenBounds(sql, fromIndex, tokenizerConfig, memo, false);
++        final int start = (int) (bounds >>> 32);
++        final int end = (int) bounds;
++        return start == end ? "" : tokenText(sql, start, end);
+     }
+ 
+     /**
+@@ -1570,107 +1294,84 @@ public final class SqlParser {
+     }
+ 
+     private static int nextTokenEndIndex(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig) {
+-        return nextTokenEndIndex(sql, fromIndex, tokenizerConfig, new HashScanMemo(sql));
++        return nextTokenEndIndex(sql, fromIndex, tokenizerConfig, null);
+     }
+ 
+     private static int nextTokenEndIndex(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+-        final int sqlLength = sql.length();
+-
+-        // Mirrors nextToken's scan. `started` tracks whether any token character has been
+-        // accumulated yet (the analogue of nextToken's `!sb.isEmpty()` guard).
+-        boolean started = false;
+-        char quoteChar = 0;
+-        // Forward-running backslash parity (see tokenize()): true if the char at the current
+-        // `index` is preceded by an ODD number of consecutive backslashes.
+-        boolean bsEscaped = false;
++        return (int) nextTokenBounds(sql, fromIndex, tokenizerConfig, memo, false);
++    }
+ 
+-        for (int index = Math.max(0, fromIndex); index < sqlLength; index++) {
++    /**
++     * Scans one contiguous source range. Packing start/end into a long avoids allocating a token or
++     * cursor for position-only callers, and keeps nextToken and nextTokenEndIndex on identical rules.
++     * Search also exposes whitespace separators; extraction skips them. A longer configured separator
++     * always wins before whitespace is skipped (for example, " ->" starts at its leading blank).
++     */
++    private static long nextTokenBounds(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, HashScanMemo memo,
++            final boolean includeWhitespace) {
++        final int len = sql.length();
++        int start = -1;
++        for (int index = Math.max(0, fromIndex); index < len; index++) {
+             final char ch = sql.charAt(index);
+-
+-            // is it in a quoted identifier?
+-            if (quoteChar != 0) {
+-                // end in quote.
+-                if (ch == quoteChar) {
+-                    if (bsEscaped) {
+-                        bsEscaped = false;
+-                    } else if (index < sqlLength - 1 && sql.charAt(index + 1) == quoteChar) {
+-                        index++;
+-                        bsEscaped = false;
+-                    } else {
+-                        return index + 1;
+-                    }
+-                } else if (ch == '\\' && quoteChar != ']') {
+-                    // Backslash escaping does not apply inside SQL Server [bracket] identifiers (only ]] does).
+-                    bsEscaped = !bsEscaped;
+-                } else {
+-                    bsEscaped = false;
+-                }
+-            } else if (ch == '-' && index < sqlLength - 1 && sql.charAt(index + 1) == '-') {
+-                // Skip single-line comment (-- ...)
+-                if (started) {
+-                    return index;
+-                }
+-                while (++index < sqlLength) {
+-                    final char cc = sql.charAt(index);
+-                    if (cc == ENTER || cc == ENTER_2) {
+-                        break;
+-                    }
+-                }
+-            } else if (isHashCommentStartAtTokenBoundary(sql, sqlLength, index, tokenizerConfig, memo)) {
+-                // Skip MySQL single-line comment (# ...)
+-                if (started) {
+-                    return index;
+-                }
+-                while (++index < sqlLength) {
+-                    final char cc = sql.charAt(index);
+-                    if (cc == ENTER || cc == ENTER_2) {
+-                        break;
+-                    }
+-                }
+-            } else if (ch == '/' && index < sqlLength - 1 && sql.charAt(index + 1) == '*') {
+-                // Skip block comment (/* ... */)
+-                if (started) {
+-                    return index;
+-                }
+-                // Consume the opening '*' so a comment body that starts with '/'
+-                // (e.g. "/*/x*/") is not mistaken for the closing "*/".
+-                index++;
+-                while (++index < sqlLength) {
+-                    final char cc = sql.charAt(index);
+-                    if (cc == '*' && index < sqlLength - 1 && sql.charAt(index + 1) == '/') {
+-                        index++;
+-                        break;
+-                    }
++            String separator = null;
++            boolean hashWord = ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{';
++            if (ch == '#' && !hashWord && hashIdentifierPrefixStart(sql, len, index) >= 0) {
++                // Markers and punctuation operators need no context memo. Allocate only for a
++                // possible hash-prefixed name; callers scanning several tokens can share it.
++                if (memo == null) {
++                    memo = new HashScanMemo(sql);
++                }
++                hashWord = isLikelyHashPrefixedIdentifier(sql, len, index, tokenizerConfig, memo);
++            }
++            if ((ch == '-' && index + 1 < len && sql.charAt(index + 1) == '-')
++                    || (ch == '#' && !hashWord && (separator = matchMultiCharSeparator(sql, len, index, tokenizerConfig)) == null)) {
++                if (start >= 0) {
++                    return tokenBounds(start, index);
++                }
++                // Unlike tokenize, the scanners consume the line terminator with the comment.
++                index = lineCommentEnd(sql, index + 1);
++            } else if (ch == '/' && index + 1 < len && sql.charAt(index + 1) == '*') {
++                if (start >= 0) {
++                    return tokenBounds(start, index);
+                 }
++                final int close = sql.indexOf("*/", index + 2);
++                index = close < 0 ? len : close + 1;
+             } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+-                // Quoted regions remain whole even when their opening character is configured
+-                // as a separator.
+-                started = true;
+-                quoteChar = ch == '[' ? ']' : ch;
+-                bsEscaped = false;
+-            } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig, memo)) {
+-                if (started) {
+-                    return index;
++                final int close = quotedTokenEndIndex(sql, index + 1, ch == '[' ? ']' : ch);
++                return tokenBounds(start < 0 ? index : start, close < len ? close + 1 : len);
++            } else if (!hashWord && (separator != null || (separator = matchMultiCharSeparator(sql, len, index, tokenizerConfig)) != null
++                    || tokenizerConfig.isSingleCharSeparator(ch))) {
++                if (start >= 0) {
++                    return tokenBounds(start, index);
+                 }
+-
+-                // Matched before whitespace is skipped, so the bounds reported here cover the same token
+-                // that tokenize(...) and nextToken(...) produce for a separator spelled with a leading blank.
+-                final String temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
+-
+-                if (temp != null) {
+-                    return index + temp.length();
+-                } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
+-                    // skip white char
+-                    continue;
++                if (separator != null) {
++                    return tokenBounds(index, index + separator.length());
+                 }
++                if (includeWhitespace || !isTokenWhitespace(ch)) {
++                    return tokenBounds(index, index + 1);
++                }
++            } else if (start < 0) {
++                start = index;
++            }
++        }
++        return tokenBounds(start < 0 ? len : start, len);
++    }
+ 
+-                return index + 1;
+-            } else {
+-                started = true;
++    private static int lineCommentEnd(final String sql, int index) {
++        // Scan both terminators together. Separate unbounded indexOf calls would repeatedly scan
++        // the remaining SQL when a file uses only one newline convention, making many comments quadratic.
++        while (index < sql.length()) {
++            final char ch = sql.charAt(index);
++            if (ch == ENTER || ch == ENTER_2) {
++                break;
+             }
++            index++;
+         }
++        return index;
++    }
+ 
+-        return sqlLength;
++    private static long tokenBounds(final int start, final int end) {
++        return ((long) start << 32) | end;
+     }
+ 
+     /**
+@@ -1787,20 +1488,15 @@ public final class SqlParser {
+     }
+ 
+     /**
+-     * Variant of {@link #isHashCommentStart} for the scanners that consume multi-character
+-     * separators as units ({@code nextToken}, {@code nextTokenEndIndex}, {@code indexOfToken}),
+-     * mirroring the inline classification in {@code tokenize}: such a scanner lands on a
+-     * {@code '#'} only when the preceding characters were <em>not</em> consumed as part of an
+-     * operator, so the covering-operator guard must not apply. With the guard, {@code "a @?#c"}
+-     * yielded the bare token {@code "#"} followed by {@code "c"} from {@code nextToken} /
+-     * {@code indexOfToken}, while {@code tokenize} consumed {@code @?} and dropped {@code #c} as a
+-     * comment.
++     * Character-scanner hash classification, including operators that began before this position.
++     * Token-consuming scanners instead classify hashes inline in tokenize and nextTokenBounds:
++     * they land on a {@code '#'} only when preceding characters were not already consumed as an
++     * operator, so they must not apply the covering-operator guard used here. For example,
++     * {@code "a @?#c"} consumes {@code @?} first and then drops {@code #c} as a comment.
++     * Rechecking an overlapping {@code ?#} at that boundary would incorrectly expose the bare
++     * {@code '#'} and {@code 'c'} as tokens. Character-by-character classification scanners do
++     * need the guard because they visit the interior of an operator.
+      */
+-    private static boolean isHashCommentStartAtTokenBoundary(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig,
+-            final HashScanMemo memo) {
+-        return isHashCommentStart(str, len, index, tokenizerConfig, memo, false);
+-    }
+-
+     private static boolean isHashCommentStart(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig, final HashScanMemo memo,
+             final boolean guardCoveringOperators) {
+         if (str.charAt(index) != '#') {
+@@ -1861,10 +1557,32 @@ public final class SqlParser {
+      */
+     private static boolean isLikelyHashPrefixedIdentifier(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig,
+             final boolean lineCommentAware, final HashScanMemo memo) {
+-        if (index >= len - 1) {
++        final int prefixStart = hashIdentifierPrefixStart(str, len, index);
++        if (prefixStart < 0) {
+             return false;
+         }
+ 
++        // The backward-context walk below is the expensive part and may (through the
++        // parenthesis/bracket matchers) re-classify every earlier '#'. Its result depends only on
++        // the string, the position and the flavor, so it is computed once per scan (see HashScanMemo).
++        final int memoized = memo.hashIdentifierState(str, index, lineCommentAware);
++
++        if (memoized >= 0) {
++            return memoized == 1;
++        }
++
++        final boolean identifier = isHashPrefixInIdentifierContext(str, prefixStart, tokenizerConfig, lineCommentAware, memo);
++        memo.rememberHashIdentifierState(str, index, lineCommentAware, identifier);
++
++        return identifier;
++    }
++
++    /** Returns a usable hash-name prefix, or -1 when no preceding identifier context is possible. */
++    private static int hashIdentifierPrefixStart(final String str, final int len, final int index) {
++        if (index >= len - 1) {
++            return -1;
++        }
++
+         int prefixStart = index;
+         int identifierStart = index + 1;
+ 
+@@ -1878,29 +1596,17 @@ public final class SqlParser {
+             // been classified as identifier text. Re-evaluate the pair from its real start so the
+             // second '#' is appended instead of being mistaken for a new hash comment.
+             if (index > 1 && str.charAt(index - 2) == '#') {
+-                return false;
++                return -1;
+             }
+ 
+             prefixStart--;
+         }
+ 
+         if (identifierStart >= len || !isIdentifierChar(str.charAt(identifierStart))) {
+-            return false;
+-        }
+-
+-        // The backward-context walk below is the expensive part and may (through the
+-        // parenthesis/bracket matchers) re-classify every earlier '#'. Its result depends only on
+-        // the string, the position and the flavor, so it is computed once per scan (see HashScanMemo).
+-        final int memoized = memo.hashIdentifierState(str, index, lineCommentAware);
+-
+-        if (memoized >= 0) {
+-            return memoized == 1;
++            return -1;
+         }
+ 
+-        final boolean identifier = isHashPrefixInIdentifierContext(str, prefixStart, tokenizerConfig, lineCommentAware, memo);
+-        memo.rememberHashIdentifierState(str, index, lineCommentAware, identifier);
+-
+-        return identifier;
++        return prefixStart == 0 ? -1 : prefixStart;
+     }
+ 
+     /**
+@@ -1949,8 +1655,7 @@ public final class SqlParser {
+                 tokenStart--;
+             }
+ 
+-            final String prevWord = str.substring(tokenStart + 1, left + 1).toUpperCase(Locale.ROOT);
+-            return hashIdentifierContextKeywords.contains(prevWord);
++            return matchesAnyToken(str, tokenStart + 1, left + 1, hashIdentifierContextKeywords);
+         }
+ 
+         return false;
+@@ -1974,13 +1679,13 @@ public final class SqlParser {
+ 
+         int tokenStart = identifierWordStart(str, left);
+ 
+-        if (tokenStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(tokenStart, left + 1).toUpperCase(Locale.ROOT))) {
++        if (tokenStart >= 0 && matchesAnyToken(str, tokenStart, left + 1, hashIdentifierDmlTargetKeywords)) {
+             return true;
+         }
+ 
+         // TOP may end with PERCENT. Strip it before locating the parenthesized (or legacy bare)
+         // expression that follows TOP.
+-        if (tokenStart >= 0 && "PERCENT".equalsIgnoreCase(str.substring(tokenStart, left + 1))) {
++        if (tokenStart >= 0 && matchesToken(str, tokenStart, left + 1, "PERCENT", false)) {
+             left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments, tokenizerConfig, memo);
+         }
+ 
+@@ -2010,14 +1715,14 @@ public final class SqlParser {
+ 
+         tokenStart = identifierWordStart(str, left);
+ 
+-        if (tokenStart < 0 || !"TOP".equalsIgnoreCase(str.substring(tokenStart, left + 1))) {
++        if (tokenStart < 0 || !matchesToken(str, tokenStart, left + 1, "TOP", false)) {
+             return false;
+         }
+ 
+         left = skipBackwardHashContextTrivia(str, tokenStart - 1, skipLineComments, tokenizerConfig, memo);
+         tokenStart = identifierWordStart(str, left);
+ 
+-        return tokenStart >= 0 && hashIdentifierDmlTargetKeywords.contains(str.substring(tokenStart, left + 1).toUpperCase(Locale.ROOT));
++        return tokenStart >= 0 && matchesAnyToken(str, tokenStart, left + 1, hashIdentifierDmlTargetKeywords);
+     }
+ 
+     private static int skipBackwardHashContextTrivia(final String str, final int left, final boolean skipLineComments, final TokenizerConfig tokenizerConfig,
+@@ -2097,13 +1802,11 @@ public final class SqlParser {
+                         tokenStart--;
+                     }
+ 
+-                    final String token = str.substring(tokenStart + 1, left + 1).toUpperCase(Locale.ROOT);
+-
+-                    if (hashIdentifierContextKeywords.contains(token)) {
++                    if (matchesAnyToken(str, tokenStart + 1, left + 1, hashIdentifierContextKeywords)) {
+                         break outer; // the anchor keyword; leave it for the caller to classify
+                     }
+ 
+-                    if ("AS".equals(token) && left == unitStart) {
++                    if (matchesToken(str, tokenStart + 1, left + 1, "AS", false) && left == unitStart) {
+                         // "name AS alias": the AS keyword does not count against the unit budget.
+                         left = skipBackwardWhitespaceAndBlockComments(str, tokenStart);
+                         continue outer;
+@@ -2368,7 +2071,7 @@ public final class SqlParser {
+             if (left >= 0 && left != lastLineScanPosition) {
+                 lastLineScanPosition = left;
+ 
+-                final int commentIndex = memo.lineCommentOpenerAt(str, left, tokenizerConfig);
++                final int commentIndex = memo == null ? -1 : memo.lineCommentOpenerAt(str, left, tokenizerConfig);
+ 
+                 if (commentIndex >= 0) {
+                     left = commentIndex - 1;
+@@ -3045,29 +2748,24 @@ public final class SqlParser {
+         }
+ 
+         final TokenizerConfig tokenizerConfig = DEFAULT_TOKENIZER_CONFIG;
+-        final HashScanMemo memo = new HashScanMemo(sql);
++        final HashScanMemo memo = hashScanMemo(sql);
+         int index = getLeadingQueryKeywordIndex(sql, tokenizerConfig, memo);
+ 
+         if (index < 0) {
+             return false;
+         }
+ 
+-        String keyword = readKeyword(sql, index, tokenizerConfig, memo);
+-
+-        if (!"INSERT".equalsIgnoreCase(keyword)) {
++        int end = identifierEnd(sql, index);
++        if (!matchesToken(sql, index, end, "INSERT", false)) {
+             return false;
+         }
+-
+-        index = skipLeadingWhitespaceAndComments(sql, index + keyword.length(), tokenizerConfig, memo);
+-        keyword = readKeyword(sql, index, tokenizerConfig, memo);
+-
+-        if (!"OR".equalsIgnoreCase(keyword)) {
++        index = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
++        end = identifierEnd(sql, index);
++        if (!matchesToken(sql, index, end, "OR", false)) {
+             return false;
+         }
+-
+-        index = skipLeadingWhitespaceAndComments(sql, index + keyword.length(), tokenizerConfig, memo);
+-
+-        return "REPLACE".equalsIgnoreCase(readKeyword(sql, index, tokenizerConfig, memo));
++        index = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
++        return matchesToken(sql, index, identifierEnd(sql, index), "REPLACE", false);
+     }
+ 
+     /**
+@@ -3148,22 +2846,40 @@ public final class SqlParser {
+      * whitespace requirement after {@code --}.
+      */
+     private static boolean isAcceptedQueryUnderEveryLexicalMode(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert) {
++        // The leading unquoted verb is invariant across quote/comment modes. Resolve it once,
++        // but keep validating the tail under every applicable mode before accepting a statement.
++        int first = 0;
++        boolean knownAllowedLeadingVerb = false;
++        while (first < sql.length() && Character.isWhitespace(sql.charAt(first))) {
++            first++;
++        }
++        if (first < sql.length() && Character.isLetter(sql.charAt(first))) {
++            final int end = identifierEnd(sql, first);
++            knownAllowedLeadingVerb = matchesToken(sql, first, end, "SELECT", false) || allowInsert && matchesToken(sql, first, end, "INSERT", false);
++            if (!knownAllowedLeadingVerb && !matchesToken(sql, first, end, "WITH", false)) {
++                return false;
++            }
++        }
+         boolean hasValidMode = false;
+-        // '#' classification on the raw text does not depend on the quote/comment mode, so the
+-        // masking passes share one memo; each masked text is a different string and gets its own.
+-        final HashScanMemo memo = new HashScanMemo(sql);
+-
+-        for (int quoteMode = 0; quoteMode < 2; quoteMode++) {
++        // '#' classification on the raw text does not depend on the quote/comment mode. Reuse
++        // its memo while masking and for unchanged text; an actual masked copy gets its own.
++        final HashScanMemo memo = hashScanMemo(sql);
++
++        // Without a backslash or dash pair, that lexical choice cannot change the input.
++        // Keep both independent axes when present (including NO_BACKSLASH_ESCAPES + MySQL comments).
++        final int quoteModes = sql.indexOf('\\') >= 0 ? 2 : 1;
++        final int commentModes = sql.indexOf("--") >= 0 ? 2 : 1;
++        for (int quoteMode = 0; quoteMode < quoteModes; quoteMode++) {
+             final boolean backslashEscapes = quoteMode == 0;
+ 
+-            for (int commentMode = 0; commentMode < 2; commentMode++) {
++            for (int commentMode = 0; commentMode < commentModes; commentMode++) {
+                 final boolean mysqlCommentRules = commentMode == 0;
+                 final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules, memo);
+ 
+                 if (maskedSql != null) {
+                     hasValidMode = true;
+ 
+-                    if (!isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules, new HashScanMemo(maskedSql))) {
++                    if (!isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules, maskedSql == sql ? memo : hashScanMemo(maskedSql), knownAllowedLeadingVerb)) {
+                         return false;
+                     }
+                 }
+@@ -3178,15 +2894,28 @@ public final class SqlParser {
+      * classification scanners on the same masked text prevents them from choosing inconsistent quote modes.
+      */
+     private static boolean isAcceptedMaskedQuery(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert,
+-            final boolean mysqlCommentRules, final HashScanMemo memo) {
+-        final String leadingKeyword = getLeadingQueryKeyword(sql, tokenizerConfig, memo);
++            final boolean mysqlCommentRules, final HashScanMemo memo, final boolean knownAllowedLeadingVerb) {
++        if (!knownAllowedLeadingVerb) {
++            final int leading = getLeadingQueryKeywordIndex(sql, tokenizerConfig, memo);
++            if (leading < 0) {
++                return false;
++            }
++            final int end = identifierEnd(sql, leading);
++            if (!(matchesToken(sql, leading, end, "SELECT", false) || allowInsert && matchesToken(sql, leading, end, "INSERT", false))) {
++                return false;
++            }
++        }
+ 
+-        if (!("SELECT".equalsIgnoreCase(leadingKeyword) || allowInsert && "INSERT".equalsIgnoreCase(leadingKeyword))) {
++        // Masking already proved lexical completeness. Without a semicolon there cannot be a
++        // second statement, and the first statement's leading verb was validated just above.
++        if (containsExecutableBlockComment(sql, tokenizerConfig, mysqlCommentRules, memo)
++                || sql.indexOf(';') >= 0 && !hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, allowInsert, memo)) {
+             return false;
+         }
+ 
+-        if (containsExecutableBlockComment(sql, tokenizerConfig, mysqlCommentRules, memo)
+-                || !hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, allowInsert, memo)) {
++        // Reject upserts before collecting other clause/statement keywords. Every check below is
++        // a pure rejection predicate over the same masked SQL; reordering keeps the result unchanged.
++        if (allowInsert && containsInsertUpdateClause(sql, tokenizerConfig, memo)) {
+             return false;
+         }
+ 
+@@ -3201,7 +2930,7 @@ public final class SqlParser {
+         // false-positiving while still rejecting those verbs at the start of a statement or CTE.
+         if (allowInsert) {
+             return !containsAnyQueryKeyword(collectQueryStartKeywords(sql, tokenizerConfig, memo), "UPDATE", "DELETE", "MERGE", "REPLACE", "TRUNCATE", "DROP",
+-                    "ALTER", "CREATE") && !containsProcedureInvocation(sql, tokenizerConfig, memo) && !containsInsertUpdateClause(sql, tokenizerConfig, memo)
++                    "ALTER", "CREATE") && !containsProcedureInvocation(sql, tokenizerConfig, memo)
+                     && !containsSelectIntoClause(sql, tokenizerConfig, memo) && !containsTokenSequence(sql, tokenizerConfig, memo, "INSERT", "OVERWRITE");
+         }
+ 
+@@ -3220,29 +2949,31 @@ public final class SqlParser {
+      */
+     private static String maskQuotedRegionsForClassification(final String sql, final TokenizerConfig tokenizerConfig, final boolean backslashEscapes,
+             final boolean mysqlCommentRules, final HashScanMemo memo) {
+-        final char[] masked = sql.toCharArray();
+-        final int len = masked.length;
++        char[] masked = null;
++        final int len = sql.length();
+         int index = 0;
+ 
+         while (index < len) {
+             final char ch = sql.charAt(index);
+ 
+             if (ch == '\'' || ch == '"' || ch == '`') {
+-                if (!isQuotedLiteralTerminated(sql, index, ch, backslashEscapes)) {
++                final int close = quotedTokenEndIndex(sql, index + 1, ch, backslashEscapes);
++                if (close == len) {
+                     return null;
+                 }
+ 
+-                final int endIndex = skipQuotedLiteral(sql, index, ch, backslashEscapes);
+-                maskRange(masked, index + 1, endIndex - 1);
++                final int endIndex = close + 1;
++                masked = maskRange(sql, masked, index + 1, endIndex - 1);
+                 index = endIndex;
+                 continue;
+             } else if (ch == '[') {
+-                if (!isBracketQuotedIdentifierTerminated(sql, index)) {
++                final int close = quotedTokenEndIndex(sql, index + 1, ']');
++                if (close == len) {
+                     return null;
+                 }
+ 
+-                final int endIndex = skipBracketQuotedIdentifier(sql, index);
+-                maskRange(masked, index + 1, endIndex - 1);
++                final int endIndex = close + 1;
++                masked = maskRange(sql, masked, index + 1, endIndex - 1);
+                 index = endIndex;
+                 continue;
+             } else if (ch == ':' && (index == 0 || sql.charAt(index - 1) != ':') && index + 1 < len && isParameterIdentifierStart(sql.codePointAt(index + 1))) {
+@@ -3260,13 +2991,13 @@ public final class SqlParser {
+                     }
+                 }
+ 
+-                maskRange(masked, start, index);
++                masked = maskRange(sql, masked, start, index);
+                 continue;
+             } else if (ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{') {
+                 final int endIndex = sql.indexOf('}', index + 2);
+ 
+                 if (endIndex >= 0) {
+-                    maskRange(masked, index + 2, endIndex);
++                    masked = maskRange(sql, masked, index + 2, endIndex);
+                     index = endIndex + 1;
+                     continue;
+                 }
+@@ -3283,7 +3014,7 @@ public final class SqlParser {
+ 
+                 // The general scanners treat every "--" as a line comment. Break a pair that is
+                 // not a comment under MySQL/MariaDB rules so following executable text stays visible.
+-                masked[index] = ' ';
++                masked = maskRange(sql, masked, index, index + 1);
+             } else if (ch == '#' && isHashCommentStart(sql, len, index, tokenizerConfig, memo)) {
+                 do {
+                     index++;
+@@ -3308,19 +3039,31 @@ public final class SqlParser {
+             index++;
+         }
+ 
+-        return new String(masked);
++        return masked == null ? sql : new String(masked);
+     }
+ 
+     private static boolean isParameterIdentifierStart(final int codePoint) {
+         return codePoint == '_' || Character.isUnicodeIdentifierStart(codePoint);
+     }
+ 
+-    private static void maskRange(final char[] chars, final int fromIndex, final int toIndex) {
++    /** Allocate the masked copy only if a region actually needs hiding. */
++    private static char[] maskRange(final String sql, char[] chars, final int fromIndex, final int toIndex) {
++        if (fromIndex >= toIndex) {
++            return chars;
++        }
++        if (chars == null) {
++            chars = sql.toCharArray();
++        }
+         for (int index = fromIndex; index < toIndex; index++) {
+             if (chars[index] != ENTER && chars[index] != ENTER_2) {
+                 chars[index] = ' ';
+             }
+         }
++        return chars;
++    }
++
++    private static HashScanMemo hashScanMemo(final String sql) {
++        return sql.indexOf('#') >= 0 || sql.indexOf("--") >= 0 ? new HashScanMemo(sql) : null;
+     }
+ 
+     /**
+@@ -3441,7 +3184,7 @@ public final class SqlParser {
+             }
+ 
+             if (ch == ';') {
+-                if (!isAllowedTopLevelStatement(sql, statementStart, index, tokenizerConfig, allowInsert)) {
++                if (!isAllowedTopLevelStatement(sql, statementStart, index, tokenizerConfig, allowInsert, memo)) {
+                     return false;
+                 }
+ 
+@@ -3451,13 +3194,13 @@ public final class SqlParser {
+             index++;
+         }
+ 
+-        return isAllowedTopLevelStatement(sql, statementStart, sqlLength, tokenizerConfig, allowInsert);
++        return isAllowedTopLevelStatement(sql, statementStart, sqlLength, tokenizerConfig, allowInsert, memo);
+     }
+ 
+     private static boolean isAllowedTopLevelStatement(final String sql, final int fromIndex, final int toIndex, final TokenizerConfig tokenizerConfig,
+-            final boolean allowInsert) {
++            final boolean allowInsert, final HashScanMemo sourceMemo) {
+         final String statement = sql.substring(fromIndex, toIndex);
+-        final HashScanMemo memo = new HashScanMemo(statement);
++        final HashScanMemo memo = statement == sql ? sourceMemo : hashScanMemo(statement);
+ 
+         if (skipLeadingWhitespaceAndComments(statement, 0, tokenizerConfig, memo) >= statement.length()) {
+             return true; // Empty statement (including comments only), e.g. a trailing semicolon.
+@@ -3526,14 +3269,14 @@ public final class SqlParser {
+                 }
+ 
+                 if (Character.isLetter(ch)) {
+-                    final String token = readKeyword(sql, index, tokenizerConfig, memo);
++                    final int end = identifierEnd(sql, index);
+ 
+-                    if ("CALL".equalsIgnoreCase(token) || "EXEC".equalsIgnoreCase(token) || "EXECUTE".equalsIgnoreCase(token)) {
++                    if (matchesToken(sql, index, end, "CALL", false) || matchesToken(sql, index, end, "EXEC", false) || matchesToken(sql, index, end, "EXECUTE", false)) {
+                         return true;
+                     }
+ 
+                     canStartStatement = false;
+-                    index += token.length();
++                    index = end;
+                     continue;
+                 }
+             }
+@@ -3604,32 +3347,32 @@ public final class SqlParser {
+             }
+ 
+             if (Character.isLetter(ch)) {
+-                final String token = readKeyword(sql, index, tokenizerConfig, memo);
++                final int end = identifierEnd(sql, index);
+ 
+                 if (matched == 0) {
+-                    matched = "ON".equalsIgnoreCase(token) ? 1 : 0;
++                    matched = matchesToken(sql, index, end, "ON", false) ? 1 : 0;
+                 } else if (matched == 1) {
+-                    if ("CONFLICT".equalsIgnoreCase(token)) {
++                    if (matchesToken(sql, index, end, "CONFLICT", false)) {
+                         matched = 2;
+                     } else {
+-                        matched = "ON".equalsIgnoreCase(token) ? 1 : 0;
++                        matched = matchesToken(sql, index, end, "ON", false) ? 1 : 0;
+                     }
+ 
+                     conflictClauseDepth = 0;
+                 } else if (matched == 2) {
+-                    if (conflictClauseDepth == 0 && "DO".equalsIgnoreCase(token)) {
++                    if (conflictClauseDepth == 0 && matchesToken(sql, index, end, "DO", false)) {
+                         matched = 3;
+                     }
+                 } else if (matched == 3) {
+-                    if ("UPDATE".equalsIgnoreCase(token)) {
++                    if (matchesToken(sql, index, end, "UPDATE", false)) {
+                         return true;
+                     }
+ 
+-                    matched = "ON".equalsIgnoreCase(token) ? 1 : 0;
++                    matched = matchesToken(sql, index, end, "ON", false) ? 1 : 0;
+                     conflictClauseDepth = 0;
+                 }
+ 
+-                index += token.length();
++                index = end;
+                 continue;
+             }
+ 
+@@ -3710,20 +3453,20 @@ public final class SqlParser {
+             }
+ 
+             if (isIdentifierChar(ch)) {
+-                final String token = readIdentifierToken(sql, index, tokenizerConfig, memo);
++                final int end = identifierEnd(sql, index);
+ 
+-                if ("SELECT".equalsIgnoreCase(token)) {
++                if (matchesToken(sql, index, end, "SELECT", false)) {
+                     setSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth, true);
+-                } else if ("FROM".equalsIgnoreCase(token) && !isDotQualifiedToken(sql, index, index + token.length(), tokenizerConfig, memo)) {
++                } else if (matchesToken(sql, index, end, "FROM", false) && !isDotQualifiedToken(sql, index, end, tokenizerConfig, memo)) {
+                     if (isSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth)) {
+                         setSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth, false);
+                     }
+-                } else if ("INTO".equalsIgnoreCase(token) && isSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth)
+-                        && !isDotQualifiedToken(sql, index, index + token.length(), tokenizerConfig, memo)) {
++                } else if (matchesToken(sql, index, end, "INTO", false) && isSelectBeforeFromAtDepth(selectBeforeFromByDepth, depth)
++                        && !isDotQualifiedToken(sql, index, end, tokenizerConfig, memo)) {
+                     return true;
+                 }
+ 
+-                index += token.length();
++                index = end;
+                 continue;
+             }
+ 
+@@ -3863,19 +3606,19 @@ public final class SqlParser {
+             }
+ 
+             if (Character.isLetter(ch)) {
+-                final String token = readKeyword(sql, index, tokenizerConfig, memo);
++                final int end = identifierEnd(sql, index);
+ 
+-                if (tokens[matched].equalsIgnoreCase(token)) {
++                if (matchesToken(sql, index, end, tokens[matched], false)) {
+                     matched++;
+ 
+                     if (matched == tokens.length) {
+                         return true;
+                     }
+                 } else {
+-                    matched = tokens[0].equalsIgnoreCase(token) ? 1 : 0;
++                    matched = matchesToken(sql, index, end, tokens[0], false) ? 1 : 0;
+                 }
+ 
+-                index += token.length();
++                index = end;
+                 continue;
+             }
+ 
+@@ -3982,14 +3725,31 @@ public final class SqlParser {
+      * query predicates such as {@link #isSelectQuery(String)}.
+      */
+     private static String getLeadingQueryKeywordAcrossLexicalModes(final String sql, final TokenizerConfig tokenizerConfig) {
++        // These predicates identify the leading verb even when the tail is malformed. An
++        // initial unquoted word cannot change across lexical modes; WITH still needs its CTE body,
++        // and leading comments/parentheses still use the full mode resolution below.
++        int first = 0;
++        while (first < sql.length() && Character.isWhitespace(sql.charAt(first))) {
++            first++;
++        }
++        if (first < sql.length() && Character.isLetter(sql.charAt(first))) {
++            final int end = identifierEnd(sql, first);
++            if (!matchesToken(sql, first, end, "WITH", false)) {
++                return tokenText(sql, first, end);
++            }
++        }
+         String resolvedKeyword = null;
+         boolean hasValidMode = false;
+-        final HashScanMemo memo = new HashScanMemo(sql);
++        final HashScanMemo memo = hashScanMemo(sql);
+ 
+-        for (int quoteMode = 0; quoteMode < 2; quoteMode++) {
++        // Without a backslash or dash pair, that lexical choice cannot change the input.
++        // Keep both independent axes when present (including NO_BACKSLASH_ESCAPES + MySQL comments).
++        final int quoteModes = sql.indexOf('\\') >= 0 ? 2 : 1;
++        final int commentModes = sql.indexOf("--") >= 0 ? 2 : 1;
++        for (int quoteMode = 0; quoteMode < quoteModes; quoteMode++) {
+             final boolean backslashEscapes = quoteMode == 0;
+ 
+-            for (int commentMode = 0; commentMode < 2; commentMode++) {
++            for (int commentMode = 0; commentMode < commentModes; commentMode++) {
+                 final boolean mysqlCommentRules = commentMode == 0;
+                 final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules, memo);
+ 
+@@ -3997,7 +3757,7 @@ public final class SqlParser {
+                     continue;
+                 }
+ 
+-                final String keyword = getLeadingQueryKeyword(maskedSql, tokenizerConfig, new HashScanMemo(maskedSql));
++                final String keyword = getLeadingQueryKeyword(maskedSql, tokenizerConfig, maskedSql == sql ? memo : hashScanMemo(maskedSql));
+                 hasValidMode = true;
+ 
+                 if (keyword.isEmpty()) {
+@@ -4042,23 +3802,17 @@ public final class SqlParser {
+             return -1;
+         }
+ 
+-        String keyword = readKeyword(sql, index, tokenizerConfig, memo);
+-
+-        if (Strings.isEmpty(keyword)) {
++        if (!Character.isLetter(sql.charAt(index))) {
+             return -1;
+         }
+-
+-        if (!"WITH".equalsIgnoreCase(keyword)) {
++        int end = identifierEnd(sql, index);
++        if (!matchesToken(sql, index, end, "WITH", false)) {
+             return index;
+         }
+-
+-        index += keyword.length();
+-        index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
+-
+-        keyword = readKeyword(sql, index, tokenizerConfig, memo);
+-
+-        if ("RECURSIVE".equalsIgnoreCase(keyword)) {
+-            index += keyword.length();
++        index = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
++        end = identifierEnd(sql, index);
++        if (matchesToken(sql, index, end, "RECURSIVE", false)) {
++            index = end;
+         }
+ 
+         return findKeywordIndexAfterWithClause(sql, index, tokenizerConfig, memo);
+@@ -4257,58 +4011,16 @@ public final class SqlParser {
+      * @return {@code true} if a matching closing quote was found
+      */
+     private static boolean isQuotedLiteralTerminated(final String sql, final int fromIndex, final char quoteChar, final boolean backslashEscapes) {
+-        final int sqlLength = sql.length();
+-        int index = fromIndex + 1;
+-
+-        while (index < sqlLength) {
+-            final char ch = sql.charAt(index);
+-
+-            if (backslashEscapes && ch == '\\') {
+-                index += 2;
+-            } else if (ch == quoteChar) {
+-                if (index + 1 < sqlLength && sql.charAt(index + 1) == quoteChar) {
+-                    index += 2; // doubled-quote escape
+-                } else {
+-                    return true;
+-                }
+-            } else {
+-                index++;
+-            }
+-        }
+-
+-        return false;
++        return quotedTokenEndIndex(sql, fromIndex + 1, quoteChar, backslashEscapes) < sql.length();
+     }
+ 
+     private static int skipQuotedLiteral(final String sql, final int fromIndex, final char quoteChar) {
+         return skipQuotedLiteral(sql, fromIndex, quoteChar, true);
+     }
+ 
+-    private static int skipQuotedLiteral(final String sql, int fromIndex, final char quoteChar, final boolean backslashEscapes) {
+-        fromIndex++;
+-
+-        while (fromIndex < sql.length()) {
+-            final char ch = sql.charAt(fromIndex);
+-
+-            if (backslashEscapes && ch == '\\') {
+-                // Skip backslash-escaped character (e.g., \' in MySQL)
+-                fromIndex += 2;
+-                if (fromIndex >= sql.length()) {
+-                    break;
+-                }
+-            } else if (ch == quoteChar) {
+-                if ((fromIndex + 1 < sql.length()) && sql.charAt(fromIndex + 1) == quoteChar) {
+-                    // Doubled quote escape (SQL standard)
+-                    fromIndex += 2;
+-                } else {
+-                    fromIndex++;
+-                    break;
+-                }
+-            } else {
+-                fromIndex++;
+-            }
+-        }
+-
+-        return fromIndex;
++    private static int skipQuotedLiteral(final String sql, final int fromIndex, final char quoteChar, final boolean backslashEscapes) {
++        final int close = quotedTokenEndIndex(sql, fromIndex + 1, quoteChar, backslashEscapes);
++        return close < sql.length() ? close + 1 : sql.length();
+     }
+ 
+     /**
+@@ -4323,41 +4035,12 @@ public final class SqlParser {
+      * @return {@code true} if a matching closing bracket was found
+      */
+     private static boolean isBracketQuotedIdentifierTerminated(final String sql, final int fromIndex) {
+-        final int sqlLength = sql.length();
+-        int index = fromIndex + 1;
+-
+-        while (index < sqlLength) {
+-            if (sql.charAt(index) == ']') {
+-                if (index + 1 < sqlLength && sql.charAt(index + 1) == ']') {
+-                    index += 2; // doubled-bracket escape
+-                } else {
+-                    return true;
+-                }
+-            } else {
+-                index++;
+-            }
+-        }
+-
+-        return false;
++        return quotedTokenEndIndex(sql, fromIndex + 1, ']') < sql.length();
+     }
+ 
+-    private static int skipBracketQuotedIdentifier(final String sql, int fromIndex) {
+-        fromIndex++;
+-
+-        while (fromIndex < sql.length()) {
+-            if (sql.charAt(fromIndex) == ']') {
+-                if ((fromIndex + 1 < sql.length()) && sql.charAt(fromIndex + 1) == ']') {
+-                    fromIndex += 2;
+-                } else {
+-                    fromIndex++;
+-                    break;
+-                }
+-            } else {
+-                fromIndex++;
+-            }
+-        }
+-
+-        return fromIndex;
++    private static int skipBracketQuotedIdentifier(final String sql, final int fromIndex) {
++        final int close = quotedTokenEndIndex(sql, fromIndex + 1, ']');
++        return close < sql.length() ? close + 1 : sql.length();
+     }
+ 
+     private static String readKeyword(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+@@ -4377,21 +4060,11 @@ public final class SqlParser {
+         return sql.substring(startIndex, fromIndex);
+     }
+ 
+-    private static String readIdentifierToken(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+-        fromIndex = skipLeadingWhitespaceAndComments(sql, fromIndex, tokenizerConfig, memo);
+-
+-        final int startIndex = fromIndex;
+-
+-        while (fromIndex < sql.length()) {
+-            final char ch = sql.charAt(fromIndex);
+-
+-            if (!isIdentifierChar(ch)) {
+-                break;
+-            }
+-
+-            fromIndex++;
++    /** Callers already stand on a keyword/identifier; no text is needed to compare its bounds. */
++    private static int identifierEnd(final String sql, int index) {
++        while (index < sql.length() && isIdentifierChar(sql.charAt(index))) {
++            index++;
+         }
+-
+-        return fromIndex > startIndex ? sql.substring(startIndex, fromIndex) : "";
++        return index;
+     }
+ }
+diff --git a/src/test/java/com/landawn/abacus/query/SqlParserTest.java b/src/test/java/com/landawn/abacus/query/SqlParserTest.java
+index a1be2bf..511f9f7 100644
+--- a/src/test/java/com/landawn/abacus/query/SqlParserTest.java
++++ b/src/test/java/com/landawn/abacus/query/SqlParserTest.java
+@@ -19,6 +19,181 @@ import com.landawn.abacus.TestBase;
+ @Tag("2025")
+ public class SqlParserTest extends TestBase {
+ 
++    @Test
++    public void testLeadingVerbFastPathDoesNotBypassReadClassification() {
++        // Leading-verb predicates deliberately work on malformed tails; read/write gates still
++        // require complete lexical structure and inspect every statement and modifying clause.
++        assertTrue(SqlParser.isSelectQuery(" \tSeLeCt 'unfinished"));
++        assertTrue(SqlParser.isInsertQuery("insert 'unfinished"));
++        assertTrue(SqlParser.isUpdateQuery("update [unfinished"));
++        assertTrue(SqlParser.isDeleteQuery("delete \"unfinished"));
++        assertFalse(SqlParser.isSelectQuery("SELECTED 'unfinished"));
++        assertFalse(SqlParser.isSelectQuery("WITH c AS ('unfinished"));
++        assertFalse(SqlParser.isSyntacticallyReadQuery(" \tSeLeCt 'unfinished"));
++        assertFalse(SqlParser.isReadOrInsertQuery("insert 'unfinished"));
++        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT id INTO copied FROM t"));
++        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1); DELETE FROM t"));
++        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT ';', [a;b] FROM t /* ; DELETE */"));
++        assertTrue(SqlParser.isSelectQuery("--x\nSELECT 1"));
++    }
++
++    @Test
++    public void testHashScannerShortcutsPreserveMarkersOperatorsAndTableContext() {
++        for (final String token : List.of("#{id}", "#>", "##")) {
++            assertEquals(List.of(token), SqlParser.tokenize(token));
++            assertEquals(token, SqlParser.nextToken(token, 0));
++            assertEquals(token.length(), SqlParser.nextTokenEndIndex(token, 0));
++            assertEquals(0, SqlParser.indexOfToken(token, token));
++        }
++        assertEquals(List.of(), SqlParser.tokenize("#t"));
++        assertEquals("x", SqlParser.nextToken(" # comment\nx", 0));
++        // Comment-boundary lookahead can be the first consumer of hash-identifier context.
++        assertEquals(List.of("FROM", " ", "#t"), SqlParser.tokenize("FROM/* gap */#t"));
++        assertEquals("#t", SqlParser.nextToken("FROM/* gap */#t", 4));
++        assertEquals(List.of("#{id}"), SqlParser.tokenize("\t#{id}"));
++    }
++
++    @Test
++    public void testDenseOperatorTokenStreamsKeepEverySourceToken() {
++        for (final int bindings : new int[] { 256, 1024, 4096, 8192 }) {
++            final String sql = "SELECT " + "?||".repeat(bindings - 1) + "? FROM t";
++            final List<String> tokens = SqlParser.tokenize(sql);
++            // A compact ?|| token carries a binding followed by concatenation. Growing the
++            // token list must preserve both its source text and every eventual binding.
++            assertEquals(bindings + 6, tokens.size());
++            assertEquals(sql, String.join("", tokens));
++            assertEquals(bindings, ParsedSql.parse(sql).parameterCount());
++            assertEquals(sql.indexOf("FROM"), SqlParser.indexOfToken(sql, "FROM"));
++        }
++    }
++
++    @Test
++    public void testTokenizerBuilderSnapshotsStayIndependentAfterRepeatedBuilds() {
++        final SqlParser.TokenizerConfig original = SqlParser.defaultTokenizerConfig();
++        final SqlParser.TokenizerConfig.Builder builder = original.toBuilder();
++        final SqlParser.TokenizerConfig unchanged = builder.build();
++        final SqlParser.TokenizerConfig first = builder.withSeparator("~>").withSeparator('~').build();
++        final SqlParser.TokenizerConfig second = builder.withSeparator("~>>").withoutSeparator('~').build();
++        final SqlParser.TokenizerConfig third = builder.withoutSeparator("~>").build();
++
++        // Building transfers ownership of the mutable set; a later mutation must copy it again.
++        assertEquals(original, unchanged);
++        assertFalse(original.separators().contains("~>"));
++        assertTrue(first.separators().contains("~"));
++        assertFalse(first.separators().contains("~>>"));
++        assertFalse(second.separators().contains("~"));
++        assertTrue(second.separators().contains("~>"));
++        assertFalse(third.separators().contains("~>"));
++        assertTrue(third.separators().contains("~>>"));
++        assertEquals(List.of("x", "~>", ">", "y"), SqlParser.tokenizer(first).tokenize("x~>>y"));
++        assertEquals(List.of("x", "~>>", "y"), SqlParser.tokenizer(second).tokenize("x~>>y"));
++        assertThrows(UnsupportedOperationException.class, () -> first.separators().add("bad"));
++        assertEquals(third, builder.build());
++    }
++
++    @Test
++    public void testTokenizerDerivedBucketsKeepUnicodeAndCaseVariantsIndependent() {
++        final SqlParser.TokenizerConfig first = SqlParser.TokenizerConfig.builder()
++                .withSeparator("π>").withSeparator("π>>").withSeparator("😀>").withSeparator("order by").build();
++        final SqlParser.TokenizerConfig second = first.toBuilder().withoutSeparator("π>>").withSeparator("😀>>").build();
++        final SqlParser.Tokenizer firstTokenizer = SqlParser.tokenizer(first);
++        final SqlParser.Tokenizer secondTokenizer = SqlParser.tokenizer(second);
++        assertEquals(List.of("x", "π>>", "y"), firstTokenizer.tokenize("xπ>>y"));
++        assertEquals(List.of("x", "π>", ">", "y"), secondTokenizer.tokenize("xπ>>y"));
++        assertEquals(List.of("x", "😀>", ">", "y"), firstTokenizer.tokenize("x😀>>y"));
++        assertEquals(List.of("x", "😀>>", "y"), secondTokenizer.tokenize("x😀>>y"));
++        // Case-insensitive composite fallback must survive a configuration rebuild, too.
++        for (final SqlParser.Tokenizer tokenizer : List.of(firstTokenizer, secondTokenizer)) {
++            assertEquals(2, tokenizer.indexOfToken("x ORDER /* c */ BY y order by z", "ORDER BY"));
++        }
++    }
++
++    @Test
++    public void testRangeScannersPreservePrefixedQuotesAndArbitrarySearchOffsets() {
++        for (final String quoted : List.of("N'it''s'", "E'it\\'s'", "\"a.b\"", "[a]]b]",
++                "prefix" + (char) 96 + "a" + (char) 96 + (char) 96 + "b" + (char) 96, "'unterminated")) {
++            final boolean unterminated = quoted.equals("'unterminated");
++            final String sql = "/* lead */ " + quoted + (unterminated ? "" : "tail /* gap */ WHERE x = 1");
++            final int start = sql.indexOf(quoted);
++            assertEquals(quoted, SqlParser.nextToken(sql, 0), sql);
++            assertEquals(start + quoted.length(), SqlParser.nextTokenEndIndex(sql, 0), sql);
++            assertEquals(start, SqlParser.indexOfToken(sql, quoted, 0, true), sql);
++            // A public search offset inside a quote is a lower bound, never a new lexical origin.
++            assertEquals(-1, SqlParser.indexOfToken(sql, quoted, start + 1, true), sql);
++            if (!unterminated) {
++                assertEquals("tail", SqlParser.nextToken(sql, start + quoted.length()), sql);
++                assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE", start + 1, false), sql);
++            }
++        }
++    }
++
++    @Test
++    public void testRangeScannersConsumeLineTerminatorsAndHandleEmptyTails() {
++        for (final String newline : List.of("\n", "\r", "\r\n")) {
++            final String sql = "/*/ body */ -- ignored" + newline + "word/* tail */ -- done";
++            assertEquals("word", SqlParser.nextToken(sql, -4), sql);
++            final int end = sql.indexOf("word") + 4;
++            assertEquals(end, SqlParser.nextTokenEndIndex(sql, -4), sql);
++            assertEquals("", SqlParser.nextToken(sql, end), sql);
++            assertEquals(sql.length(), SqlParser.nextTokenEndIndex(sql, end), sql);
++            assertEquals("", SqlParser.nextToken(sql, sql.length() + 10), sql);
++            assertEquals(sql.length(), SqlParser.nextTokenEndIndex(sql, sql.length() + 10), sql);
++        }
++        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
++                .withoutSeparator('\r').withoutSeparator('\n').build());
++        final String sql = "--ignored\r\nword";
++        // Extraction consumes the first comment terminator; tokenize reprocesses it. A custom
++        // configuration that removes newlines makes this existing distinction observable.
++        assertEquals(List.of("\r\nword"), tokenizer.tokenize(sql));
++        assertEquals("\nword", tokenizer.nextToken(sql, 0));
++        assertEquals(sql.length(), tokenizer.nextTokenEndIndex(sql, 0));
++        // Search trims target padding; neither the trimmed word nor the original target matches.
++        assertEquals(-1, tokenizer.indexOfToken(sql, "\nword", 0, true));
++    }
++
++    @Test
++    public void testRangeTokenizationKeepsLargeQuotedValuesAndUnclosedComments() {
++        final String quoted = "'" + "汉字 and text ".repeat(2048) + "''end'";
++        final String sql = "SELECT " + quoted + ", x";
++        assertEquals(List.of("SELECT", " ", quoted, ",", " ", "x"), SqlParser.tokenize(sql));
++        assertEquals(quoted, SqlParser.nextToken(sql, 6));
++        assertEquals(7 + quoted.length(), SqlParser.nextTokenEndIndex(sql, 6));
++        assertEquals(7, SqlParser.indexOfToken(sql, quoted));
++        assertEquals(List.of("SELECT", " ", "x", " ", "/* unfinished"), SqlParser.tokenize("-- Keep comments\nSELECT x /* unfinished"));
++        assertEquals(List.of("SELECT", " ", "x", " "), SqlParser.tokenize("SELECT x /* unfinished"));
++    }
++
++    @Test
++    public void testHashContextFastComparisonPreservesRootUppercaseSemantics() {
++        // ROOT uppercasing and equalsIgnoreCase differ for dotted capital I. Optimizing ASCII
++        // hash-context checks must retain the old non-ASCII rule, including dotless lowercase I.
++        assertEquals(List.of("SELECT", " ", "*", " ", "JOİN", " "), SqlParser.tokenize("SELECT * JOİN #t"));
++        assertEquals(List.of("SELECT", " ", "*", " ", "JOıN", " ", "#t"), SqlParser.tokenize("SELECT * JOıN #t"));
++        assertEquals(List.of("ınsert", " ", "#t"), SqlParser.tokenize("ınsert #t"));
++        assertEquals("", SqlParser.nextToken("JOİN #t", 4));
++        assertEquals("#t", SqlParser.nextToken("JOıN #t", 4));
++        assertEquals(-1, SqlParser.indexOfToken("JOİN #t", "#t"));
++        assertEquals(5, SqlParser.indexOfToken("JOıN #t", "#t"));
++    }
++
++    @Test
++    public void testClassifierOptimizationsPreserveIndependentLexicalModes() {
++        for (final String sql : List.of("SELECT 1", "SELECT 'C:\\'", "SELECT :into, #{call}", "SELECT 1 -- comment\n",
++                "WITH c AS (SELECT 'x') SELECT * FROM c")) {
++            assertTrue(SqlParser.isSelectQuery(sql), sql);
++            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
++            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
++        }
++        for (final String sql : List.of("SELECT 'a\\'; DELETE FROM t; -- '", "SELECT 1--x; DELETE FROM t", "SELECT 1 /*! DELETE FROM t */",
++                "WITH c AS (DELETE FROM t RETURNING id) SELECT * FROM c", "SELECT 1 /* unfinished", "SELECT 'unfinished")) {
++            assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
++            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
++        }
++        assertFalse(SqlParser.isSyntacticallyReadQuery(" INSERT INTO t VALUES ('unclosed"));
++        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1)"));
++        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET id = 2"));
++    }
++
+     @Test
+     public void testTokenizerSeparatorBucketsKeepLongestMatchesAndUnicode() {
+         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()

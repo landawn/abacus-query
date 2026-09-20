@@ -1,0 +1,86 @@
+[
+  {
+    "version": "baseline",
+    "fork": 1,
+    "exit": 0,
+    "seconds": 41.124
+  },
+  {
+    "version": "current",
+    "fork": 1,
+    "exit": 0,
+    "seconds": 36.327
+  },
+  {
+    "version": "current",
+    "fork": 2,
+    "exit": 0,
+    "seconds": 35.328
+  },
+  {
+    "version": "baseline",
+    "fork": 2,
+    "exit": 0,
+    "seconds": 38.251
+  },
+  {
+    "version": "baseline",
+    "fork": 3,
+    "exit": 0,
+    "seconds": 41.473
+  },
+  {
+    "version": "current",
+    "fork": 3,
+    "exit": 0,
+    "seconds": 36.198
+  },
+  {
+    "version": "current",
+    "fork": 4,
+    "exit": 0,
+    "seconds": 38.785
+  },
+  {
+    "version": "baseline",
+    "fork": 4,
+    "exit": 0,
+    "seconds": 39.596
+  },
+  {
+    "version": "baseline",
+    "fork": 5,
+    "exit": 0,
+    "seconds": 38.572
+  },
+  {
+    "version": "current",
+    "fork": 5,
+    "exit": 0,
+    "seconds": 38.484
+  },
+  {
+    "version": "before",
+    "fork": 1,
+    "exit": 0,
+    "seconds": 38.911
+  },
+  {
+    "version": "baseline-control",
+    "fork": 1,
+    "exit": 0,
+    "seconds": 38.79
+  },
+  {
+    "version": "baseline-control",
+    "fork": 2,
+    "exit": 0,
+    "seconds": 39.627
+  },
+  {
+    "version": "baseline-control",
+    "fork": 3,
+    "exit": 0,
+    "seconds": 40.546
+  }
+]

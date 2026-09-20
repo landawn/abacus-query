@@ -1,0 +1,2 @@
+Generated .\docs\ai\API.md and .\docs\ai\api-index.json from 81 files.
+Diagnostics: 0 (0 errors)

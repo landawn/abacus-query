@@ -1,0 +1,16 @@
+[
+  {
+    "corpus": "differential",
+    "cases": 42000,
+    "equal": true,
+    "beforeSha256": "2ed36e1d344e7457d9aa37d8a61a173f6e5c21a11f72a08a743791001bcb735b",
+    "currentSha256": "2ed36e1d344e7457d9aa37d8a61a173f6e5c21a11f72a08a743791001bcb735b"
+  },
+  {
+    "corpus": "classifier",
+    "cases": 24000,
+    "equal": true,
+    "beforeSha256": "fd354505d043764e12d013debe132116d2eb1b05f591d08cca3d8eaf98e780d1",
+    "currentSha256": "fd354505d043764e12d013debe132116d2eb1b05f591d08cca3d8eaf98e780d1"
+  }
+]

@@ -1,5 +1,5 @@
 # abacus-query API Index (v4.9.3)
-- Build: 417ab8a8a4c038b041b63592c99ee215ac7da686
+- Build: 4986c32bdf620aac68d88f56178a766e8cd78683
 - Java: 17
 - Generated: 2026-09-20
 
@@ -46,7 +46,7 @@ Base class for fluent SQL builders.
   - ```java
     String insertSql = PSC.insert("firstName", "lastName").into("account").build().query();
     // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
-    
+
     String insertSelectSql = PSC.select("firstName").into("account_backup").from("account").build().query();
     // Output: INSERT INTO account_backup (first_name) SELECT first_name AS "firstName" FROM account
     ```
@@ -183,7 +183,7 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.select("*").from("users u").build().query();
     // Output: SELECT * FROM users u
-    
+
     String sql2 = PSC.select("*").from("(SELECT * FROM users) t").build().query();
     // Output: SELECT * FROM (SELECT * FROM users) t
     ```
@@ -1196,7 +1196,7 @@ Base class for fluent SQL builders.
                     .limit(10)
                     .build().query();
     // Output: SELECT * FROM users LIMIT 10
-    
+
     Dsl oracleDsl = Dsl.forDialect(SqlDialect.builder()
             .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
             .productInfo(SqlDialect.ProductInfo.of("Oracle"))
@@ -1220,7 +1220,7 @@ Base class for fluent SQL builders.
                     .limit(10, 20)  // limit 10, offset 20
                     .build().query();
     // Output: SELECT * FROM users LIMIT 10 OFFSET 20
-    
+
     Dsl oracleDsl = Dsl.forDialect(SqlDialect.builder()
             .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
             .productInfo(SqlDialect.ProductInfo.of("Oracle"))
@@ -1741,7 +1741,7 @@ Base class for fluent SQL builders.
                     .where(Filters.equal("id", 1))
                     .build().query();
     // Output: UPDATE users SET name = 'John' WHERE id = ?
-    
+
     // Column name (placeholder is generated):
     String sql2 = PSC.update("users")
                      .set("status")
@@ -1800,7 +1800,7 @@ Base class for fluent SQL builders.
   - ```java
     PSC.update("users").set("status", "INACTIVE");
     // UPDATE users SET status = ?
-    
+
     PSC.update("users").set("loginCount", SqlExpression.of("login_count + 1"));
     // UPDATE users SET login_count = login_count + 1
     ```
@@ -1926,7 +1926,7 @@ Base class for fluent SQL builders.
                     .build();
     // sqlPair.query() returns: "SELECT * FROM account WHERE status = ?"
     // sqlPair.parameters() returns: ["ACTIVE"]
-    
+
     // Get just the SQL string
     String sql = PSC.select("*")
                     .from("users")
@@ -1963,7 +1963,7 @@ Base class for fluent SQL builders.
   - ```java
     Map<String, Object> updates = new LinkedHashMap<>();
     updates.put("status", "INACTIVE");
-    
+
     int count = PSC.update("account")
         .set(updates)
         .where(Filters.lessThan("lastLogin", "2025-01-01"))
@@ -1985,7 +1985,7 @@ Base class for fluent SQL builders.
     account.put("name", "Alice");
     account.put("email", "alice@example.com");
     account.put("status", "ACTIVE");
-    
+
     PSC.insert(account)
        .into("account")
        .accept(sp -> jdbcTemplate.update(sp.query(), sp.parameters().toArray()));
@@ -2025,7 +2025,7 @@ Base class for fluent SQL builders.
         .from("orders")
         .where(Filters.gt("total", 100))
         .toSubQuery();
-    
+
     SP result = PSC.select("*")
         .from("users")
         .where(Filters.in("id", paidOrders))
@@ -2151,7 +2151,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
             .namingPolicy(NamingPolicy.SNAKE_CASE)
             .sqlPolicy(SqlPolicy.PARAMETERIZED_SQL)
             .build());
-    
+
     String sql = MY_DSL.insert("firstName", "lastName").into("account").build().query();
     // Output: INSERT INTO account (first_name, last_name) VALUES (?, ?)
     ```
@@ -2240,7 +2240,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     account.setFirstName("John");
     account.setLastName("Doe");
     account.setEmail("john.doe@example.com");
-    
+
     SP sqlPair = PSC.insert(account).into("account").build();
     // sqlPair.query(): INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
     // sqlPair.parameters(): ["John", "Doe", "john.doe@example.com"]
@@ -2264,7 +2264,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     account.setLastName("Doe");
     account.setEmail("john.doe@example.com");
     account.setCreatedDate(new Date());
-    
+
     Set<String> excluded = N.asSet("createdDate");
     SP sqlPair = PSC.insert(account, excluded).into("account").build();
     // sqlPair.query(): INSERT INTO account (first_name, last_name, email) VALUES (?, ?, ?)
@@ -2338,7 +2338,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
         new Account("Jane", "Smith"),
         new Account("Bob", "Johnson")
     );
-    
+
     SP sqlPair = PSC.batchInsert(accounts).into("account").build();
     // sqlPair.query(): INSERT INTO account (first_name, last_name) VALUES (?, ?), (?, ?), (?, ?)
     // sqlPair.parameters(): ["John", "Doe", "Jane", "Smith", "Bob", "Johnson"]
@@ -2471,7 +2471,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
                     .build().query();
     // Output: SELECT COUNT(*) FROM account WHERE status = ?
     // (COUNT is recognized as a function name and left unchanged)
-    
+
     String sql2 = PSC.select("firstName || ' ' || lastName AS fullName")
                      .from("account")
                      .build().query();
@@ -2523,7 +2523,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     columnAliases.put("firstName", "fname");
     columnAliases.put("lastName", "lname");
     columnAliases.put("emailAddress", "email");
-    
+
     String sql = PSC.select(columnAliases)
                     .from("account")
                     .build().query();
@@ -2559,7 +2559,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     String sql1 = PSC.select(Order.class, false)
                      .from("orders")
                      .build().query();
-    
+
     // With sub-entities (includes nested object properties)
     String sql2 = PSC.select(Order.class, true)
                      .from("orders")
@@ -2640,7 +2640,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - ```java
     Set<String> userExclude = N.asSet("password", "salt");
     Set<String> orderExclude = N.asSet("internalNotes");
-    
+
     String sql = PSC.select(Account.class, "a", "account", userExclude,
                            Order.class, "o", "order", orderExclude)
                     .from("account a")
@@ -2681,7 +2681,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
         Selection.builder(Product.class).tableAlias("p").classAlias("product")
             .excludedPropNames(N.asSet("description")).build()
     );
-    
+
     String sql = PSC.select(selections)
                     .from("account a")
                     .innerJoin("orders o").on("a.id = o.account_id")
@@ -2897,7 +2897,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
         Selection.builder(Product.class).tableAlias("p").classAlias("product")
             .excludedPropNames(N.asSet("details")).build()
     );
-    
+
     String sql = PSC.selectFrom(selections)
                     .where(Filters.equal("a.status", "active"))
                     .build().query();
@@ -2946,7 +2946,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
         Filters.equal("firstName", "John"),
         Filters.like("email", "%@example.com")
     );
-    
+
     String sql = PSC.renderCondition(cond, Account.class).build().query();
     // Output: (first_name = ?) AND (email LIKE ?)
     ```
@@ -2991,7 +2991,7 @@ Entry point for fluently creating dynamic SQL queries programmatically.
     builder.where().append("active = true");
     String sql = builder.build();
     // Returns: "SELECT * FROM users WHERE active = true"
-    
+
     // Each call returns a new, independent builder
     Builder another = DynamicQuery.builder();   // not the same instance as 'builder'
     ```
@@ -4243,13 +4243,13 @@ Factory class for creating SQL Condition objects used in query construction.
     // Create a NOT LIKE condition
     Like likeCondition = Filters.like("name", "%test%");
     Not notLike = Filters.not(likeCondition);
-    
+
     // Create a NOT IN condition
     Not notIn = Filters.not(Filters.in("status", Arrays.asList("inactive", "deleted")));
-    
+
     // Create a NOT BETWEEN condition
     Not notBetween = Filters.not(Filters.between("age", 18, 65));
-    
+
     // Create a complex negated condition
     Not complexNot = Filters.not(Filters.and(
         Filters.equal("status", "active"),
@@ -4523,7 +4523,7 @@ Factory class for creating SQL Condition objects used in query construction.
     propsSet.add(verifiedTrial);
     Or mapCondition = Filters.anyOfAllEqual(propsSet);
     // Results in: ((((status = 'active') AND (type = 'premium'))) OR (((status = 'trial') AND (verified = true))))
-    
+
     List<User> users = Arrays.asList(
         new User("John", "john@example.com"),
         new User("Jane", "jane@example.com")
@@ -7015,11 +7015,11 @@ Represents a parsed SQL statement with support for named parameters and paramete
     // Using named parameters
     ParsedSql ps1 = ParsedSql.parse("SELECT * FROM users WHERE id = :userId");
     System.out.println(ps1.parameterizedSql());   // "SELECT * FROM users WHERE id = ?"
-    
+
     // Using iBatis/MyBatis style
     ParsedSql ps2 = ParsedSql.parse("INSERT INTO users (name, email) VALUES (#{name}, #{email})");
     System.out.println(ps2.namedParameters());   // ["name", "email"]
-    
+
     // Using standard JDBC placeholders
     ParsedSql ps3 = ParsedSql.parse("UPDATE users SET status = ? WHERE id = ?");
     System.out.println(ps3.parameterCount());   // 2
@@ -7048,7 +7048,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
     ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
     String sql = parsed.parameterizedSql();
     // Returns: "SELECT * FROM users WHERE id = ? AND status = ?"
-    
+
     // Use with PreparedStatement
     PreparedStatement stmt = connection.prepareStatement(parsed.parameterizedSql());
     stmt.setLong(1, userId);
@@ -7067,7 +7067,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
     ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE name = :name AND age > :minAge");
     ImmutableList<String> params = parsed.namedParameters();
     // Returns: ["name", "minAge"]
-    
+
     // SQL with no named parameters returns empty list
     ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users WHERE id = ?");
     ImmutableList<String> params2 = parsed2.namedParameters();
@@ -7084,7 +7084,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
     ParsedSql parsed = ParsedSql.parse("INSERT INTO users (name, email, age) VALUES (:name, :email, :age)");
     int count = parsed.parameterCount();
     // Returns: 3
-    
+
     ParsedSql parsed2 = ParsedSql.parse("SELECT * FROM users");
     int count2 = parsed2.parameterCount();
     // Returns: 0
@@ -7115,7 +7115,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
     ParsedSql a = ParsedSql.parse("SELECT * FROM users WHERE id = :id");
     ParsedSql b = ParsedSql.parse("  SELECT * FROM users WHERE id = :id  ");
     ParsedSql c = ParsedSql.parse("SELECT * FROM users WHERE id = :otherId");
-    
+
     boolean eq = a.equals(b);                    // true (same trimmed original SQL)
     boolean ne = a.equals(c);                    // false (different parameter name)
     boolean notString = a.equals("SELECT ...");  // false (not a ParsedSql)
@@ -7164,11 +7164,11 @@ Utility class for handling database query operations, entity-column mappings, an
     // Get property-to-column details
     ImmutableMap<String, QueryUtil.ColumnInfo> columnInfoMap =
         QueryUtil.propToColumnInfoMap(User.class, NamingPolicy.SNAKE_CASE);
-    
+
     QueryUtil.ColumnInfo result = columnInfoMap.get("firstName");
     String columnName = result.columnName(); // "first_name"
     boolean unqualified = result.isUnqualified(); // true
-    
+
     // Nested property example
     QueryUtil.ColumnInfo nested = columnInfoMap.get("address.street");
     String nestedColumn = nested.columnName(); // e.g. "addr.street"
@@ -7189,7 +7189,7 @@ Utility class for handling database query operations, entity-column mappings, an
   - ```java
     // Given an entity class with @Column annotations
     ImmutableMap<String, String> columnToProp = QueryUtil.columnToPropNameMap(User.class);
-    
+
     // If User has @Column("User_Name") on property "userName":
     String propName  = columnToProp.get("User_Name");   // "userName" (looked up by original column name)
     String propName2 = columnToProp.get("USER_NAME");   // "userName" (looked up by uppercase variant)
@@ -7209,10 +7209,10 @@ Utility class for handling database query operations, entity-column mappings, an
   - ```java
     // Build property-to-column mapping with SNAKE_CASE naming policy
     ImmutableMap<String, String> propToColumn = QueryUtil.propToColumnNameMap(User.class, NamingPolicy.SNAKE_CASE);
-    
+
     // If User has property "firstName" without @Column annotation:
     String columnName = propToColumn.get("firstName");   // "first_name"
-    
+
     // With SCREAMING_SNAKE_CASE naming policy
     ImmutableMap<String, String> propToColumnUpper =
         QueryUtil.propToColumnNameMap(User.class, NamingPolicy.SCREAMING_SNAKE_CASE);
@@ -7237,10 +7237,10 @@ Utility class for handling database query operations, entity-column mappings, an
     user.setEmail("john@example.com");
     // user.id is at its default value (e.g. null for Long, 0 for long primitive)
     // so the "id" property will be excluded.
-    
+
     Collection<String> insertProps = QueryUtil.insertPropNames(user, null);
     // Returns: ["name", "email", ...] (excludes "id" since it has default value)
-    
+
     // With excluded properties
     Set<String> excluded = N.asSet("email");
     Collection<String> filteredProps = QueryUtil.insertPropNames(user, excluded);
@@ -7259,7 +7259,7 @@ Utility class for handling database query operations, entity-column mappings, an
     // Get all insertable property names for a class
     Collection<String> insertProps = QueryUtil.insertPropNames(User.class, null);
     // Returns: ["id", "name", "email", "createdDate", ...]
-    
+
     // Exclude specific properties
     Set<String> excluded = N.asSet("createdDate", "updatedDate");
     Collection<String> filteredProps = QueryUtil.insertPropNames(User.class, excluded);
@@ -7282,11 +7282,11 @@ Utility class for handling database query operations, entity-column mappings, an
     // Get top-level properties only
     Collection<String> selectProps = QueryUtil.selectPropNames(User.class, false, null);
     // Returns: ["id", "name", "email", ...]
-    
+
     // Include sub-entity properties (e.g., nested Address)
     Collection<String> allProps = QueryUtil.selectPropNames(User.class, true, null);
     // Returns: ["id", "name", "email", "address.street", "address.city", ...]
-    
+
     // Exclude specific properties
     Set<String> excluded = N.asSet("email");
     Collection<String> filteredProps = QueryUtil.selectPropNames(User.class, false, excluded);
@@ -7324,7 +7324,7 @@ Utility class for handling database query operations, entity-column mappings, an
     // Account declares a plain read-write @Id "id", so it remains updatable.
     Collection<String> updateProps = QueryUtil.updatePropNames(Account.class, null);
     // returns ["id", "gui", "emailAddress", "firstName", ...] (a plain @Id is NOT excluded)
-    
+
     // Exclude additional properties explicitly.
     Collection<String> filteredProps = QueryUtil.updatePropNames(Account.class, N.asSet("createTime"));
     // returns the same list without "createTime"
@@ -7359,11 +7359,11 @@ Utility class for handling database query operations, entity-column mappings, an
     // Get ID property names for an entity with @Id annotation
     List<String> idFields = QueryUtil.idPropNames(User.class);
     // Returns: ["id"] for a class with @Id on the "id" property
-    
+
     // Composite key example
     List<String> compositeIds = QueryUtil.idPropNames(OrderItem.class);
     // Returns: ["orderId", "itemId"] for a composite key entity
-    
+
     // Entity without @Id returns empty list
     List<String> noIds = QueryUtil.idPropNames(LogEntry.class);
     // Returns: [] (no @Id/@ReadOnlyId and no conventionally-typed property named "id")
@@ -7384,13 +7384,13 @@ Utility class for handling database query operations, entity-column mappings, an
   - ```java
     BeanInfo beanInfo = ParserUtil.getBeanInfo(User.class);
     PropInfo propInfo = beanInfo.getPropInfo("tempField");
-    
+
     // Check if a property is excluded from column mapping
     Set<String> columnFields = N.asSet("id", "name", "email");
     Set<String> nonColumnFields = N.emptySet();
     boolean excluded = QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo);
     // Returns true if "tempField" is not in columnFields
-    
+
     // Check with nonColumnFields
     Set<String> nonColumns = N.asSet("tempField", "transientData");
     boolean excluded2 = QueryUtil.isNonColumn(N.emptySet(), nonColumns, propInfo);
@@ -7449,11 +7449,11 @@ Utility class for handling database query operations, entity-column mappings, an
     // Given: @Table(name = "users", alias = "u") on User class
     String alias = QueryUtil.tableAlias(User.class);
     // Returns: "u"
-    
+
     // Given: @Table(name = "orders") on Order class (no alias)
     String alias2 = QueryUtil.tableAlias(Order.class);
     // Returns: "" (empty string when alias is not specified)
-    
+
     // Given: no @Table annotation on LogEntry class
     String alias3 = QueryUtil.tableAlias(LogEntry.class);
     // Returns: null
@@ -7473,11 +7473,11 @@ Utility class for handling database query operations, entity-column mappings, an
     // Given: @Table(name = "users", alias = "u") on User class
     String tableAndAlias = QueryUtil.tableNameAndAlias(User.class);
     // Returns: "users u"
-    
+
     // Given: @Table(name = "orders") on Order class (no alias)
     String tableOnly = QueryUtil.tableNameAndAlias(Order.class);
     // Returns: "orders"
-    
+
     // Given: no @Table annotation on MyEntity class
     String derived = QueryUtil.tableNameAndAlias(MyEntity.class);
     // Returns: "my_entity" (derived from class name using SNAKE_CASE)
@@ -7499,11 +7499,11 @@ Utility class for handling database query operations, entity-column mappings, an
     // Given: @Table(name = "users", alias = "u") - annotation takes priority
     String tableAndAlias = QueryUtil.tableNameAndAlias(User.class, NamingPolicy.SCREAMING_SNAKE_CASE);
     // Returns: "users u" (annotation values used as-is, naming policy ignored)
-    
+
     // Given: no @Table annotation on MyEntity class
     String snakeCase = QueryUtil.tableNameAndAlias(MyEntity.class, NamingPolicy.SNAKE_CASE);
     // Returns: "my_entity"
-    
+
     String upperCase = QueryUtil.tableNameAndAlias(MyEntity.class, NamingPolicy.SCREAMING_SNAKE_CASE);
     // Returns: "MY_ENTITY"
     ```
@@ -7992,7 +7992,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - ```java
     // Single file
     SqlMapper mapper = SqlMapper.loadFrom("config/sql-mapper.xml");
-    
+
     // Multiple files
     SqlMapper mapper = SqlMapper.loadFrom("sql/users.xml,sql/orders.xml,sql/products.xml");
     // or
@@ -8068,14 +8068,14 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Examples:**
   - ```java
     SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
-    
+
     ParsedSql sql = mapper.get("findAccountById");
     if (sql != null) {
         String parameterizedSql = sql.parameterizedSql();
         // Use with PreparedStatement
         PreparedStatement stmt = connection.prepareStatement(parameterizedSql);
     }
-    
+
     // Returns null for unknown ids
     ParsedSql unknown = mapper.get("nonExistentId");
     // unknown is null
@@ -8103,13 +8103,13 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - ```java
     // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql>
     SqlMapper mapper = SqlMapper.loadFrom("sql/queries.xml");
-    
+
     ImmutableMap<String, String> attrs = mapper.attributes("batchInsert");
     if (attrs != null) {
         String batchSize = attrs.get("batchSize");   // "100"
         String timeout = attrs.get("timeout");       // "30"
     }
-    
+
     // Returns null for unknown ids
     ImmutableMap<String, String> unknown = mapper.attributes("nonExistentId");
     // unknown is null
@@ -8129,7 +8129,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
     SqlMapper mapper = new SqlMapper();
     ParsedSql parsedSql = ParsedSql.parse("select * from users where id = ?");
     mapper.add("findUserById", parsedSql);
-    
+
     // Later, retrieve the SQL
     ParsedSql retrieved = mapper.get("findUserById");   // returns the same parsedSql instance just added
     ```
@@ -8203,7 +8203,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - ```java
     SqlMapper original = SqlMapper.loadFrom("sql/queries.xml");
     SqlMapper copy = original.copy();
-    
+
     // Modifications to the copy do not affect the original
     copy.add("newQuery", ParsedSql.parse("SELECT 1"));
     boolean originalHasIt = original.get("newQuery") != null;  // false
@@ -8288,7 +8288,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - ```java
     SqlMapper emptyMapper = new SqlMapper();
     boolean empty = emptyMapper.isEmpty();  // true
-    
+
     SqlMapper loadedMapper = SqlMapper.loadFrom("sql/queries.xml");
     boolean hasEntries = !loadedMapper.isEmpty();  // true (assuming file has SQL definitions)
     ```
@@ -8323,7 +8323,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
     b.add("q", ParsedSql.parse("SELECT 1"));
     SqlMapper c = new SqlMapper();
     c.add("q", ParsedSql.parse("SELECT 2"));
-    
+
     boolean eq = a.equals(b);                // true (same id-to-SQL mappings)
     boolean ne = a.equals(c);                // false (different SQL for "q")
     boolean notMapper = a.equals("text");    // false (not a SqlMapper)
@@ -8338,7 +8338,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - ```java
     SqlMapper mapper = new SqlMapper();
     String empty = mapper.toString();   // "{}"
-    
+
     mapper.add("findUser", ParsedSql.parse("select * from users where id = ?"));
     String s = mapper.toString();       // contains "findUser" and the parsed SQL
     ```
@@ -8417,12 +8417,12 @@ Enumeration representing SQL operation types.
     SqlOperation selectOp = SqlOperation.of("SELECT");      // returns SELECT
     SqlOperation insertOp = SqlOperation.of("INSERT");      // returns INSERT
     SqlOperation mergeOp = SqlOperation.of("MERGE");        // returns MERGE
-    
+
     // Case-insensitive; multi-word and enum constant names are accepted
     SqlOperation lower = SqlOperation.of("select");                  // returns SELECT
     SqlOperation tx = SqlOperation.of("begin transaction");          // returns BEGIN_TRANSACTION
     SqlOperation txByName = SqlOperation.of("BEGIN_TRANSACTION");    // returns BEGIN_TRANSACTION
-    
+
     // Edge cases
     SqlOperation unsupported = SqlOperation.of("TRUNCATE");   // returns null (not supported)
     SqlOperation blank = SqlOperation.of("");                 // returns null
@@ -8454,7 +8454,7 @@ Enumeration representing SQL operation types.
   - ```java
     SqlOperation op = SqlOperation.SELECT;
     String sqlKeyword = op.sqlToken();   // Returns "SELECT"
-    
+
     SqlOperation txOp = SqlOperation.BEGIN_TRANSACTION;
     String txText = txOp.sqlToken();   // Returns "BEGIN TRANSACTION"
     ```
@@ -8470,7 +8470,7 @@ Enumeration representing SQL operation types.
     String insert = SqlOperation.INSERT.toString();             // "INSERT"
     String tx = SqlOperation.BEGIN_TRANSACTION.toString();      // "BEGIN TRANSACTION"
     String unknown = SqlOperation.UNKNOWN.toString();           // "UNKNOWN"
-    
+
     // toString() always equals sqlToken()
     boolean same = SqlOperation.DELETE.toString().equals(SqlOperation.DELETE.sqlToken()); // true
     ```
@@ -8572,7 +8572,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     String sql = "SELECT * FROM users WHERE name = 'John' ORDER BY age";
     int index = SqlParser.indexOfToken(sql, "ORDER BY", 0, false);
     // Returns: 40 (the position where "ORDER BY" starts)
-    
+
     int whereIndex = SqlParser.indexOfToken(sql, "WHERE", 0, false);
     // Returns: 20 (the position where "WHERE" starts)
     ```
@@ -8641,17 +8641,17 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     // Valid SELECT queries
     boolean result1 = SqlParser.isSelectQuery("SELECT * FROM users");
     // result1 = true
-    
+
     boolean result2 = SqlParser.isSelectQuery("select id, name from products");
     // result2 = true
-    
+
     boolean result3 = SqlParser.isSelectQuery("  SELECT count(*) FROM orders");
     // result3 = true
-    
+
     // Non-SELECT queries
     boolean result4 = SqlParser.isSelectQuery("UPDATE users SET name = 'John'");
     // result4 = false
-    
+
     boolean result5 = SqlParser.isSelectQuery("INSERT INTO users VALUES (1, 'John')");
     // result5 = false
     ```
@@ -8685,17 +8685,17 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     // Valid INSERT queries
     boolean result1 = SqlParser.isInsertQuery("INSERT INTO users VALUES (1, 'John')");
     // result1 = true
-    
+
     boolean result2 = SqlParser.isInsertQuery("insert into products (name, price) values ('Widget', 9.99)");
     // result2 = true
-    
+
     boolean result3 = SqlParser.isInsertQuery("  INSERT INTO orders (order_id) VALUES (100)");
     // result3 = true
-    
+
     // Non-INSERT queries
     boolean result4 = SqlParser.isInsertQuery("UPDATE users SET name = 'John'");
     // result4 = false
-    
+
     boolean result5 = SqlParser.isInsertQuery("SELECT * FROM users");
     // result5 = false
     ```
@@ -8711,14 +8711,14 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     // Valid UPDATE queries
     boolean result1 = SqlParser.isUpdateQuery("UPDATE users SET name = 'John'");
     // result1 = true
-    
+
     boolean result2 = SqlParser.isUpdateQuery("update products set price = 9.99 where id = 1");
     // result2 = true
-    
+
     // Non-UPDATE queries
     boolean result3 = SqlParser.isUpdateQuery("SELECT * FROM users");
     // result3 = false
-    
+
     boolean result4 = SqlParser.isUpdateQuery("DELETE FROM users WHERE id = 1");
     // result4 = false
     ```
@@ -8734,14 +8734,14 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     // Valid DELETE queries
     boolean result1 = SqlParser.isDeleteQuery("DELETE FROM users WHERE id = 1");
     // result1 = true
-    
+
     boolean result2 = SqlParser.isDeleteQuery("delete from products where price < 1");
     // result2 = true
-    
+
     // Non-DELETE queries
     boolean result3 = SqlParser.isDeleteQuery("SELECT * FROM users");
     // result3 = false
-    
+
     boolean result4 = SqlParser.isDeleteQuery("UPDATE users SET name = 'John'");
     // result4 = false
     ```
@@ -8758,7 +8758,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
   - ```java
     boolean result1 = SqlParser.isInsertOrReplaceQuery("INSERT OR REPLACE INTO t (id) VALUES (1)");
     // result1 = true
-    
+
     boolean result2 = SqlParser.isInsertOrReplaceQuery("INSERT INTO t (id) VALUES (1)");
     // result2 = false
     ```
@@ -8879,7 +8879,7 @@ Builder for immutable TokenizerConfig instances.
 - **Summary:** Builds the immutable configuration.
 - **Parameters:**
   - (none)
-- **Returns:** a new tokenizer configuration
+- **Returns:** an immutable tokenizer configuration; an unchanged builder may reuse its previous result
 
 ### Class Tokenizer (com.landawn.abacus.query.SqlParser.Tokenizer)
 Instance-scoped, thread-safe SQL tokenizer.
@@ -9050,7 +9050,7 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
     // Literal bounds -> [min, max]
     Between between = new Between("age", 18, 65);
     List<Object> p1 = between.parameters();   // [18, 65]
-    
+
     // A Condition bound has its parameters spliced in
     SubQuery sub = Filters.subQuery("config", Arrays.asList("minAge"), Filters.eq("active", true));
     Between subBound = new Between("age", sub, 65);
@@ -9071,11 +9071,11 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
     // Numeric bounds are unquoted
     Between between = new Between("age", 18, 65);
     String s1 = between.toSql(NamingPolicy.NO_CHANGE);   // "age BETWEEN 18 AND 65"
-    
+
     // NotBetween uses the NOT BETWEEN operator
     NotBetween nb = new NotBetween("age", 18, 65);
     String s2 = nb.toSql(NamingPolicy.NO_CHANGE);   // "age NOT BETWEEN 18 AND 65"
-    
+
     // String bounds are single-quoted; a null naming policy uses NO_CHANGE
     Between str = new Between("name", "A", "M");
     String s3 = str.toSql(null);   // "name BETWEEN 'A' AND 'M'"
@@ -9106,13 +9106,13 @@ Abstract base class for BETWEEN and NOT BETWEEN conditions in SQL queries.
     Between a = new Between("age", 18, 65);
     Between b = new Between("age", 18, 65);
     boolean eq = a.equals(b);   // true
-    
+
     // Different upper bound -> not equal
     boolean neMax = a.equals(new Between("age", 18, 99));   // false
-    
+
     // Different operator (BETWEEN vs NOT BETWEEN) -> not equal
     boolean neOp = a.equals(new NotBetween("age", 18, 65));   // false
-    
+
     // Non-AbstractBetween object -> not equal
     boolean neType = a.equals("age");   // false
     ```
@@ -9143,7 +9143,7 @@ Abstract base class for all condition implementations.
   - ```java
     Equal eq = new Equal("status", "active");
     Operator op1 = eq.operator();   // Operator.EQUAL
-    
+
     GreaterThan gt = new GreaterThan("age", 18);
     Operator op2 = gt.operator();   // Operator.GREATER_THAN
     ```
@@ -9157,7 +9157,7 @@ Abstract base class for all condition implementations.
   - ```java
     Equal eq = new Equal("name", "John");
     String s1 = eq.toString();   // "name = 'John'"
-    
+
     // Binary rendering (inherited by Equal): a null value with = renders as IS NULL
     Equal nullEq = new Equal("deletedAt", (Object) null);
     String s2 = nullEq.toString();   // "deletedAt IS NULL"
@@ -9200,7 +9200,7 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
   - ```java
     In single = new In("status", Arrays.asList("active", "pending"));
     Collection<String> p1 = single.propNames();   // ["status"]
-    
+
     In multi = new In(Arrays.asList("first_name", "last_name"),
                       Arrays.asList(Arrays.asList("John", "Doe"), Arrays.asList("Jane", "Roe")));
     Collection<String> p2 = multi.propNames();   // ["first_name", "last_name"]
@@ -9226,7 +9226,7 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
   - ```java
     In scalar = new In("status", Arrays.asList("active", "pending"));
     boolean b1 = scalar.usesRowValueConstructor();   // false
-    
+
     In rowValue = new In(Arrays.asList("firstName", "lastName"),
                          Arrays.asList(Arrays.asList("John", "Doe")));
     boolean b2 = rowValue.usesRowValueConstructor(); // true
@@ -9244,7 +9244,7 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
     // String values listed in order
     In in = new In("status", Arrays.asList("active", "pending"));
     List<Object> p1 = in.parameters();   // ["active", "pending"]
-    
+
     // Numeric values
     In nums = new In("id", Arrays.asList(1, 2, 3));
     List<Object> p2 = nums.parameters();   // [1, 2, 3]
@@ -9264,11 +9264,11 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
     // String values are single-quoted
     In in = new In("status", Arrays.asList("active", "pending"));
     String s1 = in.toSql(NamingPolicy.NO_CHANGE);   // "status IN ('active', 'pending')"
-    
+
     // NotIn uses the NOT IN operator
     NotIn notIn = new NotIn("status", Arrays.asList("active", "pending"));
     String s2 = notIn.toSql(NamingPolicy.NO_CHANGE);   // "status NOT IN ('active', 'pending')"
-    
+
     // Numeric values are unquoted; a null naming policy uses NO_CHANGE
     In nums = new In("id", Arrays.asList(1, 2, 3));
     String s3 = nums.toSql(null);   // "id IN (1, 2, 3)"
@@ -9299,13 +9299,13 @@ Abstract base class for IN and NOT IN conditions in SQL queries.
     In a = new In("status", Arrays.asList("active", "pending"));
     In b = new In("status", Arrays.asList("active", "pending"));
     boolean eq = a.equals(b);   // true
-    
+
     // Different values -> not equal
     boolean neValues = a.equals(new In("status", Arrays.asList("active")));   // false
-    
+
     // Different operator (IN vs NOT IN) -> not equal
     boolean neOp = a.equals(new NotIn("status", Arrays.asList("active", "pending")));   // false
-    
+
     // Non-AbstractIn object -> not equal
     boolean neType = a.equals("status");   // false
     ```
@@ -9374,7 +9374,7 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
     SubQuery raw = new SubQuery("SELECT id FROM departments WHERE active = true");
     InSubQuery inSub = new InSubQuery("deptId", raw);
     List<Object> p1 = inSub.parameters();   // [] (empty)
-    
+
     // Structured subquery with a parameterized condition -> subquery's params
     SubQuery structured = Filters.subQuery("departments", Arrays.asList("id"), Filters.eq("active", true));
     InSubQuery inSub2 = new InSubQuery("deptId", structured);
@@ -9407,13 +9407,13 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
     InSubQuery a = new InSubQuery("deptId", subQuery);
     InSubQuery b = new InSubQuery("deptId", subQuery);
     boolean eq = a.equals(b);   // true
-    
+
     // Different property -> not equal
     boolean neProp = a.equals(new InSubQuery("teamId", subQuery));   // false
-    
+
     // Different operator (IN vs NOT IN) -> not equal
     boolean neOp = a.equals(new NotInSubQuery("deptId", subQuery));   // false
-    
+
     // Non-AbstractInSubQuery object -> not equal
     boolean neType = a.equals("deptId");   // false
     ```
@@ -9432,12 +9432,12 @@ Abstract base class for IN and NOT IN subquery conditions in SQL queries.
     InSubQuery inSub = new InSubQuery("deptId", subQuery);
     String s1 = inSub.toSql(NamingPolicy.NO_CHANGE);
     // "deptId IN (SELECT id FROM departments WHERE active = true)"
-    
+
     // NotInSubQuery uses the NOT IN operator
     NotInSubQuery notInSub = new NotInSubQuery("deptId", subQuery);
     String s2 = notInSub.toSql(NamingPolicy.NO_CHANGE);
     // "deptId NOT IN (SELECT id FROM departments WHERE active = true)"
-    
+
     // Multiple properties -> (prop1, prop2) IN (subQuery)
     SubQuery multi = new SubQuery("SELECT firstName, lastName FROM employees");
     InSubQuery inMulti = new InSubQuery(Arrays.asList("firstName", "lastName"), multi);
@@ -9479,7 +9479,7 @@ Represents the SQL ALL operator for use with subqueries.
     All all = new All(subQuery);
     SubQuery retrieved = all.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = all.subQuery() == all.condition();
     // returns true
@@ -9524,14 +9524,14 @@ Represents a composable AND condition that combines multiple conditions.
   - ```java
     // Start with a basic AND
     And and = new And(Filters.equal("status", "active"));
-    
+
     // Add more conditions through chaining
     And extended = and
         .and(Filters.greaterThan("score", 80))
         .and(Filters.lessThan("attempts", 3))
         .and(Filters.equal("verified", true));
     // SQL: ((status = 'active') AND (score > 80) AND (attempts < 3) AND (verified = true))
-    
+
     // Original 'and' is unchanged
     // extended is a new instance with all conditions
     ```
@@ -9570,7 +9570,7 @@ Represents the SQL ANY operator for use with subqueries.
     Any any = new Any(subQuery);
     SubQuery retrieved = any.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = any.subQuery() == any.condition();
     // returns true
@@ -9635,7 +9635,7 @@ Base class for binary conditions that compare a property with a value.
   - ```java
     Binary eq = new Equal("age", 25);
     String name = eq.propName();   // "age"
-    
+
     Binary like = new Like("email", "%@example.com");
     String likeName = like.propName();   // "email"
     ```
@@ -9681,11 +9681,11 @@ Base class for binary conditions that compare a property with a value.
     // Literal value -> single-element list
     Binary eq = new Equal("age", 25);
     List<Object> p1 = eq.parameters();   // [25]
-    
+
     // Null value with = or != -> empty list (rendered as IS NULL / IS NOT NULL)
     Binary nullEq = new Equal("name", (Object) null);
     List<Object> p2 = nullEq.parameters();   // [] (empty)
-    
+
     // Subquery value -> the subquery's own parameters
     SubQuery sub = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
     Binary eqSub = new Equal("userId", sub);
@@ -9706,17 +9706,17 @@ Base class for binary conditions that compare a property with a value.
     // String values are single-quoted; numbers are unquoted
     Binary eq = new Equal("name", "John");
     String s1 = eq.toSql(NamingPolicy.NO_CHANGE);   // "name = 'John'"
-    
+
     Binary gt = new GreaterThan("age", 18);
     String s2 = gt.toSql(NamingPolicy.NO_CHANGE);   // "age > 18"
-    
+
     // Null value with = renders as IS NULL; with != renders as IS NOT NULL
     Binary nullEq = new Equal("deletedAt", (Object) null);
     String s3 = nullEq.toSql(NamingPolicy.NO_CHANGE);   // "deletedAt IS NULL"
-    
+
     Binary nullNe = new NotEqual("deletedAt", (Object) null);
     String s4 = nullNe.toSql(NamingPolicy.NO_CHANGE);   // "deletedAt IS NOT NULL"
-    
+
     // Subquery values are parenthesized; a null naming policy uses NO_CHANGE
     Binary sub = new Equal("userId", Filters.subQuery("SELECT id FROM users"));
     String s5 = sub.toSql(null);   // "userId = (SELECT id FROM users)"
@@ -9748,11 +9748,11 @@ Base class for binary conditions that compare a property with a value.
     Binary a = new Equal("age", 25);
     Binary b = new Equal("age", 25);
     boolean eq = a.equals(b);   // true (same prop, operator, value)
-    
+
     // Different value or property -> not equal
     boolean neValue = a.equals(new Equal("age", 30));   // false
     boolean neProp = a.equals(new Equal("name", 25));   // false
-    
+
     // Non-Binary object -> not equal
     boolean neType = a.equals("age");   // false
     ```
@@ -9786,11 +9786,11 @@ Represents a condition cell that wraps another condition with an operator.
     On onCond = new On("a.id", "b.id");
     Equal inner = (Equal) onCond.condition();
     // inner.toString() returns "a.id = b.id"
-    
+
     Where where = new Where(Filters.eq("active", true));
     Condition c = where.condition();
     // c.toString() returns "active = true"
-    
+
     // Edge: the wrapped condition is returned as-is; cast to the concrete type to access subtype API
     Equal eq = (Equal) where.condition();   // ok
     Like bad = (Like) where.condition();    // throws ClassCastException
@@ -9805,14 +9805,14 @@ Represents a condition cell that wraps another condition with an operator.
   - ```java
     Where where = new Where(Filters.between("age", 18, 65));
     where.parameters();          // returns [18, 65]
-    
+
     Where single = new Where(Filters.eq("active", true));
     single.parameters();         // returns [true]
-    
+
     // Edge: wrapping a parameter-free condition yields an empty list
     On onCond = new On("a.id", "b.id");
     onCond.parameters();         // returns [] (empty, immutable)
-    
+
     // Edge: the returned list reflects the wrapped condition only and is immutable
     ```
 ##### toSql(...) -> String
@@ -9828,14 +9828,14 @@ Represents a condition cell that wraps another condition with an operator.
   - ```java
     Where where = new Where(Filters.eq("active", true));
     where.toSql(NamingPolicy.NO_CHANGE);   // returns "WHERE active = true"
-    
+
     On onCond = new On("a.id", "b.id");
     onCond.toSql(NamingPolicy.NO_CHANGE);  // returns "ON a.id = b.id" (inner NOT parenthesized)
-    
+
     // Edge: naming policy rewrites property names in the wrapped condition
     Where w = new Where(Filters.eq("firstName", "John"));
     w.toSql(NamingPolicy.SNAKE_CASE);      // returns "WHERE first_name = 'John'"
-    
+
     // Edge: an uninitialized Cell (null operator) renders the literal "null" for the operator
     ```
 ##### hashCode(...) -> int
@@ -9864,16 +9864,16 @@ Represents a condition cell that wraps another condition with an operator.
     Where a = new Where(Filters.eq("active", true));
     Where b = new Where(Filters.eq("active", true));
     a.equals(b);    // returns true
-    
+
     // Edge: different wrapped condition -> not equal
     Where c = new Where(Filters.eq("active", false));
     a.equals(c);    // returns false
-    
+
     // Edge: different concrete subclass -> never equal, even with equal operator/condition
     Where w = new Where(Filters.eq("x", 1));
     Having h = new Having(Filters.eq("x", 1));
     w.equals(h);    // returns false
-    
+
     a.equals(null); // returns false
     ```
 
@@ -9925,12 +9925,12 @@ A composable variant of Cell that supports logical composition via AND/OR/NOT/XO
     Not notCond = new Not(eq);
     Equal inner = (Equal) notCond.condition();
     // inner.toString() returns "status = 'active'"
-    
+
     SubQuery sub = Filters.subQuery("SELECT id FROM orders");
     Exists exists = new Exists(sub);
     Condition c = exists.condition();
     // c == sub (the same wrapped SubQuery is returned)
-    
+
     // Edge: the wrapped condition is returned as-is; an incompatible cast fails
     Like bad = (Like) notCond.condition();   // throws ClassCastException
     ```
@@ -9944,14 +9944,14 @@ A composable variant of Cell that supports logical composition via AND/OR/NOT/XO
   - ```java
     Not not = new Not(Filters.between("age", 18, 65));
     not.parameters();          // returns [18, 65]
-    
+
     Not single = new Not(Filters.eq("active", true));
     single.parameters();       // returns [true]
-    
+
     // Edge: a wrapped SubQuery with no bound parameters yields an empty list
     Exists exists = new Exists(Filters.subQuery("SELECT 1"));
     exists.parameters();       // returns [] (empty, immutable)
-    
+
     // Edge: the returned list reflects the wrapped condition only and is immutable
     ```
 ##### toSql(...) -> String
@@ -9966,14 +9966,14 @@ A composable variant of Cell that supports logical composition via AND/OR/NOT/XO
   - ```java
     Not not = new Not(Filters.eq("status", "active"));
     not.toSql(NamingPolicy.NO_CHANGE);   // returns "NOT (status = 'active')"
-    
+
     Exists exists = new Exists(Filters.subQuery("SELECT 1"));
     exists.toSql(NamingPolicy.NO_CHANGE); // returns "EXISTS (SELECT 1)"
-    
+
     // Edge: naming policy rewrites property names in the wrapped condition
     Not w = new Not(Filters.eq("firstName", "John"));
     w.toSql(NamingPolicy.SNAKE_CASE);    // returns "NOT (first_name = 'John')"
-    
+
     // Edge: a null naming policy falls back to NO_CHANGE; an uninitialized
     // instance (null operator) renders the literal "null" for the operator
     ```
@@ -10003,17 +10003,17 @@ A composable variant of Cell that supports logical composition via AND/OR/NOT/XO
     Not a = new Not(Filters.eq("status", "active"));
     Not b = new Not(Filters.eq("status", "active"));
     a.equals(b);    // returns true
-    
+
     // Edge: different wrapped condition -> not equal
     Not c = new Not(Filters.eq("status", "inactive"));
     a.equals(c);    // returns false
-    
+
     // Edge: different concrete subclass -> never equal, even with equal operator/condition
     SubQuery sub = Filters.subQuery("SELECT 1");
     Exists exists = new Exists(sub);
     NotExists notExists = new NotExists(sub);
     exists.equals(notExists);   // returns false
-    
+
     a.equals(null); // returns false
     ```
 
@@ -10130,10 +10130,10 @@ The base interface for all query conditions.
   - ```java
     Condition eq = Filters.equal("status", "active");
     Operator op = eq.operator();   // Operator.EQUAL
-    
+
     Condition between = Filters.between("age", 18, 65);
     Operator betweenOp = between.operator();   // Operator.BETWEEN
-    
+
     Condition combined = Filters.and(eq, between);
     Operator andOp = combined.operator();   // Operator.AND
     ```
@@ -10147,10 +10147,10 @@ The base interface for all query conditions.
   - ```java
     Condition eq = Filters.equal("name", "John");
     ImmutableList<Object> params = eq.parameters();   // ["John"]
-    
+
     Condition between = Filters.between("age", 18, 65);
     ImmutableList<Object> rangeParams = between.parameters();   // [18, 65]
-    
+
     Condition combined = Filters.and(eq, between);
     ImmutableList<Object> allParams = combined.parameters();   // ["John", 18, 65]
     ```
@@ -10163,13 +10163,13 @@ The base interface for all query conditions.
 - **Examples:**
   - ```java
     Condition eq = Filters.equal("firstName", "John");
-    
+
     // No change to property names
     String noChange = eq.toSql(NamingPolicy.NO_CHANGE);       // "firstName = 'John'"
-    
+
     // Convert to lower case with underscores (snake_case)
     String lower = eq.toSql(NamingPolicy.SNAKE_CASE);   // "first_name = 'John'"
-    
+
     // Convert to upper case with underscores (SCREAMING_SNAKE_CASE)
     String upper = eq.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);   // "FIRST_NAME = 'John'"
     ```
@@ -10227,7 +10227,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().joins();   // returns [] (empty list)
-    
+
     Criteria c = Criteria.builder()
         .join("orders", Filters.on("users.id", "orders.user_id"))
         .innerJoin("items", Filters.on("orders.id", "items.order_id"))
@@ -10244,7 +10244,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().where();   // returns null
-    
+
     Criteria c = Criteria.builder().where(Filters.eq("a", 1)).build();
     c.where().operator();                 // returns Operator.WHERE
     ```
@@ -10257,7 +10257,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().groupBy();   // returns null
-    
+
     Criteria c = Criteria.builder().groupBy("dept").build();
     c.groupBy().operator();                 // returns Operator.GROUP_BY
     ```
@@ -10270,7 +10270,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().having();   // returns null
-    
+
     Criteria c = Criteria.builder().having(Filters.greaterThan("COUNT(*)", 5)).build();
     c.having().operator();                 // returns Operator.HAVING
     ```
@@ -10283,7 +10283,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().setOperations();   // returns [] (empty list)
-    
+
     Criteria c = Criteria.builder().union(Filters.subQuery("SELECT id FROM t")).build();
     c.setOperations().size();                     // returns 1
     ```
@@ -10296,7 +10296,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().orderBy();   // returns null
-    
+
     Criteria c = Criteria.builder().orderBy("name").build();
     c.orderBy().operator();                 // returns Operator.ORDER_BY
     ```
@@ -10309,7 +10309,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().limit();   // returns null
-    
+
     Criteria c = Criteria.builder().limit(10).build();
     c.limit().toSql(NamingPolicy.NO_CHANGE);   // returns "LIMIT 10"
     ```
@@ -10322,7 +10322,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().conditions();   // returns [] (empty list)
-    
+
     Criteria c = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build();
     c.conditions().size();                      // returns 2
     c.conditions().clear();                     // throws UnsupportedOperationException (unmodifiable view)
@@ -10354,7 +10354,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Examples:**
   - ```java
     Criteria.builder().build().parameters();   // returns [] (empty list)
-    
+
     Criteria c = Criteria.builder().where(Filters.eq("status", "active")).limit(10).build();
     c.parameters();   // returns ["active"] (the literal LIMIT count carries no parameter)
     ```
@@ -10459,9 +10459,9 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria.builder().distinctOn("department, location").build().selectModifier();
     // returns "DISTINCT ON (department, location)"
-    
+
     Criteria.builder().distinctOn("city").build().selectModifier();   // returns "DISTINCT ON (city)"
-    
+
     // null, empty, or blank falls back to a plain DISTINCT (no parentheses).
     Criteria.builder().distinctOn(null).build().selectModifier();     // returns "DISTINCT"
     Criteria.builder().distinctOn("").build().selectModifier();       // returns "DISTINCT"
@@ -10492,7 +10492,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build().selectModifier();
     // returns "SQL_CALC_FOUND_ROWS"
-    
+
     // Passing null (or an empty/blank string) clears any previously set modifier.
     Criteria.builder().selectModifier(null).build().selectModifier();   // returns null
     ```
@@ -10513,7 +10513,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         )
         .build();
     c.joins().size();   // returns 2
-    
+
     // Passing no joins is a no-op.
     Criteria empty = Criteria.builder().join(new Join[0]).build();
     empty.joins();      // returns [] (empty list)
@@ -10533,7 +10533,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
     );
     Criteria c = Criteria.builder().join(joins).build();
     c.joins().size();   // returns 2
-    
+
     // An empty collection is a no-op.
     Criteria empty = Criteria.builder().join(new ArrayList<Join>()).build();
     empty.joins();      // returns [] (empty list)
@@ -10549,7 +10549,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Examples:**
   - ```java
     Criteria.builder().join("orders");   // throws IllegalArgumentException
-    
+
     // Supply the join predicate instead:
     Criteria c = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN orders ON users.id = orders.user_id"
@@ -10585,7 +10585,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .join(tables, new On("id", "order_id"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN (orders CROSS JOIN order_items) ON id = order_id"
-    
+
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().join(Arrays.asList("orders"), new On("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " JOIN orders ON a = b"
@@ -10602,7 +10602,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Examples:**
   - ```java
     Criteria.builder().innerJoin("orders");   // throws IllegalArgumentException
-    
+
     // Supply the join predicate instead:
     Criteria c = Criteria.builder().innerJoin("orders", Filters.on("users.id", "orders.user_id")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON users.id = orders.user_id"
@@ -10621,7 +10621,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .innerJoin("orders", Filters.on("users.id", "orders.user_id"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON users.id = orders.user_id"
-    
+
     // The ON value is treated as a property reference, so it is rendered unquoted.
     Criteria c2 = Criteria.builder().innerJoin("orders", Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON a = b"
@@ -10640,7 +10640,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .innerJoin(Arrays.asList("orders", "order_items"), Filters.on("id", "order_id"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN (orders CROSS JOIN order_items) ON id = order_id"
-    
+
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().innerJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " INNER JOIN orders ON a = b"
@@ -10657,7 +10657,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Examples:**
   - ```java
     Criteria.builder().leftJoin("orders");   // throws IllegalArgumentException
-    
+
     // Supply the join predicate instead:
     Criteria c = Criteria.builder().leftJoin("orders", Filters.on("users.id", "orders.user_id")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON users.id = orders.user_id"
@@ -10676,7 +10676,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .leftJoin("orders", Filters.on("users.id", "orders.user_id"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON users.id = orders.user_id"
-    
+
     Criteria c2 = Criteria.builder().leftJoin("orders", Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON a = b"
     ```
@@ -10694,7 +10694,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .leftJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN (orders CROSS JOIN items) ON a = b"
-    
+
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().leftJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " LEFT JOIN orders ON a = b"
@@ -10711,7 +10711,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Examples:**
   - ```java
     Criteria.builder().rightJoin("orders");   // throws IllegalArgumentException
-    
+
     // Supply the join predicate instead:
     Criteria c = Criteria.builder().rightJoin("orders", Filters.on("users.id", "orders.user_id")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON users.id = orders.user_id"
@@ -10730,7 +10730,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .rightJoin("orders", Filters.on("users.id", "orders.user_id"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON users.id = orders.user_id"
-    
+
     Criteria c2 = Criteria.builder().rightJoin("orders", Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON a = b"
     ```
@@ -10748,7 +10748,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .rightJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN (orders CROSS JOIN items) ON a = b"
-    
+
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().rightJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " RIGHT JOIN orders ON a = b"
@@ -10765,7 +10765,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Examples:**
   - ```java
     Criteria.builder().fullJoin("orders");   // throws IllegalArgumentException
-    
+
     // Supply the join predicate instead:
     Criteria c = Criteria.builder().fullJoin("orders", Filters.on("users.id", "orders.user_id")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON users.id = orders.user_id"
@@ -10784,7 +10784,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .fullJoin("orders", Filters.on("users.id", "orders.user_id"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON users.id = orders.user_id"
-    
+
     Criteria c2 = Criteria.builder().fullJoin("orders", Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON a = b"
     ```
@@ -10802,7 +10802,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .fullJoin(Arrays.asList("orders", "items"), Filters.on("a", "b"))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN (orders CROSS JOIN items) ON a = b"
-    
+
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().fullJoin(Arrays.asList("orders"), Filters.on("a", "b")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " FULL JOIN orders ON a = b"
@@ -10819,7 +10819,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().crossJoin("colors").build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors"
-    
+
     Criteria c2 = Criteria.builder().crossJoin("colors").where(Filters.eq("a", 1)).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors WHERE a = 1"
     ```
@@ -10834,7 +10834,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().crossJoin(Arrays.asList("colors", "sizes")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN (colors CROSS JOIN sizes)"
-    
+
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().crossJoin(Arrays.asList("colors")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " CROSS JOIN colors"
@@ -10851,7 +10851,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().naturalJoin("employees").build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees"
-    
+
     Criteria c2 = Criteria.builder().naturalJoin("employees").where(Filters.eq("a", 1)).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees WHERE a = 1"
     ```
@@ -10866,7 +10866,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().naturalJoin(Arrays.asList("employees", "departments")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN (employees CROSS JOIN departments)"
-    
+
     // A single-element collection is rendered without parentheses.
     Criteria c2 = Criteria.builder().naturalJoin(Arrays.asList("employees")).build();
     c2.toSql(NamingPolicy.NO_CHANGE);   // returns " NATURAL JOIN employees"
@@ -10887,7 +10887,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .where(Filters.and(Filters.equal("status", "active"), Filters.greaterThan("age", 18)))
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " WHERE ((status = 'active') AND (age > 18))"
-    
+
     // Edge cases:
     Criteria.builder().where((Condition) null);   // throws IllegalArgumentException
     Criteria.builder().where(new GroupBy("x"));   // throws IllegalArgumentException (wrong clause)
@@ -10905,7 +10905,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().where("age > 18 AND status = 'active'").build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " WHERE age > 18 AND status = 'active'"
-    
+
     // Edge cases:
     Criteria.builder().where((String) null);   // throws IllegalArgumentException
     Criteria.builder().where("");              // throws IllegalArgumentException
@@ -11018,7 +11018,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().groupBy(Filters.expr("YEAR(order_date)")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " GROUP BY YEAR(order_date)"
-    
+
     Criteria.builder().groupBy((Condition) null);   // throws IllegalArgumentException
     ```
 - **Signature:** `public Builder groupBy(final String... propNames)`
@@ -11104,7 +11104,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
     List<String> groupCols = Arrays.asList("region", "product_type");
     Criteria c = Criteria.builder().groupBy(groupCols).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " GROUP BY region, product_type"
-    
+
     Criteria.builder().groupBy((Collection<String>) null);   // throws IllegalArgumentException
     ```
 - **Signature:** `public Builder groupBy(final Collection<String> propNames, final SortDirection direction)`
@@ -11162,7 +11162,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);
     // returns " GROUP BY department HAVING ((COUNT(*) > 10) AND (AVG(salary) < 100000))"
-    
+
     Criteria.builder().having((Condition) null);   // throws IllegalArgumentException
     ```
 - **Signature:** `public Builder having(final String expr)`
@@ -11182,7 +11182,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);
     // returns " GROUP BY product_category HAVING SUM(revenue) > 10000 AND COUNT(*) > 5"
-    
+
     Criteria.builder().having("");   // throws IllegalArgumentException
     ```
 ##### orderByAsc(...) -> Builder
@@ -11293,7 +11293,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().orderBy(Filters.expr("created_date DESC")).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " ORDER BY created_date DESC"
-    
+
     Criteria.builder().orderBy((Condition) null);   // throws IllegalArgumentException
     ```
 - **Signature:** `public Builder orderBy(final String... propNames)`
@@ -11379,7 +11379,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
     List<String> sortCols = Arrays.asList("country", "state", "city");
     Criteria c = Criteria.builder().orderBy(sortCols).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " ORDER BY country, state, city"
-    
+
     Criteria.builder().orderBy((Collection<String>) null);   // throws IllegalArgumentException
     ```
 - **Signature:** `public Builder orderBy(final Collection<String> propNames, final SortDirection direction)`
@@ -11433,7 +11433,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().limit(Filters.limit(100)).build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " LIMIT 100"
-    
+
     Criteria.builder().limit((Limit) null);   // throws IllegalArgumentException
     ```
 - **Signature:** `public Builder limit(final int count)`
@@ -11486,7 +11486,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - ```java
     Criteria c = Criteria.builder().limit("10 OFFSET 20").build();
     c.toSql(NamingPolicy.NO_CHANGE);   // returns " LIMIT 10 OFFSET 20"
-    
+
     // Placeholders are not accepted: each count or offset must be a non-negative integer literal.
     Criteria.builder().limit("? OFFSET ?");   // throws IllegalArgumentException
     ```
@@ -11507,7 +11507,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
         .build();
     c.toSql(NamingPolicy.NO_CHANGE);
     // returns " WHERE status = 'active' UNION SELECT * FROM archived_users WHERE active = true"
-    
+
     // Multiple set operations accumulate in order.
     c.setOperations().size();   // returns 1
     ```
@@ -11701,7 +11701,7 @@ Represents an EXCEPT set operation in SQL queries.
     Except except = new Except(subQuery);
     SubQuery retrieved = except.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = except.subQuery() == except.condition();
     // returns true
@@ -11741,7 +11741,7 @@ Represents the SQL EXISTS operator for use with subqueries.
     Exists exists = new Exists(subQuery);
     SubQuery retrieved = exists.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = exists.subQuery() == exists.condition();
     // returns true
@@ -12045,7 +12045,7 @@ Represents an INTERSECT clause in SQL queries.
     Intersect intersect = new Intersect(subQuery);
     SubQuery retrieved = intersect.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = intersect.subQuery() == intersect.condition();
     // returns true
@@ -12285,13 +12285,13 @@ Base class for SQL JOIN operations.
     Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
     List<String> entities = join.joinEntities();
     // entities = ["orders o"]
-    
+
     // Multi-table join
     Join multiJoin = new Join(Arrays.asList("orders o", "order_items oi"),
         new On("o.id", "oi.order_id"));
     List<String> multiEntities = multiJoin.joinEntities();
     // multiEntities = ["orders o", "order_items oi"]
-    
+
     // Edge: the returned list is immutable
     entities.add("more");   // throws UnsupportedOperationException
     ```
@@ -12311,12 +12311,12 @@ Base class for SQL JOIN operations.
     Join join = new Join("orders o", onCondition);
     On condition = (On) join.condition();
     // condition == onCondition (the same On instance is returned)
-    
+
     // Conditionless join type (only CrossJoin/NaturalJoin can be built without a predicate)
     Join crossJoin = new CrossJoin("products");
     Condition noCondition = crossJoin.condition();
     // noCondition == null
-    
+
     // Edge: the condition is returned as-is; an incompatible cast fails
     Using bad = (Using) join.condition();   // throws ClassCastException
     ```
@@ -12333,11 +12333,11 @@ Base class for SQL JOIN operations.
     // Join with ON condition
     Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
     join.hasCondition();    // returns true
-    
+
     // Conditionless join type
     Join crossJoin = new CrossJoin("products");
     crossJoin.hasCondition();   // returns false
-    
+
     // Typical use: guard before unwrapping the condition
     if (join.hasCondition()) {
         Condition c = join.condition();   // never null here
@@ -12356,11 +12356,11 @@ Base class for SQL JOIN operations.
     // Condition with a bound value
     Join valueJoin = new Join("products p", Filters.equal("p.active", true));
     valueJoin.parameters();    // returns [true]
-    
+
     // Edge: an ON condition compares columns and has no bound parameters
     Join onJoin = new Join("orders o", new On("customers.id", "o.customer_id"));
     onJoin.parameters();       // returns [] (empty, immutable)
-    
+
     // Edge: conditionless join type -> empty list
     new CrossJoin("products").parameters();   // returns []
     ```
@@ -12375,12 +12375,12 @@ Base class for SQL JOIN operations.
     Join join = new Join("orders o", new On("customers.id", "o.customer_id"));
     join.toSql(NamingPolicy.NO_CHANGE);
     // returns "JOIN orders o ON customers.id = o.customer_id"
-    
+
     // Edge: naming policy rewrites property names within the condition
     Join snake = new Join("orders o", Filters.equal("firstName", "John"));
     snake.toSql(NamingPolicy.SNAKE_CASE);
     // returns "JOIN orders o ON first_name = 'John'"
-    
+
     // Edge: conditionless join type -> just the operator and entity
     new CrossJoin("products").toSql(NamingPolicy.NO_CHANGE);   // returns "CROSS JOIN products"
     ```
@@ -12409,15 +12409,15 @@ Base class for SQL JOIN operations.
     Join a = new Join("orders o", new On("a.id", "b.id"));
     Join b = new Join("orders o", new On("a.id", "b.id"));
     a.equals(b);    // returns true
-    
+
     // Edge: different join entity -> not equal
     Join c = new Join("customers c", new On("a.id", "b.id"));
     a.equals(c);    // returns false
-    
+
     // Edge: a different join type (operator) -> not equal
     Join left = new LeftJoin("orders o", new On("a.id", "b.id"));
     a.equals(left); // returns false
-    
+
     a.equals(null); // returns false
     ```
 
@@ -12467,10 +12467,10 @@ Base class for composable junction conditions that combine multiple conditions.
     // conditions = [Equal("status", "active"), GreaterThan("age", 18)]
     conditions.size();             // returns 2
     conditions.get(0).toString();  // returns "status = 'active'"
-    
+
     // Edge: the returned view is immutable
     conditions.add(new Equal("x", 1));   // throws UnsupportedOperationException
-    
+
     // Edge: an empty junction returns an empty list
     new Junction(Operator.AND).conditions().isEmpty();   // returns true
     ```
@@ -12486,11 +12486,11 @@ Base class for composable junction conditions that combine multiple conditions.
         new Equal("status", "active"),
         new Between("age", 18, 65));
     and.parameters();          // returns ["active", 18, 65]
-    
+
     // Edge: an empty junction has no parameters
     Junction empty = new Junction(Operator.AND);
     empty.parameters();        // returns [] (empty, immutable)
-    
+
     // Edge: conditions without bound values contribute nothing
     Junction noParams = new Junction(Operator.OR, new IsNotNull("email"));
     noParams.parameters();     // returns []
@@ -12508,15 +12508,15 @@ Base class for composable junction conditions that combine multiple conditions.
         new GreaterThan("age", 18));
     and.toSql(NamingPolicy.NO_CHANGE);
     // returns "((status = 'active') AND (age > 18))"
-    
+
     // Edge: a single condition is still doubly parenthesized
     Junction single = new Junction(Operator.OR, new Equal("x", 1));
     single.toSql(NamingPolicy.NO_CHANGE);   // returns "((x = 1))"
-    
+
     // Edge: naming policy rewrites property names
     Junction snake = new Junction(Operator.AND, new Equal("firstName", "John"));
     snake.toSql(NamingPolicy.SNAKE_CASE);   // returns "((first_name = 'John'))"
-    
+
     // Edge: empty junctions preserve their Boolean identities
     new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE);   // returns "1 = 1"
     new Junction(Operator.OR).toSql(NamingPolicy.NO_CHANGE);    // returns "1 = 0"
@@ -12546,16 +12546,16 @@ Base class for composable junction conditions that combine multiple conditions.
     Junction a = new Junction(Operator.AND, new Equal("status", "active"));
     Junction b = new Junction(Operator.AND, new Equal("status", "active"));
     a.equals(b);    // returns true
-    
+
     // Edge: a different operator -> not equal
     Junction c = new Junction(Operator.OR, new Equal("status", "active"));
     a.equals(c);    // returns false
-    
+
     // Edge: same conditions in a different order -> not equal
     Junction d = new Junction(Operator.AND, new Equal("a", 1), new Equal("b", 2));
     Junction e = new Junction(Operator.AND, new Equal("b", 2), new Equal("a", 1));
     d.equals(e);    // returns false
-    
+
     a.equals(null); // returns false
     ```
 
@@ -12814,7 +12814,7 @@ Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases
     Minus minus = new Minus(subQuery);
     SubQuery retrieved = minus.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = minus.subQuery() == minus.condition();
     // returns true
@@ -12850,7 +12850,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
   - ```java
     NamedProperty username = NamedProperty.of("username");
     NamedProperty status = NamedProperty.of("status");
-    
+
     // Invalid usage - throws IllegalArgumentException
     try {
         NamedProperty invalid = NamedProperty.of("");
@@ -12907,10 +12907,10 @@ A utility class that provides a fluent API for creating SQL conditions based on 
   - ```java
     NamedProperty.of("color").equalsAny("red", "green", "blue");
     // SQL: ((color = 'red') OR (color = 'green') OR (color = 'blue'))
-    
+
     NamedProperty.of("priority").equalsAny(1, 2, 3);
     // SQL: ((priority = 1) OR (priority = 2) OR (priority = 3))
-    
+
     NamedProperty.of("x").equalsAny();   // throws IllegalArgumentException (empty values)
     ```
 - **See also:** Or, Equal, com.landawn.abacus.query.Filters#anyEqual(java.util.Map)
@@ -13032,7 +13032,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
     NamedProperty.of("city").equalsAny(cities);
     // SQL: ((city = 'New York') OR (city = 'Los Angeles') OR (city = 'Chicago'))
-    
+
     List<Integer> validIds = List.of(10, 20, 30);
     NamedProperty.of("department_id").equalsAny(validIds);
     // SQL: ((department_id = 10) OR (department_id = 20) OR (department_id = 30))
@@ -13434,7 +13434,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
   - ```java
     NamedProperty.of("status").in("active", "pending", "approved");
     // SQL: status IN ('active', 'pending', 'approved')
-    
+
     NamedProperty.of("priority").in(1, 2, 3);
     // SQL: priority IN (1, 2, 3)
     ```
@@ -13557,7 +13557,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     List<Integer> validIds = Arrays.asList(1, 2, 3, 4, 5);
     NamedProperty.of("id").in(validIds);
     // SQL: id IN (1, 2, 3, 4, 5)
-    
+
     List<String> departments = Arrays.asList("Sales", "Marketing", "IT");
     NamedProperty.of("department").in(departments);
     // SQL: department IN ('Sales', 'Marketing', 'IT')
@@ -13593,7 +13593,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
   - ```java
     NamedProperty.of("status").notIn("deleted", "archived");
     // SQL: status NOT IN ('deleted', 'archived')
-    
+
     NamedProperty.of("priority").notIn(4, 5);
     // SQL: priority NOT IN (4, 5)
     ```
@@ -13716,7 +13716,7 @@ A utility class that provides a fluent API for creating SQL conditions based on 
     List<Integer> excludedIds = Arrays.asList(100, 200, 300);
     NamedProperty.of("id").notIn(excludedIds);
     // SQL: id NOT IN (100, 200, 300)
-    
+
     List<String> blockedDepartments = Arrays.asList("Temp", "Archived");
     NamedProperty.of("department").notIn(blockedDepartments);
     // SQL: department NOT IN ('Temp', 'Archived')
@@ -13912,7 +13912,7 @@ Represents the SQL NOT EXISTS operator for use with subqueries.
     NotExists notExists = new NotExists(subQuery);
     SubQuery retrieved = notExists.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = notExists.subQuery() == notExists.condition();
     // returns true
@@ -14211,16 +14211,16 @@ Enumeration of SQL operators supported by the condition framework.
     Operator eq = Operator.of("=");       // Operator.EQUAL
     Operator gt = Operator.of(">");       // Operator.GREATER_THAN
     Operator gte = Operator.of(">=");     // Operator.GREATER_THAN_OR_EQUAL
-    
+
     // Look up word operators (case-insensitive)
     Operator and = Operator.of("AND");    // Operator.AND
     Operator or = Operator.of("or");      // Operator.OR
     Operator like = Operator.of("LIKE");  // Operator.LIKE
-    
+
     // Enum constant names are also accepted (case-insensitive)
     Operator eq2 = Operator.of("EQUAL");           // Operator.EQUAL
     Operator gt2 = Operator.of("greater_than");    // Operator.GREATER_THAN
-    
+
     // Edge cases
     Operator unknown = Operator.of("UNKNOWN");    // null (not a known token or name)
     Operator empty = Operator.of("");             // Operator.EMPTY (its SQL token is "")
@@ -14256,7 +14256,7 @@ Enumeration of SQL operators supported by the condition framework.
     String gte = Operator.GREATER_THAN_OR_EQUAL.toString(); // ">="
     String join = Operator.LEFT_JOIN.toString();            // "LEFT JOIN"
     String empty = Operator.EMPTY.toString();               // "" (empty placeholder operator)
-    
+
     // toString() always equals sqlToken()
     boolean same = Operator.IN.toString().equals(Operator.IN.sqlToken()); // true
     ```
@@ -14303,7 +14303,7 @@ Represents a composable OR condition that combines multiple conditions.
         .or(Filters.equal("type", "B"))
         .or(Filters.equal("type", "C"));
     // SQL: ((type = 'A') OR (type = 'B') OR (type = 'C'))
-    
+
     // Add conditions conditionally
     Or baseOr = new Or(Filters.equal("status", "active"));
     boolean includeInactive = true;
@@ -14445,7 +14445,7 @@ Represents the SQL SOME operator for use with subqueries.
     Some some = new Some(subQuery);
     SubQuery retrieved = some.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = some.subQuery() == some.condition();
     // returns true
@@ -14482,7 +14482,7 @@ Represents a raw SQL expression that can be used in queries.
     SqlExpression expr1 = SqlExpression.of("CURRENT_DATE");
     SqlExpression expr2 = SqlExpression.of("CURRENT_DATE");
     // expr1.equals(expr2), but expr1 != expr2
-    
+
     SqlExpression calc = SqlExpression.of("price * 1.1");
     // Reuse the same expression in multiple places
     ```
@@ -14501,10 +14501,10 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.equal("age", 25);
     // Returns: "age = 25"
-    
+
     String expr2 = SqlExpression.equal("status", "active");
     // Returns: "status = 'active'"
-    
+
     String expr3 = SqlExpression.equal("middle_name", null);
     // Returns: "middle_name IS NULL"
     ```
@@ -14537,10 +14537,10 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.notEqual("status", "INACTIVE");
     // Returns: "status != 'INACTIVE'"
-    
+
     String expr2 = SqlExpression.notEqual("count", 0);
     // Returns: "count != 0"
-    
+
     String expr3 = SqlExpression.notEqual("email", null);
     // Returns: "email IS NOT NULL"
     ```
@@ -14571,7 +14571,7 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.greaterThan("salary", 50000);
     // Returns: "salary > 50000"
-    
+
     String expr2 = SqlExpression.greaterThan("created_date", "2024-01-01");
     // Returns: "created_date > '2024-01-01'"
     ```
@@ -14687,7 +14687,7 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.between("age", 18, 65);
     // Returns: "age BETWEEN 18 AND 65"
-    
+
     String expr2 = SqlExpression.between("price", 10.0, 50.0);
     // Returns: "price BETWEEN 10.0 AND 50.0"
     ```
@@ -14707,7 +14707,7 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.notBetween("age", 18, 65);
     // Returns: "age NOT BETWEEN 18 AND 65"
-    
+
     String expr2 = SqlExpression.notBetween("price", 10.0, 50.0);
     // Returns: "price NOT BETWEEN 10.0 AND 50.0"
     ```
@@ -14724,10 +14724,10 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.like("name", "John%");
     // Returns: "name LIKE 'John%'"
-    
+
     String expr2 = SqlExpression.like("email", "%@gmail.com");
     // Returns: "email LIKE '%@gmail.com'"
-    
+
     String expr3 = SqlExpression.like("code", "A__");
     // Returns: "code LIKE 'A__'" (matches 'A' followed by exactly 2 characters)
     ```
@@ -14744,7 +14744,7 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.notLike("name", "John%");
     // Returns: "name NOT LIKE 'John%'"
-    
+
     String expr2 = SqlExpression.notLike("email", "%@gmail.com");
     // Returns: "email NOT LIKE '%@gmail.com'"
     ```
@@ -14814,7 +14814,7 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.and("active = true", "age > 18", "status = 'APPROVED'");
     // Returns: "(active = true) AND (age > 18) AND (status = 'APPROVED')"
-    
+
     String expr2 = SqlExpression.and("verified = 1", "email IS NOT NULL");
     // Returns: "(verified = 1) AND (email IS NOT NULL)"
     ```
@@ -14846,7 +14846,7 @@ Represents a raw SQL expression that can be used in queries.
     // Use SqlExpression.of() for column references to avoid single-quote wrapping
     String expr = SqlExpression.plus(SqlExpression.of("price"), SqlExpression.of("tax"), SqlExpression.of("shipping"));
     // Returns: "price + tax + shipping"
-    
+
     String expr2 = SqlExpression.plus(SqlExpression.of("base_salary"), 5000, SqlExpression.of("bonus"));
     // Returns: "base_salary + 5000 + bonus"
     ```
@@ -14863,7 +14863,7 @@ Represents a raw SQL expression that can be used in queries.
     // Use SqlExpression.of() for column references to avoid single-quote wrapping
     String expr = SqlExpression.subtract(SqlExpression.of("total"), SqlExpression.of("discount"), SqlExpression.of("tax_credit"));
     // Returns: "total - discount - tax_credit"
-    
+
     String expr2 = SqlExpression.subtract(SqlExpression.of("price"), 10);
     // Returns: "price - 10"
     ```
@@ -14881,13 +14881,13 @@ Represents a raw SQL expression that can be used in queries.
     // Use SqlExpression.of() for column references to avoid single-quote wrapping
     String expr = SqlExpression.minus(SqlExpression.of("total"), SqlExpression.of("discount"));
     // Returns: "total - discount"
-    
+
     String expr2 = SqlExpression.minus(SqlExpression.of("price"), 10);
     // Returns: "price - 10"
-    
+
     String none = SqlExpression.minus();
     // Returns: "" (no operands)
-    
+
     SqlExpression.minus(SqlExpression.of("x"), Double.NaN);
     // throws IllegalArgumentException (NaN has no portable SQL literal)
     ```
@@ -14904,7 +14904,7 @@ Represents a raw SQL expression that can be used in queries.
     // Use SqlExpression.of() for column references to avoid single-quote wrapping
     String expr = SqlExpression.multiply(SqlExpression.of("price"), SqlExpression.of("quantity"), SqlExpression.of("tax_rate"));
     // Returns: "price * quantity * tax_rate"
-    
+
     String expr2 = SqlExpression.multiply(SqlExpression.of("hours"), 60);
     // Returns: "hours * 60"
     ```
@@ -14921,7 +14921,7 @@ Represents a raw SQL expression that can be used in queries.
     // Use SqlExpression.of() for column references to avoid single-quote wrapping
     String expr = SqlExpression.divide(SqlExpression.of("total"), SqlExpression.of("count"));
     // Returns: "total / count"
-    
+
     String expr2 = SqlExpression.divide(SqlExpression.of("distance"), SqlExpression.of("time"), 60);
     // Returns: "distance / time / 60"
     ```
@@ -14938,7 +14938,7 @@ Represents a raw SQL expression that can be used in queries.
     // Use SqlExpression.of() for column references to avoid single-quote wrapping
     String expr = SqlExpression.modulus(SqlExpression.of("value"), 10);
     // Returns: "value % 10"
-    
+
     String expr2 = SqlExpression.modulus(SqlExpression.of("id"), SqlExpression.of("batch_size"));
     // Returns: "id % batch_size"
     ```
@@ -14983,7 +14983,7 @@ Represents a raw SQL expression that can be used in queries.
     // Use SqlExpression.of() for column references to avoid single-quote wrapping
     String expr = SqlExpression.bitwiseAnd(SqlExpression.of("permissions"), SqlExpression.of("mask"));
     // Returns: "permissions & mask"
-    
+
     String expr2 = SqlExpression.bitwiseAnd(SqlExpression.of("flags"), 0xFF);
     // Returns: "flags & 255"
     ```
@@ -15329,7 +15329,7 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.concat("firstName", "' '");
     // Returns: "CONCAT(firstName, ' ')"
-    
+
     String expr2 = SqlExpression.concat("city", "', '");
     // Returns: "CONCAT(city, ', ')"
     ```
@@ -15347,7 +15347,7 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     String expr = SqlExpression.replace("email", "'@'", "'_at_'");
     // Returns: "REPLACE(email, '@', '_at_')"
-    
+
     String expr2 = SqlExpression.replace("phone", "'-'", "''");
     // Returns: "REPLACE(phone, '-', '')"
     ```
@@ -15499,7 +15499,7 @@ Represents a raw SQL expression that can be used in queries.
   - ```java
     SqlExpression expr = new SqlExpression("price * quantity");
     String literal = expr.literal();   // Returns "price * quantity"
-    
+
     SqlExpression expr2 = SqlExpression.of("CURRENT_TIMESTAMP");
     String literal2 = expr2.literal();   // Returns "CURRENT_TIMESTAMP"
     ```
@@ -15642,12 +15642,12 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE status = 'active'");
     String sql = rawQuery.rawSql();
     // Returns: "SELECT id FROM users WHERE status = 'active'"
-    
+
     // Structured subquery returns null for rawSql()
     SubQuery structured = new SubQuery("users", Arrays.asList("id"), Filters.equal("status", "active"));
     String structuredSql = structured.rawSql();
     // Returns: null
-    
+
     // Builder-backed snapshot returns the SQL rendered by its source builder
     SubQuery built = PSC.select("id").from("users").toSubQuery();
     String builtSql = built.rawSql();
@@ -15665,12 +15665,12 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.equal("active", true));
     String entityName = subQuery.entityName();
     // Returns: "users"
-    
+
     // Raw SQL subquery with entity name
     SubQuery rawQuery = new SubQuery("orders", "SELECT order_id FROM orders WHERE total > 1000");
     String name = rawQuery.entityName();
     // Returns: "orders"
-    
+
     // Raw SQL subquery without entity name
     SubQuery simpleRaw = new SubQuery("SELECT id FROM users");
     String emptyName = simpleRaw.entityName();
@@ -15688,7 +15688,7 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery subQuery = new SubQuery(Product.class, Arrays.asList("id", "name"), Filters.equal("active", true));
     Class<?> entityClass = subQuery.entityClass();
     // Returns: Product.class
-    
+
     // Subquery created with entity name string returns null
     SubQuery namedQuery = new SubQuery("products", Arrays.asList("id"), Filters.equal("active", true));
     Class<?> clazz = namedQuery.entityClass();
@@ -15706,7 +15706,7 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery subQuery = new SubQuery("users", Arrays.asList("id", "email", "name"), Filters.equal("active", true));
     Collection<String> propNames = subQuery.selectPropNames();
     // Returns: ["id", "email", "name"]
-    
+
     // Raw SQL subquery returns null
     SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE active = true");
     Collection<String> rawProps = rawQuery.selectPropNames();
@@ -15725,7 +15725,7 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), activeCondition);
     Condition condition = subQuery.condition();
     // Returns the wrapped WHERE condition: WHERE active = true
-    
+
     // Raw SQL subquery returns null for condition()
     SubQuery rawQuery = new SubQuery("SELECT id FROM users WHERE active = true");
     Condition rawCondition = rawQuery.condition();
@@ -15746,17 +15746,17 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery structured = Filters.subQuery("users", Arrays.asList("id"), cond);
     List<Object> params = structured.parameters();
     // returns ["active", 18, 65]
-    
+
     // Raw SQL subquery with positional bindings
     SubQuery raw = Filters.subQuery("SELECT id FROM users WHERE status = ?", Arrays.asList("active"));
     List<Object> rawParams = raw.parameters();
     // returns ["active"] (immutable)
-    
+
     // Structured subquery without a condition: also empty
     SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
     List<Object> noCondParams = noCond.parameters();
     // returns [] (empty immutable list)
-    
+
     // Builder-backed snapshot: parameters from the source builder are retained
     SubQuery built = PSC.select("id")
         .from("users")
@@ -15779,18 +15779,18 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery raw = Filters.subQuery("SELECT user_id FROM users");
     String rawStr = raw.toSql(NamingPolicy.SNAKE_CASE);
     // returns "SELECT user_id FROM users"
-    
+
     // Structured subquery with NO_CHANGE: names rendered verbatim
     SubQuery sq = Filters.subQuery("users", Arrays.asList("id", "name"), Filters.equal("status", "active"));
     String s1 = sq.toSql(NamingPolicy.NO_CHANGE);
     // returns "SELECT id, name FROM users WHERE status = 'active'"
-    
+
     // Structured subquery with SNAKE_CASE: props, entity, and condition are all converted
     SubQuery sq2 = Filters.subQuery("userAccount", Arrays.asList("firstName", "lastName"),
                                     Filters.equal("isActive", true));
     String s2 = sq2.toSql(NamingPolicy.SNAKE_CASE);
     // returns "SELECT first_name, last_name FROM user_account WHERE is_active = true"
-    
+
     // null naming policy behaves like NO_CHANGE
     SubQuery sq3 = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
     String s3 = sq3.toSql((NamingPolicy) null);
@@ -15829,19 +15829,19 @@ Represents a complete or structured SELECT used within SQL conditions.
     SubQuery b = Filters.subQuery("SELECT id FROM users");
     boolean eq = a.equals(b);
     // returns true
-    
+
     // Different raw SQL: not equal
     SubQuery c = Filters.subQuery("SELECT id FROM customers");
     boolean ne = a.equals(c);
     // returns false
-    
+
     // A class-based subquery is NOT equal to a name-based one, even with the same simple name,
     // because the entity class is part of identity.
     SubQuery classBased = Filters.subQuery(Product.class, Arrays.asList("id"), Filters.equal("active", true));
     SubQuery nameBased = Filters.subQuery("Product", Arrays.asList("id"), Filters.equal("active", true));
     boolean differ = classBased.equals(nameBased);
     // returns false
-    
+
     // Comparison with null or a different type
     boolean vsNull = a.equals(null);   // returns false
     boolean vsString = a.equals("x");  // returns false
@@ -15881,7 +15881,7 @@ Represents a UNION clause in SQL queries.
     Union union = new Union(subQuery);
     SubQuery retrieved = union.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = union.subQuery() == union.condition();
     // returns true
@@ -15921,7 +15921,7 @@ Represents a UNION ALL clause in SQL queries.
     UnionAll unionAll = new UnionAll(subQuery);
     SubQuery retrieved = unionAll.subQuery();
     // returns the subquery passed to the constructor
-    
+
     // The wrapped subquery is also what condition() returns
     boolean sameAsCondition = unionAll.subQuery() == unionAll.condition();
     // returns true
@@ -15965,10 +15965,10 @@ Represents a USING clause in SQL JOIN operations.
     Using using = new Using("company_id", "branch_id");
     List<String> cols = using.columnNames();
     // cols = ["company_id", "branch_id"]
-    
+
     // Edge: the returned list is immutable
     cols.add("extra");   // throws UnsupportedOperationException
-    
+
     // Edge: an uninitialized instance (created only via the package-private default
     // constructor, e.g. during Kryo deserialization) returns an empty list
     ```

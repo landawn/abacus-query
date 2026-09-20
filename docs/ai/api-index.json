@@ -5,7 +5,7 @@
     "generated_at": "2026-09-20",
     "java_target": "17",
     "source": {
-      "git_sha": "417ab8a8a4c038b041b63592c99ee215ac7da686"
+      "git_sha": "4986c32bdf620aac68d88f56178a766e8cd78683"
     }
   },
   "packages": [
@@ -20186,7 +20186,7 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Builds the immutable configuration.",
-              "returns": "a new tokenizer configuration",
+              "returns": "an immutable tokenizer configuration; an unchanged builder may reuse its previous result",
               "contract": [],
               "examples": [],
               "see_also": []

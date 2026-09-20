@@ -1,0 +1,1122 @@
+[
+  {
+    "case": "array_positional_4096",
+    "before": {
+      "version": "before",
+      "shape": "array_positional",
+      "size": 4096,
+      "ns": 26918.792,
+      "bytes": 57976,
+      "forkNs": [
+        26918.792,
+        26398.677,
+        28225.503
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_positional",
+      "size": 4096,
+      "ns": 25131.325,
+      "bytes": 57976,
+      "forkNs": [
+        25131.325,
+        25547.368,
+        25108.736
+      ]
+    },
+    "ratio": 0.9335978003767776
+  },
+  {
+    "case": "array_mybatis_1024",
+    "before": {
+      "version": "before",
+      "shape": "array_mybatis",
+      "size": 1024,
+      "ns": 103105.882,
+      "bytes": 280920,
+      "forkNs": [
+        103105.882,
+        112545.238,
+        100193.548
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_mybatis",
+      "size": 1024,
+      "ns": 92061.972,
+      "bytes": 231656,
+      "forkNs": [
+        91892.929,
+        97366.071,
+        92061.972
+      ]
+    },
+    "ratio": 0.8928876821983832
+  },
+  {
+    "case": "quoted_and_comments_2",
+    "before": {
+      "version": "before",
+      "shape": "quoted_and_comments",
+      "size": 2,
+      "ns": 1848.34,
+      "bytes": 1432,
+      "forkNs": [
+        1688.037,
+        2162.891,
+        1848.34
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "quoted_and_comments",
+      "size": 2,
+      "ns": 1510.059,
+      "bytes": 1192,
+      "forkNs": [
+        1480.273,
+        1510.498,
+        1510.059
+      ]
+    },
+    "ratio": 0.8169811831156606
+  },
+  {
+    "case": "array_named_4096",
+    "before": {
+      "version": "before",
+      "shape": "array_named",
+      "size": 4096,
+      "ns": 208450,
+      "bytes": 453056,
+      "forkNs": [
+        202382.222,
+        208450,
+        238890.909
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_named",
+      "size": 4096,
+      "ns": 194276.596,
+      "bytes": 403840,
+      "forkNs": [
+        191484,
+        200222.857,
+        194276.596
+      ]
+    },
+    "ratio": 0.9320057375869513
+  },
+  {
+    "case": "no_parameters_0",
+    "before": {
+      "version": "before",
+      "shape": "no_parameters",
+      "size": 0,
+      "ns": 1162.988,
+      "bytes": 1184,
+      "forkNs": [
+        1031.543,
+        1162.988,
+        1537.793
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "no_parameters",
+      "size": 0,
+      "ns": 879.932,
+      "bytes": 1040,
+      "forkNs": [
+        885.889,
+        872.656,
+        879.932
+      ]
+    },
+    "ratio": 0.7566131378827641
+  },
+  {
+    "case": "where_positional_16",
+    "before": {
+      "version": "before",
+      "shape": "where_positional",
+      "size": 16,
+      "ns": 6200.146,
+      "bytes": 5680,
+      "forkNs": [
+        5702.002,
+        6657.715,
+        6200.146
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "where_positional",
+      "size": 16,
+      "ns": 5288.379,
+      "bytes": 4096,
+      "forkNs": [
+        5286.084,
+        5329.688,
+        5288.379
+      ]
+    },
+    "ratio": 0.8529442693768824
+  },
+  {
+    "case": "deep_unary_256",
+    "before": {
+      "version": "before",
+      "shape": "deep_unary",
+      "size": 256,
+      "ns": 31358.659,
+      "bytes": 37560,
+      "forkNs": [
+        27642.857,
+        31358.659,
+        36041.743
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "deep_unary",
+      "size": 256,
+      "ns": 28420.93,
+      "bytes": 12936,
+      "forkNs": [
+        28420.93,
+        26917.847,
+        28857.895
+      ]
+    },
+    "ratio": 0.9063184111284861
+  },
+  {
+    "case": "array_positional_1024",
+    "before": {
+      "version": "before",
+      "shape": "array_positional",
+      "size": 1024,
+      "ns": 7545.093,
+      "bytes": 14968,
+      "forkNs": [
+        6999.541,
+        8702.007,
+        7545.093
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_positional",
+      "size": 1024,
+      "ns": 6897.996,
+      "bytes": 14968,
+      "forkNs": [
+        6897.996,
+        7067.819,
+        6892.593
+      ]
+    },
+    "ratio": 0.9142360471898756
+  },
+  {
+    "case": "array_named_256",
+    "before": {
+      "version": "before",
+      "shape": "array_named",
+      "size": 256,
+      "ns": 13945.178,
+      "bytes": 26440,
+      "forkNs": [
+        12011.429,
+        13945.178,
+        14282.709
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_named",
+      "size": 256,
+      "ns": 11581.612,
+      "bytes": 26440,
+      "forkNs": [
+        11576.506,
+        11688.619,
+        11581.612
+      ]
+    },
+    "ratio": 0.8305101591388794
+  },
+  {
+    "case": "json_constructor_1",
+    "before": {
+      "version": "before",
+      "shape": "json_constructor",
+      "size": 1,
+      "ns": 1510.645,
+      "bytes": 1336,
+      "forkNs": [
+        1286.377,
+        1646.582,
+        1510.645
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "json_constructor",
+      "size": 1,
+      "ns": 1132.178,
+      "bytes": 1192,
+      "forkNs": [
+        1140.723,
+        1132.178,
+        1126.66
+      ]
+    },
+    "ratio": 0.7494666185635938
+  },
+  {
+    "case": "where_positional_128",
+    "before": {
+      "version": "before",
+      "shape": "where_positional",
+      "size": 128,
+      "ns": 48908.789,
+      "bytes": 39944,
+      "forkNs": [
+        40793.311,
+        55765.234,
+        48908.789
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "where_positional",
+      "size": 128,
+      "ns": 38804.736,
+      "bytes": 27608,
+      "forkNs": [
+        38427.295,
+        38804.736,
+        39103.809
+      ]
+    },
+    "ratio": 0.7934102805121591
+  },
+  {
+    "case": "array_mybatis_8192",
+    "before": {
+      "version": "before",
+      "shape": "array_mybatis",
+      "size": 8192,
+      "ns": 776236.364,
+      "bytes": 2165674.909,
+      "forkNs": [
+        776236.364,
+        840585.714,
+        761066.667
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_mybatis",
+      "size": 8192,
+      "ns": 790558.333,
+      "bytes": 1929106.909,
+      "forkNs": [
+        722318.182,
+        791390.909,
+        790558.333
+      ]
+    },
+    "ratio": 1.0184505257215701
+  },
+  {
+    "case": "geometric_cast_1",
+    "before": {
+      "version": "before",
+      "shape": "geometric_cast",
+      "size": 1,
+      "ns": 1210.059,
+      "bytes": 1088,
+      "forkNs": [
+        1057.422,
+        1210.059,
+        1268.75
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "geometric_cast",
+      "size": 1,
+      "ns": 988.232,
+      "bytes": 1040,
+      "forkNs": [
+        989.453,
+        983.154,
+        988.232
+      ]
+    },
+    "ratio": 0.8166808395293123
+  },
+  {
+    "case": "array_positional_8192",
+    "before": {
+      "version": "before",
+      "shape": "array_positional",
+      "size": 8192,
+      "ns": 68720.863,
+      "bytes": 213633.842,
+      "forkNs": [
+        61753.165,
+        68720.863,
+        68885.612
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_positional",
+      "size": 8192,
+      "ns": 55121.622,
+      "bytes": 164440.512,
+      "forkNs": [
+        56375.352,
+        54263.372,
+        55121.622
+      ]
+    },
+    "ratio": 0.8021089898128899
+  },
+  {
+    "case": "where_mybatis_2",
+    "before": {
+      "version": "before",
+      "shape": "where_mybatis",
+      "size": 2,
+      "ns": 2367.627,
+      "bytes": 3024,
+      "forkNs": [
+        1930.957,
+        2367.627,
+        2375.342
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "where_mybatis",
+      "size": 2,
+      "ns": 1745.898,
+      "bytes": 2640,
+      "forkNs": [
+        1745.898,
+        1754.932,
+        1666.553
+      ]
+    },
+    "ratio": 0.737404160368166
+  },
+  {
+    "case": "bare_concat_256",
+    "before": {
+      "version": "before",
+      "shape": "bare_concat",
+      "size": 256,
+      "ns": 15708.475,
+      "bytes": 10520,
+      "forkNs": [
+        13550.362,
+        15708.475,
+        16150.24
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "bare_concat",
+      "size": 256,
+      "ns": 12799.275,
+      "bytes": 10472,
+      "forkNs": [
+        12985.888,
+        12799.275,
+        12775.639
+      ]
+    },
+    "ratio": 0.8148006092252749
+  },
+  {
+    "case": "where_positional_2",
+    "before": {
+      "version": "before",
+      "shape": "where_positional",
+      "size": 2,
+      "ns": 1524.219,
+      "bytes": 1624,
+      "forkNs": [
+        1368.604,
+        1524.219,
+        1541.26
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "where_positional",
+      "size": 2,
+      "ns": 1250.488,
+      "bytes": 1384,
+      "forkNs": [
+        1249.219,
+        1259.668,
+        1250.488
+      ]
+    },
+    "ratio": 0.8204122898349909
+  },
+  {
+    "case": "deep_unary_4096",
+    "before": {
+      "version": "before",
+      "shape": "deep_unary",
+      "size": 4096,
+      "ns": 486708.696,
+      "bytes": 576664,
+      "forkNs": [
+        425392,
+        506163.636,
+        486708.696
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "deep_unary",
+      "size": 4096,
+      "ns": 404168,
+      "bytes": 183400,
+      "forkNs": [
+        411132,
+        404168,
+        404050
+      ]
+    },
+    "ratio": 0.8304104761670418
+  },
+  {
+    "case": "array_positional_256",
+    "before": {
+      "version": "before",
+      "shape": "array_positional",
+      "size": 256,
+      "ns": 2510.795,
+      "bytes": 4216,
+      "forkNs": [
+        2510.795,
+        2426.936,
+        2555.51
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_positional",
+      "size": 256,
+      "ns": 2214.97,
+      "bytes": 4216,
+      "forkNs": [
+        2354.659,
+        2203.053,
+        2214.97
+      ]
+    },
+    "ratio": 0.8821787521482238
+  },
+  {
+    "case": "where_named_16",
+    "before": {
+      "version": "before",
+      "shape": "where_named",
+      "size": 16,
+      "ns": 6981.689,
+      "bytes": 9632,
+      "forkNs": [
+        5799.365,
+        6981.689,
+        7491.65
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "where_named",
+      "size": 16,
+      "ns": 5303.613,
+      "bytes": 8816,
+      "forkNs": [
+        5368.75,
+        5303.613,
+        5202.246
+      ]
+    },
+    "ratio": 0.7596461257440714
+  },
+  {
+    "case": "bare_concat_1024",
+    "before": {
+      "version": "before",
+      "shape": "bare_concat",
+      "size": 1024,
+      "ns": 57330.189,
+      "bytes": 46440,
+      "forkNs": [
+        50996.907,
+        57330.189,
+        63551.515
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "bare_concat",
+      "size": 1024,
+      "ns": 50443.956,
+      "bytes": 46392,
+      "forkNs": [
+        51926.596,
+        50443.956,
+        49929.439
+      ]
+    },
+    "ratio": 0.879884697397387
+  },
+  {
+    "case": "join_positional_4",
+    "before": {
+      "version": "before",
+      "shape": "join_positional",
+      "size": 4,
+      "ns": 4360.449,
+      "bytes": 4008,
+      "forkNs": [
+        3754.346,
+        4360.449,
+        4991.943
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "join_positional",
+      "size": 4,
+      "ns": 3326.27,
+      "bytes": 3192,
+      "forkNs": [
+        3326.27,
+        3315.869,
+        3370.654
+      ]
+    },
+    "ratio": 0.7628274060767596
+  },
+  {
+    "case": "deep_unary_8192",
+    "before": {
+      "version": "before",
+      "shape": "deep_unary",
+      "size": 8192,
+      "ns": 908818.182,
+      "bytes": 1199503.333,
+      "forkNs": [
+        848116.667,
+        908818.182,
+        1021033.333
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "deep_unary",
+      "size": 8192,
+      "ns": 815691.667,
+      "bytes": 413023.333,
+      "forkNs": [
+        815691.667,
+        817700,
+        800825
+      ]
+    },
+    "ratio": 0.8975300925482584
+  },
+  {
+    "case": "array_mybatis_4096",
+    "before": {
+      "version": "before",
+      "shape": "array_mybatis",
+      "size": 4096,
+      "ns": 395221.053,
+      "bytes": 1037720,
+      "forkNs": [
+        395221.053,
+        436147.619,
+        392815
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_mybatis",
+      "size": 4096,
+      "ns": 370785.714,
+      "bytes": 911744,
+      "forkNs": [
+        369507.143,
+        393888.889,
+        370785.714
+      ]
+    },
+    "ratio": 0.9381729823992954
+  },
+  {
+    "case": "where_named_2",
+    "before": {
+      "version": "before",
+      "shape": "where_named",
+      "size": 2,
+      "ns": 1687.5,
+      "bytes": 2032,
+      "forkNs": [
+        1319.385,
+        1706.934,
+        1687.5
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "where_named",
+      "size": 2,
+      "ns": 1153.467,
+      "bytes": 1888,
+      "forkNs": [
+        1197.363,
+        1148.975,
+        1153.467
+      ]
+    },
+    "ratio": 0.683536
+  },
+  {
+    "case": "array_mybatis_256",
+    "before": {
+      "version": "before",
+      "shape": "array_mybatis",
+      "size": 256,
+      "ns": 24526.113,
+      "bytes": 58232,
+      "forkNs": [
+        24366.102,
+        26307.955,
+        24526.113
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_mybatis",
+      "size": 256,
+      "ns": 24651.63,
+      "bytes": 58184,
+      "forkNs": [
+        23755.325,
+        24712,
+        24651.63
+      ]
+    },
+    "ratio": 1.0051176882370232
+  },
+  {
+    "case": "jdbc_escape_1",
+    "before": {
+      "version": "before",
+      "shape": "jdbc_escape",
+      "size": 1,
+      "ns": 1582.666,
+      "bytes": 1368,
+      "forkNs": [
+        1450.146,
+        1582.666,
+        1791.406
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "jdbc_escape",
+      "size": 1,
+      "ns": 1306.006,
+      "bytes": 1176,
+      "forkNs": [
+        1307.666,
+        1306.006,
+        1288.867
+      ]
+    },
+    "ratio": 0.8251936921624652
+  },
+  {
+    "case": "bare_concat_8192",
+    "before": {
+      "version": "before",
+      "shape": "bare_concat",
+      "size": 8192,
+      "ns": 440080.769,
+      "bytes": 450128.308,
+      "forkNs": [
+        395470.37,
+        446600,
+        440080.769
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "bare_concat",
+      "size": 8192,
+      "ns": 405695.652,
+      "bytes": 450055.04,
+      "forkNs": [
+        405695.652,
+        405916,
+        399217.857
+      ]
+    },
+    "ratio": 0.9218663494927678
+  },
+  {
+    "case": "array_named_8192",
+    "before": {
+      "version": "before",
+      "shape": "array_named",
+      "size": 8192,
+      "ns": 445318.182,
+      "bytes": 986725.455,
+      "forkNs": [
+        411231.818,
+        486988.235,
+        445318.182
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_named",
+      "size": 8192,
+      "ns": 399776.471,
+      "bytes": 914045.455,
+      "forkNs": [
+        393027.273,
+        399776.471,
+        407645.833
+      ]
+    },
+    "ratio": 0.8977321994905657
+  },
+  {
+    "case": "deep_unary_1024",
+    "before": {
+      "version": "before",
+      "shape": "deep_unary",
+      "size": 1024,
+      "ns": 115052,
+      "bytes": 145400,
+      "forkNs": [
+        104916.842,
+        115052,
+        116113.924
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "deep_unary",
+      "size": 1024,
+      "ns": 104738.71,
+      "bytes": 47048,
+      "forkNs": [
+        104222.5,
+        105962.376,
+        104738.71
+      ]
+    },
+    "ratio": 0.9103597503737441
+  },
+  {
+    "case": "bare_concat_4096",
+    "before": {
+      "version": "before",
+      "shape": "bare_concat",
+      "size": 4096,
+      "ns": 220000,
+      "bytes": 158072,
+      "forkNs": [
+        197079.63,
+        220000,
+        240805.882
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "bare_concat",
+      "size": 4096,
+      "ns": 192948.077,
+      "bytes": 158024,
+      "forkNs": [
+        192948.077,
+        197853.846,
+        189538.462
+      ]
+    },
+    "ratio": 0.8770367136363636
+  },
+  {
+    "case": "array_named_1024",
+    "before": {
+      "version": "before",
+      "shape": "array_named",
+      "size": 1024,
+      "ns": 52923.81,
+      "bytes": 104680,
+      "forkNs": [
+        45818.349,
+        52923.81,
+        53169.892
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "array_named",
+      "size": 1024,
+      "ns": 47350.761,
+      "bytes": 104680,
+      "forkNs": [
+        47350.761,
+        47500.51,
+        46055.897
+      ]
+    },
+    "ratio": 0.8946967536917694
+  },
+  {
+    "case": "join_mybatis_4",
+    "before": {
+      "version": "before",
+      "shape": "join_mybatis",
+      "size": 4,
+      "ns": 5721.729,
+      "bytes": 6688,
+      "forkNs": [
+        4731.299,
+        5721.729,
+        6033.936
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "join_mybatis",
+      "size": 4,
+      "ns": 4226.123,
+      "bytes": 5632,
+      "forkNs": [
+        4226.123,
+        4011.914,
+        4263.867
+      ]
+    },
+    "ratio": 0.7386094308206487
+  },
+  {
+    "case": "json_operator_1",
+    "before": {
+      "version": "before",
+      "shape": "json_operator",
+      "size": 1,
+      "ns": 1683.252,
+      "bytes": 1320,
+      "forkNs": [
+        1436.865,
+        1683.252,
+        1948.975
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "json_operator",
+      "size": 1,
+      "ns": 1299.219,
+      "bytes": 1176,
+      "forkNs": [
+        1277.832,
+        1303.564,
+        1299.219
+      ]
+    },
+    "ratio": 0.7718505607003586
+  },
+  {
+    "case": "where_mybatis_16",
+    "before": {
+      "version": "before",
+      "shape": "where_mybatis",
+      "size": 16,
+      "ns": 12043.994,
+      "bytes": 18040,
+      "forkNs": [
+        10659.57,
+        13190.283,
+        12043.994
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "where_mybatis",
+      "size": 16,
+      "ns": 9248.682,
+      "bytes": 15640,
+      "forkNs": [
+        9248.682,
+        9472.266,
+        9208.887
+      ]
+    },
+    "ratio": 0.7679082204790205
+  },
+  {
+    "case": "join_named_4",
+    "before": {
+      "version": "before",
+      "shape": "join_named",
+      "size": 4,
+      "ns": 3811.035,
+      "bytes": 4392,
+      "forkNs": [
+        3489.6,
+        3811.035,
+        4880.469
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "join_named",
+      "size": 4,
+      "ns": 3042.529,
+      "bytes": 3768,
+      "forkNs": [
+        3075.244,
+        3042.529,
+        2972.119
+      ]
+    },
+    "ratio": 0.7983471681577314
+  },
+  {
+    "case": "cached_positional_same_2",
+    "before": {
+      "version": "before",
+      "shape": "cached_positional_same",
+      "size": 2,
+      "ns": 13.087,
+      "bytes": 0,
+      "forkNs": [
+        13.087,
+        12.952,
+        14.417
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "cached_positional_same",
+      "size": 2,
+      "ns": 12.474,
+      "bytes": 0,
+      "forkNs": [
+        12.614,
+        12.474,
+        12.179
+      ]
+    },
+    "ratio": 0.9531596240544051
+  },
+  {
+    "case": "cached_positional_equal_2",
+    "before": {
+      "version": "before",
+      "shape": "cached_positional_equal",
+      "size": 2,
+      "ns": 19.126,
+      "bytes": 0,
+      "forkNs": [
+        17.558,
+        24.756,
+        19.126
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "cached_positional_equal",
+      "size": 2,
+      "ns": 16.366,
+      "bytes": 0,
+      "forkNs": [
+        16.408,
+        16.366,
+        16.197
+      ]
+    },
+    "ratio": 0.8556938199309839
+  },
+  {
+    "case": "cached_named_same_2",
+    "before": {
+      "version": "before",
+      "shape": "cached_named_same",
+      "size": 2,
+      "ns": 13.581,
+      "bytes": 0,
+      "forkNs": [
+        12.47,
+        19.221,
+        13.581
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "cached_named_same",
+      "size": 2,
+      "ns": 11.947,
+      "bytes": 0,
+      "forkNs": [
+        12.286,
+        11.947,
+        11.802
+      ]
+    },
+    "ratio": 0.8796848538399233
+  },
+  {
+    "case": "cached_named_equal_2",
+    "before": {
+      "version": "before",
+      "shape": "cached_named_equal",
+      "size": 2,
+      "ns": 17.706,
+      "bytes": 0,
+      "forkNs": [
+        17.427,
+        32.19,
+        17.706
+      ]
+    },
+    "current": {
+      "version": "current",
+      "shape": "cached_named_equal",
+      "size": 2,
+      "ns": 15.748,
+      "bytes": 0,
+      "forkNs": [
+        15.925,
+        15.748,
+        15.593
+      ]
+    },
+    "ratio": 0.8894160171693212
+  }
+]
