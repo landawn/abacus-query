@@ -1,5 +1,6 @@
 package com.landawn.abacus.query;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -7,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.util.ImmutableList;
+import com.landawn.abacus.util.Strings;
 
 @Tag("2025")
 public class ParsedSqlTest extends TestBase {
@@ -1596,16 +1599,27 @@ public class ParsedSqlTest extends TestBase {
     @Test
     public void testParse_EscapedQuoteInsideSubscriptLiteralDoesNotEndTheLiteral() {
         // Where a literal inside a subscript ends depends on the dialect once it contains a backslash: under
-        // MySQL / PostgreSQL E'' semantics "\'" is an escaped quote, under standard-conforming strings "'a\'"
-        // is a complete literal. Committing to either reading corrupts the other dialect, so the scanners
-        // evaluate a subscript token under BOTH readings and bind only when they agree; a token on which they
-        // disagree is left verbatim (nothing bound, nothing counted) so the leftover marker fails loudly at
-        // the driver. The E prefix does not change the rule (by design, fail-safe): under the standard
-        // reading E'it\'s ...' ends at its first \', so the readings disagree and the token stays verbatim.
+        // MySQL "\'" is an escaped quote, under standard-conforming strings "'a\'" is a complete literal.
+        // Committing to either reading corrupts the other dialect, so the scanners evaluate a subscript token
+        // under BOTH readings and bind only when they agree; a token on which they disagree is left verbatim
+        // (nothing bound, nothing counted) so the leftover marker fails loudly at the driver.
+        ParsedSql ambiguous = ParsedSql.parse("SELECT ARRAY['it\\'s :literal', :id] FROM t");
+        assertEquals("SELECT ARRAY['it\\'s :literal', :id] FROM t", ambiguous.parameterizedSql());
+        assertEquals(List.of(), ambiguous.namedParameters());
+        assertEquals(0, ambiguous.parameterCount());
+
+        // A PostgreSQL escape string is the exception: that syntax exists only in PostgreSQL and always
+        // processes backslash escapes, so both readings see the same literal and the marker next to it is
+        // bound with the literal left intact.
         ParsedSql escaped = ParsedSql.parse("SELECT ARRAY[E'it\\'s :literal', :id] FROM t");
-        assertEquals("SELECT ARRAY[E'it\\'s :literal', :id] FROM t", escaped.parameterizedSql());
-        assertEquals(List.of(), escaped.namedParameters());
-        assertEquals(0, escaped.parameterCount());
+        assertEquals("SELECT ARRAY[E'it\\'s :literal', ?] FROM t", escaped.parameterizedSql());
+        assertEquals(List.of("id"), escaped.namedParameters());
+        assertEquals(1, escaped.parameterCount());
+
+        // The prefix must be a standalone E: a name that merely ends with it is not an escape string, so
+        // "code_E'it\'s ...'" stays ambiguous and verbatim.
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY[code_E'it\\'s :literal', :id] FROM t").parameterCount());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT ARRAY[e'it\\'s :literal', :id] FROM t").namedParameters());
 
         // Agree cases: no backslash, doubled quotes, or an escaped backslash right before the closing quote
         // (both readings: the pair is consumed / is two ordinary characters, then the quote closes).
@@ -1645,9 +1659,15 @@ public class ParsedSqlTest extends TestBase {
         assertEquals("SELECT ARRAY['a\\'', ?] FROM t", positionalDisagree.parameterizedSql());
         assertEquals(0, positionalDisagree.parameterCount());
         assertEquals(0, positionalDisagree.positionalParameterOffsets().length);
-        assertEquals(0, ParsedSql.parse("SELECT ARRAY[E'a\\'?', ?] FROM t").parameterCount());
-        assertEquals(0, ParsedSql.parse("SELECT ARRAY[E'it\\'s ?', ?, ?] FROM t").parameterCount());
-        assertEquals(0, ParsedSql.parse("SELECT ARRAY[E'a\\'#{x}', #{id}] FROM t").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY['a\\'?', ?] FROM t").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY['it\\'s ?', ?, ?] FROM t").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY['a\\'#{x}', #{id}] FROM t").parameterCount());
+
+        // The same shapes with an escape-string prefix: the markers inside the literal stay literal and only
+        // the ones next to it are counted.
+        assertEquals(1, ParsedSql.parse("SELECT ARRAY[E'a\\'?', ?] FROM t").parameterCount());
+        assertEquals(2, ParsedSql.parse("SELECT ARRAY[E'it\\'s ?', ?, ?] FROM t").parameterCount());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT ARRAY[E'a\\'#{x}', #{id}] FROM t").namedParameters());
 
         // A disagreeing subscript next to an ordinary top-level binding: the tokenizer closes the bracket
         // group under the backslash reading, so ":id" outside it is its own token and is bound alone while
@@ -1665,8 +1685,11 @@ public class ParsedSqlTest extends TestBase {
         // The mixed-style guard is unchanged for unambiguous tokens; an ambiguous token contributes no
         // marker to it, so the "?" it holds verbatim cannot clash with a named binding elsewhere.
         assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY['it''s :literal', ?] FROM t WHERE id = :id"));
-        ParsedSql verbatimQuestionMark = ParsedSql.parse("SELECT ARRAY[E'it\\'s :literal', ?] FROM t WHERE id = :id");
-        assertEquals("SELECT ARRAY[E'it\\'s :literal', ?] FROM t WHERE id = ?", verbatimQuestionMark.parameterizedSql());
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[E'it''s :literal', ?] FROM t WHERE id = :id"));
+        // An escape string is unambiguous, so the "?" next to it IS a placeholder and does clash.
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[E'it\\'s :literal', ?] FROM t WHERE id = :id"));
+        ParsedSql verbatimQuestionMark = ParsedSql.parse("SELECT ARRAY['it\\'s :literal', ?] FROM t WHERE id = :id");
+        assertEquals("SELECT ARRAY['it\\'s :literal', ?] FROM t WHERE id = ?", verbatimQuestionMark.parameterizedSql());
         assertEquals(List.of("id"), verbatimQuestionMark.namedParameters());
         assertEquals(1, verbatimQuestionMark.parameterCount());
     }
@@ -1700,5 +1723,146 @@ public class ParsedSqlTest extends TestBase {
 
         assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE name = :name").positionalParameterOffsets().length);
         assertEquals(0, ParsedSql.parse("SELECT [what?] FROM t").positionalParameterOffsets().length);
+    }
+
+    @Test
+    public void testPositionalParameterOffsetsSkipACommentSharingItsFirstCharacterWithTheNextToken() {
+        // The comment openers "/*" and "--" start with the operator tokens "/" and "-", so a comment
+        // immediately followed by such an operator must still be skipped while the token stream is walked back
+        // onto the original text. Otherwise the operator matches the opener, the comment is never skipped, and
+        // the offset of the real placeholder lands on the commented-out '?' instead.
+        final String block = "SELECT 1 /* ? */ / ?";
+        final ParsedSql blockParsed = ParsedSql.parse(block);
+        assertEquals(1, blockParsed.parameterCount());
+        assertArrayEquals(new int[] { block.lastIndexOf('?') }, blockParsed.positionalParameterOffsets());
+
+        final String line = "SELECT 1 -- ?\n -?";
+        final ParsedSql lineParsed = ParsedSql.parse(line);
+        assertEquals(1, lineParsed.parameterCount());
+        assertArrayEquals(new int[] { line.lastIndexOf('?') }, lineParsed.positionalParameterOffsets());
+
+        final String hash = "SELECT 1 # ?\n -?";
+        assertArrayEquals(new int[] { hash.lastIndexOf('?') }, ParsedSql.parse(hash).positionalParameterOffsets());
+
+        // Several comments in a row, and a comment that is itself followed by another comment opener.
+        final String chained = "SELECT ? /* ? */ /* ? */ / ? FROM t";
+        final ParsedSql chainedParsed = ParsedSql.parse(chained);
+        assertEquals(2, chainedParsed.parameterCount());
+        assertArrayEquals(new int[] { chained.indexOf('?'), chained.lastIndexOf('?') }, chainedParsed.positionalParameterOffsets());
+
+        // A "-" or "/" token that merely follows a comment-free expression is unaffected.
+        final String plain = "SELECT 1 / ? - ?";
+        assertArrayEquals(new int[] { plain.indexOf('?'), plain.lastIndexOf('?') }, ParsedSql.parse(plain).positionalParameterOffsets());
+    }
+
+    @Test
+    public void testParse_ManyMarkersInOneSubscriptToken() {
+        // A subscript is emitted as a single token, so all of its markers are extracted from that one token.
+        // The marker positions are therefore collected once per token instead of once per marker (which was
+        // quadratic in the number of markers); this asserts the result of that scan for a token holding many.
+        final int markerCount = 2000;
+        final StringBuilder named = new StringBuilder("SELECT ARRAY[");
+        final StringBuilder ibatis = new StringBuilder("SELECT ARRAY[");
+        final List<String> expectedNames = new ArrayList<>(markerCount);
+
+        for (int i = 0; i < markerCount; i++) {
+            if (i > 0) {
+                named.append(", ");
+                ibatis.append(", ");
+            }
+
+            named.append(':').append("id").append(i);
+            ibatis.append("#{id").append(i).append('}');
+            expectedNames.add("id" + i);
+        }
+
+        final ParsedSql namedParsed = ParsedSql.parse(named.append("] FROM t").toString());
+        assertEquals(markerCount, namedParsed.parameterCount());
+        assertEquals(expectedNames, namedParsed.namedParameters());
+        assertEquals(markerCount, Strings.countMatches(namedParsed.parameterizedSql(), '?'));
+
+        final ParsedSql ibatisParsed = ParsedSql.parse(ibatis.append("] FROM t").toString());
+        assertEquals(markerCount, ibatisParsed.parameterCount());
+        assertEquals(expectedNames, ibatisParsed.namedParameters());
+        assertEquals(markerCount, Strings.countMatches(ibatisParsed.parameterizedSql(), '?'));
+    }
+
+    @Test
+    public void testParse_CommentsInsideSubscriptsDoNotCreateParameters() {
+        final ParsedSql named = ParsedSql.parse("SELECT ARRAY[:first /* :ignored ? #{ignored} */, :last]");
+        assertEquals("SELECT ARRAY[? /* :ignored ? #{ignored} */, ?]", named.parameterizedSql());
+        assertEquals(List.of("first", "last"), named.namedParameters());
+        assertEquals(2, named.parameterCount());
+
+        final ParsedSql ibatis = ParsedSql.parse("SELECT ARRAY[#{first} /* #{ignored} :ignored ? */, #{last}]");
+        assertEquals("SELECT ARRAY[? /* #{ignored} :ignored ? */, ?]", ibatis.parameterizedSql());
+        assertEquals(List.of("first", "last"), ibatis.namedParameters());
+        assertEquals(2, ibatis.parameterCount());
+
+        final String positionalSql = "SELECT ARRAY[? /* ? :ignored #{ignored} */, ?]";
+        final ParsedSql positional = ParsedSql.parse(positionalSql);
+        assertEquals(positionalSql, positional.parameterizedSql());
+        assertEquals(2, positional.parameterCount());
+        Assertions.assertArrayEquals(new int[] { positionalSql.indexOf('?'), positionalSql.lastIndexOf('?') }, positional.positionalParameterOffsets());
+
+        final ParsedSql lineComment = ParsedSql.parse("SELECT ARRAY[:first -- :ignored ? #{ignored}\n, :last]");
+        assertEquals("SELECT ARRAY[? -- :ignored ? #{ignored}\n, ?]", lineComment.parameterizedSql());
+        assertEquals(List.of("first", "last"), lineComment.namedParameters());
+        assertEquals(2, lineComment.parameterCount());
+
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT arr[1][/* :ignored ? #{ignored} */ :id]").namedParameters());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT ARRAY['/* :literal */', :id]").namedParameters());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT ARRAY['-- :literal', :id]").namedParameters());
+    }
+
+    @Test
+    public void testParse_JsonQuestionOperatorAfterSupplementaryIdentifier() {
+        final String column = "\uD801\uDC00payload";
+        final ParsedSql named = ParsedSql.parse("SELECT " + column + " ? :key FROM events");
+        assertEquals("SELECT " + column + " ? ? FROM events", named.parameterizedSql());
+        assertEquals(List.of("key"), named.namedParameters());
+        assertEquals(1, named.parameterCount());
+
+        final String sql = "SELECT " + column + " ? ? FROM events";
+        final ParsedSql positional = ParsedSql.parse(sql);
+        assertEquals(1, positional.parameterCount());
+        Assertions.assertArrayEquals(new int[] { sql.lastIndexOf('?') }, positional.positionalParameterOffsets());
+        assertEquals(0, ParsedSql.parse("SELECT " + column + " ? 'key' FROM events").parameterCount());
+    }
+
+    @Test
+    public void testParse_RemovingBlockCommentsCannotCreateCommentOpenersOrOperators() {
+        assertEquals("SELECT 1- -2", ParsedSql.parse("SELECT 1-/* comment */-2").parameterizedSql());
+        assertEquals("SELECT 1/ *2", ParsedSql.parse("SELECT 1//* comment */*2").parameterizedSql());
+        assertEquals("SELECT 1< =2", ParsedSql.parse("SELECT 1</* comment */=2").parameterizedSql());
+        // Separate the placeholder from '-' because '?-' is a configured PostgreSQL operator.
+        final ParsedSql positional = ParsedSql.parse("SELECT ? -/* comment */- ?");
+        assertEquals("SELECT ? - - ?", positional.parameterizedSql());
+        assertEquals(2, positional.parameterCount());
+    }
+
+    @Test
+    public void testSubscriptOpeningOffsetsShareParameterParsingRules() {
+        final String sql = "SELECT scores[:a] /* [ignored] */ ['literal [text]', :b] FROM t WHERE id = :id";
+        Assertions.assertArrayEquals(new int[] { sql.indexOf('['), sql.indexOf("['literal") }, ParsedSql.subscriptOpeningOffsets(sql));
+
+        final String nested = "SELECT ARRAY[ARRAY[:id]] FROM t";
+        Assertions.assertArrayEquals(new int[] { nested.indexOf('['), nested.lastIndexOf('[') }, ParsedSql.subscriptOpeningOffsets(nested));
+
+        final String comments = "SELECT arr[/* [ignored] ' */ :id, '-- [literal]'] FROM t";
+        Assertions.assertArrayEquals(new int[] { comments.indexOf('[') }, ParsedSql.subscriptOpeningOffsets(comments));
+        final String lineComment = "SELECT arr[1 -- [ignored] '\n, :id] FROM t";
+        Assertions.assertArrayEquals(new int[] { lineComment.indexOf('[') }, ParsedSql.subscriptOpeningOffsets(lineComment));
+
+        assertEquals(0, ParsedSql.subscriptOpeningOffsets("SELECT [literal:param], t.[:param], 'arr[:param]', [#{param}] FROM t").length);
+        assertEquals(0, ParsedSql.subscriptOpeningOffsets("SELECT ARRAY['a\\'', :id] FROM t").length);
+        assertEquals(0, ParsedSql.subscriptOpeningOffsets("SELECT [a] [b:c] FROM t").length);
+
+        final String standalone = "SELECT [:id], [?] FROM t";
+        Assertions.assertArrayEquals(new int[] { standalone.indexOf('['), standalone.lastIndexOf('[') }, ParsedSql.subscriptOpeningOffsets(standalone));
+
+        final String custom = "SELECT  arr[:id]::jsonb FROM t";
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("::").build());
+        Assertions.assertArrayEquals(new int[] { custom.indexOf('[') }, ParsedSql.subscriptOpeningOffsets(custom, tokenizer));
     }
 }

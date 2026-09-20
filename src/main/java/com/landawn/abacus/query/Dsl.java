@@ -442,6 +442,11 @@ public final class Dsl {
      * their default value (for a composite ID, only when every ID property holds its default value).
      * Property names are rendered according to this DSL's naming policy.</p>
      *
+     * <p>A {@link Map} supplied through this overload is treated as explicit property/value pairs:
+     * its null values are retained. A {@link String} is treated as a single column name with an
+     * unbound placeholder. The selected property names and values are snapshotted before this method
+     * returns; mutable value objects themselves are not copied.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Account account = new Account();
@@ -471,7 +476,10 @@ public final class Dsl {
      * and are normally insertable. Properties whose value is {@code null} are also skipped, as are
      * ID properties still holding their default value (for a composite ID, only when every ID
      * property holds its default value). When {@code entity} is a {@code String} column name,
-     * {@code excludedPropNames} is ignored and the named column is always inserted.</p>
+     * {@code excludedPropNames} is ignored and the named column is always inserted. Null-value and
+     * default-ID omission applies only to bean inputs; a {@link Map} retains explicitly supplied null
+     * values for every non-excluded property. Property names and values are snapshotted before this
+     * method returns, but mutable value objects themselves are not copied.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

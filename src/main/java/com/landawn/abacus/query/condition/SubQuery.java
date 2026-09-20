@@ -166,7 +166,8 @@ public class SubQuery extends AbstractCondition {
      * }</pre>
      *
      * <p><b>&#9888;&#65039;</b> The entire argument is treated as complete raw query-expression text and is not
-     * parsed or syntax-validated. It is not an entity/table name (contrast with
+     * syntax-validated as a SELECT statement; it is scanned to validate placeholders. It is not an
+     * entity/table name (contrast with
      * {@link #SubQuery(String, java.util.Collection, Condition)},
      * whose first argument is an entity name). {@code new SubQuery("orders")} would use the text
      * {@code orders} as the whole subquery. Prefer the
@@ -191,9 +192,9 @@ public class SubQuery extends AbstractCondition {
      * deep-copied and {@code Date}/{@code Calendar} values cloned at construction, while every other binding
      * is kept by reference. A later mutation of the caller's array or date therefore never changes this
      * subquery: {@link #parameters()} exposes defensive copies, and {@link #equals(Object)}/{@link #hashCode()}
-     * are content-based <i>and</i> stable (array bindings are compared element-wise via
-     * {@link N#deepEquals(Object, Object)}/{@link N#deepHashCode(Object)}, every other binding through its own
-     * {@code equals}/{@code hashCode}), so the subquery stays findable in a {@code HashSet}. Markers inside
+     * compare array bindings by content via {@link N#deepEquals(Object, Object)}/{@link N#deepHashCode(Object)}
+     * and every other binding through its own {@code equals}/{@code hashCode}. Bindings retained by reference
+     * must not be mutated while the subquery is in use, particularly when it is stored in a {@code HashSet}. Markers inside
      * quoted text and comments, and PostgreSQL JSON {@code ?} operators, are not counted as placeholders.
      *
      * <p>Named ({@code :name}) and MyBatis ({@code #{name}}) markers are deliberately rejected because

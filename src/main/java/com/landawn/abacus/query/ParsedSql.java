@@ -74,16 +74,16 @@ import com.landawn.abacus.util.Strings;
  * <p>Markers inside quoted literals, quoted identifiers, and SQL comments are not parameters; this
  * also holds for a literal element inside a subscript ({@code ARRAY[':x']}), while a marker next to
  * such a literal ({@code ARRAY['a', :id]}, {@code ARRAY['a', #{id}]}) is still a parameter. Where a
- * literal inside a subscript ends depends on the dialect once it contains a backslash: MySQL and PostgreSQL
- * {@code E''} strings read {@code \'} as an escaped quote, standard-conforming strings read {@code 'a\'} as a
- * complete literal. The subscript scanners therefore evaluate the token under both readings and bind a
- * marker only when the readings agree on its position ({@code ARRAY['it''s :x', :id]} and
- * {@code ARRAY['a\\', :id]} bind {@code id}; {@code ARRAY[E'a\\b', ?]} counts one placeholder). A token on
- * which they disagree is left verbatim, by design and fail-safe: {@code ARRAY[E'it\'s :literal', :id]},
- * {@code ARRAY['a\'', #{id}]} and {@code ARRAY['a\'', ?]} bind and count nothing (the {@code E} prefix does
- * not change the rule, since under the standard reading that literal ends at its first {@code \'}), so a
- * leftover marker fails loudly at the driver instead of a literal being silently rewritten. Ordinary
- * bindings outside such a token are unaffected ({@code ARRAY['a\'', :x] AND id = :id} binds only
+ * literal inside a subscript ends depends on the dialect once it contains a backslash: MySQL reads {@code \'}
+ * as an escaped quote, standard-conforming strings read {@code 'a\'} as a complete literal. The subscript
+ * scanners therefore evaluate the token under both readings and bind a marker only when the readings agree on
+ * its position ({@code ARRAY['it''s :x', :id]} and {@code ARRAY['a\\', :id]} bind {@code id};
+ * {@code ARRAY[E'a\\b', ?]} counts one placeholder). A token on which they disagree is left verbatim, by
+ * design and fail-safe: {@code ARRAY['a\'', :id]}, {@code ARRAY['a\'', #{id}]} and {@code ARRAY['a\'', ?]}
+ * bind and count nothing, so a leftover marker fails loudly at the driver instead of a literal being silently
+ * rewritten. A PostgreSQL escape string is never ambiguous, since that syntax always processes backslash
+ * escapes: {@code ARRAY[E'it\'s :literal', :id]} binds {@code id} and keeps the literal intact. Ordinary
+ * bindings outside an ambiguous token are unaffected ({@code ARRAY['a\'', :x] AND id = :id} binds only
  * {@code id}). A chained
  * subscript, that is a bracket group that follows a subscript glued to an identifier
  * ({@code x['a', :b]['c', :d]}, {@code x[?]['c', ?]}, {@code x[#{a}]['c', #{b}]}), is inspected under the
@@ -107,7 +107,8 @@ import com.landawn.abacus.util.Strings;
  * output would over-count; bind by {@code parameterCount()} and keep {@code ?} out of bracket-quoted identifiers
  * that a JDBC driver would otherwise read as placeholders.
  * Comments are normally removed by {@link SqlParser} when parameter conversion is applied; markers
- * inside block comments retained by its keep-comments directive are still ignored. For an
+ * inside block comments retained by its keep-comments directive are still ignored. Block and dash-line
+ * comments embedded in a subscript token are preserved verbatim, and their markers are ignored as well. For an
  * unrecognized operation the token stream is not used to rebuild the SQL and no parameter
  * conversion is performed, so its comments remain in the normalized parameterized SQL.</p>
  *
@@ -227,56 +228,70 @@ public final class ParsedSql {
                         // A token may contain multiple iBatis markers and literal text between them
                         // (for example "#{a}x#{b}"). Scan the complete unquoted token instead of only
                         // consuming markers at its beginning, so no embedded binding is left as SQL text.
+                        // The marker positions are collected once for the whole token: the quoted-region check
+                        // behind them scans it under both escape readings, so asking for the next marker one at
+                        // a time made a token that holds many of them ("ARRAY[#{a},#{b},...]") take quadratic
+                        // time. Only a marker whose '}' lives in a following token ("#{ name }") replaces the
+                        // text being scanned, and the positions are then recollected for what remains.
+                        int[] markerIndexes = findUnquotedIbatisMarkerIndexes(word);
                         final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
-                        final StringBuilder ibatisTokenBuilder = new StringBuilder();
+                        int copiedFrom = 0;
+                        int markerCursor = 0;
 
-                        int parameterStartIndex;
+                        while (markerCursor < markerIndexes.length) {
+                            int markerStartIndex = markerIndexes[markerCursor++];
 
-                        while ((parameterStartIndex = indexOfUnquotedIbatisMarker(word)) >= 0) {
-                            rebuilt.append(word, 0, parameterStartIndex);
-                            ibatisTokenBuilder.setLength(0);
-                            ibatisTokenBuilder.append(word, parameterStartIndex, word.length());
-
-                            while (ibatisTokenBuilder.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER) < 0 && i < size - 1) {
-                                ibatisTokenBuilder.append(words.get(++i));
+                            if (markerStartIndex < copiedFrom) {
+                                continue; // part of a marker that was already consumed
                             }
 
-                            final String ibatisToken = ibatisTokenBuilder.toString();
-                            final int rightBracketIndex = ibatisToken.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER);
+                            rebuilt.append(word, copiedFrom, markerStartIndex);
 
-                            if (rightBracketIndex < 0) {
-                                throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
-                            }
+                            int closingIndex = word.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER, markerStartIndex);
 
-                            if (rightBracketIndex > 2) {
-                                final String namedParameter = extractIbatisNamedParameter(ibatisToken.substring(2, rightBracketIndex));
+                            if (closingIndex < 0) {
+                                // The '}' is in a following token: join tokens until it appears, and continue
+                                // in that joined text, whose marker now starts at 0.
+                                final StringBuilder ibatisTokenBuilder = new StringBuilder();
+                                ibatisTokenBuilder.append(word, markerStartIndex, word.length());
 
-                                if (Strings.isNotEmpty(namedParameter)) {
-                                    namedParameterList.add(namedParameter);
-                                    rebuilt.append(SK.QUESTION_MARK);
-                                    word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1) : Strings.EMPTY;
-                                    paramCount++;
-                                    type |= IBATIS_PARAMETER_TYPE;
-                                } else {
-                                    // empty/blank #{...} content — keep verbatim, no parameter.
-                                    // 'word' strictly shrinks (substring starts at rightBracketIndex + 1 >= 3),
-                                    // so continuing the loop cannot spin forever and lets us still extract
-                                    // any subsequent "#{...}" markers in the same token (e.g. "#{ }#{a}").
-                                    rebuilt.append(ibatisToken, 0, rightBracketIndex + 1);
-                                    word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1) : Strings.EMPTY;
-                                    continue;
+                                while (ibatisTokenBuilder.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER) < 0 && i < size - 1) {
+                                    ibatisTokenBuilder.append(words.get(++i));
                                 }
-                            } else {
-                                // rightBracketIndex == 2 means literal "#{}" — keep verbatim.
-                                // Continue (don't break) so a following "#{...}" marker in the same
-                                // token (e.g. "#{}#{a}") is still extracted instead of being lost.
-                                rebuilt.append(ibatisToken, 0, rightBracketIndex + 1);
-                                word = rightBracketIndex + 1 < ibatisToken.length() ? ibatisToken.substring(rightBracketIndex + 1) : Strings.EMPTY;
-                                continue;
+
+                                word = ibatisTokenBuilder.toString();
+                                closingIndex = word.indexOf(RIGHT_OF_IBATIS_NAMED_PARAMETER);
+
+                                if (closingIndex < 0) {
+                                    throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
+                                }
+
+                                markerStartIndex = 0;
+                                markerIndexes = findUnquotedIbatisMarkerIndexes(word);
+                                markerCursor = 0; // the marker being handled is skipped by the copiedFrom guard
                             }
+
+                            // Content between "#{" and "}"; empty for the literal "#{}".
+                            final String namedParameter = closingIndex > markerStartIndex + 2
+                                    ? extractIbatisNamedParameter(word.substring(markerStartIndex + 2, closingIndex))
+                                    : null;
+
+                            if (Strings.isNotEmpty(namedParameter)) {
+                                namedParameterList.add(namedParameter);
+                                rebuilt.append(SK.QUESTION_MARK);
+                                paramCount++;
+                                type |= IBATIS_PARAMETER_TYPE;
+                            } else {
+                                // Empty or blank "#{...}" content — keep verbatim, no parameter, and keep
+                                // scanning so a subsequent marker in the same token ("#{}#{a}", "#{ }#{a}")
+                                // is still extracted instead of being lost.
+                                rebuilt.append(word, markerStartIndex, closingIndex + 1);
+                            }
+
+                            copiedFrom = closingIndex + 1;
                         }
 
-                        rebuilt.append(word);
+                        rebuilt.append(word, copiedFrom, word.length());
                         word = rebuilt.toString();
                     }
 
@@ -289,31 +304,39 @@ public final class ParsedSql {
                         // ':' is not a token separator. Extract markers at safe boundaries so
                         // constructs such as ":a:b" and "array[:ids]" are parameterized, while
                         // PostgreSQL casts such as "::int" and quoted literal tokens are preserved.
-                        final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
-                        int copiedFrom = 0;
-                        int searchFrom = 0;
+                        // The candidate positions are collected once for the whole token: the quoted-region
+                        // check behind them scans the token under both escape readings, so asking for the
+                        // next marker one at a time made a token that holds many of them
+                        // ("ARRAY[:id0,:id1,...]") take quadratic time.
+                        final int[] markerIndexes = findUnquotedNamedParameterMarkerIndexes(word);
 
-                        while (true) {
-                            final int parameterStartIndex = findNextNamedParameterStartIndex(word, searchFrom);
+                        if (markerIndexes.length > 0) {
+                            final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
+                            int copiedFrom = 0;
+                            int searchFrom = 0;
 
-                            if (parameterStartIndex < 0) {
-                                break;
+                            for (final int parameterStartIndex : markerIndexes) {
+                                // A ':' the previous parameter's name swallowed is not a marker of its own,
+                                // and a boundary check rejects casts and qualified names.
+                                if (parameterStartIndex < searchFrom || !isNamedParameterStart(word, parameterStartIndex, searchFrom)) {
+                                    continue;
+                                }
+
+                                rebuilt.append(word, copiedFrom, parameterStartIndex);
+
+                                final int parameterEndIndex = findNamedParameterEndIndex(word, parameterStartIndex + 1);
+                                namedParameterList.add(word.substring(parameterStartIndex + 1, parameterEndIndex));
+                                rebuilt.append(SK.QUESTION_MARK);
+                                paramCount++;
+                                type |= NAMED_PARAMETER_TYPE;
+
+                                copiedFrom = parameterEndIndex;
+                                searchFrom = parameterEndIndex;
                             }
 
-                            rebuilt.append(word, copiedFrom, parameterStartIndex);
-
-                            final int parameterEndIndex = findNamedParameterEndIndex(word, parameterStartIndex + 1);
-                            namedParameterList.add(word.substring(parameterStartIndex + 1, parameterEndIndex));
-                            rebuilt.append(SK.QUESTION_MARK);
-                            paramCount++;
-                            type |= NAMED_PARAMETER_TYPE;
-
-                            copiedFrom = parameterEndIndex;
-                            searchFrom = parameterEndIndex;
+                            rebuilt.append(word, copiedFrom, word.length());
+                            word = rebuilt.toString();
                         }
-
-                        rebuilt.append(word, copiedFrom, word.length());
-                        word = rebuilt.toString();
                     }
 
                     if (Integer.bitCount(type) > 1) {
@@ -542,6 +565,13 @@ public final class ParsedSql {
      * {@code sql}. The tokenizer drops comments and collapses whitespace runs, so the token stream is walked
      * alongside the original text: whitespace and comments are skipped, then each non-blank token must be found
      * verbatim at the cursor. Returns {@code null} if a token cannot be located (never expected, guarded anyway).
+     *
+     * <p>A token is accepted at the cursor only when the cursor does not open a comment the tokenizer discarded,
+     * because the openers share their first character with ordinary operator tokens: without that guard the token
+     * {@code "/"} matches the {@code '/'} of a following {@code "/*"} and {@code "-"} matches the {@code '-'} of
+     * {@code "--"}, the comment is then never skipped, and the marker offsets land inside it ({@code "SELECT 1 /*
+     * ? *}{@code / / ?"} would report the commented-out {@code '?'}). A comment that the tokenizer kept as a token
+     * (the "Keep comments" marker) starts with an opener itself, so it is still matched rather than skipped.</p>
      */
     private static int[] resolvePositionalParameterOffsets(final String sql, final List<String> words, final IntList questionMarkTokenIndexes,
             final IntList questionMarkTokenOffsets) {
@@ -563,7 +593,11 @@ public final class ParsedSql {
                     cursor++;
                 }
 
-                if (sql.startsWith(word, cursor)) {
+                // A token may only be matched at the cursor when the cursor is not the start of a comment the
+                // tokenizer discarded: "/" and "-" are prefixes of the "/*" and "--" openers, so matching them
+                // first would skip the comment skipping below and resolve the markers inside the comment. A
+                // comment kept as a token starts with an opener itself, so it still matches here.
+                if (sql.startsWith(word, cursor) && (!startsWithCommentOpener(sql, cursor) || startsWithCommentOpener(word, 0))) {
                     break;
                 }
 
@@ -597,6 +631,16 @@ public final class ParsedSql {
         }
 
         return marker == markerCount ? offsets : null;
+    }
+
+    /**
+     * Returns {@code true} if a comment opener the tokenizer recognizes ({@code "--"}, {@code "#"} or
+     * {@code "/*"}) starts at {@code index} of {@code text}. Exactly the openers
+     * {@link #resolvePositionalParameterOffsets(String, List, IntList, IntList)} skips, so its token match and
+     * its comment skipping cannot disagree about where a comment begins.
+     */
+    private static boolean startsWithCommentOpener(final String text, final int index) {
+        return text.startsWith("--", index) || text.startsWith("#", index) || text.startsWith("/*", index);
     }
 
     /**
@@ -750,6 +794,99 @@ public final class ParsedSql {
     }
 
     /**
+     * Returns the original-text offsets of bracket openers recognized as subscripts by the default tokenizer.
+     *
+     * @param sql the SQL text to inspect
+     * @return sorted bracket-opening offsets
+     * @see #subscriptOpeningOffsets(String, SqlParser.Tokenizer)
+     */
+    static int[] subscriptOpeningOffsets(final String sql) {
+        return subscriptOpeningOffsets(sql, SqlParser.tokenizer());
+    }
+
+    /**
+     * Locates subscript brackets for builder placeholder rewriting using the same distinction between
+     * subscripts and quoted identifiers as parameter parsing. Identifier-rooted and chained subscripts,
+     * and standalone groups starting with a colon binding or positional marker, are recognized.
+     * Every unquoted nested opener is included; comments and literal content are excluded. A token with
+     * ambiguous backslash/doubled-quote readings is left opaque.
+     *
+     * <p>Standalone {@code [#{name}]} or custom-token groups remain bracket-quoted identifiers. Once a
+     * standalone {@code [?]} has been rendered into that shape, its original subscript role cannot be
+     * recovered from the resulting text alone.</p>
+     *
+     * @param sql the original SQL text to inspect
+     * @param tokenizer the tokenizer configured for that SQL
+     * @return sorted original-text offsets, or an empty array when no subscript is recognized
+     * @throws IllegalStateException if the token stream cannot be aligned with the original SQL text
+     */
+    static int[] subscriptOpeningOffsets(final String sql, final SqlParser.Tokenizer tokenizer) {
+        if (sql.indexOf('[') < 0) {
+            return N.EMPTY_INT_ARRAY;
+        }
+
+        final List<String> words = tokenizer.tokenize(sql);
+        final boolean[] chainedSubscripts = markChainedSubscriptTokens(words);
+        final IntList tokenIndexes = new IntList();
+        final IntList tokenOffsets = new IntList();
+
+        for (int i = 0; i < words.size(); i++) {
+            final String word = words.get(i);
+
+            if (word.indexOf('[') < 0 || isCommentOrSpaceToken(word) || !(chainedSubscripts[i] || !isQuotedToken(word) || isPositionalSubscriptToken(word))) {
+                continue;
+            }
+
+            for (final int opening : unambiguousSubscriptOpenings(word)) {
+                tokenIndexes.add(i);
+                tokenOffsets.add(opening);
+            }
+        }
+
+        if (tokenIndexes.isEmpty()) {
+            return N.EMPTY_INT_ARRAY;
+        }
+
+        final int[] offsets = resolvePositionalParameterOffsets(sql, words, tokenIndexes, tokenOffsets);
+
+        if (offsets == null) {
+            throw new IllegalStateException("Cannot locate subscript brackets in the original SQL text: " + sql);
+        }
+
+        return offsets;
+    }
+
+    /** Collects bracket openers only when both supported quote readings agree throughout the token. */
+    private static int[] unambiguousSubscriptOpenings(final String token) {
+        final IntList openings = new IntList();
+
+        for (int index = 0, len = token.length(); index < len; index++) {
+            final char ch = token.charAt(index);
+
+            if (isQuoteChar(ch)) {
+                final int end = skipQuotedRegion(token, index, true);
+
+                if (end != skipQuotedRegion(token, index, false)) {
+                    return N.EMPTY_INT_ARRAY;
+                }
+
+                index = end;
+            } else if (ch == '/' && index + 1 < len && token.charAt(index + 1) == '*') {
+                final int end = token.indexOf("*/", index + 2);
+                index = end < 0 ? len : end + 1;
+            } else if (ch == '-' && index + 1 < len && token.charAt(index + 1) == '-') {
+                while (index + 1 < len && token.charAt(index + 1) != '\r' && token.charAt(index + 1) != '\n') {
+                    index++;
+                }
+            } else if (ch == '[') {
+                openings.add(index);
+            }
+        }
+
+        return openings.toArray();
+    }
+
+    /**
      * Flags every token that continues a subscript chain: a bracket group whose chain of preceding bracket
      * groups is rooted in a subscript glued to an identifier, as in {@code "x[?][?]"},
      * {@code "x['a', :b]['c', :d]"} or {@code "x[?] ['c', ?]"}, where the tokenizer emits every group after
@@ -855,24 +992,37 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the index of the first {@code "#{"} in {@code token} that lies outside single-, double-
-     * or backtick-quoted regions, or {@code -1} if there is none, so a marker inside a literal element
-     * of a subscript ({@code "ARRAY['#{x}']"}) is not mistaken for a binding. A token whose quoting is
-     * ambiguous between the two escape readings (see
-     * {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}) yields {@code -1}: it is verbatim.
+     * Returns the indexes of every {@code "#{"} in {@code token} that lies outside single-, double- or
+     * backtick-quoted regions, in ascending order, so a marker inside a literal element of a subscript
+     * ({@code "ARRAY['#{x}']"}) is not mistaken for a binding. A token that holds none, and one whose quoting
+     * is ambiguous between the two escape readings (see
+     * {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}), yields an empty array: it is verbatim.
+     *
+     * <p>Collected once for the whole token, like
+     * {@link #findUnquotedNamedParameterMarkerIndexes(String)}: every reported index lies outside every quoted
+     * region under both readings, so the text following one of them reads identically to a fresh scan that
+     * started there.</p>
      */
-    private static int indexOfUnquotedIbatisMarker(final String token) {
+    private static int[] findUnquotedIbatisMarkerIndexes(final String token) {
         final int[] hashIndexes = findUnambiguousUnquotedMarkerIndexes(token, 0, '#');
 
-        if (hashIndexes != null) {
-            for (final int index : hashIndexes) {
-                if (index + 1 < token.length() && token.charAt(index + 1) == '{') {
-                    return index;
+        if (N.isEmpty(hashIndexes)) {
+            return N.EMPTY_INT_ARRAY;
+        }
+
+        IntList markerIndexes = null;
+
+        for (final int index : hashIndexes) {
+            if (index + 1 < token.length() && token.charAt(index + 1) == '{') {
+                if (markerIndexes == null) {
+                    markerIndexes = new IntList();
                 }
+
+                markerIndexes.add(index);
             }
         }
 
-        return -1;
+        return markerIndexes == null ? N.EMPTY_INT_ARRAY : markerIndexes.toArray();
     }
 
     private static boolean isQuoteChar(final char ch) {
@@ -890,15 +1040,21 @@ public final class ParsedSql {
      * double- or backtick-quoted identifier only the doubled quote ever escapes. Callers resume scanning at the
      * returned index + 1.
      *
-     * <p>No scanner calls this with a single reading: because the two readings disagree on where a literal such
-     * as {@code 'a\''} ends, {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)} evaluates a token
-     * under BOTH readings and commits to a marker position only when they agree; a token on which they
-     * disagree is left verbatim ({@code ARRAY[E'it\'s :literal', :id]} binds nothing and is emitted unchanged),
+     * <p>A literal written with the PostgreSQL {@code E} prefix ({@code E'it\'s'}) is the exception: that
+     * syntax exists only in PostgreSQL and always processes backslash escapes, whatever
+     * {@code standard_conforming_strings} is set to, so {@code backslashEscapes} is forced for it and both
+     * readings see the same literal.</p>
+     *
+     * <p>Otherwise no scanner calls this with a single reading: because the two readings disagree on where a
+     * literal such as {@code 'a\''} ends, {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}
+     * evaluates a token under BOTH readings and commits to a marker position only when they agree; a token on
+     * which they disagree is left verbatim ({@code ARRAY['a\'', :id]} binds nothing and is emitted unchanged),
      * so an unbound marker fails loudly at the driver instead of a literal being silently corrupted.</p>
      */
     private static int skipQuotedRegion(final String token, final int openIndex, final boolean backslashEscapes) {
         final char quote = token.charAt(openIndex);
         final int len = token.length();
+        final boolean escapesWithBackslash = quote == '\'' && (backslashEscapes || isEscapeStringPrefixed(token, openIndex));
 
         for (int index = openIndex + 1; index < len; index++) {
             final char ch = token.charAt(index);
@@ -909,12 +1065,32 @@ public final class ParsedSql {
                 } else {
                     return index;
                 }
-            } else if (ch == '\\' && backslashEscapes && quote == '\'') {
+            } else if (ch == '\\' && escapesWithBackslash) {
                 index++;
             }
         }
 
         return len;
+    }
+
+    /**
+     * Returns {@code true} if the single quote at {@code openIndex} opens a PostgreSQL escape-string literal,
+     * that is one prefixed by a standalone {@code E} or {@code e} ({@code E'it\'s'}, {@code ARRAY[E'a\'b']}).
+     * The prefix must not continue an identifier, so the {@code 'abc'} of {@code code_E'abc'} or
+     * {@code NE'abc'} is not an escape string.
+     */
+    private static boolean isEscapeStringPrefixed(final String token, final int openIndex) {
+        if (openIndex == 0) {
+            return false;
+        }
+
+        final char prefix = token.charAt(openIndex - 1);
+
+        if (prefix != 'E' && prefix != 'e') {
+            return false;
+        }
+
+        return openIndex == 1 || !isNamedParameterIdentifierPart(token.codePointBefore(openIndex - 1));
     }
 
     /**
@@ -926,8 +1102,11 @@ public final class ParsedSql {
      * yield the {@code ':'} of {@code :id}); disagreement ({@code 'a\'', :id}: one literal under the backslash
      * reading, a literal plus an unclosed one under the standard reading) makes the token ambiguous, and the
      * callers then treat it as verbatim SQL, binding and counting nothing inside it. This is by design and
-     * fail-safe: an {@code E''} prefix does not change the rule, so {@code E'it\'s :literal', :id} is left
-     * verbatim as well.
+     * fail-safe: a leftover marker fails loudly at the driver instead of a literal being silently corrupted.
+     *
+     * <p>A PostgreSQL escape string carries its reading in its syntax, so it never makes a token ambiguous:
+     * {@link #skipQuotedRegion(String, int, boolean)} always reads {@code E'...'} with backslash escapes and
+     * {@code ARRAY[E'it\'s :literal', :id]} therefore binds {@code id} with the literal left intact.</p>
      */
     private static int[] findUnambiguousUnquotedMarkerIndexes(final String token, final int fromIndex, final char marker) {
         final int[] withBackslashEscapes = collectUnquotedMarkerIndexes(token, fromIndex, marker, true);
@@ -944,6 +1123,13 @@ public final class ParsedSql {
 
             if (isQuoteChar(ch)) {
                 index = skipQuotedRegion(token, index, backslashEscapes);
+            } else if (ch == '/' && index + 1 < len && token.charAt(index + 1) == '*') {
+                final int commentEnd = token.indexOf("*/", index + 2);
+                index = commentEnd < 0 ? len : commentEnd + 1;
+            } else if (ch == '-' && index + 1 < len && token.charAt(index + 1) == '-') {
+                while (index + 1 < len && token.charAt(index + 1) != '\n' && token.charAt(index + 1) != '\r') {
+                    index++;
+                }
             } else if (ch == marker) {
                 if (indexes == null) {
                     indexes = new IntList();
@@ -1004,9 +1190,10 @@ public final class ParsedSql {
      * Returns the indexes of the {@code '?'} characters from {@code fromIndex} that are outside single-, double-
      * or backtick-quoted regions under both escape readings (see
      * {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}), so a {@code '?'} inside a literal
-     * in a subscript ({@code "ARRAY['a?', ?]"}, {@code "ARRAY['it''s ?', ?]"}) is not mistaken for a placeholder.
-     * An ambiguous token ({@code "ARRAY[E'it\'s ?', ?]"}) yields no indexes at all: none of its {@code '?'}
-     * characters is counted, and it contributes nothing to {@link #positionalParameterOffsets()}.
+     * in a subscript ({@code "ARRAY['a?', ?]"}, {@code "ARRAY['it''s ?', ?]"}, {@code "ARRAY[E'it\'s ?', ?]"})
+     * is not mistaken for a placeholder. An ambiguous token ({@code "ARRAY['a\'?', ?]"}) yields no indexes at
+     * all: none of its {@code '?'} characters is counted, and it contributes nothing to
+     * {@link #positionalParameterOffsets()}.
      */
     private static int[] findUnquotedQuestionMarkIndexes(final String token, final int fromIndex) {
         final int[] indexes = findUnambiguousUnquotedMarkerIndexes(token, fromIndex, '?');
@@ -1034,25 +1221,34 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the index of the next {@code ':'} at or after {@code fromIndex} that starts a named
-     * parameter, skipping single-, double- and backtick-quoted regions so a marker inside a literal
-     * element of a subscript ({@code "ARRAY[':x']"}) is not mistaken for a binding, or {@code -1}. A token
-     * whose quoting is ambiguous between the two escape readings (see
-     * {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}) yields {@code -1}: it is verbatim.
+     * Returns the indexes of every {@code ':'} of {@code token} that lies outside single-, double- and
+     * backtick-quoted regions, so a marker inside a literal element of a subscript ({@code "ARRAY[':x']"})
+     * is not mistaken for a binding, or an empty array when the token holds none or its quoting is ambiguous
+     * between the two escape readings (see {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}),
+     * in which case the token is verbatim. Collected once for the whole token: which of these indexes really
+     * starts a parameter is then decided per marker by {@link #isNamedParameterStart(String, int, int)},
+     * because that depends on where the name of the previous one ended.
+     *
+     * <p>Restricting the result to a suffix is sound: every index it reports sits outside every quoted region
+     * under both readings, so a scan that resumes at one of them starts from the same unquoted state and reads
+     * the remaining text identically.</p>
      */
-    private static int findNextNamedParameterStartIndex(final String token, final int fromIndex) {
-        final int[] colonIndexes = findUnambiguousUnquotedMarkerIndexes(token, fromIndex, _PREFIX_OF_NAMED_PARAMETER);
+    private static int[] findUnquotedNamedParameterMarkerIndexes(final String token) {
+        final int[] indexes = findUnambiguousUnquotedMarkerIndexes(token, 0, _PREFIX_OF_NAMED_PARAMETER);
 
-        if (colonIndexes != null) {
-            for (final int index : colonIndexes) {
-                if (index + 1 < token.length() && isNamedParameterIdentifierStart(namedParameterCodePointAt(token, index + 1))
-                        && isNamedParameterStartBoundary(token, index, fromIndex)) {
-                    return index;
-                }
-            }
-        }
+        return indexes == null ? N.EMPTY_INT_ARRAY : indexes;
+    }
 
-        return -1;
+    /**
+     * Returns {@code true} if the {@code ':'} at {@code index} of {@code token} starts a named parameter: a
+     * valid parameter-name start follows it and it sits at a safe boundary, so a PostgreSQL cast
+     * ({@code "::int"}), a qualified name and a {@code ':'} inside a name are not parameters.
+     * {@code fromIndex} is where the scan resumed, that is the end of the previously extracted parameter, so
+     * the second marker of {@code ":a:b"} is a parameter although a name character precedes it.
+     */
+    private static boolean isNamedParameterStart(final String token, final int index, final int fromIndex) {
+        return index + 1 < token.length() && isNamedParameterIdentifierStart(namedParameterCodePointAt(token, index + 1))
+                && isNamedParameterStartBoundary(token, index, fromIndex);
     }
 
     private static boolean isNamedParameterStartBoundary(final String token, final int parameterStartIndex, final int fromIndex) {
@@ -1106,8 +1302,7 @@ public final class ParsedSql {
         // "~*", "(", ",", ...) is an operator, so the "?" after it is a positional placeholder. Checking
         // the leading character covers every operator spelling instead of enumerating them.
         if (!(first == ')' || first == ']' || first == '?' || first == '_' || first == '"' || first == '`' || first == '\'' || first == '$' || first == '.'
-                || first == _PREFIX_OF_NAMED_PARAMETER || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || Character.isUnicodeIdentifierStart(first)
-                || Character.isDigit(first))) {
+                || first == _PREFIX_OF_NAMED_PARAMETER || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || startsWithSqlExpressionWord(word))) {
             return false;
         }
 

@@ -597,6 +597,37 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
                 SCSB.select("*").from("account").where(Filters.in("id", tricky)).build());
     }
 
+    // A comment holding a "?" that is immediately followed by an operator sharing its first character with the
+    // comment opener ("/" for "/*", "-" for "--"): the placeholder positions ParsedSql reports must still be the
+    // real ones, or the rewrite renames (NAMED/IBATIS) or inlines the value into (RAW_SQL) the comment and leaves
+    // the actual placeholder unbound.
+    @Test
+    public void testRawSubQueryRewriteSkipsACommentPrecedingASimilarOperator() {
+        final SubQuery blockComment = new SubQuery("SELECT id FROM x WHERE a = b /* ? */ / ?", List.of(2));
+
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE a = b /* ? */ / :param)", List.of(2),
+                NSC.select("*").from("account").where(Filters.exists(blockComment)).build());
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE a = b /* ? */ / #{param})", List.of(2),
+                MSC.select("*").from("account").where(Filters.exists(blockComment)).build());
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE a = b /* ? */ / 2)", List.of(),
+                SCSB.select("*").from("account").where(Filters.exists(blockComment)).build());
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE a = b /* ? */ / ?)", List.of(2),
+                PSC.select("*").from("account").where(Filters.exists(blockComment)).build());
+
+        final SubQuery lineComment = new SubQuery("SELECT id FROM x WHERE a = b -- ?\n - ?", List.of(2));
+
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE a = b -- ?\n - :param)", List.of(2),
+                NSC.select("*").from("account").where(Filters.exists(lineComment)).build());
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE a = b -- ?\n - 2)", List.of(),
+                SCSB.select("*").from("account").where(Filters.exists(lineComment)).build());
+
+        // Under RAW_SQL the value is a literal in value position, so a string that carries a comment terminator
+        // cannot close a comment around it.
+        final SubQuery injected = new SubQuery("SELECT id FROM x WHERE a = b /* ? */ / ?", List.of("x*/ OR 1=1) --"));
+        assertSp("SELECT * FROM account WHERE EXISTS (SELECT id FROM x WHERE a = b /* ? */ / 'x*/ OR 1=1) --')", List.of(),
+                SCSB.select("*").from("account").where(Filters.exists(injected)).build());
+    }
+
     // Under RAW_SQL ("inline values directly into the SQL string as literals") the positional bindings of a
     // raw SubQuery are inlined in placeholder order with exactly the literal rendering a structured condition's
     // value receives on the same builder, and nothing is bound. PSC keeps the "?" + bindings.

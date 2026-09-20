@@ -97,7 +97,10 @@
  * <h2>Thread-safety</h2>
  * <p>{@code Dsl}, {@code SqlDialect}, and {@code Selection} are immutable and safe to share (a
  * {@code Dsl} being thread-safe additionally requires any custom named-parameter handler on its
- * dialect to tolerate concurrent invocation). {@code SqlBuilder} and
+ * dialect to tolerate concurrent invocation). {@link com.landawn.abacus.query.ParsedSql} and
+ * {@link com.landawn.abacus.query.SqlParser.Tokenizer} are also immutable and safe to share.
+ * {@code SqlMapper} is mutable and requires external synchronization when reads and writes occur
+ * concurrently. {@code SqlBuilder} and
  * {@link com.landawn.abacus.query.DynamicQuery.Builder} are <em>not</em> thread-safe and are
  * single-use: create one per query and finish it, which releases the internal pooled resources.
  * A {@code SqlBuilder} is finished by {@code build()} or by one of the terminal helpers

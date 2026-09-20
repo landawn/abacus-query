@@ -392,7 +392,8 @@ public abstract class AbstractIn extends ComposableCondition {
      *         array, {@code Date} and {@code Calendar} elements in the list are defensive copies (a fresh list is
      *         built on every call when any element is an array, {@code Date}, {@code Calendar} or nested
      *         {@link Condition}; the memoized view is reused only when every element is a plain scalar), so
-     *         mutating a returned element never affects this condition
+     *         mutating one of these defensive copies never affects this condition. Other mutable values remain
+     *         shared by reference
      */
     public ImmutableList<?> values() { //NOSONAR
         if (values == null) {
@@ -516,8 +517,8 @@ public abstract class AbstractIn extends ComposableCondition {
      * @return an immutable list of parameter values, or an empty immutable list for an uninitialized instance
      *         (e.g. created via the no-arg constructor for deserialization); array, {@code Date} and
      *         {@code Calendar} values in the list are defensive copies (the list is rebuilt on every call in
-     *         that case rather than memoized), so mutating a returned element never affects this condition
-     *         or a later call
+     *         that case rather than memoized), so mutating one of these defensive copies never affects this condition
+     *         or a later call. Other mutable values remain shared by reference
      */
     @Override
     public ImmutableList<Object> parameters() {

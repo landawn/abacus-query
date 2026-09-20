@@ -1401,4 +1401,40 @@ public class SqlExpressionTest extends TestBase {
         }
     }
 
+    @Test
+    public void testRenderValueUsesConditionSqlInsteadOfDiagnosticToString() {
+        final Condition condition = new Condition() {
+            @Override
+            public Operator operator() {
+                return Operator.EQUAL;
+            }
+
+            @Override
+            public com.landawn.abacus.util.ImmutableList<Object> parameters() {
+                return com.landawn.abacus.util.ImmutableList.empty();
+            }
+
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                assertEquals(NamingPolicy.NO_CHANGE, namingPolicy);
+                return "firstName = 'Ada'";
+            }
+
+            @Override
+            public String toString() {
+                return "Diagnostic condition";
+            }
+        };
+        final SubQuery subQuery = new SubQuery("SELECT firstName FROM people") {
+            @Override
+            public String toString() {
+                return "Diagnostic subquery";
+            }
+        };
+
+        assertEquals("firstName = 'Ada'", SqlExpression.renderValue(condition));
+        assertEquals("(SELECT firstName FROM people)", SqlExpression.renderValue(subQuery));
+        assertEquals("firstName = (SELECT firstName FROM people)", SqlExpression.equal("firstName", subQuery));
+    }
+
 }

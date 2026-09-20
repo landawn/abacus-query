@@ -384,6 +384,7 @@ public class Junction extends ComposableCondition {
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         if (N.isEmpty(conditions)) {
             return identitySql();
         }
@@ -408,7 +409,7 @@ public class Junction extends ComposableCondition {
                 }
 
                 sb.append(_PARENTHESIS_L);
-                sb.append(condition.toSql(namingPolicy));
+                sb.append(condition.toSql(effectiveNamingPolicy));
                 sb.append(_PARENTHESIS_R);
 
                 isFirst = false;

@@ -217,7 +217,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      * <p>The result is memoized only when both bounds are plain scalars (neither an array, {@code Date},
      * {@code Calendar} nor a nested {@link Condition}); otherwise a fresh list, holding fresh defensive copies of
      * any array/{@code Date}/{@code Calendar} values (including those spliced in from a nested condition), is
-     * built on every call, so mutating a returned element never affects this condition or a later call.</p>
+     * built on every call. Mutating one of these defensive array/date/calendar copies does not affect
+     * this condition or a later call; other application-defined mutable values remain shared by reference.</p>
      *
      * @return an immutable list containing {@code [minValue, maxValue]}, or their respective
      *         parameters spliced in where a bound is itself a {@link Condition}; known mutable JDK

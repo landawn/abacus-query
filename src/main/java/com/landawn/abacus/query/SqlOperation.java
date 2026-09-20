@@ -76,7 +76,7 @@ public enum SqlOperation {
     DELETE(SK.DELETE),
 
     /**
-     * MERGE operation for upserting (inserting or updating) records.
+     * MERGE operation for conditionally inserting, updating, or deleting records, depending on the database dialect.
      */
     MERGE(SK.MERGE),
 

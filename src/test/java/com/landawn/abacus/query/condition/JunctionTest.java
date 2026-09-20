@@ -572,4 +572,18 @@ public class JunctionTest extends TestBase {
         assertEquals(7, junction.parameters().get(1));
         assertEquals("((payload = '[1]') AND (id = 7))", junction.toSql(NamingPolicy.NO_CHANGE));
     }
+
+    @Test
+    public void testNullNamingPolicyIsNormalizedBeforeRenderingChildren() {
+        final SqlExpression child = new SqlExpression("firstName = 'Ada'") {
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                return java.util.Objects.requireNonNull(namingPolicy, "namingPolicy").convert("firstName") + " = 'Ada'";
+            }
+        };
+
+        assertEquals("((firstName = 'Ada'))", new And(child).toSql(null));
+        assertEquals("((firstName = 'Ada'))", new Or(child).toSql(null));
+        assertEquals("((first_name = 'Ada'))", new And(child).toSql(NamingPolicy.SNAKE_CASE));
+    }
 }

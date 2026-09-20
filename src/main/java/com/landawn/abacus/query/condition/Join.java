@@ -530,17 +530,18 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param namingPolicy the naming policy passed through to the join condition's {@link Condition#toSql(NamingPolicy)} method;
-     *                     if {@code null}, the nested condition treats it as {@link NamingPolicy#NO_CHANGE}
+     *                     if {@code null}, it is normalized to {@link NamingPolicy#NO_CHANGE} before delegation
      * @return the SQL representation, e.g., "JOIN orders o ON customers.id = o.customer_id"
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
         final String entities = renderJoinEntities();
 
         if (op == null && entities.isEmpty()) {
             // Default (Kryo) state: avoid emitting "null " with a trailing space.
-            return condition == null ? Strings.NULL : Strings.NULL + _SPACE + condition.toSql(namingPolicy);
+            return condition == null ? Strings.NULL : Strings.NULL + _SPACE + condition.toSql(effectiveNamingPolicy);
         }
 
         final String opStr = (op == null) ? Strings.NULL : op.toString();
@@ -548,7 +549,7 @@ public class Join extends AbstractCondition {
         String condPart = Strings.EMPTY;
 
         if (condition != null) {
-            final String conditionString = condition.toSql(namingPolicy);
+            final String conditionString = condition.toSql(effectiveNamingPolicy);
             condPart = _SPACE + (condition.operator() == Operator.ON || condition.operator() == Operator.USING ? conditionString
                     : Operator.ON.toString() + _SPACE + conditionString);
         }

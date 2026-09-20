@@ -725,6 +725,8 @@ public final class SqlParser {
      * case each block comment is emitted as its own token) and runs of built-in whitespace
      * separators (space, horizontal tab, line feed, carriage return, and form feed) are collapsed
      * into a single space token (see the class-level documentation for full tokenization rules).
+     * Removing a block comment preserves token boundaries, including between operators: for example,
+     * {@code 1-/* comment *}{@code /-2} is rebuilt as {@code 1- -2}, never as a line comment.
      * Composite keywords are <em>not</em> merged: e.g. {@code "ORDER BY"} is returned as the
      * separate tokens {@code "ORDER"}, {@code " "}, {@code "BY"}.</p>
      *
@@ -1619,9 +1621,43 @@ public final class SqlParser {
 
         final char nextChar = sql.charAt(nextIndex);
 
-        if (!Character.isWhitespace(nextChar) && !isSeparator(sql, sqlLength, nextIndex, nextChar, tokenizerConfig, memo)) {
+        if (!Character.isWhitespace(nextChar) && (!isSeparator(sql, sqlLength, nextIndex, nextChar, tokenizerConfig, memo)
+                || wouldMergeAcrossComment(tokens, sql, nextIndex, tokenizerConfig))) {
             tokens.add(SK.SPACE);
         }
+    }
+
+    /** Keeps comment removal from joining separate operators into a different operator or a comment opener. */
+    private static boolean wouldMergeAcrossComment(final List<String> tokens, final String sql, final int nextIndex, final TokenizerConfig tokenizerConfig) {
+        final int maxSuffixLength = Math.max(1, tokenizerConfig.maxSeparatorLength - 1);
+        final StringBuilder suffix = new StringBuilder(maxSuffixLength);
+
+        for (int i = tokens.size() - 1; i >= 0 && suffix.length() < maxSuffixLength; i--) {
+            final String token = tokens.get(i);
+
+            if (SK.SPACE.equals(token)) {
+                break;
+            }
+
+            suffix.insert(0, token.substring(Math.max(0, token.length() - (maxSuffixLength - suffix.length()))));
+        }
+
+        final int suffixLength = suffix.length();
+        final String joined = suffix + sql.substring(nextIndex, Math.min(sql.length(), nextIndex + Math.max(2, tokenizerConfig.maxSeparatorLength)));
+
+        for (int start = 0; start < suffixLength; start++) {
+            if ((joined.startsWith("--", start) || joined.startsWith("/*", start)) && start + 2 > suffixLength) {
+                return true;
+            }
+
+            final String separator = matchMultiCharSeparator(joined, joined.length(), start, tokenizerConfig);
+
+            if (separator != null && start + separator.length() > suffixLength) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -2670,9 +2706,9 @@ public final class SqlParser {
      * such as {@code t.into} do not count as {@code SELECT ... INTO}. MySQL's file-writing
      * {@code INTO OUTFILE} / {@code INTO DUMPFILE} are rejected wherever they appear, including
      * in the trailing position after {@code FROM}. Keyword matching ignores
-     * occurrences inside quoted string literals, quoted identifiers, SQL comments and larger
-     * identifier tokens, so a SELECT that merely returns the literal text {@code 'DELETE'} or a
-     * column named {@code into$} is still accepted, whereas a data-changing CTE such as
+     * occurrences inside quoted string literals, quoted identifiers, SQL comments, named parameters
+     * ({@code :name} or {@code #{name}}), and larger identifier tokens, so a SELECT that merely returns
+     * the literal text {@code 'DELETE'} or a column named {@code into$} is still accepted, whereas a data-changing CTE such as
      * {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later statement is
      * permitted only when it also resolves to a {@code SELECT}; a later statement with any other
      * leading verb (including an unrecognized or vendor-specific command) is rejected.
@@ -2975,8 +3011,9 @@ public final class SqlParser {
      * A plain {@code INSERT}, and an {@code INSERT ... ON CONFLICT ... DO NOTHING}, are therefore
      * accepted because their SQL text contains no recognized overwrite clause. Clause and keyword scans use token
      * boundaries, so identifiers such as {@code into$}, qualified names such as {@code t.into},
-     * {@code update_time} or bracket/quoted identifiers named like keywords are ignored. A
-     * {@code null} or empty statement does not lead with {@code SELECT} or {@code INSERT}, so it
+     * {@code update_time}, named parameters ({@code :name} or {@code #{name}}), and bracket/quoted
+     * identifiers named like keywords are ignored. A {@code null} or empty statement does not lead
+     * with {@code SELECT} or {@code INSERT}, so it
      * returns {@code false}. For multi-statement SQL, a later top-level {@code UPDATE},
      * {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE}, {@code CREATE}, {@code DROP},
      * {@code ALTER}, {@code CALL}, JDBC {@code {call ...}} / {@code {? = call ...}}, {@code EXEC} or
@@ -3085,6 +3122,8 @@ public final class SqlParser {
     /**
      * Replaces the contents of quoted strings and identifiers with same-length whitespace under one
      * fixed quote convention, retaining their delimiters for context-sensitive token checks.
+     * Named-parameter contents are also masked so names such as {@code :into} or {@code #{insert}}
+     * cannot be confused with executable SQL keywords.
      * Comments are preserved for the comment-aware classification scanners, but are skipped here
      * so quotes inside comments cannot affect lexical validity.
      *
@@ -3117,6 +3156,31 @@ public final class SqlParser {
                 maskRange(masked, index + 1, endIndex - 1);
                 index = endIndex;
                 continue;
+            } else if (ch == ':' && (index == 0 || sql.charAt(index - 1) != ':') && index + 1 < len && isParameterIdentifierStart(sql.codePointAt(index + 1))) {
+                final int start = ++index;
+
+                while (index < len) {
+                    final int codePoint = sql.codePointAt(index);
+
+                    if (codePoint == '_' || Character.isUnicodeIdentifierPart(codePoint)) {
+                        index += Character.charCount(codePoint);
+                    } else if (codePoint == '.' && index + 1 < len && isParameterIdentifierStart(sql.codePointAt(index + 1))) {
+                        index++;
+                    } else {
+                        break;
+                    }
+                }
+
+                maskRange(masked, start, index);
+                continue;
+            } else if (ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{') {
+                final int endIndex = sql.indexOf('}', index + 2);
+
+                if (endIndex >= 0) {
+                    maskRange(masked, index + 2, endIndex);
+                    index = endIndex + 1;
+                    continue;
+                }
             } else if (ch == '-' && index + 1 < len && sql.charAt(index + 1) == '-') {
                 if (!mysqlCommentRules || isMySqlDashCommentStart(sql, len, index)) {
                     index += 2;
@@ -3156,6 +3220,10 @@ public final class SqlParser {
         }
 
         return new String(masked);
+    }
+
+    private static boolean isParameterIdentifierStart(final int codePoint) {
+        return codePoint == '_' || Character.isUnicodeIdentifierStart(codePoint);
     }
 
     private static void maskRange(final char[] chars, final int fromIndex, final int toIndex) {

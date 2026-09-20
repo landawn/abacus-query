@@ -167,9 +167,10 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @param cond the condition to render; must be one of the supported condition types
      * @throws IllegalArgumentException if {@code cond} is an unsupported condition type; if a
      *         structured {@link SubQuery} (one not defined by raw SQL) has no selected property/column names;
-     *         or if, under {@code NAMED_SQL}/{@code IBATIS_SQL}/{@code RAW_SQL}, the top-level {@code ?} count of
-     *         a bound raw sub-query cannot be matched to its bindings (PostgreSQL JSON {@code ?} operators or
-     *         {@code ?} inside array subscripts)
+     *         or if, under {@code NAMED_SQL}/{@code IBATIS_SQL}/{@code RAW_SQL}, the positional placeholder count
+     *         of a bound raw sub-query cannot be matched to its bindings. Placeholder detection follows
+     *         {@link ParsedSql}: array-subscript bindings are included, while JSON operators and quoted or
+     *         commented question marks are excluded
      */
     @Override
     protected void appendCondition(final Condition cond) {

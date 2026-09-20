@@ -13840,6 +13840,150 @@ public class SqlBuilderTest extends TestBase {
         };
     }
 
+    @Test
+    public void testQualifiedColumnMappingDoesNotRepeatAliasInSelectAndPredicate() {
+        final SP sp = PSC.select("p.name")
+                .from(QualifiedProfile.class, "p")
+                .where(Filters.eq("p.name", "Ada"))
+                .orderBy("p.name")
+                .build();
+
+        assertEquals("SELECT p.display_name AS \"p.name\" FROM profiles p WHERE p.display_name = ? ORDER BY p.display_name", sp.query());
+        assertEquals(Collections.singletonList("Ada"), sp.parameters());
+    }
+
+    @Test
+    public void testQualifiedColumnMappingDoesNotRepeatAliasInRawExpression() {
+        final SP sp = PSC.select("LOWER(p.name)").from(QualifiedProfile.class, "p").where("p.name = ?").build();
+
+        assertEquals("SELECT LOWER(p.display_name) AS \"LOWER(p.name)\" FROM profiles p WHERE p.display_name = ?", sp.query());
+        assertTrue(sp.parameters().isEmpty());
+    }
+
+    @Test
+    public void testSubEntityExpansionPreservesQualifiedColumnMapping() {
+        final String sql = PSC.select("profile").from(QualifiedProfileHolder.class).build().query();
+
+        assertEquals("SELECT p.display_name AS \"profile.name\" FROM profile_holders", sql);
+    }
+
+    @Test
+    public void testAliasedNestedPropertyPreservesExistingColumnQualifier() {
+        final SP sp = PSC.select("h.profile.name")
+                .from(QualifiedProfileHolder.class, "h")
+                .join(QualifiedProfile.class, "p")
+                .on("h.profile_id = p.id")
+                .where(Filters.eq("h.profile.name", "Ada"))
+                .build();
+
+        assertEquals("SELECT p.display_name AS \"h.profile.name\" FROM profile_holders h JOIN profiles p ON h.profile_id = p.id WHERE p.display_name = ?",
+                sp.query());
+        assertEquals(Collections.singletonList("Ada"), sp.parameters());
+    }
+
+    @Test
+    public void testMultiSelectDoesNotAddSubEntityTableWhenAllItsPropertiesAreExcluded() {
+        final Selection holder = Selection.builder(QualifiedProfileHolder.class)
+                .tableAlias("h")
+                .includeSubEntityProperties(true)
+                .excludedPropNames(Collections.singleton("profile.name"))
+                .build();
+        final Selection profile = Selection.builder(QualifiedProfile.class).tableAlias("p").build();
+
+        assertEquals("SELECT p.display_name AS \"name\" FROM profile_holders h, profiles p", PSC.selectFrom(Arrays.asList(holder, profile)).build().query());
+    }
+
+    @Test
+    public void testUnionRenamesGeneratedNamedParametersInsideArraySubscripts() {
+        final SubQuery subQuery = Filters.subQuery("SELECT scores[?] FROM score_archive", Collections.singletonList(2));
+        final SP sp = NSC.select("id")
+                .from("users")
+                .where(Filters.eq("param", 1))
+                .union(NSC.select("id").from("archive").where(Filters.in("id", subQuery)))
+                .build();
+
+        assertEquals("SELECT id FROM users WHERE param = :param UNION SELECT id FROM archive WHERE id IN (SELECT scores[:param_2] FROM score_archive)",
+                sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
+    @Test
+    public void testUnionRenamesGeneratedIbatisParametersInsideArraySubscripts() {
+        final SubQuery subQuery = Filters.subQuery("SELECT scores[?] FROM score_archive", Collections.singletonList(2));
+        final SP sp = MSC.select("id")
+                .from("users")
+                .where(Filters.eq("param", 1))
+                .union(MSC.select("id").from("archive").where(Filters.in("id", subQuery)))
+                .build();
+
+        assertEquals("SELECT id FROM users WHERE param = #{param} UNION SELECT id FROM archive WHERE id IN (SELECT scores[#{param_2}] FROM score_archive)",
+                sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
+    @Test
+    public void testUnionRenamesChainedSubscriptParametersWithoutChangingQuotedText() {
+        final String suffix = " FROM score_archive WHERE note = ':param #{param}' AND [literal:param] = 1 /* :param #{param} */";
+
+        for (final Dsl dsl : Arrays.asList(NSC, MSC)) {
+            final SubQuery subQuery = Filters.subQuery("SELECT scores[?][?]" + suffix, Arrays.asList(2, 3));
+            final SP sp = dsl.select("id")
+                    .from("users")
+                    .where(Filters.eq("param", 1))
+                    .union(dsl.select("id").from("archive").where(Filters.in("id", subQuery)))
+                    .build();
+            final String expectedExpression = dsl == NSC ? "scores[:param_2][:param_3]" : "scores[#{param_2}][#{param_3}]";
+
+            assertTrue(sp.query().contains("SELECT " + expectedExpression + suffix), sp.query());
+            assertEquals(Arrays.asList(1, 2, 3), sp.parameters());
+        }
+    }
+
+    @Test
+    public void testUnionRenamesCustomNamedParametersInsideArraySubscripts() {
+        final Dsl customDsl = Dsl.forDialect(NSC.sqlDialect()
+                .toBuilder()
+                .namedParameterHandler((sb, name) -> sb.append("CAST(:").append(name).append(" AS integer)"))
+                .build());
+        final SubQuery subQuery = Filters.subQuery("SELECT scores[?] FROM score_archive", Collections.singletonList(2));
+        final SP sp = customDsl.select("id")
+                .from("users")
+                .where(Filters.eq("param", 1))
+                .union(customDsl.select("id").from("archive").where(Filters.in("id", subQuery)))
+                .build();
+
+        assertEquals("SELECT id FROM users WHERE param = CAST(:param AS integer) UNION SELECT id FROM archive WHERE id IN "
+                + "(SELECT scores[CAST(:param_2 AS integer)] FROM score_archive)", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
+    @Table(name = "profiles", alias = "p")
+    public static class QualifiedProfile {
+        @Column("p.display_name")
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+    }
+
+    @Table(name = "profile_holders")
+    public static class QualifiedProfileHolder {
+        private QualifiedProfile profile;
+
+        public QualifiedProfile getProfile() {
+            return profile;
+        }
+
+        public void setProfile(final QualifiedProfile profile) {
+            this.profile = profile;
+        }
+    }
+
     static final class AllNullBatchEntity {
         private String value;
 

@@ -66,8 +66,9 @@ package com.landawn.abacus.query.condition;
  * <p>Relationship to ALL and SOME:</p>
  * <ul>
  *   <li>ANY and SOME are functionally equivalent - both return true if condition matches at least one value</li>
- *   <li>ALL requires the condition to be true for all values (more restrictive)</li>
- *   <li>ANY/SOME are less restrictive than ALL</li>
+ *   <li>ALL requires the condition to be true for all values</li>
+ *   <li>For a nonempty subquery, a true ALL comparison also makes ANY/SOME true; for an empty
+ *       subquery, ANY/SOME is false while ALL is true</li>
  * </ul>
  *
  * <p><b>&#9888;&#65039;</b> Although this class extends {@link ComposableCell}, the inherited composition methods

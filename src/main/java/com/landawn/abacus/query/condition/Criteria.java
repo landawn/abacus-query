@@ -504,11 +504,12 @@ public class Criteria extends AbstractCondition {
      * }</pre>
      *
      * @param namingPolicy the naming policy to apply to property names within each clause; {@code null}
-     *                     is treated as {@link NamingPolicy#NO_CHANGE} by the standard clause implementations
+     *                     is normalized to {@link NamingPolicy#NO_CHANGE} before rendering each clause
      * @return a SQL representation of this Criteria
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
+        final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         // Single pass into per-clause buffers, then assembled in SQL order
         // (selectModifier + join + where + groupBy + having + setOps + orderBy + limit).
         // Output is byte-identical to the previous O(n^2) string-concatenation version.
@@ -540,7 +541,7 @@ public class Criteria extends AbstractCondition {
                 target = setOps;
             }
 
-            target.append(SK._SPACE).append(cond.toSql(namingPolicy));
+            target.append(SK._SPACE).append(cond.toSql(effectiveNamingPolicy));
         }
 
         final int modifierLen = Strings.isEmpty(this.selectModifier) ? 0 : 1 + this.selectModifier.length();

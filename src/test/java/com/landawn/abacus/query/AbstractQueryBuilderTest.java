@@ -1838,7 +1838,28 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testOn_varargsComposite() {
         final String sql = PSC.select("*").from("users u").join("orders o").on("u.id = o.user_id", "u.tenant_id = o.tenant_id").build().query();
 
-        assertTrue(sql.contains("ON u.id = o.user_id AND u.tenant_id = o.tenant_id"), sql);
+        assertTrue(sql.contains("ON (u.id = o.user_id) AND (u.tenant_id = o.tenant_id)"), sql);
+    }
+
+    @Test
+    public void testOnVarargsPreservesDisjunctionPrecedence() {
+        final String sql = PSC.select("*")
+                .from("users u")
+                .join("orders o")
+                .on("u.id = o.user_id OR u.id = o.owner_id", "u.tenant_id = o.tenant_id OR o.public_flag = 1")
+                .build()
+                .query();
+
+        assertEquals("SELECT * FROM users u JOIN orders o ON (u.id = o.user_id OR u.id = o.owner_id)"
+                + " AND (u.tenant_id = o.tenant_id OR o.public_flag = 1)", sql);
+    }
+
+    @Test
+    public void testOnSingleElementArrayMatchesSingleExpressionOverload() {
+        final String expression = "u.id = o.user_id OR u.id = o.owner_id";
+
+        assertEquals(PSC.select("*").from("users u").join("orders o").on(expression).build().query(),
+                PSC.select("*").from("users u").join("orders o").on(new String[] { expression }).build().query());
     }
 
     @Test

@@ -92,18 +92,22 @@ import com.landawn.abacus.util.stream.Stream;
  *   <li>Joins, subqueries, set operations ({@code UNION}, {@code INTERSECT}, etc.) and arbitrary conditions</li>
  * </ul>
  *
- * <p>Concrete subclasses live in {@link com.landawn.abacus.query.SqlBuilder}. Pick a subclass
- * by parameter style and naming policy (see {@link com.landawn.abacus.query.SqlBuilder} for the full table).</p>
+ * <p>{@link SqlBuilder} supplies the concrete SQL renderer. Choose a predefined {@link Dsl} constant
+ * by parameter style and naming policy, or use {@link Dsl#forDialect(SqlDialect)} for custom settings.</p>
  *
  * <p>Instances are <b>not thread-safe</b>; build one per thread or per query and finish it with
  * {@link #build()} or a terminal helper such as {@code apply(...)}, {@code accept(...)}, or
- * {@link #debugPrint()} to release pooled resources. After any terminal operation, the builder is
- * closed and must not be reused; attempting to build it again throws {@link IllegalStateException}.</p>
+ * {@link #debugPrint()} to release pooled resources. Once a terminal operation begins final rendering,
+ * the builder is closed and must not be reused; attempting to build it again throws {@link IllegalStateException}.
+ * Preliminary validation can fail without closing the builder; see {@link #build()}.</p>
  *
  * <p>SELECT clauses are order-checked as they are added: {@code from(...)} must precede JOIN,
  * WHERE, GROUP BY, HAVING, ORDER BY, pagination, and FOR UPDATE; each later clause prevents an
  * earlier clause from being appended afterward. Invalid calls fail before changing builder state,
  * so the caller may still complete or build the statement.</p>
+ *
+ * <p>Raw SQL fragments follow the lexical limitations documented by {@link SqlParser}; in particular,
+ * PostgreSQL dollar-quoted strings and nested block comments are not supported.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -3157,13 +3161,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds an ON clause for a composite join condition, joining the given expressions with {@code AND}.
      *
-     * <p>This is a convenience for multi-column ON conditions. Each element is rendered as a separate
-     * expression and the resulting fragments are combined with {@code AND}.</p>
+     * <p>This is a convenience for multi-column ON conditions. When there are multiple elements,
+     * each expression is enclosed in parentheses before the fragments are combined with {@code AND},
+     * preserving the precedence of any {@code OR} within an expression. A single element is rendered
+     * exactly as by {@link #on(String)}.</p>
      *
      * <p><b>Note:</b> unlike {@link Filters#on(String, String)} — where two strings mean an equality
      * {@code ON left = right} — each argument here is a <em>complete</em> boolean expression and multiple
      * arguments are joined with {@code AND}: {@code on("u.id = o.user_id", "o.active = 1")}. Calling
-     * {@code on("u.id", "o.user_id")} renders the invalid SQL {@code ON u.id AND o.user_id}.</p>
+     * {@code on("u.id", "o.user_id")} renders {@code ON (u.id) AND (o.user_id)}, not an equality comparison.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3172,7 +3178,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .join("orders o")
      *                 .on("u.id = o.user_id", "u.tenant_id = o.tenant_id")
      *                 .build().query();
-     * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id AND u.tenant_id = o.tenant_id
+     * // Output: SELECT * FROM users u JOIN orders o ON (u.id = o.user_id) AND (u.tenant_id = o.tenant_id)
      * }</pre>
      *
      * @param exprs the join condition expressions (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
@@ -3193,7 +3199,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     _sb.append(_SPACE_AND_SPACE);
                 }
 
+                if (len > 1) {
+                    _sb.append(SK._PARENTHESIS_L);
+                }
+
                 appendStringExpr(exprs[i], false);
+
+                if (len > 1) {
+                    _sb.append(SK._PARENTHESIS_R);
+                }
             }
 
             _joinConditionAllowed = false;
@@ -6263,16 +6277,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     // rewrite: skip the full-SQL scan and only keep the token bookkeeping current.
                     if (!oldToken.equals(newToken)) {
                         if (oldToken.equals(":" + oldName)) {
-                            result = replaceDefaultNamedParameterToken(result, oldName, newToken, sqlServerTempIdentifiers);
+                            result = replaceDefaultNamedParameterToken(result, oldName, newToken, sqlServerTempIdentifiers, _tokenizer);
                         } else {
-                            result = replaceRenderedNamedParameterToken(result, oldToken, newToken, sqlServerTempIdentifiers);
+                            result = replaceRenderedNamedParameterToken(result, oldToken, newToken, sqlServerTempIdentifiers, _tokenizer);
                         }
                     }
 
                     childParameterTokens.remove(oldName);
                     childParameterTokens.put(newName, newToken);
                 } else if (rename) {
-                    result = replaceIbatisParameterName(result, oldName, newName, sqlServerTempIdentifiers);
+                    result = replaceIbatisParameterName(result, oldName, newName, sqlServerTempIdentifiers, _tokenizer);
                 }
 
                 if (rename) {
@@ -6334,12 +6348,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Replaces a default {@code :name} placeholder with an arbitrary rendered token. */
     private static String replaceDefaultNamedParameterToken(final String sql, final String oldName, final String newToken,
-            final boolean sqlServerTempIdentifiers) {
+            final boolean sqlServerTempIdentifiers, final SqlParser.Tokenizer tokenizer) {
         StringBuilder sb = null;
         int last = 0;
+        final int[] subscriptOpenings = ParsedSql.subscriptOpeningOffsets(sql, tokenizer);
 
         for (int i = 0, len = sql.length(); i < len; i++) {
-            final int next = skipSqlQuotedOrComment(sql, i, sqlServerTempIdentifiers);
+            final int next = skipParameterQuotedOrComment(sql, i, sqlServerTempIdentifiers, subscriptOpenings);
 
             if (next != i) {
                 i = next - 1;
@@ -6380,14 +6395,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param newName the replacement parameter name
      * @param sqlServerTempIdentifiers whether {@code #name}/{@code ##name} are SQL Server temporary-table
      *        identifiers (data tokens) rather than MySQL hash comments
+     * @param tokenizer the tokenizer used to distinguish array subscripts from bracket-quoted identifiers
      * @return the rewritten query, or {@code sql} unchanged when no placeholder matches
      */
-    private static String replaceIbatisParameterName(final String sql, final String oldName, final String newName, final boolean sqlServerTempIdentifiers) {
+    private static String replaceIbatisParameterName(final String sql, final String oldName, final String newName, final boolean sqlServerTempIdentifiers,
+            final SqlParser.Tokenizer tokenizer) {
         StringBuilder sb = null;
         int last = 0;
+        final int[] subscriptOpenings = ParsedSql.subscriptOpeningOffsets(sql, tokenizer);
 
         for (int start = 0, len = sql.length(); start < len; start++) {
-            final int next = skipSqlQuotedOrComment(sql, start, sqlServerTempIdentifiers);
+            final int next = skipParameterQuotedOrComment(sql, start, sqlServerTempIdentifiers, subscriptOpenings);
 
             if (next != start) {
                 start = next - 1;
@@ -6421,13 +6439,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Replaces an exact custom placeholder token outside SQL quoted regions and comments. */
     private static String replaceRenderedNamedParameterToken(final String sql, final String oldToken, final String newToken,
-            final boolean sqlServerTempIdentifiers) {
+            final boolean sqlServerTempIdentifiers, final SqlParser.Tokenizer tokenizer) {
         StringBuilder sb = null;
         int last = 0;
         final int tokenLength = oldToken.length();
+        final int[] subscriptOpenings = ParsedSql.subscriptOpeningOffsets(sql, tokenizer);
 
         for (int i = 0, len = sql.length(); i <= len - tokenLength; i++) {
-            final int next = skipSqlQuotedOrComment(sql, i, sqlServerTempIdentifiers);
+            final int next = skipParameterQuotedOrComment(sql, i, sqlServerTempIdentifiers, subscriptOpenings);
 
             if (next != i) {
                 i = next - 1;
@@ -6456,6 +6475,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
+    }
+
+    /**
+     * Skips quoted text during parameter rewriting while leaving recognized array subscripts open
+     * for scanning. Bracket-quoted identifiers remain opaque, as do strings and comments inside a subscript.
+     */
+    private static int skipParameterQuotedOrComment(final String sql, final int start, final boolean sqlServerTempIdentifiers, final int[] subscriptOpenings) {
+        if (sql.charAt(start) == '[' && Arrays.binarySearch(subscriptOpenings, start) >= 0) {
+            return start;
+        }
+
+        return skipSqlQuotedOrComment(sql, start, sqlServerTempIdentifiers);
     }
 
     /**
@@ -7135,7 +7166,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Generates the final SQL string and its parameters as an {@link SP} pair, then releases resources.
      * This is the canonical method for obtaining the SQL output from a builder.
-     * The builder cannot be reused after calling this method.
+     * Once final rendering begins, the builder is closed even if rendering fails. A rejected incomplete
+     * qualified JOIN leaves the builder open so its {@code on(...)} or {@code using(...)} connector can be supplied.
      *
      * <p>To get just the SQL string, call {@code build().query()}. To get the parameter values,
      * call {@code build().parameters()}.</p>
@@ -7579,11 +7611,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * positional {@code ?} placeholders line up with {@code rawParameters}, which the caller binds. Under
      * {@code NAMED_SQL} and {@code IBATIS_SQL} a raw sub-query with bindings would otherwise leave
      * {@code ?} placeholders inside a {@code :name}/{@code #{name}} statement, which named-parameter
-     * consumers such as {@code ParsedSql} reject ("Cannot mix parameter styles"). So each top-level
-     * {@code ?} (outside quoted regions, bracket-quoted identifiers and comments) is rewritten, in order,
+     * consumers such as {@code ParsedSql} reject ("Cannot mix parameter styles"). So each positional
+     * {@code ?} (including array-subscript bindings, but excluding quoted text, comments and JSON operators) is rewritten, in order,
      * to the next collision-safe generated name ({@code :param}, {@code :param_2}, ... or
      * {@code #{param}}, ...) exactly as structured conditions are named, and the caller binds
-     * {@code rawParameters} in that same order. Under {@code RAW_SQL} each top-level {@code ?} is instead
+     * {@code rawParameters} in that same order. Under {@code RAW_SQL} each positional {@code ?} is instead
      * replaced, in order, by the literal rendering of its binding ({@code SqlExpression.renderValue}: the
      * same rendering a structured condition's value receives, so strings are quoted and escaped, numbers and
      * booleans are emitted verbatim, {@code null} becomes the {@code null} literal and a {@link SqlExpression}
@@ -8230,6 +8262,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Appends a column name to the SQL string builder with full control over aliasing, table prefix, and sub-entity expansion.
+     * A mapped column that already includes a qualifier is emitted as-is; table aliases and sub-entity
+     * table names are prefixed only to unqualified mappings.
      *
      * @param entityClass the entity class for resolving sub-entity properties
      * @param entityInfo the bean info for the entity class, or {@code null}
@@ -8294,9 +8328,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     }
 
                     final ColumnInfo subTp = subPropColumnNameMap.get(subPropName);
-                    _sb.append(propEntityTableAliasOrName)
-                            .append(SK._PERIOD)
-                            .append(subTp != null ? subTp.columnName() : normalizeColumnName(subPropName, _namingPolicy));
+                    if (subTp == null || subTp.isUnqualified()) {
+                        _sb.append(propEntityTableAliasOrName).append(SK._PERIOD);
+                    }
+
+                    _sb.append(subTp != null ? subTp.columnName() : normalizeColumnName(subPropName, _namingPolicy));
 
                     if (isForSelect) {
                         _sb.append(_SPACE_AS_SPACE);
@@ -8329,7 +8365,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     tp = newPropColumnNameMap.get(newPropName);
 
                     if (tp != null) {
-                        _sb.append(propTableAlias).append('.').append(tp.columnName());
+                        if (tp.isUnqualified()) {
+                            _sb.append(propTableAlias).append(SK._PERIOD);
+                        }
+
+                        _sb.append(tp.columnName());
 
                         if (isForSelect && (withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
                             _sb.append(_SPACE_AS_SPACE);
@@ -8588,6 +8628,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Normalizes a column name using the property-to-column-name mapping, with support for table alias resolution.
      * Falls back to the static naming policy conversion if no mapping is found.
+     * An existing qualifier in a mapped column takes precedence over the property path's table alias.
      *
      * @param propColumnNameMap the property-to-column-name mapping, or {@code null}
      * @param propName the property name to normalize
@@ -8615,7 +8656,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     tp = newPropColumnNameMap.get(newPropName);
 
                     if (tp != null) {
-                        return propTableAlias + "." + tp.columnName();
+                        return tp.isUnqualified() ? propTableAlias + "." + tp.columnName() : tp.columnName();
                     }
                 }
             }
@@ -8857,7 +8898,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Builds the FROM clause string for a multi-select query, including table names, aliases,
-     * and any sub-entity tables that need to be joined.
+     * and any sub-entity tables referenced by the resolved projection. A selection whose properties
+     * are all excluded contributes its own table but no sub-entity tables.
      *
      * @param multiSelects the list of selections defining the tables and their properties
      * @param namingPolicy the naming policy for table name conversion
@@ -8884,7 +8926,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     final Class<?> entityClass = selection.entityClass();
                     final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
                             : QueryUtil.selectPropNames(entityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
-                    final Set<String> excludedPropNames = selection.excludedPropNames();
                     final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
 
                     if (N.isEmpty(subEntityPropNames)) {
@@ -8896,11 +8937,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     Class<?> subEntityClass = null;
 
                     for (final String subEntityPropName : subEntityPropNames) {
-                        if (N.notEmpty(selectPropNames)) {
-                            if (!containsSelectedPropOrSubProp(selectPropNames, subEntityPropName)) {
-                                continue;
-                            }
-                        } else if (excludedPropNames != null && excludedPropNames.contains(subEntityPropName)) {
+                        if (!containsSelectedPropOrSubProp(selectPropNames, subEntityPropName)) {
                             continue;
                         }
 
@@ -8976,7 +9013,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Represents a SQL string and its associated parameters.
      * This record is used to encapsulate the generated SQL and the parameters required for execution.
-     * It is immutable, meaning once created, the SQL and parameters cannot be changed.
+     * The SQL and parameter-list structure are fixed once created. Parameter values are retained by
+     * reference, so mutable value objects must not be changed while the pair is in use.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -8995,7 +9033,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param query the generated SQL query string
-     * @param parameters the parameter values corresponding to placeholders in the SQL; defensively copied
+     * @param parameters the parameter values corresponding to placeholders in the SQL; the list is defensively copied,
+     *                   but its elements are not
      */
     public record SP(String query, ImmutableList<Object> parameters) {
 

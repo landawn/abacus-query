@@ -3160,4 +3160,33 @@ public class SqlParserTest extends TestBase {
         assertTrue(SqlParser.isSelectQuery("-- x\nSELECT 1"));
         assertTrue(SqlParser.isSelectQuery("#x\nSELECT 1"));
     }
+
+    @Test
+    public void testTokenize_BlockCommentsPreserveSeparatedOperatorBoundaries() {
+        assertEquals(List.of("SELECT", " ", "1", "-", " ", "-", "2"), SqlParser.tokenize("SELECT 1-/* c */-2"));
+        assertEquals(List.of("SELECT", " ", "1", "/", " ", "*", "2"), SqlParser.tokenize("SELECT 1//* c */*2"));
+        assertEquals(List.of("SELECT", " ", "1", "<", " ", "=", "2"), SqlParser.tokenize("SELECT 1</* c */=2"));
+        assertEquals(List.of("SELECT", " ", "1", "-", " ", "-", "2"), SqlParser.tokenize("SELECT 1-/* a *//* b */-2"));
+
+        final SqlParser.Tokenizer custom = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("+~+").build());
+        assertEquals(List.of("SELECT", " ", "1", "+", " ", "~", "+", "2"), custom.tokenize("SELECT 1+/* c */~+2"));
+        assertEquals(List.of("SELECT", " ", "1", "+", "~", " ", "+", "2"), custom.tokenize("SELECT 1+~/* c */+2"));
+        assertEquals(List.of("SELECT", " ", "(", ")"), SqlParser.tokenize("SELECT (/* c */)"));
+    }
+
+    @Test
+    public void testQueryClassificationIgnoresNamedParameterKeywords() {
+        for (final String sql : List.of("SELECT :into FROM t", "SELECT #{into} FROM t", "SELECT #{ into, jdbcType=VARCHAR } FROM t",
+                "SELECT * FROM t WHERE t.select = :into", "SELECT :insert OR REPLACE('a', 'b', 'c')",
+                "SELECT #{insert} OR REPLACE('a', 'b', 'c')")) {
+            assertTrue(SqlParser.isSelectQuery(sql), sql);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT :value INTO archive FROM t"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT #{value} FROM t INTO OUTFILE 'result.txt'"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (:value) ON CONFLICT DO UPDATE SET v = :value"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (#{value}); DELETE FROM t"));
+    }
 }

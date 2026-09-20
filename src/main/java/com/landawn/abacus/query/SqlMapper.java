@@ -336,8 +336,8 @@ public final class SqlMapper {
      * The stream content must contain a {@code <sqlMapper>} root element.
      *
      * <p>The caller opens the stream and remains responsible for closing it (typically via
-     * try-with-resources); this method never closes it. The stream is fully consumed, and the
-     * underlying JAXP parser may close it as well, so do not reuse it after this call returns.</p>
+     * try-with-resources). This method does not explicitly close the stream, but the underlying
+     * JAXP parser may do so. The stream is consumed and must not be reused after this call returns.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -609,8 +609,9 @@ public final class SqlMapper {
      *
      * @param id the SQL identifier (must not be {@code null} or empty, must not contain whitespace, and must not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)}),
-     *                                  or if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
+     * @throws IllegalArgumentException if {@link ParsedSql#parse(String)} rejects {@code sql} (including null/blank SQL,
+     *                                  mixed parameter styles, or malformed parameters), or if the id is {@code null}/empty,
+     *                                  contains whitespace, exceeds {@link #MAX_ID_LENGTH}
      *                                  characters, or already exists
      */
     public void add(final String id, final String sql) {
@@ -634,8 +635,9 @@ public final class SqlMapper {
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
      * @param attributes additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout);
      *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
-     * @throws IllegalArgumentException if {@code sql} is {@code null} or blank (blank is rejected by {@link ParsedSql#parse(String)});
-     *                                  if the id is {@code null}/empty, contains whitespace, exceeds {@link #MAX_ID_LENGTH}
+     * @throws IllegalArgumentException if {@link ParsedSql#parse(String)} rejects {@code sql} (including null/blank SQL,
+     *                                  mixed parameter styles, or malformed parameters); if the id is {@code null}/empty,
+     *                                  contains whitespace, exceeds {@link #MAX_ID_LENGTH}
      *                                  characters, or already exists; or if {@code attributes} contains a {@code null}/empty/invalid
      *                                  or namespace-qualified XML attribute name, or a {@code null} value
      */

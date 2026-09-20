@@ -556,7 +556,8 @@ public class SqlExpression extends ComposableCondition {
     /**
      * Creates a NOT BETWEEN expression for the given expression with min and max values.
      * A value satisfies {@code NOT BETWEEN min AND max} when it is strictly less than {@code min}
-     * or strictly greater than {@code max}, so both ends of the range are excluded.
+     * or strictly greater than {@code max}. With ordered, non-null bounds, both boundary values
+     * are excluded. Bounds are emitted in the supplied order and are not compared or reordered.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1195,7 +1196,9 @@ public class SqlExpression extends ComposableCondition {
      *       {@code NaN}/infinite {@link Float}/{@link Double} values and non-numeric custom text are rejected.
      *       {@link Boolean} values are converted via {@code toString()} without quoting.</li>
      *   <li>{@link SqlExpression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
-     *   <li>{@link SubQuery} instances render their {@code toString()} wrapped in parentheses; other {@link Condition}s use their {@code toString()} verbatim</li>
+     *   <li>{@link Condition} values render through {@link Condition#toSql(NamingPolicy)} with
+     *       {@link NamingPolicy#NO_CHANGE}; {@link SubQuery} SQL is wrapped in parentheses. Diagnostic
+     *       {@code toString()} overrides do not affect the generated SQL</li>
      *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
      * </ul>
      *
@@ -1234,7 +1237,7 @@ public class SqlExpression extends ComposableCondition {
             final String exprLiteral = ((SqlExpression) value).literal();
             return exprLiteral != null ? exprLiteral : NULL_STRING;
         } else if (value instanceof Condition) {
-            final String conditionStr = value.toString();
+            final String conditionStr = ((Condition) value).toSql(NamingPolicy.NO_CHANGE);
 
             if (value instanceof SubQuery) {
                 return SK.PARENTHESIS_L + conditionStr + SK.PARENTHESIS_R;
@@ -1248,7 +1251,8 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Creates a COUNT function expression.
-     * COUNT returns the number of rows that match the criteria.
+     * {@code COUNT(*)} counts rows; {@code COUNT(expr)} counts non-null expression values.
+     * Supply {@code DISTINCT expr} to count distinct non-null values.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1339,7 +1343,7 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Creates an ABS (absolute value) function expression.
-     * ABS returns the absolute (positive) value of a number.
+     * ABS returns the absolute (non-negative) value of a number.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1676,7 +1680,8 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Creates a LENGTH function expression.
-     * LENGTH returns the number of characters in a string.
+     * The unit depends on the database: for example, MySQL counts bytes rather than characters.
+     * This method emits {@code LENGTH(expr)} without translating it for the target dialect.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

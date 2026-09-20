@@ -611,4 +611,18 @@ public class JoinTest extends TestBase {
                 ex.getMessage());
         assertFalse(ex.getMessage().contains("non-empty predicate"), ex.getMessage());
     }
+
+    @Test
+    public void testNullNamingPolicyIsNormalizedBeforeRenderingPredicate() {
+        final SqlExpression predicate = new SqlExpression("customerId = id") {
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                return java.util.Objects.requireNonNull(namingPolicy, "namingPolicy").convert("customerId") + " = id";
+            }
+        };
+        final Join join = new Join("orders", predicate);
+
+        assertEquals("JOIN orders ON customerId = id", join.toSql(null));
+        assertEquals("JOIN orders ON customer_id = id", join.toSql(NamingPolicy.SNAKE_CASE));
+    }
 }

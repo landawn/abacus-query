@@ -1017,4 +1017,18 @@ public class BinaryTest extends TestBase {
         final Binary scalarIn = new Binary("id", Operator.IN, Arrays.asList(1, 2));
         assertSame(scalarIn.parameters(), scalarIn.parameters());
     }
+
+    @Test
+    public void testScalarCollectionValueRetainsItsTypeAndBindingIdentity() {
+        final java.util.Set<Integer> value = new java.util.LinkedHashSet<>(Arrays.asList(1, 2));
+        final Equal condition = new Equal("payload", value);
+
+        assertSame(value, condition.propValue());
+        assertSame(value, condition.propValueAs(java.util.Set.class));
+        assertSame(value, condition.parameters().get(0));
+        assertSame(value, PSC.select("id").from("records").where(condition).build().parameters().get(0));
+
+        final ArrayList<Integer> listValue = new ArrayList<>(Arrays.asList(1, 2));
+        assertSame(listValue, new NotEqual("payload", listValue).propValueAs(ArrayList.class));
+    }
 }

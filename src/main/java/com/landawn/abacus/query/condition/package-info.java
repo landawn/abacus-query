@@ -120,9 +120,10 @@
  * {@link java.util.Calendar} parameter values are snapshotted at construction and returned as defensive
  * copies; other application-defined mutable values and custom {@code Condition} implementations are
  * retained by reference, so callers must not mutate them while a containing condition is in use.
- * {@code toString()} delegates to {@code toSql(NamingPolicy.NO_CHANGE)} and inlines literal
- * values, which makes it useful for diagnostics but not for execution &mdash; parameter binding happens
- * when a query builder renders the condition, according to the builder's
+ * Standard {@code toString()} implementations delegate to {@code toSql(NamingPolicy.NO_CHANGE)} and inline
+ * ordinary literal values. Raw and builder-backed subqueries retain their query text and may still contain
+ * placeholders, so these methods do not promise a fully interpolated query. Use them for diagnostics;
+ * parameter binding happens when a query builder renders the condition, according to the builder's
  * {@link com.landawn.abacus.query.SqlDialect}.</p>
  *
  * <h2>Usage example</h2>

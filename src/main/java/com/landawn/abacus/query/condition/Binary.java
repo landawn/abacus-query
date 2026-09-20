@@ -232,8 +232,11 @@ public class Binary extends ComposableCondition {
     }
 
     /**
-     * Returns the property value without an unchecked generic cast. Arrays, dates, calendars, and
-     * mutable values nested in an {@code IN}/{@code NOT IN} membership list are defensively copied.
+     * Returns the property value without an unchecked generic cast. Arrays, dates, and calendars are
+     * defensively copied, including those nested in an {@code IN}/{@code NOT IN} membership list.
+     * Membership lists are returned as unmodifiable copies. A collection used as a scalar value
+     * by another operator retains its concrete type and identity; callers must not mutate that
+     * collection while the condition is in use.
      *
      * <p>A Boolean right-hand value of {@code IS}/{@code IS NOT} is normalized at construction to the
      * {@link SqlExpression} {@code TRUE}/{@code FALSE}, so this method returns that expression (not the
@@ -309,7 +312,9 @@ public class Binary extends ComposableCondition {
      * <p>The result is memoized only when every operand is a plain scalar (neither an array, {@code Date},
      * {@code Calendar} nor a nested {@link Condition}); otherwise a fresh list, holding fresh defensive copies of
      * any array/{@code Date}/{@code Calendar} values (including those spliced in from a nested condition), is
-     * built on every call, so mutating a returned element never affects this condition or a later call.</p>
+     * built on every call. Mutating one of these defensive array/date/calendar copies does not affect
+     * this condition or a later call. Other mutable scalar values, including collections used outside
+     * {@code IN}/{@code NOT IN}, are retained by reference and must not be mutated while in use.</p>
      *
      * @return an immutable list of parameter values; known mutable JDK values in the list are defensive
      *         copies, and the result is never {@code null}
@@ -557,8 +562,8 @@ public class Binary extends ComposableCondition {
     }
 
     /** Returns a safe public view while preserving identity for immutable and application-defined values. */
-    private static Object copyPropValueForExposure(final Object value) {
-        if (value instanceof final Collection<?> values) {
+    private Object copyPropValueForExposure(final Object value) {
+        if (isCollectionOperator(operator()) && value instanceof final Collection<?> values) {
             final List<Object> copy = new ArrayList<>(values.size());
 
             for (final Object element : values) {

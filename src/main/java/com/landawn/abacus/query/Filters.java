@@ -141,6 +141,10 @@ public final class Filters {
     /**
      * A SQL expression representing a question mark literal ({@code ?}) for use in parameterized SQL queries.
      * This constant is used when creating conditions with placeholders for prepared statements.
+     * Its standalone representation is {@code ?}; a {@link SqlBuilder} renders the placeholder using
+     * its SQL policy, for example {@code :age} for a named-SQL equality on {@code age}. The placeholder
+     * contributes no value to the condition's or builder's parameter list, so the execution layer must
+     * supply its binding separately.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -485,8 +489,8 @@ public final class Filters {
     }
 
     /**
-     * Creates an {@code OR} condition from an entity object using all its properties.
-     * Each property of the entity will be included as an equality check in the {@code OR} condition
+     * Creates an {@code OR} condition from an entity object using its selectable top-level properties.
+     * Each selected property of the entity will be included as an equality check in the {@code OR} condition
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -632,8 +636,8 @@ public final class Filters {
     }
 
     /**
-     * Creates an {@code AND} condition from an entity object using all its properties.
-     * Each property of the entity will be included as an equality check in the {@code AND} condition
+     * Creates an {@code AND} condition from an entity object using its selectable top-level properties.
+     * Each selected property of the entity will be included as an equality check in the {@code AND} condition
      * across <b>different</b> columns/properties.
      *
      * <p><b>Usage Examples:</b></p>
@@ -2109,7 +2113,7 @@ public final class Filters {
      *                  naming the SQL keyword
      * @return an {@link Is} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue}
-     *                                  is not {@code null}, a {@code Boolean}, or an {@link SqlExpression}
+     *                                  is a blank {@link SqlExpression} or is not {@code null}, a {@code Boolean}, or an {@link SqlExpression}
      */
     public static Is is(final String propName, final Object propValue) {
         return new Is(propName, propValue);
@@ -2165,7 +2169,7 @@ public final class Filters {
      *                  {@link SqlExpression} naming the SQL keyword
      * @return an {@link IsNot} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue}
-     *                                  is not {@code null}, a {@code Boolean}, or an {@link SqlExpression}
+     *                                  is a blank {@link SqlExpression} or is not {@code null}, a {@code Boolean}, or an {@link SqlExpression}
      */
     public static IsNot isNot(final String propName, final Object propValue) {
         return new IsNot(propName, propValue);
@@ -2481,8 +2485,8 @@ public final class Filters {
 
     /**
      * Creates a {@link GroupBy} clause with the specified property names.
-     * Groups results by the given columns. No explicit sort direction is appended
-     * to the columns; the database default is used.
+     * Groups results by the given columns without appending a sort direction.
+     * Use an {@link OrderBy} clause when the result rows require a defined order.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2500,9 +2504,9 @@ public final class Filters {
 
     /**
      * Creates a {@link GroupBy} clause with properties from a collection.
-     * Groups results by the given columns. No explicit sort direction is appended
-     * to the columns; the database default is used. To append a sort direction to
-     * every column, use {@link #groupBy(Collection, SortDirection)}.
+     * Groups results by the given columns without appending a sort direction.
+     * Use an {@link OrderBy} clause when the result rows require a defined order.
+     * To append a sort direction to every grouping column, use {@link #groupBy(Collection, SortDirection)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2984,9 +2988,9 @@ public final class Filters {
     /**
      * Creates an {@link On} clause for JOIN operations with the specified condition.
      *
-     * <p>Note: do not build join conditions with {@link #equal(String, Object)} — it renders the
-     * right-hand side as a quoted string literal ({@code equal("users.id", "orders.user_id")}
-     * produces {@code users.id = 'orders.user_id'}), not as a column reference. To compare two
+     * <p>A String value passed to {@link #equal(String, Object)} is a data value:
+     * {@code equal("users.id", "orders.user_id")} compares {@code users.id} with the literal
+     * {@code 'orders.user_id'} (or its bind parameter). To compare two
      * columns, use {@link #on(String, String)} or {@link #expr(String)} as shown below.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -4527,9 +4531,11 @@ public final class Filters {
      * {@code parameters} is defensively copied and must have exactly one value for each positional
      * {@code ?} placeholder in encounter order.
      *
-     * <p>Named and MyBatis placeholders are not supported by raw bound subqueries because they lack
-     * builder-generated collision metadata. Use {@link SqlBuilder#toSubQuery()} when a named SQL policy
-     * is required. As with every raw SQL API, the SQL structure itself must not come from untrusted input.</p>
+     * <p>The supplied SQL accepts only positional placeholders. When this subquery is embedded in a
+     * {@link SqlBuilder}, those placeholders are converted to the builder's named or MyBatis parameter
+     * style, or their values are inlined for a raw-SQL policy. To capture SQL that already has generated
+     * named placeholders and their collision metadata, use {@link SqlBuilder#toSubQuery()}.
+     * As with every raw SQL API, the SQL structure itself must not come from untrusted input.</p>
      *
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery(

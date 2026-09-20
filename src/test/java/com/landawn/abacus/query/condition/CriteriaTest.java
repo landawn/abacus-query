@@ -1865,4 +1865,18 @@ public class CriteriaTest extends TestBase {
         assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) criteria.parameters().get(0)));
         assertEquals(" WHERE payload = '[1]'", criteria.toString());
     }
+
+    @Test
+    public void testNullNamingPolicyIsNormalizedBeforeRenderingClauses() {
+        final Where where = new Where(Filters.eq("firstName", "Ada")) {
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                return "WHERE " + java.util.Objects.requireNonNull(namingPolicy, "namingPolicy").convert("firstName") + " = 'Ada'";
+            }
+        };
+        final Criteria criteria = Criteria.builder().where(where).build();
+
+        assertEquals(" WHERE firstName = 'Ada'", criteria.toSql(null));
+        assertEquals(" WHERE first_name = 'Ada'", criteria.toSql(NamingPolicy.SNAKE_CASE));
+    }
 }

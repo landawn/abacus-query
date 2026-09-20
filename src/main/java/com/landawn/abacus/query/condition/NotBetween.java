@@ -16,12 +16,15 @@ package com.landawn.abacus.query.condition;
 
 /**
  * Represents a NOT BETWEEN condition in SQL queries.
- * The NOT BETWEEN operator selects values outside a given range, excluding both endpoints.
+ * With ordered bounds, the NOT BETWEEN operator selects values outside a given range, excluding both endpoints.
  * It's the logical opposite of the {@link Between} operator and is useful for excluding ranges of values.
  *
  * <p>The NOT BETWEEN condition is equivalent to: property &lt; minValue OR property &gt; maxValue.
  * The condition evaluates to true if the property value falls strictly outside the specified range
  * (i.e., less than minValue or greater than maxValue).</p>
+ *
+ * <p>The bounds are neither reordered nor compared by this class. Reversed non-null bounds make
+ * {@code NOT BETWEEN} true for every non-null comparable value, including the two boundary values.</p>
  *
  * <p>Common use cases include:</p>
  * <ul>
@@ -33,7 +36,8 @@ package com.landawn.abacus.query.condition;
  *
  * <p><b>&#9888;&#65039;</b> Important notes:</p>
  * <ul>
- *   <li>BETWEEN is inclusive on both sides, so NOT BETWEEN excludes rows whose value equals
+ *   <li>When the bounds are ordered ({@code minValue <= maxValue}), BETWEEN is inclusive on both sides,
+ *       so NOT BETWEEN excludes rows whose value equals
  *       either {@code minValue} or {@code maxValue}</li>
  *   <li>Works with numbers, strings, dates, and other comparable types</li>
  *   <li>Can use expressions or subqueries as range boundaries</li>
@@ -81,8 +85,9 @@ public class NotBetween extends AbstractBetween {
      * Creates a new NOT BETWEEN condition.
      * The condition matches rows where the property value is less than {@code minValue}
      * OR greater than {@code maxValue} — i.e., outside the inclusive {@code [minValue, maxValue]}
-     * range. Values exactly equal to either boundary do not match (because they are inside the
-     * inclusive BETWEEN range, and NOT BETWEEN is its negation).
+     * range. When the bounds are ordered ({@code minValue <= maxValue}), values exactly equal
+     * to either boundary do not match. The bounds are not reordered; reversed non-null bounds
+     * match every non-null comparable value.
      *
      * <p><b>&#9888;&#65039;</b> If the property value is SQL {@code NULL}, SQL three-valued logic
      * makes the predicate UNKNOWN (treated as false in a WHERE clause). A {@code NULL} bound does

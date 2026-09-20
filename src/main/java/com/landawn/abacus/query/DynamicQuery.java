@@ -43,7 +43,7 @@ import com.landawn.abacus.util.Strings;
  * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation;
  * this class does not quote identifiers, escape literals, or create bind parameters. Keep SQL text
  * application-controlled and represent untrusted values with placeholders bound by the execution
- * layer.</p>
+ * layer. Builders and their clause builders are mutable and are not thread-safe.</p>
  *
  * <h2>Example usage:</h2>
  * <pre>{@code
@@ -1927,6 +1927,10 @@ public final class DynamicQuery {
      * Builder class for constructing the {@code WHERE} clause of a SQL query.
      * Supports adding conditions with {@code AND}/{@code OR} operators and parameter placeholders.
      *
+     * <p>Expressions are appended without parentheses. Mixing {@code and(...)} and {@code or(...)}
+     * therefore follows SQL operator precedence rather than grouping earlier calls. Include explicit
+     * parentheses in the supplied expressions when a different grouping is required.</p>
+     *
      * <p>This class is not meant to be instantiated directly. Use {@link Builder#where()}
      * to get an instance.</p>
      *
@@ -2344,6 +2348,10 @@ public final class DynamicQuery {
     /**
      * Builder class for constructing the {@code HAVING} clause of a SQL query.
      * Used to filter grouped results based on aggregate conditions.
+     *
+     * <p>Expressions are appended without parentheses. Mixing {@code and(...)} and {@code or(...)}
+     * therefore follows SQL operator precedence rather than grouping earlier calls. Include explicit
+     * parentheses in the supplied expressions when a different grouping is required.</p>
      *
      * <p>This class is not meant to be instantiated directly. Use {@link Builder#having()}
      * to get an instance.</p>

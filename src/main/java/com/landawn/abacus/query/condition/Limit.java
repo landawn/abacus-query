@@ -121,8 +121,6 @@ public class Limit extends Clause {
      * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
      */
     public Limit(final int count, final int offset) {
-        // Deliberately NOT SqlExpression.of(...): that factory's cache is unbounded, so interning every
-        // distinct (count, offset) pair would grow without limit under dynamic pagination values.
         super(Operator.LIMIT, new SqlExpression(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, "count"))
                 : N.checkArgNotNegative(count, "count") + " OFFSET " + N.checkArgNotNegative(offset, "offset")));
 
@@ -160,8 +158,6 @@ public class Limit extends Clause {
     }
 
     private Limit(final Prepared prepared) {
-        // Deliberately NOT SqlExpression.of(...): expressions carry dynamic count/offset values, and the
-        // factory's unbounded cache would retain every distinct pair for the classloader lifetime.
         super(Operator.LIMIT, new SqlExpression(prepared.conditionExpr));
 
         this.expr = prepared.expr;

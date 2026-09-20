@@ -141,9 +141,10 @@ public abstract class ComposableCondition extends AbstractCondition {
      * Creates a new XOR (exclusive OR) condition combining this condition with another.
      * Exactly one of the two conditions must be true for the result to be true.
      *
-     * <p>XOR has no direct SQL equivalent, so it is expanded to its composable definition:
+     * <p>For portability across databases, XOR is expanded to its composable definition:
      * {@code (A AND NOT B) OR (NOT A AND B)}. The object returned is the outer {@link Or} of that
-     * expanded expression.</p>
+     * expanded expression. An UNKNOWN operand produces an UNKNOWN result; true requires one true
+     * operand and one false operand.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

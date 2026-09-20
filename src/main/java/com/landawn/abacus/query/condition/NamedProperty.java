@@ -37,6 +37,11 @@ import com.landawn.abacus.util.Strings;
  * property name in each condition, you create a NamedProperty once and use it to build multiple
  * conditions fluently.</p>
  *
+ * <p>Membership methods ({@code in}/{@code notIn}) reject null elements; {@code equalsAny}
+ * accepts null elements and creates {@code IS NULL} predicates for them. Pattern helpers such as
+ * {@code startsWith}, {@code endsWith}, and {@code contains} add {@code %} wildcards but do not
+ * escape {@code %} or {@code _} supplied by the caller; those characters retain SQL LIKE semantics.</p>
+ *
  * <p>Key features:</p>
  * <ul>
  *   <li>Instance reuse by property name (using {@link #of(String)}); intended for a fixed, application-known set of names</li>
@@ -884,9 +889,9 @@ public class NamedProperty {
      * NamedProperty.of("price").notBetween(10.0, 100.0);   // price NOT BETWEEN 10.0 AND 100.0
      * }</pre>
      *
-     * @param minValue the lower bound of the excluded range (a value equal to this boundary is itself excluded, per SQL NOT BETWEEN).
+     * @param minValue the lower bound of the excluded range (this boundary is excluded when the bounds are ordered).
      *                 Can be numeric, date, string, or any comparable type.
-     * @param maxValue the upper bound of the excluded range (a value equal to this boundary is itself excluded, per SQL NOT BETWEEN).
+     * @param maxValue the upper bound of the excluded range (this boundary is excluded when the bounds are ordered).
      *                 Can be numeric, date, string, or any comparable type.
      * @return a NotBetween condition for this property
      * @see NotBetween
