@@ -1,0 +1,49 @@
+# Local-change regression coverage
+
+Audit date: 2026-09-20. Scope: the current local changes under `src/main/java`, including the follow-up parser and builder fixes. Tests remain in existing test classes. This inventory records the important implemented behaviors and their rationale; it does not claim exhaustive coverage of every SQL spelling or dialect.
+
+## Implemented behavior
+
+Test classes are under `src/test/java/com/landawn/abacus/query`; condition tests are in its `condition` subdirectory. Each row lists representative guards, including normal, rejection/recovery, or boundary cases where relevant.
+
+| Behavior | Regression tests | Rationale comments or contract |
+| --- | --- | --- |
+| Binding styles and standalone brackets | `ParsedSqlTest.testParse_StandaloneSubscriptsRejectMixedParameterStyles`<br>`ParsedSqlTest.testParse_StandaloneSubscriptsKeepQuotedAndCommentedMarkersLiteral` | ParsedSql: isParameterSubscriptToken and mixedParameterStyleMessage explain recognition and rejection. |
+| Compact expressions, JSON operators, offsets, comments | `ParsedSqlTest.testParse_CompactMarkerChainsRetainEveryOffsetInsideAndOutsideBrackets`<br>`ParsedSqlTest.testParse_SubscriptJsonOperatorsPreservePositionalOperandOffsets`<br>`ParsedSqlTest.testParse_SubscriptJsonOperandsKeepCommentsQuotesAndBindingsIntact` | ParsedSql: forward operand state and bracket lexer comments explain operator/placeholder distinctions. |
+| JDBC escapes, adjacent MyBatis bindings, metadata and cast suffixes | `ParsedSqlTest.testParse_JdbcEscapesPreserveAdjacentMyBatisBindings`<br>`ParsedSqlTest.testParse_JdbcEscapesPreserveSplitMyBatisMetadataAndQuotedCasts`<br>`ParsedSqlTest.testParse_EscapedMyBatisProbeInQuotedTextKeepsOperatorGapsAndSourceOffsets`<br>`ParsedSqlTest.testParse_JdbcEscapedMyBatisBoundaryDoesNotHideOtherTokens` | ParsedSql: restoreEscapedIbatisOpeners and bracket opener comments explain precedence, offsets and opaque metadata. |
+| Typed geometric operands and stack/scaling safety | `ParsedSqlTest.testParse_GeometricCastsRespectTokenBoundariesAndQuotedTypes`<br>`ParsedSqlTest.testParse_GeometricCastsIgnoreCommentsAndKeepTypeNamesExact`<br>`ParsedSqlTest.testParse_DeeplyParenthesizedGeometricOperandsPreserveOnlyRealBindings`<br>`ParsedSqlTest.testParse_RepeatedGeometricCastsKeepEveryOperandBindingOffset` | ParsedSql: iterative unwrapping, bounded type scanning and lazy parenthesis-index rationale. |
+| SQL/JSON value clauses and query scopes | `ParsedSqlTest.testParse_SqlJsonClausePlaceholdersSurviveCommentsCaseAndNesting`<br>`ParsedSqlTest.testParse_SqlJsonQueryBodiesDoNotUseConstructorValueClauses` | ParsedSql: constructor scope stack and clause-context comments. Known scope/uniqueness defects below remain open. |
+| Mixed-style diagnostics inside and outside brackets | `ParsedSqlTest.testParse_MixedStyleMessageExplainsSqlJsonValuesAndUnaryOperators`<br>`ParsedSqlTest.testParse_MixedStyleMessageExplainsCompactBindings` | ParsedSql: general guidance uses detected styles; only the bracket sentence depends on subscript origin. |
+| Configured separators, Unicode case, whitespace and longest matches | `SqlParserTest.testConfiguredCompositeSeparatorSearchFindsDifferentSqlCasing`<br>`SqlParserTest.testConfiguredCompositeSeparatorSearchReturnsEarliestWholeMatch`<br>`SqlParserTest.testConfiguredSeparatorSearchUsesUnicodeCaseComparison`<br>`SqlParserTest.testIndexOfTokenFindsExplicitWhitespaceSeparators`<br>`SqlParserTest.testWhitespacePrefixedSeparatorsAreConsistentAcrossScanners` | SqlParser: TokenizerConfig and search Javadocs describe exact spelling, case comparison and lexical precedence. |
+| Search scaling, overlapping candidates, quote/hash context | `SqlParserTest.testConfiguredCompositeSeparatorSearchScalesWithRepeatedNearMatches`<br>`SqlParserTest.testCompositeSeparatorSearchResumesAtBoundariesAndKeepsOverlappingCandidates`<br>`SqlParserTest.testCompositeSearchRetriesAfterCompleteQuotedIdentifiers` | SqlParser: scanFrom contract and retry comments restrict resumed scans to proven token boundaries. |
+| Quoted/Unicode mappings, aliases and USING recovery | `QueryUtilTest.testQuotedColumnDotsDoNotSuppressTableAliases`<br>`QueryUtilTest.testQuotedColumnMappingsRetainAliasesInConditionsAndOrdering`<br>`QueryUtilTest.testUnicodeIdentifiersRetainSelfJoinAndNestedQualifiers`<br>`QueryUtilTest.testUnicodeEscapeClausesDoNotHideFollowingUsingColumns`<br>`QueryUtilTest.testNestedQuotedColumnDotsRetainSubEntityQualifier` | QueryUtil: identifier-shape, quote/escape, and qualifying-dot helpers explain why expressions differ from simple names. |
+| USING rendering and alias restoration | `SqlBuilderTest.testUsingColumnsDoNotInheritEntityTableAlias`<br>`SqlBuilderTest.testUsingAcceptsQuotedDotsInsideColumnNames`<br>`SqlBuilderTest.testFailedUsingRenderingRestoresEntityTableAlias` | SqlBuilder: USING-specific parentheses and temporary alias suppression comments. |
+| Explicit mapped aliases with NO_CHANGE | `SqlBuilderTest.testExplicitMappedSelectAliasesAreHonoredWithNoChangeNamingPolicy` | AbstractQueryBuilder: appendColumnName documentation distinguishes explicit aliases from naming conversion. |
+| Raw bindings, parameter-policy ownership and rollback | `SqlBuilderTest.testRawSubQueryBindingsPreventMixedPoliciesInSiblingSetOperations`<br>`SqlBuilderTest.testRawSubQueryBindingsPreventMixedPoliciesInDerivedTables`<br>`SqlBuilderTest.testRawSubQueryBindingsRetainPolicyInReusableSnapshots`<br>`SqlBuilderTest.testFailedRawSubQueryRenderingRestoresParameterPolicyMetadata`<br>`SqlBuilderTest.testInlinedRawSubQueryBindingsDoNotRestrictParentParameterPolicy` | SqlBuilder: generated-placeholder flag rationale; AbstractQueryBuilder: mutation checkpoint saves/restores policy state. |
+| Generated escaped-operator SQL round trips and raw rejection | `SqlBuilderTest.testRawSubQueryJdbcEscapedOperatorsArePreserved` | ParsedSql/SubQuery contracts distinguish driver escapes from real bindings and reject unresolved raw bindings. |
+| Set-operation isolation, lifecycle, nesting, metadata equality and rollback | `SqlBuilderTest.testSiblingSetOperationsRejectUnisolatedBranchClausesWithoutConsumingBuilders`<br>`SqlBuilderTest.testSetOperationsRejectClosedChildrenWithoutConsumingParent`<br>`SqlBuilderTest.testUnfinishedCompoundChildCanBeCompletedAfterIsolationRejection`<br>`SqlBuilderTest.testNestedCompoundSnapshotDoesNotRequireOuterBranchIsolation`<br>`SqlBuilderTest.testSubQuerySnapshotEqualityDistinguishesIsolationMetadata`<br>`SqlBuilderTest.testFailedCriteriaSetOperationDoesNotRetainIsolationState` | AbstractQueryBuilder: early compound-state assignment and top-level-only isolation rationale; snapshot Javadocs explain retained metadata. |
+| Scalar arity, allowed unknown arity, tuple and EXISTS compatibility | `AbstractConditionTest.testScalarSubqueryOperandsRejectKnownMultiColumnProjections`<br>`AbstractConditionTest.testScalarSubqueryOperandsAcceptSingleColumnsAndRetainBindings`<br>`AbstractConditionTest.testScalarSubqueryOperandsLeaveRawWildcardAndBuilderProjectionArityUnchecked`<br>`AbstractConditionTest.testMultiColumnSubqueriesRemainValidForTupleMembershipAndExistence` | AbstractCondition: known-projection-only validation contract, with raw/wildcard/snapshot exemptions. |
+| Enum aliases remain predicates through structured subqueries | `AbstractConditionTest.testClauseAliasesRemainPredicatesInStructuredSubqueries` | AbstractCondition: SQL clause recognition rejects Java enum spellings; tests include comment boundaries. |
+| USING error guidance | `UsingTest.testConstructorRejectsQualifiedColumnName` | Using: constructor validation explains the restricted spelling and points to builder using(...). |
+| Selection owns snapshots of caller collections | `SelectionTest.testPropertyCollectionsAreDefensivelyCopiedAndImmutable`<br>`SelectionTest.testImmutableWrappersOverMutableCollectionsAreCopiedToo` | Selection: build documentation includes immutable views over mutable backing collections. |
+
+The remaining production changes in `Dsl`, `DynamicQuery`, `Filters`, and the condition classes clarify existing contracts (naming, placeholder ownership, scalar arity, raw grouping, dialect-dependent LIMIT, tuple NULL semantics, and diagnostic rendering). Their corresponding existing factory, validation, rendering and quantifier tests were checked; duplicate tests were not added for wording-only changes.
+
+## Latest additions and validation
+
+- Deep geometric operands: 4,096 parenthesis pairs, positional/named/MyBatis bindings, and ordinary/bracket lexers.
+- Repeated geometric casts: 4,000 operands, every expected binding offset, and a generous five-second scalability bound in both lexers.
+- An unfinished compound child is rejected before consumption, then completed, isolated and reused with the original parent.
+- The two changed test classes passed 1,303 tests using the direct JUnit runner (192 ParsedSql tests and 1,111 SqlBuilder tests), with no failures or skips. The preceding comment/test pass also validated the unchanged tokenizer, mapping and condition coverage.
+
+## Known defects still requiring implementation fixes
+
+These were reported separately and are not treated as fixed or protected by passing tests:
+
+1. `JSON_OBJECT` value placeholders before `WITH UNIQUE KEYS` or `WITHOUT UNIQUE KEYS` disappear inside bracket groups.
+2. Geometric casts through an intermediate type, such as `CAST(? AS text)::line` or `?::text ::line`, introduce a phantom parameter.
+3. Glued qualified geometric literals, such as `pg_catalog.line'(0,0),(1,0)'`, lose unary-operator recognition.
+4. `JSON_ARRAY` query scope is misidentified when a set-operation query starts with a parenthesized SELECT.
+5. Mapped Unicode identifiers using `UESCAPE E'!'` lose their table alias.
+
+Regression tests for these cases should assert the corrected behavior when each implementation fix is made; tests must not endorse the current wrong result.
