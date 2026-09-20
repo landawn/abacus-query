@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Objectory;
@@ -370,7 +371,11 @@ public final class SqlParser {
      * <p>SQL lexical structure takes precedence over configured separators: quoted regions remain
      * whole tokens, comments are skipped, {@code #{...}} remains a MyBatis parameter marker, and a
      * contextually recognized hash-prefixed identifier remains an identifier. Separators are
-     * recognized outside those constructs, with the longest configured match winning.</p>
+     * recognized outside those constructs, with the longest configured match winning. A configured
+     * multi-character separator beginning with whitespace is emitted as a complete token before
+     * ordinary whitespace skipping is considered, by tokenization, next-token scanning, token bounds
+     * and token search alike; searching for such a separator requires its exact spelling, including the
+     * leading whitespace.</p>
      */
     public static final class TokenizerConfig {
         private final Set<String> separators;
@@ -380,6 +385,14 @@ public final class SqlParser {
         private final String[][] multiCharSeparatorsByLength;
         private final boolean[] multiCharSeparatorFirstChars;
         private final boolean hasNonAsciiMultiCharFirstChar;
+
+        /**
+         * Separators containing characters with case variants, ordered with the same Unicode comparison
+         * used by String.equalsIgnoreCase. Lowercasing is insufficient for final sigma and dotted/dotless I.
+         * Empty for a purely punctuational configuration such as the built-in one, so ordinary lookups
+         * need only the exact set probe.
+         */
+        private final Set<String> caseInsensitiveSeparators;
 
         private TokenizerConfig(final Set<String> configuredSeparators) {
             separators = Collections.unmodifiableSet(new LinkedHashSet<>(configuredSeparators));
@@ -439,6 +452,48 @@ public final class SqlParser {
 
             multiCharSeparatorFirstChars = firstChars;
             hasNonAsciiMultiCharFirstChar = nonAsciiFirstChar;
+
+            Set<String> caseInsensitive = null;
+
+            for (final String separator : separators) {
+                if (hasCaseVariants(separator)) {
+                    if (caseInsensitive == null) {
+                        caseInsensitive = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+                    }
+
+                    caseInsensitive.add(separator);
+                }
+            }
+
+            caseInsensitiveSeparators = caseInsensitive == null ? Collections.emptySet() : Collections.unmodifiableSet(caseInsensitive);
+        }
+
+        /** Includes supplementary letters and case-bearing symbols, not just BMP letter characters. */
+        private static boolean hasCaseVariants(final String separator) {
+            for (int i = 0, len = separator.length(); i < len;) {
+                final int codePoint = separator.codePointAt(i);
+
+                if (codePoint != Character.toUpperCase(codePoint) || codePoint != Character.toLowerCase(codePoint)) {
+                    return true;
+                }
+
+                i += Character.charCount(codePoint);
+            }
+
+            return false;
+        }
+
+        /**
+         * Returns whether {@code token} is spelled exactly like a configured separator, honoring the
+         * caller's case sensitivity. Case-insensitive lookup uses the same comparison as token matching,
+         * without allocating a normalized copy of the search text.
+         *
+         * @param token the candidate separator spelling
+         * @param caseSensitive whether the spelling must match exactly
+         * @return {@code true} if a configured separator is spelled this way
+         */
+        boolean isConfiguredSeparator(final String token, final boolean caseSensitive) {
+            return separators.contains(token) || (!caseSensitive && !caseInsensitiveSeparators.isEmpty() && caseInsensitiveSeparators.contains(token));
         }
 
         /**
@@ -726,7 +781,8 @@ public final class SqlParser {
      * separators (space, horizontal tab, line feed, carriage return, and form feed) are collapsed
      * into a single space token (see the class-level documentation for full tokenization rules).
      * Removing a block comment preserves token boundaries, including between operators: for example,
-     * {@code 1-/* comment *}{@code /-2} is rebuilt as {@code 1- -2}, never as a line comment.
+     * {@code 1-/* comment *}{@code /-2} is rebuilt as {@code 1- -2}, never as a line comment. Likewise,
+     * {@code ?/* comment *}{@code /?} remains {@code ? ?}, rather than becoming a pgJDBC {@code ??} escape.
      * Composite keywords are <em>not</em> merged: e.g. {@code "ORDER BY"} is returned as the
      * separate tokens {@code "ORDER"}, {@code " "}, {@code "BY"}.</p>
      *
@@ -1012,7 +1068,16 @@ public final class SqlParser {
      * {@code token} appears as a <em>complete</em> SQL token (or composite token), not where it
      * occurs as a substring of another identifier; matches that fall inside line/hash/block
      * comments are skipped. Leading and trailing whitespace in {@code token} is ignored, and runs
-     * of whitespace inside a composite token are treated as a separator between its components.</p>
+     * of whitespace inside a composite token are treated as a separator between its components. The one
+     * exception is a {@code token} that is itself a configured separator: it is matched verbatim, so a
+     * separator whose spelling begins with whitespace ({@code " ->"}) is found as the single token that
+     * {@link #tokenize(String)} and {@link #nextToken(String, int)} emit for it, while its trimmed form
+     * ({@code "->"}) is not found, because no such token is produced there. In a case-insensitive search,
+     * a configured separator without surrounding whitespace may also match a composite token: source
+     * casing or whitespace can make {@code ORDER BY} tokenize separately from a configured
+     * {@code "order by"} separator. The earliest complete match of either form is returned. An explicit
+     * search for a configured single whitespace separator matches that source character, including
+     * within a whitespace run; ordinary next-token scanning still skips whitespace.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1037,19 +1102,30 @@ public final class SqlParser {
 
     private static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
             final TokenizerConfig tokenizerConfig) {
-        return indexOfToken(sql, token, fromIndex, caseSensitive, tokenizerConfig, new HashScanMemo(sql));
+        return indexOfToken(sql, token, fromIndex, caseSensitive, tokenizerConfig, new HashScanMemo(sql), 0);
     }
 
+    /**
+     * Resumes only at a proven token boundary: an arbitrary public {@code fromIndex} may sit inside a
+     * quoted token or comment. Keep the original SQL and memo when resuming, because hash-prefixed
+     * identifiers still depend on the clause context preceding that boundary.
+     */
     private static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
-            final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+            final TokenizerConfig tokenizerConfig, final HashScanMemo memo, final int scanFrom) {
         final String trimmedToken = token.trim();
         String[] componentTokens = null;
 
-        // A search argument that is one token under the active configuration must be matched as a
-        // unit. This covers quoted tokens containing spaces and configurations that deliberately
-        // remove space from the separator set. Only composite targets are space-split below.
-        if (!trimmedToken.isEmpty() && trimmedToken.equals(nextToken(trimmedToken, 0, tokenizerConfig))
-                && nextTokenEndIndex(trimmedToken, 0, tokenizerConfig) == trimmedToken.length()) {
+        // A configured separator is searched for exactly as the tokenizer emits it, before any whitespace
+        // normalization. A separator that begins with whitespace (" ->") is one token to tokenize(...) and
+        // nextToken(...), so trimming it here would instead look for a "->" token that is never produced.
+        if (tokenizerConfig.isConfiguredSeparator(token, caseSensitive)) {
+            componentTokens = new String[] { token };
+        } else if (!trimmedToken.isEmpty() && ((!token.equals(trimmedToken) && tokenizerConfig.isConfiguredSeparator(trimmedToken, caseSensitive))
+                || (trimmedToken.equals(nextToken(trimmedToken, 0, tokenizerConfig))
+                        && nextTokenEndIndex(trimmedToken, 0, tokenizerConfig) == trimmedToken.length()))) {
+            // Normalize padding before recognizing a separator in another case, too. Otherwise padded
+            // " ORDER BY " cannot find the single token emitted for a configured "order by" separator.
+            // Quoted tokens and configurations that remove space from the separator set also stay whole.
             componentTokens = new String[] { trimmedToken };
         } else {
             componentTokens = compositeTokens.get(token);
@@ -1078,7 +1154,9 @@ public final class SqlParser {
                 // `index` is preceded by an ODD number of consecutive backslashes.
                 boolean bsEscaped = false;
 
-                for (int index = 0; index < sqlLength; index++) {
+                // Public searches start at zero to honor quotes/comments before fromIndex. Composite
+                // retries already know a token boundary and can resume there without rescanning prefixes.
+                for (int index = scanFrom; index < sqlLength; index++) {
                     final char ch = sql.charAt(index);
 
                     // is it in a quoted identifier?
@@ -1196,11 +1274,11 @@ public final class SqlParser {
                             }
 
                             sb.setLength(0);
-                        } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
-                            // skip white char
-                            continue;
                         }
 
+                        // The longest configured separator wins, so this must run before whitespace is
+                        // skipped: a separator spelled with a leading blank (" ->") starts on a whitespace
+                        // character, and skipping it first would split the separator and leave "->" behind.
                         temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
 
                         if (temp != null) {
@@ -1211,6 +1289,14 @@ public final class SqlParser {
                             }
 
                             index += temp.length() - 1;
+                        } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
+                            // Whitespace is normally skipped, but an explicit single-character separator
+                            // search must still find it. Longer configured separators retain precedence.
+                            if (index >= startIndex && searchToken.length() == 1 && searchToken.charAt(0) == ch) {
+                                result = index;
+                                break;
+                            }
+                            continue;
                         } else if (index >= startIndex
                                 && (searchToken.equals(String.valueOf(ch)) || (!caseSensitive && searchToken.equalsIgnoreCase(String.valueOf(ch))))) {
                             result = index;
@@ -1231,48 +1317,78 @@ public final class SqlParser {
                     }
                 }
 
+                // Separator recognition is case-sensitive even when search is not. A letter-bearing
+                // separator such as "order by" can therefore appear as separate ORDER/BY tokens in SQL.
+                // Keep whitespace-prefixed separators verbatim, and avoid this extra scan for the default
+                // punctuation-only configuration. A composite match must precede any whole-token match.
+                if (!caseSensitive && result != startIndex && !tokenizerConfig.caseInsensitiveSeparators.isEmpty() && searchToken.equals(trimmedToken)
+                        && tokenizerConfig.caseInsensitiveSeparators.contains(searchToken)) {
+                    String[] separatedTokens = compositeTokens.get(searchToken);
+
+                    if (separatedTokens == null) {
+                        separatedTokens = splitTokenComponents(searchToken);
+                    }
+
+                    if (separatedTokens.length > 1) {
+                        final int compositeResult = indexOfCompositeToken(sql, separatedTokens, fromIndex, result < 0 ? sqlLength : result, caseSensitive,
+                                tokenizerConfig, memo);
+
+                        if (compositeResult >= 0) {
+                            return compositeResult;
+                        }
+                    }
+                }
+
                 return result;
             } finally {
                 Objectory.recycle(sb);
             }
-        } else {
-            int result = indexOfToken(sql, componentTokens[0], fromIndex, caseSensitive, tokenizerConfig, memo);
+        }
 
-            while (result >= 0) {
-                int tmpIndex = result + componentTokens[0].length();
-                boolean matched = true;
+        return indexOfCompositeToken(sql, componentTokens, fromIndex, sql.length(), caseSensitive, tokenizerConfig, memo);
+    }
 
-                for (int i = 1; i < componentTokens.length; i++) {
-                    final String nextToken = nextToken(sql, tmpIndex, tokenizerConfig, memo);
+    /** Finds a composite token starting before {@code toIndex}, reusing the caller's lexical memo. */
+    private static int indexOfCompositeToken(final String sql, final String[] componentTokens, final int fromIndex, final int toIndex,
+            final boolean caseSensitive, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        int result = indexOfToken(sql, componentTokens[0], fromIndex, caseSensitive, tokenizerConfig, memo, 0);
 
-                    if (Strings.isNotEmpty(nextToken)
-                            && (nextToken.equals(componentTokens[i]) || (!caseSensitive && nextToken.equalsIgnoreCase(componentTokens[i])))) {
-                        // Use indexOfToken to skip whitespace and block/line comments between component tokens.
-                        final int componentTokenPos = indexOfToken(sql, componentTokens[i], tmpIndex, caseSensitive, tokenizerConfig, memo);
+        while (result >= 0 && result < toIndex) {
+            int tmpIndex = result + componentTokens[0].length();
+            boolean matched = true;
 
-                        if (componentTokenPos < 0) {
-                            matched = false;
-                            break;
-                        }
+            for (int i = 1; i < componentTokens.length; i++) {
+                final String nextToken = nextToken(sql, tmpIndex, tokenizerConfig, memo);
 
-                        tmpIndex = componentTokenPos + componentTokens[i].length();
-                    } else {
+                if (Strings.isNotEmpty(nextToken)
+                        && (nextToken.equals(componentTokens[i]) || (!caseSensitive && nextToken.equalsIgnoreCase(componentTokens[i])))) {
+                    // Use indexOfToken to skip whitespace and block/line comments between component tokens.
+                    final int componentTokenPos = indexOfToken(sql, componentTokens[i], tmpIndex, caseSensitive, tokenizerConfig, memo, tmpIndex);
+
+                    if (componentTokenPos < 0) {
                         matched = false;
-
                         break;
                     }
-                }
 
-                if (matched) {
-                    return result;
-                }
+                    tmpIndex = componentTokenPos + componentTokens[i].length();
+                } else {
+                    matched = false;
 
-                // The first component matched but a later one did not; continue after the current match.
-                result = indexOfToken(sql, componentTokens[0], result + componentTokens[0].length(), caseSensitive, tokenizerConfig, memo);
+                    break;
+                }
             }
 
-            return result;
+            if (matched) {
+                return result;
+            }
+
+            // The first component ends at a known token boundary. Resume the scan there, keeping
+            // overlapping candidates while avoiding quadratic prefix scans on repeated near-matches.
+            final int nextStart = result + componentTokens[0].length();
+            result = indexOfToken(sql, componentTokens[0], nextStart, caseSensitive, tokenizerConfig, memo, nextStart);
         }
+
+        return N.INDEX_NOT_FOUND;
     }
 
     /**
@@ -1398,15 +1514,17 @@ public final class SqlParser {
                 } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig, memo)) {
                     if (!sb.isEmpty()) {
                         break;
-                    } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
-                        // skip white char
-                        continue;
                     }
 
+                    // Matched before whitespace is skipped: a configured separator may begin with a blank
+                    // (" ->"), and skipping that blank first would emit "->" instead of the whole separator.
                     temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
 
                     if (temp != null) {
                         sb.append(temp);
+                    } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
+                        // skip white char
+                        continue;
                     } else {
                         sb.append(ch);
                     }
@@ -1543,14 +1661,20 @@ public final class SqlParser {
             } else if (isSeparator(sql, sqlLength, index, ch, tokenizerConfig, memo)) {
                 if (started) {
                     return index;
+                }
+
+                // Matched before whitespace is skipped, so the bounds reported here cover the same token
+                // that tokenize(...) and nextToken(...) produce for a separator spelled with a leading blank.
+                final String temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
+
+                if (temp != null) {
+                    return index + temp.length();
                 } else if (ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED) {
                     // skip white char
                     continue;
                 }
 
-                final String temp = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig);
-
-                return temp != null ? index + temp.length() : index + 1;
+                return index + 1;
             } else {
                 started = true;
             }
@@ -1627,7 +1751,7 @@ public final class SqlParser {
         }
     }
 
-    /** Keeps comment removal from joining separate operators into a different operator or a comment opener. */
+    /** Keeps comment removal from creating a different operator, comment opener, or pgJDBC {@code ??} escape. */
     private static boolean wouldMergeAcrossComment(final List<String> tokens, final String sql, final int nextIndex, final TokenizerConfig tokenizerConfig) {
         final int maxSuffixLength = Math.max(1, tokenizerConfig.maxSeparatorLength - 1);
         final StringBuilder suffix = new StringBuilder(maxSuffixLength);
@@ -1646,7 +1770,7 @@ public final class SqlParser {
         final String joined = suffix + sql.substring(nextIndex, Math.min(sql.length(), nextIndex + Math.max(2, tokenizerConfig.maxSeparatorLength)));
 
         for (int start = 0; start < suffixLength; start++) {
-            if ((joined.startsWith("--", start) || joined.startsWith("/*", start)) && start + 2 > suffixLength) {
+            if ((joined.startsWith("--", start) || joined.startsWith("/*", start) || joined.startsWith("??", start)) && start + 2 > suffixLength) {
                 return true;
             }
 
@@ -3675,19 +3799,20 @@ public final class SqlParser {
         return nextIndex < sql.length() && sql.charAt(nextIndex) == '.';
     }
 
-    /**
-     * Reports whether the SQL contains MySQL's {@code INTO OUTFILE} or {@code INTO DUMPFILE}
-     * (outside quoted literals, quoted identifiers and comments). Only the two-keyword sequence is
-     * matched, wherever it appears, because MySQL accepts it both in the select list and after the
-     * final clause of a SELECT; an {@code INTO} that directly follows {@code INSERT} is a table
-     * name slot ({@code INSERT INTO outfile ...}) and is not counted.
-     */
+    /** Recognizes modifiers between INSERT and its INTO table-name clause. */
     private static boolean isInsertModifierKeyword(final String token) {
         return "IGNORE".equalsIgnoreCase(token) || "LOW_PRIORITY".equalsIgnoreCase(token) || "DELAYED".equalsIgnoreCase(token)
                 || "HIGH_PRIORITY".equalsIgnoreCase(token) || "OR".equalsIgnoreCase(token) || "REPLACE".equalsIgnoreCase(token)
                 || "ROLLBACK".equalsIgnoreCase(token) || "ABORT".equalsIgnoreCase(token) || "FAIL".equalsIgnoreCase(token);
     }
 
+    /**
+     * Reports whether the SQL contains MySQL's {@code INTO OUTFILE} or {@code INTO DUMPFILE}
+     * outside quoted literals, quoted identifiers and comments. The two-keyword sequence is
+     * matched both in the select list and after the final SELECT clause. An {@code INTO} following
+     * {@code INSERT} and its optional modifiers introduces a table name, so
+     * {@code INSERT IGNORE INTO outfile ...} does not count as file output.
+     */
     private static boolean containsIntoOutfileClause(final String sql, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
         if (Strings.isEmpty(sql)) {
             return false;

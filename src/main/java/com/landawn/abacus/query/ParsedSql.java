@@ -16,6 +16,9 @@ package com.landawn.abacus.query;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -100,7 +103,16 @@ import com.landawn.abacus.util.Strings;
  * is {@code ':'} (for example the SQL Server column reference {@code SELECT [:identifier] FROM t})
  * is parameterized rather than preserved; qualify it ({@code t.[:identifier]}) to keep it literal.
  * Likewise a subscript whose content is a positional placeholder ({@code ARRAY[?]}, {@code arr[?, ?]},
- * or a standalone {@code [?]}) counts its {@code ?} markers as JDBC parameters, while a bracket-quoted
+ * or a standalone {@code [?]}) counts its {@code ?} markers as JDBC parameters. Standalone groups
+ * recognized by either a leading named or positional marker inspect all parameter styles, so
+ * {@code [:id, ?]} and {@code [?, #{id}]} are rejected as mixed styles. A {@code ?} standing between two
+ * operands inside such a group is a PostgreSQL JSON existence operator ({@code ?}, {@code ?|}, {@code ?&})
+ * rather than a placeholder, and is preserved and left uncounted exactly as it is outside brackets, so
+ * {@code ARRAY [:payload ? 'key']} binds one named parameter. Operand boundaries respect SQL operators,
+ * parentheses, quoted values, and intervening block or dash-line comments; a positional operand such as
+ * the last marker in {@code ARRAY[doc ? ?]} is still counted. A marker that opens or closes a subscript
+ * element has no operand on one side and remains a placeholder unless it opens an explicitly typed unary
+ * geometric expression as described below. A bracket-quoted
  * identifier that merely contains {@code ?} elsewhere ({@code [what?]}, {@code t.[what?]}) is preserved.
  * Such a preserved {@code ?} is still emitted verbatim by {@link #parameterizedSql()} but is not counted by
  * {@link #parameterCount()}, so a caller that binds JDBC parameters by counting {@code ?} characters in the
@@ -111,6 +123,24 @@ import com.landawn.abacus.util.Strings;
  * comments embedded in a subscript token are preserved verbatim, and their markers are ignored as well. For an
  * unrecognized operation the token stream is not used to rebuild the SQL and no parameter
  * conversion is performed, so its comments remain in the normalized parameterized SQL.</p>
+ *
+ * <p>The pgJDBC escape {@code ??} represents an operator question mark, including in {@code ??|},
+ * {@code ??&}, and {@code @??}, and contributes no binding. Escapes are preserved verbatim for the driver. Only
+ * adjacent question marks form an escape: {@code doc ?? ?} has one positional parameter, while
+ * {@code ? ?? ?} has two; whitespace or comments between the question marks prevent pairing.</p>
+ *
+ * <p>Compact positional expressions such as {@code ?||?||?} and {@code ?-1} retain every binding.
+ * PostgreSQL's unary {@code ?-} and {@code ?|} operators are preserved when the operand explicitly
+ * identifies a {@code line} or {@code lseg} literal, constructor or cast (for example
+ * {@code ?- lseg '(0,0),(1,0)'} or {@code ?| ?::line}). Cast type names may be separated by whitespace
+ * or comments, double-quoted, or qualified with {@code pg_catalog}; quoted names retain their case
+ * sensitivity (for example {@code ?- CAST(? AS "line")}). Without type information, {@code ?-column}
+ * is ambiguous with a placeholder followed by subtraction and is treated as a binding. SQL/JSON clauses
+ * {@code NULL ON NULL}, {@code ABSENT ON NULL} and {@code FORMAT JSON} are recognized in constructor
+ * value-argument context, not in the query body of {@code JSON_ARRAY(SELECT ...)} or
+ * {@code JSON_ARRAY(WITH ... SELECT ...)}. Nested constructors establish their own value context.
+ * A genuine JSON operator may still take {@code NULL}, an identifier named {@code format}, or
+ * a call to {@code format(...)} as its right operand.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -145,6 +175,26 @@ public final class ParsedSql {
 
     private static final String RIGHT_OF_IBATIS_NAMED_PARAMETER = "}";
 
+    /** Bit flag recording that a positional {@code ?} placeholder was found. */
+    private static final int QUESTION_MARK_TYPE = 1;
+
+    /** Bit flag recording that a {@code :propName} placeholder was found. */
+    private static final int NAMED_PARAMETER_TYPE = 2;
+
+    /** Bit flag recording that a {@code #{propName}} placeholder was found. */
+    private static final int IBATIS_PARAMETER_TYPE = 4;
+
+    /** Default SQL separators grouped by their first character, longest first, for scanning bracket interiors. */
+    private static final String[][] SUBSCRIPT_SEPARATORS = subscriptSeparators();
+
+    /**
+     * Configured separators spelled with a leading {@code '?'} ({@code ?-}, {@code ?|}, {@code ?&},
+     * {@code ?#}, {@code ?||}, {@code ?-|}). Longest-match tokenization glues a placeholder written
+     * against one of them into a single token, so {@code ?-1} and {@code ?||'x'} arrive here as the words
+     * {@code ?-} and {@code ?||} rather than as a marker followed by an operator.
+     */
+    private static final Set<String> QUESTION_MARK_LEADING_SEPARATORS = questionMarkLeadingSeparators();
+
     private final String sql;
 
     private final String parameterizedSql;
@@ -167,7 +217,10 @@ public final class ParsedSql {
         this.sql = sql.trim();
         hashCode = this.sql.hashCode();
 
-        final List<String> words = SqlParser.tokenize(this.sql);
+        final List<String> tokens = SqlParser.tokenize(this.sql);
+        // The tokenizer can split an adjacent escaped operator and MyBatis binding as ?, ?#, {name}.
+        // Repair only that boundary before either scanner runs; ordinary SQL needs no extra token pass.
+        final List<String> words = this.sql.indexOf("??#{") >= 0 ? restoreEscapedIbatisOpeners(tokens) : tokens;
         final String firstOpWord = resolveFirstOpWord(words);
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && isOpSqlPrefixWord(firstOpWord);
 
@@ -178,18 +231,22 @@ public final class ParsedSql {
         final IntList questionMarkTokenIndexes = new IntList();
         final IntList questionMarkTokenOffsets = new IntList();
         int paramCount = 0;
-        int type = 0; // Use bit flags: 1=question mark, 2=named parameter, 4=iBatis parameter
-        final int QUESTION_MARK_TYPE = 1;
-        final int NAMED_PARAMETER_TYPE = 2;
-        final int IBATIS_PARAMETER_TYPE = 4;
-
-        final StringBuilder sb = Objectory.createStringBuilder();
+        int type = 0; // Bit flags: QUESTION_MARK_TYPE, NAMED_PARAMETER_TYPE, IBATIS_PARAMETER_TYPE
+        // Remembers where a positional marker came from so a mixed-style rejection can explain the
+        // distinction between a bracket group's placeholders and JSON operators.
+        boolean questionMarkFromSubscript = false;
 
         // A bracket group that continues a subscript rooted in an identifier ("x[?][?]",
         // "x['a', :b]['c', :d]", "x[?] ['c', ?]") is a chained subscript: the tokenizer emits it as a
         // standalone "[...]" token, but it is inspected exactly like that first group. Computed up front in
         // one pass so the per-token lookup below stays O(1).
         final boolean[] chainedSubscripts = isOpSqlPrefix ? markChainedSubscriptTokens(words) : null;
+        // Classify the original tokens once, before named/MyBatis conversion changes their text or joins
+        // split bindings. The same forward state machine handles bracket interiors below.
+        final int[] positionalTokenIndexes = isOpSqlPrefix && this.sql.indexOf('?') >= 0 ? new QuestionMarkClassifier(words, null).classify()
+                : N.EMPTY_INT_ARRAY;
+        int positionalTokenCursor = 0;
+        final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
             for (int i = 0, size = words.size(); i < size; i++) {
@@ -198,32 +255,36 @@ public final class ParsedSql {
                 if (isOpSqlPrefix) {
                     final boolean chainedSubscript = chainedSubscripts[i];
 
-                    if (word.indexOf('?') >= 0 && (chainedSubscript || isPositionalSubscriptToken(word))) {
+                    if (word.indexOf('?') >= 0 && (chainedSubscript || isParameterSubscriptToken(word))) {
                         // Positional placeholders embedded in a subscript-shaped token ("ARRAY[?]", "arr[?, ?]",
                         // standalone "[?]"): the tokenizer keeps the bracket region glued to the preceding
                         // identifier, so the "?" never surfaces as its own token. Kept independent of the
                         // marker chain below so a token that also carries a "#{...}" or ":name" marker still
                         // reaches the mixed-style guard.
-                        final int[] embedded = findUnquotedQuestionMarkIndexes(word, word.indexOf('[') + 1);
+                        final int[] embedded = findSubscriptPositionalParameterIndexes(word, word.indexOf('[') + 1);
+
+                        for (final int offsetInToken : embedded) {
+                            questionMarkTokenIndexes.add(i);
+                            questionMarkTokenOffsets.add(offsetInToken);
+                        }
 
                         if (embedded.length > 0) {
-                            for (final int offsetInToken : embedded) {
-                                questionMarkTokenIndexes.add(i);
-                                questionMarkTokenOffsets.add(offsetInToken);
-                            }
-
                             paramCount += embedded.length;
                             type |= QUESTION_MARK_TYPE;
+                            questionMarkFromSubscript = true;
                         }
                     }
 
-                    if (word.equals(SK.QUESTION_MARK)) {
-                        if (!isPostgreSqlJsonQuestionOperator(words, i)) {
-                            questionMarkTokenIndexes.add(i);
-                            questionMarkTokenOffsets.add(0);
-                            paramCount++;
-                            type |= QUESTION_MARK_TYPE;
-                        }
+                    while (positionalTokenCursor < positionalTokenIndexes.length && positionalTokenIndexes[positionalTokenCursor] < i) {
+                        positionalTokenCursor++; // A MyBatis binding may have joined several original tokens.
+                    }
+
+                    if (positionalTokenCursor < positionalTokenIndexes.length && positionalTokenIndexes[positionalTokenCursor] == i) {
+                        positionalTokenCursor++;
+                        questionMarkTokenIndexes.add(i);
+                        questionMarkTokenOffsets.add(0);
+                        paramCount++;
+                        type |= QUESTION_MARK_TYPE;
                     } else if (mayContainIbatisParameter(word, chainedSubscript)) {
                         // A token may contain multiple iBatis markers and literal text between them
                         // (for example "#{a}x#{b}"). Scan the complete unquoted token instead of only
@@ -340,7 +401,7 @@ public final class ParsedSql {
                     }
 
                     if (Integer.bitCount(type) > 1) {
-                        throw new IllegalArgumentException("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script");
+                        throw new IllegalArgumentException(mixedParameterStyleMessage(type, questionMarkFromSubscript));
                     }
                 }
 
@@ -367,6 +428,56 @@ public final class ParsedSql {
         } finally {
             Objectory.recycle(sb);
         }
+    }
+
+    /**
+     * Builds the message for a script that mixes parameter styles. It names the styles that were actually
+     * found, rather than only listing the three supported spellings. Conflicts involving positional markers
+     * explain their SQL expression context, with an additional bracket-group note when a counted marker came
+     * from a subscript. Recognized JSON and typed unary geometric operators are distinct from placeholders;
+     * neighboring words alone do not distinguish them, and compact expressions may still begin with a binding.
+     *
+     * @param type the detected style bit flags
+     * @param questionMarkFromSubscript whether a positional marker was read from inside a bracket group
+     * @return the message for the {@code IllegalArgumentException} reporting the conflict
+     */
+    private String mixedParameterStyleMessage(final int type, final boolean questionMarkFromSubscript) {
+        final List<String> found = new ArrayList<>(3);
+
+        if ((type & QUESTION_MARK_TYPE) != 0) {
+            found.add("positional '?'");
+        }
+
+        if ((type & NAMED_PARAMETER_TYPE) != 0) {
+            found.add("named ':propName'");
+        }
+
+        if ((type & IBATIS_PARAMETER_TYPE) != 0) {
+            found.add("iBatis/MyBatis '#{propName}'");
+        }
+
+        final StringBuilder msg = new StringBuilder(256);
+
+        msg.append("Cannot mix parameter styles ('?', ':propName', '#{propName}') in the same SQL script; found ")
+                .append(String.join(" and ", found))
+                .append('.');
+
+        if (questionMarkFromSubscript) {
+            msg.append(" Positional placeholders inside a bracket group are counted in their SQL expression context.");
+        }
+
+        // These rules also apply outside brackets. Use the detected styles so named/MyBatis-only
+        // conflicts avoid irrelevant positional guidance, without collecting any extra classifier state.
+        if ((type & QUESTION_MARK_TYPE) != 0) {
+            msg.append(" Recognized PostgreSQL JSON existence operators ('?', '?|', '?&') and typed unary geometric operators ('?-', '?|')")
+                    .append(" are not parameters. Value placeholders before SQL/JSON constructor clauses")
+                    .append(" (NULL ON NULL, ABSENT ON NULL, FORMAT JSON) are still parameters.")
+                    .append(" In compact expressions such as ?-1 and ?||'x', the leading '?' is a positional parameter.");
+        }
+
+        msg.append(" SQL: ").append(sql);
+
+        return msg.toString();
     }
 
     /**
@@ -515,13 +626,24 @@ public final class ParsedSql {
     /**
      * Returns the total number of parameters (named or positional) in the SQL.
      * This count includes parameter occurrences of {@code ?}, {@code :paramName}, or {@code #{paramName}},
-     * but excludes {@code ?} tokens recognized as PostgreSQL JSON-existence operators. The
-     * operator's right operand may be a literal, placeholder, column, or function expression;
+     * but excludes tokens recognized as PostgreSQL JSON-existence operators or explicitly typed unary
+     * geometric operators ({@code ?-}, {@code ?|}). A JSON-existence operator's right operand may be a
+     * literal, placeholder, column, or function expression. Adjacent question marks in the pgJDBC
+     * operator escape {@code ??} (also {@code ??|}, {@code ??&}, and {@code @??}) contribute no parameters;
+     * any following placeholder is still counted, so {@code doc ?? ?} has one parameter.
      * SQL ordering/pagination placeholders remain ordinary JDBC parameters, and so does a {@code ?}
      * that directly follows a SQL operator or a value-taking keyword such as {@code INTERVAL},
      * {@code ILIKE}, {@code SIMILAR TO} or {@code ESCAPE} (for example {@code INTERVAL ? DAY}).
      * Parameters are only counted for recognized data operation statements (see the class-level
      * documentation); for other SQL this returns {@code 0}.
+     *
+     * <p>A value placeholder in a SQL/JSON constructor remains counted before {@code NULL ON NULL},
+     * {@code ABSENT ON NULL}, or {@code FORMAT JSON}. For example,
+     * {@code SELECT JSON_OBJECT('k' VALUE ? NULL ON NULL)} contains one parameter, whereas
+     * {@code SELECT ?- lseg '(0,0),(1,0)'} contains none. See the class-level documentation for the
+     * supported operator contexts. Constructor option words inside a {@code JSON_ARRAY} query body
+     * retain their ordinary SQL meaning; {@code SELECT JSON_ARRAY(SELECT payload ? format JSON FROM t)}
+     * contains no parameters.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -535,7 +657,7 @@ public final class ParsedSql {
      * }</pre>
      *
      * @return the number of parameters in the SQL; this can be smaller than the number of {@code ?} characters in
-     *         {@link #parameterizedSql()} when a bracket-quoted identifier such as {@code [what?]} is preserved verbatim
+     *         {@link #parameterizedSql()} when an operator or quoted text such as {@code [what?]} contains a question mark
      */
     public int parameterCount() {
         return parameterCount;
@@ -833,7 +955,10 @@ public final class ParsedSql {
         for (int i = 0; i < words.size(); i++) {
             final String word = words.get(i);
 
-            if (word.indexOf('[') < 0 || isCommentOrSpaceToken(word) || !(chainedSubscripts[i] || !isQuotedToken(word) || isPositionalSubscriptToken(word))) {
+            // A recognized parameter subscript is exactly what isQuotedToken excludes -- for a standalone
+            // group it is defined as !isParameterSubscriptToken, and for a glued or dot-qualified bracket
+            // the two are complements -- so !isQuotedToken already covers it and needs no separate test.
+            if (word.indexOf('[') < 0 || isCommentOrSpaceToken(word) || !(chainedSubscripts[i] || !isQuotedToken(word))) {
                 continue;
             }
 
@@ -945,8 +1070,35 @@ public final class ParsedSql {
     }
 
     private static boolean mayContainNamedParameter(final String token, final boolean chainedSubscript) {
-        return token.length() >= 2 && token.indexOf(_PREFIX_OF_NAMED_PARAMETER) >= 0 && (chainedSubscript || !isQuotedToken(token))
-                && !isCommentOrSpaceToken(token);
+        return token.length() >= 2 && token.indexOf(_PREFIX_OF_NAMED_PARAMETER) >= 0
+                && (chainedSubscript || !isQuotedToken(token) || hasQuotedCastSuffix(token)) && !isCommentOrSpaceToken(token);
+    }
+
+    /**
+     * Keeps the MyBatis opener intact when longest-match tokenization borrows its '#' for a preceding
+     * escaped question-mark operator. Moving that character to the next token preserves the exact SQL,
+     * so source offsets still follow from the resulting token lengths. The copy is lazy and the scan is linear.
+     * Legitimate {@code ?#} operators without an immediately adjacent '{' are left unchanged.
+     *
+     * @param tokens the original tokenizer output, including whitespace and comments
+     * @return the original list, or a corrected copy if a MyBatis opener crossed that token boundary
+     */
+    private static List<String> restoreEscapedIbatisOpeners(final List<String> tokens) {
+        List<String> result = tokens;
+
+        for (int i = 1, size = tokens.size(); i + 1 < size; i++) {
+            if (tokens.get(i).equals("?#") && tokens.get(i + 1).startsWith("{")
+                    && (tokens.get(i - 1).equals(SK.QUESTION_MARK) || tokens.get(i - 1).equals("@?"))) {
+                if (result == tokens) {
+                    result = new ArrayList<>(tokens);
+                }
+
+                result.set(i, SK.QUESTION_MARK);
+                result.set(i + 1, "#" + tokens.get(i + 1));
+            }
+        }
+
+        return result;
     }
 
     private static boolean mayContainIbatisParameter(final String token, final boolean chainedSubscript) {
@@ -956,8 +1108,14 @@ public final class ParsedSql {
         // 2-char token containing LEFT_OF_IBATIS_NAMED_PARAMETER is exactly "#{".
         // A chained subscript ("x[#{a}]['c', #{b}]") bypasses the bracket-quoted-identifier check:
         // the marker scanner skips quoted regions itself, so literal elements stay literal.
-        return token.length() >= 2 && token.indexOf(LEFT_OF_IBATIS_NAMED_PARAMETER) >= 0 && (chainedSubscript || !isQuotedToken(token))
-                && !isCommentOrSpaceToken(token);
+        return token.length() >= 2 && token.indexOf(LEFT_OF_IBATIS_NAMED_PARAMETER) >= 0
+                && (chainedSubscript || !isQuotedToken(token) || hasQuotedCastSuffix(token)) && !isCommentOrSpaceToken(token);
+    }
+
+    /** A quoted cast type does not quote its preceding binding; the marker scanners still skip the type's quoted contents. */
+    private static boolean hasQuotedCastSuffix(final String token) {
+        final int cast = token.indexOf("::");
+        return cast >= 0 && token.indexOf('"') > cast && token.indexOf('[') < 0 && !precededByQuote(token, cast, '\'') && !precededByQuote(token, cast, '`');
     }
 
     private static boolean isQuotedToken(final String token) {
@@ -982,13 +1140,12 @@ public final class ParsedSql {
             return token.charAt(bracketIndex - 1) == '.';
         }
 
-        // A token that starts with '[' is a SQL Server bracket-quoted identifier, with one exception: a
-        // leading "[:name" (optionally after whitespace) is a PostgreSQL-style array subscript holding a
-        // named binding. Whitespace before the bracket makes the tokenizer emit the subscript as its own
-        // token (e.g. "array [:ids]" yields the standalone token "[:ids]"), and without the exception that
-        // binding would silently pass through as literal SQL. (A group continuing a subscript chain is
-        // recognized by the caller via isChainedSubscriptToken and never consults this rule.)
-        return !isNamedParameterSubscript(token, bracketIndex);
+        // A token that starts with '[' is a SQL Server bracket-quoted identifier unless its first
+        // non-whitespace content is a named or positional binding. Whitespace before an array bracket
+        // makes the tokenizer emit the group as its own token ("array [:ids]" or "array [?, :id]").
+        // Inspect every parameter style in a recognized subscript, including the mixed-style guard.
+        // The caller identifies chained groups separately with markChainedSubscriptTokens.
+        return !isParameterSubscriptToken(token);
     }
 
     /**
@@ -1143,15 +1300,17 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns {@code true} if the token is a PostgreSQL-style subscript that may hold positional
-     * placeholders: an identifier glued to a bracket region ({@code "arr[?]"}, {@code "ARRAY[?, ?]"}) or a
-     * standalone bracket region whose content starts with a lone {@code '?'} ({@code "[?]"}, {@code "[?, ?]"}).
+     * Returns {@code true} if the token is a PostgreSQL-style subscript that may hold
+     * parameters: an identifier glued to a bracket region ({@code "arr[?]"}, {@code "ARRAY[?, ?]"}) or a
+     * standalone bracket region whose content starts with a named binding or a lone {@code '?'}
+     * ({@code "[:id]"}, {@code "[?]"}, {@code "[?, ?]"}). All marker styles must be inspected in such
+     * a region so mixing positional and named markers cannot bypass validation.
      * A bracket that sits inside a quoted literal or quoted identifier ({@code "'$.items[*] ? (...)'"},
      * {@code "N'a[?]'"}, {@code "\"col[?]\""}), one that follows a qualification dot ({@code "t.[what?]"}),
      * and a standalone bracket-quoted identifier that merely contains {@code '?'} ({@code "[what?]"},
      * {@code "[?foo]"}) do not qualify.
      */
-    private static boolean isPositionalSubscriptToken(final String token) {
+    private static boolean isParameterSubscriptToken(final String token) {
         final int bracketIndex = token.indexOf('[');
 
         if (bracketIndex < 0 || isCommentOrSpaceToken(token) || precededByQuote(token, bracketIndex, '\'') || precededByQuote(token, bracketIndex, '"')
@@ -1161,6 +1320,10 @@ public final class ParsedSql {
 
         if (bracketIndex > 0) {
             return token.charAt(bracketIndex - 1) != '.';
+        }
+
+        if (isNamedParameterSubscript(token, bracketIndex)) {
+            return true;
         }
 
         // Standalone "[...]": mirrors the "[:name" exception -- a positional subscript only when the first
@@ -1211,7 +1374,7 @@ public final class ParsedSql {
         final int len = token.length();
         int index = bracketIndex + 1;
 
-        // Mirror isPositionalSubscriptToken: "[ :ids ]" binds exactly like "[ ? ]" does.
+        // Mirror isParameterSubscriptToken: "[ :ids ]" binds exactly like "[ ? ]" does.
         while (index < len && Character.isWhitespace(token.charAt(index))) {
             index++;
         }
@@ -1281,12 +1444,548 @@ public final class ParsedSql {
         return -1;
     }
 
-    private static boolean isPostgreSqlJsonQuestionOperator(final List<String> words, final int questionMarkIndex) {
-        final int previousIndex = previousNonCommentWord(words, questionMarkIndex - 1);
-        final int nextIndex = nextNonCommentWord(words, questionMarkIndex + 1);
+    /**
+     * Finds positional markers in a bracket token, excluding JSON operators and other multi-character SQL
+     * operators. Both escape readings must agree on the unquoted marker positions and on their classification;
+     * otherwise the token remains verbatim, like the other subscript marker scanners.
+     *
+     * <p>Lexical words and their source offsets are collected in a forward pass, then adjacent operands are
+     * inspected once. No marker rescans a prefix or suffix of the expression, so compact sums such as
+     * {@code ARRAY[?+?+...]} take linear time as well as comma-separated arrays. The preliminary marker
+     * agreement check and the two classification readings add only a fixed number of forward scans.</p>
+     */
+    private static int[] findSubscriptPositionalParameterIndexes(final String token, final int fromIndex) {
+        if (findUnquotedQuestionMarkIndexes(token, fromIndex).length == 0) {
+            return N.EMPTY_INT_ARRAY;
+        }
 
-        return previousIndex >= 0 && nextIndex >= 0 && canPrecedeJsonQuestionOperator(words.get(previousIndex))
-                && canFollowJsonQuestionOperator(words.get(nextIndex));
+        final int[] withBackslashEscapes = collectSubscriptPositionalParameterIndexes(token, fromIndex, true);
+        final int[] doubledQuoteOnly = collectSubscriptPositionalParameterIndexes(token, fromIndex, false);
+
+        return Arrays.equals(withBackslashEscapes, doubledQuoteOnly) ? withBackslashEscapes : N.EMPTY_INT_ARRAY;
+    }
+
+    /**
+     * Scans a bracket interior using SqlParser's default separators and this class's shared quote rules.
+     * SqlParser itself keeps brackets opaque and uses a single escape reading, so invoking its next-token
+     * methods would neither expose these operands nor preserve the subscript ambiguity contract.
+     */
+    private static int[] collectSubscriptPositionalParameterIndexes(final String token, final int fromIndex, final boolean backslashEscapes) {
+        final List<String> words = new ArrayList<>();
+        final IntList wordOffsets = new IntList();
+        final int length = token.length();
+
+        for (int index = fromIndex; index < length;) {
+            final char ch = token.charAt(index);
+
+            if (Character.isWhitespace(ch)) {
+                index++;
+                continue;
+            } else if (ch == '/' && index + 1 < length && token.charAt(index + 1) == '*') {
+                final int end = token.indexOf("*/", index + 2);
+                index = end < 0 ? length : end + 2;
+                continue;
+            } else if (ch == '-' && index + 1 < length && token.charAt(index + 1) == '-') {
+                while (index < length && token.charAt(index) != '\n' && token.charAt(index) != '\r') {
+                    index++;
+                }
+                continue;
+            }
+
+            final int start = index;
+
+            if (isQuoteChar(ch)) {
+                index = Math.min(length, skipQuotedRegion(token, index, backslashEscapes) + 1);
+            } else if (ch == '#' && index + 1 < length && token.charAt(index + 1) == '{') {
+                // MyBatis options may contain commas and spaces; the complete binding is one operand.
+                final int end = token.indexOf('}', index + 2);
+                index = end < 0 ? length : end + 1;
+            } else if (ch == '[' || ch == ']') {
+                index++;
+            } else {
+                // The # in ?#{...} starts a binding, not the ?# operator. Keep its opener intact
+                // so metadata is consumed as one operand; otherwise option question marks/parentheses
+                // leak into SQL classification, including after a pgJDBC ?? escape.
+                final int separatorLength = ch == '?' && index + 2 < length && token.charAt(index + 1) == '#' && token.charAt(index + 2) == '{' ? 1
+                        : subscriptSeparatorLength(token, index);
+
+                if (separatorLength > 0) {
+                    index += separatorLength;
+                } else {
+                    do {
+                        index++;
+                    } while (index < length && !Character.isWhitespace(token.charAt(index)) && !isQuoteChar(token.charAt(index)) && token.charAt(index) != '['
+                            && token.charAt(index) != ']' && subscriptSeparatorLength(token, index) == 0);
+                }
+            }
+
+            words.add(token.substring(start, index));
+            wordOffsets.add(start);
+        }
+
+        final int[] indexes = new QuestionMarkClassifier(words, wordOffsets).classify();
+
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = wordOffsets.get(indexes[i]);
+        }
+
+        return indexes;
+    }
+
+    /**
+     * Classifies ordinary tokens and bracket-interior words with one forward operand state. A compact
+     * {@code ?||} ends in an operator even when its first character is a binding; inspecting only its
+     * spelling as the previous token loses the middle binding in {@code ?||?||?}.
+     *
+     * <p>Lookahead visits a bounded number of significant words. Matching parentheses for explicitly typed
+     * geometric operands are indexed lazily, once, instead of searching a suffix for each marker. JSON
+     * constructor scopes use an amortized constant-time stack. Scanning and auxiliary storage are linear
+     * in the token count; the ordinary no-question-mark path never creates this classifier.</p>
+     */
+    private static final class QuestionMarkClassifier {
+        private final List<String> words;
+        private final IntList wordOffsets;
+        private int[] closingParentheses;
+
+        private QuestionMarkClassifier(final List<String> words, final IntList wordOffsets) {
+            this.words = words;
+            this.wordOffsets = wordOffsets;
+        }
+
+        private int[] classify() {
+            IntList indexes = null;
+            boolean previousIsOperand = false;
+            String previousWord = Strings.EMPTY;
+            int depth = 0;
+            int[] jsonDepths = null;
+            int jsonDepthCount = 0;
+
+            for (int i = 0, size = words.size(); i < size; i++) {
+                final String word = words.get(i);
+
+                if (isCommentOrSpaceToken(word)) {
+                    continue;
+                }
+
+                final int bindingEnd = splitIbatisBindingEnd(i);
+
+                if (bindingEnd > i) {
+                    // The outer tokenizer can split MyBatis options at spaces/operators. Their contents
+                    // are metadata, so parentheses or question marks there cannot change SQL operand state.
+                    i = bindingEnd;
+                    previousIsOperand = true;
+                    previousWord = word;
+                    continue;
+                }
+
+                if (word.equals("(") || word.equals("[")) {
+                    depth++;
+
+                    if (word.equals("(") && isSqlJsonConstructor(previousWord)) {
+                        if (jsonDepths == null) {
+                            jsonDepths = new int[4];
+                        } else if (jsonDepthCount == jsonDepths.length) {
+                            jsonDepths = Arrays.copyOf(jsonDepths, jsonDepthCount * 2);
+                        }
+
+                        // A negative depth marks JSON_ARRAY's query form. FORMAT JSON in its SELECT
+                        // list can be an operand and alias, while a nested constructor gets a new scope.
+                        final int next = "JSON_ARRAY".equalsIgnoreCase(previousWord) ? nextNonCommentWord(words, i + 1) : -1;
+                        final boolean query = next >= 0 && ("SELECT".equalsIgnoreCase(words.get(next)) || "WITH".equalsIgnoreCase(words.get(next))
+                                || "VALUES".equalsIgnoreCase(words.get(next)) || "TABLE".equalsIgnoreCase(words.get(next)));
+                        jsonDepths[jsonDepthCount++] = query ? -depth : depth;
+                    }
+                } else if (word.equals(")") || word.equals("]")) {
+                    if (jsonDepthCount > 0 && Math.abs(jsonDepths[jsonDepthCount - 1]) == depth) {
+                        jsonDepthCount--;
+                    }
+
+                    depth = Math.max(0, depth - 1);
+                }
+
+                final boolean bareMarker = word.equals(SK.QUESTION_MARK);
+                final boolean compactMarker = isCompactQuestionMarkOperator(word);
+
+                // pgJDBC escapes an operator question mark as ??. The first token can end in @? and
+                // the second can include a suffix (?|), so consume the pair and expect an operand.
+                // Ordinary tokens retain gaps; bracket words omit them and must use their source offsets
+                // to keep ? ? and ?/* comment */? distinct from an adjacent escape. No rescan is needed.
+                if ((bareMarker || word.equals("@?")) && i + 1 < size && words.get(i + 1).startsWith(SK.QUESTION_MARK)
+                        && (wordOffsets == null || wordOffsets.get(i + 1) == wordOffsets.get(i) + word.length())) {
+                    previousWord = words.get(++i);
+                    previousIsOperand = false;
+                    continue;
+                }
+
+                if (bareMarker || compactMarker) {
+                    final int next = nextNonCommentWord(words, i + 1);
+                    final boolean jsonClause = jsonDepthCount > 0 && jsonDepths[jsonDepthCount - 1] == depth && startsSqlJsonClause(next);
+                    final boolean binaryOperator = previousIsOperand && next >= 0 && !jsonClause && canFollowJsonQuestionOperator(words.get(next));
+                    final boolean unaryOperator = !previousIsOperand && (word.equals("?-") || word.equals("?|")) && isExplicitGeometricOperand(next);
+                    final boolean placeholder = !binaryOperator && !unaryOperator;
+
+                    if (placeholder) {
+                        if (indexes == null) {
+                            indexes = new IntList();
+                        }
+
+                        indexes.add(i);
+                    }
+
+                    // A bare binding finishes an operand. Every operator, including the operator suffix
+                    // of a compact binding, expects another operand. This also distinguishes "? ? ?".
+                    previousIsOperand = bareMarker && placeholder;
+                } else {
+                    previousIsOperand = canPrecedeJsonQuestionOperator(word)
+                            && (word.equals(")") || word.equals("]") || subscriptSeparatorLength(word, 0) != word.length());
+                }
+
+                previousWord = word;
+            }
+
+            return indexes == null ? N.EMPTY_INT_ARRAY : indexes.toArray();
+        }
+
+        /** SQL/JSON phrases are clauses only in a constructor's value scope, never its query body or a global keyword ban. */
+        private boolean startsSqlJsonClause(final int start) {
+            if (start < 0) {
+                return false;
+            }
+
+            final String word = words.get(start);
+
+            if ("FORMAT".equalsIgnoreCase(word)) {
+                final int next = nextNonCommentWord(words, start + 1);
+                return next >= 0 && "JSON".equalsIgnoreCase(words.get(next));
+            }
+
+            if ("NULL".equalsIgnoreCase(word) || "ABSENT".equalsIgnoreCase(word)) {
+                final int on = nextNonCommentWord(words, start + 1);
+                final int last = on >= 0 && "ON".equalsIgnoreCase(words.get(on)) ? nextNonCommentWord(words, on + 1) : -1;
+                return last >= 0 && "NULL".equalsIgnoreCase(words.get(last));
+            }
+
+            return false;
+        }
+
+        /**
+         * Recognizes the unary geometric operators only when the operand explicitly identifies line/lseg
+         * syntax. Untyped {@code ?-column} is ambiguous with a JDBC binding minus a column and stays a
+         * binding; a type literal, constructor or cast resolves that ambiguity without schema inspection.
+         */
+        private boolean isExplicitGeometricOperand(int start) {
+            int end = words.size();
+
+            while (start >= 0 && start < end) {
+                final String word = words.get(start);
+                final int bindingEnd = splitIbatisBindingEnd(start);
+
+                if (bindingEnd > start) {
+                    final int after = nextNonCommentWord(words, bindingEnd + 1);
+                    return isGeometricCast(bindingEnd, end) || (after >= 0 && after < end && isGeometricCast(after, end));
+                }
+
+                final int next = nextNonCommentWord(words, start + 1);
+
+                if (word.equals("(")) {
+                    final int close = closingParenthesis(start);
+
+                    if (close <= start || close >= end) {
+                        return false;
+                    }
+
+                    final int after = nextNonCommentWord(words, close + 1);
+
+                    if (after >= 0 && after < end && isGeometricCast(after, end)) {
+                        return true;
+                    }
+
+                    end = close;
+                    start = next;
+                    continue; // Iterative unwrapping also handles deeply parenthesized operands safely.
+                }
+
+                if ("CAST".equalsIgnoreCase(word) && next >= 0 && next < end && words.get(next).equals("(")) {
+                    final int close = closingParenthesis(next);
+                    int type = close > next && close < end ? previousNonCommentWord(words, close - 1) : -1;
+
+                    // A qualified type occupies at most three significant tokens: schema, dot, name.
+                    // Bound the backward search so repeated CAST operands never rescan expression bodies.
+                    for (int parts = 0; parts < 3 && type > next; parts++) {
+                        final int as = previousNonCommentWord(words, type - 1);
+
+                        if (as > next && "AS".equalsIgnoreCase(words.get(as))) {
+                            final int typeEnd = geometricTypeEnd(type, 0, close);
+                            return typeEnd >= 0 && nextNonCommentWord(words, typeEnd) == close;
+                        }
+
+                        type = as;
+                    }
+
+                    return false;
+                }
+
+                final int typeEnd = geometricTypeEnd(start, 0, end);
+
+                if (typeEnd >= 0) {
+                    final int followingIndex = nextNonCommentWord(words, typeEnd);
+
+                    if (followingIndex < 0 || followingIndex >= end) {
+                        return false;
+                    }
+
+                    final String following = words.get(followingIndex);
+
+                    if (isSqlStringLiteral(following) || following.equals("(")) {
+                        return true;
+                    }
+
+                    // The bracket lexer exposes a string prefix separately; SqlParser glues it to the
+                    // quoted token. Accept the same typed literal in either representation.
+                    final int literal = nextNonCommentWord(words, followingIndex + 1);
+
+                    if ("E".equalsIgnoreCase(following) || "N".equalsIgnoreCase(following)) {
+                        return literal >= 0 && literal < end && words.get(literal).startsWith("'");
+                    }
+
+                    if ("U".equalsIgnoreCase(following) && literal >= 0 && literal < end && words.get(literal).equals("&")) {
+                        final int quoted = nextNonCommentWord(words, literal + 1);
+                        return quoted >= 0 && quoted < end && words.get(quoted).startsWith("'");
+                    }
+
+                    return false;
+                }
+
+                if ((word.regionMatches(true, 0, "line'", 0, 5) || word.regionMatches(true, 0, "lseg'", 0, 5)) || isGeometricCast(start, end)) {
+                    return true;
+                }
+
+                if (next >= 0 && next < end) {
+                    if (isGeometricCast(next, end)) {
+                        return true;
+                    }
+
+                    if (words.get(next).equals("(")) {
+                        final int close = closingParenthesis(next);
+                        final int after = close > next && close < end ? nextNonCommentWord(words, close + 1) : -1;
+                        return after >= 0 && after < end && isGeometricCast(after, end);
+                    }
+                }
+
+                return false;
+            }
+
+            return false;
+        }
+
+        /** Recognizes a cast suffix even when the tokenizer splits its type after {@code ::} or a quote. */
+        private boolean isGeometricCast(final int index, final int end) {
+            final int cast = words.get(index).lastIndexOf("::");
+            return cast >= 0 && geometricTypeEnd(index, cast + 2, end) >= 0;
+        }
+
+        /**
+         * Returns the token after a complete line/lseg type, or {@code -1}. Reads at most a schema,
+         * dot and type across token boundaries without joining strings or retokenizing SQL. Both the
+         * ordinary and bracket lexers can glue a cast prefix or qualification dot to either name.
+         */
+        private int geometricTypeEnd(int index, int offset, final int end) {
+            if (offset == words.get(index).length()) {
+                index = nextNonCommentWord(words, index + 1);
+                offset = 0;
+            }
+
+            if (index < 0 || index >= end) {
+                return -1;
+            }
+
+            String word = words.get(index);
+            final int schemaEnd = geometricIdentifierEnd(word, offset, "pg_catalog");
+
+            if (schemaEnd >= 0) {
+                offset = schemaEnd;
+
+                if (offset == word.length()) {
+                    index = nextNonCommentWord(words, index + 1);
+                    offset = 0;
+
+                    if (index < 0 || index >= end) {
+                        return -1;
+                    }
+
+                    word = words.get(index);
+                }
+
+                if (word.charAt(offset) != '.') {
+                    return -1;
+                }
+
+                if (++offset == word.length()) {
+                    index = nextNonCommentWord(words, index + 1);
+                    offset = 0;
+
+                    if (index < 0 || index >= end) {
+                        return -1;
+                    }
+
+                    word = words.get(index);
+                }
+            }
+
+            return geometricIdentifierEnd(word, offset, "line") == word.length() || geometricIdentifierEnd(word, offset, "lseg") == word.length() ? index + 1
+                    : -1;
+        }
+
+        /** Unquoted PostgreSQL names fold to lowercase; quoted names must match the built-in name exactly. */
+        private static int geometricIdentifierEnd(final String word, final int offset, final String name) {
+            if (offset >= word.length()) {
+                return -1;
+            }
+
+            final boolean quoted = word.charAt(offset) == '"';
+            final int nameStart = offset + (quoted ? 1 : 0);
+            final int nameEnd = nameStart + name.length();
+
+            if (!word.regionMatches(!quoted, nameStart, name, 0, name.length()) || (quoted && (nameEnd >= word.length() || word.charAt(nameEnd) != '"'))) {
+                return -1;
+            }
+
+            final int identifierEnd = nameEnd + (quoted ? 1 : 0);
+            return identifierEnd == word.length() || word.charAt(identifierEnd) == '.' ? identifierEnd : -1;
+        }
+
+        /** Builds matching-parenthesis indexes at most once; never rescans nested expression suffixes. */
+        private int closingParenthesis(final int opening) {
+            if (closingParentheses == null) {
+                final int size = words.size();
+                closingParentheses = new int[size];
+                int[] stack = new int[8];
+                int count = 0;
+
+                for (int i = 0; i < size; i++) {
+                    if (isCommentOrSpaceToken(words.get(i))) {
+                        continue;
+                    }
+
+                    final int bindingEnd = splitIbatisBindingEnd(i);
+
+                    if (bindingEnd > i) {
+                        i = bindingEnd;
+                        continue;
+                    }
+
+                    final String word = words.get(i);
+
+                    if (word.equals("(")) {
+                        if (count == stack.length) {
+                            stack = Arrays.copyOf(stack, count * 2);
+                        }
+
+                        stack[count++] = i;
+                    } else if (word.equals(")") && count > 0) {
+                        closingParentheses[stack[--count]] = i;
+                    }
+                }
+            }
+
+            return closingParentheses[opening];
+        }
+
+        /** Returns the last token of a split MyBatis binding, or the input index for an ordinary token. */
+        private int splitIbatisBindingEnd(final int start) {
+            final String word = words.get(start);
+
+            if (word.indexOf(LEFT_OF_IBATIS_NAMED_PARAMETER) < 0 || word.indexOf('}') >= 0 || isQuotedToken(word)
+                    || findUnquotedIbatisMarkerIndexes(word).length == 0) {
+                return start;
+            }
+
+            for (int i = start + 1, size = words.size(); i < size; i++) {
+                if (words.get(i).indexOf('}') >= 0) {
+                    return i;
+                }
+            }
+
+            return words.size() - 1; // The constructor reports the malformed binding itself.
+        }
+    }
+
+    private static boolean isSqlJsonConstructor(final String word) {
+        return "JSON_OBJECT".equalsIgnoreCase(word) || "JSON_ARRAY".equalsIgnoreCase(word) || "JSON_OBJECTAGG".equalsIgnoreCase(word)
+                || "JSON_ARRAYAGG".equalsIgnoreCase(word) || "JSON".equalsIgnoreCase(word) || "JSON_SCALAR".equalsIgnoreCase(word);
+    }
+
+    private static boolean isSqlStringLiteral(final String word) {
+        return word.startsWith("'") || word.regionMatches(true, 0, "E'", 0, 2) || word.regionMatches(true, 0, "N'", 0, 2)
+                || word.regionMatches(true, 0, "U&'", 0, 3);
+    }
+
+    /** Collects the configured separators whose spelling starts with {@code '?'}, for the compact-operator rule. */
+    private static Set<String> questionMarkLeadingSeparators() {
+        final Set<String> result = new LinkedHashSet<>();
+
+        for (final String separator : SqlParser.defaultTokenizerConfig().separators()) {
+            if (separator.length() > 1 && separator.charAt(0) == '?') {
+                result.add(separator);
+            }
+        }
+
+        return Collections.unmodifiableSet(result);
+    }
+
+    /**
+     * Returns whether {@code word} is a separator spelled with a leading {@code '?'} whose marker must be
+     * counted unless it stands in operator position.
+     *
+     * <p>{@code ?-}, {@code ?|}, {@code ?&}, {@code ?#}, {@code ?||} and {@code ?-|} are PostgreSQL
+     * geometric and jsonb operators, and longest-match tokenization claims them before a placeholder
+     * written against one of them can surface. A JDBC driver sees the leading {@code '?'} of
+     * {@code ?-1} or {@code ?||'x'} as a placeholder, so leaving it uncounted makes
+     * {@link #parameterCount()} disagree with what the statement will bind. The operand test that decides
+     * this uses forward operand state, so {@code a ?- b} keeps its binary operator. Explicit line/lseg
+     * literals, constructors and casts also identify unary geometric operators without confusing
+     * {@code ?-1} or {@code ?-column} with them.</p>
+     *
+     * @param word the token or subscript word to classify
+     * @return {@code true} if {@code word} is a {@code '?'}-leading compact operator
+     */
+    private static boolean isCompactQuestionMarkOperator(final String word) {
+        return word.length() > 1 && word.charAt(0) == '?' && QUESTION_MARK_LEADING_SEPARATORS.contains(word);
+    }
+
+    /** Builds fixed operator buckets once; each per-character lookup examines only a bounded set of SQL separators. */
+    private static String[][] subscriptSeparators() {
+        final List<String> separators = new ArrayList<>(SqlParser.defaultTokenizerConfig().separators());
+        separators.sort(Comparator.comparingInt(String::length).reversed());
+        final String[][] result = new String[128][];
+
+        for (int ch = 0; ch < result.length; ch++) {
+            final List<String> bucket = new ArrayList<>();
+
+            for (final String separator : separators) {
+                if (separator.charAt(0) == ch) {
+                    bucket.add(separator);
+                }
+            }
+
+            result[ch] = bucket.toArray(new String[0]);
+        }
+
+        return result;
+    }
+
+    private static int subscriptSeparatorLength(final String token, final int index) {
+        final char first = token.charAt(index);
+
+        if (first < SUBSCRIPT_SEPARATORS.length) {
+            for (final String separator : SUBSCRIPT_SEPARATORS[first]) {
+                if (token.startsWith(separator, index)) {
+                    return separator.length();
+                }
+            }
+        }
+
+        return 0;
     }
 
     private static boolean canPrecedeJsonQuestionOperator(final String word) {
@@ -1336,7 +2035,8 @@ public final class ParsedSql {
         // including column references and function calls such as "payload ? lower(:key)". Requiring
         // a literal/placeholder here misclassifies the operator as a JDBC placeholder and then
         // falsely reports mixed parameter styles when the expression contains a named parameter.
-        return word.equals(SK.QUESTION_MARK) || firstChar == '\'' || firstChar == '"' || firstChar == '`' || firstChar == '(' || firstChar == '['
+        return word.equals(SK.QUESTION_MARK) || isCompactQuestionMarkOperator(word) || firstChar == '\'' || firstChar == '"' || firstChar == '`'
+                || firstChar == '(' || firstChar == '['
                 || (firstChar == _PREFIX_OF_NAMED_PARAMETER && word.length() >= 2 && isNamedParameterIdentifierStart(namedParameterCodePointAt(word, 1)))
                 || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || startsWithSqlExpressionWord(word);
     }

@@ -98,7 +98,8 @@ public class NotIn extends AbstractIn {
      *                                  {@code null}/empty or contains {@code null}, or if any element is a
      *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
      *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
-     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected)
+     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
+     *                                  or if a scalar {@link SubQuery} has a known, non-wildcard projection containing multiple columns
      */
     public NotIn(final String propName, final Collection<?> values) {
         super(propName, Operator.NOT_IN, values);
@@ -140,7 +141,8 @@ public class NotIn extends AbstractIn {
      *                                  if a bean row does not expose a requested property, or if any row element is a
      *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
      *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
-     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected)
+     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
+     *                                  or if a scalar {@link SubQuery} has a known, non-wildcard projection containing multiple columns
      */
     public NotIn(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.NOT_IN, valueRows);

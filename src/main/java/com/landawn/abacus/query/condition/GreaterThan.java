@@ -100,7 +100,8 @@ public class GreaterThan extends Binary {
      *                  {@link SubQuery}, or direct {@link All}/{@link Any}/{@link Some} operand to compare against
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; {@code propValue}
      *                                  is {@code null}, an ordinary predicate or query clause, or a blank
-     *                                  {@link SqlExpression}
+     *                                  {@link SqlExpression}; or if a structured subquery has a known,
+     *                                  non-wildcard projection with a column count other than one
      */
     public GreaterThan(final String propName, final Object propValue) {
         super(propName, Operator.GREATER_THAN, propValue);

@@ -91,6 +91,11 @@ import com.landawn.abacus.util.Strings;
  * (suitable for passing back into {@link #of(String)} or {@link Filters#expr(String)}),
  * not {@code SqlExpression} instances.</p>
  *
+ * <p>Arithmetic and bitwise helpers concatenate their operands without adding grouping parentheses.
+ * When an operand is a compound {@code SqlExpression}, include any parentheses needed to preserve its
+ * meaning; for example, {@code multiply(of("(price + tax)"), 2)} produces {@code (price + tax) * 2}.
+ * A plain Java string is a quoted value in these helpers, so wrap SQL fragments with {@link #of(String)}.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Simple expression

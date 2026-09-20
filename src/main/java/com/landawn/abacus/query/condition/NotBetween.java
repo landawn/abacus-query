@@ -113,7 +113,8 @@ public class NotBetween extends AbstractBetween {
      *                 {@link SqlExpression}, or scalar {@link SubQuery}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; either bound
      *                                  is {@code null}; or a bound is another predicate, query clause, JOIN,
-     *                                  ON/USING connector, or quantified {@link All}/{@link Any}/{@link Some} operand
+     *                                  ON/USING connector, blank {@link SqlExpression}, or quantified {@link All}/{@link Any}/{@link Some} operand;
+     *                                  or if a structured subquery bound has a known, non-wildcard projection with a column count other than one
      */
     public NotBetween(final String propName, final Object minValue, final Object maxValue) {
         super(propName, Operator.NOT_BETWEEN, minValue, maxValue);

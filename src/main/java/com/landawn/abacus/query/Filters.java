@@ -327,7 +327,8 @@ public final class Filters {
      *                  {@code IN}/{@code NOT_IN} a non-empty {@link Collection} or array without {@code null}
      *                  elements is copied defensively
      * @return a {@link Binary} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not a valid binary comparison/membership operator (e.g. a structural
      *                                  operator); if {@code propValue} is {@code null} for any operator other than
      *                                  {@code EQUAL}, {@code NOT_EQUAL}, {@code NOT_EQUAL_ANSI}, {@code IS} or {@code IS_NOT};
@@ -391,7 +392,8 @@ public final class Filters {
      * @param propValue the value to compare for equality: a literal, {@code null} (renders as {@code IS NULL}),
      *                  an {@link SqlExpression}, a scalar {@link SubQuery}, or a direct {@link All}/{@link Any}/{@link Some} operand
      * @return an {@link Equal} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
      *                                  nested {@link All}/{@link Any}/{@link Some} operand)
@@ -433,7 +435,8 @@ public final class Filters {
      * @param propValue the value to compare for equality: a literal, {@code null} (renders as {@code IS NULL}),
      *                  an {@link SqlExpression}, a scalar {@link SubQuery}, or a direct {@link All}/{@link Any}/{@link Some} operand
      * @return an {@link Equal} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
      *                                  nested {@link All}/{@link Any}/{@link Some} operand)
@@ -481,7 +484,9 @@ public final class Filters {
      * @param props map of property names to values (must not be empty). Entries are consumed once during
      *              this call; subsequent mutations do not affect the returned condition
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      * @see NamedProperty#equalsAny(Object...)
      */
     public static Or anyEqual(final Map<String, ?> props) {
@@ -503,7 +508,9 @@ public final class Filters {
      * @param entity the entity object whose properties will be used
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null}, is a map (use {@link #anyEqual(Map)}),
-     *                                  or its class declares no selectable property
+     *                                  or its class declares no selectable property;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
@@ -530,7 +537,9 @@ public final class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if
      *                                  {@code includedPropNames} is {@code null}, empty, or contains a
-     *                                  {@code null}, empty, blank, or unreadable name
+     *                                  {@code null}, empty, blank, or unreadable name;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static Or anyEqual(final Object entity, final Collection<String> includedPropNames) {
         return or(equalConditions(entity, includedPropNames));
@@ -551,7 +560,9 @@ public final class Filters {
      * @param propName2 second property name
      * @param propValue2 second property value
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).or(equal(propName2, propValue2));
@@ -579,7 +590,9 @@ public final class Filters {
      * @param propName3 third property name
      * @param propValue3 third property value
      * @return an {@link Or} condition
-     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -602,7 +615,9 @@ public final class Filters {
      * @param props map of property names to values (must not be empty). Entries are consumed once during
      *              this call; subsequent mutations do not affect the returned condition
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static And allEqual(final Map<String, ?> props) {
         return and(equalConditions(props));
@@ -650,7 +665,9 @@ public final class Filters {
      * @param entity the entity object whose properties will be used
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null}, is a map (use {@link #allEqual(Map)}),
-     *                                  or its class declares no selectable property
+     *                                  or its class declares no selectable property;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, "entity");
@@ -677,7 +694,9 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if
      *                                  {@code includedPropNames} is {@code null}, empty, or contains a
-     *                                  {@code null}, empty, blank, or unreadable name
+     *                                  {@code null}, empty, blank, or unreadable name;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static And allEqual(final Object entity, final Collection<String> includedPropNames) {
         return and(equalConditions(entity, includedPropNames));
@@ -726,7 +745,9 @@ public final class Filters {
      * @param propName2 second property name
      * @param propValue2 second property value
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).and(equal(propName2, propValue2));
@@ -754,7 +775,9 @@ public final class Filters {
      * @param propName3 third property name
      * @param propValue3 third property value
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -800,7 +823,9 @@ public final class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is {@code null} or empty, if all elements are {@code null}, if maps and entities
      *                                  are mixed, if a map is empty, if a map key is not a non-blank {@link String}, if the first entity class declares
-     *                                  no selectable property, or if a selected property is unreadable from an entity
+     *                                  no selectable property, or if a selected property is unreadable from an entity;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      * @see #anyOfAllEqual(Collection, Collection)
      * @see #anyEqual(Map)
      * @see #allEqual(Map)
@@ -849,7 +874,9 @@ public final class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entities} or {@code includedPropNames} is {@code null} or empty,
      *                                  all entities are null, an element is a map, or a property name is {@code null},
-     *                                  empty, blank, or not readable
+     *                                  empty, blank, or not readable;
+     *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      * @see #anyOfAllEqual(Collection)
      * @see #allEqual(Object, Collection)
      */
@@ -892,7 +919,8 @@ public final class Filters {
      * @param minValue the minimum value (exclusive, must not be {@code null})
      * @param maxValue the maximum value (exclusive, must not be {@code null})
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
      *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -939,7 +967,8 @@ public final class Filters {
      * @param minValue the minimum value (inclusive, must not be {@code null})
      * @param maxValue the maximum value (exclusive, must not be {@code null})
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
      *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -986,7 +1015,8 @@ public final class Filters {
      * @param minValue the minimum value (inclusive, must not be {@code null})
      * @param maxValue the maximum value (inclusive, must not be {@code null})
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
      *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1033,7 +1063,8 @@ public final class Filters {
      * @param minValue the minimum value (exclusive, must not be {@code null})
      * @param maxValue the maximum value (inclusive, must not be {@code null})
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
      *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1169,7 +1200,8 @@ public final class Filters {
      * @param propValue the value to compare for inequality: a literal, {@code null} (renders as {@code IS NOT NULL}),
      *                  an {@link SqlExpression}, a scalar {@link SubQuery}, or a direct {@link All}/{@link Any}/{@link Some} operand
      * @return a {@link NotEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
      *                                  nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1211,7 +1243,8 @@ public final class Filters {
      * @param propValue the value to compare for inequality: a literal, {@code null} (renders as {@code IS NOT NULL}),
      *                  an {@link SqlExpression}, a scalar {@link SubQuery}, or a direct {@link All}/{@link Any}/{@link Some} operand
      * @return a {@link NotEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
      *                                  nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1253,7 +1286,8 @@ public final class Filters {
      *                  or a direct {@link All}/{@link Any}/{@link Some} operand (must not be {@code null}; use
      *                  {@link #isNull(String)} / {@link #isNotNull(String)} for null tests)
      * @return a {@link GreaterThan} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1295,7 +1329,8 @@ public final class Filters {
      *                  or a direct {@link All}/{@link Any}/{@link Some} operand (must not be {@code null}; use
      *                  {@link #isNull(String)} / {@link #isNotNull(String)} for null tests)
      * @return a {@link GreaterThan} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1337,7 +1372,8 @@ public final class Filters {
      *                  or a direct {@link All}/{@link Any}/{@link Some} operand (must not be {@code null}; use
      *                  {@link #isNull(String)} / {@link #isNotNull(String)} for null tests)
      * @return a {@link GreaterThanOrEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1379,7 +1415,8 @@ public final class Filters {
      *                  or a direct {@link All}/{@link Any}/{@link Some} operand (must not be {@code null}; use
      *                  {@link #isNull(String)} / {@link #isNotNull(String)} for null tests)
      * @return a {@link GreaterThanOrEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1421,7 +1458,8 @@ public final class Filters {
      *                  or a direct {@link All}/{@link Any}/{@link Some} operand (must not be {@code null}; use
      *                  {@link #isNull(String)} / {@link #isNotNull(String)} for null tests)
      * @return a {@link LessThan} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1463,7 +1501,8 @@ public final class Filters {
      *                  or a direct {@link All}/{@link Any}/{@link Some} operand (must not be {@code null}; use
      *                  {@link #isNull(String)} / {@link #isNotNull(String)} for null tests)
      * @return a {@link LessThan} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1505,7 +1544,8 @@ public final class Filters {
      *                  or a direct {@link All}/{@link Any}/{@link Some} operand (must not be {@code null}; use
      *                  {@link #isNull(String)} / {@link #isNotNull(String)} for null tests)
      * @return a {@link LessThanOrEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1547,7 +1587,8 @@ public final class Filters {
      *                  or a direct {@link All}/{@link Any}/{@link Some} operand (must not be {@code null}; use
      *                  {@link #isNull(String)} / {@link #isNotNull(String)} for null tests)
      * @return a {@link LessThanOrEqual} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
@@ -1589,7 +1630,8 @@ public final class Filters {
      * @param minValue the minimum value (inclusive, must not be {@code null})
      * @param maxValue the maximum value (inclusive, must not be {@code null})
      * @return a {@link Between} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if either bound is
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if either bound is
      *                                  {@code null} or a blank {@link SqlExpression}, or if either bound is any other {@link Condition}
      *                                  than an {@link SqlExpression} or a scalar {@link SubQuery} (an ordinary predicate, Criteria,
      *                                  clause, JOIN or {@code ON}/{@code USING} connector, or an {@link All}/{@link Any}/{@link Some} operand)
@@ -1631,7 +1673,8 @@ public final class Filters {
      * @param minValue the minimum value of the excluded range (inclusive, must not be {@code null})
      * @param maxValue the maximum value of the excluded range (inclusive, must not be {@code null})
      * @return a {@link NotBetween} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if either bound is
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if either bound is
      *                                  {@code null} or a blank {@link SqlExpression}, or if either bound is any other {@link Condition}
      *                                  than an {@link SqlExpression} or a scalar {@link SubQuery} (an ordinary predicate, Criteria,
      *                                  clause, JOIN or {@code ON}/{@code USING} connector, or an {@link All}/{@link Any}/{@link Some} operand)
@@ -1690,7 +1733,8 @@ public final class Filters {
      * @param propValue the operand to compare with {@code LIKE}: a literal, an {@link SqlExpression}, or a scalar
      *                  {@link SubQuery} (must not be {@code null})
      * @return a {@link Like} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue} is
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue} is
      *                                  {@code null}, a blank {@link SqlExpression}, or an {@link All}/{@link Any}/{@link Some} operand, or if
      *                                  {@code propValue} is any other {@link Condition} (an ordinary predicate, Criteria, clause,
      *                                  JOIN or {@code ON}/{@code USING} connector)
@@ -1749,7 +1793,8 @@ public final class Filters {
      * @param propValue the operand to compare with {@code NOT LIKE}: a literal, an {@link SqlExpression}, or a scalar
      *                  {@link SubQuery} (must not be {@code null})
      * @return a {@link NotLike} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code propValue} is
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue} is
      *                                  {@code null}, a blank {@link SqlExpression}, or an {@link All}/{@link Any}/{@link Some} operand, or if
      *                                  {@code propValue} is any other {@link Condition} (an ordinary predicate, Criteria, clause,
      *                                  JOIN or {@code ON}/{@code USING} connector)
@@ -3731,7 +3776,8 @@ public final class Filters {
      * @param propName the property/column name
      * @param values array of non-{@code null} values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values} is
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than an
      *                                  {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
@@ -3753,7 +3799,8 @@ public final class Filters {
      * @param propName the property/column name
      * @param values collection of non-{@code null} values
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values} is
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than an
      *                                  {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
@@ -3786,7 +3833,8 @@ public final class Filters {
      * @param valueRows collection of value rows; each row must resolve to exactly {@code propNames.size()} non-{@code null} values.
      *               A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return an {@link In} condition
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
@@ -3998,7 +4046,8 @@ public final class Filters {
      * @param propName the property/column name
      * @param values array of non-{@code null} values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values} is
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than an
      *                                  {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
@@ -4020,7 +4069,8 @@ public final class Filters {
      * @param propName the property/column name
      * @param values collection of non-{@code null} values to exclude
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values} is
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than an
      *                                  {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
@@ -4053,7 +4103,8 @@ public final class Filters {
      * @param valueRows collection of value rows to exclude; each row must resolve to exactly {@code propNames.size()}
      *               non-{@code null} values. A row may be a {@link Collection}, {@link Iterable}, object array, {@link Map} or bean
      * @return a {@link NotIn} condition
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
+     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     *                                  with more than one column; if {@code propNames} is {@code null}/empty or contains any {@code null}/blank name,
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},

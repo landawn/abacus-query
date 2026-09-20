@@ -30,8 +30,9 @@ import com.landawn.abacus.util.Strings;
  * a fluent and lightweight way to construct SQL SELECT statements with support for joins,
  * conditions, grouping, ordering, set operations, pagination, and raw trailing fragments.
  *
- * <p>The {@link Builder} follows a fluent interface pattern where each method returns the builder
- * instance, allowing method chaining. The main SQL components are built in grammar order regardless
+ * <p>Clause accessors return the corresponding clause builder, whose append methods can be chained;
+ * pagination, set-operation, and trailing-fragment methods return the main {@link Builder}.
+ * The main SQL components are built in grammar order regardless
  * of the order in which their typed clause builders are requested: SELECT → FROM → WHERE →
  * GROUP BY → HAVING → set operations → ORDER BY → pagination → raw trailing fragments.
  * Typed pagination is modeled as a clause, so its SQL grammar order does not depend on method-call
@@ -41,7 +42,8 @@ import com.landawn.abacus.util.Strings;
  * release resources. The builder uses object pooling internally for performance optimization.</p>
  *
  * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation;
- * this class does not quote identifiers, escape literals, or create bind parameters. Keep SQL text
+ * this class does not quote identifiers, escape literals, or collect parameter values. Placeholder
+ * helpers emit {@code ?} markers without binding them. Keep SQL text
  * application-controlled and represent untrusted values with placeholders bound by the execution
  * layer. Builders and their clause builders are mutable and are not thread-safe.</p>
  *
@@ -728,7 +730,7 @@ public final class DynamicQuery {
         /**
          * Appends a raw, database-specific SQL clause or fragment verbatim to the end of the query.
          * The supplied text is emitted unchanged (preceded by a separating space when needed; see below) and is <em>not</em>
-         * validated, escaped, or interpreted in any way — whatever you pass becomes the literal tail
+         * parsed, escaped, or interpreted after non-blank validation — whatever you pass becomes the literal tail
          * of the generated SQL. Use it for any trailing clause that has no typed builder method, such
          * as locking hints (for example {@code "FOR UPDATE"}) or other vendor-specific suffixes, or
          * for raw pagination/row-limiting syntax when the typed methods do not fit the dialect.
@@ -777,7 +779,7 @@ public final class DynamicQuery {
          * Conditionally appends a raw SQL clause or fragment verbatim to the end of the query.
          * When {@code b} is {@code true} this behaves exactly like {@link #append(String)}
          * (a single separating space is inserted only when needed, then the text is emitted unchanged
-         * with no validation, escaping, or interpretation); when {@code b} is {@code false}
+         * after non-blank validation, without escaping or interpretation); when {@code b} is {@code false}
          * the builder is left unchanged and {@code textToAppend} is not inspected.
          *
          * <p><b>Usage Examples:</b></p>
@@ -810,7 +812,8 @@ public final class DynamicQuery {
          * Appends one of two raw SQL clauses verbatim to the end of the query based on a boolean condition.
          * Always appends something, choosing between the two options; the chosen text is emitted exactly
          * as {@link #append(String)} would emit it (a single separating space is inserted only when needed,
-         * with no validation, escaping, or interpretation).
+         * without SQL parsing, escaping, or interpretation). Both alternatives must be non-blank,
+         * including the alternative that is not selected.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

@@ -31,7 +31,8 @@ import com.landawn.abacus.util.Strings;
 /**
  * Models a SQL row-limiting clause.
  *
- * <p>The numeric constructors render the portable internal form {@code LIMIT count [OFFSET offset]}.
+ * <p>The numeric constructors render the internal form {@code LIMIT count [OFFSET offset]}.
+ * This syntax is not supported by every database; dialect-aware query builders translate resolved limits.
  * The expression constructor accepts and normalizes the following forms:</p>
  * <ul>
  *   <li>{@code LIMIT count}</li>
@@ -263,8 +264,8 @@ public class Limit extends Clause {
     /**
      * Tests whether both the count and offset are available as {@code int} values.
      *
-     * <p>Numeric constructors and fully numeric expressions are resolved. An expression containing a
-     * out-of-range integer is unresolved.</p>
+     * <p>Numeric constructors and fully numeric expressions are resolved. An expression containing
+     * an out-of-range integer is unresolved.</p>
      *
      * @return {@code true} if {@link #resolvedCount()} and {@link #resolvedOffset()} are both present
      */

@@ -35,6 +35,8 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.entity.Account;
+import com.landawn.abacus.util.ImmutableList;
+import com.landawn.abacus.util.ImmutableSet;
 
 public class SelectionTest extends TestBase {
 
@@ -110,6 +112,26 @@ public class SelectionTest extends TestBase {
         included.add("lastName");
         excluded.add("createTime");
         builder.includedPropNames(List.of("changed")).excludedPropNames(Set.of("changed"));
+
+        assertEquals(Arrays.asList("id", "firstName"), selection.includedPropNames());
+        assertEquals(Set.of("status"), selection.excludedPropNames());
+        assertThrows(UnsupportedOperationException.class, () -> selection.includedPropNames().add("other"));
+        assertThrows(UnsupportedOperationException.class, () -> selection.excludedPropNames().add("other"));
+    }
+
+    @Test
+    public void testImmutableWrappersOverMutableCollectionsAreCopiedToo() {
+        // ImmutableList.wrap(...) / ImmutableSet.wrap(...) are live views: the build must copy them, not adopt
+        // them, or a later change to the backing collection would reach through into the built selection.
+        final List<String> includedBacking = new ArrayList<>(Arrays.asList("id", "firstName"));
+        final Set<String> excludedBacking = new LinkedHashSet<>(Arrays.asList("status"));
+        final Selection selection = Selection.builder(Account.class)
+                .includedPropNames(ImmutableList.wrap(includedBacking))
+                .excludedPropNames(ImmutableSet.wrap(excludedBacking))
+                .build();
+
+        includedBacking.add("lastName");
+        excludedBacking.add("createTime");
 
         assertEquals(Arrays.asList("id", "firstName"), selection.includedPropNames());
         assertEquals(Set.of("status"), selection.excludedPropNames());

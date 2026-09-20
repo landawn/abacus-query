@@ -591,6 +591,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     protected boolean _hasCompletedSetOperation = false; //NOSONAR
 
+    /** Whether this statement contains a top-level set operation, including a currently open SELECT segment. */
+    protected boolean _hasSetOperation = false; //NOSONAR
+
     /**
      * Whether a set(...) call has already written assignments, so chained set(...) calls know a
      * leading comma is required (sniffing the buffer's last char breaks on trailing whitespace).
@@ -3233,7 +3236,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                                  {@link On}/{@link Using} has a {@code null} operator or is/contains a {@link Criteria},
      *                                  standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING} connector,
      *                                  quantified-subquery operand, or blank {@link SqlExpression}. An empty
-     *                                  {@link com.landawn.abacus.query.condition.Junction} is accepted and renders its Boolean identity (for example {@code ON 1 = 1})
+     *                                  {@link com.landawn.abacus.query.condition.Junction} is accepted and renders its Boolean identity (for example {@code ON 1 = 1}).
+     *                                  A {@link Using} connector is rendered like {@link #using(String)}, so it is also rejected when a
+     *                                  column maps to a qualified name, which {@code USING (...)} does not accept
      * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This on(final Condition condition) {
@@ -3262,6 +3267,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a USING clause for join conditions.
+     * Entity property names are mapped to column names without adding the current table alias,
+     * because SQL requires unqualified names inside {@code USING (...)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3275,7 +3282,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param expr the property or column name(s) for the USING clause (must not be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or contains a SQL comment token
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, contains a SQL comment token,
+     *                                  or renders a qualified column name (a dot outside a quoted identifier), which
+     *                                  {@code USING (...)} does not accept
      * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This using(final String expr) {
@@ -3290,15 +3299,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return mutateAtomically(() -> {
             checkCanAppendJoinCondition();
 
-            _sb.append(_SPACE_USING_SPACE);
-
-            if (trimmedExpr.startsWith(SK.PARENTHESIS_L) && trimmedExpr.endsWith(SK.PARENTHESIS_R)) {
-                appendStringExpr(trimmedExpr, false);
-            } else {
-                _sb.append(SK._PARENTHESIS_L);
-                appendColumnName(trimmedExpr);
-                _sb.append(SK._PARENTHESIS_R);
-            }
+            appendUsingClause(() -> {
+                if (trimmedExpr.startsWith(SK.PARENTHESIS_L) && trimmedExpr.endsWith(SK.PARENTHESIS_R)) {
+                    appendStringExpr(trimmedExpr, false);
+                } else {
+                    _sb.append(SK._PARENTHESIS_L);
+                    appendColumnName(trimmedExpr);
+                    _sb.append(SK._PARENTHESIS_R);
+                }
+            });
 
             _joinConditionAllowed = false;
         });
@@ -3306,6 +3315,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a USING clause with multiple columns for join conditions.
+     * Entity mappings are applied without automatically qualifying columns with the current table alias.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3319,7 +3329,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the property or column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null},
+     *                                  empty, or blank element, or renders a qualified column name (a dot outside a
+     *                                  quoted identifier), which {@code USING (...)} does not accept
      * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This using(final String... propOrColumnNames) {
@@ -3330,6 +3342,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a USING clause with a collection of columns for join conditions.
+     * Entity mappings are applied without automatically qualifying columns with the current table alias.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3344,7 +3357,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames the collection of property or column names for the USING clause (must not be {@code null} or empty, and no element may be {@code null}, empty, or blank)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null} or empty, contains a {@code null},
+     *                                  empty, or blank element, or renders a qualified column name (a dot outside a
+     *                                  quoted identifier), which {@code USING (...)} does not accept
      * @throws IllegalStateException if there is no immediately preceding JOIN that accepts an {@code ON}/{@code USING} connector
      */
     public This using(final Collection<String> propOrColumnNames) {
@@ -3353,22 +3368,66 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return mutateAtomically(() -> {
             checkCanAppendJoinCondition();
 
-            _sb.append(_SPACE_USING_SPACE);
+            appendUsingClause(() -> {
+                _sb.append(SK._PARENTHESIS_L);
 
-            _sb.append(SK._PARENTHESIS_L);
+                int i = 0;
+                for (final String propOrColumnName : propOrColumnNamesSnapshot) {
+                    if (i++ > 0) {
+                        _sb.append(_COMMA_SPACE);
+                    }
 
-            int i = 0;
-            for (final String propOrColumnName : propOrColumnNamesSnapshot) {
-                if (i++ > 0) {
-                    _sb.append(_COMMA_SPACE);
+                    appendColumnName(propOrColumnName);
                 }
 
-                appendColumnName(propOrColumnName);
-            }
-
-            _sb.append(SK._PARENTHESIS_R);
+                _sb.append(SK._PARENTHESIS_R);
+            });
             _joinConditionAllowed = false;
         });
+    }
+
+    /**
+     * Emits a USING clause without automatically qualifying its column names, and rejects a rendered
+     * column list that is qualified anyway. The current entity mapping is retained, and the table alias
+     * is restored even if column rendering fails.
+     *
+     * @param appendColumns renders the parenthesized column list
+     * @throws IllegalArgumentException if a rendered column name carries a table or schema qualifier
+     */
+    protected void appendUsingClause(final Runnable appendColumns) {
+        final String tableAlias = _tableAlias;
+        _tableAlias = null;
+
+        try {
+            _sb.append(_SPACE_USING_SPACE);
+
+            final int columnListStartIdx = _sb.length();
+
+            appendColumns.run();
+
+            checkUsingColumnsAreUnqualified(columnListStartIdx);
+        } finally {
+            _tableAlias = tableAlias;
+        }
+    }
+
+    /**
+     * Rejects a rendered USING column list that still carries a qualifier. Clearing the table alias only
+     * stops this builder from adding one: a property mapped to an already-qualified column (for example
+     * {@code @Column("p.display_name")}) and an explicitly qualified raw expression both still render a
+     * qualifier, which SQL does not accept inside {@code USING (...)}. A dot inside a quoted identifier
+     * ({@code USING ("weird.col")}) is part of the name and is allowed.
+     *
+     * @param columnListStartIdx the buffer index at which the parenthesized column list begins
+     * @throws IllegalArgumentException if a rendered column name carries a table or schema qualifier
+     */
+    private void checkUsingColumnsAreUnqualified(final int columnListStartIdx) {
+        final String columnList = _sb.substring(columnListStartIdx);
+
+        if (QueryUtil.indexOfQualifyingDot(columnList) >= 0) {
+            throw new IllegalArgumentException("USING column names must be unqualified, but rendered: " + columnList.trim()
+                    + ". Pass the unqualified column name, or use on(...) when the join columns are qualified");
+        }
     }
 
     /**
@@ -4837,6 +4896,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         private final boolean hasFromBeenSet;
         private final boolean joinConditionAllowed;
         private final boolean hasCompletedSetOperation;
+        private final boolean hasSetOperation;
         private final boolean setListStarted;
 
         /** Captures a snapshot of the mutable state that structured-clause rendering may change. */
@@ -4865,6 +4925,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             hasFromBeenSet = builder._hasFromBeenSet;
             joinConditionAllowed = builder._joinConditionAllowed;
             hasCompletedSetOperation = builder._hasCompletedSetOperation;
+            hasSetOperation = builder._hasSetOperation;
             setListStarted = builder._setListStarted;
         }
 
@@ -4902,6 +4963,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             builder._hasFromBeenSet = hasFromBeenSet;
             builder._joinConditionAllowed = joinConditionAllowed;
             builder._hasCompletedSetOperation = hasCompletedSetOperation;
+            builder._hasSetOperation = hasSetOperation;
             builder._setListStarted = setListStarted;
         }
     }
@@ -5060,7 +5122,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code union(...)}/{@code intersect(...)}/... method: it must follow a SELECT segment completed by
      * {@code from(...)}, must precede {@code ORDER BY}, pagination, and {@code FOR UPDATE}, its operand
      * must be a complete, lexically SELECT-only {@code SELECT} sub-query (a syntactic check, not a read-only
-     * guarantee), and afterwards only compound-result clauses
+     * guarantee). Structured and builder-backed operands with their own set operations, ORDER BY,
+     * pagination, or FOR UPDATE require explicit derived-table isolation first. ORDER BY and pagination
+     * intended for the combined result belong on this builder after the final set operation, rather than
+     * inside its operand. Raw SQL operands remain responsible for their own grouping. Afterwards only compound-result clauses
      * ({@code ORDER BY}, pagination, {@code FOR UPDATE}) may follow. Any other condition is appended with
      * a leading {@code WHERE} keyword
      * (unless this builder is condition-only). A multi-element {@link com.landawn.abacus.query.condition.Junction}
@@ -5082,6 +5147,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                                  non-predicate condition, if a generic clause uses an operator that requires a
      *                                  dedicated builder method or condition type, or if a set-operation operand
      *                                  (standalone or carried by a Criteria) is not a complete, lexically SELECT-only {@code SELECT} query
+     *                                  or requires explicit branch isolation
      * @throws IllegalStateException if there is no current SELECT segment, if that segment already
      *                               has a select modifier, if a clause emitted by the criteria has already been set,
      *                               if any Criteria clause would be emitted after a clause that must follow it,
@@ -5131,6 +5197,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 // Criteria set-operation path; without this, an appended Union could smuggle in a
                 // non-SELECT operand or land after ORDER BY/pagination/FOR UPDATE.
                 checkCanAppendSetOperation(clause.operator().toString());
+                checkSetOperationIsolation((SubQuery) clause.condition(), clause.operator().toString());
                 checkSetOperationSubQuery(((SubQuery) clause.condition()).toSql(_namingPolicy), clause.operator().toString());
             } else if (clause.operator() == Operator.WHERE || clause.operator() == Operator.HAVING) {
                 // Directly appended clause objects must not bypass the predicate checks performed by
@@ -5362,6 +5429,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     private void checkCriteriaSetOperationOperands(final Criteria criteria) {
         for (final Clause aggregation : criteria.setOperations()) {
             final SubQuery subQuery = (SubQuery) aggregation.condition();
+            checkSetOperationIsolation(subQuery, aggregation.operator().toString());
             checkSetOperationSubQuery(subQuery.toSql(_namingPolicy), aggregation.operator().toString());
         }
     }
@@ -5392,7 +5460,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code expr} if the statement does not already end with a space and {@code expr} does not
      * already begin with one. Caller-supplied edge whitespace is otherwise preserved; if the
      * statement ends with a space and {@code expr} begins with one, both spaces remain. The rest of
-     * {@code expr} is emitted verbatim and is not validated, escaped, or interpreted in any way.</p>
+     * {@code expr} is emitted verbatim without SQL syntax validation, escaping, or column-name conversion.
+     * The leading join-connector check described below still updates builder state.</p>
      *
      * <p>A fragment that begins with an {@code ON} or {@code USING} keyword completes a pending qualified
      * JOIN exactly as {@link #on(String)} / {@link #using(String)} would, so
@@ -5595,7 +5664,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a UNION clause with another SQL query.
-     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>The child is consumed once final rendering begins. Argument, parent-state, SQL-policy, and
+     * branch-isolation checks run first; rejection by those checks leaves both builders reusable.
+     * For ORDER BY or pagination of the combined result, apply those clauses to this builder after the
+     * final set operation, leaving them off the child. To retain the child's own set operations, ORDER BY,
+     * pagination, or FOR UPDATE, isolate it explicitly with {@code dsl.select("*").from(child, "branch")}.
+     * Choose a projection and derived-table syntax supported by the target database. Compound children
+     * are rejected uniformly; this method does not flatten their operators or add grouping implicitly.
+     * Clauses supplied through raw SQL fragments remain the caller's responsibility.</p>
      * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
      * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
@@ -5605,16 +5681,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * SqlBuilder query2 = PSC.select("id", "name").from("customers");
      * String sql = query1.union(query2).build().query();
      * // Output: SELECT id, name FROM users UNION SELECT id, name FROM customers
+     *
+     * // Sort and limit the combined result:
+     * String combined = PSC.select("id").from("users")
+     *         .union(PSC.select("id").from("customers")).orderBy("id").limit(5).build().query();
+     *
+     * // Keep the child's ordering and limit inside that branch:
+     * SqlBuilder child = PSC.select("id").from("customers").orderBy("id").limit(5);
+     * String isolated = PSC.select("id").from("users")
+     *         .union(PSC.select("id").from(child, "branch")).build().query();
      * }</pre>
      *
      * @param sqlBuilder the SQL builder containing the query to union (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
-     *         when this is thrown)
-     * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
-     *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
+     *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
+     *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
+     *         the child has been consumed by {@code build()}
+     * @throws IllegalStateException if this builder or {@code sqlBuilder} is closed; if this builder is not building a SELECT query,
+     *         its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This union(final This sqlBuilder) {
         return appendSetOperation(_SPACE_UNION_SPACE, sqlBuilder, "UNION");
@@ -5625,6 +5710,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * UNION combines result sets from two queries and removes duplicates.
      * This overload always treats its argument as a complete query; use {@link #unionSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
+     * The query text is appended without adding branch isolation; callers must supply any grouping
+     * required by their database for branch-local clauses or nested set operations. ORDER BY or pagination
+     * intended for the combined result can be applied to this builder after the final set operation.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -5672,7 +5760,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds a UNION ALL clause with another SQL query.
-     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>The child is consumed once final rendering begins. Argument, parent-state, SQL-policy, and
+     * branch-isolation checks run first; rejection by those checks leaves both builders reusable.
+     * For ORDER BY or pagination of the combined result, apply those clauses to this builder after the
+     * final set operation, leaving them off the child. To retain the child's own set operations, ORDER BY,
+     * pagination, or FOR UPDATE, isolate it explicitly with {@code dsl.select("*").from(child, "branch")}.
+     * Choose a projection and derived-table syntax supported by the target database. Compound children
+     * are rejected uniformly; this method does not flatten their operators or add grouping implicitly.
+     * Clauses supplied through raw SQL fragments remain the caller's responsibility.</p>
      * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
      * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
@@ -5687,11 +5782,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to union all (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
-     *         when this is thrown)
-     * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
-     *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
+     *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
+     *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
+     *         the child has been consumed by {@code build()}
+     * @throws IllegalStateException if this builder or {@code sqlBuilder} is closed; if this builder is not building a SELECT query,
+     *         its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This unionAll(final This sqlBuilder) {
         return appendSetOperation(_SPACE_UNION_ALL_SPACE, sqlBuilder, "UNION ALL");
@@ -5702,6 +5797,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * UNION ALL combines result sets from two queries and keeps all duplicates.
      * This overload always treats its argument as a complete query; use {@link #unionAllSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
+     * The query text is appended without adding branch isolation; callers must supply any grouping
+     * required by their database for branch-local clauses or nested set operations. ORDER BY or pagination
+     * intended for the combined result can be applied to this builder after the final set operation.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -5749,7 +5847,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an INTERSECT clause with another SQL query.
-     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>The child is consumed once final rendering begins. Argument, parent-state, SQL-policy, and
+     * branch-isolation checks run first; rejection by those checks leaves both builders reusable.
+     * For ORDER BY or pagination of the combined result, apply those clauses to this builder after the
+     * final set operation, leaving them off the child. To retain the child's own set operations, ORDER BY,
+     * pagination, or FOR UPDATE, isolate it explicitly with {@code dsl.select("*").from(child, "branch")}.
+     * Choose a projection and derived-table syntax supported by the target database. Compound children
+     * are rejected uniformly; this method does not flatten their operators or add grouping implicitly.
+     * Clauses supplied through raw SQL fragments remain the caller's responsibility.</p>
      * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
      * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
@@ -5764,11 +5869,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to intersect (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
-     *         when this is thrown)
-     * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
-     *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
+     *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
+     *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
+     *         the child has been consumed by {@code build()}
+     * @throws IllegalStateException if this builder or {@code sqlBuilder} is closed; if this builder is not building a SELECT query,
+     *         its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This intersect(final This sqlBuilder) {
         return appendSetOperation(_SPACE_INTERSECT_SPACE, sqlBuilder, "INTERSECT");
@@ -5779,6 +5884,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * INTERSECT returns only rows that appear in both result sets.
      * This overload always treats its argument as a complete query; use {@link #intersectSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
+     * The query text is appended without adding branch isolation; callers must supply any grouping
+     * required by their database for branch-local clauses or nested set operations. ORDER BY or pagination
+     * intended for the combined result can be applied to this builder after the final set operation.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -5826,7 +5934,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Adds an EXCEPT clause with another SQL query.
-     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>The child is consumed once final rendering begins. Argument, parent-state, SQL-policy, and
+     * branch-isolation checks run first; rejection by those checks leaves both builders reusable.
+     * For ORDER BY or pagination of the combined result, apply those clauses to this builder after the
+     * final set operation, leaving them off the child. To retain the child's own set operations, ORDER BY,
+     * pagination, or FOR UPDATE, isolate it explicitly with {@code dsl.select("*").from(child, "branch")}.
+     * Choose a projection and derived-table syntax supported by the target database. Compound children
+     * are rejected uniformly; this method does not flatten their operators or add grouping implicitly.
+     * Clauses supplied through raw SQL fragments remain the caller's responsibility.</p>
      * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
      * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
@@ -5841,11 +5956,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to except (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
-     *         when this is thrown)
-     * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
-     *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
+     *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
+     *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
+     *         the child has been consumed by {@code build()}
+     * @throws IllegalStateException if this builder or {@code sqlBuilder} is closed; if this builder is not building a SELECT query,
+     *         its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This except(final This sqlBuilder) {
         return appendSetOperation(_SPACE_EXCEPT_SPACE, sqlBuilder, "EXCEPT");
@@ -5856,6 +5971,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * EXCEPT returns rows from the first query that don't appear in the second query.
      * This overload always treats its argument as a complete query; use {@link #exceptSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
+     * The query text is appended without adding branch isolation; callers must supply any grouping
+     * required by their database for branch-local clauses or nested set operations. ORDER BY or pagination
+     * intended for the combined result can be applied to this builder after the final set operation.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -5904,7 +6022,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Adds a MINUS clause with another SQL query (Oracle syntax).
      * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
-     * <p><b>&#9888;&#65039;</b> The passed {@code sqlBuilder} is finalized via {@link #build()} and cannot be reused after this call.</p>
+     * <p>The child is consumed once final rendering begins. Argument, parent-state, SQL-policy, and
+     * branch-isolation checks run first; rejection by those checks leaves both builders reusable.
+     * For ORDER BY or pagination of the combined result, apply those clauses to this builder after the
+     * final set operation, leaving them off the child. To retain the child's own set operations, ORDER BY,
+     * pagination, or FOR UPDATE, isolate it explicitly with {@code dsl.select("*").from(child, "branch")}.
+     * Choose a projection and derived-table syntax supported by the target database. Compound children
+     * are rejected uniformly; this method does not flatten their operators or add grouping implicitly.
+     * Clauses supplied through raw SQL fragments remain the caller's responsibility.</p>
      * <p>For {@link SqlPolicy#NAMED_SQL}, child placeholders are rendered with this parent builder's
      * named-parameter handler so the compound statement uses one placeholder syntax.</p>
      *
@@ -5919,11 +6044,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param sqlBuilder the SQL builder containing the query to minus (must not be {@code null} and must not be this same instance)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
-     *         or has generated parameter placeholders under a different SQL policy, or if the built sub-query is not
-     *         a complete, lexically SELECT-only SELECT query (the child builder has already been consumed by {@code build()}
-     *         when this is thrown)
-     * @throws IllegalStateException if this builder is closed, is not building a SELECT query, the current SELECT segment
-     *         has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
+     *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
+     *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
+     *         the child has been consumed by {@code build()}
+     * @throws IllegalStateException if this builder or {@code sqlBuilder} is closed; if this builder is not building a SELECT query,
+     *         its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY, pagination, or FOR UPDATE has already been added
      */
     public This minus(final This sqlBuilder) {
         return appendSetOperation(_SPACE_EXCEPT_MINUS_SPACE, sqlBuilder, "MINUS");
@@ -5934,6 +6059,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * MINUS is Oracle's equivalent to EXCEPT - returns rows from the first query that don't appear in the second.
      * This overload always treats its argument as a complete query; use {@link #minusSelect(Collection)}
      * to generate the right-hand {@code SELECT} from property or column names.
+     * The query text is appended without adding branch isolation; callers must supply any grouping
+     * required by their database for branch-local clauses or nested set operations. ORDER BY or pagination
+     * intended for the combined result can be applied to this builder after the final set operation.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -6026,6 +6154,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * from being spliced retro-actively into the already-finished left operand.</p>
      */
     private void closeSetOperationSegment() {
+        _hasSetOperation = true;
         _propOrColumnNames = null;
         _propOrColumnNameAliases = null;
         _multiSelects = null;
@@ -6068,6 +6197,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _joinConditionAllowed = false;
         _hasCompletedSetOperation = false;
 
+        // Record the compound query before from(...) completes its next SELECT. A sibling's isolation
+        // check must reject it before build() would consume the unfinished child.
+        _hasSetOperation = true;
+
         _sb.append(keyword);
 
         return (This) this;
@@ -6080,7 +6213,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * placeholder sequence stays unique across the full compound query.
      *
      * @param keyword the set-operation keyword token (e.g. {@link #_SPACE_UNION_SPACE})
-     * @param sqlBuilder the sibling builder supplying the right-hand query; consumed by this call
+     * @param sqlBuilder the sibling builder supplying the right-hand query; consumed once prevalidation succeeds
      * @param operationName the set-operation SQL keyword (e.g. {@code "UNION"}) used in validation messages
      * @return this builder instance for method chaining
      */
@@ -6088,6 +6221,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply " + operationName + " with the same SqlBuilder instance");
         checkCanAppendSetOperation(operationName);
+        sqlBuilder.assertNotClosed();
+        checkSetOperationIsolation(sqlBuilder.requiresSetOperationIsolation(), operationName);
         N.checkArgument(_sqlPolicy == sqlBuilder._sqlPolicy || !sqlBuilder._hasGeneratedParameterPlaceholder,
                 "A set-operation child with generated parameter placeholders must use the parent's SQL policy: parent=" + _sqlPolicy + ", child="
                         + sqlBuilder._sqlPolicy);
@@ -6128,6 +6263,58 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Returns whether a clause that applies to a completed result has already been emitted:
+     * {@code ORDER BY}, pagination, or {@code FOR UPDATE}. Such a clause must follow the final
+     * set-operation operand, which makes it both the reason a set operator can no longer be appended
+     * here and the reason this statement cannot become somebody else's operand without isolation.
+     *
+     * @return {@code true} if one of those clauses has been emitted
+     */
+    private boolean hasCompoundResultClause() {
+        return calledOpSet.contains(SK.ORDER_BY) || calledOpSet.contains(SK.LIMIT) || calledOpSet.contains(SK.OFFSET) || calledOpSet.contains(SK.FETCH_FIRST)
+                || calledOpSet.contains(SK.FETCH_NEXT) || calledOpSet.contains(SK.FOR_UPDATE);
+    }
+
+    /**
+     * Returns whether this complete statement must be isolated before use as one set-operation operand.
+     * Only this statement's clauses count: nested condition subqueries and derived tables already have
+     * their own parentheses, so their compound or terminal clauses do not escape into this statement.
+     */
+    final boolean requiresSetOperationIsolation() {
+        return _hasSetOperation || hasCompoundResultClause();
+    }
+
+    /** Rejects structured operands whose own compound or terminal clauses would escape into the enclosing query. */
+    private void checkSetOperationIsolation(final SubQuery subQuery, final String operationName) {
+        if (subQuery instanceof final SubQuerySnapshot snapshot) {
+            checkSetOperationIsolation(snapshot.requiresSetOperationIsolation, operationName);
+        } else if (Strings.isEmpty(subQuery.rawSql())) {
+            final Condition condition = subQuery.condition();
+
+            if (condition instanceof final Criteria criteria) {
+                checkSetOperationIsolation(criteria.orderBy() != null || criteria.limit() != null || N.notEmpty(criteria.setOperations()), operationName);
+            } else if (condition != null) {
+                final Operator operator = condition.operator();
+                checkSetOperationIsolation(operator == Operator.ORDER_BY || operator == Operator.LIMIT || operator == Operator.OFFSET
+                        || operator == Operator.FOR_UPDATE || isSetOperationOperator(operator), operationName);
+            }
+        }
+    }
+
+    /** Explains combined-result versus child-local scope without moving clauses or flattening compound operands. */
+    private static void checkSetOperationIsolation(final boolean required, final String operationName) {
+        if (required) {
+            // Even identical operators cannot always be flattened: A EXCEPT (B EXCEPT C) differs from
+            // (A EXCEPT B) EXCEPT C. Require explicit scope for every structured compound child.
+            throw new IllegalArgumentException(operationName + " requires explicit scope for a right-hand query with its own set operations, ORDER BY, "
+                    + "pagination, or FOR UPDATE. For ORDER BY or pagination of the combined result, apply those clauses to the parent after the final "
+                    + "set operation and leave them off the child. To preserve child-local scope, create an isolated right-hand query with "
+                    + "select(...).from(sourceBuilder, alias) before composing it or creating its SubQuery snapshot; "
+                    + "choose a projection and derived-table syntax supported by the target database.");
+        }
+    }
+
+    /**
      * Verifies that a set operation has a complete query on its left-hand side. A staged SELECT list
      * is not a query until {@link #from(String)} renders it, and data-modification statements cannot
      * legally be used as the left operand of {@code UNION}, {@code INTERSECT}, {@code EXCEPT}, or
@@ -6160,8 +6347,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             throw new IllegalStateException(operationName + " requires from(...) to complete the current SELECT segment first");
         }
 
-        if (calledOpSet.contains(SK.ORDER_BY) || calledOpSet.contains(SK.LIMIT) || calledOpSet.contains(SK.OFFSET) || calledOpSet.contains(SK.FETCH_FIRST)
-                || calledOpSet.contains(SK.FETCH_NEXT) || calledOpSet.contains(SK.FOR_UPDATE)) {
+        if (hasCompoundResultClause()) {
             throw new IllegalStateException(operationName + " must be added before ORDER BY, pagination, or FOR UPDATE clauses");
         }
     }
@@ -7359,8 +7545,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final SP sp = build();
         checkSubQuerySnapshot(sp.query());
 
-        return new SubQuerySnapshot(sp.query(), sp.parameters(), _sqlPolicy, _hasGeneratedParameterPlaceholder, _namedParameterNameOccurrences,
-                _generatedNamedParameterNames, _renderedNamedParameterTokens);
+        return new SubQuerySnapshot(sp.query(), sp.parameters(), _sqlPolicy, _hasGeneratedParameterPlaceholder, requiresSetOperationIsolation(),
+                _namedParameterNameOccurrences, _generatedNamedParameterNames, _renderedNamedParameterTokens);
     }
 
     /**
@@ -8263,7 +8449,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends a column name to the SQL string builder with full control over aliasing, table prefix, and sub-entity expansion.
      * A mapped column that already includes a qualifier is emitted as-is; table aliases and sub-entity
-     * table names are prefixed only to unqualified mappings.
+     * table names are prefixed only to unqualified mappings. Explicit SELECT aliases are honored under
+     * every naming policy, including {@link NamingPolicy#NO_CHANGE}.
      *
      * @param entityClass the entity class for resolving sub-entity properties
      * @param entityInfo the bean info for the entity class, or {@code null}
@@ -8288,7 +8475,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             _sb.append(tp.columnName());
 
-            if (isForSelect && (withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
+            if (isForSelect && (Strings.isNotEmpty(propAlias) || withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
                 _sb.append(_SPACE_AS_SPACE);
 
                 if (quotePropAlias) {
@@ -8371,7 +8558,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                         _sb.append(tp.columnName());
 
-                        if (isForSelect && (withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
+                        if (isForSelect && (Strings.isNotEmpty(propAlias) || withClassAlias || _namingPolicy != NamingPolicy.NO_CHANGE)) {
                             _sb.append(_SPACE_AS_SPACE);
 
                             if (quotePropAlias) {

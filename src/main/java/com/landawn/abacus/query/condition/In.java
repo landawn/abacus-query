@@ -105,7 +105,8 @@ public class In extends AbstractIn {
      *                                  is {@code null}/empty or contains {@code null}, or if any element is a
      *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
      *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
-     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected)
+     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
+     *                                  or if a scalar {@link SubQuery} has a known, non-wildcard projection containing multiple columns
      */
     public In(final String propName, final Collection<?> values) {
         super(propName, Operator.IN, values);
@@ -151,7 +152,8 @@ public class In extends AbstractIn {
      *                                  if a bean row does not expose a requested property, or if any row element is a
      *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
      *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
-     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected)
+     *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
+     *                                  or if a scalar {@link SubQuery} has a known, non-wildcard projection containing multiple columns
      */
     public In(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.IN, valueRows);

@@ -98,7 +98,8 @@ public class NotEqual extends Binary {
      *                                  {@code propValue} is an ordinary predicate or query clause (any
      *                                  {@link Condition} other than an {@link SqlExpression}, a scalar
      *                                  {@link SubQuery}, or a direct {@link All}/{@link Any}/{@link Some} operand),
-     *                                  or a blank {@link SqlExpression}
+     *                                  or a blank {@link SqlExpression}; or if a structured subquery has a known,
+     *                                  non-wildcard projection with a column count other than one
      */
     public NotEqual(final String propName, final Object propValue) {
         super(propName, Operator.NOT_EQUAL, propValue);

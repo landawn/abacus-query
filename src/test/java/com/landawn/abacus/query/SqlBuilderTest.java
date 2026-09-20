@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
@@ -80,6 +81,87 @@ public class SqlBuilderTest extends TestBase {
     public void testSelectWithAlias() {
         String sql = PSC.select("first_name AS fname").from("users").build().query();
         assertTrue(sql.contains("AS fname"));
+    }
+
+    @Test
+    public void testExplicitMappedSelectAliasesAreHonoredWithNoChangeNamingPolicy() {
+        for (final Dsl dsl : new Dsl[] { PSB, NSB, MSB }) {
+            assertEquals("SELECT account_status AS \"currentStatus\" FROM test_account",
+                    dsl.select(Collections.singletonMap("status", "currentStatus")).from(Account.class).build().query());
+            assertEquals("SELECT a.account_status AS \"currentStatus\" FROM test_account a",
+                    dsl.select(Collections.singletonMap("a.status", "currentStatus")).from(Account.class, "a").build().query());
+            assertEquals("SELECT account_status AS currentStatus FROM test_account",
+                    dsl.select("status AS currentStatus").from(Account.class).build().query());
+            assertEquals("SELECT a.account_status AS currentStatus FROM test_account a",
+                    dsl.select("a.status AS currentStatus").from(Account.class, "a").build().query());
+        }
+    }
+
+    @Test
+    public void testUsingColumnsDoNotInheritEntityTableAlias() {
+        for (final Dsl dsl : new Dsl[] { PSB, PSC, NSC }) {
+            final String expected = "SELECT * FROM test_account a JOIN test_account b USING (account_status) WHERE a.id = ";
+            final String placeholder = dsl == NSC ? ":id" : "?";
+
+            assertEquals(expected + placeholder, dsl.select("*").from(Account.class, "a").join(Account.class, "b")
+                    .using("status").where(Filters.eq("id", 1)).build().query());
+            assertEquals(expected + placeholder, dsl.select("*").from(Account.class, "a").join(Account.class, "b")
+                    .using("(status)").where(Filters.eq("id", 1)).build().query());
+            assertEquals(expected + placeholder, dsl.select("*").from(Account.class, "a").join(Account.class, "b")
+                    .using(Collections.singletonList("status")).where(Filters.eq("id", 1)).build().query());
+            assertEquals(expected + placeholder, dsl.select("*").from(Account.class, "a").join(Account.class, "b")
+                    .on(Filters.using("status")).where(Filters.eq("id", 1)).build().query());
+            assertEquals("SELECT * FROM test_account a JOIN test_account b USING (id, account_status)",
+                    dsl.select("*").from(Account.class, "a").join(Account.class, "b").using("id", "status").build().query());
+        }
+    }
+
+    @Test
+    public void testCriteriaUsingColumnsDoNotInheritEntityTableAlias() {
+        final Criteria criteria = Criteria.builder().join("test_account b", Filters.using("status")).where(Filters.eq("id", 1)).build();
+        final SP result = PSC.select("*").from(Account.class, "a").append(criteria).build();
+
+        assertEquals("SELECT * FROM test_account a JOIN test_account b USING (account_status) WHERE a.id = ?", result.query());
+        assertEquals(Arrays.asList(1), result.parameters());
+    }
+
+    @Test
+    public void testUsingRejectsQualifiedColumnMappings() {
+        // Clearing the table alias only stops the builder from adding a qualifier; a property mapped to an
+        // already-qualified column still renders one, which USING (...) does not accept. Reject it instead of
+        // emitting invalid SQL.
+        final List<Function<SqlBuilder, SqlBuilder>> usingForms = Arrays.asList(builder -> builder.using("name"),
+                builder -> builder.using(new String[] { "name" }), builder -> builder.using(Arrays.asList("name")),
+                builder -> builder.on(Filters.using("name")), builder -> builder.using("(p.display_name)"));
+
+        for (final Function<SqlBuilder, SqlBuilder> usingForm : usingForms) {
+            final SqlBuilder builder = PSC.select("*").from(QualifiedProfile.class, "p").join("other");
+            final IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> usingForm.apply(builder));
+
+            assertTrue(failure.getMessage().contains("USING column names must be unqualified"), failure.getMessage());
+            assertTrue(failure.getMessage().contains("p.display_name"), failure.getMessage());
+
+            // The rejected clause is rolled back, so the pending JOIN can still be completed with ON.
+            assertEquals("SELECT * FROM profiles p JOIN other ON p.display_name = ?",
+                    builder.on(Filters.eq("name", "x")).build().query());
+        }
+    }
+
+    @Test
+    public void testUsingAcceptsQuotedDotsInsideColumnNames() {
+        // A dot inside a quoted identifier belongs to the name, so it is not a qualifier.
+        assertEquals("SELECT * FROM test_account a JOIN test_account b USING (\"weird.col\")",
+                PSC.select("*").from(Account.class, "a").join(Account.class, "b").using("(\"weird.col\")").build().query());
+    }
+
+    @Test
+    public void testFailedUsingRenderingRestoresEntityTableAlias() {
+        final SqlBuilder builder = PSC.select("*").from(Account.class, "a").join(Account.class, "b");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.using(Arrays.asList("status", "id -- unsafe")));
+        final SP result = builder.on(Filters.eq("id", 1)).build();
+        assertEquals("SELECT * FROM test_account a JOIN test_account b ON a.id = ?", result.query());
+        assertEquals(Arrays.asList(1), result.parameters());
     }
 
     @Test
@@ -13595,6 +13677,417 @@ public class SqlBuilderTest extends TestBase {
         final SP rightSql = right.build();
         assertEquals("SELECT id FROM archived_records WHERE owner_id IN (SELECT id FROM owners WHERE active = ?)", rightSql.query());
         assertEquals(Arrays.asList(true), rightSql.parameters());
+    }
+
+    @Test
+    public void testRawSubQueryBindingsPreventMixedPoliciesInSiblingSetOperations() {
+        final SubQuery activeOwners = new SubQuery("SELECT id FROM owners WHERE active = ?", Arrays.asList(true));
+        final SqlBuilder left = NSC.select("id").from("current_records");
+        final SqlBuilder right = PSC.select("id").from("archived_records").where(Filters.in("owner_id", activeOwners));
+
+        assertThrows(IllegalArgumentException.class, () -> left.union(right));
+        assertEquals("SELECT id FROM current_records", left.build().query());
+        final SP rightSql = right.build();
+        assertEquals("SELECT id FROM archived_records WHERE owner_id IN (SELECT id FROM owners WHERE active = ?)", rightSql.query());
+        assertEquals(Arrays.asList(true), rightSql.parameters());
+    }
+
+    @Test
+    public void testFailedRawSubQueryRenderingRestoresParameterPolicyMetadata() {
+        final SubQuery raw = new SubQuery("SELECT id FROM owners WHERE active = ?", List.of(true));
+        final SqlBuilder child = PSC.select("id").from("archived_records");
+
+        // The first predicate renders and records positional bindings before the unsupported second
+        // predicate fails. Rollback must clear that policy requirement along with the SQL and bindings.
+        final IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> child.where(Filters.and(Filters.exists(raw), unsupportedCondition())));
+        assertTrue(failure.getMessage().contains("Unsupported condition type"), failure.getMessage());
+
+        final SP result = NSC.select("id").from("current_records").where(Filters.eq("status", "current")).union(child).build();
+        assertEquals("SELECT id FROM current_records WHERE status = :status UNION SELECT id FROM archived_records", result.query());
+        assertEquals(List.of("current"), result.parameters());
+    }
+
+    @Test
+    public void testInlinedRawSubQueryBindingsDoNotRestrictParentParameterPolicy() {
+        final SubQuery raw = new SubQuery("SELECT id FROM owners WHERE name = ?", List.of("O'Brien"));
+        final SqlBuilder child = SCSB.select("id").from("archived_records").where(Filters.exists(raw));
+
+        // RAW_SQL consumes the raw bindings as literals, leaving no placeholders that require the
+        // parent to use its policy. Only the parent's named value belongs in the final binding list.
+        final SP result = NSC.select("id").from("current_records").where(Filters.eq("status", "current")).union(child).build();
+        assertEquals("SELECT id FROM current_records WHERE status = :status UNION SELECT id FROM archived_records "
+                + "WHERE EXISTS (SELECT id FROM owners WHERE name = 'O''Brien')", result.query());
+        assertEquals(List.of("current"), result.parameters());
+    }
+
+    @Test
+    public void testRawSubQueryBindingsPreventMixedPoliciesInDerivedTables() {
+        final SubQuery activeOwners = new SubQuery("SELECT id FROM owners WHERE active = ?", Arrays.asList(true));
+        final SqlBuilder parent = NSC.select("id");
+        final SqlBuilder child = PSC.select("id").from("archived_records").where(Filters.in("owner_id", activeOwners));
+
+        assertThrows(IllegalArgumentException.class, () -> parent.from(child, "archived"));
+        assertEquals("SELECT id FROM current_records", parent.from("current_records").build().query());
+        assertEquals(Arrays.asList(true), child.build().parameters());
+    }
+
+    @Test
+    public void testRawSubQueryBindingsRetainPolicyInReusableSnapshots() {
+        final SubQuery activeOwners = new SubQuery("SELECT id FROM owners WHERE active = ?", Arrays.asList(true));
+        final SubQuery archived = PSC.select("id").from("archived_records").where(Filters.in("owner_id", activeOwners)).toSubQuery();
+        final SqlBuilder incompatible = NSC.select("id").from("current_records");
+
+        assertThrows(IllegalArgumentException.class, () -> incompatible.where(Filters.in("id", archived)));
+        assertEquals("SELECT id FROM current_records WHERE id = :id", incompatible.where(Filters.eq("id", 1)).build().query());
+
+        final SP compatible = PSC.select("id").from("current_records").where(Filters.in("id", archived)).build();
+        assertEquals("SELECT id FROM current_records WHERE id IN (SELECT id FROM archived_records WHERE owner_id IN (SELECT id FROM owners WHERE active = ?))",
+                compatible.query());
+        assertEquals(Arrays.asList(true), compatible.parameters());
+    }
+
+    @Test
+    public void testRawSubQueryCompactExpressionsValidateAndRewriteEveryBinding() {
+        final String[][] cases = {
+                { "SELECT ?||?||?", "SELECT :param||:param_2||:param_3", "SELECT #{param}||#{param_2}||#{param_3}" },
+                { "SELECT ?-?-?", "SELECT :param-:param_2-:param_3", "SELECT #{param}-#{param_2}-#{param_3}" },
+                { "SELECT ARRAY[?||?||?]", "SELECT ARRAY[:param||:param_2||:param_3]", "SELECT ARRAY[#{param}||#{param_2}||#{param_3}]" },
+                { "SELECT ARRAY[?-?-?]", "SELECT ARRAY[:param-:param_2-:param_3]", "SELECT ARRAY[#{param}-#{param_2}-#{param_3}]" }
+        };
+
+        for (final String[] sql : cases) {
+            final List<Object> bindings = sql[0].contains("||") ? List.of("a", "b", "c") : List.of(3, 2, 1);
+            final SubQuery subQuery = new SubQuery(sql[0], bindings);
+
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0]), sql[0]);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0], bindings.subList(0, 1)), sql[0]);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0], bindings.subList(0, 2)), sql[0]);
+
+            final Dsl[] policies = { PSC, NSC, MSC };
+
+            for (int policy = 0; policy < policies.length; policy++) {
+                final SP result = policies[policy].select("id").from("records").where(Filters.exists(subQuery)).build();
+                assertEquals("SELECT id FROM records WHERE EXISTS (" + sql[policy] + ")", result.query(), sql[0]);
+                assertEquals(bindings, result.parameters(), sql[0]);
+            }
+        }
+    }
+
+    @Test
+    public void testRawSubQueryJsonOperatorsAreNotRewrittenAsBindings() {
+        final String[][] cases = {
+                { "SELECT doc ? format('%s', ?) FROM documents", "SELECT doc ? format('%s', :param) FROM documents",
+                        "SELECT doc ? format('%s', #{param}) FROM documents" },
+                { "SELECT ARRAY[doc ? format('%s', ?)] FROM documents", "SELECT ARRAY[doc ? format('%s', :param)] FROM documents",
+                        "SELECT ARRAY[doc ? format('%s', #{param})] FROM documents" },
+                { "SELECT doc ?| ARRAY[?] FROM documents", "SELECT doc ?| ARRAY[:param] FROM documents",
+                        "SELECT doc ?| ARRAY[#{param}] FROM documents" }
+        };
+
+        for (final String[] sql : cases) {
+            final SubQuery subQuery = new SubQuery(sql[0], List.of("key"));
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0]), sql[0]);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0], List.of("key", "extra")), sql[0]);
+
+            final Dsl[] policies = { PSC, NSC, MSC };
+
+            for (int policy = 0; policy < policies.length; policy++) {
+                final SP result = policies[policy].select("id").from("records").where(Filters.exists(subQuery)).build();
+                assertEquals("SELECT id FROM records WHERE EXISTS (" + sql[policy] + ")", result.query(), sql[0]);
+                assertEquals(List.of("key"), result.parameters(), sql[0]);
+            }
+        }
+
+        for (final String sql : List.of("SELECT doc ? NULL FROM documents", "SELECT ARRAY[doc ? NULL] FROM documents",
+                "SELECT doc ? format('%s', 'key') FROM documents")) {
+            final SubQuery subQuery = new SubQuery(sql);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql, List.of("extra")), sql);
+
+            for (final Dsl dsl : List.of(PSC, NSC, MSC)) {
+                final SP result = dsl.select("id").from("records").where(Filters.exists(subQuery)).build();
+                assertEquals("SELECT id FROM records WHERE EXISTS (" + sql + ")", result.query(), sql);
+                assertTrue(result.parameters().isEmpty(), sql);
+            }
+        }
+    }
+
+    @Test
+    public void testRawSubQueryJdbcEscapedOperatorsArePreserved() {
+        for (final String sql : List.of("SELECT 1 FROM documents WHERE doc ?? 'k'", "SELECT ARRAY[doc ?? 'k'] FROM documents",
+                "SELECT doc ??| keys FROM documents", "SELECT doc ??& keys FROM documents", "SELECT doc @?? path FROM documents")) {
+            final SubQuery noBindings = new SubQuery(sql);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql, List.of("extra")), sql);
+            for (final Dsl dsl : List.of(PSC, NSC, MSC)) {
+                final SP result = dsl.select("id").from("records").where(Filters.exists(noBindings)).build();
+                assertEquals("SELECT id FROM records WHERE EXISTS (" + sql + ")", result.query(), sql);
+                assertTrue(result.parameters().isEmpty(), sql);
+            }
+        }
+
+        final String[][] cases = {
+                { "SELECT 1 FROM documents WHERE doc ?? 'k' AND id = ?", "SELECT 1 FROM documents WHERE doc ?? 'k' AND id = :param",
+                        "SELECT 1 FROM documents WHERE doc ?? 'k' AND id = #{param}" },
+                { "SELECT doc ??? FROM documents", "SELECT doc ??:param FROM documents", "SELECT doc ??#{param} FROM documents" },
+                { "SELECT ARRAY[doc ?? ?] FROM documents", "SELECT ARRAY[doc ?? :param] FROM documents",
+                        "SELECT ARRAY[doc ?? #{param}] FROM documents" },
+                { "SELECT doc ??| ARRAY[?] FROM documents", "SELECT doc ??| ARRAY[:param] FROM documents",
+                        "SELECT doc ??| ARRAY[#{param}] FROM documents" },
+                { "SELECT doc @??? FROM documents", "SELECT doc @??:param FROM documents", "SELECT doc @??#{param} FROM documents" },
+                { "SELECT ARRAY[doc ??& ?] FROM documents", "SELECT ARRAY[doc ??& :param] FROM documents",
+                        "SELECT ARRAY[doc ??& #{param}] FROM documents" }
+        };
+        for (final String[] sql : cases) {
+            final SubQuery subQuery = new SubQuery(sql[0], List.of("key"));
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0]), sql[0]);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0], List.of("key", "extra")), sql[0]);
+            final Dsl[] policies = { PSC, NSC, MSC };
+            for (int policy = 0; policy < policies.length; policy++) {
+                final SP result = policies[policy].select("id").from("records").where(Filters.exists(subQuery)).build();
+                assertEquals("SELECT id FROM records WHERE EXISTS (" + sql[policy] + ")", result.query(), sql[0]);
+                assertEquals(List.of("key"), result.parameters(), sql[0]);
+
+                // Generated MyBatis SQL must remain parseable even when its opener touches the escaped operator.
+                final ParsedSql reparsed = ParsedSql.parse(result.query());
+                assertEquals(1, reparsed.parameterCount(), result.query());
+                assertEquals(policy == 0 ? List.of() : List.of("param"), reparsed.namedParameters(), result.query());
+                assertEquals("SELECT id FROM records WHERE EXISTS (" + sql[0] + ")", reparsed.parameterizedSql(), result.query());
+
+                if (policy != 0) {
+                    // A raw SubQuery cannot accept unresolved named/MyBatis bindings, with or without supplied values.
+                    assertThrows(IllegalArgumentException.class, () -> new SubQuery(result.query()), result.query());
+                    assertThrows(IllegalArgumentException.class, () -> new SubQuery(result.query(), List.of("key")), result.query());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testSetOperationsRejectClosedChildrenWithoutConsumingParent() {
+        final List<BiConsumer<SqlBuilder, SqlBuilder>> operations = Arrays.asList(SqlBuilder::union, SqlBuilder::unionAll,
+                SqlBuilder::intersect, SqlBuilder::except, SqlBuilder::minus);
+        for (final BiConsumer<SqlBuilder, SqlBuilder> operation : operations) {
+            final SqlBuilder parent = PSC.select("id").from("current_records");
+            final SqlBuilder child = PSC.select("id").from("archived_records");
+            child.build();
+            assertThrows(IllegalStateException.class, () -> operation.accept(parent, child));
+            assertEquals("SELECT id FROM current_records", parent.build().query());
+        }
+    }
+
+    @Test
+    public void testRawSubQueryUnaryGeometricOperatorsPreserveTypedOperands() {
+        final String[][] cases = {
+                { "SELECT ?- ?::line", "SELECT ?- :param::line", "SELECT ?- #{param}::line" },
+                { "SELECT ?| ?::lseg", "SELECT ?| :param::lseg", "SELECT ?| #{param}::lseg" },
+                { "SELECT ?- (?::line)", "SELECT ?- (:param::line)", "SELECT ?- (#{param}::line)" },
+                { "SELECT ARRAY[?- ?::line]", "SELECT ARRAY[?- :param::line]", "SELECT ARRAY[?- #{param}::line]" },
+                { "SELECT ARRAY[?| ?::lseg]", "SELECT ARRAY[?| :param::lseg]", "SELECT ARRAY[?| #{param}::lseg]" }
+        };
+        final List<String> bindings = List.of("(0,0),(1,0)");
+
+        for (final String[] sql : cases) {
+            final SubQuery subQuery = new SubQuery(sql[0], bindings);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0]), sql[0]);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0], List.of("first", "second")), sql[0]);
+
+            final Dsl[] policies = { PSC, NSC, MSC };
+
+            for (int policy = 0; policy < policies.length; policy++) {
+                final SP result = policies[policy].select("id").from("records").where(Filters.exists(subQuery)).build();
+                assertEquals("SELECT id FROM records WHERE EXISTS (" + sql[policy] + ")", result.query(), sql[0]);
+                assertEquals(bindings, result.parameters(), sql[0]);
+            }
+        }
+
+        for (final String sql : List.of("SELECT ?- line(point(0, 0), point(1, 0))", "SELECT ?| lseg(point(0, 0), point(0, 1))",
+                "SELECT ARRAY[?- line(point(0, 0), point(1, 0))]", "SELECT ARRAY[?| lseg(point(0, 0), point(0, 1))]")) {
+            final SubQuery subQuery = new SubQuery(sql);
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql, List.of("extra")), sql);
+
+            for (final Dsl dsl : List.of(PSC, NSC, MSC)) {
+                final SP result = dsl.select("id").from("records").where(Filters.exists(subQuery)).build();
+                assertEquals("SELECT id FROM records WHERE EXISTS (" + sql + ")", result.query(), sql);
+                assertTrue(result.parameters().isEmpty(), sql);
+            }
+        }
+    }
+
+    @Test
+    public void testSiblingSetOperationsRejectUnisolatedBranchClausesWithoutConsumingBuilders() {
+        final List<BiConsumer<SqlBuilder, SqlBuilder>> setOperations = Arrays.asList(SqlBuilder::union, SqlBuilder::unionAll, SqlBuilder::intersect,
+                SqlBuilder::except, SqlBuilder::minus);
+
+        for (final BiConsumer<SqlBuilder, SqlBuilder> setOperation : setOperations) {
+            for (int variant = 0; variant < 10; variant++) {
+                final SqlBuilder parent = PSC.select("id").from("current_records");
+                final SqlBuilder child = PSC.select("id").from("archived_records");
+
+                switch (variant) {
+                    case 0 -> child.limit(1);
+                    case 1 -> child.orderBy("id");
+                    case 2 -> child.union("SELECT id FROM older_records");
+                    case 3 -> child.unionSelect(Arrays.asList("id")).from("older_records");
+                    case 4 -> child.forUpdate();
+                    case 5 -> child.offset(1);
+                    case 6 -> child.offsetRows(1);
+                    case 7 -> child.fetchFirstRows(1);
+                    case 8 -> child.fetchNextRows(1);
+                    default -> child.except("SELECT id FROM older_records");
+                }
+
+                final IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> setOperation.accept(parent, child));
+                assertTrue(failure.getMessage().contains("isolated right-hand query"), failure.getMessage());
+                assertTrue(failure.getMessage().contains("combined result"), failure.getMessage());
+                assertTrue(failure.getMessage().contains("apply those clauses to the parent"), failure.getMessage());
+                assertTrue(failure.getMessage().contains("preserve child-local scope"), failure.getMessage());
+                assertEquals("SELECT id FROM current_records", parent.build().query());
+                assertTrue(child.build().query().startsWith("SELECT id FROM archived_records"));
+            }
+        }
+    }
+
+    @Test
+    public void testUnfinishedCompoundChildCanBeCompletedAfterIsolationRejection() {
+        final SqlBuilder parent = PSC.select("id").from("current_records");
+        final SqlBuilder child = PSC.select("id").from("archived_records").unionSelect(List.of("id"));
+
+        // An open SELECT segment already makes the child compound. Prevalidation must reject it
+        // before final rendering consumes its buffer, leaving it available to complete and isolate.
+        assertThrows(IllegalArgumentException.class, () -> parent.union(child));
+        child.from("older_records");
+        final SP result = parent.union(PSC.select("id").from(child, "branch")).build();
+
+        assertEquals("SELECT id FROM current_records UNION SELECT id FROM "
+                + "(SELECT id FROM archived_records UNION SELECT id FROM older_records) branch", result.query());
+        assertTrue(result.parameters().isEmpty());
+    }
+
+    @Test
+    public void testSetOperationsApplyOrderingAndPaginationToCombinedResult() {
+        final List<BiConsumer<SqlBuilder, SqlBuilder>> setOperations = Arrays.asList(SqlBuilder::union, SqlBuilder::unionAll, SqlBuilder::intersect,
+                SqlBuilder::except, SqlBuilder::minus);
+        final List<String> operators = Arrays.asList("UNION", "UNION ALL", "INTERSECT", "EXCEPT", "MINUS");
+
+        for (int i = 0; i < setOperations.size(); i++) {
+            final SqlBuilder parent = NSC.select("id").from("current_records").where(Filters.eq("status", "current"));
+            final SqlBuilder child = NSC.select("id").from("archived_records").where(Filters.eq("status", "archived"));
+            setOperations.get(i).accept(parent, child);
+            final SP result = parent.orderBy("id").limit(5).build();
+
+            assertEquals("SELECT id FROM current_records WHERE status = :status " + operators.get(i)
+                    + " SELECT id FROM archived_records WHERE status = :status_2 ORDER BY id LIMIT 5", result.query());
+            assertEquals(Arrays.asList("current", "archived"), result.parameters());
+        }
+    }
+
+    @Test
+    public void testExplicitDerivedTableIsolationPreservesBranchLimitAndBindings() {
+        final SqlBuilder child = NSC.select("id").from("archived_records").where(Filters.eq("status", "archived")).orderBy("id").limit(1);
+        final SqlBuilder isolated = NSC.select("*").from(child, "branch");
+        final SP result = NSC.select("id").from("current_records").where(Filters.eq("status", "current")).union(isolated).orderBy("id").limit(5).build();
+
+        assertEquals("SELECT id FROM current_records WHERE status = :status UNION SELECT * FROM "
+                + "(SELECT id FROM archived_records WHERE status = :status_2 ORDER BY id LIMIT 1) branch ORDER BY id LIMIT 5", result.query());
+        assertEquals(Arrays.asList("current", "archived"), result.parameters());
+    }
+
+    @Test
+    public void testRejectedExceptChildCanBeIsolatedWithoutFlatteningItsOperators() {
+        final SqlBuilder parent = PSC.select("id").from("current_records");
+        final SqlBuilder child = PSC.select("id").from("archived_records").except(PSC.select("id").from("older_records"));
+
+        assertThrows(IllegalArgumentException.class, () -> parent.except(child));
+
+        // Both builders remain usable; the derived table preserves A EXCEPT (B EXCEPT C).
+        final SP result = parent.except(PSC.select("id").from(child, "branch")).build();
+        assertEquals("SELECT id FROM current_records EXCEPT SELECT id FROM "
+                + "(SELECT id FROM archived_records EXCEPT SELECT id FROM older_records) branch", result.query());
+        assertTrue(result.parameters().isEmpty());
+    }
+
+    @Test
+    public void testSetOperationSnapshotsAndStructuredSubQueriesRequireBranchIsolation() {
+        final SubQuery limitedSnapshot = PSC.select("id").from("archived_records").limit(1).toSubQuery();
+        final SubQuery compoundSnapshot = PSC.select("id").from("archived_records").unionSelect(Arrays.asList("id")).from("older_records").toSubQuery();
+        final SubQuery limitedStructured = Filters.subQuery("archived_records", Arrays.asList("id"), new Limit(1));
+        final SubQuery orderedStructured = Filters.subQuery("archived_records", Arrays.asList("id"), Criteria.builder().orderBy("id").build());
+        final SubQuery compoundStructured = Filters.subQuery("archived_records", Arrays.asList("id"),
+                Criteria.builder().union(Filters.subQuery("SELECT id FROM older_records")).build());
+
+        for (final SubQuery child : Arrays.asList(limitedSnapshot, compoundSnapshot, limitedStructured, orderedStructured, compoundStructured)) {
+            final SqlBuilder standalone = PSC.select("id").from("current_records");
+            assertThrows(IllegalArgumentException.class, () -> standalone.append(Filters.union(child)));
+            assertEquals("SELECT id FROM current_records", standalone.build().query());
+
+            final SqlBuilder criteria = PSC.select("id").from("current_records");
+            assertThrows(IllegalArgumentException.class, () -> criteria.append(Criteria.builder().union(child).limit(5).build()));
+            assertEquals("SELECT id FROM current_records WHERE id = ?", criteria.where(Filters.eq("id", 1)).build().query());
+        }
+
+        assertEquals("SELECT id FROM current_records WHERE id IN (SELECT id FROM archived_records LIMIT 1)",
+                PSC.select("id").from("current_records").where(Filters.in("id", limitedSnapshot)).build().query());
+    }
+
+    @Test
+    public void testNestedCompoundSnapshotDoesNotRequireOuterBranchIsolation() {
+        final SubQuery owners = PSC.select("id").from("owners").where(Filters.eq("active", true))
+                .union(PSC.select("id").from("former_owners").where(Filters.eq("active", false)))
+                .orderBy("id").limit(1).toSubQuery();
+        final SqlBuilder child = PSC.select("id").from("archived_records").where(Filters.in("owner_id", owners));
+
+        // The IN subquery's parentheses already contain its UNION/ORDER BY/LIMIT. Its bindings must
+        // propagate to the outer branch, but its top-level isolation requirement must stay inside IN.
+        final SP result = PSC.select("id").from("current_records").union(child).build();
+        assertEquals("SELECT id FROM current_records UNION SELECT id FROM archived_records WHERE owner_id IN "
+                + "(SELECT id FROM owners WHERE active = ? UNION SELECT id FROM former_owners WHERE active = ? ORDER BY id LIMIT 1)", result.query());
+        assertEquals(List.of(true, false), result.parameters());
+    }
+
+    @Test
+    public void testSubQuerySnapshotEqualityDistinguishesIsolationMetadata() {
+        // The isolation flag is part of a snapshot's state, so two snapshots carrying the same SQL and the
+        // same bindings are only equal when they also agree on whether the source needs branch isolation.
+        final SubQuery paginated = PSC.select("id").from("t").limit(1).toSubQuery();
+        final SubQuery appended = PSC.select("id").from("t").append("LIMIT 1").toSubQuery();
+
+        assertEquals(paginated.toString(), appended.toString());
+        assertEquals(paginated.parameters(), appended.parameters());
+        assertNotEquals(paginated, appended);
+        assertNotEquals(appended, paginated);
+
+        // Matching metadata is equal, with a consistent hash code.
+        final SubQuery samePagination = PSC.select("id").from("t").limit(1).toSubQuery();
+        assertEquals(paginated, samePagination);
+        assertEquals(paginated.hashCode(), samePagination.hashCode());
+
+        final SubQuery sameAppended = PSC.select("id").from("t").append("LIMIT 1").toSubQuery();
+        assertEquals(appended, sameAppended);
+        assertEquals(appended.hashCode(), sameAppended.hashCode());
+
+        // Only the isolated one is refused as a set-operation operand.
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("u").append(Filters.union(paginated)));
+        assertEquals("SELECT id FROM u UNION SELECT id FROM t LIMIT 1",
+                PSC.select("id").from("u").append(Filters.union(appended)).build().query());
+    }
+
+    @Test
+    public void testFailedCriteriaSetOperationDoesNotRetainIsolationState() {
+        final Dsl rejecting = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sql, name) -> {
+            if (name.equals("rejected")) {
+                throw new IllegalArgumentException("Rejected test parameter");
+            }
+            sql.append(':').append(name);
+        }).build());
+        final SqlBuilder child = rejecting.select("id").from("archived_records");
+        final Criteria invalid = Criteria.builder()
+                .union(Filters.subQuery("SELECT id FROM older_records"))
+                .orderBy(Filters.eq("rejected", 1))
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () -> child.append(invalid));
+        assertEquals("SELECT id FROM current_records UNION SELECT id FROM archived_records",
+                NSC.select("id").from("current_records").union(child).build().query());
     }
 
     @Test

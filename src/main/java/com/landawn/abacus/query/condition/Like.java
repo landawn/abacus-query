@@ -111,7 +111,8 @@ public class Like extends Binary {
      *                  to match a single character.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or
      *                                  {@code propValue} is {@code null}, an ordinary predicate or query
-     *                                  clause, or a quantified {@link All}/{@link Any}/{@link Some} operand
+     *                                  clause, a blank {@link SqlExpression}, or a quantified {@link All}/{@link Any}/{@link Some} operand;
+     *                                  or if a structured subquery has a known, non-wildcard projection with a column count other than one
      */
     public Like(final String propName, final Object propValue) {
         super(propName, Operator.LIKE, propValue);

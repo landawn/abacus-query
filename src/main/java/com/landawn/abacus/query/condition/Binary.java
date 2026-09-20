@@ -181,6 +181,8 @@ public class Binary extends ComposableCondition {
      *                  elements must be non-null scalar values or explicit scalar expressions. A
      *                  {@link SqlExpression} or a {@link SubQuery} is also accepted as the whole right-hand
      *                  side of {@code IN}/{@code NOT IN}.
+     *                  Every structured subquery with a known, non-wildcard projection must select exactly
+     *                  one column; raw SQL and wildcard projection arity are left to the database.
      *                  For {@code IS}/{@code IS NOT}, the value must be {@code null}, a Boolean, or
      *                  an explicit {@link SqlExpression} such as {@code NULL}, {@code TRUE}, or {@code UNKNOWN}.
      *                  A Boolean is normalized at construction to the SQL keyword expression {@code TRUE} /
@@ -194,7 +196,8 @@ public class Binary extends ComposableCondition {
      *                                  {@code null}; if {@code IS}/{@code IS NOT} receives an arbitrary literal; if a
      *                                  condition-valued operand is an ordinary predicate or query clause or a blank
      *                                  {@link SqlExpression}; or if an {@link All}/{@link Any}/{@link Some} operand is used
-     *                                  anywhere other than the direct RHS of a compatible scalar comparison
+     *                                  anywhere other than the direct RHS of a compatible scalar comparison; or if a
+     *                                  scalar {@link SubQuery} has a known, non-wildcard projection with multiple columns
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {

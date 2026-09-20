@@ -18,12 +18,97 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.query.Dsl;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class AbstractConditionTest extends TestBase {
+    @Test
+    public void testScalarSubqueryOperandsRejectKnownMultiColumnProjections() {
+        final SubQuery multiColumn = new SubQuery("accounts", Arrays.asList("id", "tenantId"), null);
+
+        for (final Operator operator : Arrays.asList(Operator.EQUAL, Operator.NOT_EQUAL, Operator.NOT_EQUAL_ANSI, Operator.GREATER_THAN,
+                Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL, Operator.LIKE, Operator.NOT_LIKE)) {
+            assertThrows(IllegalArgumentException.class, () -> new Binary("accountId", operator, multiColumn), operator.toString());
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> new Equal("accountId", multiColumn));
+        assertThrows(IllegalArgumentException.class, () -> new GreaterThan("accountId", multiColumn));
+
+        for (final Operator operator : Arrays.asList(Operator.IN, Operator.NOT_IN)) {
+            assertThrows(IllegalArgumentException.class, () -> new Binary("accountId", operator, multiColumn), operator.toString());
+            assertThrows(IllegalArgumentException.class, () -> new Binary("accountId", operator, Arrays.asList(1, multiColumn)), operator.toString());
+            assertThrows(IllegalArgumentException.class, () -> new Binary("accountId", operator, new Object[] { 1, multiColumn }), operator.toString());
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> new Between("accountId", multiColumn, 10));
+        assertThrows(IllegalArgumentException.class, () -> new Between("accountId", 1, multiColumn));
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("accountId", multiColumn, 10));
+        assertThrows(IllegalArgumentException.class, () -> new NotBetween("accountId", 1, multiColumn));
+        assertThrows(IllegalArgumentException.class, () -> new In("accountId", Arrays.asList(1, multiColumn)));
+        assertThrows(IllegalArgumentException.class, () -> new NotIn("accountId", Arrays.asList(1, multiColumn)));
+        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("accountId", "tenantId"), Arrays.asList(Arrays.asList(multiColumn, 2))));
+        assertThrows(IllegalArgumentException.class, () -> new NotIn(Arrays.asList("accountId", "tenantId"), Arrays.asList(Arrays.asList(1, multiColumn))));
+    }
+
+    @Test
+    public void testScalarSubqueryOperandsAcceptSingleColumnsAndRetainBindings() {
+        final SubQuery singleColumn = new SubQuery("accounts", "id", new Equal("active", true));
+        assertEquals("accountId = (SELECT id FROM accounts WHERE active = true)", new Equal("accountId", singleColumn).toString());
+        assertEquals(Arrays.asList(true, 10), new Between("accountId", singleColumn, 10).parameters());
+        assertEquals(Arrays.asList(1, true), new NotBetween("accountId", 1, singleColumn).parameters());
+        assertEquals(Arrays.asList(true), new In("accountId", Arrays.asList(singleColumn)).parameters());
+        assertEquals(Arrays.asList(1, true), new NotIn("accountId", Arrays.asList(1, singleColumn)).parameters());
+        assertEquals(Arrays.asList(true, 2),
+                new In(Arrays.asList("accountId", "tenantId"), Arrays.asList(Arrays.asList(singleColumn, 2))).parameters());
+        assertEquals(Arrays.asList(1, true),
+                new NotIn(Arrays.asList("accountId", "tenantId"), Arrays.asList(Arrays.asList(1, singleColumn))).parameters());
+    }
+
+    @Test
+    public void testScalarSubqueryOperandsLeaveRawWildcardAndBuilderProjectionArityUnchecked() {
+        // Builder snapshots retain SQL and bindings, but expose no projection metadata to this validator.
+        final SubQuery builderSnapshot = Dsl.PSC.select("id", "tenantId").from("accounts").where(new Equal("active", true)).toSubQuery();
+        Assertions.assertNull(builderSnapshot.selectPropNames());
+
+        // Raw text is not parsed for column count, and a wildcard can expand beyond its list entry.
+        for (final SubQuery unknownArity : Arrays.asList(new SubQuery("SELECT id, tenantId FROM accounts WHERE active = ?", Arrays.asList(true)),
+                new SubQuery("accounts", "*", new Equal("active", true)),
+                new SubQuery("accounts a", Arrays.asList("id", "a.*"), new Equal("active", true)), builderSnapshot)) {
+            assertSame(unknownArity, new Equal("accountId", unknownArity).propValue());
+            assertSame(unknownArity, new Binary("accountId", Operator.IN, unknownArity).propValue());
+            assertSame(unknownArity, new Binary("accountId", Operator.NOT_IN, unknownArity).propValue());
+            assertSame(unknownArity, new Between("accountId", unknownArity, 10).minValue());
+            assertSame(unknownArity, new NotBetween("accountId", 1, unknownArity).maxValue());
+            assertSame(unknownArity, new In("accountId", Arrays.asList(unknownArity)).values().get(0));
+            assertSame(unknownArity, new NotIn("accountId", Arrays.asList(unknownArity)).values().get(0));
+            assertEquals(Arrays.asList(true), new Equal("accountId", unknownArity).parameters());
+        }
+    }
+
+    @Test
+    public void testMultiColumnSubqueriesRemainValidForTupleMembershipAndExistence() {
+        final SubQuery multiColumn = new SubQuery("accounts", Arrays.asList("id", "tenantId"), new Equal("active", true));
+        final InSubQuery in = new InSubQuery(Arrays.asList("accountId", "tenantId"), multiColumn);
+        final NotInSubQuery notIn = new NotInSubQuery(Arrays.asList("accountId", "tenantId"), multiColumn);
+        final Exists exists = new Exists(multiColumn);
+        final NotExists notExists = new NotExists(multiColumn);
+
+        assertEquals("(accountId, tenantId) IN (SELECT id, tenantId FROM accounts WHERE active = true)", in.toString());
+        assertEquals("(accountId, tenantId) NOT IN (SELECT id, tenantId FROM accounts WHERE active = true)", notIn.toString());
+        assertEquals("EXISTS (SELECT id, tenantId FROM accounts WHERE active = true)", exists.toString());
+        assertEquals("NOT EXISTS (SELECT id, tenantId FROM accounts WHERE active = true)", notExists.toString());
+
+        for (final Condition condition : Arrays.asList(in, notIn, exists, notExists)) {
+            assertEquals(Arrays.asList(true), condition.parameters());
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> new InSubQuery("accountId", multiColumn));
+        assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery("accountId", multiColumn));
+    }
+
     private static Number customNumber(final String literal) {
         return new Number() {
             @Override
@@ -497,6 +582,58 @@ public class AbstractConditionTest extends TestBase {
     public void testIsClause_StringEdgeCases() {
         Assertions.assertFalse(AbstractCondition.isClause((String) null));
         Assertions.assertTrue(AbstractCondition.isClause("WHERE"));
+    }
+
+    @Test
+    public void testClauseDetectionDoesNotTreatEnumNamesAsSqlKeywords() {
+        for (final String column : Arrays.asList("order_by", "group_by", "left_join", "right_join", "full_join", "cross_join", "inner_join", "natural_join",
+                "union_all", "for_update", "ORDER_BY")) {
+            final SqlExpression predicate = Filters.expr(column + " = 1");
+            Assertions.assertFalse(AbstractCondition.isClause(predicate), column);
+            assertEquals("WHERE " + column + " = 1", new Where(predicate).toString());
+            assertEquals("ORDER BY " + column, new OrderBy(column).toString());
+            assertEquals("((" + column + " = 1) AND (enabled = true))", predicate.and(new Equal("enabled", true)).toString());
+        }
+
+        // Operator lookup still supports enum aliases; only SQL-text clause detection differs.
+        assertEquals(Operator.ORDER_BY, Operator.of("order_by"));
+        Assertions.assertTrue(AbstractCondition.isClause(Filters.expr("order by id")));
+        assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("ORDER BY id")));
+
+        // The String overload applies the same rule, so both entry points agree on every spelling.
+        for (final String alias : Arrays.asList("order_by", "group_by", "left_join", "union_all", "for_update", "ORDER_BY")) {
+            Assertions.assertFalse(AbstractCondition.isClause(alias), alias);
+            Assertions.assertNotNull(Operator.of(alias), alias);
+        }
+
+        for (final String sqlToken : Arrays.asList("WHERE", "ORDER BY", "group by", "Left Join", "UNION ALL", "FOR UPDATE")) {
+            Assertions.assertTrue(AbstractCondition.isClause(sqlToken), sqlToken);
+        }
+
+        Assertions.assertFalse(AbstractCondition.isClause("="));
+        Assertions.assertFalse(AbstractCondition.isClause("AND"));
+        Assertions.assertFalse(AbstractCondition.isClause((String) null));
+        Assertions.assertFalse(AbstractCondition.isClause(""));
+    }
+
+    @Test
+    public void testClauseAliasesRemainPredicatesInStructuredSubqueries() {
+        // Misclassifying an enum alias here omits WHERE entirely from the structured SELECT.
+        for (final String prefix : Arrays.asList("/* ORDER BY id */ ", "-- ORDER BY id\n")) {
+            for (final String column : Arrays.asList("order_by", "union_all", "left_join")) {
+                final String predicate = prefix + column + " = 1";
+                final SubQuery subQuery = new SubQuery("accounts", "id", Filters.expr(predicate));
+                assertTrue(subQuery.condition() instanceof Where, predicate);
+                assertEquals("SELECT id FROM accounts WHERE " + column + " = 1", subQuery.toString().replaceAll("\\s+", " ").trim());
+            }
+        }
+
+        // Actual clause keywords still bypass WHERE, even when separated by a comment.
+        final String clauseSql = "/* order_by = 1 */ ORDER /* gap */ BY id";
+        final SqlExpression clause = Filters.expr(clauseSql);
+        final SubQuery subQuery = new SubQuery("accounts", "id", clause);
+        assertSame(clause, subQuery.condition());
+        assertEquals("SELECT id FROM accounts ORDER BY id", subQuery.toString().replaceAll("\\s+", " ").trim());
     }
 
     @Test

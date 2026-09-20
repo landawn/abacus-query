@@ -903,8 +903,8 @@ public final class Dsl {
      * Creates a DELETE FROM statement for a table.
      *
      * <p>This method starts building a DELETE statement. Typically followed by WHERE conditions
-     * to specify which rows to delete. Property names in WHERE conditions will be rendered
-     * according to this DSL's naming policy if an entity class is associated.</p>
+     * to specify which rows to delete. Property names in WHERE conditions are rendered according
+     * to this DSL's naming policy, even when no entity class is associated.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

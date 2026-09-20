@@ -344,7 +344,13 @@ public class Using extends Cell {
         }
 
         if (columnName.indexOf('.') >= 0) {
-            throw new IllegalArgumentException("USING column names must be unqualified");
+            // Deliberately a plain dot test: this runs before any entity mapping, so it can judge only the
+            // caller's own spelling. A quoted identifier that contains a dot ("a.b") is a legal USING column
+            // and the query builder accepts it, because that check inspects the rendered name. The message
+            // points there rather than loosening a guard that fails safe.
+            throw new IllegalArgumentException("USING column names must be unqualified, but was: " + columnName
+                    + ". A quoted identifier that contains a dot is refused here too; pass that form to the query builder's using(...), "
+                    + "which validates the rendered column name instead");
         }
 
         // Reject list/grouping punctuation: a name like "a, b" would render as USING (a, b) while

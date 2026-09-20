@@ -20,7 +20,7 @@
  * <p>{@link com.landawn.abacus.query.Dsl} is the entry point. Every predefined constant on it is a
  * {@code Dsl} bound to one {@link com.landawn.abacus.query.SqlDialect}; calling a statement method
  * ({@code select}, {@code selectFrom}, {@code insert}, {@code update}, {@code deleteFrom},
- * {@code count}, &hellip;) returns a fresh {@link com.landawn.abacus.query.SqlBuilder} configured for
+ * {@code selectCountFrom}, &hellip;) returns a fresh {@link com.landawn.abacus.query.SqlBuilder} configured for
  * that operation. Finish the builder with {@code build()}, which yields an
  * {@link com.landawn.abacus.query.AbstractQueryBuilder.SP} record pairing the generated
  * {@linkplain com.landawn.abacus.query.AbstractQueryBuilder.SP#query() SQL} with its
@@ -103,7 +103,7 @@
  * concurrently. {@code SqlBuilder} and
  * {@link com.landawn.abacus.query.DynamicQuery.Builder} are <em>not</em> thread-safe and are
  * single-use: create one per query and finish it, which releases the internal pooled resources.
- * A {@code SqlBuilder} is finished by {@code build()} or by one of the terminal helpers
+ * A {@code SqlBuilder} is finished by {@code build()}, {@code toSubQuery()}, or one of the terminal helpers
  * {@code apply(...)}, {@code accept(...)}, and {@code debugPrint()}; a {@code DynamicQuery.Builder}
  * is finished by {@code build()}.</p>
  *

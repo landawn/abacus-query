@@ -159,27 +159,35 @@ public abstract class AbstractCondition implements Condition {
     }
 
     /**
-     * Checks if the given operator string represents a valid clause operator.
-     * This method converts the string to an Operator and checks if it's a clause.
+     * Checks if the given string is the SQL spelling of a clause operator, case-insensitively.
+     *
+     * <p>Only the SQL token counts, not the Java enum alias that {@link Operator#of(String)} also
+     * accepts: {@code ORDER BY} starts a clause, while {@code order_by} is an ordinary identifier even
+     * though {@code Operator.of("order_by")} resolves to {@link Operator#ORDER_BY}. Without that
+     * distinction a column literally named {@code order_by} or {@code union_all} would be misread as the
+     * start of a clause.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * boolean result1 = isClause("WHERE");      // true
      * boolean result2 = isClause("ORDER BY");   // true
-     * boolean result3 = isClause("GROUP BY");   // true
-     * boolean result4 = isClause("=");          // false
-     * boolean result5 = isClause("AND");        // false
+     * boolean result3 = isClause("group by");   // true (case-insensitive)
+     * boolean result4 = isClause("order_by");   // false (enum alias, not SQL spelling)
+     * boolean result5 = isClause("=");          // false
+     * boolean result6 = isClause("AND");        // false
      * }</pre>
      *
      * @param operator the operator string to check (may be {@code null} or empty)
-     * @return {@code true} if the operator string represents a clause operator, {@code false} otherwise
+     * @return {@code true} if the operator string is the SQL spelling of a clause operator, {@code false} otherwise
      */
     protected static boolean isClause(final String operator) {
         if (Strings.isEmpty(operator)) {
             return false;
         }
 
-        return isClause(Operator.of(operator));
+        final Operator candidate = Operator.of(operator);
+
+        return isClause(candidate) && candidate.sqlToken().equalsIgnoreCase(operator);
     }
 
     /**
@@ -423,12 +431,21 @@ public abstract class AbstractCondition implements Condition {
      * (an empty or whitespace-only literal) is rejected because it would render a truncated comparison
      * such as {@code a = }.</p>
      *
+     * <p>Each scalar position requires a single-column subquery, including comparison operands,
+     * BETWEEN bounds, and individual IN/NOT IN values or tuple elements. A structured {@link SubQuery}
+     * with a known, non-wildcard projection is checked here. Raw SQL and wildcard projections have
+     * unknown arity, so their column count is left to the database.</p>
+     *
+     * <p>For tuple membership, use {@link InSubQuery} or {@link NotInSubQuery} with a collection of
+     * compared properties; those APIs require one selected column per property. {@link Exists} and
+     * {@link NotExists} test row existence and do not require a single-column projection.</p>
+     *
      * @param <T> the operand type
      * @param operand the value-position operand to validate; may be {@code null} or a non-condition value
      * @param argumentName the argument name used in an exception message
      * @return {@code operand}, unchanged
      * @throws IllegalArgumentException if a condition operand is not a supported scalar SQL expression, or is a blank
-     *                                  {@link SqlExpression}
+     *                                  {@link SqlExpression}, or a structured subquery has a known projection arity other than one
      */
     protected static <T> T validateValueOperand(final T operand, final String argumentName) {
         if (operand instanceof Condition && !(operand instanceof SqlExpression) && !(operand instanceof SubQuery)
@@ -442,7 +459,60 @@ public abstract class AbstractCondition implements Condition {
             throw new IllegalArgumentException(argumentName + " must not be a blank SqlExpression");
         }
 
+        if (operand instanceof SubQuery) {
+            validateSubQuerySelectArity(1, (SubQuery) operand);
+        }
+
         return operand;
+    }
+
+    /**
+     * Validates the arity of a structured subquery when its projection is known. Raw SQL and
+     * wildcard projections are deliberately left unchecked because their result shape cannot be
+     * determined reliably here. Scalar value operands and quantified {@code ALL}/{@code ANY}/{@code SOME}
+     * operands require one column. {@link InSubQuery} and {@link NotInSubQuery} require one column per
+     * compared property, which permits matching multi-column tuple projections. {@link Exists} and
+     * {@link NotExists} do not constrain projection width and do not use this validation.
+     *
+     * <p>This checks selected-property metadata; it does not parse raw query text, expand wildcard
+     * projections, or determine how many rows a subquery returns.</p>
+     *
+     * @param expectedArity the number of columns required by the enclosing SQL construct
+     * @param subQuery the subquery whose explicit structured projection is inspected
+     * @throws IllegalArgumentException if a known projection has a different number of columns
+     */
+    static void validateSubQuerySelectArity(final int expectedArity, final SubQuery subQuery) {
+        final Collection<String> subQuerySelectPropNames = subQuery.selectPropNames();
+
+        if (subQuerySelectPropNames != null && !hasWildcardProjection(subQuerySelectPropNames) && subQuerySelectPropNames.size() != expectedArity) {
+            throw new IllegalArgumentException("The number of selected properties in subQuery (" + subQuerySelectPropNames.size()
+                    + ") must match the required arity (" + expectedArity + ")");
+        }
+    }
+
+    /**
+     * Returns whether any selected property name is a wildcard ({@code *} or {@code qualifier.*}), in
+     * which case the projection's column count cannot be determined here and arity is left unchecked.
+     *
+     * @param selectPropNames the selected property names to inspect
+     * @return {@code true} if any element is {@code *} or ends with {@code .*} (ignoring surrounding whitespace)
+     */
+    private static boolean hasWildcardProjection(final Collection<String> selectPropNames) {
+        for (final String selectPropName : selectPropNames) {
+            if (selectPropName == null) {
+                // Null projection names are not wildcards; treat them as ordinary columns so callers
+                // get a clear arity IllegalArgumentException rather than an NPE on trim().
+                continue;
+            }
+
+            final String trimmed = selectPropName.trim();
+
+            if ("*".equals(trimmed) || trimmed.endsWith(".*")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -205,50 +205,6 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     }
 
     /**
-     * Validates the arity of a structured subquery when its projection is known. Raw SQL and
-     * wildcard projections are deliberately left unchecked because their result shape cannot be
-     * determined reliably here. This helper is also used by quantified {@code ALL}/{@code ANY}/
-     * {@code SOME} operands, all of which require a one-column subquery.
-     *
-     * @param expectedArity the number of columns required by the enclosing SQL construct
-     * @param subQuery the subquery whose explicit structured projection is inspected
-     * @throws IllegalArgumentException if a known projection has a different number of columns
-     */
-    static void validateSubQuerySelectArity(final int expectedArity, final SubQuery subQuery) {
-        final Collection<String> subQuerySelectPropNames = subQuery.selectPropNames();
-
-        if (subQuerySelectPropNames != null && !hasWildcardProjection(subQuerySelectPropNames) && subQuerySelectPropNames.size() != expectedArity) {
-            throw new IllegalArgumentException("The number of selected properties in subQuery (" + subQuerySelectPropNames.size()
-                    + ") must match the required arity (" + expectedArity + ")");
-        }
-    }
-
-    /**
-     * Returns whether any selected property name is a wildcard ({@code *} or {@code qualifier.*}), in
-     * which case the projection's column count cannot be determined here and arity is left unchecked.
-     *
-     * @param selectPropNames the selected property names to inspect
-     * @return {@code true} if any element is {@code *} or ends with {@code .*} (ignoring surrounding whitespace)
-     */
-    private static boolean hasWildcardProjection(final Collection<String> selectPropNames) {
-        for (final String selectPropName : selectPropNames) {
-            if (selectPropName == null) {
-                // Null projection names are not wildcards; treat them as ordinary columns so callers
-                // get a clear arity IllegalArgumentException rather than an NPE on trim().
-                continue;
-            }
-
-            final String trimmed = selectPropName.trim();
-
-            if ("*".equals(trimmed) || trimmed.endsWith(".*")) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Returns the list of parameters from the subquery.
      * The list is obtained from the subquery afresh on every call (it is not memoized here), so
      * mutable parameter values such as arrays or {@code Date}s come from the subquery's own per-call

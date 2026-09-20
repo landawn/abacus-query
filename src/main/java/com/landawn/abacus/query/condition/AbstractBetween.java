@@ -86,6 +86,8 @@ public abstract class AbstractBetween extends ComposableCondition {
 
     /**
      * Creates a new BETWEEN or NOT BETWEEN condition.
+     * A structured subquery bound with a known, non-wildcard projection must select exactly one column;
+     * raw SQL and wildcard projection arity are left to the database.
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
@@ -100,7 +102,9 @@ public abstract class AbstractBetween extends ComposableCondition {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code operator}
      *                                  is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
      *                                  if either bound is {@code null}, an ordinary predicate or query clause,
-     *                                  or an {@link All}, {@link Any}, or {@link Some} quantified operand
+     *                                  a blank {@link SqlExpression}, an {@link All}, {@link Any}, or {@link Some}
+     *                                  quantified operand, or a scalar {@link SubQuery} with a known, non-wildcard
+     *                                  projection containing multiple columns
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {

@@ -27,9 +27,10 @@ import java.util.Collection;
  *
  * <p><b>&#9888;&#65039;</b> Important considerations:</p>
  * <ul>
- *   <li>NULL handling: if the subquery returns a NULL, equality with a returned non-null value
+ *   <li>For single-column comparisons, if the subquery returns a NULL, equality with a returned non-null value
  *       still makes {@code NOT IN} false, while an otherwise nonmatching value becomes unknown.
- *       Neither result matches a {@code WHERE} clause</li>
+ *       Neither result matches a {@code WHERE} clause. For row comparisons, a NULL component does not
+ *       force UNKNOWN when another component establishes that the rows are unequal</li>
  *   <li>Performance: for large result sets, consider using NOT EXISTS instead</li>
  *   <li>Empty subquery results: if the subquery returns no rows, all values pass the NOT IN check</li>
  * </ul>

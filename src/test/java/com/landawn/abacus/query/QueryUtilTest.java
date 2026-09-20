@@ -100,6 +100,125 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
+    @lombok.Data
+    @Table(name = "quoted_columns", alias = "q")
+    static class QuotedColumnNames {
+        @Column("\"double.dot\"")
+        private String doubleQuoted;
+
+        @Column("`backtick.dot`")
+        private String backtickQuoted;
+
+        @Column("[bracket.dot]")
+        private String bracketQuoted;
+
+        @Column("\"escaped\"\".dot\"")
+        private String escapedQuote;
+
+        @Column("[escaped]].dot]")
+        private String escapedBracket;
+
+        @Column("source.\"qualified.dot\"")
+        private String qualified;
+    }
+
+    @lombok.Data
+    static class NestedQuotedColumns {
+        private QuotedColumnNames child;
+    }
+
+    @lombok.Data
+    @Table(name = "unicode_columns", alias = "u")
+    static class UnicodeColumnNames {
+        @Column("cafe\u0301")
+        private String combiningMark;
+
+        @Column("\u0915\u093e")
+        private String spacingMark;
+
+        @Column("x\u20dd")
+        private String enclosingMark;
+
+        @Column("\uD801\uDC00col")
+        private String supplementaryLetter;
+
+        @Column("\u2163value")
+        private String letterNumber;
+
+        @Column("a\u203fb")
+        private String connectorPunctuation;
+
+        @Column("\uD83D\uDE00value")
+        private String supplementarySymbol;
+
+        @Column("U&\"caf\\00e9\"")
+        private String unicodeQuoted;
+
+        @Column("u&\"na.me\"")
+        private String unicodeQuotedDot;
+
+        @Column("u&\"na\"\"me\"")
+        private String unicodeEscapedQuote;
+
+        @Column("U&\"caf!00e9\" UESCAPE '!'")
+        private String customEscape;
+
+        @Column("U&\"caf.00e9\" uescape '.'")
+        private String dotEscape;
+
+        @Column("U&\"caf[00e9\" UESCAPE '['")
+        private String bracketEscape;
+
+        @Column("t.U&\"caf\\00e9\"")
+        private String qualifiedUnicode;
+
+        @Column("U&\"schema\\002e\".\"value\"")
+        private String unicodeQuotedQualifier;
+
+        @Column("U&\"table\" UESCAPE '.'.value")
+        private String escapedQualifier;
+
+        @Column("U&\"value\" || 'x'")
+        private String unicodeExpression;
+
+        @Column("U&\"value\" UESCAPE '!' || 'x'")
+        private String unicodeEscapeExpression;
+    }
+
+    @lombok.Data
+    static class NestedUnicodeColumns {
+        private UnicodeColumnNames child;
+    }
+
+    @lombok.Data
+    @Table(name = "lexical_columns", alias = "l")
+    static class LexicalColumnNames {
+        // A mapped column is a rendered identifier, not a SQL script: none of the constructs below hides
+        // the qualifier that the generated SQL actually carries.
+        @Column("#temp.column")
+        private String hashQualified;
+
+        @Column("\"a\\\".b")
+        private String backslashQualified;
+
+        @Column("COALESCE(x, 'N.A')")
+        private String literalDotExpression;
+
+        @Column("a--b.c")
+        private String dashQualified;
+
+        // Expression mappings: punctuation inside them must never be read as identifier quoting, in either
+        // direction -- neither hiding a qualifier that follows, nor making the expression look prefixable.
+        @Column("COALESCE(x, '[N.A]')")
+        private String bracketedLiteral;
+
+        @Column("COALESCE(x, '[') || t.suffix")
+        private String unterminatedBracketLiteral;
+
+        @Column("COALESCE(x, 1)")
+        private String dotlessExpression;
+    }
+
     @Table(columnFields = { "visible", "hiddenByAnnotation" }, nonColumnFields = { "hiddenByTable" })
     static class ReverseLookupFilteredEntity {
         @Column("visible_column")
@@ -513,6 +632,149 @@ public class QueryUtilTest extends TestBase {
         String sql = PSC.selectFrom(QualifiedColumnEntity.class).build().query();
         assertEquals("SELECT source.value AS \"value\" FROM qualified_column_entity q", sql);
         assertFalse(sql.contains("q.source.value"));
+    }
+
+    @Test
+    public void testQuotedColumnDotsDoNotSuppressTableAliases() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(QuotedColumnNames.class, NamingPolicy.SNAKE_CASE);
+
+        for (final String propName : List.of("doubleQuoted", "backtickQuoted", "bracketQuoted", "escapedQuote", "escapedBracket")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertTrue(column.isUnqualified(), propName);
+            assertEquals(column, map.get(column.columnName()));
+            final Selection selection = Selection.builder(QuotedColumnNames.class).tableAlias("q").includedPropNames(List.of(propName)).build();
+            assertEquals("SELECT q." + column.columnName() + " AS \"" + propName + "\" FROM quoted_columns q",
+                    PSC.selectFrom(selection).build().query());
+        }
+
+        assertFalse(map.get("qualified").isUnqualified());
+        final Selection qualified = Selection.builder(QuotedColumnNames.class).tableAlias("q").includedPropNames(List.of("qualified")).build();
+        assertEquals("SELECT source.\"qualified.dot\" AS \"qualified\" FROM quoted_columns q", PSC.selectFrom(qualified).build().query());
+    }
+
+    @Test
+    public void testQuotedColumnMappingsRetainAliasesInConditionsAndOrdering() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(QuotedColumnNames.class, NamingPolicy.SNAKE_CASE);
+
+        for (final String propName : List.of("doubleQuoted", "backtickQuoted", "bracketQuoted", "escapedQuote", "escapedBracket")) {
+            final String columnName = map.get(propName).columnName();
+            // WHERE resolves the joined table's property map; ORDER BY resolves the original table's map.
+            final AbstractQueryBuilder.SP result = PSC.select(propName).from(QuotedColumnNames.class, "a").join(QuotedColumnNames.class, "b")
+                    .on("a.id = b.id").where(Filters.eq("b." + propName, "match")).orderBy("a." + propName).build();
+
+            assertEquals("SELECT a." + columnName + " AS \"" + propName + "\" FROM quoted_columns a JOIN quoted_columns b ON a.id = b.id WHERE b."
+                    + columnName + " = ? ORDER BY a." + columnName, result.query(), propName);
+            assertEquals(List.of("match"), result.parameters(), propName);
+        }
+    }
+
+    @Test
+    public void testUnicodeIdentifiersRetainSelfJoinAndNestedQualifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("combiningMark", "spacingMark", "enclosingMark", "supplementaryLetter", "letterNumber",
+                "connectorPunctuation", "supplementarySymbol", "unicodeQuoted", "unicodeQuotedDot", "unicodeEscapedQuote", "customEscape", "dotEscape",
+                "bracketEscape")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertTrue(column.isUnqualified(), propName);
+            assertEquals(column, map.get(column.columnName()));
+
+            // A self-join makes dropping this qualifier observable: both tables expose the same mapped name.
+            assertEquals("SELECT a." + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a JOIN unicode_columns b ON a.id = b.id",
+                    PSC.select(propName).from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on("a.id = b.id").build().query(), propName);
+            assertEquals("u." + column.columnName(), nestedMap.get("child." + propName), propName);
+        }
+    }
+
+    @Test
+    public void testUnicodeQualifiedNamesAndExpressionsAreNotPrefixedAgain() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("qualifiedUnicode", "unicodeQuotedQualifier", "escapedQualifier", "unicodeExpression", "unicodeEscapeExpression")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertFalse(column.isUnqualified(), propName);
+            assertEquals("SELECT " + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a",
+                    PSC.select(propName).from(UnicodeColumnNames.class, "a").build().query(), propName);
+            assertEquals(column.columnName(), nestedMap.get("child." + propName), propName);
+        }
+    }
+
+    @Test
+    public void testUnicodeIdentifierEscapeClausesDoNotHideOrInventUsingQualifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("unicodeQuoted", "unicodeQuotedDot", "unicodeEscapedQuote", "customEscape", "dotEscape", "bracketEscape")) {
+            final String columnName = map.get(propName).columnName();
+            final String expected = "SELECT * FROM unicode_columns a JOIN unicode_columns b USING (" + columnName + ")";
+            assertEquals(expected, PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").using(propName).build().query());
+            assertEquals(expected,
+                    PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on(Filters.using(propName)).build().query());
+        }
+
+        for (final String propName : List.of("qualifiedUnicode", "unicodeQuotedQualifier", "escapedQualifier")) {
+            final SqlBuilder builder = PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b");
+            assertThrows(IllegalArgumentException.class, () -> builder.using(propName), propName);
+            builder.on("a.id = b.id").build();
+        }
+    }
+
+    @Test
+    public void testUnicodeEscapeClausesDoNotHideFollowingUsingColumns() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+        final SqlBuilder builder = PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b");
+
+        // The '[' escape belongs to the first identifier, and must not hide a qualifier in the next one.
+        assertThrows(IllegalArgumentException.class, () -> builder.using(List.of("bracketEscape", "qualifiedUnicode")));
+
+        // The rejected list must also leave the join ready for a valid list containing punctuation escapes.
+        assertEquals("SELECT * FROM unicode_columns a JOIN unicode_columns b USING (" + map.get("dotEscape").columnName() + ", "
+                + map.get("bracketEscape").columnName() + ")", builder.using(List.of("dotEscape", "bracketEscape")).build().query());
+    }
+
+    @Test
+    public void testCommentAndEscapeConstructsDoNotHideColumnQualifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(LexicalColumnNames.class, NamingPolicy.NO_CHANGE);
+
+        // Only identifier quoting hides a dot. A hash comment, a backslash escape, a string literal and a
+        // dash comment are SQL-script constructs: reading them here would drop a real qualifier and let the
+        // builder prepend a table alias to an already-qualified column.
+        for (final String propName : List.of("hashQualified", "backslashQualified", "literalDotExpression", "dashQualified", "bracketedLiteral",
+                "unterminatedBracketLiteral", "dotlessExpression")) {
+            assertFalse(map.get(propName).isUnqualified(), propName);
+
+            final Selection selection = Selection.builder(LexicalColumnNames.class).tableAlias("l").includedPropNames(List.of(propName)).build();
+            assertEquals("SELECT " + map.get(propName).columnName() + " AS \"" + propName + "\" FROM lexical_columns l",
+                    PSC.selectFrom(selection).build().query());
+        }
+
+        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedLexicalColumns.class, NamingPolicy.NO_CHANGE);
+        assertEquals("#temp.column", nestedMap.get("child.hashQualified"));
+        assertEquals("COALESCE(x, 'N.A')", nestedMap.get("child.literalDotExpression"));
+        assertEquals("COALESCE(x, '[N.A]')", nestedMap.get("child.bracketedLiteral"));
+        assertEquals("COALESCE(x, '[') || t.suffix", nestedMap.get("child.unterminatedBracketLiteral"));
+        assertEquals("COALESCE(x, 1)", nestedMap.get("child.dotlessExpression"));
+
+        // A single identifier, quoted or not, still takes the sub-entity qualifier.
+        assertEquals("q.\"double.dot\"", QueryUtil.propToColumnNameMap(NestedQuotedColumns.class, NamingPolicy.NO_CHANGE).get("child.doubleQuoted"));
+    }
+
+    @lombok.Data
+    static class NestedLexicalColumns {
+        private LexicalColumnNames child;
+    }
+
+    @Test
+    public void testNestedQuotedColumnDotsRetainSubEntityQualifier() {
+        final ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(NestedQuotedColumns.class, NamingPolicy.SNAKE_CASE);
+
+        assertEquals("q.\"double.dot\"", map.get("child.doubleQuoted"));
+        assertEquals("q.`backtick.dot`", map.get("child.backtickQuoted"));
+        assertEquals("q.[bracket.dot]", map.get("child.bracketQuoted"));
+        assertEquals("q.\"escaped\"\".dot\"", map.get("child.escapedQuote"));
+        assertEquals("q.[escaped]].dot]", map.get("child.escapedBracket"));
+        assertEquals("source.\"qualified.dot\"", map.get("child.qualified"));
     }
 
     @Test

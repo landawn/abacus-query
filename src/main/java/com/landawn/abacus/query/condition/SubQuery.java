@@ -50,10 +50,22 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>Subqueries can be used in various contexts:</p>
  * <ul>
+ *   <li>Scalar values in comparisons, BETWEEN bounds, and individual IN/NOT IN list values or tuple elements</li>
  *   <li>IN/NOT IN conditions for set membership tests (see {@link InSubQuery}, {@link NotInSubQuery})</li>
  *   <li>EXISTS/NOT EXISTS for existence checks (see {@link Exists}, {@link NotExists})</li>
  *   <li>ANY/ALL/SOME for quantified comparisons (see {@link Any}, {@link All}, {@link Some})</li>
  * </ul>
+ *
+ * <p>A scalar subquery must select one column. Scalar operand constructors reject a structured
+ * subquery whose known, non-wildcard projection has a different width. Raw SQL, builder-backed
+ * snapshots, and wildcard projections do not expose a known column count for this validation, so
+ * their projection width is left to the database. This check does not determine how many rows a
+ * subquery returns.</p>
+ *
+ * <p>Use {@link Filters#in(Collection, SubQuery)} or {@link Filters#notIn(Collection, SubQuery)} to
+ * compare multiple properties with a matching multi-column projection. These tuple membership APIs
+ * require one selected column per compared property. When only row existence matters, use
+ * {@link Exists} or {@link NotExists}; their subqueries may select multiple columns.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -743,6 +755,11 @@ public class SubQuery extends AbstractCondition {
      * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition-or-clauses]}
      * statement, applying the naming policy to property names, the entity/table name, and to
      * the trailing condition or clauses.</p>
+     *
+     * <p>This direct rendering is intended for diagnostics. For an entity-class subquery, table
+     * metadata and explicit column mappings are applied to the SELECT list, while trailing conditions
+     * receive only the naming policy. Render the subquery through a {@link SqlBuilder} when condition
+     * identifiers must also resolve against entity column mappings.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

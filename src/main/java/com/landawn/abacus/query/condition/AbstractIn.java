@@ -56,6 +56,10 @@ import com.landawn.abacus.util.Strings;
  * ({@code IN} vs {@code NOT IN}). All fields, getters, and methods
  * for parameters, string rendering, hashing, and equality are identical.</p>
  *
+ * <p>Each subquery used as a scalar membership value or tuple element must select exactly one column
+ * when its structured, non-wildcard projection is known. Raw SQL and wildcard projections have unknown
+ * arity and are left to the database.</p>
+ *
  * @see In
  * @see NotIn
  * @see InSubQuery
@@ -122,7 +126,8 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  or if any element is a {@link Condition} other than a non-blank {@link SqlExpression}
      *                                  or a scalar {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING
      *                                  connectors and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
-     *                                  or if an element is a cyclic object array
+     *                                  if a scalar {@link SubQuery} has a known, non-wildcard projection containing
+     *                                  multiple columns, or if an element is a cyclic object array
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {
@@ -193,7 +198,8 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
      *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
      *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
-     *                                  or if a tuple element is a cyclic object array
+     *                                  if a scalar {@link SubQuery} has a known, non-wildcard projection containing
+     *                                  multiple columns, or if a tuple element is a cyclic object array
      * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> valueRows) {

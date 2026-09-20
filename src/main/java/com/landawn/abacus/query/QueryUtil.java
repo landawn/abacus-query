@@ -60,7 +60,8 @@ public final class QueryUtil {
      * Describes the database column associated with a property or column lookup key.
      *
      * @param columnName the mapped database column name
-     * @param isUnqualified {@code true} if the mapped column name is unqualified (contains no {@code '.'} character)
+     * @param isUnqualified {@code true} if the mapped column name is a single unqualified identifier, and may
+     *                      therefore still receive a table alias or sub-entity qualifier
      */
     public record ColumnInfo(String columnName, boolean isUnqualified) {
     }
@@ -181,9 +182,16 @@ public final class QueryUtil {
 
     /**
      * Returns column information keyed by both property names and mapped column names.
-     * The {@link ColumnInfo#isUnqualified()} flag describes the mapped column value: it is
-     * {@code true} when the column name contains no {@code '.'} character. Query builders use
-     * this flag to avoid prepending another table alias to an already-qualified mapping.
+     * The {@link ColumnInfo#isUnqualified()} flag describes the mapped column value: it is {@code true}
+     * only when the column name is one bare identifier, so query builders may still prepend a table alias
+     * or sub-entity qualifier to it. A dot inside a quoted identifier is part of the name, so {@code "a.b"}
+     * is unqualified while {@code t."a.b"} is qualified. A mapping that is not a single identifier, such as
+     * the expression {@code COALESCE(x, 'N.A')}, is never qualified by the builders and reports
+     * {@code false} as well.
+     * Unquoted identifiers may contain non-ASCII code points, including combining marks and supplementary
+     * characters, in addition to ASCII letters, digits, {@code _}, {@code $}, {@code #}, {@code @}, and {@code -}.
+     * This tests the identifier's shape, not whether a particular database accepts its spelling. PostgreSQL
+     * {@code U&"..."} identifiers, including an optional {@code UESCAPE '...'} clause, retain their original text.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -210,7 +218,7 @@ public final class QueryUtil {
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return an immutable map containing property-name keys and, when a mapped column name is not
      *         already a property-name key, an additional column-name key. Each value contains the
-     *         mapped column name and whether that column name has no dot.
+     *         mapped column name and whether that column name is a single unqualified identifier.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      * @see #propToColumnNameMap(Class, NamingPolicy)
      */
@@ -228,10 +236,11 @@ public final class QueryUtil {
             final Map<String, ColumnInfo> newPropColumnInfoMap = N.newHashMap(propToColumnNameMap.size() * 2);
 
             for (final Map.Entry<String, String> entry : propToColumnNameMap.entrySet()) {
-                newPropColumnInfoMap.put(entry.getKey(), new ColumnInfo(entry.getValue(), entry.getValue().indexOf('.') < 0));
+                final ColumnInfo columnInfo = new ColumnInfo(entry.getValue(), isUnqualifiedColumnName(entry.getValue()));
+                newPropColumnInfoMap.put(entry.getKey(), columnInfo);
 
                 if (!propToColumnNameMap.containsKey(entry.getValue())) {
-                    newPropColumnInfoMap.put(entry.getValue(), new ColumnInfo(entry.getValue(), entry.getValue().indexOf('.') < 0));
+                    newPropColumnInfoMap.put(entry.getValue(), columnInfo);
                 }
             }
 
@@ -247,6 +256,192 @@ public final class QueryUtil {
         }
 
         return result;
+    }
+
+    /**
+     * Reports whether a mapped column may still receive a table alias or sub-entity qualifier, which is
+     * true only when the mapping is one bare identifier: either unquoted, or a single quoted identifier
+     * whose delimiters enclose the whole value. PostgreSQL {@code U&"..."} identifiers may also carry
+     * an optional {@code UESCAPE} clause. A dot inside a quoted identifier belongs to the name
+     * ({@code "a.b"}) and does not qualify it.
+     *
+     * <p>Testing the shape, rather than only scanning for a qualifying dot, is what keeps an expression
+     * mapping safe. A qualifier may not be prepended to {@code COALESCE(x, 'N.A')} whatever punctuation
+     * the expression happens to contain, and no dot-scan can decide that reliably: this is a rendered
+     * column reference, not a SQL script, so it has no string literals or comments to parse, and reading
+     * the {@code [} of {@code COALESCE(x, '[')} as a quoted identifier would swallow a genuine qualifier
+     * that follows it.</p>
+     *
+     * @param columnName the non-null mapped column name
+     * @return {@code true} if the mapping is a single unqualified identifier
+     */
+    private static boolean isUnqualifiedColumnName(final String columnName) {
+        if (columnName.isEmpty()) {
+            return false;
+        }
+
+        final char first = columnName.charAt(0);
+
+        if (isUnicodeQuotedIdentifierStart(columnName, 0)) {
+            final int end = unicodeQuotedIdentifierEnd(columnName, 0);
+            return end >= 0 && skipIdentifierWhitespace(columnName, end) == columnName.length();
+        }
+
+        if (first == SK._DOUBLE_QUOTE || first == SK._BACKTICK || first == '[') {
+            // One quoted identifier, and nothing after its closing delimiter.
+            return skipQuotedIdentifier(columnName, 1, first == '[' ? ']' : first) == columnName.length() - 1;
+        }
+
+        for (int i = 0, len = columnName.length(); i < len;) {
+            final int codePoint = columnName.codePointAt(i);
+
+            if (!isUnquotedIdentifierCodePoint(codePoint)) {
+                return false;
+            }
+
+            i += Character.charCount(codePoint);
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns whether {@code codePoint} may appear in the shape of an unquoted column identifier.
+     * Non-ASCII code points are preserved, matching PostgreSQL's non-ASCII identifier range instead of
+     * restricting names to Java's letter/digit categories. This includes combining marks, letter numbers,
+     * connector punctuation and supplementary characters. ASCII letters and digits, database identifier
+     * punctuation ({@code _}, {@code $}, {@code #}, {@code @}), and the hyphen permitted by
+     * {@link #SIMPLE_COLUMN_NAME_PATTERN} are also accepted. ASCII expression syntax is excluded,
+     * including the qualifier separator {@code .}; this is not dialect-specific identifier validation.
+     *
+     * @param codePoint the Unicode code point to classify
+     * @return {@code true} if {@code codePoint} may appear in an unquoted identifier
+     */
+    private static boolean isUnquotedIdentifierCodePoint(final int codePoint) {
+        return codePoint >= 0x80 || Character.isLetterOrDigit(codePoint) || codePoint == '_' || codePoint == '$' || codePoint == '#' || codePoint == '@'
+                || codePoint == '-';
+    }
+
+    /** Recognizes PostgreSQL's case-insensitive Unicode-quoted identifier prefix. */
+    private static boolean isUnicodeQuotedIdentifierStart(final String text, final int index) {
+        return index + 2 < text.length() && (text.charAt(index) == 'U' || text.charAt(index) == 'u') && text.charAt(index + 1) == '&'
+                && text.charAt(index + 2) == SK._DOUBLE_QUOTE;
+    }
+
+    /**
+     * Returns the exclusive end of a {@code U&"..."} identifier and its optional {@code UESCAPE}
+     * clause, or {@code -1} for an unterminated identifier or malformed escape clause. The escape
+     * character is one non-hexadecimal, non-whitespace character other than {@code +}, {@code '},
+     * or {@code "}. No identifier or escape text is decoded or rewritten.
+     */
+    private static int unicodeQuotedIdentifierEnd(final String text, final int startIndex) {
+        final int closingQuote = skipQuotedIdentifier(text, startIndex + 3, SK._DOUBLE_QUOTE);
+
+        if (closingQuote == text.length()) {
+            return -1;
+        }
+
+        final int identifierEnd = closingQuote + 1;
+        int index = skipIdentifierWhitespace(text, identifierEnd);
+
+        if (!text.regionMatches(true, index, "UESCAPE", 0, 7)) {
+            return identifierEnd;
+        }
+
+        index = skipIdentifierWhitespace(text, index + 7);
+
+        if (index + 1 >= text.length() || text.charAt(index) != SK._SINGLE_QUOTE) {
+            return -1;
+        }
+
+        final int escape = text.codePointAt(index + 1);
+        final int closingEscapeQuote = index + 1 + Character.charCount(escape);
+
+        if (closingEscapeQuote >= text.length() || text.charAt(closingEscapeQuote) != SK._SINGLE_QUOTE || escape == '+' || escape == SK._SINGLE_QUOTE
+                || escape == SK._DOUBLE_QUOTE || Character.isWhitespace(escape) || (escape >= '0' && escape <= '9') || (escape >= 'a' && escape <= 'f')
+                || (escape >= 'A' && escape <= 'F')) {
+            return -1;
+        }
+
+        return closingEscapeQuote + 1;
+    }
+
+    /** Skips whitespace between the parts of a Unicode-quoted identifier without changing the rendered text. */
+    private static int skipIdentifierWhitespace(final String text, int index) {
+        while (index < text.length() && Character.isWhitespace(text.charAt(index))) {
+            index++;
+        }
+
+        return index;
+    }
+
+    /**
+     * Returns the index of the first dot of {@code text} that sits outside a quoted identifier, or
+     * {@code -1} when {@code text} holds no such dot.
+     *
+     * <p>Only identifier quoting is recognized: a region opened by {@code "}, {@code `} or {@code [}
+     * runs to its matching delimiter, and a doubled delimiter ({@code ""}, {@code ``}, {@code ]]}) is an
+     * escaped delimiter rather than the end of the region. A PostgreSQL {@code U&"..."} identifier's
+     * optional {@code UESCAPE} clause is also part of that identifier: an escape character of {@code '.'}
+     * or {@code '['} must not be mistaken for a qualifier or another quoted region. Every other character &mdash; including a
+     * single quote, a {@code #} and a backslash &mdash; is ordinary text. A mapped column name is a
+     * rendered SQL identifier, not a SQL script, so a dot must not be hidden by a string literal, a
+     * comment or an escape sequence that only a full SQL lexer would recognize: reading the {@code #} of
+     * {@code #temp.column} as a comment, or the {@code \"} of {@code "a\".b} as an escaped quote, would
+     * drop the qualifier that the rendered SQL actually carries. An unterminated quoted identifier
+     * swallows the rest of the text, exactly as the renderer emits it.</p>
+     *
+     * @param text the non-null column name, or a rendered list of column names
+     * @return the index of the first qualifying dot, or {@code -1} if there is none
+     */
+    static int indexOfQualifyingDot(final String text) {
+        for (int i = 0, len = text.length(); i < len; i++) {
+            final char ch = text.charAt(i);
+
+            if (ch == SK._PERIOD) {
+                return i;
+            }
+
+            if (isUnicodeQuotedIdentifierStart(text, i)) {
+                final int end = unicodeQuotedIdentifierEnd(text, i);
+
+                if (end >= 0) {
+                    i = end - 1;
+                    continue;
+                }
+            }
+
+            if (ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                i = skipQuotedIdentifier(text, i + 1, ch == '[' ? ']' : ch);
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Returns the index of the delimiter closing the quoted identifier that starts at {@code fromIndex},
+     * or {@code text.length()} when the identifier is unterminated. A doubled delimiter is an escaped
+     * delimiter and does not close the region.
+     *
+     * @param text the text being scanned
+     * @param fromIndex the index of the first character inside the quoted identifier
+     * @param closingQuote the delimiter that closes the region
+     * @return the index of the closing delimiter, or {@code text.length()} if there is none
+     */
+    private static int skipQuotedIdentifier(final String text, final int fromIndex, final char closingQuote) {
+        for (int i = fromIndex, len = text.length(); i < len; i++) {
+            if (text.charAt(i) == closingQuote) {
+                if (i + 1 < len && text.charAt(i + 1) == closingQuote) {
+                    i++; // an escaped delimiter: the identifier continues
+                    continue;
+                }
+
+                return i;
+            }
+        }
+
+        return text.length();
     }
 
     /**
@@ -454,7 +649,7 @@ public final class QueryUtil {
                         for (final Map.Entry<String, String> entry : subPropColumnNameMap.entrySet()) {
                             final String subColumnName = entry.getValue();
                             propColumnNameMap.put(propInfo.name + SK.PERIOD + entry.getKey(),
-                                    subColumnName.indexOf('.') < 0 ? subTableAliasOrName + SK.PERIOD + subColumnName : subColumnName);
+                                    isUnqualifiedColumnName(subColumnName) ? subTableAliasOrName + SK.PERIOD + subColumnName : subColumnName);
                         }
                     }
                 } else {

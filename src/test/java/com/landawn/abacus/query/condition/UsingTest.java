@@ -302,8 +302,21 @@ public class UsingTest extends TestBase {
 
     @Test
     public void testConstructorRejectsQualifiedColumnName() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.using("orders.customer_id"));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.using(Arrays.asList("id", "orders.customer_id")));
+        // The condition's strict dot check also rejects quoted dots; callers need the offending name
+        // and the builder guidance to distinguish that case from an actually qualified column.
+        for (final String columnName : List.of("orders.customer_id", "\"quoted.dot\"", "`quoted.dot`", "[quoted.dot]")) {
+            final IllegalArgumentException varargsFailure = assertThrows(IllegalArgumentException.class, () -> Filters.using(columnName));
+            final IllegalArgumentException collectionFailure = assertThrows(IllegalArgumentException.class,
+                    () -> Filters.using(Arrays.asList("id", columnName)));
+
+            for (final IllegalArgumentException failure : List.of(varargsFailure, collectionFailure)) {
+                final String message = failure.getMessage();
+                assertTrue(message.contains(columnName), message);
+                assertTrue(message.contains("quoted identifier that contains a dot"), message);
+                assertTrue(message.contains("query builder's using(...)"), message);
+                assertTrue(message.contains("rendered column name"), message);
+            }
+        }
     }
 
     @Test

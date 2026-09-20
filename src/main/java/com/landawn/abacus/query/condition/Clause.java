@@ -27,6 +27,11 @@ import com.landawn.abacus.util.N;
  * 
  * <p>This design enforces proper SQL structure - you cannot, for example, AND two
  * WHERE clauses together. Instead, you combine the conditions within a single WHERE clause.</p>
+ *
+ * <p>Direct {@code toSql} rendering of a set-operation clause emits its subquery text without adding
+ * grouping parentheses. Raw query operands must include any isolation required by the target database
+ * when they contain their own ORDER BY, LIMIT, or set operations; a derived-table SELECT such as
+ * {@code SELECT * FROM (SELECT id FROM items ORDER BY id LIMIT 5) branch} can isolate such a branch.</p>
  * 
  * <p>Common subclasses include:</p>
  * <ul>

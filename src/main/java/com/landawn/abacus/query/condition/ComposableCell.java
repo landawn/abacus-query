@@ -99,7 +99,7 @@ public abstract class ComposableCell extends ComposableCondition {
                 throw new IllegalArgumentException(operator + " must wrap a SubQuery");
             }
 
-            AbstractInSubQuery.validateSubQuerySelectArity(1, (SubQuery) condition);
+            validateSubQuerySelectArity(1, (SubQuery) condition);
         }
 
         return condition;

@@ -3172,6 +3172,215 @@ public class SqlParserTest extends TestBase {
         assertEquals(List.of("SELECT", " ", "1", "+", " ", "~", "+", "2"), custom.tokenize("SELECT 1+/* c */~+2"));
         assertEquals(List.of("SELECT", " ", "1", "+", "~", " ", "+", "2"), custom.tokenize("SELECT 1+~/* c */+2"));
         assertEquals(List.of("SELECT", " ", "(", ")"), SqlParser.tokenize("SELECT (/* c */)"));
+        assertEquals(List.of("SELECT", " ", "doc", " ", "?", " ", "?"), SqlParser.tokenize("SELECT doc ?/* c */?"));
+        assertEquals(List.of("SELECT", " ", "doc", " ", "?", " ", "?"), SqlParser.tokenize("SELECT doc ?/* c *//* d */?"));
+    }
+
+    @Test
+    public void testConfiguredSeparatorSearchHonorsCaseInsensitivity() {
+        // A separator holding letters must be findable under caseSensitive=false in any spelling, exactly
+        // like every other token; the verbatim-separator lookup must not silently become case-sensitive.
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(" aa").build());
+        final String sql = "x aavalue";
+
+        assertEquals(List.of("x", " aa", "value"), tokenizer.tokenize(sql));
+
+        for (final String spelling : List.of(" aa", " AA", " Aa")) {
+            assertEquals(1, tokenizer.indexOfToken(sql, spelling, 0, false), spelling);
+        }
+
+        assertEquals(1, tokenizer.indexOfToken(sql, " aa", 0, true));
+        assertEquals(-1, tokenizer.indexOfToken(sql, " AA", 0, true));
+        assertEquals(-1, tokenizer.indexOfToken(sql, "aa", 0, false));
+
+        // A punctuation-only configuration keeps the plain set probe and is unaffected.
+        final SqlParser.Tokenizer punctuation = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(" +").build());
+        assertEquals(1, punctuation.indexOfToken("x +value", " +", 0, false));
+        assertEquals(1, punctuation.indexOfToken("x +value", " +", 0, true));
+    }
+
+    @Test
+    public void testConfiguredCompositeSeparatorSearchFindsDifferentSqlCasing() {
+        // Separator recognition is case-sensitive, but token search must also find the separately
+        // tokenized spelling. Exercise both an emitted separator and a composite SQL token.
+        for (final String separator : List.of("order by", "ORDER BY", "Order By")) {
+            final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(separator).build());
+
+            for (final String spelling : List.of("order by", "ORDER BY", "Order By", " order by ", "\tORDER BY\n")) {
+                for (final String clause : List.of("order by", "ORDER BY", "Order By", "ORDER  BY", "ORDER\tBY",
+                        "ORDER /* gap */ BY", "ORDER -- gap\n BY")) {
+                    final String sql = "SELECT x FROM t " + clause + " x";
+                    assertEquals(16, tokenizer.indexOfToken(sql, spelling, 0, false), separator + ": " + sql + " / " + spelling);
+                    assertEquals(16, tokenizer.indexOfToken(sql, spelling, 16, false), sql);
+                    assertEquals(-1, tokenizer.indexOfToken(sql, spelling, 17, false), sql);
+                }
+            }
+        }
+
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("order by").build());
+        assertEquals(16, tokenizer.indexOfToken("SELECT x FROM t ORDER BY x", "ORDER BY", 0, true));
+        assertEquals(-1, tokenizer.indexOfToken("SELECT x FROM t ORDER BY x", "order by", 0, true));
+        assertEquals(16, tokenizer.indexOfToken("SELECT x FROM t order by x", "order by", 0, true));
+        assertEquals(-1, tokenizer.indexOfToken("SELECT x FROM t order by x", "ORDER BY", 0, true));
+    }
+
+    @Test
+    public void testConfiguredCompositeSeparatorSearchReturnsEarliestWholeMatch() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("order by").build());
+
+        for (final String sql : List.of("x ORDER BY y order by z", "x order by y ORDER BY z")) {
+            final int second = sql.indexOf(" y ") + 3;
+            for (final String spelling : List.of("ORDER BY", "order by", "Order By")) {
+                assertEquals(2, tokenizer.indexOfToken(sql, spelling), sql);
+                assertEquals(2, tokenizer.indexOfToken(sql, spelling, 2), sql);
+                assertEquals(second, tokenizer.indexOfToken(sql, spelling, 3), sql);
+                assertEquals(second, tokenizer.indexOfToken(sql, spelling, second), sql);
+                assertEquals(-1, tokenizer.indexOfToken(sql, spelling, second + 1), sql);
+            }
+        }
+
+        final String sql = "'ORDER BY' /* order by */ preORDER BY ORDER BYpost ORDER /* gap */ BY";
+        assertEquals(sql.lastIndexOf("ORDER"), tokenizer.indexOfToken(sql, "ORDER BY"));
+        assertEquals(-1, tokenizer.indexOfToken("'ORDER BY' /* order by */ preORDER BY ORDER BYpost", "ORDER BY"));
+
+        final SqlParser.Tokenizer longest = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
+                .withSeparator("order by").withSeparator("order byx").build());
+        assertEquals(-1, longest.indexOfToken("x order byx y", "ORDER BY"));
+    }
+
+    @Test
+    public void testConfiguredCompositeSeparatorSearchScalesWithRepeatedNearMatches() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("left join").build());
+        final StringBuilder sql = new StringBuilder("SELECT t.x FROM t");
+        for (int i = 0; i < 12_000; i++) {
+            sql.append(" LEFT OUTER JOIN t t").append(i).append(" ON t").append(i).append(".x = t.x");
+        }
+        final String withoutMatch = sql.toString();
+        final int matchIndex = sql.length() + 1;
+        final String withMatch = sql.append(" LEFT /* gap */ JOIN t matched ON matched.x = t.x").toString();
+
+        // The old fallback restarted at zero for every LEFT, taking quadratic time. This generous
+        // bound checks scalability, not nanosecond performance, for both absent and late matches.
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            assertEquals(-1, tokenizer.indexOfToken(withoutMatch, "left join"));
+            assertEquals(matchIndex, tokenizer.indexOfToken(withMatch, "left join"));
+            assertEquals(matchIndex, SqlParser.indexOfToken(withMatch, "LEFT JOIN"));
+        });
+    }
+
+    @Test
+    public void testCompositeSeparatorSearchResumesAtBoundariesAndKeepsOverlappingCandidates() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("left left join").build());
+        final String sql = "LEFT nope 'LEFT LEFT JOIN' /* LEFT LEFT JOIN */ LEFT LEFT LEFT /* gap */ JOIN # hidden\n x";
+        final int matchIndex = sql.indexOf("LEFT LEFT LEFT") + "LEFT ".length();
+
+        // Retrying after the first LEFT must retain the overlapping candidate beginning at the next
+        // LEFT. Public fromIndex values inside a quote, comment, or token still require an initial scan.
+        for (final int fromIndex : new int[] { -1, 0, 2, sql.indexOf("'LEFT") + 1, sql.indexOf("/* LEFT") + 3, matchIndex }) {
+            assertEquals(matchIndex, tokenizer.indexOfToken(sql, "left left join", fromIndex, false));
+            assertEquals(matchIndex, SqlParser.indexOfToken(sql, "LEFT LEFT JOIN", fromIndex, true));
+        }
+        assertEquals(-1, tokenizer.indexOfToken(sql, "left left join", matchIndex + 1, false));
+        assertEquals(-1, SqlParser.indexOfToken(sql, "LEFT LEFT JOIN", matchIndex + 1, true));
+
+        // Restarting at a known boundary must preserve the source context for hash-prefixed tables.
+        assertEquals(16, SqlParser.indexOfToken("SELECT x FROM y FROM /* gap */ #temp", "FROM #temp"));
+    }
+
+    @Test
+    public void testCompositeSearchRetriesAfterCompleteQuotedIdentifiers() {
+        for (final String quoted : List.of("\"left\"", "`left`", "[left]", "\"le\"\"ft\"", "`le``ft`", "[le]]ft]")) {
+            final String sql = quoted + " nope " + quoted + " " + quoted + " /* gap */ JOIN x";
+            final String target = quoted + " JOIN";
+            final int matchIndex = sql.lastIndexOf(quoted);
+
+            // Each retry starts after the entire quoted token, including doubled closing delimiters.
+            // A public offset inside the first token must still reconstruct the original quote state.
+            for (final int fromIndex : new int[] { 0, 1, matchIndex }) {
+                assertEquals(matchIndex, SqlParser.indexOfToken(sql, target, fromIndex, true), quoted);
+            }
+            assertEquals(-1, SqlParser.indexOfToken(sql, target, matchIndex + 1, true), quoted);
+        }
+    }
+
+    @Test
+    public void testConfiguredSeparatorSearchUsesUnicodeCaseComparison() {
+        // Lowercasing alone disagrees with equalsIgnoreCase for sigma and Turkish I; UTF-16 char
+        // classification also misses supplementary letters and case-bearing non-letter symbols.
+        final String[][] spellings = {
+                { " \u03a3", " \u03c2" },
+                { " \u0130", " i" },
+                { " I", " \u0131" },
+                { " S", " \u017f" },
+                { " \ud801\udc00", " \ud801\udc28" },
+                { " \u2160", " \u2170" }
+        };
+
+        for (final String[] pair : spellings) {
+            final String separator = pair[0];
+            final String alternate = pair[1];
+            final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(separator).build());
+            final String sql = "x" + separator + "value";
+
+            assertTrue(separator.equalsIgnoreCase(alternate));
+            assertEquals(List.of("x", separator, "value"), tokenizer.tokenize(sql));
+            assertEquals(1, tokenizer.indexOfToken(sql, alternate, 0, false));
+            assertEquals(-1, tokenizer.indexOfToken(sql, alternate, 0, true));
+            assertEquals(1, tokenizer.indexOfToken(sql, separator, 0, true));
+            assertEquals(-1, tokenizer.indexOfToken(sql, alternate, 2, false));
+            assertEquals(-1, tokenizer.indexOfToken(sql, alternate.trim(), 0, false));
+        }
+    }
+
+    @Test
+    public void testIndexOfTokenFindsExplicitWhitespaceSeparators() {
+        // Explicit separator searches use source characters, including repeated and leading whitespace.
+        for (final String separator : List.of(" ", "\t", "\n", "\r", "\f")) {
+            final String sql = separator + "x" + separator + separator + "y" + separator;
+            for (final boolean caseSensitive : new boolean[] { false, true }) {
+                assertEquals(6, SqlParser.indexOfToken("SELECT" + separator + "a", separator, 0, caseSensitive));
+                assertEquals(0, SqlParser.indexOfToken(sql, separator, -1, caseSensitive));
+                assertEquals(2, SqlParser.indexOfToken(sql, separator, 1, caseSensitive));
+                assertEquals(3, SqlParser.indexOfToken(sql, separator, 3, caseSensitive));
+                assertEquals(5, SqlParser.indexOfToken(sql, separator, 4, caseSensitive));
+                assertEquals(-1, SqlParser.indexOfToken(sql, separator, 6, caseSensitive));
+
+                final String quoted = "'" + separator + "'/*" + separator + "*/" + separator + "a";
+                assertEquals(quoted.lastIndexOf(separator), SqlParser.indexOfToken(quoted, separator, 0, caseSensitive));
+            }
+
+            final SqlParser.Tokenizer longest = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(separator + "->").build());
+            assertEquals(-1, longest.indexOfToken("x" + separator + "->y", separator));
+            assertEquals(1, longest.indexOfToken("x" + separator + "->y", separator + "->"));
+        }
+
+        final SqlParser.Tokenizer withoutTab = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withoutSeparator('\t').build());
+        assertEquals(-1, withoutTab.indexOfToken("x\ty", "\t"));
+    }
+
+    @Test
+    public void testWhitespacePrefixedSeparatorsAreConsistentAcrossScanners() {
+        for (final String separator : List.of(" +", "\t=>", "\n~", "\r!", "\f%")) {
+            final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(separator).build());
+            final String sql = "x" + separator + "value";
+            assertEquals(List.of("x", separator, "value"), tokenizer.tokenize(sql));
+            assertEquals(separator, tokenizer.nextToken(sql, 1));
+            assertEquals(1 + separator.length(), tokenizer.nextTokenEndIndex(sql, 1));
+
+            // Token search agrees with the three scanners above: the separator is found at the leading
+            // whitespace it is spelled with, both case-sensitively and case-insensitively.
+            assertEquals(1, tokenizer.indexOfToken(sql, separator));
+            assertEquals(1, tokenizer.indexOfToken(sql, separator, 0));
+            assertEquals(1, tokenizer.indexOfToken(sql, separator, 1, true));
+            assertEquals(-1, tokenizer.indexOfToken(sql, separator, 2, true));
+
+            // The trimmed spelling is deliberately not found: the tokenizer never emits it as a token here,
+            // because the longest configured separator wins and it starts at the whitespace.
+            assertEquals(-1, tokenizer.indexOfToken(sql, separator.trim()));
+
+            assertEquals(0, tokenizer.indexOfToken(sql, "x"));
+            assertEquals(1 + separator.length(), tokenizer.indexOfToken(sql, "value"));
+        }
     }
 
     @Test

@@ -152,7 +152,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * {@code IN}/{@code NOT IN} and whose value is a {@code List} are rendered as a full IN list
      * ({@code col IN (?, ?, ...)}), identically to {@link In}/{@link NotIn}. Nested conditions and sub-queries
      * are rendered recursively, with sub-query parameters (including the positional bindings of a raw
-     * {@code SubQuery(String, Collection)}) merged into this builder's parameter list. The positional
+     * {@code SubQuery(String, Collection)}) merged into this builder's parameter list. Bound raw sub-queries
+     * also retain the enclosing builder's parameter-policy requirement when it is later composed into another query. The positional
      * {@code ?} placeholders of such a raw sub-query follow this builder's SQL policy: under
      * {@code PARAMETERIZED_SQL} they stay as {@code ?} and the bindings are appended to the parameter list;
      * under {@code NAMED_SQL}/{@code IBATIS_SQL} they are rewritten, in order, to the next collision-safe
@@ -220,11 +221,16 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
         } else if (cond instanceof final AbstractInSubQuery anyInSubQuery) {
             // Handles both InSubQuery and NotInSubQuery; the IN / NOT IN operator is carried by anyInSubQuery.operator().
             appendInSubQueryClause(anyInSubQuery.propNames(), anyInSubQuery.operator(), anyInSubQuery.subQuery());
-        } else if (cond instanceof Where || cond instanceof Having || cond instanceof Using) {
+        } else if (cond instanceof final Using using) {
+            // Rendered through appendUsingClause so a Using condition emits exactly what using(...) does:
+            // the USING keyword, entity mappings resolved without this builder's table alias (SQL rejects a
+            // qualified name there), and the unqualified-name check. It must also stay out of the generic
+            // Cell branch below: the inner expression already carries the required parentheses, e.g.
+            // "(employee_id)", and wrapping it again would produce invalid SQL like "USING ((employee_id))".
+            appendUsingClause(() -> appendCondition(using.condition()));
+        } else if (cond instanceof Where || cond instanceof Having) {
             // These cells render as "KEYWORD condition" without the wrapping parentheses added by the
-            // generic Cell branch below. In particular, the inner expression of a Using condition already
-            // carries the required parentheses, e.g. "(employee_id)"; wrapping it again would produce
-            // invalid SQL like "USING ((employee_id))".
+            // generic Cell branch below. Using is handled separately above for the same reason.
             final Cell cell = (Cell) cond;
 
             _sb.append(_SPACE);
@@ -281,6 +287,14 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 _sb.append(renameRawSubQueryPlaceholders(subQuery.rawSql(), rawParameters));
 
                 if (N.notEmpty(rawParameters) && _sqlPolicy != SqlPolicy.RAW_SQL) {
+                    // The rendered statement now carries placeholders bound under this builder's policy, so a
+                    // later composition (a sibling set operation, a derived table, a reusable snapshot) must
+                    // not combine it with a parent using a different one. Under NAMED_SQL / IBATIS_SQL the
+                    // rewrite above already set the flag through nextNamedParameterName; this also covers
+                    // PARAMETERIZED_SQL, where the raw "?"s are kept verbatim and nothing else records them.
+                    // Testing the bindings is enough: the public SubQuery(String) constructor rejects unbound
+                    // placeholders, so a raw sub-query without parameters holds no "?" to preserve.
+                    _hasGeneratedParameterPlaceholder = true;
                     _parameters.addAll(rawParameters);
                 }
             } else {

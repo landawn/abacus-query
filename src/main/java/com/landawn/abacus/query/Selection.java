@@ -302,7 +302,9 @@ public final class Selection {
         }
 
         /**
-         * Builds an immutable selection, defensively copying its property collections.
+         * Builds an immutable selection, defensively copying its property collections, including
+         * immutable wrappers over mutable backing collections. Later changes to the builder or the
+         * supplied collections do not affect the built selection.
          *
          * @return the new selection
          */
