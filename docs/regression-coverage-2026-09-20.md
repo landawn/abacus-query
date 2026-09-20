@@ -1,6 +1,6 @@
 # Local-change regression coverage
 
-Audit date: 2026-09-20. Scope: the current local changes under `src/main/java`, including the follow-up parser and builder fixes. Tests remain in existing test classes. This inventory records the important implemented behaviors and their rationale; it does not claim exhaustive coverage of every SQL spelling or dialect.
+Audit date: 2026-09-20. Scope: the fixes committed in `396fa9a`, plus subsequent local test/comment hardening under `src/main/java`. Tests remain in existing test classes. This inventory records the important implemented behaviors and their rationale; it does not claim exhaustive coverage of every SQL spelling or dialect.
 
 ## Implemented behavior
 
@@ -15,7 +15,7 @@ Test classes are under `src/test/java/com/landawn/abacus/query`; condition tests
 | SQL/JSON value clauses and query scopes | `ParsedSqlTest.testParse_SqlJsonClausePlaceholdersSurviveCommentsCaseAndNesting`<br>`ParsedSqlTest.testParse_SqlJsonQueryBodiesDoNotUseConstructorValueClauses` | ParsedSql: constructor scope stack and clause-context comments. Known scope/uniqueness defects below remain open. |
 | Mixed-style diagnostics inside and outside brackets | `ParsedSqlTest.testParse_MixedStyleMessageExplainsSqlJsonValuesAndUnaryOperators`<br>`ParsedSqlTest.testParse_MixedStyleMessageExplainsCompactBindings` | ParsedSql: general guidance uses detected styles; only the bracket sentence depends on subscript origin. |
 | Configured separators, Unicode case, whitespace and longest matches | `SqlParserTest.testConfiguredCompositeSeparatorSearchFindsDifferentSqlCasing`<br>`SqlParserTest.testConfiguredCompositeSeparatorSearchReturnsEarliestWholeMatch`<br>`SqlParserTest.testConfiguredSeparatorSearchUsesUnicodeCaseComparison`<br>`SqlParserTest.testIndexOfTokenFindsExplicitWhitespaceSeparators`<br>`SqlParserTest.testWhitespacePrefixedSeparatorsAreConsistentAcrossScanners` | SqlParser: TokenizerConfig and search Javadocs describe exact spelling, case comparison and lexical precedence. |
-| Search scaling, overlapping candidates, quote/hash context | `SqlParserTest.testConfiguredCompositeSeparatorSearchScalesWithRepeatedNearMatches`<br>`SqlParserTest.testCompositeSeparatorSearchResumesAtBoundariesAndKeepsOverlappingCandidates`<br>`SqlParserTest.testCompositeSearchRetriesAfterCompleteQuotedIdentifiers` | SqlParser: scanFrom contract and retry comments restrict resumed scans to proven token boundaries. |
+| Search scaling, overlapping candidates, quote/hash context | `SqlParserTest.testConfiguredCompositeSeparatorSearchScalesWithRepeatedNearMatches`<br>`SqlParserTest.testCompositeSeparatorContinuationsScaleWithRepeatedLateMismatches`<br>`SqlParserTest.testCompositeSeparatorSearchResumesAtBoundariesAndKeepsOverlappingCandidates`<br>`SqlParserTest.testCompositeSearchRetriesAfterCompleteQuotedIdentifiers` | SqlParser: scanFrom contract and retry comments restrict resumed scans to proven token boundaries. |
 | Quoted/Unicode mappings, aliases and USING recovery | `QueryUtilTest.testQuotedColumnDotsDoNotSuppressTableAliases`<br>`QueryUtilTest.testQuotedColumnMappingsRetainAliasesInConditionsAndOrdering`<br>`QueryUtilTest.testUnicodeIdentifiersRetainSelfJoinAndNestedQualifiers`<br>`QueryUtilTest.testUnicodeEscapeClausesDoNotHideFollowingUsingColumns`<br>`QueryUtilTest.testNestedQuotedColumnDotsRetainSubEntityQualifier` | QueryUtil: identifier-shape, quote/escape, and qualifying-dot helpers explain why expressions differ from simple names. |
 | USING rendering and alias restoration | `SqlBuilderTest.testUsingColumnsDoNotInheritEntityTableAlias`<br>`SqlBuilderTest.testUsingAcceptsQuotedDotsInsideColumnNames`<br>`SqlBuilderTest.testFailedUsingRenderingRestoresEntityTableAlias` | SqlBuilder: USING-specific parentheses and temporary alias suppression comments. |
 | Explicit mapped aliases with NO_CHANGE | `SqlBuilderTest.testExplicitMappedSelectAliasesAreHonoredWithNoChangeNamingPolicy` | AbstractQueryBuilder: appendColumnName documentation distinguishes explicit aliases from naming conversion. |
@@ -35,6 +35,16 @@ The remaining production changes in `Dsl`, `DynamicQuery`, `Filters`, and the co
 - Repeated geometric casts: 4,000 operands, every expected binding offset, and a generous five-second scalability bound in both lexers.
 - An unfinished compound child is rejected before consumption, then completed, isolated and reused with the original parent.
 - The two changed test classes passed 1,303 tests using the direct JUnit runner (192 ParsedSql tests and 1,111 SqlBuilder tests), with no failures or skips. The preceding comment/test pass also validated the unchanged tokenizer, mapping and condition coverage.
+
+## Guard-sensitivity recheck
+
+A fresh compilation of all 81 production and 86 test source files revalidated the coverage after the fixes were committed. One new test and one strengthened existing test close two gaps that ordinary result assertions did not expose:
+
+- Composite search now exercises 12,000 candidates that match three components before failing on the fourth, including an absent target and a late match. This protects continuation scans separately from failed-candidate retries.
+- Closed-child rejection now covers plain, limited and compound children for all five set operators, while verifying the parent can still be used. Retained clause metadata must not mask the documented lifecycle exception.
+- Isolated copies were compiled with one guard removed at a time. Restarting continuation scans at zero failed only the new scalability test (five-second timeout); removing the early closed-child check failed the strengthened exception-type test. The tracked implementation was never replaced by these copies.
+- All **5,268 tests passed**, with no failures or skips, against freshly compiled production/test classes using the direct JUnit runner and the repository's test-tag selection. Temporary files were placed under the workspace and automatic JUnit temp-directory cleanup was disabled because the sandbox denied cleanup path resolution; no test assertions were disabled.
+- Production behavior is unchanged in this recheck. Two rationale comments, one new regression method and one expanded regression method were added. Whitespace and CRLF checks passed.
 
 ## Known defects still requiring implementation fixes
 

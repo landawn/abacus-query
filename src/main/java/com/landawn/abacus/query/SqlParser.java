@@ -1363,6 +1363,7 @@ public final class SqlParser {
                 if (Strings.isNotEmpty(nextToken)
                         && (nextToken.equals(componentTokens[i]) || (!caseSensitive && nextToken.equalsIgnoreCase(componentTokens[i])))) {
                     // Use indexOfToken to skip whitespace and block/line comments between component tokens.
+                    // Resume here too: candidates that fail on a later component must not rescan prefixes for each earlier match.
                     final int componentTokenPos = indexOfToken(sql, componentTokens[i], tmpIndex, caseSensitive, tokenizerConfig, memo, tmpIndex);
 
                     if (componentTokenPos < 0) {

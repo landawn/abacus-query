@@ -6221,6 +6221,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgNotNull(sqlBuilder, "sqlBuilder");
         N.checkArgument(sqlBuilder != this, "Cannot apply " + operationName + " with the same SqlBuilder instance");
         checkCanAppendSetOperation(operationName);
+        // A closed child's retained clause/policy metadata must not mask its lifecycle error.
         sqlBuilder.assertNotClosed();
         checkSetOperationIsolation(sqlBuilder.requiresSetOperationIsolation(), operationName);
         N.checkArgument(_sqlPolicy == sqlBuilder._sqlPolicy || !sqlBuilder._hasGeneratedParameterPlaceholder,

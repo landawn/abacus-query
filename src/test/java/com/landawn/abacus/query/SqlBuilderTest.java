@@ -13867,11 +13867,21 @@ public class SqlBuilderTest extends TestBase {
         final List<BiConsumer<SqlBuilder, SqlBuilder>> operations = Arrays.asList(SqlBuilder::union, SqlBuilder::unionAll,
                 SqlBuilder::intersect, SqlBuilder::except, SqlBuilder::minus);
         for (final BiConsumer<SqlBuilder, SqlBuilder> operation : operations) {
-            final SqlBuilder parent = PSC.select("id").from("current_records");
-            final SqlBuilder child = PSC.select("id").from("archived_records");
-            child.build();
-            assertThrows(IllegalStateException.class, () -> operation.accept(parent, child));
-            assertEquals("SELECT id FROM current_records", parent.build().query());
+            for (int variant = 0; variant < 3; variant++) {
+                final SqlBuilder parent = PSC.select("id").from("current_records");
+                final SqlBuilder child = PSC.select("id").from("archived_records");
+                if (variant == 1) {
+                    child.limit(1);
+                } else if (variant == 2) {
+                    child.union("SELECT id FROM older_records");
+                }
+                child.build();
+
+                // Terminal/compound metadata survives build(). It must not change the lifecycle
+                // exception into an isolation error, and the rejected call must leave the parent usable.
+                assertThrows(IllegalStateException.class, () -> operation.accept(parent, child), "Closed child variant: " + variant);
+                assertEquals("SELECT id FROM current_records", parent.build().query());
+            }
         }
     }
 

@@ -3269,6 +3269,27 @@ public class SqlParserTest extends TestBase {
     }
 
     @Test
+    public void testCompositeSeparatorContinuationsScaleWithRepeatedLateMismatches() {
+        final String target = "left outer join missing";
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(target).build());
+        final StringBuilder sql = new StringBuilder("SELECT t.x FROM t");
+        for (int i = 0; i < 12_000; i++) {
+            sql.append(" LEFT OUTER JOIN t t").append(i).append(" ON t").append(i).append(".x = t.x");
+        }
+        final String withoutMatch = sql.toString();
+        final int matchIndex = sql.length() + 1;
+        final String withMatch = sql.append(" LEFT OUTER JOIN missing matched ON matched.x = t.x").toString();
+
+        // Every candidate matches three components before its table name differs. Rescanning from zero
+        // for each matched component is quadratic even when failed-candidate retries already resume locally.
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            assertEquals(-1, tokenizer.indexOfToken(withoutMatch, target));
+            assertEquals(matchIndex, tokenizer.indexOfToken(withMatch, target));
+            assertEquals(matchIndex, SqlParser.indexOfToken(withMatch, "LEFT OUTER JOIN missing"));
+        });
+    }
+
+    @Test
     public void testCompositeSeparatorSearchResumesAtBoundariesAndKeepsOverlappingCandidates() {
         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("left left join").build());
         final String sql = "LEFT nope 'LEFT LEFT JOIN' /* LEFT LEFT JOIN */ LEFT LEFT LEFT /* gap */ JOIN # hidden\n x";
