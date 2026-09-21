@@ -1,0 +1,304 @@
+• The rerun shows ParsedSql improved, SqlParser slowed down compared with the previous tuned version, and the
+  builders remained broadly similar overall. All three suites still have substantially lower aggregate execution
+  times than 965f6afe.
+
+  The current snapshot was 13cfe58f, rebuilt with JDK 25 targeting Java 17. 5,355 tests passed. The benchmarks
+  covered 321 workloads, 45 fresh JVM runs, and 43,335 samples.
+
+  Percentages below are changes in execution time: negative means less time; positive means more time. Aggregate
+  percentages use the geometric mean of per-case ratios, with each case weighted equally.
+
+   Classes                           Cases      vs previous recorded      vs previous snapshot    vs 965f6afe rerun
+                                                             results                     rerun
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━
+   ParsedSql                            40                     −6.4%                     −6.2%               −60.5%
+  ────────────────────────────────  ───────  ────────────────────────  ────────────────────────  ───────────────────
+   SqlParser                            93                     +9.0%                    +13.0%               −78.6%
+  ────────────────────────────────  ───────  ────────────────────────  ────────────────────────  ───────────────────
+   AbstractQueryBuilder /              188                     −2.0%                     −0.8%               −36.3%
+   SqlBuilder
+
+  The previous snapshots were rerun alongside the current build. Their aggregate timings changed by −0.2%, −3.5%,
+  and −1.2%, respectively, compared with their saved recordings. This helps distinguish changes in the current build
+  from variation between measurement sessions.
+
+  Baseline aggregates include only cases with equivalent outputs: 31 ParsedSql, 91 SqlParser, and 182 builder cases.
+
+  Allocation measurements count bytes allocated per operation on the calling thread—not retained heap. The following
+  entries are numbers of cases with lower / unchanged / higher allocation.
+
+   Classes                                  Compared with previous snapshot      Compared with 965f6afe, equivalent
+                                                                      rerun                                   cases
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ParsedSql                                                     30 / 9 / 1                             15 / 6 / 10
+  ───────────────────────────────────  ─────────────────────────────────────  ──────────────────────────────────────
+   SqlParser                                                     0 / 91 / 2                             75 / 16 / 0
+  ───────────────────────────────────  ─────────────────────────────────────  ──────────────────────────────────────
+   AbstractQueryBuilder / SqlBuilder                            6 / 178 / 4                             182 / 0 / 0
+
+  Selected ParsedSql timings:
+
+   Workload               Previous recording    Previous rerun    965f6afe rerun       Current            Change vs
+                                                                                                     previous rerun
+  ━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━
+   Two positional                   1.430 µs          1.445 µs          1.880 µs      1.293 µs               −10.5%
+   bindings
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ────────────  ───────────────────
+   Sixteen positional               5.869 µs          5.882 µs         10.829 µs      5.359 µs                −8.9%
+   bindings
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ────────────  ───────────────────
+   128 positional                  41.334 µs         42.476 µs         83.597 µs     39.156 µs                −7.8%
+   bindings
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ────────────  ───────────────────
+   MyBatis array,                 778.300 µs        789.371 µs        161.068 ms    776.708 µs                −1.6%
+   8,192 bindings
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ────────────  ───────────────────
+   Positional cache                 12.82 ns          13.08 ns          12.89 ns      12.20 ns                −6.7%
+   hit, same String
+
+  Of its 40 cases, 37 had lower timing medians than the previous snapshot. The remaining three increased by less
+  than 3.2%; none exceeded 5%.
+
+  Selected SqlParser timings:
+
+   Workload                           Previous    Previous rerun    965f6afe rerun      Current           Change vs
+                                     recording                                                       previous rerun
+  ━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━
+   Simple tokenization               651.69 ns         620.21 ns          1.145 µs    711.67 ns              +14.7%
+  ────────────────────────  ───────────────────  ────────────────  ────────────────  ───────────  ──────────────────
+   Large-query                       25.116 µs         23.137 µs         52.445 µs    27.232 µs              +17.7%
+   tokenization
+  ────────────────────────  ───────────────────  ────────────────  ────────────────  ───────────  ──────────────────
+   Hash-row tokenization             11.181 µs         11.051 µs          1.773 ms    10.262 µs               −7.1%
+  ────────────────────────  ───────────────────  ────────────────  ────────────────  ───────────  ──────────────────
+   Composite-token search            466.15 ns         425.46 ns          2.294 µs    575.36 ns              +35.2%
+  ────────────────────────  ───────────────────  ────────────────  ────────────────  ───────────  ──────────────────
+   Late-token search                 16.318 µs         15.641 µs         95.067 µs    20.717 µs              +32.5%
+  ────────────────────────  ───────────────────  ────────────────  ────────────────  ───────────  ──────────────────
+   Simple read-only                   1.466 µs          1.423 µs          5.914 µs     1.554 µs               +9.2%
+   classification
+  ────────────────────────  ───────────────────  ────────────────  ────────────────  ───────────  ──────────────────
+   Simple read-or-insert              2.276 µs          2.187 µs         11.941 µs     2.327 µs               +6.4%
+   classification
+  ────────────────────────  ───────────────────  ────────────────  ────────────────  ───────────  ──────────────────
+   Default tokenizer                   8.28 ns           7.74 ns          2.903 µs      8.21 ns               +6.1%
+   configuration
+
+  Of its 93 cases, 58 were more than 5% slower than the previous snapshot. Twelve of those had non-overlapping
+  ranges of JVM-run medians.
+
+  Selected builder timings:
+
+   Workload               Previous recording    Previous rerun    965f6afe rerun      Current    Change vs previous
+                                                                                                              rerun
+  ━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━
+   Positional SELECT *             223.13 ns         219.59 ns         310.53 ns    222.27 ns                 +1.2%
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ───────────  ────────────────────
+   Named entity                    544.84 ns         509.23 ns         602.13 ns    523.11 ns                 +2.7%
+   selection
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ───────────  ────────────────────
+   Positional WHERE,                3.084 µs          3.000 µs          4.390 µs     2.938 µs                 −2.0%
+   16 conditions
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ───────────  ────────────────────
+   Named WHERE, 128                32.866 µs         31.570 µs         46.516 µs    30.539 µs                 −3.3%
+   conditions
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ───────────  ────────────────────
+   Raw IN, 1,024                   13.464 µs         11.986 µs         76.655 µs    12.855 µs                 +7.2%
+   values
+  ─────────────────────  ────────────────────  ────────────────  ────────────────  ───────────  ────────────────────
+   MyBatis UNION                    4.190 µs          4.030 µs         11.004 µs     4.067 µs                 +0.9%
+   builder
+
+  Of the 188 builder cases, 162 were within ±5%, 15 improved by more than 5%, and 11 slowed by more than 5%. Four
+  slower cases had non-overlapping timing ranges—all JOIN ON workloads.
+
+  The following tables include every case more than 5% slower than the previous snapshot rerun. “Overlap” indicates
+  whether the ranges of the five JVM-run medians overlap. The 5% threshold and range comparison are descriptive, not
+  formal statistical significance tests.
+
+   SqlParser case                Previous rerun       Current    More time    Overlap
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━  ━━━━━━━━━━━  ━━━━━━━━━
+   end_trivia                          58.24 ns      84.62 ns       +45.3%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   end_word                            25.85 ns      37.43 ns       +44.8%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   walk_bounds_comments               952.63 ns      1.378 µs       +44.7%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   walk_tokens_comments                1.966 µs      2.791 µs       +41.9%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   walk_bounds_simple                 432.22 ns     610.17 ns       +41.2%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   walk_tokens_simple                 926.31 ns      1.307 µs       +41.1%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   walk_tokens_large                  35.483 µs     49.681 µs       +40.0%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_near_matches                 15.707 µs     21.974 µs       +39.9%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   walk_bounds_large                  16.789 µs     23.324 µs       +38.9%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   next_trivia                         64.51 ns      89.05 ns       +38.0%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_early                         62.35 ns      85.25 ns       +36.7%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_composite_comments           145.86 ns     197.40 ns       +35.3%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_composite                    425.46 ns     575.36 ns       +35.2%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_sensitive                    194.83 ns     262.06 ns       +34.5%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   next_mybatis_single                 19.71 ns      26.26 ns       +33.3%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_from_inside_quote            141.27 ns     187.67 ns       +32.8%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_late                         15.641 µs     20.717 µs       +32.5%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   end_empty                           33.55 ns      44.39 ns       +32.3%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   next_word                           34.27 ns      44.88 ns       +31.0%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   next_empty                          33.41 ns      43.14 ns       +29.1%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   end_mybatis_single                  19.94 ns      25.71 ns       +28.9%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_whitespace                    44.53 ns      56.91 ns       +27.8%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_missing                      16.458 µs     20.799 µs       +26.4%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_custom_separator              89.80 ns     113.04 ns       +25.9%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   end_custom                          13.19 ns      16.39 ns       +24.2%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_dense_concat_8192        119.228 µs    144.284 µs       +21.0%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   select_ambiguous                    19.43 ns      23.51 ns       +21.0%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_dense_concat_4096         59.517 µs     71.769 µs       +20.6%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_custom                    331.23 ns     399.32 ns       +20.6%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_mybatis                    2.722 µs      3.278 µs       +20.5%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_custom_composite             392.50 ns     468.29 ns       +19.3%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_mybatis_single             33.84 ns      40.33 ns       +19.2%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_large                     23.137 µs     27.232 µs       +17.7%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   select_quotes                       19.78 ns      23.28 ns       +17.7%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_unicode                   391.78 ns     456.94 ns       +16.6%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   classify_update                     21.14 ns      24.39 ns       +15.3%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_dense_concat_1024         15.798 µs     18.196 µs       +15.2%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_simple                    620.21 ns     711.67 ns       +14.7%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_tiny                       65.99 ns      75.38 ns       +14.2%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   select_simple                       21.34 ns      24.30 ns       +13.8%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   read_large                         42.514 µs     48.205 µs       +13.4%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_dense_concat_256           4.270 µs      4.780 µs       +11.9%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   classify_insert                     21.19 ns      23.61 ns       +11.4%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   next_custom                         21.68 ns      23.91 ns       +10.3%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   index_quoted                        3.549 µs      3.878 µs        +9.3%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   read_simple                         1.423 µs      1.554 µs        +9.2%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_keep_comments              1.418 µs      1.548 µs        +9.1%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_array                     680.09 ns     741.66 ns        +9.1%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   end_hash                           107.63 ns     117.26 ns        +8.9%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_comments                   1.243 µs      1.352 µs        +8.7%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_backslashes               208.76 ns     225.45 ns        +8.0%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   read_insert_large                  62.265 µs     67.036 µs        +7.7%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   tokenize_hash_operator              33.25 ns      35.42 ns        +6.5%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   read_insert_simple                  2.187 µs      2.327 µs        +6.4%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   select_parenthesized                88.14 ns      93.68 ns        +6.3%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   config_default                       7.74 ns       8.21 ns        +6.1%      Yes
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   read_insert_insert                 918.19 ns     973.26 ns        +6.0%      No
+  ────────────────────────────  ────────────────  ────────────  ───────────  ─────────
+   read_cte                            2.920 µs      3.092 µs        +5.9%      Yes
+
+   Builder case                Previous rerun      Current    More time    Overlap
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━  ━━━━━━━━━━━  ━━━━━━━━━━━  ━━━━━━━━━
+   positional_join_on                1.105 µs     1.218 µs       +10.2%      No
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   raw_join_on                       1.099 µs     1.188 µs        +8.2%      No
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   raw_in_256                        3.370 µs     3.631 µs        +7.7%      Yes
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   raw_in_1024                      11.986 µs    12.855 µs        +7.2%      Yes
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   raw_batch_4                       1.324 µs     1.419 µs        +7.1%      Yes
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   raw_batch_64                     12.399 µs    13.261 µs        +7.0%      Yes
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   named_join_on                     1.260 µs     1.340 µs        +6.4%      No
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   named_batch_64                   23.677 µs    25.115 µs        +6.1%      Yes
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   mybatis_join_on                   1.214 µs     1.285 µs        +5.9%      No
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   positional_in_expression          3.338 µs     3.513 µs        +5.3%      Yes
+  ──────────────────────────  ────────────────  ───────────  ───────────  ─────────
+   mybatis_update_chain_16           8.348 µs     8.773 µs        +5.1%      Yes
+
+  Every case with increased allocation compared with the previous snapshot is listed below. Allocation counts use a
+  0.5-byte tolerance for small measurement differences.
+
+   Classes / case                    Previous bytes/op    Current bytes/op      Change
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━
+   SqlParser — tokenize_hash_rows                2,624               3,176    +21.037%
+  ────────────────────────────────  ───────────────────  ──────────────────  ──────────
+   Builders — mybatis_join_on                    2,648               2,936    +10.876%
+  ────────────────────────────────  ───────────────────  ──────────────────  ──────────
+   Builders — named_join_on                      2,808               3,096    +10.256%
+  ────────────────────────────────  ───────────────────  ──────────────────  ──────────
+   Builders — positional_join_on                 2,424               2,712    +11.881%
+  ────────────────────────────────  ───────────────────  ──────────────────  ──────────
+   Builders — raw_join_on                        2,336               2,624    +12.329%
+  ────────────────────────────────  ───────────────────  ──────────────────  ──────────
+   ParsedSql — bare_concat/8192              449,977.9           450,080.3     +0.023%
+  ────────────────────────────────  ───────────────────  ──────────────────  ──────────
+   SqlParser — config_custom                     6,704               6,712     +0.119%
+
+  The measurements used the following conditions and interpretation rules:
+
+  - Five fresh JVMs per version per suite, with nine measured rounds per workload. Results use the median of each
+    JVM’s rounds, then the median across JVMs.
+
+  - One benchmark JVM ran at a time. Compilation and tests finished before timing. The original harnesses, warmup,
+    calibration, and deterministic case shuffling were preserved.
+
+  - ParsedSql and SqlParser used -Xms512m -Xmx1024m -XX:+UseG1GC. Builders used -Xms128m -Xmx256m -XX:+UseG1GC.
+  - Current uses abacus-common 8.0.1, previous snapshots 8.0.0, and 965f6afe 7.9.3. These results include dependency
+    changes and do not isolate individual fixes.
+
+  - Current and previous snapshots produced matching outputs in every measured case. Nine ParsedSql, two SqlParser,
+    and six builder cases differed at 965f6afe; those cases were excluded from equivalent-work baseline aggregates.
+
+  - Small changes and overlapping timing ranges should not be treated as demonstrated regressions or optimizations.
+    These are standalone benchmarks on a shared host, not JMH measurements or application-throughput estimates.
+
+  - Cache-hit measurements were uncontended and excluded initial string hashing. Allocation figures exclude
+    background-thread allocations and do not measure retained heap.
+
+  - Artifact and dependency fingerprints passed verification. Production and unit-test sources remained unchanged.
+
+  The complete comparison CSV (docs/performance/rerun-2026-09-20/comparison.csv) contains all 321 workloads,
+  including improvements, smaller differences, allocation figures, and per-version timing ranges.

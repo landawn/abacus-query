@@ -388,10 +388,14 @@ public final class SqlParser {
      */
     public static final class TokenizerConfig {
         private static final Comparator<String> LONGEST_SEPARATOR_FIRST = Comparator.comparingInt(String::length).reversed();
+        private static final byte SINGLE_SEPARATOR = 1;
+        private static final byte SPECIAL_START = 2;
 
         private final Set<String> separators;
         private final int maxSeparatorLength;
-        private final boolean[] asciiSeparators;
+        // Reuse the single-character table's storage for lexical flags: ordinary ASCII characters
+        // need no separator lookup, while quotes/comments remain special even if separators omit them.
+        private final byte[] asciiCharacterKinds;
         private final Set<Character> nonAsciiSingleCharSeparators;
         private final String[][] asciiMultiCharSeparators;
         private final Map<Character, String[]> nonAsciiMultiCharSeparators;
@@ -416,7 +420,8 @@ public final class SqlParser {
             this.semicolonlessBatches = semicolonlessBatches;
 
             int maxLength = 1;
-            final boolean[] ascii = new boolean[128];
+            final byte[] ascii = new byte[128];
+            ascii['\''] = ascii['"'] = ascii['`'] = ascii['['] = ascii['-'] = ascii['/'] = ascii['#'] = SPECIAL_START;
             final int[] counts = new int[128];
             Set<Character> nonAscii = null;
             Map<Character, List<String>> nonAsciiBuckets = null;
@@ -425,7 +430,7 @@ public final class SqlParser {
                 final char first = separator.charAt(0);
                 if (separator.length() == 1) {
                     if (first < 128) {
-                        ascii[first] = true;
+                        ascii[first] |= SINGLE_SEPARATOR;
                     } else {
                         if (nonAscii == null) {
                             nonAscii = new LinkedHashSet<>();
@@ -435,6 +440,7 @@ public final class SqlParser {
                 } else if (!crossesQuotedRegionBoundary(separator)) {
                     if (first < 128) {
                         counts[first]++;
+                        ascii[first] |= SPECIAL_START;
                     } else {
                         if (nonAsciiBuckets == null) {
                             nonAsciiBuckets = new HashMap<>();
@@ -444,7 +450,7 @@ public final class SqlParser {
                 }
             }
             maxSeparatorLength = maxLength;
-            asciiSeparators = ascii;
+            asciiCharacterKinds = ascii;
             nonAsciiSingleCharSeparators = nonAscii == null ? Collections.emptySet() : Collections.unmodifiableSet(nonAscii);
 
             // Count then fill exact-size buckets: no temporary map/list per ASCII operator family.
@@ -564,7 +570,7 @@ public final class SqlParser {
         }
 
         private boolean isSingleCharSeparator(final char ch) {
-            return ch < 128 ? asciiSeparators[ch] : nonAsciiSingleCharSeparators.contains(ch);
+            return ch < 128 ? (asciiCharacterKinds[ch] & SINGLE_SEPARATOR) != 0 : nonAsciiSingleCharSeparators.contains(ch);
         }
 
         /**
@@ -1390,6 +1396,12 @@ public final class SqlParser {
         int start = -1;
         for (int index = Math.max(0, fromIndex); index < len; index++) {
             final char ch = sql.charAt(index);
+            if (ch < 128 && tokenizerConfig.asciiCharacterKinds[ch] == 0) {
+                if (start < 0) {
+                    start = index;
+                }
+                continue;
+            }
             String separator = null;
             boolean hashWord = ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{';
             if (ch == '#' && !hashWord && hashIdentifierPrefixStart(sql, len, index) >= 0) {
@@ -2470,14 +2482,8 @@ public final class SqlParser {
                 // MySQL's "#" is deliberately NOT handled here: unlike "--" and "/*" it is a legal character in a
                 // PostgreSQL operator name, so "?#" is the PostgreSQL intersection operator in one dialect and a
                 // placeholder plus a comment in another, with no dialect-independent rule to choose between them.
-                final int after = index + candidate.length();
-
-                if (after < len) {
-                    final char last = candidate.charAt(candidate.length() - 1);
-
-                    if ((last == '-' && str.charAt(after) == '-') || (last == '/' && str.charAt(after) == '*')) {
-                        continue;
-                    }
+                if (endsAtCommentStart(str, len, index, candidate)) {
+                    continue;
                 }
 
                 return candidate;
@@ -2485,6 +2491,20 @@ public final class SqlParser {
         }
 
         return null;
+    }
+
+    /** Rejects only the candidate's final character overlapping a following comment opener. */
+    private static boolean endsAtCommentStart(final String str, final int len, final int index, final String candidate) {
+        final char last = candidate.charAt(candidate.length() - 1);
+        // Most operators cannot overlap a comment opener; keep their successful-match path short.
+        if (last != '-' && last != '/') {
+            return false;
+        }
+        final int after = index + candidate.length();
+        if (after >= len) {
+            return false;
+        }
+        return (last == '-' && str.charAt(after) == '-') || (last == '/' && str.charAt(after) == '*');
     }
 
     private static boolean crossesQuotedRegionBoundary(final String separator) {

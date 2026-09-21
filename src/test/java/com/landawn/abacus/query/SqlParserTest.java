@@ -4002,4 +4002,43 @@ public class SqlParserTest extends TestBase {
         assertSame(defaults, SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(false).build());
         assertTrue(batches.toBuilder().withSeparator("::").build().semicolonlessBatches());
     }
+
+    @Test
+    public void testAsciiScanningHonorsCustomWordAndWhitespaceSeparators() {
+        // Preclassified ASCII characters are ordinary only in this exact immutable configuration.
+        final SqlParser.Tokenizer words = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("AND").build());
+        assertEquals(java.util.List.of("foo", "AND", "bar"), words.tokenize("fooANDbar"));
+        assertEquals("foo", words.nextToken("fooANDbar", 0));
+        assertEquals(3, words.nextTokenEndIndex("fooANDbar", 0));
+        assertEquals(6, words.indexOfToken("fooANDbar", "bar"));
+
+        final SqlParser.Tokenizer spaces = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withoutSeparator(' ').withSeparator("xy").build());
+        assertEquals(java.util.List.of("a b", "xy", "c"), spaces.tokenize("a bxyc"));
+        assertEquals("a b", spaces.nextToken("a bxyc", 0));
+        assertEquals(3, spaces.nextTokenEndIndex("a bxyc", 0));
+        assertEquals(0, spaces.indexOfToken("a bxyc", "a b"));
+        assertEquals(java.util.List.of("N'x'", "xy", "q"), spaces.tokenize("N'x'xyq"));
+    }
+
+    @Test
+    public void testOperatorFamiliesPreserveCommentBoundaries() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder()
+                .withSeparator("x-").withSeparator("x/").withSeparator("π/").withSeparator("||/").build());
+
+        // ASCII letters can begin configured operators too; Unicode families use the same boundary rule.
+        for (final String sql : new String[] { "x--ignored\nz", "x/*ignored*/z", "π/*ignored*/z" }) {
+            final String first = sql.substring(0, 1);
+            assertEquals(first, tokenizer.nextToken(sql, 0), sql);
+            assertEquals(1, tokenizer.nextTokenEndIndex(sql, 0), sql);
+            assertEquals(java.util.List.of(first, " ", "z"), tokenizer.tokenize(sql), sql);
+            assertEquals(sql.lastIndexOf('z'), tokenizer.indexOfToken(sql, "z"), sql);
+        }
+
+        // A rejected longest candidate must still fall back to a shorter valid operator.
+        assertEquals("||", tokenizer.nextToken("||/*ignored*/z", 0));
+        assertEquals(2, tokenizer.nextTokenEndIndex("||/*ignored*/z", 0));
+        assertEquals(java.util.List.of("x-", "z"), tokenizer.tokenize("x-z"));
+        assertEquals(java.util.List.of("x/", "z"), tokenizer.tokenize("x/z"));
+        assertEquals(java.util.List.of("π/", "z"), tokenizer.tokenize("π/z"));
+    }
 }

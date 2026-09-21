@@ -1539,6 +1539,22 @@ public class QueryUtilTest extends TestBase {
         assertTrue(PSC.select("*").from("account acc").where(Filters.eq("acc.Id", 1)).build().query().endsWith("acc.id = ?"));
     }
 
+    @Test
+    public void testConvertIdentifierQualifiedIdentityAndConversionBoundaries() {
+        // Qualified ASCII names need no temporary segments when snake-case conversion is an identity.
+        for (final String name : new String[] { "u.id", "schema.table.name", "a..b", ".id.", "." }) {
+            assertSame(name, QueryUtil.convertIdentifier(name, NamingPolicy.SNAKE_CASE));
+        }
+        // The identity path must not bypass per-segment conversion or edge-underscore preservation.
+        assertEquals("acc.id", QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE));
+        assertEquals("u.first_name", QueryUtil.convertIdentifier("u.firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("u._first_name_", QueryUtil.convertIdentifier("u._firstName_", NamingPolicy.SNAKE_CASE));
+        assertEquals("u.a_b", QueryUtil.convertIdentifier("u.a__b", NamingPolicy.SNAKE_CASE));
+        assertEquals("u.名称", QueryUtil.convertIdentifier("u.名称", NamingPolicy.SNAKE_CASE));
+        assertEquals("U.ID", QueryUtil.convertIdentifier("u.id", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("u.firstName", QueryUtil.convertIdentifier("u.first_name", NamingPolicy.CAMEL_CASE));
+    }
+
     static class ParentWithFilteredChild {
         private long id;
 

@@ -1187,6 +1187,9 @@ public final class QueryUtil {
      * QueryUtil.convertIdentifier("", NamingPolicy.SNAKE_CASE);                     // ""
      * }</pre>
      *
+     * <p>Qualified names consisting only of lowercase ASCII letters and dots are reused under {@code SNAKE_CASE}, avoiding
+     * temporary segment strings when rendering common join predicates such as {@code u.id = a.id}.</p>
+     *
      * @param identifier the identifier to convert; {@code null} and empty strings are returned as-is
      * @param namingPolicy the naming policy to apply to the parts between the underscore runs;
      *                     {@code null} and {@link NamingPolicy#NO_CHANGE} return {@code identifier} as-is
@@ -1204,15 +1207,18 @@ public final class QueryUtil {
             return convertIdentifierSegment(identifier, namingPolicy);
         }
 
+        if (namingPolicy == NamingPolicy.SNAKE_CASE && isLowercaseAsciiDottedName(identifier)) {
+            return identifier;
+        }
+
         // Convert each dot-separated segment on its own. Handing the whole qualified name to the policy lets the
         // qualifier act as a word boundary of the segment that follows it (SNAKE_CASE turned "acc.Id" into
         // "acc._id"), so the COLUMN segment now renders exactly as it does through a builder. The qualifier is
         // still converted - a condition does not know the declared alias - so Filters.eq("acc.Id", 1) renders as
         // "ACC.ID = 1" under SCREAMING_SNAKE_CASE where a builder with a known alias keeps "acc.ID": harmless for
         // case-insensitive unquoted identifiers, but not full parity.
-        // Cost: one NamingPolicy.convert call per segment plus a StringBuilder and the substrings, measured at
-        // ~2-3x the single whole-name convert this replaced, on a path every rendered identifier goes through.
-        // Unqualified names - the common case - return above without entering this branch, and got faster.
+        // Names that need conversion retain the segment-by-segment rules. The conservative identity check
+        // above avoids this allocation for lowercase ASCII names without changing underscores or Unicode.
         final StringBuilder sb = new StringBuilder(identifier.length() + 8);
         int start = 0;
         int dot = firstDot;
@@ -1226,6 +1232,17 @@ public final class QueryUtil {
         sb.append(convertIdentifierSegment(identifier.substring(start), namingPolicy));
 
         return sb.toString();
+    }
+
+    /** Only lowercase ASCII letters and dots are proven unchanged; all other spellings use the converter. */
+    private static boolean isLowercaseAsciiDottedName(final String identifier) {
+        for (int i = 0, len = identifier.length(); i < len; i++) {
+            final char ch = identifier.charAt(i);
+            if ((ch < 'a' || ch > 'z') && ch != '.') {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

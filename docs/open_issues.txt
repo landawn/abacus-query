@@ -1,0 +1,40 @@
+• 1. [P2] JSON uniqueness clauses hide real bindings — src/main/java/com/landawn/abacus/query/ParsedSql.java:1648.
+     SELECT ARRAY[JSON_OBJECT('k' VALUE ? WITH UNIQUE KEYS)] reports zero parameters instead of one. WITHOUT UNIQUE
+     KEYS behaves identically. The clause recognizer omits these options, causing the placeholder to be classified
+     as an operator. Adding :other incorrectly bypasses mixed-style rejection. HEAD handles both cases correctly;
+     current tests omit uniqueness clauses.
+
+  2. [P2] Chained geometric casts introduce phantom parameters — src/main/java/com/landawn/abacus/query/
+     ParsedSql.java:1715.
+     Both statements report two parameters instead of one:
+
+     SELECT ?- CAST(? AS text)::line
+     SELECT ?- ?::text ::line
+
+     Recognition stops at the intermediate text cast instead of following the final geometric cast. HEAD reports
+     one. Tests cover individual formatted casts but omit cast chains.
+
+  3. [P2] Qualified geometric literals lose unary-operator recognition — src/main/java/com/landawn/abacus/query/
+     ParsedSql.java:1757.
+     SELECT ?-pg_catalog.line'(0,0),(1,0)' reports one parameter instead of zero. The fallback recognizes only
+     unqualified line' and lseg' prefixes. Adding whitespace before the literal changes classification despite
+     equivalent SQL. HEAD reports zero; tests omit this spelling.
+
+  4. [P2] Parenthesized JSON_ARRAY queries retain constructor-value scope — src/main/java/com/landawn/abacus/query/
+     ParsedSql.java:1591.
+     Query-form detection misses the leading parenthesized SELECT:
+
+     SELECT JSON_ARRAY(
+       (SELECT 1) UNION
+       SELECT 1 FROM t JOIN u JOIN v ON v.payload ? NULL ON NULL
+     )
+
+     NULL ON NULL, spanning two JOIN predicates, is mistaken for a constructor clause. Current parsing reports one
+     phantom parameter; HEAD reports zero. Named bindings consequently trigger false mixed-style errors. Tests omit
+     this query form.
+
+  5. [P2] Unicode identifier mappings using escape-string syntax lose table aliases — src/main/java/com/landawn/
+     abacus/query/QueryUtil.java:353.
+     @Column("U&\"caf!00e9\" UESCAPE E'!'") loses its table qualification because the helper rejects the valid E
+     prefix. A self-join therefore produces an ambiguous column reference. HEAD prefixes the alias correctly.
+     Existing tests cover only ordinary escape literals.
