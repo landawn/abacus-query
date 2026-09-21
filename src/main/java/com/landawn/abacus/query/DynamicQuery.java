@@ -396,13 +396,13 @@ public final class DynamicQuery {
          *
          * @param count the maximum number of rows to return (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()},
+         *         a limit count was already specified, or SQL:2008 pagination was selected
          * @throws IllegalArgumentException if {@code count} is negative
-         * @throws IllegalStateException if a limit count was already specified, SQL:2008 pagination was selected,
-         *         or this builder has already been closed by a prior call to {@link #build()}
          */
         public Builder limit(final int count) {
             checkNotBuilt();
-            N.checkArgNotNegative(count, "count");
+            N.checkArgNotNegative(count, cs.count);
 
             selectPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(limitCount, "LIMIT count");
@@ -431,17 +431,17 @@ public final class DynamicQuery {
          * @param count the maximum number of rows to return (must not be negative)
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()},
+         *         a limit or plain offset was already specified, or SQL:2008 pagination was selected
          * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
-         * @throws IllegalStateException if a limit or plain offset was already specified, SQL:2008 pagination
-         *         was selected, or this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          * @see #fetchNextRows(int)
          * @see #fetchFirstRows(int)
          */
         public Builder limit(final int count, final int offset) {
             checkNotBuilt();
-            N.checkArgNotNegative(count, "count");
-            N.checkArgNotNegative(offset, "offset");
+            N.checkArgNotNegative(count, cs.count);
+            N.checkArgNotNegative(offset, cs.offset);
 
             selectPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(limitCount, "LIMIT count");
@@ -468,15 +468,15 @@ public final class DynamicQuery {
          *
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()},
+         *         a plain offset was already specified (by this method or by {@link #limit(int, int)}, including
+         *         with a zero offset), or SQL:2008 pagination was selected
          * @throws IllegalArgumentException if {@code offset} is negative
-         * @throws IllegalStateException if a plain offset was already specified (by this method or by
-         *         {@link #limit(int, int)}, including with a zero offset), SQL:2008 pagination was selected,
-         *         or this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
         public Builder offset(final int offset) {
             checkNotBuilt();
-            N.checkArgNotNegative(offset, "offset");
+            N.checkArgNotNegative(offset, cs.offset);
 
             selectPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(plainOffset, "plain OFFSET");
@@ -499,13 +499,13 @@ public final class DynamicQuery {
          *
          * @param offset the number of rows to skip (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()},
+         *         an {@code OFFSET ... ROWS} value was already specified, or LIMIT-style pagination was selected
          * @throws IllegalArgumentException if {@code offset} is negative
-         * @throws IllegalStateException if an {@code OFFSET ... ROWS} value was already specified, LIMIT-style
-         *         pagination was selected, or this builder has already been closed by a prior call to {@link #build()}
          */
         public Builder offsetRows(final int offset) {
             checkNotBuilt();
-            N.checkArgNotNegative(offset, "offset");
+            N.checkArgNotNegative(offset, cs.offset);
 
             selectPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(rowsOffset, "OFFSET ... ROWS");
@@ -526,13 +526,13 @@ public final class DynamicQuery {
          *
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()},
+         *         a fetch count was already specified, or LIMIT-style pagination was selected
          * @throws IllegalArgumentException if {@code count} is negative
-         * @throws IllegalStateException if a fetch count was already specified, LIMIT-style pagination was selected,
-         *         or this builder has already been closed by a prior call to {@link #build()}
          */
         public Builder fetchNextRows(final int count) {
             checkNotBuilt();
-            N.checkArgNotNegative(count, "count");
+            N.checkArgNotNegative(count, cs.count);
 
             selectPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(fetchCount, "FETCH count");
@@ -555,14 +555,14 @@ public final class DynamicQuery {
          *
          * @param count the number of rows to fetch (must not be negative)
          * @return this builder instance for method chaining
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()},
+         *         a fetch count was already specified, or LIMIT-style pagination was selected
          * @throws IllegalArgumentException if {@code count} is negative
-         * @throws IllegalStateException if a fetch count was already specified, LIMIT-style pagination was selected,
-         *         or this builder has already been closed by a prior call to {@link #build()}
          * @see #offsetRows(int)
          */
         public Builder fetchFirstRows(final int count) {
             checkNotBuilt();
-            N.checkArgNotNegative(count, "count");
+            N.checkArgNotNegative(count, cs.count);
 
             selectPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(fetchCount, "FETCH count");
@@ -591,8 +591,8 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query to union with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder union(final String query) {
             checkNotBuilt();
@@ -622,8 +622,8 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query to union with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder unionAll(final String query) {
             checkNotBuilt();
@@ -653,8 +653,8 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query to intersect with (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder intersect(final String query) {
             checkNotBuilt();
@@ -684,8 +684,8 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query whose result rows are subtracted from the current result set (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder except(final String query) {
             checkNotBuilt();
@@ -715,8 +715,8 @@ public final class DynamicQuery {
          *
          * @param query the complete SQL query whose result rows are subtracted from the current result set (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalArgumentException if {@code query} is {@code null}, empty, or blank
          */
         public Builder minus(final String query) {
             checkNotBuilt();
@@ -763,8 +763,8 @@ public final class DynamicQuery {
          *
          * @param textToAppend the complete raw SQL clause to append verbatim, e.g. {@code "LIMIT 10 OFFSET 20"} (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code textToAppend} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalArgumentException if {@code textToAppend} is {@code null}, empty, or blank
          */
         public Builder append(final String textToAppend) {
             checkNotBuilt();
@@ -792,8 +792,8 @@ public final class DynamicQuery {
          * @param textToAppend the raw SQL clause to append verbatim if {@code b} is {@code true}
          *                  (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
          * @see #append(String)
          */
         public Builder appendIf(final boolean b, final String textToAppend) {
@@ -824,8 +824,8 @@ public final class DynamicQuery {
          * @param textToAppendWhenTrue the raw SQL clause to append if condition is true (must not be {@code null}, empty, or blank)
          * @param textToAppendWhenFalse the raw SQL clause to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
          * @see #append(String)
          */
         public Builder appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
@@ -841,6 +841,9 @@ public final class DynamicQuery {
         /**
          * Selects a typed pagination family and rejects attempts to combine grammatically incompatible
          * {@code LIMIT/OFFSET} and {@code OFFSET ... ROWS/FETCH} clauses.
+         *
+         * @throws IllegalStateException if a different typed pagination family was already selected by a prior
+         *         pagination call
          */
         private void selectPaginationSyntax(final PaginationSyntax requested) {
             if (paginationSyntax != PaginationSyntax.NONE && paginationSyntax != requested) {
@@ -850,7 +853,12 @@ public final class DynamicQuery {
             paginationSyntax = requested;
         }
 
-        /** Rejects duplicate typed pagination components before any pagination value is recorded. */
+        /**
+         * Rejects duplicate typed pagination components before any pagination value is recorded.
+         *
+         * @throws IllegalStateException if {@code currentValue} is non-{@code null}, that is, the pagination
+         *         component named by {@code partName} was already specified
+         */
         private static void checkPaginationPartUnset(final Integer currentValue, final String partName) {
             if (currentValue != null) {
                 throw new IllegalStateException(partName + " has already been specified");
@@ -984,7 +992,7 @@ public final class DynamicQuery {
          * }</pre>
          *
          * @return the complete SQL query string
-         * @throws IllegalStateException if the builder has already been built/closed
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@code build()}
          */
         public String build() {
             try {
@@ -2020,7 +2028,7 @@ public final class DynamicQuery {
          */
         public WhereClause appendPlaceholders(final int placeholderCount) {
             assertNotClosed();
-            N.checkArgNotNegative(placeholderCount, "placeholderCount");
+            N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
             requireInitializedForPlaceholders("WHERE");
 
             appendPlaceholderSequence(placeholderCount);
@@ -2051,9 +2059,9 @@ public final class DynamicQuery {
          */
         public WhereClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
             assertNotClosed();
-            N.checkArgNotNegative(placeholderCount, "placeholderCount");
-            N.checkArgNotNull(prefix, "prefix");
-            N.checkArgNotNull(postfix, "postfix");
+            N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
+            N.checkArgNotNull(prefix, cs.prefix);
+            N.checkArgNotNull(postfix, cs.postfix);
             requireInitializedForPlaceholders("WHERE");
 
             if (placeholderCount > 0) {
@@ -2440,7 +2448,7 @@ public final class DynamicQuery {
          */
         public HavingClause appendPlaceholders(final int placeholderCount) {
             assertNotClosed();
-            N.checkArgNotNegative(placeholderCount, "placeholderCount");
+            N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
             requireInitializedForPlaceholders("HAVING");
 
             appendPlaceholderSequence(placeholderCount);
@@ -2471,9 +2479,9 @@ public final class DynamicQuery {
          */
         public HavingClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
             assertNotClosed();
-            N.checkArgNotNegative(placeholderCount, "placeholderCount");
-            N.checkArgNotNull(prefix, "prefix");
-            N.checkArgNotNull(postfix, "postfix");
+            N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
+            N.checkArgNotNull(prefix, cs.prefix);
+            N.checkArgNotNull(postfix, cs.postfix);
             requireInitializedForPlaceholders("HAVING");
 
             if (placeholderCount > 0) {

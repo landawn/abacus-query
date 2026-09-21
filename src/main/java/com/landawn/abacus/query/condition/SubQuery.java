@@ -190,7 +190,8 @@ public class SubQuery extends AbstractCondition {
      * {@link #SubQuery(String, Collection)} when the text contains JDBC {@code ?} placeholders.</p>
      *
      * @param sql complete raw query-expression text (must not be {@code null}, empty, blank, or contain a parameter placeholder)
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
+     *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
      *         or contains a positional placeholder without a corresponding binding
      */
     public SubQuery(final String sql) {
@@ -218,7 +219,8 @@ public class SubQuery extends AbstractCondition {
      *                   individual binding values may be {@code null}; array/{@code Date}/{@code Calendar}
      *                   bindings are snapshotted, all others kept by reference
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters}
-     *         is {@code null}; the SQL contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder; the number of positional
+     *         is {@code null}; the SQL contains malformed placeholder text such as an unclosed {@code #{...}} marker;
+     *         the SQL contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder; the number of positional
      *         placeholders differs from the number of bindings; or an object-array binding contains a cycle
      */
     public SubQuery(final String sql, final Collection<?> parameters) {
@@ -242,7 +244,8 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name; may be {@code null} or empty, in which case it is
      *            stored as the empty string
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
+     *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
      *         or contains a positional placeholder without a corresponding binding
      * @deprecated the entity name is unused when rendering raw query-expression text; it is only exposed by
      *             {@link #entityName()} and participates in {@link #equals(Object)}/{@link #hashCode()}. Use
@@ -261,7 +264,8 @@ public class SubQuery extends AbstractCondition {
      *
      * @param sql complete builder-rendered query text
      * @param builderBackedSnapshot must be {@code true}; distinguishes this trusted path from public raw SQL construction
-     * @throws IllegalArgumentException if {@code builderBackedSnapshot} is {@code false} or {@code sql} is blank
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, or if
+     *         {@code builderBackedSnapshot} is {@code false}
      */
     protected SubQuery(final String sql, final boolean builderBackedSnapshot) {
         this(Strings.EMPTY, sql, Collections.emptyList(), false);

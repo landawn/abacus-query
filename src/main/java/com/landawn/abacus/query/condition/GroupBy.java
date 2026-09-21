@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.N;
 
 /**
@@ -167,7 +168,7 @@ public class GroupBy extends Clause {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public GroupBy(final Collection<String> propNames) {
-        this(N.checkArgNotEmpty(propNames, "propNames").toArray(new String[0]));
+        this(N.checkArgNotEmpty(propNames, cs.propNames).toArray(new String[0]));
     }
 
     /**
@@ -254,6 +255,6 @@ public class GroupBy extends Clause {
      *                                  or {@code null} values
      */
     public GroupBy(final Map<String, SortDirection> groupings) {
-        this(Filters.expr(AbstractCondition.createSortSpec(N.checkArgNotEmpty(groupings, "groupings"))));
+        this(Filters.expr(AbstractCondition.createSortSpec(N.checkArgNotEmpty(groupings, cs.groupings))));
     }
 }

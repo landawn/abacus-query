@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.landawn.abacus.query.QueryUtil;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -120,6 +121,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param values the collection of values to check membership against (must not be {@code null}, empty,
      *               or contain {@code null})
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, {@code values} is {@code null}/empty
      *                                  or contains {@code null},
      *                                  or {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
@@ -128,13 +130,12 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  connectors and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
      *                                  if a scalar {@link SubQuery} has a known, non-wildcard projection containing
      *                                  multiple columns, or if an element is a cyclic object array
-     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final String propName, final Operator operator, final Collection<?> values) {
         super(validateOperator(operator));
 
         checkPropName(propName);
-        N.checkArgNotNull(values, "values");
+        N.checkArgNotNull(values, cs.values);
 
         final List<Object> valuesCopy = new ArrayList<>(values.size());
 
@@ -144,7 +145,7 @@ public abstract class AbstractIn extends ComposableCondition {
             valuesCopy.add(snapshotMutableValue(value));
         }
 
-        N.checkArgNotEmpty(valuesCopy, "values");
+        N.checkArgNotEmpty(valuesCopy, cs.values);
         rejectNullElements(valuesCopy, "values");
         validateNonQuantifiedValueOperands(valuesCopy, "values");
 
@@ -189,6 +190,7 @@ public abstract class AbstractIn extends ComposableCondition {
      *               non-{@code null} and resolve to exactly {@code propNames.size()} non-{@code null} values.
      *               A row may be a {@link Collection}, {@link Iterable}, object array,
      *               {@link Map} or bean
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *                                  if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
@@ -200,17 +202,17 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
      *                                  if a scalar {@link SubQuery} has a known, non-wildcard projection containing
      *                                  multiple columns, or if a tuple element is a cyclic object array
-     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> valueRows) {
         super(validateOperator(operator));
 
         this.propNames = copyAndValidatePropNames(propNames);
+        N.checkArgNotNull(valueRows, cs.valueRows);
+
         this.rowValueConstructor = true;
-        N.checkArgNotNull(valueRows, "valueRows");
 
         final List<?> valueRowsCopy = new ArrayList<>(valueRows);
-        N.checkArgNotEmpty(valueRowsCopy, "valueRows");
+        N.checkArgNotEmpty(valueRowsCopy, cs.valueRows);
 
         final int arity = this.propNames.size();
         final List<List<Object>> copy = new ArrayList<>(valueRowsCopy.size());
@@ -338,10 +340,10 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     private static ImmutableList<String> copyAndValidatePropNames(final Collection<String> propNames) {
-        N.checkArgNotNull(propNames, "propNames");
+        N.checkArgNotNull(propNames, cs.propNames);
 
         final List<String> copy = new ArrayList<>(propNames);
-        N.checkArgNotEmpty(copy, "propNames");
+        N.checkArgNotEmpty(copy, cs.propNames);
 
         for (final String propName : copy) {
             checkPropName(propName);

@@ -578,7 +578,8 @@ public final class ParsedSql {
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, if it mixes different
      *         parameter styles ({@code ?}, {@code :propName}, {@code #{propName}}), or if it contains
      *         a malformed iBatis/MyBatis parameter that is missing its closing brace, or an unpaired
-     *         UTF-16 surrogate in, or immediately before, a prospective colon-style parameter name
+     *         UTF-16 surrogate in, or immediately before, a prospective colon-style parameter name,
+     *         or directly after a {@code '?'} that opens the content of a bracket group
      */
     public static ParsedSql parse(final String sql) {
         if (Strings.isBlank(sql)) {
@@ -1023,6 +1024,9 @@ public final class ParsedSql {
      *
      * @param sql the SQL text to inspect
      * @return sorted bracket-opening offsets
+     * @throws IllegalArgumentException if a standalone bracket group in {@code sql} starts with a {@code ':'} or
+     *         {@code '?'} marker followed by an unpaired UTF-16 surrogate
+     * @throws IllegalStateException if the token stream cannot be aligned with the original SQL text
      * @see #subscriptOpeningOffsets(String, SqlParser.Tokenizer)
      */
     static int[] subscriptOpeningOffsets(final String sql) {
@@ -1043,6 +1047,8 @@ public final class ParsedSql {
      * @param sql the original SQL text to inspect
      * @param tokenizer the tokenizer configured for that SQL
      * @return sorted original-text offsets, or an empty array when no subscript is recognized
+     * @throws IllegalArgumentException if a standalone bracket group in {@code sql} starts with a {@code ':'} or
+     *         {@code '?'} marker followed by an unpaired UTF-16 surrogate
      * @throws IllegalStateException if the token stream cannot be aligned with the original SQL text
      */
     static int[] subscriptOpeningOffsets(final String sql, final SqlParser.Tokenizer tokenizer) {

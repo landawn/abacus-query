@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.N;
 
 /**
@@ -161,7 +162,7 @@ public class OrderBy extends Clause {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     public OrderBy(final Collection<String> propNames) {
-        this(N.checkArgNotEmpty(propNames, "propNames").toArray(new String[0]));
+        this(N.checkArgNotEmpty(propNames, cs.propNames).toArray(new String[0]));
     }
 
     /**

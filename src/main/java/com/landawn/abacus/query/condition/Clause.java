@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.N;
 
 /**
@@ -120,7 +121,7 @@ public abstract class Clause extends Cell {
 
     private static Condition validateClauseOperand(final Operator operator, final Condition cond) {
         N.requireNonNull(operator, "operator");
-        N.checkArgNotNull(cond, "condition");
+        N.checkArgNotNull(cond, cs.condition);
 
         if (!isClause(operator)) {
             throw new IllegalArgumentException("Clause operator must be a SQL clause operator, but was: " + operator);

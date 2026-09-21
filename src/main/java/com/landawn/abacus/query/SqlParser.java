@@ -364,7 +364,7 @@ public final class SqlParser {
      * @throws IllegalArgumentException if {@code tokenizerConfig} is {@code null}
      */
     public static Tokenizer tokenizer(final TokenizerConfig tokenizerConfig) {
-        N.checkArgNotNull(tokenizerConfig, "tokenizerConfig");
+        N.checkArgNotNull(tokenizerConfig, cs.tokenizerConfig);
         return new Tokenizer(tokenizerConfig);
     }
 
@@ -675,7 +675,7 @@ public final class SqlParser {
              * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
              */
             public Builder withSeparator(final String separator) {
-                N.checkArgNotEmpty(separator, "separator");
+                N.checkArgNotEmpty(separator, cs.separator);
                 mutableSeparators().add(separator);
                 return this;
             }
@@ -699,7 +699,7 @@ public final class SqlParser {
              * @throws IllegalArgumentException if {@code separator} is {@code null} or empty
              */
             public Builder withoutSeparator(final String separator) {
-                N.checkArgNotEmpty(separator, "separator");
+                N.checkArgNotEmpty(separator, cs.separator);
                 mutableSeparators().remove(separator);
                 return this;
             }
@@ -1492,6 +1492,7 @@ public final class SqlParser {
      * @param index the current position in the string (0-based)
      * @param ch the character to check; expected to equal {@code str.charAt(index)}
      * @return {@code true} if the character is a separator in this context, {@code false} otherwise
+     * @throws NullPointerException if {@code str} is {@code null}
      */
     static boolean isSeparator(final String str, final int len, final int index, final char ch) {
         return isSeparator(str, len, index, ch, DEFAULT_TOKENIZER_CONFIG, new HashScanMemo(str));

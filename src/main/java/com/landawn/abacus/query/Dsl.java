@@ -186,6 +186,7 @@ public final class Dsl {
      * predefined dialect combinations.
      *
      * @param sqlDialect the rendering and tokenizer configuration to bind to (must not be {@code null})
+     * @throws NullPointerException if {@code sqlDialect} is {@code null}
      */
     Dsl(final SqlDialect sqlDialect) {
         this.sqlDialect = sqlDialect;
@@ -219,7 +220,7 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}
      */
     public static Dsl forDialect(final SqlDialect sqlDialect) {
-        N.checkArgNotNull(sqlDialect, "sqlDialect");
+        N.checkArgNotNull(sqlDialect, cs.sqlDialect);
 
         final Dsl dsl = dslCache.get(sqlDialect);
 
@@ -255,17 +256,19 @@ public final class Dsl {
      *        contain no {@code null} element, and resolve to at least one property in total)
      * @return a snapshot copy of {@code selections}, detached from later caller mutations
      * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a
-     *         {@code null} element, or resolves to no properties in total
+     *         {@code null} element, an element with a {@code null} entity class, a blank included
+     *         property name, or an unsafe (whitespace-only, quoted, or comment-bearing) table or
+     *         class alias, or resolves to no properties in total
      */
     private static List<Selection> snapshotSelections(final List<Selection> selections) {
-        N.checkArgNotNull(selections, "selections");
+        N.checkArgNotNull(selections, cs.selections);
 
         // Snapshot the caller-owned list once. Selection descriptors are immutable, so retaining their
         // references is safe and validation, SELECT rendering and automatic FROM generation all observe
         // the same input even for weakly consistent or otherwise mutable caller lists.
         final List<Selection> snapshots = new ArrayList<>(selections);
 
-        N.checkArgNotEmpty(snapshots, "selections");
+        N.checkArgNotEmpty(snapshots, cs.selections);
 
         // checkMultiSelects repeats these checks, but with messages naming its own 'multiSelects'
         // parameter; checking here first keeps the messages aligned with 'selections'.
@@ -557,6 +560,10 @@ public final class Dsl {
      * Materializes the insertable values of a bean before a pooled SQL buffer is allocated. This
      * mirrors the single-row bean rules used by {@link AbstractQueryBuilder#parseInsertEntity}:
      * null values are omitted, and default-valued IDs are omitted only while the whole ID is default.
+     *
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or is not a valid entity bean,
+     *         or if no insertable value remains after its {@code null} values and default-valued ID
+     *         properties are removed
      */
     private static Map<String, Object> snapshotInsertBean(final Object entity, final Set<String> excludedPropNames) {
         final Collection<String> propNames = QueryUtil.insertPropNames(entity, excludedPropNames);
@@ -993,7 +1000,7 @@ public final class Dsl {
      *
      * @param entityClass the entity class to delete from
      * @return a new SqlBuilder instance configured for DELETE operation
-     * @throws IllegalArgumentException if entityClass is null
+     * @throws IllegalArgumentException if entityClass is null or is not a valid entity bean class
      */
     public SqlBuilder deleteFrom(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, SqlBuilder.DELETION_PART_MSG);
@@ -1614,7 +1621,7 @@ public final class Dsl {
      * @see Selection
      */
     public SqlBuilder select(final Selection selection) {
-        N.checkArgNotNull(selection, "selection");
+        N.checkArgNotNull(selection, cs.selection);
 
         return select(N.asList(selection));
     }
@@ -1763,7 +1770,7 @@ public final class Dsl {
      * @see Selection
      */
     public SqlBuilder selectFrom(final Selection selection) {
-        N.checkArgNotNull(selection, "selection");
+        N.checkArgNotNull(selection, cs.selection);
 
         return selectFrom(N.asList(selection));
     }
@@ -1911,9 +1918,12 @@ public final class Dsl {
      * @param entityClass the entity class used for property-to-column mapping (may be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
      * @throws IllegalArgumentException if {@code condition} is {@code null} or contains a condition type that cannot be rendered
+     * @throws IllegalStateException if {@code condition} is a {@link com.landawn.abacus.query.condition.Criteria} carrying joins,
+     *                               set operations, or a select modifier, or is a standalone set-operation clause:
+     *                               a condition-only builder has no SELECT segment for them to attach to
      */
     public SqlBuilder renderCondition(final Condition condition, final Class<?> entityClass) {
-        N.checkArgNotNull(condition, "condition");
+        N.checkArgNotNull(condition, cs.condition);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
@@ -1945,6 +1955,9 @@ public final class Dsl {
      * @param condition the condition to render (must not be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
      * @throws IllegalArgumentException if {@code condition} is {@code null} or contains a condition type that cannot be rendered
+     * @throws IllegalStateException if {@code condition} is a {@link com.landawn.abacus.query.condition.Criteria} carrying joins,
+     *                               set operations, or a select modifier, or is a standalone set-operation clause:
+     *                               a condition-only builder has no SELECT segment for them to attach to
      * @see #renderCondition(Condition, Class)
      */
     public SqlBuilder renderCondition(final Condition condition) {

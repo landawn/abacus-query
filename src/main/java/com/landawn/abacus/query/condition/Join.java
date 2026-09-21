@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -334,7 +335,7 @@ public class Join extends AbstractCondition {
      *         {@code null}, empty, or blank element
      */
     private static List<String> copyAndValidateJoinEntities(final Collection<String> joinEntities) {
-        N.checkArgNotEmpty(joinEntities, "joinEntities");
+        N.checkArgNotEmpty(joinEntities, cs.joinEntities);
 
         final List<String> copy = new ArrayList<>(joinEntities.size());
 

@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 import com.landawn.abacus.query.QueryUtil;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -71,19 +72,19 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *             if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is
      *             {@code null}, or if the subquery has an explicit structured projection with a number of columns other than 1
-     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractInSubQuery(final String propName, final Operator operator, final SubQuery subQuery) {
         super(validateOperator(operator));
 
         checkPropName(propName);
-        N.checkArgNotNull(subQuery, "subQuery");
+        N.checkArgNotNull(subQuery, cs.subQuery);
+        validateSubQuerySelectArity(1, subQuery);
 
         this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
-        validateSubQuerySelectArity(this.propNames.size(), subQuery);
         this.subQuery = subQuery;
     }
 
@@ -98,18 +99,20 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *             if {@code propNames} is {@code null}/empty, if any element is
      *             {@code null}, empty, or blank, if {@code subQuery} is {@code null}, or if the subquery has an explicit
      *             structured projection whose number of selected columns does not match {@code propNames.size()}
-     * @throws NullPointerException if {@code operator} is {@code null}
      */
     protected AbstractInSubQuery(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
         super(validateOperator(operator));
 
-        this.propNames = copyAndValidatePropNames(propNames);
-        N.checkArgNotNull(subQuery, "subQuery");
-        validateSubQuerySelectArity(this.propNames.size(), subQuery);
+        final ImmutableList<String> validatedPropNames = copyAndValidatePropNames(propNames);
+        N.checkArgNotNull(subQuery, cs.subQuery);
+        validateSubQuerySelectArity(validatedPropNames.size(), subQuery);
+
+        this.propNames = validatedPropNames;
         this.subQuery = subQuery;
     }
 
@@ -176,10 +179,10 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      *         {@code null}, empty, or blank
      */
     private static ImmutableList<String> copyAndValidatePropNames(final Collection<String> propNames) {
-        N.checkArgNotNull(propNames, "propNames");
+        N.checkArgNotNull(propNames, cs.propNames);
 
         final List<String> copy = new ArrayList<>(propNames);
-        N.checkArgNotEmpty(copy, "propNames");
+        N.checkArgNotEmpty(copy, cs.propNames);
 
         for (final String propName : copy) {
             checkPropName(propName);

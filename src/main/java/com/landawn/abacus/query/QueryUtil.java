@@ -106,11 +106,6 @@ public final class QueryUtil {
     private static final int MAX_NESTED_PROP_DEPTH = Math.max(0, Integer.getInteger("abacus.query.maxNestedPropDepth", DEFAULT_MAX_NESTED_PROP_DEPTH));
 
     /**
-     * Parameter name used in argument-validation messages for entity-class parameters.
-     */
-    private static final String ENTITY_CLASS = "entityClass";
-
-    /**
      * Cache of column-name-to-property-name maps per entity class, built by
      * {@link #columnToPropNameMap(Class)}.
      */
@@ -157,6 +152,7 @@ public final class QueryUtil {
      * @param entityClass the entity class whose prop-name list is requested
      * @param slot the {@code loadPropNamesByClass} array index (0, 1, 2, 3, or 4)
      * @return the memoized immutable list for that (class, slot)
+     * @throws IllegalArgumentException if {@code entityClass} is not a valid entity bean class
      */
     private static ImmutableList<String> getNoExclusionPropNames(final Class<?> entityClass, final int slot) {
         final AtomicReferenceArray<ImmutableList<String>> cache = noExclusionPropNamesPool.computeIfAbsent(entityClass, cls -> new AtomicReferenceArray<>(5));
@@ -219,13 +215,13 @@ public final class QueryUtil {
      * @return an immutable map containing property-name keys and, when a mapped column name is not
      *         already a property-name key, an additional column-name key. Each value contains the
      *         mapped column name and whether that column name is a single unqualified identifier.
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, or is neither a {@link Map} type nor a valid entity bean class
      * @see #propToColumnNameMap(Class, NamingPolicy)
      */
     @Beta
     @Internal
     public static ImmutableMap<String, ColumnInfo> propToColumnInfoMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
         Map<NamingPolicy, ImmutableMap<String, ColumnInfo>> namingPropColumnInfoMap = entityPropColumnInfoMap.get(entityClass);
@@ -471,11 +467,11 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return an immutable map of column names (including upper- and lower-case variations) to property names
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     @Internal
     public static ImmutableMap<String, String> columnToPropNameMap(final Class<?> entityClass) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         // Backing map is a ConcurrentHashMap, so computeIfAbsent runs the (expensive)
         // metadata build at most once per class even under concurrent first-touch.
@@ -539,6 +535,7 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (may be {@code null})
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return an immutable map of property names to column names, or an empty immutable map if {@code entityClass} is {@code null} or is a {@link Map} type
+     * @throws IllegalArgumentException if {@code entityClass} is non-{@code null} and is neither a {@link Map} type nor a valid entity bean class
      */
     @Internal
     public static ImmutableMap<String, String> propToColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
@@ -568,7 +565,7 @@ public final class QueryUtil {
      * @param namingPolicy the naming policy used to derive column names for properties without an explicit column name
      * @param registeringClasses classes already on the recursion stack, or {@code null} for a top-level call
      * @return an immutable map of property names to column names
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses) {
@@ -586,11 +583,11 @@ public final class QueryUtil {
      * @param registeringClasses classes already on the recursion stack, or {@code null} for a top-level call
      * @param remainingNestedPropDepth the number of further nested bean hops to expand
      * @return an immutable map of property names to column names
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     private static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses, final int remainingNestedPropDepth) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         if (registeringClasses != null) {
             if (registeringClasses.contains(entityClass)) {
@@ -714,11 +711,11 @@ public final class QueryUtil {
      * @param entity the entity instance to analyze (must not be {@code null})
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for INSERT operations
-     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, or its class is not a valid entity bean class
      */
     @Internal
     public static ImmutableList<String> insertPropNames(final Object entity, final Set<String> excludedPropNames) {
-        N.checkArgNotNull(entity, "entity");
+        N.checkArgNotNull(entity, cs.entity);
 
         final Class<?> entityClass = entity.getClass();
 
@@ -795,11 +792,11 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for INSERT operations
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     @Internal
     public static ImmutableList<String> insertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         if (N.isEmpty(excludedPropNames)) {
             // Return the memoized immutable list (slot 2: insert with id) so both paths return an
@@ -844,12 +841,12 @@ public final class QueryUtil {
      *        are included, excluding a root such as {@code "address"} also excludes descendants such as
      *        {@code "address.street"}.
      * @return an immutable list of property names suitable for SELECT operations
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     @Internal
     public static ImmutableList<String> selectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         final int slot = includeSubEntityProperties ? 0 : 1;
 
@@ -898,12 +895,12 @@ public final class QueryUtil {
      * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for SELECT operations
-     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, or its class is not a valid entity bean class
      * @see #selectPropNames(Class, boolean, Set)
      */
     @Internal
     public static ImmutableList<String> selectPropNames(final Object entity, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
-        N.checkArgNotNull(entity, "entity");
+        N.checkArgNotNull(entity, cs.entity);
 
         return selectPropNames(entity.getClass(), includeSubEntityProperties, excludedPropNames);
     }
@@ -937,11 +934,11 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for UPDATE operations
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     @Internal
     public static ImmutableList<String> updatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         if (N.isEmpty(excludedPropNames)) {
             // Return the memoized immutable list (slot 4: update) so both paths return an
@@ -971,12 +968,12 @@ public final class QueryUtil {
      * @param entity the entity instance to analyze (must not be {@code null})
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for UPDATE operations
-     * @throws IllegalArgumentException if {@code entity} is {@code null}
+     * @throws IllegalArgumentException if {@code entity} is {@code null}, or its class is not a valid entity bean class
      * @see #updatePropNames(Class, Set)
      */
     @Internal
     public static ImmutableList<String> updatePropNames(final Object entity, final Set<String> excludedPropNames) {
-        N.checkArgNotNull(entity, "entity");
+        N.checkArgNotNull(entity, cs.entity);
 
         return updatePropNames(entity.getClass(), excludedPropNames);
     }
@@ -1008,12 +1005,12 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return an immutable list of ID property names, or an empty list if no ID properties are defined
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     @Internal
     @Immutable
     public static ImmutableList<String> idPropNames(final Class<?> entityClass) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         return ParserUtil.getBeanInfo(entityClass).idPropNameList;
     }
@@ -1049,7 +1046,7 @@ public final class QueryUtil {
      */
     @Internal
     public static boolean isNonColumn(final Set<String> columnFields, final Set<String> nonColumnFields, final PropInfo propInfo) {
-        N.checkArgNotNull(propInfo, "propInfo");
+        N.checkArgNotNull(propInfo, cs.propInfo);
 
         return propInfo.isTransient || propInfo.isAnnotationPresent(NonColumn.class) || (N.notEmpty(columnFields) && !columnFields.contains(propInfo.name))
                 || (N.notEmpty(nonColumnFields) && nonColumnFields.contains(propInfo.name));
@@ -1124,7 +1121,7 @@ public final class QueryUtil {
      * @throws IllegalArgumentException if {@code placeholderCount} is negative
      */
     public static String placeholders(final int placeholderCount) {
-        N.checkArgNotNegative(placeholderCount, "placeholderCount");
+        N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
 
         if (placeholderCount < QM_CACHE.length) {
             return QM_CACHE[placeholderCount];
@@ -1309,7 +1306,7 @@ public final class QueryUtil {
      */
     @Internal
     public static String tableAlias(final Class<?> entityClass) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         final Table anno = entityClass.getAnnotation(Table.class);
         return anno == null ? null : anno.alias();
@@ -1341,7 +1338,7 @@ public final class QueryUtil {
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return the table name, optionally followed by space and alias
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      * @see #tableNameAndAlias(Class, NamingPolicy)
      */
     @Internal
@@ -1380,11 +1377,11 @@ public final class QueryUtil {
      * @param namingPolicy the naming policy used when no annotated table name exists. If {@code null},
      *        defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return the table name, optionally followed by space and alias
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     @Internal
     public static String tableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {
-        N.checkArgNotNull(entityClass, ENTITY_CLASS);
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         // Delegate to the query builders' own resolver so this helper cannot diverge from the FROM clause
         // rendered for the same class. Applying NamingPolicy.convert() here directly used to diverge for

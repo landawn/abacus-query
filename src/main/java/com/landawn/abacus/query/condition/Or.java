@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.N;
 
 /**
@@ -213,7 +214,7 @@ public class Or extends Junction {
      */
     @Override
     public Or or(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(condition, "or");
 
         final List<Condition> conditionList = new ArrayList<>(this.conditions.size() + 1);

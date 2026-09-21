@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.landawn.abacus.query.QueryUtil;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -189,6 +190,7 @@ public class Binary extends ComposableCondition {
      *                  {@code FALSE} (the same literals {@code Filters.isTrue}/{@code Filters.isFalse} use), so it
      *                  is always rendered inline ({@code x IS TRUE}) and never bound as a parameter; consequently
      *                  {@code new Is("x", true)} equals {@code Filters.isTrue("x")}.
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not one of the operators listed above; or if, for an {@code IN}/{@code NOT_IN}
      *                                  operator, {@code propValue} is not a non-empty {@link Collection}, a non-empty
@@ -196,9 +198,10 @@ public class Binary extends ComposableCondition {
      *                                  {@code null}; if {@code IS}/{@code IS NOT} receives an arbitrary literal; if a
      *                                  condition-valued operand is an ordinary predicate or query clause or a blank
      *                                  {@link SqlExpression}; or if an {@link All}/{@link Any}/{@link Some} operand is used
-     *                                  anywhere other than the direct RHS of a compatible scalar comparison; or if a
-     *                                  scalar {@link SubQuery} has a known, non-wildcard projection with multiple columns
-     * @throws NullPointerException if {@code operator} is {@code null}
+     *                                  anywhere other than the direct RHS of a compatible scalar comparison; if a
+     *                                  scalar {@link SubQuery} has a known, non-wildcard projection with multiple columns;
+     *                                  or if {@code propValue}, or an element of an {@code IN}/{@code NOT IN} membership
+     *                                  list, is a cyclic object array
      */
     public Binary(final String propName, final Operator operator, final Object propValue) {
         super(operator);
@@ -274,7 +277,7 @@ public class Binary extends ComposableCondition {
      * @throws ClassCastException if the stored value is not assignable to {@code valueType}
      */
     public <T> T propValueAs(final Class<T> valueType) {
-        N.checkArgNotNull(valueType, "valueType");
+        N.checkArgNotNull(valueType, cs.valueType);
 
         return valueType.cast(copyPropValueForExposure(propValue));
     }
@@ -487,7 +490,7 @@ public class Binary extends ComposableCondition {
                 valuesCopy.add(snapshotMutableValue(validateNonQuantifiedValueOperand(value, "propValue[" + index++ + "]")));
             }
 
-            N.checkArgNotEmpty(valuesCopy, "propValue");
+            N.checkArgNotEmpty(valuesCopy, cs.propValue);
             return Collections.unmodifiableList(valuesCopy);
         }
 
@@ -527,7 +530,8 @@ public class Binary extends ComposableCondition {
      * @param propValue the raw right-hand-side value; may be {@code null}
      * @return the validated value
      * @throws IllegalArgumentException if a quantified operand is used with an incompatible operator,
-     *         the operand is an unsupported condition, or a required value is {@code null}
+     *         the operand is an unsupported condition, a required value is {@code null}, or the value is a
+     *         cyclic object array
      */
     private static Object validateScalarValueOperand(final Operator op, final Object propValue) {
         if (propValue == null) {

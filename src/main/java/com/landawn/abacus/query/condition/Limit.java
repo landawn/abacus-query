@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -122,8 +123,8 @@ public class Limit extends Clause {
      * @throws IllegalArgumentException if {@code count} or {@code offset} is negative
      */
     public Limit(final int count, final int offset) {
-        super(Operator.LIMIT, new SqlExpression(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, "count"))
-                : N.checkArgNotNegative(count, "count") + " OFFSET " + N.checkArgNotNegative(offset, "offset")));
+        super(Operator.LIMIT, new SqlExpression(offset == 0 ? String.valueOf(N.checkArgNotNegative(count, cs.count))
+                : N.checkArgNotNegative(count, cs.count) + " OFFSET " + N.checkArgNotNegative(offset, cs.offset)));
 
         this.count = count;
         this.offset = offset;

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
 
@@ -150,7 +151,7 @@ public class On extends Cell {
     }
 
     private static Condition validateOnCondition(final Condition cond) {
-        N.checkArgNotNull(cond, "condition");
+        N.checkArgNotNull(cond, cs.condition);
 
         if (containsNonPredicateComponent(cond)) {
             throw new IllegalArgumentException("ON condition type " + cond.getClass().getName()

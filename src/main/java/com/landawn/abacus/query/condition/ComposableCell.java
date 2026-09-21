@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -91,8 +92,20 @@ public abstract class ComposableCell extends ComposableCondition {
         this.condition = validateWrappedCondition(operator, condition);
     }
 
+    /**
+     * Validates the condition a {@code ComposableCell} is about to wrap: it must be non-{@code null}, and for a
+     * quantified {@code ALL}/{@code ANY}/{@code SOME} operator it must additionally be a {@link SubQuery} whose
+     * known, non-wildcard structured projection selects exactly one column.
+     *
+     * @param operator the operator this cell applies to the wrapped condition (may be {@code null})
+     * @param condition the condition to wrap
+     * @return the validated condition
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code operator} is
+     *         {@code ALL}, {@code ANY}, or {@code SOME} and {@code condition} is not a {@link SubQuery} with a
+     *         known one-column projection
+     */
     private static Condition validateWrappedCondition(final Operator operator, final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+        N.checkArgNotNull(condition, cs.condition);
 
         if (isQuantifiedSubQueryOperator(operator)) {
             if (!(condition instanceof SubQuery)) {

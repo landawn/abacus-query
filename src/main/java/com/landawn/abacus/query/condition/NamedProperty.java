@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ConcurrentCacheMap;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
@@ -261,7 +262,7 @@ public class NamedProperty {
      * @see com.landawn.abacus.query.Filters#anyEqual(java.util.Map)
      */
     public Or equalsAny(final Object... values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -289,7 +290,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final boolean[] values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -317,7 +318,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final char[] values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -345,7 +346,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final byte[] values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -373,7 +374,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final short[] values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -401,7 +402,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final int[] values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -429,7 +430,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final long[] values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -457,7 +458,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final float[] values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -485,7 +486,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final double[] values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -523,7 +524,7 @@ public class NamedProperty {
      * @see Equal
      */
     public Or equalsAny(final Collection<?> values) {
-        N.checkArgNotEmpty(values, "values");
+        N.checkArgNotEmpty(values, cs.values);
 
         final List<Condition> conditions = new ArrayList<>(values.size());
 
@@ -533,7 +534,7 @@ public class NamedProperty {
 
         // A live/custom collection may become empty after the initial validation. Returning an
         // empty OR would silently erase the caller's intended predicate.
-        N.checkArgNotEmpty(conditions, "values");
+        N.checkArgNotEmpty(conditions, cs.values);
 
         return new Or(conditions);
     }

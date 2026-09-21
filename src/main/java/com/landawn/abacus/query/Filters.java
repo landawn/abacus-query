@@ -330,6 +330,7 @@ public final class Filters {
      *                  {@code IN}/{@code NOT_IN} a non-empty {@link Collection} or array without {@code null}
      *                  elements is copied defensively
      * @return a {@link Binary} condition
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not a valid binary comparison/membership operator (e.g. a structural
@@ -343,7 +344,6 @@ public final class Filters {
      *                                  {@code ON}/{@code USING} connector) or a blank {@link SqlExpression}; or if an
      *                                  {@link All}/{@link Any}/{@link Some} operand is used anywhere other than the direct
      *                                  RHS of a compatible scalar comparison
-     * @throws NullPointerException if {@code operator} is {@code null}
      */
     public static Binary binary(final String propName, final Operator operator, final Object propValue) {
         return new Binary(propName, operator, propValue);
@@ -376,10 +376,10 @@ public final class Filters {
      * @param operator the binary comparison operator to use (must not be {@code null}; membership, {@code IS}/{@code IS NOT},
      *                 and structural operators are rejected)
      * @return a {@link Binary} condition with a {@code ?} placeholder value
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code operator}
      *                                  is {@code IN}, {@code NOT_IN}, {@code IS}, {@code IS_NOT}, or is not a valid
      *                                  binary comparison operator
-     * @throws NullPointerException if {@code operator} is {@code null}
      * @see #binary(String, Operator, Object)
      */
     public static Binary binary(final String propName, final Operator operator) {
@@ -529,7 +529,7 @@ public final class Filters {
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static Or anyEqual(final Object entity) {
-        N.checkArgNotNull(entity, "entity");
+        N.checkArgNotNull(entity, cs.entity);
         N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use anyEqual(Map) for maps");
 
         return anyEqual(entity, QueryUtil.selectPropNames(entity.getClass(), false, null));
@@ -651,7 +651,7 @@ public final class Filters {
      *                                  non-blank {@link String}
      */
     private static List<Condition> equalConditions(final Map<?, ?> props) {
-        N.checkArgNotEmpty(props, "props");
+        N.checkArgNotEmpty(props, cs.props);
 
         final List<Condition> conditions = new ArrayList<>();
 
@@ -662,7 +662,7 @@ public final class Filters {
             conditions.add(equal((String) propName, prop.getValue()));
         }
 
-        N.checkArgNotEmpty(conditions, "props");
+        N.checkArgNotEmpty(conditions, cs.props);
         return conditions;
     }
 
@@ -686,7 +686,7 @@ public final class Filters {
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
      */
     public static And allEqual(final Object entity) {
-        N.checkArgNotNull(entity, "entity");
+        N.checkArgNotNull(entity, cs.entity);
         N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use allEqual(Map) for maps");
 
         return allEqual(entity, QueryUtil.selectPropNames(entity.getClass(), false, null));
@@ -731,9 +731,9 @@ public final class Filters {
      *                                  {@code null}, empty, blank, or unreadable name
      */
     private static List<Condition> equalConditions(final Object entity, final Collection<String> includedPropNames) {
-        N.checkArgNotNull(entity, "entity");
+        N.checkArgNotNull(entity, cs.entity);
         N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use the map overload for maps");
-        N.checkArgNotEmpty(includedPropNames, "includedPropNames");
+        N.checkArgNotEmpty(includedPropNames, cs.includedPropNames);
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
         final List<Condition> conditions = new ArrayList<>();
@@ -742,7 +742,7 @@ public final class Filters {
             conditions.add(equal(propName, entityInfo.getPropValue(entity, propName)));
         }
 
-        N.checkArgNotEmpty(conditions, "includedPropNames");
+        N.checkArgNotEmpty(conditions, cs.includedPropNames);
         return conditions;
     }
 
@@ -848,9 +848,9 @@ public final class Filters {
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entitiesOrPropMaps) {
-        N.checkArgNotNull(entitiesOrPropMaps, "entitiesOrPropMaps");
+        N.checkArgNotNull(entitiesOrPropMaps, cs.entitiesOrPropMaps);
         final List<?> elements = new ArrayList<>(entitiesOrPropMaps);
-        N.checkArgNotEmpty(elements, "entitiesOrPropMaps");
+        N.checkArgNotEmpty(elements, cs.entitiesOrPropMaps);
 
         final Object firstNonNull = N.firstNonNull(elements).orElseThrow(() -> new IllegalArgumentException("All specified entities/maps are null."));
 
@@ -898,12 +898,12 @@ public final class Filters {
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames) {
-        N.checkArgNotNull(entities, "entities");
-        N.checkArgNotNull(includedPropNames, "includedPropNames");
+        N.checkArgNotNull(entities, cs.entities);
+        N.checkArgNotNull(includedPropNames, cs.includedPropNames);
         final List<?> entitySnapshot = new ArrayList<>(entities);
         final List<String> propNameSnapshot = new ArrayList<>(includedPropNames);
-        N.checkArgNotEmpty(entitySnapshot, "entities");
-        N.checkArgNotEmpty(propNameSnapshot, "includedPropNames");
+        N.checkArgNotEmpty(entitySnapshot, cs.entities);
+        N.checkArgNotEmpty(propNameSnapshot, cs.includedPropNames);
 
         final List<Condition> condList = new ArrayList<>();
 
@@ -1128,7 +1128,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code entityId} is {@code null} or contains no keys
      */
     public static And idToCond(final EntityId entityId) {
-        N.checkArgNotNull(entityId, "entityId");
+        N.checkArgNotNull(entityId, cs.entityId);
 
         final List<Condition> conditions = new ArrayList<>();
 
@@ -1136,7 +1136,7 @@ public final class Filters {
             conditions.add(equal(entry.getKey(), entry.getValue()));
         }
 
-        N.checkArgNotEmpty(conditions, "entityId");
+        N.checkArgNotEmpty(conditions, cs.entityId);
         return and(conditions);
     }
 
@@ -1160,7 +1160,7 @@ public final class Filters {
      *         {@link EntityId} with no keys
      */
     public static Or idToCond(final Collection<? extends EntityId> entityIds) {
-        N.checkArgNotNull(entityIds, "entityIds");
+        N.checkArgNotNull(entityIds, cs.entityIds);
 
         final List<Condition> conditions = new ArrayList<>();
 
@@ -1168,7 +1168,7 @@ public final class Filters {
             conditions.add(idToCond(entityId));
         }
 
-        N.checkArgNotEmpty(conditions, "entityIds");
+        N.checkArgNotEmpty(conditions, cs.entityIds);
         return or(conditions);
     }
 
@@ -1855,7 +1855,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like contains(final String propName, final String propValue) {
-        N.checkArgNotNull(propValue, "propValue");
+        N.checkArgNotNull(propValue, cs.propValue);
         return new Like(propName, SK._PERCENT + propValue + SK._PERCENT);
     }
 
@@ -1877,7 +1877,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notContains(final String propName, final String propValue) {
-        N.checkArgNotNull(propValue, "propValue");
+        N.checkArgNotNull(propValue, cs.propValue);
         return new NotLike(propName, SK._PERCENT + propValue + SK._PERCENT);
     }
 
@@ -1899,7 +1899,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like startsWith(final String propName, final String propValue) {
-        N.checkArgNotNull(propValue, "propValue");
+        N.checkArgNotNull(propValue, cs.propValue);
         return new Like(propName, propValue + SK._PERCENT);
     }
 
@@ -1921,7 +1921,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notStartsWith(final String propName, final String propValue) {
-        N.checkArgNotNull(propValue, "propValue");
+        N.checkArgNotNull(propValue, cs.propValue);
         return new NotLike(propName, propValue + SK._PERCENT);
     }
 
@@ -1943,7 +1943,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like endsWith(final String propName, final String propValue) {
-        N.checkArgNotNull(propValue, "propValue");
+        N.checkArgNotNull(propValue, cs.propValue);
         return new Like(propName, SK._PERCENT + propValue);
     }
 
@@ -1965,7 +1965,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notEndsWith(final String propName, final String propValue) {
-        N.checkArgNotNull(propValue, "propValue");
+        N.checkArgNotNull(propValue, cs.propValue);
         return new NotLike(propName, SK._PERCENT + propValue);
     }
 
@@ -2438,7 +2438,7 @@ public final class Filters {
      *         nested inside a clause
      */
     public static Where where(final String expr) {
-        N.checkArgNotBlank(expr, "expr");
+        N.checkArgNotBlank(expr, cs.expr);
 
         return new Where(expr(expr));
     }
@@ -2754,7 +2754,7 @@ public final class Filters {
      *         nested inside a clause
      */
     public static Having having(final String expr) {
-        N.checkArgNotBlank(expr, "expr");
+        N.checkArgNotBlank(expr, cs.expr);
 
         return new Having(expr(expr));
     }
@@ -3096,7 +3096,7 @@ public final class Filters {
      *         predicate and cannot be used as a join condition
      */
     public static On on(final String expr) {
-        N.checkArgNotBlank(expr, "expr");
+        N.checkArgNotBlank(expr, cs.expr);
 
         return new On(expr(expr));
     }
@@ -4628,7 +4628,8 @@ public final class Filters {
      *                   individual values may be {@code null}
      * @return a raw {@link SubQuery} carrying an immutable binding snapshot
      * @throws IllegalArgumentException if the SQL is blank, {@code parameters} is {@code null}, a named/MyBatis
-     *         marker is present, or the placeholder and binding counts differ
+     *         marker is present, the placeholder and binding counts differ, or an object-array binding contains
+     *         a direct or indirect cycle
      */
     public static SubQuery subQuery(final String sql, final Collection<?> parameters) {
         return new SubQuery(sql, parameters);

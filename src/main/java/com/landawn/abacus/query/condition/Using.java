@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
@@ -240,7 +241,7 @@ public class Using extends Cell {
     }
 
     private static Prepared prepare(final String... columnNames) {
-        N.checkArgNotEmpty(columnNames, "columnNames");
+        N.checkArgNotEmpty(columnNames, cs.columnNames);
 
         final List<String> copy = new ArrayList<>(columnNames.length);
 
@@ -255,7 +256,7 @@ public class Using extends Cell {
     }
 
     private static Prepared prepare(final Collection<String> columnNames) {
-        N.checkArgNotEmpty(columnNames, "columnNames");
+        N.checkArgNotEmpty(columnNames, cs.columnNames);
 
         final List<String> copy = new ArrayList<>(columnNames.size());
 
@@ -268,7 +269,7 @@ public class Using extends Cell {
 
         // Re-check the snapshot: a live collection can report a non-zero size yet yield no elements
         // while being copied.
-        N.checkArgNotEmpty(copy, "columnNames");
+        N.checkArgNotEmpty(copy, cs.columnNames);
         return new Prepared(copy, createUsingConditionFromSnapshot(copy));
     }
 

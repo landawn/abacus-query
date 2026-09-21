@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -123,6 +124,8 @@ public class Junction extends ComposableCondition {
      * @param operator the composable operator (must be {@link Operator#AND} or {@link Operator#OR})
      * @param ownedValidatedConditions a freshly created list whose elements have already been validated
      * @param marker disambiguation marker (ignored)
+     * @throws NullPointerException if {@code operator} is {@code null}
+     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR}
      */
     @SuppressWarnings({ "unchecked", "unused" })
     Junction(final Operator operator, final List<? extends Condition> ownedValidatedConditions, final boolean marker) {
@@ -259,6 +262,13 @@ public class Junction extends ComposableCondition {
      * Validates each element via {@code validateConstructorOperand} (in iteration order) and returns a
      * freshly allocated snapshot list for the {@link #conditions} field. A {@code null} or empty input
      * yields an empty list (treated as no conditions).
+     *
+     * @param conditions the conditions to validate and copy; may be {@code null} or empty
+     * @return a freshly allocated list holding the validated conditions
+     * @throws IllegalArgumentException if any element is {@code null}, or is or contains a non-predicate
+     *         component (a {@link Criteria}, a clause, an {@code ON}/{@code USING} connector, an
+     *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *         or a blank {@link SqlExpression})
      */
     private static List<Condition> validateAndCopy(final Collection<? extends Condition> conditions) {
         if (N.isEmpty(conditions)) {
@@ -298,7 +308,7 @@ public class Junction extends ComposableCondition {
      *         non-predicate component
      */
     private static Condition validateConstructorOperand(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+        N.checkArgNotNull(condition, cs.condition);
 
         if (containsNonPredicateComponent(condition)) {
             throw new IllegalArgumentException("Condition " + condition.getClass().getSimpleName() + " (operator '" + condition.operator()

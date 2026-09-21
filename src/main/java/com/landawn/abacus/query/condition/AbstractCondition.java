@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.SqlParser;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableSet;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -479,6 +480,7 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param expectedArity the number of columns required by the enclosing SQL construct
      * @param subQuery the subquery whose explicit structured projection is inspected
+     * @throws NullPointerException if {@code subQuery} is {@code null}
      * @throws IllegalArgumentException if a known projection has a different number of columns
      */
     static void validateSubQuerySelectArity(final int expectedArity, final SubQuery subQuery) {
@@ -548,6 +550,7 @@ public abstract class AbstractCondition implements Condition {
      * @param values the value-position operands to validate; must not be {@code null}, though individual
      *               elements may be {@code null}
      * @param argumentName the argument name used as the prefix in an exception message
+     * @throws NullPointerException if {@code values} is {@code null}
      * @throws IllegalArgumentException if any element is an unsupported condition or a quantified operand
      */
     protected static void validateNonQuantifiedValueOperands(final Collection<?> values, final String argumentName) {
@@ -666,7 +669,8 @@ public abstract class AbstractCondition implements Condition {
      *                     {@code null} policy as {@link NamingPolicy#NO_CHANGE}.
      * @return the SQL representation of the parameter, or {@code null} if {@code parameter} is {@code null}
      * @throws IllegalArgumentException if {@code parameter} is a {@code NaN} or infinite {@link Float}/{@link Double},
-     *                                  or a {@link Number} whose text is not a valid numeric literal
+     *                                  or a {@link Number} whose text is not a valid numeric literal, or if rendering a
+     *                                  nested {@link Condition} rejects one of its own values for the same reasons
      */
     protected static String formatParameter(final Object parameter, final NamingPolicy namingPolicy) {
         if (parameter == null) {
@@ -759,8 +763,9 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param value the number to render
      * @return the validated numeric literal
-     * @throws IllegalArgumentException if the value is non-finite or its text is not a decimal,
+     * @throws IllegalArgumentException if {@code value} is non-finite or its text is not a decimal,
      *                                  integer, or scientific-notation literal
+     * @throws NullPointerException if {@code value} is {@code null}
      */
     protected static String formatNumberLiteral(final Number value) {
         checkFiniteNumber(value);
@@ -923,7 +928,7 @@ public abstract class AbstractCondition implements Condition {
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
      */
     protected static String createSortSpec(final String... propNames) {
-        N.checkArgNotEmpty(propNames, "propNames");
+        N.checkArgNotEmpty(propNames, cs.propNames);
 
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -982,7 +987,7 @@ public abstract class AbstractCondition implements Condition {
      *                                  or {@code propNames} contains {@code null}, empty, or blank elements
      */
     protected static String createSortSpec(final Collection<String> propNames, final SortDirection direction) {
-        N.checkArgNotEmpty(propNames, "propNames");
+        N.checkArgNotEmpty(propNames, cs.propNames);
 
         if (direction == null) {
             throw new IllegalArgumentException("direction must not be null");
@@ -1026,7 +1031,7 @@ public abstract class AbstractCondition implements Condition {
      *                                  or {@code null} values
      */
     protected static String createSortSpec(final Map<String, SortDirection> orders) {
-        N.checkArgNotEmpty(orders, "orders");
+        N.checkArgNotEmpty(orders, cs.orders);
 
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -1100,7 +1105,7 @@ public abstract class AbstractCondition implements Condition {
      *                                  or a blank {@link SqlExpression}
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
-        N.checkArgNotNull(cond, "condition");
+        N.checkArgNotNull(cond, cs.condition);
 
         final Operator operator = cond.operator();
 

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.landawn.abacus.query.QueryUtil;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -99,25 +100,26 @@ public abstract class AbstractBetween extends ComposableCondition {
      *                 excluded range for {@code NOT_BETWEEN} (values strictly above it match); may be a
      *                 non-null literal value, an explicit {@link SqlExpression}, or a scalar
      *                 {@link SubQuery} whose parameters will be spliced into {@link #parameters()}
+     * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code operator}
      *                                  is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
      *                                  if either bound is {@code null}, an ordinary predicate or query clause,
      *                                  a blank {@link SqlExpression}, an {@link All}, {@link Any}, or {@link Some}
      *                                  quantified operand, or a scalar {@link SubQuery} with a known, non-wildcard
-     *                                  projection containing multiple columns
-     * @throws NullPointerException if {@code operator} is {@code null}
+     *                                  projection containing multiple columns, or if either bound is a cyclic object array
      */
     protected AbstractBetween(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
         super(validateOperator(operator));
 
         checkPropName(propName);
+        N.checkArgNotNull(minValue, cs.minValue);
+        N.checkArgNotNull(maxValue, cs.maxValue);
+        validateNonQuantifiedValueOperand(minValue, cs.minValue);
+        validateNonQuantifiedValueOperand(maxValue, cs.maxValue);
 
         this.propName = propName;
-        N.checkArgNotNull(minValue, "minValue");
-        N.checkArgNotNull(maxValue, "maxValue");
-
-        this.minValue = snapshotMutableValue(validateNonQuantifiedValueOperand(minValue, "minValue"));
-        this.maxValue = snapshotMutableValue(validateNonQuantifiedValueOperand(maxValue, "maxValue"));
+        this.minValue = snapshotMutableValue(minValue);
+        this.maxValue = snapshotMutableValue(maxValue);
         this.rebuildParametersPerCall = requiresPerCallParameters(this.minValue) || requiresPerCallParameters(this.maxValue);
     }
 

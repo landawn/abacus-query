@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -82,7 +83,7 @@ public abstract class Cell extends AbstractCondition {
      */
     protected Cell(final Operator operator, final Condition condition) {
         super(operator);
-        this.condition = N.checkArgNotNull(condition, "condition");
+        this.condition = N.checkArgNotNull(condition, cs.condition);
     }
 
     /**

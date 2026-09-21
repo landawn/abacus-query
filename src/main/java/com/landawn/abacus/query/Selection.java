@@ -163,7 +163,7 @@ public final class Selection {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     public static SelectionBuilder builder(final Class<?> entityClass) {
-        N.checkArgNotNull(entityClass, "entityClass");
+        N.checkArgNotNull(entityClass, cs.entityClass);
 
         return new SelectionBuilder(entityClass);
     }

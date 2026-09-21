@@ -115,8 +115,8 @@ public class Not extends ComposableCell {
      * @param condition the condition to be negated; must not be {@code null}. May be any composable condition,
      *             including simple comparisons, logical junctions ({@link And}, {@link Or}),
      *             or subquery predicates such as {@link Exists}, {@link NotExists}, or {@link InSubQuery}.
-     *             It should not be a clause condition (such as
-     *             {@link Where} or {@link Having}), since those are not meant to be composed.
+     *             It must not be a clause condition (such as
+     *             {@link Where} or {@link Having}); such conditions are rejected as non-composable.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is non-composable —
      *             a {@link Criteria}, a {@link Clause} condition (for example {@link Where}, {@link Having}, or
      *             {@link OrderBy}), an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}

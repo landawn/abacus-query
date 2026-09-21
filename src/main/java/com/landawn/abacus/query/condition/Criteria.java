@@ -23,6 +23,7 @@ import java.util.Set;
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -98,16 +99,18 @@ public class Criteria extends AbstractCondition {
      * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}); {@code null}, empty, or blank means none,
      *                       and any surrounding whitespace is stripped
      * @param conditions the list of conditions representing the query clauses; defensively copied
-     * @throws IllegalArgumentException if {@code conditions} is {@code null}, contains {@code null},
-     *                                  contains a condition that is not a supported clause implementation,
-     *                                  or contains more than one WHERE, GROUP BY, HAVING, ORDER BY, or LIMIT clause
+     * @throws IllegalArgumentException if {@code conditions} is {@code null}, contains {@code null}, contains a
+     *                                  condition whose operator is {@code null} or is not a clause-level operator,
+     *                                  contains a condition that is not an instance of the clause type its operator
+     *                                  requires, or contains more than one WHERE, GROUP BY, HAVING, ORDER BY, or LIMIT clause
      */
     Criteria(String selectModifier, List<Condition> conditions) {
         super(Operator.EMPTY);
+        N.checkArgNotNull(conditions, cs.conditions);
+
         // strip(), not trim(): the blank test is Strings.isBlank (Character.isWhitespace), so trim() would keep a
         // modifier padded with EM SPACE (U+2003, above U+0020) while an all-EM-SPACE one normalizes to null.
         this.selectModifier = Strings.isBlank(selectModifier) ? null : selectModifier.strip();
-        N.checkArgNotNull(conditions, "conditions");
 
         final List<Condition> conditionsCopy = new ArrayList<>(conditions);
         Set<Operator> singletonOperators = null;
@@ -659,7 +662,7 @@ public class Criteria extends AbstractCondition {
     private static void validateCriteriaCondition(final Condition cond) {
         // the message names the public parameter ('condition' on Criteria.Builder.join/add and the Clause
         // validators), not this private one, so all null-clause reports read alike
-        N.checkArgNotNull(cond, "condition");
+        N.checkArgNotNull(cond, cs.condition);
         final Operator operator = cond.operator();
 
         if (operator == null) {
@@ -1523,7 +1526,7 @@ public class Criteria extends AbstractCondition {
          *                                  clause condition and is rejected as well; pass only the predicate text)
          */
         public Builder where(final Condition condition) {
-            N.checkArgNotNull(condition, "condition");
+            N.checkArgNotNull(condition, cs.condition);
 
             validateClauseCondition(condition, Operator.WHERE, "where");
 
@@ -1560,7 +1563,7 @@ public class Criteria extends AbstractCondition {
          *                                  the clause keyword
          */
         public Builder where(final String expr) {
-            N.checkArgNotBlank(expr, "expr");
+            N.checkArgNotBlank(expr, cs.expr);
 
             addConditions(new Where(Filters.expr(expr)));
 
@@ -1722,7 +1725,7 @@ public class Criteria extends AbstractCondition {
          *                                  accepted and renders its Boolean identity (for example {@code GROUP BY 1 = 1})
          */
         public Builder groupBy(final Condition condition) {
-            N.checkArgNotNull(condition, "condition");
+            N.checkArgNotNull(condition, cs.condition);
 
             validateClauseCondition(condition, Operator.GROUP_BY, "groupBy");
 
@@ -1857,7 +1860,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
          */
         public Builder groupBy(final Collection<String> propNames) {
-            N.checkArgNotEmpty(propNames, "propNames");
+            N.checkArgNotEmpty(propNames, cs.propNames);
 
             addConditions(new GroupBy(propNames));
             return this;
@@ -1946,7 +1949,7 @@ public class Criteria extends AbstractCondition {
          *                                  pass only the predicate text)
          */
         public Builder having(final Condition condition) {
-            N.checkArgNotNull(condition, "condition");
+            N.checkArgNotNull(condition, cs.condition);
 
             validateClauseCondition(condition, Operator.HAVING, "having");
 
@@ -1985,7 +1988,7 @@ public class Criteria extends AbstractCondition {
          *                                  the clause keyword
          */
         public Builder having(final String expr) {
-            N.checkArgNotBlank(expr, "expr");
+            N.checkArgNotBlank(expr, cs.expr);
 
             addConditions(new Having(Filters.expr(expr)));
 
@@ -2151,7 +2154,7 @@ public class Criteria extends AbstractCondition {
          *                                  accepted and renders its Boolean identity (for example {@code ORDER BY 1 = 0})
          */
         public Builder orderBy(final Condition condition) {
-            N.checkArgNotNull(condition, "condition");
+            N.checkArgNotNull(condition, cs.condition);
 
             validateClauseCondition(condition, Operator.ORDER_BY, "orderBy");
 
@@ -2288,7 +2291,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element
          */
         public Builder orderBy(final Collection<String> propNames) {
-            N.checkArgNotEmpty(propNames, "propNames");
+            N.checkArgNotEmpty(propNames, cs.propNames);
 
             addConditions(new OrderBy(propNames));
             return this;
@@ -2366,7 +2369,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code limit} is {@code null}
          */
         public Builder limit(final Limit limit) {
-            N.checkArgNotNull(limit, "limit");
+            N.checkArgNotNull(limit, cs.limit);
 
             addConditions(limit);
 
@@ -2618,7 +2621,7 @@ public class Criteria extends AbstractCondition {
          *         whose literal begins with a clause keyword (for example {@code LIMIT 10})
          */
         public Builder add(final Condition condition) {
-            N.checkArgNotNull(condition, "condition");
+            N.checkArgNotNull(condition, cs.condition);
 
             final Operator conditionOperator = condition.operator();
 
@@ -2801,7 +2804,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code conditions} is {@code null} or contains an invalid condition
          */
         private void checkConditions(final Collection<? extends Condition> conditions) {
-            N.checkArgNotNull(conditions, "conditions");
+            N.checkArgNotNull(conditions, cs.conditions);
 
             for (final Condition cond : conditions) {
                 checkCondition(cond);
@@ -2816,7 +2819,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code conditions} is {@code null} or contains an invalid condition
          */
         private void checkConditions(final Condition... conditions) {
-            N.checkArgNotNull(conditions, "conditions");
+            N.checkArgNotNull(conditions, cs.conditions);
 
             for (final Condition cond : conditions) {
                 checkCondition(cond);
@@ -2828,7 +2831,7 @@ public class Criteria extends AbstractCondition {
          * see the {@link Criteria} constructor for the exact rules.
          *
          * @param cond the condition to validate (must not be {@code null})
-         * @throws IllegalArgumentException if {@code cond} is not a valid clause-level condition
+         * @throws IllegalArgumentException if {@code cond} is {@code null} or is not a valid clause-level condition
          */
         private void checkCondition(final Condition cond) {
             validateCriteriaCondition(cond);
@@ -2861,7 +2864,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code conditions} is {@code null} or contains an invalid condition
          */
         private void addConditions(final Condition... conditions) {
-            N.checkArgNotNull(conditions, "conditions");
+            N.checkArgNotNull(conditions, cs.conditions);
 
             final Condition[] conditionsCopy = conditions.clone();
             checkConditions(conditionsCopy);
@@ -2879,7 +2882,7 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code conditions} is {@code null} or contains an invalid condition
          */
         private void addConditions(final Collection<? extends Condition> conditions) {
-            N.checkArgNotNull(conditions, "conditions");
+            N.checkArgNotNull(conditions, cs.conditions);
 
             final List<? extends Condition> conditionsCopy = new ArrayList<>(conditions);
             checkConditions(conditionsCopy);

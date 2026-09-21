@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.N;
 
 /**
@@ -104,7 +105,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  {@link SqlExpression}
      */
     public And and(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(this, "and");
         validateComposableOperand(condition, "and");
 
@@ -132,7 +133,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  {@link SqlExpression}
      */
     public Or or(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(this, "or");
         validateComposableOperand(condition, "or");
 
@@ -168,7 +169,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  {@link SqlExpression}
      */
     public Or xor(final Condition condition) {
-        N.checkArgNotNull(condition, "condition");
+        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(this, "xor");
         validateComposableOperand(condition, "xor");
 
