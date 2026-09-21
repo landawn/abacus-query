@@ -1124,4 +1124,52 @@ public class NamedPropertyTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> p.equalsAny((float[]) null));
         assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new float[0]));
     }
+
+    @Test
+    public void testBetween_nullBound_throwsIAE() {
+        NamedProperty p = NamedProperty.of("age");
+        assertThrows(IllegalArgumentException.class, () -> p.between(null, 65));
+        assertThrows(IllegalArgumentException.class, () -> p.between(18, null));
+        assertThrows(IllegalArgumentException.class, () -> p.notBetween(null, 65));
+        assertThrows(IllegalArgumentException.class, () -> p.notBetween(18, null));
+        assertThrows(IllegalArgumentException.class, () -> p.between(Filters.expr(" "), 65));
+        assertThrows(IllegalArgumentException.class, () -> p.notBetween(18, Filters.eq("x", 1)));
+        assertEquals("age BETWEEN 18 AND 65", p.between(18, 65).toString());
+    }
+
+    @Test
+    public void testComparison_nullValue_throwsIAE() {
+        NamedProperty p = NamedProperty.of("age");
+        assertThrows(IllegalArgumentException.class, () -> p.greaterThan(null));
+        assertThrows(IllegalArgumentException.class, () -> p.gt(null));
+        assertThrows(IllegalArgumentException.class, () -> p.greaterThanOrEqual(null));
+        assertThrows(IllegalArgumentException.class, () -> p.ge(null));
+        assertThrows(IllegalArgumentException.class, () -> p.lessThan(null));
+        assertThrows(IllegalArgumentException.class, () -> p.lt(null));
+        assertThrows(IllegalArgumentException.class, () -> p.lessThanOrEqual(null));
+        assertThrows(IllegalArgumentException.class, () -> p.le(null));
+        assertThrows(IllegalArgumentException.class, () -> p.gt(Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> p.lt(Filters.eq("x", 1)));
+        assertThrows(IllegalArgumentException.class, () -> p.eq(Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> p.ne(Filters.eq("x", 1)));
+        // the equality operators accept null and render it as IS [NOT] NULL instead of throwing
+        assertEquals("age IS NULL", p.eq(null).toString());
+        assertEquals("age IS NOT NULL", p.ne(null).toString());
+    }
+
+    @Test
+    public void testIn_nullOrPredicateElement_throwsIAE() {
+        NamedProperty p = NamedProperty.of("status");
+        assertThrows(IllegalArgumentException.class, () -> p.in("a", null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(Arrays.asList("a", null)));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn("a", null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(Arrays.asList("a", null)));
+        assertThrows(IllegalArgumentException.class, () -> p.in("a", Filters.eq("x", 1)));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(Arrays.asList("a", Filters.eq("x", 1))));
+        assertThrows(IllegalArgumentException.class, () -> p.in("a", Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn("a", Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny("a", Filters.eq("x", 1)));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(Arrays.asList("a", Filters.expr(" "))));
+        assertEquals("status IN ('a', 'b')", p.in("a", "b").toString());
+    }
 }

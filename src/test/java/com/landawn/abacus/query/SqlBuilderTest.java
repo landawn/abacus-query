@@ -14738,4 +14738,126 @@ public class SqlBuilderTest extends TestBase {
             this.name = name;
         }
     }
+
+    @Test
+    public void testSelectSingleExpressionDoesNotSplitCommaListOrImplicitAlias() {
+        // select(String) treats its argument as ONE select item: a comma list is not split and an alias
+        // must be introduced with AS, otherwise the auto-alias heuristic aliases the whole text
+        assertEquals("SELECT first_name, last_name AS \"firstName, lastName\" FROM account",
+                PSC.select("firstName, lastName").from("account").build().query());
+        assertEquals("SELECT first_name fn AS \"firstName fn\" FROM account", PSC.select("firstName fn").from("account").build().query());
+        assertEquals("SELECT first_name AS fn FROM account", PSC.select("firstName AS fn").from("account").build().query());
+        assertEquals("SELECT first_name AS \"firstName\", last_name AS \"lastName\" FROM account",
+                PSC.select("firstName", "lastName").from("account").build().query());
+        // identifiers after the first top-level AS are left unconverted, and the comma list is still not split
+        assertEquals("SELECT first_name AS fn, lastName FROM account", PSC.select("firstName AS fn, lastName").from("account").build().query());
+        // the paragraph is scoped to a policy that CHANGES the text: under NO_CHANGE the rendered text equals
+        // the argument, so the auto-alias heuristic never fires and no alias is added at all
+        assertEquals("SELECT firstName fn FROM account", PSB.select("firstName fn").from("account").build().query());
+        assertEquals("SELECT firstName, lastName FROM account", PSB.select("firstName, lastName").from("account").build().query());
+    }
+
+    @Test
+    public void testInsertBeanKeepsDefaultValuedNonIdPrimitive() {
+        // only null values and default-valued ID properties are skipped; a non-ID primitive at its default is inserted
+        final SP sp = PSC.insert((Object) new com.landawn.abacus.query.entity.Account()).into("t").build();
+        assertEquals("INSERT INTO t (status) VALUES (?)", sp.query());
+        assertEquals(Arrays.asList(0), sp.parameters());
+
+        // a non-default ID is inserted (only a DEFAULT-valued ID is skipped)
+        final SP withId = PSC.insert((Object) new com.landawn.abacus.query.entity.Account(5)).into("t").build();
+        assertEquals("INSERT INTO t (id, status) VALUES (?, ?)", withId.query());
+        assertEquals(Arrays.asList(5L, 0), withId.parameters());
+
+        // the reworded @throws: excluding the only insertable value leaves nothing to insert
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> PSC.insert((Object) new com.landawn.abacus.query.entity.Account(), N.asSet("status")).into("t").build());
+        assertTrue(e.getMessage().contains("No insertable values remain"), e.getMessage());
+    }
+
+    @Test
+    public void testToSubQuerySnapshotComparesArrayParametersByContent() {
+        // the snapshot's captured parameters compare by content like every other condition class does
+        final SubQuery first = PSC.select("id").from("blob_store").where(Filters.eq("payload", new byte[] { 1, 2, 3 })).toSubQuery();
+        final SubQuery second = PSC.select("id").from("blob_store").where(Filters.eq("payload", new byte[] { 1, 2, 3 })).toSubQuery();
+        final SubQuery other = PSC.select("id").from("blob_store").where(Filters.eq("payload", new byte[] { 9 })).toSubQuery();
+
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+        assertNotEquals(first, other);
+        assertEquals(Filters.in("id", first), Filters.in("id", second));
+        assertEquals(Filters.in("id", first).hashCode(), Filters.in("id", second).hashCode());
+    }
+
+    @Test
+    public void testQualifiedWildcardIsNeverAutoAliased() {
+        // "d.* AS "d.*"" is invalid SQL: a wildcard select item never gets the auto alias, whichever table it qualifies
+        assertEquals("SELECT a.*, d.* FROM account a JOIN device d ON a.id = d.account_id",
+                PSC.select("a.*", "d.*").from("account a").join("device d").on("a.id = d.account_id").build().query());
+        assertEquals("SELECT t.* FROM t", PSC.select("t.*").from("t").build().query());
+        // trailing whitespace does not hide the wildcard from the guard
+        assertFalse(PSC.select("a.*", "d.* ").from("account a").join("device d").on("a.id = d.account_id").build().query().contains(" AS "));
+        assertEquals("SELECT d.* FROM account acc JOIN device d ON account.id = d.account_id",
+                PSC.select("d.*").from(com.landawn.abacus.query.entity.Account.class).join(com.landawn.abacus.query.entity.AccountDevice.class, "d").on("account.id = d.account_id").build().query());
+        assertFalse(PAC.select("acc.*").from("account acc").build().query().contains(" AS "));
+    }
+
+    @Test
+    public void testRawSubQueryPlaceholderGluedToKeywordIsSeparatedUnderNamedSql() {
+        // "?AND" must not be rewritten into ":paramAND" (named) or "1AND" (inlined)
+        final SubQuery raw = new SubQuery("SELECT id FROM t WHERE a=?AND b=?", Arrays.asList(1, 2));
+
+        final SP named = NSC.select("*").from("x").where(Filters.in("id", raw)).build();
+        assertTrue(named.query().contains("a=:param AND b=:param_2"), named.query());
+        assertEquals(Arrays.asList(1, 2), named.parameters());
+
+        final SP inlined = SCSB.select("*").from("x").where(Filters.in("id", raw)).build();
+        assertTrue(inlined.query().contains("a=1 AND b=2"), inlined.query());
+
+        // an ordinary placeholder followed by whitespace is rendered exactly as before
+        final SP spaced = NSC.select("*").from("x").where(Filters.in("id", new SubQuery("SELECT id FROM t WHERE a = ? AND b = ?", Arrays.asList(1, 2)))).build();
+        assertTrue(spaced.query().contains("a = :param AND b = :param_2"), spaced.query());
+
+        // a keyword glued to the LEFT of a placeholder ("AND?=b") is separated as well
+        final SubQuery leftGlued = new SubQuery("SELECT id FROM t WHERE a=?AND?=b", Arrays.asList(1, 2));
+        final SP leftNamed = NSC.select("*").from("x").where(Filters.in("id", leftGlued)).build();
+        assertTrue(leftNamed.query().contains("a=:param AND :param_2=b"), leftNamed.query());
+        final SP leftInlined = SCSB.select("*").from("x").where(Filters.in("id", leftGlued)).build();
+        assertTrue(leftInlined.query().contains("a=1 AND 2=b"), leftInlined.query());
+
+        // IBATIS rewrites the same way
+        final SP ibatis = MSC.select("*").from("x").where(Filters.in("id", raw)).build();
+        assertTrue(ibatis.query().contains("a=#{param} AND b=#{param_2}"), ibatis.query());
+
+        // control: PARAMETERIZED_SQL keeps the '?' placeholders, so the text is passed through untouched
+        final SP passThrough = PSC.select("*").from("x").where(Filters.in("id", raw)).build();
+        assertTrue(passThrough.query().contains("a=?AND b=?"), passThrough.query());
+        assertEquals(Arrays.asList(1, 2), passThrough.parameters());
+    }
+
+    @Test
+    public void testRawSubQueryPlaceholderGluedToDotIsSeparated() {
+        // "?.5" must not be rewritten into the literal "1.5" (a WRONG VALUE in valid SQL) nor into ":param.5";
+        // "?.x" would even re-parse as the parameter NAME "param.x", losing the name the builder registered
+        final SubQuery dotDigit = new SubQuery("SELECT id FROM t WHERE a=?.5 AND b=?", Arrays.asList(1, 2));
+        assertTrue(SCSB.select("*").from("x").where(Filters.in("id", dotDigit)).build().query().contains("a=1 .5 AND b=2"),
+                SCSB.select("*").from("x").where(Filters.in("id", dotDigit)).build().query());
+        assertTrue(NSC.select("*").from("x").where(Filters.in("id", dotDigit)).build().query().contains("a=:param .5 AND b=:param_2"),
+                NSC.select("*").from("x").where(Filters.in("id", dotDigit)).build().query());
+        assertTrue(MSC.select("*").from("x").where(Filters.in("id", dotDigit)).build().query().contains("a=#{param} .5 AND b=#{param_2}"),
+                MSC.select("*").from("x").where(Filters.in("id", dotDigit)).build().query());
+
+        final SubQuery dotName = new SubQuery("SELECT id FROM t WHERE a=?.x AND b=?", Arrays.asList(1, 2));
+        final SP named = NSC.select("*").from("x").where(Filters.in("id", dotName)).build();
+        assertTrue(named.query().contains("a=:param .x AND b=:param_2"), named.query());
+        assertEquals(Arrays.asList("param", "param_2"), ParsedSql.parse(named.query()).namedParameters());
+
+        // controls: the digit and keyword glue cases the guard already covered
+        final SubQuery digit = new SubQuery("SELECT id FROM t WHERE a=?5 AND b=?", Arrays.asList(1, 2));
+        assertTrue(SCSB.select("*").from("x").where(Filters.in("id", digit)).build().query().contains("a=1 5 AND b=2"),
+                SCSB.select("*").from("x").where(Filters.in("id", digit)).build().query());
+        final SubQuery keyword = new SubQuery("SELECT id FROM t WHERE a=?AND b=?", Arrays.asList(1, 2));
+        assertTrue(NSC.select("*").from("x").where(Filters.in("id", keyword)).build().query().contains("a=:param AND b=:param_2"),
+                NSC.select("*").from("x").where(Filters.in("id", keyword)).build().query());
+    }
 }

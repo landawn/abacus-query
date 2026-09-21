@@ -2996,4 +2996,84 @@ public class AbstractQueryBuilderTest extends TestBase {
         // Registration is UPPER-case only: a column genuinely named "true" is still converted.
         assertEquals("is_true = 1", Filters.expr("isTrue = 1").toSql(NamingPolicy.SNAKE_CASE));
     }
+
+    @Test
+    public void testJoinedEntityMappingDoesNotLeakIntoUnqualifiedPrimaryColumns() {
+        // Joining an entity class onto a plain-string FROM must not install the joined entity's property
+        // mapping as the builder's PRIMARY mapping: unqualified names in later clauses used to resolve through
+        // the joined entity and were prefixed with the PRIMARY table's alias (o.first_name).
+        assertEquals("SELECT o.id FROM orders o JOIN account acc ON o.aid = acc.id WHERE first_name = ?",
+                PSC.select("o.id").from("orders o").join(Account.class, "acc").on("o.aid = acc.id").where(Filters.eq("firstName", "J")).build().query());
+        assertEquals("SELECT o.id FROM orders o JOIN account acc ON o.aid = acc.id WHERE acc.first_name = ?",
+                PSC.select("o.id").from("orders o").join(Account.class, "acc").on("o.aid = acc.id").where(Filters.eq("acc.firstName", "J")).build().query());
+        assertEquals("SELECT o.id FROM orders o JOIN account acc ON o.aid = acc.id ORDER BY last_name",
+                PSC.select("o.id").from("orders o").join(Account.class, "acc").on("o.aid = acc.id").orderBy("lastName").build().query());
+        assertEquals("SELECT o.id FROM orders o JOIN account acc ON o.aid = acc.id GROUP BY o.id HAVING first_name = ?",
+                PSC.select("o.id").from("orders o").join(Account.class, "acc").on("o.aid = acc.id").groupBy("o.id").having(Filters.eq("firstName", "J")).build().query());
+
+        // every entity-class join flavour routes through addPropColumnMapForAlias and behaves the same way
+        assertEquals("SELECT o.id FROM orders o LEFT JOIN account acc ON o.aid = acc.id WHERE first_name = ?",
+                PSC.select("o.id").from("orders o").leftJoin(Account.class, "acc").on("o.aid = acc.id").where(Filters.eq("firstName", "J")).build().query());
+        assertEquals("SELECT o.id FROM orders o NATURAL JOIN account acc WHERE first_name = ?",
+                PSC.select("o.id").from("orders o").naturalJoin(Account.class, "acc").where(Filters.eq("firstName", "J")).build().query());
+        assertEquals("SELECT o.id FROM orders o CROSS JOIN account acc WHERE first_name = ?",
+                PSC.select("o.id").from("orders o").crossJoin(Account.class, "acc").where(Filters.eq("firstName", "J")).build().query());
+        // the alias-less overload derives "acc" from @Table(alias = "acc") and registers it the same way
+        assertEquals("SELECT o.id FROM orders o JOIN account acc ON o.aid = acc.id WHERE first_name = ?",
+                PSC.select("o.id").from("orders o").join(Account.class).on("o.aid = acc.id").where(Filters.eq("firstName", "J")).build().query());
+
+        final SqlBuilder builder = PSC.select("o.id").from("orders o").join(Account.class, "acc");
+        assertNull(builder._propColumnNameMap);
+        builder.on("o.aid = acc.id").build();
+    }
+
+    @Test
+    public void testClosedBuilderTakesPrecedenceOverArgumentValidation() {
+        // every clause method reports the closed state first, like limit(int) and append(String) already did
+        final SqlBuilder closed = PSC.select("*").from("t");
+        closed.build();
+
+        assertThrows(IllegalStateException.class, () -> closed.offset(-1));
+        assertThrows(IllegalStateException.class, () -> closed.offsetRows(-1));
+        assertThrows(IllegalStateException.class, () -> closed.fetchNextRows(-1));
+        assertThrows(IllegalStateException.class, () -> closed.fetchFirstRows(-1));
+        assertThrows(IllegalStateException.class, () -> closed.appendIfOrElse(true, (Condition) null, (Condition) null));
+        assertThrows(IllegalStateException.class, () -> closed.appendIfOrElse(true, (String) null, (String) null));
+        assertThrows(IllegalStateException.class, () -> closed.groupBy(" ", SortDirection.ASC));
+        assertThrows(IllegalStateException.class, () -> closed.orderBy(" ", SortDirection.DESC));
+        assertThrows(IllegalStateException.class, () -> closed.groupBy("a", (SortDirection) null));
+        assertThrows(IllegalStateException.class, () -> closed.orderBy("a", (SortDirection) null));
+        assertThrows(IllegalStateException.class, () -> closed.groupBy(Arrays.asList("a"), (SortDirection) null));
+        assertThrows(IllegalStateException.class, () -> closed.orderBy(Arrays.asList("a"), (SortDirection) null));
+
+        // positive control: an OPEN builder still rejects exactly these arguments, so the checks above are
+        // about precedence, not about the argument validation having been dropped
+        final SqlBuilder open1 = PSC.select("*").from("t");
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> open1.offset(-1)).getMessage().contains("offset"));
+        assertThrows(IllegalArgumentException.class, () -> open1.offsetRows(-1));
+        assertThrows(IllegalArgumentException.class, () -> open1.fetchNextRows(-1));
+        assertThrows(IllegalArgumentException.class, () -> open1.fetchFirstRows(-1));
+        assertThrows(IllegalArgumentException.class, () -> open1.appendIfOrElse(true, (Condition) null, (Condition) null));
+        assertThrows(IllegalArgumentException.class, () -> open1.appendIfOrElse(false, "x", (String) null));
+        assertThrows(IllegalArgumentException.class, () -> open1.groupBy(" ", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> open1.orderBy("a", (SortDirection) null));
+        open1.build(); // recycle the pooled StringBuilder
+    }
+
+    @Test
+    public void testGroupByOrderByWithDirectionReportBlankExpr() {
+        // pre-built locals so the rejected builders release their pooled StringBuilder
+        final SqlBuilder groupByBuilder = PSC.select("*").from("t");
+        final IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> groupByBuilder.groupBy(" ", SortDirection.ASC));
+        assertTrue(e1.getMessage().contains("expr"), e1.getMessage());
+        groupByBuilder.build();
+
+        final SqlBuilder orderByBuilder = PSC.select("*").from("t");
+        final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> orderByBuilder.orderBy(" ", SortDirection.DESC));
+        assertTrue(e2.getMessage().contains("expr"), e2.getMessage());
+        orderByBuilder.build();
+
+        assertEquals("SELECT * FROM t GROUP BY a ASC ORDER BY b DESC",
+                PSC.select("*").from("t").groupBy("a", SortDirection.ASC).orderBy("b", SortDirection.DESC).build().query());
+    }
 }

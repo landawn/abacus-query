@@ -1039,7 +1039,7 @@ public abstract class AbstractCondition implements Condition {
                 checkPropName(propName);
 
                 if (direction == null) {
-                    throw new IllegalArgumentException("SortDirection in orders must not be null");
+                    throw new IllegalArgumentException("SortDirection for '" + propName + "' in the sort map must not be null");
                 }
 
                 if (i++ > 0) {
@@ -1100,7 +1100,7 @@ public abstract class AbstractCondition implements Condition {
      *                                  or a blank {@link SqlExpression}
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
-        N.checkArgNotNull(cond, "cond");
+        N.checkArgNotNull(cond, "condition");
 
         final Operator operator = cond.operator();
 

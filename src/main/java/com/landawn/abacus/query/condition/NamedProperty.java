@@ -191,8 +191,13 @@ public class NamedProperty {
      * NamedProperty.of("count").equal(5);           // count = 5
      * }</pre>
      *
-     * @param value the value to compare against. Can be of any type compatible with the property.
+     * @param value the value to compare against. Can be of any type compatible with the property;
+     *              {@code null} renders as {@code IS NULL}.
      * @return an Equal condition for this property
+     * @throws IllegalArgumentException if {@code value} is a blank {@link SqlExpression}, a {@link Condition} other than an
+     *                                  {@link SqlExpression}, a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some}
+     *                                  operand, or a structured {@link SubQuery} whose known, non-wildcard projection does not
+     *                                  contain exactly one column
      * @see Equal
      * @see Filters#equal(String, Object)
      */
@@ -210,8 +215,12 @@ public class NamedProperty {
      * NamedProperty.of("count").eq(5);           // count = 5
      * }</pre>
      *
-     * @param value the value to compare against
+     * @param value the value to compare against; {@code null} renders as {@code IS NULL}
      * @return an Equal condition for this property
+     * @throws IllegalArgumentException if {@code value} is a blank {@link SqlExpression}, a {@link Condition} other than an
+     *                                  {@link SqlExpression}, a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some}
+     *                                  operand, or a structured {@link SubQuery} whose known, non-wildcard projection does not
+     *                                  contain exactly one column
      * @see #equal(Object)
      */
     @Beta
@@ -243,7 +252,10 @@ public class NamedProperty {
      * @param values array of values to check equality against. Each value will be tested with OR logic.
      *               Must not be {@code null} or empty.
      * @return an Or condition containing multiple Equal conditions
-     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or if an element is a blank {@link SqlExpression},
+     *                                  a {@link Condition} other than an {@link SqlExpression}, a scalar {@link SubQuery} or a direct
+     *                                  {@link All}/{@link Any}/{@link Some} operand, or a structured {@link SubQuery} whose known,
+     *                                  non-wildcard projection does not contain exactly one column
      * @see Or
      * @see Equal
      * @see com.landawn.abacus.query.Filters#anyEqual(java.util.Map)
@@ -503,7 +515,10 @@ public class NamedProperty {
      * @param values collection of values to check equality against. Each value will be tested with OR logic.
      *               Must not be {@code null} or empty, and must still yield at least one element when iterated.
      * @return an Or condition containing multiple Equal conditions
-     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or yields no elements when iterated
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or yields no elements when iterated, or if an
+     *                                  element is a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see Or
      * @see Equal
      */
@@ -534,7 +549,11 @@ public class NamedProperty {
      * }</pre>
      *
      * @param value the value to compare against. Can be of any type compatible with the property.
-     * @return a NotEqual condition for this property
+     * @return a NotEqual condition for this property ({@code null} renders as {@code IS NOT NULL})
+     * @throws IllegalArgumentException if {@code value} is a blank {@link SqlExpression}, a {@link Condition} other than an
+     *                                  {@link SqlExpression}, a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some}
+     *                                  operand, or a structured {@link SubQuery} whose known, non-wildcard projection does not
+     *                                  contain exactly one column
      * @see NotEqual
      * @see Filters#notEqual(String, Object)
      */
@@ -553,7 +572,11 @@ public class NamedProperty {
      * }</pre>
      *
      * @param value the value to compare against
-     * @return a NotEqual condition for this property
+     * @return a NotEqual condition for this property ({@code null} renders as {@code IS NOT NULL})
+     * @throws IllegalArgumentException if {@code value} is a blank {@link SqlExpression}, a {@link Condition} other than an
+     *                                  {@link SqlExpression}, a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some}
+     *                                  operand, or a structured {@link SubQuery} whose known, non-wildcard projection does not
+     *                                  contain exactly one column
      * @see #notEqual(Object)
      */
     @Beta
@@ -573,6 +596,10 @@ public class NamedProperty {
      *
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a GreaterThan condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null} (use {@code isNull()}/{@code isNotNull()} instead),
+     *                                  a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see GreaterThan
      * @see Filters#greaterThan(String, Object)
      */
@@ -592,6 +619,10 @@ public class NamedProperty {
      *
      * @param value the value to compare against
      * @return a GreaterThan condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null} (use {@code isNull()}/{@code isNotNull()} instead),
+     *                                  a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see #greaterThan(Object)
      */
     @Beta
@@ -611,6 +642,10 @@ public class NamedProperty {
      *
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a GreaterThanOrEqual condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null} (use {@code isNull()}/{@code isNotNull()} instead),
+     *                                  a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see GreaterThanOrEqual
      * @see Filters#greaterThanOrEqual(String, Object)
      */
@@ -630,6 +665,10 @@ public class NamedProperty {
      *
      * @param value the value to compare against
      * @return a GreaterThanOrEqual condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null} (use {@code isNull()}/{@code isNotNull()} instead),
+     *                                  a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see #greaterThanOrEqual(Object)
      */
     @Beta
@@ -649,6 +688,10 @@ public class NamedProperty {
      *
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a LessThan condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null} (use {@code isNull()}/{@code isNotNull()} instead),
+     *                                  a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see LessThan
      * @see Filters#lessThan(String, Object)
      */
@@ -668,6 +711,10 @@ public class NamedProperty {
      *
      * @param value the value to compare against
      * @return a LessThan condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null} (use {@code isNull()}/{@code isNotNull()} instead),
+     *                                  a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see #lessThan(Object)
      */
     @Beta
@@ -687,6 +734,10 @@ public class NamedProperty {
      *
      * @param value the value to compare against. Can be numeric, date, string, or any comparable type.
      * @return a LessThanOrEqual condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null} (use {@code isNull()}/{@code isNotNull()} instead),
+     *                                  a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see LessThanOrEqual
      * @see Filters#lessThanOrEqual(String, Object)
      */
@@ -706,6 +757,10 @@ public class NamedProperty {
      *
      * @param value the value to compare against
      * @return a LessThanOrEqual condition for this property
+     * @throws IllegalArgumentException if {@code value} is {@code null} (use {@code isNull()}/{@code isNotNull()} instead),
+     *                                  a blank {@link SqlExpression}, a {@link Condition} other than an {@link SqlExpression},
+     *                                  a scalar {@link SubQuery} or a direct {@link All}/{@link Any}/{@link Some} operand, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see #lessThanOrEqual(Object)
      */
     @Beta
@@ -872,6 +927,9 @@ public class NamedProperty {
      * @param minValue the minimum value (inclusive). Can be numeric, date, string, or any comparable type.
      * @param maxValue the maximum value (inclusive). Can be numeric, date, string, or any comparable type.
      * @return a Between condition for this property
+     * @throws IllegalArgumentException if {@code minValue} or {@code maxValue} is {@code null}, a blank {@link SqlExpression},
+     *                                  a {@link Condition} other than an {@link SqlExpression} or a scalar {@link SubQuery}, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see Between
      * @see Filters#between(String, Object, Object)
      */
@@ -894,6 +952,9 @@ public class NamedProperty {
      * @param maxValue the upper bound of the excluded range (this boundary is excluded when the bounds are ordered).
      *                 Can be numeric, date, string, or any comparable type.
      * @return a NotBetween condition for this property
+     * @throws IllegalArgumentException if {@code minValue} or {@code maxValue} is {@code null}, a blank {@link SqlExpression},
+     *                                  a {@link Condition} other than an {@link SqlExpression} or a scalar {@link SubQuery}, or a
+     *                                  structured {@link SubQuery} whose known, non-wildcard projection does not contain exactly one column
      * @see NotBetween
      * @see Filters#notBetween(String, Object, Object)
      */
@@ -1078,7 +1139,8 @@ public class NamedProperty {
      *
      * @param values array of values to check membership against (must not be {@code null} or empty)
      * @return an In condition for this property
-     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, contains a {@code null} element, or contains
+     *                                  a {@link Condition} other than a non-blank {@link SqlExpression} or a scalar {@link SubQuery}
      * @see In
      * @see Filters#in(String, Object[])
      */
@@ -1256,7 +1318,8 @@ public class NamedProperty {
      *
      * @param values collection of values to check membership against (must not be {@code null} or empty)
      * @return an In condition for this property
-     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, contains a {@code null} element, or contains
+     *                                  a {@link Condition} other than a non-blank {@link SqlExpression} or a scalar {@link SubQuery}
      * @see In
      * @see Filters#in(String, Collection)
      */
@@ -1303,7 +1366,8 @@ public class NamedProperty {
      *
      * @param values array of values to check non-membership against (must not be {@code null} or empty)
      * @return a NotIn condition for this property
-     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, contains a {@code null} element, or contains
+     *                                  a {@link Condition} other than a non-blank {@link SqlExpression} or a scalar {@link SubQuery}
      * @see NotIn
      * @see Filters#notIn(String, Object[])
      */
@@ -1481,7 +1545,8 @@ public class NamedProperty {
      *
      * @param values collection of values to check non-membership against (must not be {@code null} or empty)
      * @return a NotIn condition for this property
-     * @throws IllegalArgumentException if {@code values} is {@code null} or empty
+     * @throws IllegalArgumentException if {@code values} is {@code null} or empty, contains a {@code null} element, or contains
+     *                                  a {@link Condition} other than a non-blank {@link SqlExpression} or a scalar {@link SubQuery}
      * @see NotIn
      * @see Filters#notIn(String, Collection)
      */

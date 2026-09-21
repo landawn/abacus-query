@@ -5,7 +5,7 @@
     "generated_at": "2026-09-20",
     "java_target": "17",
     "source": {
-      "git_sha": "cbc5e44a848c2932dc345a136c81582860f661ba"
+      "git_sha": "cdd4e8a36542614aa2ede7c93ca0e333f79191f9"
     }
   },
   "packages": [
@@ -75,7 +75,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into())"
+                  "condition": "if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into())"
                 }
               ],
               "javadoc_summary": "Specifies the target table for an INSERT or INSERT ... SELECT operation.",
@@ -113,7 +113,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into())"
+                  "condition": "if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into())"
                 }
               ],
               "javadoc_summary": "Specifies the target table for an INSERT or INSERT ... SELECT operation using an entity class.",
@@ -156,7 +156,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into())"
+                  "condition": "if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into())"
                 }
               ],
               "javadoc_summary": "Specifies the target table for an INSERT or INSERT ... SELECT operation with an explicit table name and entity class.",
@@ -313,7 +313,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
+                  "condition": "if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
                 }
               ],
               "javadoc_summary": "Sets the FROM clause with multiple table names.",
@@ -348,7 +348,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
+                  "condition": "if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
                 }
               ],
               "javadoc_summary": "Sets the FROM clause with a collection of table names.",
@@ -383,7 +383,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
+                  "condition": "if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
                 }
               ],
               "javadoc_summary": "Sets the FROM clause with a single expression.",
@@ -467,7 +467,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
+                  "condition": "if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
                 }
               ],
               "javadoc_summary": "Sets the FROM clause with an expression and associates it with an entity class.",
@@ -504,7 +504,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
+                  "condition": "if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
                 }
               ],
               "javadoc_summary": "Sets the FROM clause using an entity class.",
@@ -545,7 +545,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
+                  "condition": "if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment"
                 }
               ],
               "javadoc_summary": "Sets the FROM clause using an entity class with an alias.",
@@ -582,7 +582,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause to the SQL statement.",
@@ -617,7 +617,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause using an entity class.",
@@ -658,12 +658,14 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause using an entity class with an alias.",
               "returns": "this SqlBuilder instance for method chaining",
-              "contract": [],
+              "contract": [
+                "An unqualified property name in a later clause is therefore resolved against the FROM table, and when the FROM table was given as a plain string (which carries no entity mapping) such a name is emitted verbatim and unqualified - ambiguous if both tables define it."
+              ],
               "examples": [
                 "String sql = PSC.select(\"*\")\n                .from(User.class, \"u\")\n                .join(Order.class, \"o\")\n                .on(\"u.id = o.user_id\")\n                .build().query();\n// Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
               ],
@@ -693,7 +695,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause to the SQL statement.",
@@ -728,7 +730,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause using an entity class.",
@@ -769,7 +771,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause using an entity class with an alias.",
@@ -804,7 +806,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause to the SQL statement.",
@@ -839,7 +841,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause using an entity class.",
@@ -880,7 +882,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause using an entity class with an alias.",
@@ -915,7 +917,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause to the SQL statement.",
@@ -950,7 +952,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause using an entity class.",
@@ -991,7 +993,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause using an entity class with an alias.",
@@ -1026,7 +1028,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause to the SQL statement.",
@@ -1061,7 +1063,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause using an entity class.",
@@ -1102,7 +1104,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause using an entity class with an alias.",
@@ -1137,7 +1139,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a CROSS JOIN clause to the SQL statement.",
@@ -1172,7 +1174,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a CROSS JOIN clause using an entity class.",
@@ -1213,7 +1215,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a CROSS JOIN clause using an entity class with an alias.",
@@ -1248,7 +1250,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a NATURAL JOIN clause to the SQL statement.",
@@ -1283,7 +1285,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a NATURAL JOIN clause using an entity class.",
@@ -1324,7 +1326,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a NATURAL JOIN clause using an entity class with an alias.",
@@ -1355,7 +1357,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, or blank, or, on a SQL Server dialect, contains a temporary-table identifier (#name) together with a SQL comment token"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -1390,7 +1392,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if exprs is null or empty, or contains a null, empty, or blank element"
+                  "condition": "if exprs is null or empty, or contains a null, empty, or blank element, or, on a SQL Server dialect, an element that contains a temporary-table identifier (#name) together with a SQL comment token"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -1567,7 +1569,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, or blank, or, on a SQL Server dialect, contains a temporary-table identifier (#name) together with a SQL comment token"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -1925,11 +1927,11 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if direction is null"
+                  "condition": "if expr is null, empty, or blank, if expr contains a SQL comment token, or if direction is null"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a GROUP BY clause with a single column and sort direction.",
@@ -2005,7 +2007,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if GROUP BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds a GROUP BY clause with a collection of columns and sort direction.",
@@ -2071,7 +2073,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, or blank, or, on a SQL Server dialect, contains a temporary-table identifier (#name) together with a SQL comment token"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -2429,11 +2431,11 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if direction is null"
+                  "condition": "if expr is null, empty, or blank, if expr contains a SQL comment token, or if direction is null"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds an ORDER BY clause with a single column and sort direction.",
@@ -2509,7 +2511,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds an ORDER BY clause with a collection of columns and sort direction.",
@@ -2544,7 +2546,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if ORDER BY has already been set on this builder"
+                  "condition": "if ORDER BY has already been set on this builder, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
                 }
               ],
               "javadoc_summary": "Adds an ORDER BY clause with columns and individual sort directions.",
@@ -2575,7 +2577,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder has already been closed by #build(), or if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, for SQL Server if ORDER BY has not been set, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder has already been closed by #build(), or if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, for SQL Server if ORDER BY has not been set, if a preceding qualified JOIN has not been completed with on(...)/using(...), on a FETCH-style dialect for UPDATE/DELETE statements, or after FOR UPDATE has been emitted"
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
@@ -2657,7 +2659,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if OFFSET has already been set on this builder, for SQL Server if ORDER BY has not been set, or if a preceding qualified JOIN has not been completed with on(...)/using(...)"
+                  "condition": "if this builder is closed, if OFFSET has already been set on this builder, for SQL Server if ORDER BY has not been set, if a preceding qualified JOIN has not been completed with on(...)/using(...), on UPDATE/DELETE statements, or after FOR UPDATE has been emitted"
                 }
               ],
               "javadoc_summary": "Adds an OFFSET clause to skip a number of rows, rendered in the dialect's pagination syntax.",
@@ -2694,7 +2696,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if OFFSET has already been set on this builder, or for SQL Server if ORDER BY has not been set"
+                  "condition": "if this builder is closed, if OFFSET has already been set on this builder, for SQL Server if ORDER BY has not been set, if a preceding qualified JOIN has not been completed with on(...)/using(...), on UPDATE/DELETE statements, or after FOR UPDATE has been emitted"
                 }
               ],
               "javadoc_summary": "Adds an OFFSET ROWS clause (SQL:2008 standard syntax).",
@@ -2732,7 +2734,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if LIMIT, FETCH NEXT, or FETCH FIRST has already been set, if a prior offset used limit-style OFFSET n rather than OFFSET n ROWS, or for SQL Server if ORDER BY has not been set"
+                  "condition": "if this builder is closed, if LIMIT, FETCH NEXT, or FETCH FIRST has already been set, if a prior offset used limit-style OFFSET n rather than OFFSET n ROWS, for SQL Server if ORDER BY has not been set, if a preceding qualified JOIN has not been completed with on(...)/using(...), on UPDATE/DELETE statements, or after FOR UPDATE has been emitted"
                 }
               ],
               "javadoc_summary": "Adds a FETCH NEXT N ROWS ONLY clause (SQL:2008 standard syntax).",
@@ -2772,7 +2774,7 @@
                 },
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if LIMIT, FETCH FIRST, or FETCH NEXT has already been set, if a prior offset used limit-style OFFSET n rather than OFFSET n ROWS, or for SQL Server if ORDER BY has not been set"
+                  "condition": "if this builder is closed, if LIMIT, FETCH FIRST, or FETCH NEXT has already been set, if a prior offset used limit-style OFFSET n rather than OFFSET n ROWS, for SQL Server if ORDER BY has not been set, if a preceding qualified JOIN has not been completed with on(...)/using(...), on UPDATE/DELETE statements, or after FOR UPDATE has been emitted"
                 }
               ],
               "javadoc_summary": "Adds a FETCH FIRST N ROWS ONLY clause (SQL standard syntax).",
@@ -3620,7 +3622,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, or blank, or contains a SQL comment token"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -3657,7 +3659,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, or contains a null, empty, or blank element"
+                  "condition": "if propOrColumnNames is null or empty, or contains a null, empty, or blank element, or an element containing a SQL comment token"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -3694,7 +3696,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if props is null or empty, or contains a null, empty, or blank key"
+                  "condition": "if props is null or empty, or contains a null, empty, or blank key, or a key containing a SQL comment token"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -3735,7 +3737,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnName is null, empty, or blank"
+                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -3788,7 +3790,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if either property or column name is null, empty, or blank, or if the same name is given more than once"
+                  "condition": "if either property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -3853,7 +3855,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any property or column name is null, empty, or blank, or if the same name is given more than once"
+                  "condition": "if any property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -4088,6 +4090,10 @@
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if function is null"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed"
                 }
               ],
               "javadoc_summary": "Applies a function to the SQL-Parameters pair and returns the result.",
@@ -4136,6 +4142,10 @@
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if function is null"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed"
                 }
               ],
               "javadoc_summary": "Applies a bi-function to the SQL string and parameters separately and returns the result.",
@@ -4178,6 +4188,10 @@
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if consumer is null"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed"
                 }
               ],
               "javadoc_summary": "Accepts a consumer for the SQL-Parameters pair.",
@@ -4221,6 +4235,10 @@
                 {
                   "type": "java.lang.IllegalArgumentException",
                   "condition": "if consumer is null"
+                },
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "if this builder is closed"
                 }
               ],
               "javadoc_summary": "Accepts a bi-consumer for the SQL string and parameters separately.",
@@ -4541,7 +4559,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null; if a String entity is blank; if a Map entity is empty or has a non-String or blank key; or if a bean has no non-null, non-default insertable values"
+                  "condition": "if entity is null; if a String entity is blank; if a Map entity is empty or has a non-String or blank key; or if a bean has no insertable value left after its null values and default-valued ID properties are skipped (a non-ID primitive still holding its default, such as 0, is kept)"
                 }
               ],
               "javadoc_summary": "Creates an INSERT statement from an entity object.",
@@ -4580,7 +4598,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null; if a String entity is blank; if a Map entity is empty, has a non-String or blank key, or has no entries left after exclusions are applied; or if a bean has no non-null, non-default insertable values after exclusions are applied"
+                  "condition": "if entity is null; if a String entity is blank; if a Map entity is empty, has a non-String or blank key, or has no entries left after exclusions are applied; or if a bean has no insertable value left after exclusions are applied and its null values and default-valued ID properties are skipped (a non-ID primitive still holding its default, such as 0, is kept)"
                 }
               ],
               "javadoc_summary": "Creates an INSERT statement from an entity object with excluded properties.",
@@ -5027,7 +5045,8 @@
               "javadoc_summary": "Creates a SELECT statement with a single expression.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
               "contract": [
-                "This method is useful for complex select expressions, aggregate functions, or when selecting computed values."
+                "This method is useful for complex select expressions, aggregate functions, or when selecting computed values.",
+                "A comma-separated list is not split, and an alias must be introduced with AS: under a naming policy that changes the text (for example snake_case), an implicit alias such as \"firstName fn\" is treated as part of the expression and the whole text is aliased as a single column (rendering first_name fn AS \"firstName fn\"), a comma list such as \"firstName, lastName\" is aliased as one column, and identifiers after the first top-level AS are left unconverted."
               ],
               "examples": [
                 "String sql = PSC.select(\"COUNT(*)\")\n                .from(\"account\")\n                .where(Filters.equal(\"status\", \"active\"))\n                .build().query();\n// Output: SELECT COUNT(*) FROM account WHERE status = ?\n// (COUNT is recognized as a function name and left unchanged)\n\nString sql2 = PSC.select(\"firstName || ' ' || lastName AS fullName\")\n                 .from(\"account\")\n                 .build().query();\n// Output: SELECT first_name || ' ' || last_name AS fullName FROM account\n// (identifiers converted to snake_case, the AS alias preserved)"
@@ -9237,7 +9256,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against: a literal, an SqlExpression, or a scalar SubQuery. null is accepted only for EQUAL, NOT_EQUAL, NOT_EQUAL_ANSI, IS and IS_NOT (rendering IS NULL/IS NOT NULL); IS/IS_NOT otherwise accept only a Boolean (normalized to the TRUE/FALSE keyword, never a bind parameter) or an SqlExpression; for IN/NOT_IN a non-empty Collection or array without null elements is copied defensively",
+                  "javadoc": "the value to compare against: a literal, an SqlExpression, or a scalar SubQuery. null is accepted only for EQUAL, NOT_EQUAL, NOT_EQUAL_ANSI, IS and IS_NOT (rendering IS NULL/IS NOT NULL); IS/IS_NOT otherwise accept only a Boolean (normalized to the TRUE/FALSE keyword, never a bind parameter) or an SqlExpression — the SqlExpression is rendered verbatim, so this overload (unlike #binary(String, Operator)) still lets Filters.QME through and produces the unbindable propName IS ?; for IN/NOT_IN a non-empty Collection or array without null elements is copied defensively",
                   "nullability": "unspecified"
                 }
               ],
@@ -9282,14 +9301,14 @@
                 {
                   "name": "operator",
                   "type": "Operator",
-                  "javadoc": "the binary comparison operator to use (must not be null; membership and structural operators are rejected)",
+                  "javadoc": "the binary comparison operator to use (must not be null; membership, IS/IS NOT, and structural operators are rejected)",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null, empty, or blank, or if operator is IN, NOT_IN, or is not a valid binary comparison operator"
+                  "condition": "if propName is null, empty, or blank, or if operator is IN, NOT_IN, IS, IS_NOT, or is not a valid binary comparison operator"
                 },
                 {
                   "type": "java.lang.NullPointerException",
@@ -12467,7 +12486,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank (rejected up front, with the same 'expr' cannot be null or empty or blank message as Criteria.Builder.where(String))"
+                  "condition": "if expr is null, empty, or blank (rejected up front, with the same 'expr' cannot be null or empty or blank message as Criteria.Builder.where(String)), or if expr begins with a SQL clause keyword (for example WHERE, ORDER BY, LEFT [OUTER] JOIN, UNION) or an ON/USING connector, which cannot be nested inside a clause"
                 }
               ],
               "javadoc_summary": "Creates a Where clause from a raw SQL expression string.",
@@ -13047,7 +13066,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank (rejected up front, with the same 'expr' cannot be null or empty or blank message as Criteria.Builder.having(String))"
+                  "condition": "if expr is null, empty, or blank (rejected up front, with the same 'expr' cannot be null or empty or blank message as Criteria.Builder.having(String)), or if expr begins with a SQL clause keyword (for example WHERE, ORDER BY, LEFT [OUTER] JOIN, UNION) or an ON/USING connector, which cannot be nested inside a clause"
                 }
               ],
               "javadoc_summary": "Creates a Having clause from a raw SQL expression string.",
@@ -13623,7 +13642,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, or blank (rejected up front, with the same 'expr' cannot be null or empty or blank message as #where(String)), or if expr begins with a SQL clause keyword (for example WHERE, ORDER BY, LEFT [OUTER] JOIN, UNION) or an ON/USING connector, which is not a predicate and cannot be used as a join condition"
                 }
               ],
               "javadoc_summary": "Creates an On clause from a raw SQL expression string for JOIN operations.",
@@ -14796,7 +14815,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates an IN condition with an array of object values.",
@@ -14834,7 +14853,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates an IN condition with a collection of values.",
@@ -14872,7 +14891,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates a row value constructor IN condition.",
@@ -15295,7 +15314,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates a NOT IN condition with an array of object values.",
@@ -15333,7 +15352,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates a NOT IN condition with a collection of values.",
@@ -15371,7 +15390,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than an SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
+                  "condition": "if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propNames is null/empty or contains any null/blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map key or bean property is missing/unreadable, or if a row element is null, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected)"
                 }
               ],
               "javadoc_summary": "Creates a row value constructor NOT IN condition.",
@@ -15910,7 +15929,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, if propNames is null or empty, contains a null, empty, or blank element, or if expr is null"
+                  "condition": "if entityClass is null, if propNames is null or empty, contains a null, empty, or blank element, or if expr is null, or if expr begins with an ON/USING keyword (not a valid subquery filter)"
                 }
               ],
               "javadoc_summary": "Creates a SubQuery from an entity class with selected properties and a raw SQL condition string.",
@@ -16048,7 +16067,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityName is null, empty, or blank, if propNames is null or empty, contains a null, empty, or blank element, or if expr is null"
+                  "condition": "if entityName is null, empty, or blank, if propNames is null or empty, contains a null, empty, or blank element, or if expr is null, or if expr begins with an ON/USING keyword (not a valid subquery filter)"
                 }
               ],
               "javadoc_summary": "Creates a SubQuery from an entity name with selected properties and a raw SQL condition string.",
@@ -17017,7 +17036,7 @@
               "returns": "the converted identifier with the leading and trailing underscore runs of every dot-separated segment preserved",
               "contract": [],
               "examples": [
-                "QueryUtil.convertIdentifier(\"firstName\", NamingPolicy.SNAKE_CASE);            // \"first_name\"\nQueryUtil.convertIdentifier(\"_firstName\", NamingPolicy.SNAKE_CASE);           // \"_first_name\"\nQueryUtil.convertIdentifier(\"firstName_\", NamingPolicy.SNAKE_CASE);           // \"first_name_\"\nQueryUtil.convertIdentifier(\"__x\", NamingPolicy.SNAKE_CASE);                  // \"__x\"\nQueryUtil.convertIdentifier(\"_firstName\", NamingPolicy.SCREAMING_SNAKE_CASE); // \"_FIRST_NAME\"\nQueryUtil.convertIdentifier(\"_1\", NamingPolicy.SNAKE_CASE);                   // \"_1\"\nQueryUtil.convertIdentifier(\"__\", NamingPolicy.SNAKE_CASE);                   // \"__\" (all underscores, returned as-is)\nQueryUtil.convertIdentifier(\"t.__v\", NamingPolicy.SNAKE_CASE);                // \"t.__v\" (runs preserved per segment)\nQueryUtil.convertIdentifier(\"acc._id\", NamingPolicy.SCREAMING_SNAKE_CASE);    // \"ACC._ID\"\nQueryUtil.convertIdentifier(\"a__b\", NamingPolicy.SNAKE_CASE);                 // \"a_b\" (internal runs follow the policy)\nQueryUtil.convertIdentifier(\"_firstName\", NamingPolicy.NO_CHANGE);            // \"_firstName\"\nQueryUtil.convertIdentifier(\"\", NamingPolicy.SNAKE_CASE);                     // \"\""
+                "QueryUtil.convertIdentifier(\"firstName\", NamingPolicy.SNAKE_CASE);            // \"first_name\"\nQueryUtil.convertIdentifier(\"_firstName\", NamingPolicy.SNAKE_CASE);           // \"_first_name\"\nQueryUtil.convertIdentifier(\"firstName_\", NamingPolicy.SNAKE_CASE);           // \"first_name_\"\nQueryUtil.convertIdentifier(\"__x\", NamingPolicy.SNAKE_CASE);                  // \"__x\"\nQueryUtil.convertIdentifier(\"_firstName\", NamingPolicy.SCREAMING_SNAKE_CASE); // \"_FIRST_NAME\"\nQueryUtil.convertIdentifier(\"_1\", NamingPolicy.SNAKE_CASE);                   // \"_1\"\nQueryUtil.convertIdentifier(\"__\", NamingPolicy.SNAKE_CASE);                   // \"__\" (all underscores, returned as-is)\nQueryUtil.convertIdentifier(\"t.__v\", NamingPolicy.SNAKE_CASE);                // \"t.__v\" (runs preserved per segment)\nQueryUtil.convertIdentifier(\"acc._id\", NamingPolicy.SCREAMING_SNAKE_CASE);    // \"ACC._ID\"\nQueryUtil.convertIdentifier(\"acc.Id\", NamingPolicy.SNAKE_CASE);               // \"acc.id\" (segments converted independently)\nQueryUtil.convertIdentifier(\"a__b\", NamingPolicy.SNAKE_CASE);                 // \"a_b\" (internal runs follow the policy)\nQueryUtil.convertIdentifier(\"_firstName\", NamingPolicy.NO_CHANGE);            // \"_firstName\"\nQueryUtil.convertIdentifier(\"\", NamingPolicy.SNAKE_CASE);                     // \"\""
               ],
               "see_also": []
             },
@@ -18624,11 +18643,11 @@
                 },
                 {
                   "type": "com.landawn.abacus.exception.UncheckedIOException",
-                  "condition": "if an I/O error occurs while creating or writing to the file"
+                  "condition": "if an I/O error occurs while creating or writing to the file, or if a stored value contains a lone high surrogate followed by another character, which the XML serializer rejects as an invalid UTF-16 surrogate"
                 },
                 {
                   "type": "com.landawn.abacus.exception.UncheckedException",
-                  "condition": "if a stored SQL body or identifier contains a character that is not legal in XML"
+                  "condition": "if a stored SQL body, identifier, or attribute value contains a lone low surrogate, or a character below U+0020 other than tab, LF, or CR; note that a lone high surrogate at the very end of a value is silently dropped from the output, and that U+FFFE and U+FFFF are written verbatim and make the output unloadable by loadFrom (other noncharacters such as U+FDD0, and U+007F through U+009F, round-trip normally)"
                 }
               ],
               "javadoc_summary": "Saves all SQL definitions in this mapper to an XML file.",
@@ -18666,11 +18685,11 @@
                 },
                 {
                   "type": "com.landawn.abacus.exception.UncheckedIOException",
-                  "condition": "if an I/O error occurs while creating or writing the file"
+                  "condition": "if an I/O error occurs while creating or writing the file, or if a stored value contains a lone high surrogate followed by another character, which the XML serializer rejects as an invalid UTF-16 surrogate"
                 },
                 {
                   "type": "com.landawn.abacus.exception.UncheckedException",
-                  "condition": "if a stored SQL body or identifier contains a character that is not legal in XML"
+                  "condition": "if a stored SQL body, identifier, or attribute value contains a lone low surrogate, or a character below U+0020 other than tab, LF, or CR; note that a lone high surrogate at the very end of a value is silently dropped from the output, and that U+FFFE and U+FFFF are written verbatim and make the output unloadable by loadFrom (other noncharacters such as U+FDD0, and U+007F through U+009F, round-trip normally)"
                 }
               ],
               "javadoc_summary": "Writes this mapper to the specified file path.",
@@ -18704,11 +18723,11 @@
                 },
                 {
                   "type": "com.landawn.abacus.exception.UncheckedIOException",
-                  "condition": "if an I/O error occurs while writing to the stream"
+                  "condition": "if an I/O error occurs while writing to or flushing the stream, or if a stored value contains a lone high surrogate followed by another character, which the XML serializer rejects as an invalid UTF-16 surrogate"
                 },
                 {
                   "type": "com.landawn.abacus.exception.UncheckedException",
-                  "condition": "if a stored SQL body or identifier contains a character that is not legal in XML"
+                  "condition": "if a stored SQL body, identifier, or attribute value contains a lone low surrogate, or a character below U+0020 other than tab, LF, or CR; note that a lone high surrogate at the very end of a value is silently dropped from the output, and that U+FFFE and U+FFFF are written verbatim and make the output unloadable by loadFrom (other noncharacters such as U+FDD0, and U+007F through U+009F, round-trip normally)"
                 }
               ],
               "javadoc_summary": "Writes all SQL definitions in this mapper to the supplied output stream as XML.",
@@ -19703,7 +19722,7 @@
               "returns": "true if the SQL text has an accepted SELECT-only shape, false otherwise",
               "contract": [
                 "A statement is accepted only if its leading keyword is SELECT (see #isSelectQuery(String)) and it contains no top-level mutation or DDL keyword (INSERT, UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP), no procedure invocation (CALL, JDBC {call ...} / {?",
-                "For multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) is rejected.",
+                "For ;-separated multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) is rejected.",
                 "Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot hide a mutation clause."
               ],
               "examples": [],
@@ -19908,6 +19927,7 @@
               "contract": [
                 "A statement qualifies as read-or-insert only if its leading keyword is SELECT or INSERT and it contains none of the following (matching outside of quoted string literals and SQL comments): a top-level UPDATE, DELETE, MERGE, REPLACE, TRUNCATE, CREATE, ALTER or DROP keyword (matched only at statement-start positions, so e.g. SELECT ...",
                 "More generally, every top-level statement must resolve to either SELECT or INSERT; an unrecognized or vendor-specific command is rejected rather than assumed to be safe.",
+                "An identifier-shaped #name or ##name that the temp-table heuristic cannot anchor is a MySQL line comment, but if its line also contains a ; the statement is rejected outright, because SQL Server would execute what follows that semicolon; with semicolon-less batches enabled it is read as a temp table and the rest of its line is scanned as SQL.",
                 "Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot hide an upsert or overwrite clause."
               ],
               "examples": [],
@@ -19991,6 +20011,25 @@
               "see_also": []
             },
             {
+              "name": "semicolonlessBatches",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean semicolonlessBatches()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Returns whether the read gates (Tokenizer#isSyntacticallyReadQuery(String) and Tokenizer#isReadOrInsertQuery(String)) split SQL Server-style batches, in which a second statement follows the first without a ;.",
+              "returns": "true if semicolon-less batches are split at their statement verbs",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "Builder#withSemicolonlessBatches(boolean)"
+              ]
+            },
+            {
               "name": "hashCode",
               "kind": "instance",
               "modifiers": [
@@ -20026,9 +20065,9 @@
               ],
               "throws": [],
               "javadoc_summary": "Compares this configuration with another object for equality.",
-              "returns": "true if obj is a TokenizerConfig with the same separators, false otherwise",
+              "returns": "true if obj is a TokenizerConfig with the same separators and flag, false otherwise",
               "contract": [
-                "Two configurations are equal when they hold equal separator sets; the order in which separators were added does not affect equality."
+                "Two configurations are equal when they hold equal separator sets and the same semicolon-less batch flag; the order in which separators were added does not affect equality."
               ],
               "examples": [],
               "see_also": []
@@ -20044,8 +20083,8 @@
               "type_params": [],
               "params": [],
               "throws": [],
-              "javadoc_summary": "Returns a string representation of this configuration listing its separators.",
-              "returns": "a string of the form \"TokenizerConfig{separators=[...]}\"",
+              "javadoc_summary": "Returns a string representation of this configuration listing its separators and the semicolon-less batch flag.",
+              "returns": "a string of the form \"TokenizerConfig{separators=[...], semicolonlessBatches=false}\"",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -20068,6 +20107,32 @@
           "type_params": [],
           "constructors": [],
           "methods": [
+            {
+              "name": "withSemicolonlessBatches",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public Builder withSemicolonlessBatches(final boolean enabled)",
+              "return_type": "Builder",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "enabled",
+                  "type": "boolean",
+                  "javadoc": "true to split semicolon-less batches at their statement verbs",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Enables or disables splitting of SQL Server-style batches by the read gates (Tokenizer#isSyntacticallyReadQuery(String) and Tokenizer#isReadOrInsertQuery(String)).",
+              "returns": "this builder",
+              "contract": [
+                "When enabled, a top-level DELETE, UPDATE, INSERT, MERGE, TRUNCATE, DROP, ALTER, CREATE, CALL, EXEC or EXECUTE token that follows a statement's own verb (outside parentheses, quotes, brackets and comments, and not in a FOR UPDATE, ON DUPLICATE KEY UPDATE, ON CONFLICT DO UPDATE, WHEN ..."
+              ],
+              "examples": [],
+              "see_also": []
+            },
             {
               "name": "withSeparator",
               "kind": "instance",
@@ -20480,7 +20545,7 @@
                 }
               ],
               "throws": [],
-              "javadoc_summary": "Lexically classifies the statement as SELECT-only using this tokenizer's configured separator rules.",
+              "javadoc_summary": "Lexically classifies the statement as SELECT-only using this tokenizer's configured separator rules and its semicolon-less batch setting.",
               "returns": "true if the SQL text has an accepted SELECT-only shape, false otherwise",
               "contract": [
                 "This method does not resolve functions, triggers, locking clauses, or other database semantics and must not be used as a security boundary."
@@ -20518,6 +20583,35 @@
               "contract": [],
               "examples": [],
               "see_also": []
+            },
+            {
+              "name": "isReadOrInsertQuery",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean isReadOrInsertQuery(final String sql)",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to classify; may be empty or null",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [],
+              "javadoc_summary": "Lexically classifies the statement as SELECT-or-INSERT-only using this tokenizer's configured separator rules and its semicolon-less batch setting; otherwise identical to SqlParser#isReadOrInsertQuery(String).",
+              "returns": "true if the SQL text has an accepted SELECT-or-INSERT-only shape, false otherwise",
+              "contract": [
+                "This method does not resolve functions, triggers or other database semantics and must not be used as a security boundary."
+              ],
+              "examples": [],
+              "see_also": [
+                "SqlParser#isReadOrInsertQuery(String)",
+                "#isSyntacticallyReadQuery(String)"
+              ]
             }
           ],
           "fields": []
@@ -21404,7 +21498,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against; may be a literal value, null only for equality and IS/IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values or explicit scalar expressions. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN. Every structured subquery with a known, non-wildcard projection must select exactly one column; raw SQL and wildcard projection arity are left to the database. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is(\"x\", true) equals Filters.isTrue(\"x\").",
+                  "javadoc": "the value to compare against; may be a literal value, null only for equality and IS/IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values, explicit scalar expressions, or scalar sub-queries. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN. Every structured subquery with a known, non-wildcard projection must select exactly one column; raw SQL and wildcard projection arity are left to the database. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is(\"x\", true) equals Filters.isTrue(\"x\").",
                   "nullability": "unspecified"
                 }
               ],
@@ -21923,7 +22017,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if this condition is non-composable — a Criteria, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression"
+                  "condition": "if this is or contains a non-composable component — a blank SqlExpression, an ANY/ALL/SOME quantified-subquery operand, a condition with a null operator, or (inside a custom wrapper) a Criteria, a SQL clause, an ON/USING connector or a standalone SubQuery"
                 }
               ],
               "javadoc_summary": "Creates a new NOT condition that negates this condition.",
@@ -22143,12 +22237,12 @@
               "params": [],
               "throws": [],
               "javadoc_summary": "Returns the SELECT modifier (e.g., DISTINCT, DISTINCTROW, DISTINCT ON (col1, col2), or any custom modifier set via Builder#selectModifier(String)), or null if none was set.",
-              "returns": "the SELECT modifier, or null if not set",
+              "returns": "the SELECT modifier with any surrounding whitespace stripped (an empty or blank modifier is normalized to null, so this does not necessarily round-trip the string that was set), or null if not set",
               "contract": [
                 "SqlBuilder.append(Condition) applies this modifier to its current SELECT segment when the appended condition is a Criteria."
               ],
               "examples": [
-                "Criteria.builder().build().selectModifier();                    // returns null\nCriteria.builder().distinct().build().selectModifier();         // returns \"DISTINCT\"\nCriteria.builder().distinctOn(\"a, b\").build().selectModifier(); // returns \"DISTINCT ON (a, b)\""
+                "Criteria.builder().build().selectModifier();                    // returns null\nCriteria.builder().distinct().build().selectModifier();         // returns \"DISTINCT\"\nCriteria.builder().distinctOn(\"a, b\").build().selectModifier(); // returns \"DISTINCT ON (a, b)\"\nCriteria.builder().selectModifier(\" DISTINCT \").build().selectModifier(); // returns \"DISTINCT\" (stripped)"
               ],
               "see_also": [
                 "Builder#distinct()",
@@ -22570,7 +22664,7 @@
                 {
                   "name": "selectModifier",
                   "type": "String",
-                  "javadoc": "the custom SELECT modifier; null, empty, or blank means no modifier",
+                  "javadoc": "the custom SELECT modifier; null, empty, or blank means no modifier, and any surrounding whitespace is stripped",
                   "nullability": "unspecified"
                 }
               ],
@@ -22579,7 +22673,7 @@
               "returns": "this Builder instance for method chaining",
               "contract": [],
               "examples": [
-                "Criteria.builder().selectModifier(\"SQL_CALC_FOUND_ROWS\").build().selectModifier();\n// returns \"SQL_CALC_FOUND_ROWS\"\n\n// Passing null (or an empty/blank string) clears any previously set modifier.\nCriteria.builder().selectModifier(null).build().selectModifier();   // returns null"
+                "Criteria.builder().selectModifier(\"SQL_CALC_FOUND_ROWS\").build().selectModifier();\n// returns \"SQL_CALC_FOUND_ROWS\"\n\n// Surrounding whitespace is stripped.\nCriteria.builder().selectModifier(\"  DISTINCT  \").build().selectModifier();  // returns \"DISTINCT\"\n\n// Passing null (or an empty/blank string) clears any previously set modifier.\nCriteria.builder().selectModifier(null).build().selectModifier();   // returns null"
               ],
               "see_also": []
             },
@@ -23339,7 +23433,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than WHERE"
+                  "condition": "if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than WHERE (an SqlExpression whose literal begins with a clause keyword such as WHERE or ORDER BY counts as a clause condition and is rejected as well; pass only the predicate text)"
                 }
               ],
               "javadoc_summary": "Sets or replaces the WHERE clause.",
@@ -23603,7 +23697,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than GROUP_BY. An empty Junction is accepted and renders its Boolean identity (for example GROUP BY 1 = 1)"
+                  "condition": "if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than GROUP_BY (an SqlExpression whose literal begins with a clause keyword counts as a clause condition and is rejected as well; pass only the grouping text). An empty Junction is accepted and renders its Boolean identity (for example GROUP BY 1 = 1)"
                 }
               ],
               "javadoc_summary": "Sets or replaces the GROUP BY clause.",
@@ -23928,7 +24022,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than HAVING"
+                  "condition": "if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than HAVING (an SqlExpression whose literal begins with a clause keyword counts as a clause condition and is rejected as well; pass only the predicate text)"
                 }
               ],
               "javadoc_summary": "Sets or replaces the HAVING clause.",
@@ -24192,7 +24286,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than ORDER_BY. An empty Junction is accepted and renders its Boolean identity (for example ORDER BY 1 = 0)"
+                  "condition": "if condition is null, is a Criteria, uses ON/USING, is an empty predicate (a blank SqlExpression), is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, or is a clause condition with an operator other than ORDER_BY (an SqlExpression whose literal begins with a clause keyword counts as a clause condition and is rejected as well; pass only the ordering text). An empty Junction is accepted and renders its Boolean identity (for example ORDER BY 1 = 0)"
                 }
               ],
               "javadoc_summary": "Sets or replaces the ORDER BY clause.",
@@ -24811,7 +24905,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, reports a null operator, is a nested Criteria, uses an ON/USING operator, is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, is an empty predicate (a blank SqlExpression), or reports a routed operator without being the corresponding clause type"
+                  "condition": "if condition is null, reports a null operator, is a nested Criteria, uses an ON/USING operator, is an ANY/ALL/SOME quantified operand, is a standalone SubQuery, is an empty predicate (a blank SqlExpression), reports a routed operator without being the corresponding clause type, or is an SqlExpression whose literal begins with a clause keyword (for example LIMIT 10)"
                 }
               ],
               "javadoc_summary": "Adds a condition to this builder, routing it to the appropriate clause based on its operator.",
@@ -25413,7 +25507,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null/empty/blank, if values is null/empty or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
+                  "condition": "if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
                 }
               ]
             },
@@ -25437,7 +25531,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
+                  "condition": "if propNames is null or empty or contains any null, empty, or blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
                 }
               ]
             }
@@ -25501,7 +25595,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNames is null/empty, if any element is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose number of selected columns does not match propNames.size()"
+                  "condition": "if propNames is null or empty, if any element is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose number of selected columns does not match propNames.size()"
                 }
               ]
             }
@@ -27009,11 +27103,16 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the value to compare against. Can be of any type compatible with the property.",
+                  "javadoc": "the value to compare against. Can be of any type compatible with the property; null renders as IS NULL.",
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates an EQUAL condition for this property.",
               "returns": "an Equal condition for this property",
               "contract": [],
@@ -27038,11 +27137,16 @@
                 {
                   "name": "value",
                   "type": "Object",
-                  "javadoc": "the value to compare against",
+                  "javadoc": "the value to compare against; null renders as IS NULL",
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates an EQUAL condition for this property.",
               "returns": "an Equal condition for this property",
               "contract": [],
@@ -27073,7 +27177,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if values is null or empty"
+                  "condition": "if values is null or empty, or if an element is a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
                 }
               ],
               "javadoc_summary": "Creates an OR condition with multiple EQUAL checks for this property.",
@@ -27380,7 +27484,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if values is null or empty, or yields no elements when iterated"
+                  "condition": "if values is null or empty, or yields no elements when iterated, or if an element is a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
                 }
               ],
               "javadoc_summary": "Creates an OR condition with multiple EQUAL checks for this property using a collection.",
@@ -27413,9 +27517,14 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a NOT EQUAL condition for this property.",
-              "returns": "a NotEqual condition for this property",
+              "returns": "a NotEqual condition for this property (null renders as IS NOT NULL)",
               "contract": [
                 "This generates a condition that checks if the property value is not equal to the specified value."
               ],
@@ -27444,9 +27553,14 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a NOT EQUAL condition for this property.",
-              "returns": "a NotEqual condition for this property",
+              "returns": "a NotEqual condition for this property (null renders as IS NOT NULL)",
               "contract": [],
               "examples": [
                 "NamedProperty.of(\"status\").ne(\"deleted\");   // status != 'deleted'\nNamedProperty.of(\"count\").ne(0);            // count != 0"
@@ -27472,7 +27586,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is null (use isNull()/isNotNull() instead), a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a GREATER THAN condition for this property.",
               "returns": "a GreaterThan condition for this property",
               "contract": [
@@ -27503,7 +27622,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is null (use isNull()/isNotNull() instead), a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a GREATER THAN condition for this property.",
               "returns": "a GreaterThan condition for this property",
               "contract": [],
@@ -27531,7 +27655,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is null (use isNull()/isNotNull() instead), a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a GREATER THAN OR EQUAL condition for this property.",
               "returns": "a GreaterThanOrEqual condition for this property",
               "contract": [
@@ -27562,7 +27691,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is null (use isNull()/isNotNull() instead), a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a GREATER THAN OR EQUAL condition for this property.",
               "returns": "a GreaterThanOrEqual condition for this property",
               "contract": [],
@@ -27590,7 +27724,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is null (use isNull()/isNotNull() instead), a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a LESS THAN condition for this property.",
               "returns": "a LessThan condition for this property",
               "contract": [
@@ -27621,7 +27760,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is null (use isNull()/isNotNull() instead), a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a LESS THAN condition for this property.",
               "returns": "a LessThan condition for this property",
               "contract": [],
@@ -27649,7 +27793,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is null (use isNull()/isNotNull() instead), a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a LESS THAN OR EQUAL condition for this property.",
               "returns": "a LessThanOrEqual condition for this property",
               "contract": [
@@ -27680,7 +27829,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if value is null (use isNull()/isNotNull() instead), a blank SqlExpression, a Condition other than an SqlExpression, a scalar SubQuery or a direct All/Any/Some operand, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a LESS THAN OR EQUAL condition for this property.",
               "returns": "a LessThanOrEqual condition for this property",
               "contract": [],
@@ -27900,7 +28054,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if minValue or maxValue is null, a blank SqlExpression, a Condition other than an SqlExpression or a scalar SubQuery, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a BETWEEN condition for this property.",
               "returns": "a Between condition for this property",
               "contract": [
@@ -27937,7 +28096,12 @@
                   "nullability": "unspecified"
                 }
               ],
-              "throws": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if minValue or maxValue is null, a blank SqlExpression, a Condition other than an SqlExpression or a scalar SubQuery, or a structured SubQuery whose known, non-wildcard projection does not contain exactly one column"
+                }
+              ],
               "javadoc_summary": "Creates a NOT BETWEEN condition for this property.",
               "returns": "a NotBetween condition for this property",
               "contract": [
@@ -28243,7 +28407,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if values is null or empty"
+                  "condition": "if values is null or empty, contains a null element, or contains a Condition other than a non-blank SqlExpression or a scalar SubQuery"
                 }
               ],
               "javadoc_summary": "Creates an IN condition for this property with an array of values.",
@@ -28551,7 +28715,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if values is null or empty"
+                  "condition": "if values is null or empty, contains a null element, or contains a Condition other than a non-blank SqlExpression or a scalar SubQuery"
                 }
               ],
               "javadoc_summary": "Creates an IN condition for this property with a collection of values.",
@@ -28623,7 +28787,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if values is null or empty"
+                  "condition": "if values is null or empty, contains a null element, or contains a Condition other than a non-blank SqlExpression or a scalar SubQuery"
                 }
               ],
               "javadoc_summary": "Creates a NOT IN condition for this property with an array of values.",
@@ -28931,7 +29095,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if values is null or empty"
+                  "condition": "if values is null or empty, contains a null element, or contains a Condition other than a non-blank SqlExpression or a scalar SubQuery"
                 }
               ],
               "javadoc_summary": "Creates a NOT IN condition for this property with a collection of values.",
@@ -29310,7 +29474,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propName is null/empty/blank, if values is null/empty or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
+                  "condition": "if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
                 }
               ]
             },
@@ -29334,7 +29498,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNames is null/empty or contains any null, empty, or blank name, if valueRows is null/empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
+                  "condition": "if propNames is null or empty or contains any null, empty, or blank name, if valueRows is null or empty, if any row is null or of an unsupported type, if a positional row's width does not match propNames.size(), if a map row is missing a requested key, if a row element is null, if a bean row does not expose a requested property, or if any row element is a Condition other than a non-blank SqlExpression or a scalar SubQuery (predicates, clauses, Criteria, JOIN/ON/USING connectors and All/Any/Some quantified operands are all rejected), or if a scalar SubQuery has a known, non-wildcard projection containing multiple columns"
                 }
               ]
             }
@@ -29398,7 +29562,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNames is null/empty, if any element is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose number of selected columns does not match propNames.size()"
+                  "condition": "if propNames is null or empty, if any element is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose number of selected columns does not match propNames.size()"
                 }
               ]
             }
@@ -29472,7 +29636,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, or is or contains a Criteria, a null operator, a SQL clause, an ON/USING connector, an ANY/ALL/SOME quantified-subquery operand, a standalone SubQuery, or a blank SqlExpression. An empty Junction is accepted and renders its Boolean identity (for example ON 1 = 1)"
+                  "condition": "if condition is null, or is or contains a Criteria, a null operator, a SQL clause, an ON/USING connector, a standalone ANY/ALL/SOME quantified-subquery operand (one that is not the direct right-hand side of a comparison such as a = ANY (...)), a standalone SubQuery, or a blank SqlExpression. An empty Junction is accepted and renders its Boolean identity (for example ON 1 = 1)"
                 }
               ]
             },
@@ -33107,7 +33271,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null, empty, or blank; contains a named placeholder; or contains a positional placeholder without a corresponding binding"
+                  "condition": "if sql is null, empty, or blank; contains a named (:name) or MyBatis #{...} placeholder; or contains a positional placeholder without a corresponding binding"
                 }
               ]
             },
@@ -33131,7 +33295,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null, empty, or blank; parameters is null; the SQL contains a named/MyBatis placeholder; the number of positional placeholders differs from the number of bindings; or an object-array binding contains a cycle"
+                  "condition": "if sql is null, empty, or blank; parameters is null; the SQL contains a named (:name) or MyBatis #{...} placeholder; the number of positional placeholders differs from the number of bindings; or an object-array binding contains a cycle"
                 }
               ]
             },
@@ -33160,7 +33324,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null, empty, or blank; contains a named placeholder; or contains a positional placeholder without a corresponding binding"
+                  "condition": "if sql is null, empty, or blank; contains a named (:name) or MyBatis #{...} placeholder; or contains a positional placeholder without a corresponding binding"
                 }
               ]
             },
@@ -33171,7 +33335,7 @@
                 {
                   "name": "entityName",
                   "type": "String",
-                  "javadoc": "the entity/table name (must not be null, empty, or blank)",
+                  "javadoc": "the entity/table name (must not be null, empty, or blank); a bare, optionally schema-qualified name. An inline alias such as users u is not recognized by #toSql(NamingPolicy), which converts the whole text as one identifier; build aliased sub-queries with a query builder instead",
                   "nullability": "unspecified"
                 },
                 {
@@ -33201,7 +33365,7 @@
                 {
                   "name": "entityName",
                   "type": "String",
-                  "javadoc": "the entity/table name (must not be null, empty, or blank)",
+                  "javadoc": "the entity/table name (must not be null, empty, or blank); a bare, optionally schema-qualified name. An inline alias such as users u is not recognized by #toSql(NamingPolicy), which converts the whole text as one identifier; build aliased sub-queries with a query builder instead",
                   "nullability": "unspecified"
                 },
                 {

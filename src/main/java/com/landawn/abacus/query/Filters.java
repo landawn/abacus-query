@@ -240,8 +240,8 @@ public final class Filters {
      * use parameterized condition factories (e.g. {@link #equal(String, Object)}) instead to avoid
      * SQL injection.</p>
      *
-     * <p>This delegates to the process-wide cache in {@link SqlExpression#of(String)}. Prefer
-     * {@code new SqlExpression(literal)} for unbounded dynamically generated expressions.</p>
+     * <p>Equivalent to {@link SqlExpression#of(String)}: each call creates an independent instance; expression
+     * text is neither interned nor cached.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -323,7 +323,10 @@ public final class Filters {
      *                  {@link SubQuery}. {@code null} is accepted only for {@code EQUAL}, {@code NOT_EQUAL},
      *                  {@code NOT_EQUAL_ANSI}, {@code IS} and {@code IS_NOT} (rendering {@code IS NULL}/{@code IS NOT NULL});
      *                  {@code IS}/{@code IS_NOT} otherwise accept only a {@code Boolean} (normalized to the
-     *                  {@code TRUE}/{@code FALSE} keyword, never a bind parameter) or an {@link SqlExpression}; for
+     *                  {@code TRUE}/{@code FALSE} keyword, never a bind parameter) or an {@link SqlExpression} —
+     *                  the {@link SqlExpression} is rendered verbatim, so this overload (unlike
+     *                  {@link #binary(String, Operator)}) still lets {@code Filters.QME} through and produces the
+     *                  unbindable {@code propName IS ?}; for
      *                  {@code IN}/{@code NOT_IN} a non-empty {@link Collection} or array without {@code null}
      *                  elements is copied defensively
      * @return a {@link Binary} condition
@@ -353,9 +356,15 @@ public final class Filters {
      * {@link #binary(String, Operator, Object)}, mirroring pairs such as
      * {@link #equal(String, Object)} / {@link #equal(String)}.
      *
-     * <p><b>Note:</b> {@link Operator#IN} and {@link Operator#NOT_IN} are rejected because this scalar-placeholder form
-     * would otherwise render invalid SQL such as {@code propName IN ?}. Use {@link #in(String, Object...)} or
-     * {@link #notIn(String, Object...)} instead.</p>
+     * <p><b>Note:</b> {@link Operator#IN}, {@link Operator#NOT_IN}, {@link Operator#IS} and {@link Operator#IS_NOT} are
+     * rejected because this scalar-placeholder form would otherwise render invalid SQL such as {@code propName IN ?} or
+     * {@code propName IS ?}. Use {@link #in(String, Object...)} or {@link #notIn(String, Object...)} for membership tests,
+     * and {@link #is(String, Object)} / {@link #isNot(String, Object)} (or {@link #isNull(String)},
+     * {@link #isNotNull(String)}, {@link #isTrue(String)}, {@link #isFalse(String)}) for {@code IS} predicates.
+     * The guard covers this overload only: the 3-arg {@link #binary(String, Operator, Object)} form (and
+     * {@link #is(String, Object)}) deliberately accepts an explicit {@link SqlExpression} right-hand side, so
+     * {@code binary("x", Operator.IS, Filters.QME)} still renders {@code x IS ?} — with that escape hatch the
+     * caller owns the rendered SQL.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -364,16 +373,23 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
-     * @param operator the binary comparison operator to use (must not be {@code null}; membership and structural operators are rejected)
+     * @param operator the binary comparison operator to use (must not be {@code null}; membership, {@code IS}/{@code IS NOT},
+     *                 and structural operators are rejected)
      * @return a {@link Binary} condition with a {@code ?} placeholder value
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code operator}
-     *                                  is {@code IN}, {@code NOT_IN}, or is not a valid binary comparison operator
+     *                                  is {@code IN}, {@code NOT_IN}, {@code IS}, {@code IS_NOT}, or is not a valid
+     *                                  binary comparison operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @see #binary(String, Operator, Object)
      */
     public static Binary binary(final String propName, final Operator operator) {
         if (operator == Operator.IN || operator == Operator.NOT_IN) {
             throw new IllegalArgumentException("Use Filters.in(...) or Filters.notIn(...) for membership conditions");
+        }
+
+        if (operator == Operator.IS || operator == Operator.IS_NOT) {
+            throw new IllegalArgumentException(
+                    "Use Filters.is(...)/isNot(...) (or isNull/isNotNull/isTrue/isFalse) for IS predicates; 'propName IS ?' is not valid SQL");
         }
 
         return new Binary(propName, operator, QME);
@@ -2416,7 +2432,10 @@ public final class Filters {
      * @param expr the SQL expression as a string (must not be {@code null}, empty, or blank)
      * @return a {@link Where} clause
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank (rejected up front,
-     *         with the same {@code 'expr' cannot be null or empty or blank} message as {@code Criteria.Builder.where(String)})
+     *         with the same {@code 'expr' cannot be null or empty or blank} message as {@code Criteria.Builder.where(String)}),
+     *         or if {@code expr} begins with a SQL clause keyword (for example {@code WHERE}, {@code ORDER BY},
+     *         {@code LEFT [OUTER] JOIN}, {@code UNION}) or an {@code ON}/{@code USING} connector, which cannot be
+     *         nested inside a clause
      */
     public static Where where(final String expr) {
         N.checkArgNotBlank(expr, "expr");
@@ -2729,7 +2748,10 @@ public final class Filters {
      * @param expr the SQL expression as a string (must not be {@code null}, empty, or blank)
      * @return a {@link Having} clause
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank (rejected up front,
-     *         with the same {@code 'expr' cannot be null or empty or blank} message as {@code Criteria.Builder.having(String)})
+     *         with the same {@code 'expr' cannot be null or empty or blank} message as {@code Criteria.Builder.having(String)}),
+     *         or if {@code expr} begins with a SQL clause keyword (for example {@code WHERE}, {@code ORDER BY},
+     *         {@code LEFT [OUTER] JOIN}, {@code UNION}) or an {@code ON}/{@code USING} connector, which cannot be
+     *         nested inside a clause
      */
     public static Having having(final String expr) {
         N.checkArgNotBlank(expr, "expr");
@@ -3067,10 +3089,14 @@ public final class Filters {
      *
      * @param expr the join condition as a string (must not be {@code null}, empty, or blank)
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank (rejected up front,
+     *         with the same {@code 'expr' cannot be null or empty or blank} message as {@link #where(String)}),
+     *         or if {@code expr} begins with a SQL clause keyword (for example {@code WHERE}, {@code ORDER BY},
+     *         {@code LEFT [OUTER] JOIN}, {@code UNION}) or an {@code ON}/{@code USING} connector, which is not a
+     *         predicate and cannot be used as a join condition
      */
     public static On on(final String expr) {
-        N.checkArgNotEmpty(expr, "expr");
+        N.checkArgNotBlank(expr, "expr");
 
         return new On(expr(expr));
     }
@@ -3778,8 +3804,8 @@ public final class Filters {
      * @return an {@link In} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
-     *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than an
-     *                                  {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
+     *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
+     *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
      */
     public static In in(final String propName, final Object... values) {
@@ -3801,8 +3827,8 @@ public final class Filters {
      * @return an {@link In} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
-     *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than an
-     *                                  {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
+     *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
+     *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
      */
     public static In in(final String propName, final Collection<?> values) {
@@ -3838,7 +3864,7 @@ public final class Filters {
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
-     *                                  or if any row element is a {@link Condition} other than an {@link SqlExpression}
+     *                                  or if any row element is a {@link Condition} other than a non-blank {@link SqlExpression}
      *                                  or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
      */
@@ -4048,8 +4074,8 @@ public final class Filters {
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
-     *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than an
-     *                                  {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
+     *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
+     *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
      */
     public static NotIn notIn(final String propName, final Object... values) {
@@ -4071,8 +4097,8 @@ public final class Filters {
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
-     *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than an
-     *                                  {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
+     *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
+     *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
      */
     public static NotIn notIn(final String propName, final Collection<?> values) {
@@ -4108,7 +4134,7 @@ public final class Filters {
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
-     *                                  or if any row element is a {@link Condition} other than an {@link SqlExpression}
+     *                                  or if any row element is a {@link Condition} other than a non-blank {@link SqlExpression}
      *                                  or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
      */
@@ -4436,7 +4462,8 @@ public final class Filters {
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityClass} is {@code null},
      *         if {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
-     *         or if {@code expr} is {@code null}
+     *         or if {@code expr} is {@code null}, or if {@code expr} begins with an {@code ON}/{@code USING} keyword
+     *         (not a valid subquery filter)
      * @see #subQuery(String, Collection, String)
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final String expr) {
@@ -4522,7 +4549,8 @@ public final class Filters {
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank,
      *         if {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
-     *         or if {@code expr} is {@code null}
+     *         or if {@code expr} is {@code null}, or if {@code expr} begins with an {@code ON}/{@code USING} keyword
+     *         (not a valid subquery filter)
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr) {
         return new SubQuery(entityName, propNames, expr(expr));

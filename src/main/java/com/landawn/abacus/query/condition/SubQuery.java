@@ -90,7 +90,7 @@ import com.landawn.abacus.util.Strings;
  *    .from("orders")
  *    .where(Filters.greaterThan("total", 100))
  *    .toSubQuery();
- * // SQL: SELECT user_id FROM orders WHERE total > ?
+ * // SQL: SELECT user_id AS "userId" FROM orders WHERE total > ?
  * // parameters: [100]
  *
  * // Use in IN condition
@@ -190,7 +190,7 @@ public class SubQuery extends AbstractCondition {
      * {@link #SubQuery(String, Collection)} when the text contains JDBC {@code ?} placeholders.</p>
      *
      * @param sql complete raw query-expression text (must not be {@code null}, empty, blank, or contain a parameter placeholder)
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains a named placeholder;
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
      *         or contains a positional placeholder without a corresponding binding
      */
     public SubQuery(final String sql) {
@@ -218,7 +218,7 @@ public class SubQuery extends AbstractCondition {
      *                   individual binding values may be {@code null}; array/{@code Date}/{@code Calendar}
      *                   bindings are snapshotted, all others kept by reference
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters}
-     *         is {@code null}; the SQL contains a named/MyBatis placeholder; the number of positional
+     *         is {@code null}; the SQL contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder; the number of positional
      *         placeholders differs from the number of bindings; or an object-array binding contains a cycle
      */
     public SubQuery(final String sql, final Collection<?> parameters) {
@@ -242,7 +242,7 @@ public class SubQuery extends AbstractCondition {
      * @param entityName the entity/table name; may be {@code null} or empty, in which case it is
      *            stored as the empty string
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains a named placeholder;
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
      *         or contains a positional placeholder without a corresponding binding
      * @deprecated the entity name is unused when rendering raw query-expression text; it is only exposed by
      *             {@link #entityName()} and participates in {@link #equals(Object)}/{@link #hashCode()}. Use
@@ -297,7 +297,10 @@ public class SubQuery extends AbstractCondition {
     /**
      * Creates a structured single-property subquery for an entity name.
      *
-     * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
+     * @param entityName the entity/table name (must not be {@code null}, empty, or blank); a bare, optionally
+     *            schema-qualified name. An inline alias such as {@code users u} is not recognized by
+     *            {@link #toSql(NamingPolicy)}, which converts the whole text as one identifier; build aliased
+     *            sub-queries with a query builder instead
      * @param propName the property to select (must not be {@code null}, empty, or blank)
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
      *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no
@@ -331,7 +334,10 @@ public class SubQuery extends AbstractCondition {
      * // SQL: SELECT id, email FROM users WHERE ((active = true) AND (created > '2024-01-01'))
      * }</pre>
      *
-     * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
+     * @param entityName the entity/table name (must not be {@code null}, empty, or blank); a bare, optionally
+     *            schema-qualified name. An inline alias such as {@code users u} is not recognized by
+     *            {@link #toSql(NamingPolicy)}, which converts the whole text as one identifier; build aliased
+     *            sub-queries with a query builder instead
      * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
      *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no

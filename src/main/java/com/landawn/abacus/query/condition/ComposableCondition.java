@@ -71,9 +71,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      * }</pre>
      *
      * @return a new {@link Not} condition wrapping this condition
-     * @throws IllegalArgumentException if this condition is non-composable — a {@link Criteria}, a SQL clause,
-     *                                  an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     * @throws IllegalArgumentException if {@code this} is or contains a non-composable component — a blank
+     *                                  {@link SqlExpression}, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *                                  operand, a condition with a {@code null} operator, or (inside a custom wrapper)
+     *                                  a {@link Criteria}, a SQL clause, an {@code ON}/{@code USING} connector or a
+     *                                  standalone {@link SubQuery}
      */
     public Not not() {
         // No pre-validation needed: the Not constructor runs the identical

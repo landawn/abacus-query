@@ -1974,7 +1974,14 @@ public class SqlExpression extends ComposableCondition {
      * Returns the string form of this expression, with the naming policy applied to any
      * identifiers (column or property names) that can be detected within the literal.
      * Function names, quoted strings (including prefixed literals such as {@code N'text'}), SQL
-     * variables (such as {@code @name}), and numeric literals are left unchanged. Recognized SQL
+     * variables (such as {@code @name}), parameter placeholders written compactly ({@code ?},
+     * {@code :name}, {@code #{name}}, {@code ${name}}), and numeric literals are left unchanged.
+     * A {@code #{...}} or {@code ${...}} marker that contains internal whitespace or MyBatis attributes
+     * is <b>not</b> protected: its content is tokenized like ordinary SQL, so the bind name itself is
+     * converted and the rendered statement refers to a different parameter — under
+     * {@link NamingPolicy#SNAKE_CASE}, {@code #{ firstName }} becomes {@code #{ first_name }} and
+     * {@code #{firstName, jdbcType=VARCHAR}} becomes {@code #{firstName, jdbc_type=varchar}}. Write such
+     * markers without inner spaces, or keep them out of an expression literal. Recognized SQL
      * keyword tokens are also left unchanged when written in their canonical upper-case form
      * (for example {@code CURRENT_DATE}); a lower-case token is treated as an identifier and
      * converted. Leading and trailing underscore runs of an identifier are preserved and only the
@@ -1982,7 +1989,14 @@ public class SqlExpression extends ComposableCondition {
      * so {@code _firstName} renders as {@code _first_name} and {@code _1} stays {@code _1}.
      * A literal that is not a single simple identifier is tokenized by
      * {@link SqlParser#tokenize(String)} and reassembled from its tokens, which normalizes the text:
-     * runs of whitespace collapse to a single space and SQL comments are stripped.
+     * runs of whitespace collapse to a single space and SQL comments are stripped. This includes
+     * MySQL-style {@code #} line comments: outside a {@code FROM}/{@code JOIN} temp-table position and
+     * the {@code #{...}}, {@code #>}, {@code #>>} and {@code #-} forms, a {@code #} and the rest of the
+     * line are dropped, so PostgreSQL's {@code #} bitwise-XOR operator cannot be used inside an
+     * expression literal. An expression whose whole text is consumed this way renders as the empty
+     * string, which silently leaves a dangling clause instead of a filter: a {@code Where} (or {@code On},
+     * or a builder {@code where(...)}) over {@code SqlExpression.of("#tmp.id = x.id")} renders as
+     * {@code WHERE} with no predicate at all.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

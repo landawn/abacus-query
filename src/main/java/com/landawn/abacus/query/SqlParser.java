@@ -87,7 +87,11 @@ import com.landawn.abacus.util.Strings;
  * {@link #isInsertOrReplaceQuery(String)}, {@link #isSyntacticallyReadQuery(String)} and
  * {@link #isReadOrInsertQuery(String)} predicates classify a statement as summarized below. Each cell shows
  * whether the predicate in that column returns {@code true} (Y) or {@code false} (N) for the statement
- * kind in that row. Every syntactically read statement also qualifies as read-or-insert, but not vice versa.</p>
+ * kind in that row. Every syntactically read statement of well-formed SQL also qualifies as read-or-insert, but not
+ * vice versa. The converse can fail only for text that is not valid SQL to begin with, because
+ * {@link #isReadOrInsertQuery(String)} additionally scans for upsert clauses ({@code ON DUPLICATE KEY UPDATE},
+ * {@code ON CONFLICT DO UPDATE}), for {@code INSERT OVERWRITE}/{@code INSERT OR REPLACE}, and for a procedure
+ * invocation feeding an {@code INSERT}, and those scans are not restricted to statement-start positions.</p>
  * <table border="1">
  * <caption>{@code SqlParser} query-classification predicates by statement kind</caption>
  * <tr>
@@ -282,7 +286,7 @@ public final class SqlParser {
         return Map.copyOf(tokens);
     }
 
-    private static final TokenizerConfig DEFAULT_TOKENIZER_CONFIG = new TokenizerConfig(defaultSeparators());
+    private static final TokenizerConfig DEFAULT_TOKENIZER_CONFIG = new TokenizerConfig(defaultSeparators(), false);
 
     private static final Tokenizer DEFAULT_TOKENIZER = new Tokenizer(DEFAULT_TOKENIZER_CONFIG);
 
@@ -371,7 +375,12 @@ public final class SqlParser {
      * <p>SQL lexical structure takes precedence over configured separators: quoted regions remain
      * whole tokens, comments are skipped, {@code #{...}} remains a MyBatis parameter marker, and a
      * contextually recognized hash-prefixed identifier remains an identifier. Separators are
-     * recognized outside those constructs, with the longest configured match winning. A configured
+     * recognized outside those constructs, with the longest configured match winning. Matching is a
+     * literal character-sequence comparison at every position outside those constructs and does not
+     * check identifier boundaries: a letter-bearing separator such as {@code "AND"} therefore also
+     * splits {@code bAND} into {@code b} and {@code AND}, while {@code and} in another case is not a
+     * separator at all (see {@link SqlParser#indexOfToken(String, String, int, boolean)} for the
+     * case-insensitive search fallback). A configured
      * multi-character separator beginning with whitespace is emitted as a complete token before
      * ordinary whitespace skipping is considered, by tokenization, next-token scanning, token bounds
      * and token search alike; searching for such a separator requires its exact spelling, including the
@@ -395,9 +404,16 @@ public final class SqlParser {
          */
         private final Set<String> caseInsensitiveSeparators;
 
-        private TokenizerConfig(final Set<String> configuredSeparators) {
+        /**
+         * Whether the read gates treat a top-level statement verb that follows another statement without a
+         * {@code ;} (a SQL Server batch) as the start of a new statement. Off by default.
+         */
+        private final boolean semicolonlessBatches;
+
+        private TokenizerConfig(final Set<String> configuredSeparators, final boolean semicolonlessBatches) {
             // Both callers transfer exclusive ownership; builders copy on their next mutation.
             separators = Collections.unmodifiableSet(configuredSeparators);
+            this.semicolonlessBatches = semicolonlessBatches;
 
             int maxLength = 1;
             final boolean[] ascii = new boolean[128];
@@ -535,43 +551,56 @@ public final class SqlParser {
             return separators;
         }
 
+        /**
+         * Returns whether the read gates ({@link Tokenizer#isSyntacticallyReadQuery(String)} and
+         * {@link Tokenizer#isReadOrInsertQuery(String)}) split SQL Server-style batches, in which a second
+         * statement follows the first without a {@code ;}. Off in the built-in configuration.
+         *
+         * @return {@code true} if semicolon-less batches are split at their statement verbs
+         * @see Builder#withSemicolonlessBatches(boolean)
+         */
+        public boolean semicolonlessBatches() {
+            return semicolonlessBatches;
+        }
+
         private boolean isSingleCharSeparator(final char ch) {
             return ch < 128 ? asciiSeparators[ch] : nonAsciiSingleCharSeparators.contains(ch);
         }
 
         /**
          * Returns the hash code of this configuration.
-         * The hash code is derived from the configured separator set, so configurations with
-         * equal separators have equal hash codes.
+         * The hash code is derived from the configured separator set and the semicolon-less batch flag, so
+         * configurations with equal separators and the same flag have equal hash codes.
          *
          * @return a hash code consistent with {@link #equals(Object)}
          */
         @Override
         public int hashCode() {
-            return separators.hashCode();
+            return 31 * separators.hashCode() + Boolean.hashCode(semicolonlessBatches);
         }
 
         /**
          * Compares this configuration with another object for equality.
-         * Two configurations are equal when they hold equal separator sets; the order in which
-         * separators were added does not affect equality.
+         * Two configurations are equal when they hold equal separator sets and the same semicolon-less batch
+         * flag; the order in which separators were added does not affect equality.
          *
          * @param obj the object to compare with
-         * @return {@code true} if {@code obj} is a {@code TokenizerConfig} with the same separators, {@code false} otherwise
+         * @return {@code true} if {@code obj} is a {@code TokenizerConfig} with the same separators and flag, {@code false} otherwise
          */
         @Override
         public boolean equals(final Object obj) {
-            return obj == this || obj instanceof final TokenizerConfig other && separators.equals(other.separators);
+            return obj == this
+                    || obj instanceof final TokenizerConfig other && semicolonlessBatches == other.semicolonlessBatches && separators.equals(other.separators);
         }
 
         /**
-         * Returns a string representation of this configuration listing its separators.
+         * Returns a string representation of this configuration listing its separators and the semicolon-less batch flag.
          *
-         * @return a string of the form {@code "TokenizerConfig{separators=[...]}"}
+         * @return a string of the form {@code "TokenizerConfig{separators=[...], semicolonlessBatches=false}"}
          */
         @Override
         public String toString() {
-            return "TokenizerConfig{" + "separators=" + separators + '}';
+            return "TokenizerConfig{" + "separators=" + separators + ", semicolonlessBatches=" + semicolonlessBatches + '}';
         }
 
         /**
@@ -581,9 +610,37 @@ public final class SqlParser {
         public static final class Builder {
             private TokenizerConfig base;
             private Set<String> separators;
+            private boolean semicolonlessBatches;
 
             private Builder(final TokenizerConfig base) {
                 this.base = base;
+                semicolonlessBatches = base.semicolonlessBatches;
+            }
+
+            /**
+             * Enables or disables splitting of SQL Server-style batches by the read gates
+             * ({@link Tokenizer#isSyntacticallyReadQuery(String)} and {@link Tokenizer#isReadOrInsertQuery(String)}).
+             * T-SQL does not require a {@code ;} between statements, so {@code SELECT 1 DELETE FROM t} is two
+             * statements to SQL Server but, under the built-in configuration, one statement to the gates, which only
+             * split on {@code ;}. When enabled, a top-level {@code DELETE}, {@code UPDATE}, {@code INSERT},
+             * {@code MERGE}, {@code TRUNCATE}, {@code DROP}, {@code ALTER}, {@code CREATE}, {@code CALL},
+             * {@code EXEC} or {@code EXECUTE} token that follows a statement's own verb (outside parentheses, quotes, brackets and
+             * comments, and not in a {@code FOR UPDATE}, {@code ON DUPLICATE KEY UPDATE}, {@code ON CONFLICT DO UPDATE},
+             * {@code WHEN ... THEN ...} or {@code ON DELETE}/{@code ON UPDATE} clause) starts a new statement that is
+             * classified like one after a {@code ;}. A qualified name such as {@code o.update} is not a statement
+             * verb. Enabling this also makes an identifier-shaped {@code #name} a temp-table reference rather than a
+             * MySQL line comment, so a statement hidden behind one is still found.
+             *
+             * <p>Keep this off for dialects in which those words can be bare, unqualified column names: PostgreSQL,
+             * for example, accepts {@code SELECT delete FROM t}, which the batch scan would reject. It is off by
+             * default.</p>
+             *
+             * @param enabled {@code true} to split semicolon-less batches at their statement verbs
+             * @return this builder
+             */
+            public Builder withSemicolonlessBatches(final boolean enabled) {
+                semicolonlessBatches = enabled;
+                return this;
             }
 
             private Set<String> mutableSeparators() {
@@ -647,8 +704,8 @@ public final class SqlParser {
              * @return an immutable tokenizer configuration; an unchanged builder may reuse its previous result
              */
             public TokenizerConfig build() {
-                if (separators != null) {
-                    base = new TokenizerConfig(separators);
+                if (separators != null || semicolonlessBatches != base.semicolonlessBatches) {
+                    base = new TokenizerConfig(separators != null ? separators : new LinkedHashSet<>(base.separators), semicolonlessBatches);
                     // The built configuration now owns this set. A later edit must copy it.
                     separators = null;
                 }
@@ -766,7 +823,8 @@ public final class SqlParser {
 
         /**
          * Lexically classifies the statement as SELECT-only using this tokenizer's configured
-         * separator rules. In particular, configured hash-prefixed operators are not mistaken for
+         * separator rules and its {@linkplain TokenizerConfig#semicolonlessBatches() semicolon-less batch}
+         * setting. In particular, configured hash-prefixed operators are not mistaken for
          * MySQL hash comments while scanning later statements. This method does not resolve functions,
          * triggers, locking clauses, or other database semantics and must not be used as a security boundary.
          *
@@ -790,6 +848,25 @@ public final class SqlParser {
         @Deprecated
         public boolean isReadOnlyQuery(final String sql) {
             return isSyntacticallyReadQuery(sql);
+        }
+
+        /**
+         * Lexically classifies the statement as SELECT-or-INSERT-only using this tokenizer's configured
+         * separator rules and its {@linkplain TokenizerConfig#semicolonlessBatches() semicolon-less batch}
+         * setting; otherwise identical to {@link SqlParser#isReadOrInsertQuery(String)}. This method does not
+         * resolve functions, triggers or other database semantics and must not be used as a security boundary.
+         *
+         * @param sql the SQL statement to classify; may be empty or {@code null}
+         * @return {@code true} if the SQL text has an accepted SELECT-or-INSERT-only shape, {@code false} otherwise
+         * @see SqlParser#isReadOrInsertQuery(String)
+         * @see #isSyntacticallyReadQuery(String)
+         */
+        public boolean isReadOrInsertQuery(final String sql) {
+            if (Strings.isEmpty(sql)) {
+                return false;
+            }
+
+            return isAcceptedQueryUnderEveryLexicalMode(sql, tokenizerConfig, true);
         }
     }
 
@@ -929,7 +1006,7 @@ public final class SqlParser {
         return end - start == 1 ? singleCharToken(sql.charAt(start)) : sql.substring(start, end);
     }
 
-    private static boolean isTokenWhitespace(final char ch) {
+    static boolean isTokenWhitespace(final char ch) {
         return ch == SK._SPACE || ch == TAB || ch == ENTER || ch == ENTER_2 || ch == FORM_FEED;
     }
 
@@ -2355,6 +2432,24 @@ public final class SqlParser {
         return ch == '_' || ch == '$' || Character.isLetterOrDigit(ch);
     }
 
+    /**
+     * Returns {@code true} when the letter at {@code index} starts a word, that is, it is not preceded by an
+     * identifier character, by a {@code @}/{@code #}/{@code :} prefix or by a qualifying dot ({@code _exec},
+     * {@code @exec}, {@code #exec}, {@code :exec} and {@code s.exec} are identifiers, variables, markers and
+     * qualified column names, not the {@code EXEC} keyword). A qualifier that ends in a closing quote or
+     * bracket ({@code "s".exec}) still reaches this method, so callers that must not match a qualified name
+     * also consult {@link #isDotQualifiedToken(String, int, int, TokenizerConfig, HashScanMemo)}.
+     */
+    private static boolean isWordStart(final String sql, final int index) {
+        if (index == 0) {
+            return true;
+        }
+
+        final char prev = sql.charAt(index - 1);
+
+        return !isIdentifierChar(prev) && prev != '@' && prev != '#' && prev != ':' && prev != '.';
+    }
+
     private static String matchMultiCharSeparator(final String str, final int len, final int index, final TokenizerConfig tokenizerConfig) {
         if (index >= len) {
             return null;
@@ -2368,6 +2463,23 @@ public final class SqlParser {
 
         for (final String candidate : candidates) {
             if (candidate.length() <= len - index && str.startsWith(candidate, index)) {
+                // An operator never runs into a comment opener: "?--" is the operator "?" followed by a "--" line
+                // comment and "||/*" is "||" followed by a block comment (an operator name cannot contain "--" or
+                // "/*"), so a candidate whose last character forms such an opener with the next source character is
+                // skipped in favour of the shorter candidates; the comment is then recognized by the caller.
+                // MySQL's "#" is deliberately NOT handled here: unlike "--" and "/*" it is a legal character in a
+                // PostgreSQL operator name, so "?#" is the PostgreSQL intersection operator in one dialect and a
+                // placeholder plus a comment in another, with no dialect-independent rule to choose between them.
+                final int after = index + candidate.length();
+
+                if (after < len) {
+                    final char last = candidate.charAt(candidate.length() - 1);
+
+                    if ((last == '-' && str.charAt(after) == '-') || (last == '/' && str.charAt(after) == '*')) {
+                        continue;
+                    }
+                }
+
                 return candidate;
             }
         }
@@ -2501,9 +2613,17 @@ public final class SqlParser {
      * occurrences inside quoted string literals, quoted identifiers, SQL comments, named parameters
      * ({@code :name} or {@code #{name}}), and larger identifier tokens, so a SELECT that merely returns
      * the literal text {@code 'DELETE'} or a column named {@code into$} is still accepted, whereas a data-changing CTE such as
-     * {@code WITH t AS (...) DELETE ...} is not. For multi-statement SQL, a later statement is
+     * {@code WITH t AS (...) DELETE ...} is not. For {@code ;}-separated multi-statement SQL, a later statement is
      * permitted only when it also resolves to a {@code SELECT}; a later statement with any other
-     * leading verb (including an unrecognized or vendor-specific command) is rejected.
+     * leading verb (including an unrecognized or vendor-specific command) is rejected. Under the
+     * built-in configuration, statements chained without a semicolon (as SQL Server batches allow) are
+     * not split and are scanned as part of the preceding statement; a {@link Tokenizer} whose
+     * configuration enables {@linkplain TokenizerConfig.Builder#withSemicolonlessBatches(boolean)
+     * semicolon-less batches} splits them at their statement verbs. A {@code #} that the temp-table
+     * heuristic cannot anchor is a MySQL line comment, except that an identifier-shaped one
+     * ({@code #name} or {@code ##name}) whose line also contains a {@code ;} is rejected outright, because
+     * SQL Server would execute what follows that semicolon; with semicolon-less batches enabled such a
+     * {@code #name} is read as a temp table instead, so the rest of its line is scanned as SQL.
      * This includes statements that start with a {@code WITH} clause or leading parentheses. The
      * mutation-keyword scan matches only statement-start positions, so the
      * {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL <i>functions</i> inside a SELECT do not
@@ -2801,12 +2921,25 @@ public final class SqlParser {
      * {@code update_time}, named parameters ({@code :name} or {@code #{name}}), and bracket/quoted
      * identifiers named like keywords are ignored. A {@code null} or empty statement does not lead
      * with {@code SELECT} or {@code INSERT}, so it
-     * returns {@code false}. For multi-statement SQL, a later top-level {@code UPDATE},
+     * returns {@code false}. For {@code ;}-separated multi-statement SQL, a later top-level {@code UPDATE},
      * {@code DELETE}, {@code MERGE}, {@code REPLACE}, {@code TRUNCATE}, {@code CREATE}, {@code DROP},
      * {@code ALTER}, {@code CALL}, JDBC {@code {call ...}} / {@code {? = call ...}}, {@code EXEC} or
      * {@code EXECUTE} statement makes this method return {@code false}. More generally, every
      * top-level statement must resolve to either {@code SELECT} or {@code INSERT}; an unrecognized
-     * or vendor-specific command is rejected rather than assumed to be safe. Procedure calls are
+     * or vendor-specific command is rejected rather than assumed to be safe. Under the built-in
+     * configuration, statements chained without a semicolon (as SQL Server batches allow) are not split
+     * and are scanned as part of the preceding statement; {@link Tokenizer#isReadOrInsertQuery(String)}
+     * with a configuration that enables {@linkplain TokenizerConfig.Builder#withSemicolonlessBatches(boolean)
+     * semicolon-less batches} splits them at their statement verbs. An identifier-shaped {@code #name} or
+     * {@code ##name} that the temp-table heuristic cannot anchor is a MySQL line comment, but if its line also
+     * contains a {@code ;} the statement is rejected outright, because SQL Server would execute what follows
+     * that semicolon; with semicolon-less batches enabled it is read as a temp table and the rest of its line is
+     * scanned as SQL. A procedure invocation that feeds the {@code INSERT} itself
+     * ({@code INSERT INTO t EXEC p}) is rejected as well; {@code exec}/{@code execute} in the target
+     * table, {@code AS} alias or parenthesized target-column list are identifiers, not procedure calls.
+     * The scan stops at the {@code SELECT},
+     * {@code VALUES} or {@code DEFAULT} that settles the statement's source, so {@code exec} and
+     * {@code execute} remain usable as ordinary column names after it. Procedure calls are
      * conservatively rejected because their effects cannot be determined from the SQL text; the keyword scan matches
      * only statement-start positions, so the {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL
      * <i>functions</i> do not affect the classification. The complete SQL is checked under both
@@ -2907,10 +3040,11 @@ public final class SqlParser {
             }
         }
 
-        // Masking already proved lexical completeness. Without a semicolon there cannot be a
-        // second statement, and the first statement's leading verb was validated just above.
-        if (containsExecutableBlockComment(sql, tokenizerConfig, mysqlCommentRules, memo)
-                || sql.indexOf(';') >= 0 && !hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, allowInsert, memo)) {
+        // Masking already proved lexical completeness. Without a semicolon there cannot be a second
+        // statement (unless the configuration splits semicolon-less batches at their verbs), and the
+        // first statement's leading verb was validated just above.
+        if (containsExecutableBlockComment(sql, tokenizerConfig, mysqlCommentRules, memo) || (sql.indexOf(';') >= 0 || tokenizerConfig.semicolonlessBatches)
+                && !hasOnlyAllowedTopLevelStatements(sql, tokenizerConfig, allowInsert, memo)) {
             return false;
         }
 
@@ -3134,8 +3268,16 @@ public final class SqlParser {
     private static boolean hasOnlyAllowedTopLevelStatements(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert,
             final HashScanMemo memo) {
         final int sqlLength = sql.length();
+        final boolean batchMode = tokenizerConfig.semicolonlessBatches;
         int statementStart = 0;
         int index = 0;
+        // Batch-mode state (unused otherwise): parenthesis depth, whether the current statement's own verb has
+        // been seen, and the previous top-level word for the FOR UPDATE / KEY UPDATE / DO UPDATE / THEN ... /
+        // ON ... clause carve-outs.
+        int depth = 0;
+        boolean mainVerbSeen = false;
+        int previousWordStart = -1;
+        int previousWordEnd = -1;
 
         while (index < sqlLength) {
             final char ch = sql.charAt(index);
@@ -3168,8 +3310,27 @@ public final class SqlParser {
 
                 continue;
             } else if (ch == '#' && isHashCommentStart(sql, sqlLength, index, tokenizerConfig, memo)) {
+                // '#' opens a comment only for MySQL/MariaDB. SQL Server reads "#name"/"##name" as a temp table
+                // and executes the rest of that line, so an identifier-shaped '#' the temp-table heuristic could
+                // not anchor must not be allowed to hide a following statement. "# note" (not identifier-shaped)
+                // keeps its comment reading under every configuration.
+                final boolean identifierShaped = index + 1 < sqlLength && (isIdentifierChar(sql.charAt(index + 1)) || sql.charAt(index + 1) == '#');
+
+                if (batchMode && identifierShaped) {
+                    // Batch mode is the T-SQL setting, where the temp-table reading is the right one: scan the
+                    // rest of the line as SQL so "…, #t2 DELETE FROM x" (no ';' anywhere) is still split.
+                    previousWordStart = -1;
+                    index++;
+                    continue;
+                }
+
                 do {
                     index++;
+
+                    if (identifierShaped && index < sqlLength && sql.charAt(index) == ';') {
+                        // The would-be comment hides a ';' and whatever follows it: fail closed.
+                        return false;
+                    }
                 } while (index < sqlLength && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2);
 
                 continue;
@@ -3190,12 +3351,116 @@ public final class SqlParser {
                 }
 
                 statementStart = index + 1;
+                mainVerbSeen = false;
+                previousWordStart = -1;
+                depth = 0;
+            } else if (batchMode) {
+                if (ch == '(') {
+                    if (!mainVerbSeen && previousWordStart < 0) {
+                        // A group that no word introduces is the statement itself ("(SELECT 1) DELETE FROM t",
+                        // or "(SELECT * FROM c)" after a CTE list), and it keeps its verb out of this depth-0
+                        // scan. Count it as the statement's verb so a verb after it is a second statement.
+                        // A group a word DOES introduce is a clause body ("WITH t AS (...)", "FROM (...)"),
+                        // whose statement verb still follows at depth 0.
+                        mainVerbSeen = true;
+                    }
+
+                    depth++;
+                    previousWordStart = -1;
+                } else if (ch == ')') {
+                    if (depth > 0) {
+                        depth--;
+                    }
+
+                    previousWordStart = -1;
+                } else if (depth == 0 && Character.isLetter(ch) && isWordStart(sql, index)) {
+                    final int end = identifierEnd(sql, index);
+
+                    if (isBatchStatementVerb(sql, index, end, sqlLength, tokenizerConfig, memo)
+                            && !isDotQualifiedToken(sql, index, end, tokenizerConfig, memo)) {
+                        // The first verb of a statement is its own verb (also after a CTE list); a later one
+                        // that is not part of a clause starts the next statement of a semicolon-less batch.
+                        if (mainVerbSeen && !isBatchVerbClauseContext(sql, previousWordStart, previousWordEnd)) {
+                            if (!isAllowedTopLevelStatement(sql, statementStart, index, tokenizerConfig, allowInsert, memo)) {
+                                return false;
+                            }
+
+                            statementStart = index;
+                        }
+
+                        mainVerbSeen = true;
+                    } else if (!mainVerbSeen && matchesToken(sql, index, end, "SELECT", false)) {
+                        mainVerbSeen = true;
+                    }
+
+                    previousWordStart = index;
+                    previousWordEnd = end;
+                    index = end;
+                    continue;
+                } else if (!Character.isWhitespace(ch)) {
+                    // Every clause carve-out has its keyword IMMEDIATELY before the verb, so any other token
+                    // clears it; otherwise "JOIN b ON 1=1 DELETE FROM x" would read the DELETE as an ON clause.
+                    previousWordStart = -1;
+                }
             }
 
             index++;
         }
 
         return isAllowedTopLevelStatement(sql, statementStart, sqlLength, tokenizerConfig, allowInsert, memo);
+    }
+
+    /**
+     * Returns {@code true} when the word at {@code [start, end)} is a statement verb that opens a new statement of
+     * a semicolon-less batch. {@code EXEC}/{@code EXECUTE} count even when followed by {@code (}; every other verb
+     * followed by {@code (} is a function call ({@code TRUNCATE(x, 2)}, also across whitespace and comments) and is ignored.
+     */
+    private static boolean isBatchStatementVerb(final String sql, final int start, final int end, final int sqlLength, final TokenizerConfig tokenizerConfig,
+            final HashScanMemo memo) {
+        if (matchesToken(sql, start, end, "EXEC", false) || matchesToken(sql, start, end, "EXECUTE", false)) {
+            return true;
+        }
+
+        final boolean verb = switch (end - start) {
+            // CALL is a procedure invocation, which the gates reject at a statement start, so it must open a
+            // statement here too; unlike EXEC it always names its procedure separately ("CALL p(1)"), so the
+            // function-call rule below still applies and "CALL(x)" stays a function.
+            case 4 -> matchesToken(sql, start, end, "DROP", false) || matchesToken(sql, start, end, "CALL", false);
+            case 5 -> matchesToken(sql, start, end, "MERGE", false) || matchesToken(sql, start, end, "ALTER", false);
+            case 6 -> matchesToken(sql, start, end, "DELETE", false) || matchesToken(sql, start, end, "UPDATE", false)
+                    || matchesToken(sql, start, end, "INSERT", false) || matchesToken(sql, start, end, "CREATE", false);
+            case 8 -> matchesToken(sql, start, end, "TRUNCATE", false);
+            default -> false;
+        };
+
+        if (!verb) {
+            return false;
+        }
+
+        // Skip comments too, or "TRUNCATE /* round */ (x, 2)" would not be recognized as the function call that
+        // "TRUNCATE(x, 2)" is.
+        final int next = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
+
+        return next >= sqlLength || sql.charAt(next) != '(';
+    }
+
+    /**
+     * Returns {@code true} when the top-level word preceding a statement verb makes it part of a clause rather than a
+     * new statement: {@code FOR UPDATE}, {@code ON DUPLICATE KEY UPDATE}, {@code ON CONFLICT DO UPDATE},
+     * {@code WHEN [NOT] MATCHED THEN UPDATE/INSERT/DELETE} and {@code ON DELETE}/{@code ON UPDATE}.
+     */
+    private static boolean isBatchVerbClauseContext(final String sql, final int previousWordStart, final int previousWordEnd) {
+        if (previousWordStart < 0) {
+            return false;
+        }
+
+        return switch (previousWordEnd - previousWordStart) {
+            case 2 -> matchesToken(sql, previousWordStart, previousWordEnd, "ON", false) || matchesToken(sql, previousWordStart, previousWordEnd, "DO", false);
+            case 3 -> matchesToken(sql, previousWordStart, previousWordEnd, "FOR", false)
+                    || matchesToken(sql, previousWordStart, previousWordEnd, "KEY", false);
+            case 4 -> matchesToken(sql, previousWordStart, previousWordEnd, "THEN", false);
+            default -> false;
+        };
     }
 
     private static boolean isAllowedTopLevelStatement(final String sql, final int fromIndex, final int toIndex, final TokenizerConfig tokenizerConfig,
@@ -3224,7 +3489,8 @@ public final class SqlParser {
      * {@code CALL}, this recognizes the JDBC call escapes {@code {call ...}} and
      * {@code {? = call ...}}, plus SQL Server's {@code EXEC}/{@code EXECUTE}. Quoted text,
      * quoted identifiers, comments, larger identifier tokens, and function-like tokens appearing
-     * after a statement's leading verb are ignored.
+     * after a statement's leading verb are ignored. INSERT additionally recognizes a procedure supplying
+     * its rows, excluding target names, aliases and parenthesized column lists.
      */
     private static boolean containsProcedureInvocation(final String sql, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
         if (Strings.isEmpty(sql)) {
@@ -3233,6 +3499,10 @@ public final class SqlParser {
 
         int index = 0;
         boolean canStartStatement = true;
+        boolean insertStatement = false; // T-SQL "INSERT ... EXEC proc" invokes a procedure mid-statement
+        int insertDepth = 0;
+        int previousInsertWordStart = -1;
+        int previousInsertWordEnd = -1;
 
         while (index < sql.length()) {
             index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
@@ -3246,10 +3516,12 @@ public final class SqlParser {
             if (ch == '\'' || ch == '"' || ch == '`') {
                 index = skipQuotedLiteral(sql, index, ch);
                 canStartStatement = false;
+                previousInsertWordStart = -1;
                 continue;
             } else if (ch == '[') {
                 index = skipBracketQuotedIdentifier(sql, index);
                 canStartStatement = false;
+                previousInsertWordStart = -1;
                 continue;
             }
 
@@ -3277,16 +3549,59 @@ public final class SqlParser {
                         return true;
                     }
 
+                    insertStatement = matchesToken(sql, index, end, "INSERT", false);
+                    insertDepth = 0;
+                    previousInsertWordStart = index;
+                    previousInsertWordEnd = end;
                     canStartStatement = false;
                     index = end;
                     continue;
                 }
+            } else if (insertStatement && Character.isLetter(ch) && isWordStart(sql, index)) {
+                final int end = identifierEnd(sql, index);
+
+                if (matchesToken(sql, index, end, "SELECT", false) || matchesToken(sql, index, end, "VALUES", false)
+                        || matchesToken(sql, index, end, "DEFAULT", false)) {
+                    // The INSERT's source is settled, so a later EXEC/EXECUTE word cannot be the procedure this
+                    // INSERT feeds from; it is an ordinary identifier (PostgreSQL allows "execute" as a column
+                    // name, so "INSERT INTO t SELECT execute FROM s" must stay accepted).
+                    insertStatement = false;
+                } else if (insertDepth == 0 && (matchesToken(sql, index, end, "EXEC", false) || matchesToken(sql, index, end, "EXECUTE", false))
+                        && !isDotQualifiedToken(sql, index, end, tokenizerConfig, memo)) {
+                    // INSERT [INTO] names the target, and AS names its alias. Those identifier slots may be
+                    // called exec/execute, as may columns inside (...); only a later top-level word is a call.
+                    final boolean identifier = previousInsertWordStart >= 0
+                            && (matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INSERT", false)
+                                    || matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INTO", false)
+                                    || matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "AS", false));
+
+                    if (!identifier) {
+                        return true; // INSERT [INTO] target [(columns)] EXEC[UTE] procedure (SQL Server)
+                    }
+                }
+
+                previousInsertWordStart = index;
+                previousInsertWordEnd = end;
+                index = end;
+                continue;
             }
 
             if (ch == ';') {
                 canStartStatement = true;
+                insertStatement = false;
+                insertDepth = 0;
+                previousInsertWordStart = -1;
             } else if (!Character.isWhitespace(ch)) {
                 canStartStatement = false;
+                previousInsertWordStart = -1;
+
+                if (insertStatement) {
+                    if (ch == '(') {
+                        insertDepth++;
+                    } else if (ch == ')' && insertDepth > 0) {
+                        insertDepth--;
+                    }
+                }
             }
 
             index++;
@@ -3926,6 +4241,12 @@ public final class SqlParser {
                         }
                     } else if (isQueryKeyword(token)) {
                         return fromIndex;
+                    } else if (cteBodyClosed && !isCteBodySuffixKeyword(token)) {
+                        // The CTE list is complete and this word is neither a query verb nor a
+                        // SEARCH/CYCLE clause, so it is the statement verb itself (e.g. SQLite
+                        // "WITH ... REPLACE INTO", CockroachDB "WITH ... UPSERT INTO"). Report it
+                        // instead of skipping ahead to a later SELECT inside that statement.
+                        return fromIndex;
                     }
 
                     previousKeyword = token;
@@ -3953,6 +4274,11 @@ public final class SqlParser {
     private static boolean isQueryKeyword(final String token) {
         return "SELECT".equalsIgnoreCase(token) || "INSERT".equalsIgnoreCase(token) || "UPDATE".equalsIgnoreCase(token) || "DELETE".equalsIgnoreCase(token)
                 || "MERGE".equalsIgnoreCase(token);
+    }
+
+    /** PostgreSQL/Oracle/MariaDB {@code SEARCH ...} / {@code CYCLE ...} clauses may follow a recursive CTE body before the main statement. */
+    private static boolean isCteBodySuffixKeyword(final String token) {
+        return "SEARCH".equalsIgnoreCase(token) || "CYCLE".equalsIgnoreCase(token);
     }
 
     private static int skipLeadingWhitespaceAndComments(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {

@@ -101,8 +101,8 @@ public class In extends AbstractIn {
      *               the collection is copied internally to prevent external modifications, and array,
      *               {@code Date} and {@code Calendar} elements are snapshotted at construction. A
      *               condition-valued element must be a non-blank {@link SqlExpression} or a scalar {@link SubQuery}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, if {@code values}
-     *                                  is {@code null}/empty or contains {@code null}, or if any element is a
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code values}
+     *                                  is {@code null}, empty, or contains {@code null}, or if any element is a
      *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
      *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
      *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
@@ -145,8 +145,8 @@ public class In extends AbstractIn {
      *               {@link Collection}, {@link Iterable}, object array, {@link Map} or bean. Map rows
      *               must contain every requested property key; a condition-valued element must be a
      *               non-blank {@link SqlExpression} or a scalar {@link SubQuery}
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
-     *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty or contains any {@code null}, empty, or blank name,
+     *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map row is missing a requested key, if a row element is {@code null},
      *                                  if a bean row does not expose a requested property, or if any row element is a

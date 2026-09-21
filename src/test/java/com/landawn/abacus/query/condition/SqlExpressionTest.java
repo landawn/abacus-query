@@ -1437,4 +1437,54 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("firstName = (SELECT firstName FROM people)", SqlExpression.equal("firstName", subQuery));
     }
 
+    /**
+     * Pins the documented tokenizer behaviour: a MySQL-style {@code #} line comment (and the rest of the
+     * line) is stripped from an expression literal under every naming policy, while the PostgreSQL JSON
+     * operators, the MyBatis marker and a {@code FROM}/{@code JOIN} temp-table reference are preserved.
+     */
+    @Test
+    public void testToSqlStripsHashLineCommentButKeepsHashOperators() {
+        // preserved forms
+        assertEquals("data #> '{a}'", Filters.expr("data #> '{a}'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("data #>> '{a}'", Filters.expr("data #>> '{a}'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("data #- '{a}'", Filters.expr("data #- '{a}'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("t.id = #{id}", Filters.expr("t.id = #{id}").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("id IN (SELECT id FROM #tmp)", Filters.expr("id IN (SELECT id FROM #tmp)").toSql(NamingPolicy.NO_CHANGE));
+
+        // a bare '#' starts a line comment: it and the rest of the line are dropped (note the trailing space
+        // left by the comment removal), so PostgreSQL's '#' bitwise-XOR operator cannot be used here
+        assertEquals("x = 1 ", Filters.expr("x = 1 # c").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("flags ", Filters.expr("flags # 1 = 0").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("flags ", Filters.expr("flags # 1 = 0").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("", Filters.expr("#tmp.id = x.id").toSql(NamingPolicy.NO_CHANGE));
+
+        // consequence of the line above: when the whole literal is consumed as a comment the predicate
+        // disappears and the surrounding clause is rendered without one
+        assertEquals("WHERE ", new Where(Filters.expr("#tmp.id = x.id")).toString());
+    }
+
+    /**
+     * Pins the documented rule that parameter placeholders inside an expression literal are left
+     * unchanged by the naming policy, unlike the identifiers around them.
+     */
+    @Test
+    public void testToSqlLeavesNamedPlaceholdersUnconverted() {
+        assertEquals("firstName = :firstName", Filters.expr("first_name = :firstName").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("firstName = #{firstName}", Filters.expr("first_name = #{firstName}").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("firstName = ${firstName}", Filters.expr("first_name = ${firstName}").toSql(NamingPolicy.CAMEL_CASE));
+
+        assertEquals("first_name = :firstName AND last_name = #{lastName}",
+                Filters.expr("firstName = :firstName AND lastName = #{lastName}").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = ?", Filters.expr("firstName = ?").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = @firstName", Filters.expr("firstName = @firstName").toSql(NamingPolicy.SNAKE_CASE));
+
+        // Documented limitation: only the compact spellings are protected. A marker written with internal
+        // whitespace (a spelling ParsedSql accepts) or with MyBatis attributes has its inner text tokenized
+        // like ordinary SQL, so the BIND NAME itself is rewritten and the statement binds a different parameter.
+        assertEquals("first_name = #{ first_name }", Filters.expr("firstName = #{ firstName }").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = ${ first_name }", Filters.expr("firstName = ${ firstName }").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = #{firstName, jdbc_type=varchar}",
+                Filters.expr("firstName = #{firstName, jdbcType=VARCHAR}").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
 }

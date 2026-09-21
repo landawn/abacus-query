@@ -92,9 +92,11 @@ public class Criteria extends AbstractCondition {
      * Creates a new Criteria instance with the specified select modifier and condition list.
      * This constructor is package-private; use {@link #builder()} to construct instances.
      * The supplied {@code conditions} list is defensively copied so subsequent changes to the
-     * caller's list cannot change this condition's clause membership or its cached parameters.
+     * caller's list cannot change this condition's clause membership (and therefore the SQL and
+     * parameters it reports).
      *
-     * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}); {@code null}, empty, or blank means none
+     * @param selectModifier the SELECT modifier (e.g., {@code DISTINCT}); {@code null}, empty, or blank means none,
+     *                       and any surrounding whitespace is stripped
      * @param conditions the list of conditions representing the query clauses; defensively copied
      * @throws IllegalArgumentException if {@code conditions} is {@code null}, contains {@code null},
      *                                  contains a condition that is not a supported clause implementation,
@@ -102,7 +104,9 @@ public class Criteria extends AbstractCondition {
      */
     Criteria(String selectModifier, List<Condition> conditions) {
         super(Operator.EMPTY);
-        this.selectModifier = Strings.isBlank(selectModifier) ? null : selectModifier;
+        // strip(), not trim(): the blank test is Strings.isBlank (Character.isWhitespace), so trim() would keep a
+        // modifier padded with EM SPACE (U+2003, above U+0020) while an all-EM-SPACE one normalizes to null.
+        this.selectModifier = Strings.isBlank(selectModifier) ? null : selectModifier.strip();
         N.checkArgNotNull(conditions, "conditions");
 
         final List<Condition> conditionsCopy = new ArrayList<>(conditions);
@@ -137,9 +141,12 @@ public class Criteria extends AbstractCondition {
      * Criteria.builder().build().selectModifier();                    // returns null
      * Criteria.builder().distinct().build().selectModifier();         // returns "DISTINCT"
      * Criteria.builder().distinctOn("a, b").build().selectModifier(); // returns "DISTINCT ON (a, b)"
+     * Criteria.builder().selectModifier(" DISTINCT ").build().selectModifier(); // returns "DISTINCT" (stripped)
      * }</pre>
      *
-     * @return the SELECT modifier, or {@code null} if not set
+     * @return the SELECT modifier with any surrounding whitespace stripped (an empty or blank modifier is
+     *         normalized to {@code null}, so this does not necessarily round-trip the string that was set),
+     *         or {@code null} if not set
      * @see Builder#distinct()
      * @see Builder#distinctOn(String)
      * @see Builder#distinctRow()
@@ -650,7 +657,9 @@ public class Criteria extends AbstractCondition {
      *         non-clause operator, or is not an instance of the condition type its operator requires
      */
     private static void validateCriteriaCondition(final Condition cond) {
-        N.checkArgNotNull(cond, "cond");
+        // the message names the public parameter ('condition' on Criteria.Builder.join/add and the Clause
+        // validators), not this private one, so all null-clause reports read alike
+        N.checkArgNotNull(cond, "condition");
         final Operator operator = cond.operator();
 
         if (operator == null) {
@@ -877,24 +886,33 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets a custom SELECT modifier.
          * This allows for database-specific modifiers not covered by other methods.
-         * An empty or blank string is treated as no modifier (normalized to {@code null}).
+         * An empty or blank string is treated as no modifier (normalized to {@code null}), and surrounding
+         * whitespace is stripped, so the stored modifier is not necessarily the string that was passed in:
+         * {@code selectModifier(" DISTINCT ")} is equivalent to {@link #distinct()} (same rendered SQL,
+         * same {@code equals}/{@code hashCode}). Internal spacing is preserved.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
          * Criteria.builder().selectModifier("SQL_CALC_FOUND_ROWS").build().selectModifier();
          * // returns "SQL_CALC_FOUND_ROWS"
          *
+         * // Surrounding whitespace is stripped.
+         * Criteria.builder().selectModifier("  DISTINCT  ").build().selectModifier();  // returns "DISTINCT"
+         *
          * // Passing null (or an empty/blank string) clears any previously set modifier.
          * Criteria.builder().selectModifier(null).build().selectModifier();   // returns null
          * }</pre>
          *
-         * @param selectModifier the custom SELECT modifier; {@code null}, empty, or blank means no modifier
+         * @param selectModifier the custom SELECT modifier; {@code null}, empty, or blank means no modifier,
+         *                       and any surrounding whitespace is stripped
          * @return this Builder instance for method chaining
          */
         public Builder selectModifier(final String selectModifier) {
             // Normalize blank to null so a Criteria built with selectModifier("") equals one built with
-            // no modifier at all -- the two already render identically and share a hash code.
-            this.selectModifier = Strings.isBlank(selectModifier) ? null : selectModifier;
+            // no modifier at all -- the two already render identically and share a hash code. Surrounding
+            // whitespace is stripped so selectModifier(" DISTINCT ") renders (and compares) like distinct();
+            // strip() rather than trim() to match the Character.isWhitespace notion used by Strings.isBlank.
+            this.selectModifier = Strings.isBlank(selectModifier) ? null : selectModifier.strip();
 
             return this;
         }
@@ -1500,7 +1518,9 @@ public class Criteria extends AbstractCondition {
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
-         *                                  with an operator other than {@code WHERE}
+         *                                  with an operator other than {@code WHERE} (an {@link SqlExpression} whose literal
+         *                                  begins with a clause keyword such as {@code WHERE} or {@code ORDER BY} counts as a
+         *                                  clause condition and is rejected as well; pass only the predicate text)
          */
         public Builder where(final Condition condition) {
             N.checkArgNotNull(condition, "condition");
@@ -1696,7 +1716,9 @@ public class Criteria extends AbstractCondition {
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
-         *                                  with an operator other than {@code GROUP_BY}. An empty {@link Junction} is
+         *                                  with an operator other than {@code GROUP_BY} (an {@link SqlExpression} whose literal
+         *                                  begins with a clause keyword counts as a clause condition and is rejected as well;
+         *                                  pass only the grouping text). An empty {@link Junction} is
          *                                  accepted and renders its Boolean identity (for example {@code GROUP BY 1 = 1})
          */
         public Builder groupBy(final Condition condition) {
@@ -1919,7 +1941,9 @@ public class Criteria extends AbstractCondition {
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
-         *                                  with an operator other than {@code HAVING}
+         *                                  with an operator other than {@code HAVING} (an {@link SqlExpression} whose literal
+         *                                  begins with a clause keyword counts as a clause condition and is rejected as well;
+         *                                  pass only the predicate text)
          */
         public Builder having(final Condition condition) {
             N.checkArgNotNull(condition, "condition");
@@ -2121,7 +2145,9 @@ public class Criteria extends AbstractCondition {
          *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
          *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, or is a clause condition
-         *                                  with an operator other than {@code ORDER_BY}. An empty {@link Junction} is
+         *                                  with an operator other than {@code ORDER_BY} (an {@link SqlExpression} whose literal
+         *                                  begins with a clause keyword counts as a clause condition and is rejected as well;
+         *                                  pass only the ordering text). An empty {@link Junction} is
          *                                  accepted and renders its Boolean identity (for example {@code ORDER BY 1 = 0})
          */
         public Builder orderBy(final Condition condition) {
@@ -2587,8 +2613,9 @@ public class Criteria extends AbstractCondition {
          *         is a nested {@link Criteria}, uses an
          *         {@code ON}/{@code USING} operator, is an {@code ANY}/{@code ALL}/{@code SOME} quantified operand,
          *         is a standalone {@link SubQuery},
-         *         is an empty predicate (a blank {@link SqlExpression}), or reports a routed
-         *         operator without being the corresponding clause type
+         *         is an empty predicate (a blank {@link SqlExpression}), reports a routed
+         *         operator without being the corresponding clause type, or is an {@link SqlExpression}
+         *         whose literal begins with a clause keyword (for example {@code LIMIT 10})
          */
         public Builder add(final Condition condition) {
             N.checkArgNotNull(condition, "condition");

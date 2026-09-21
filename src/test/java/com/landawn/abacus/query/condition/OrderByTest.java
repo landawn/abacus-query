@@ -436,6 +436,27 @@ public class OrderByTest extends TestBase {
     }
 
     @Test
+    public void testMapConstructor_nullOrEmptyMap_messageNamesOrders() {
+        // twin of GroupByTest#testMapConstructor_nullOrEmptyMap_messageNamesGroupings: this path keeps its own
+        // parameter name ('orders'), while the shared null-direction message names the offending key
+        IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> new OrderBy((Map<String, SortDirection>) null));
+        assertTrue(e1.getMessage().contains("orders"), e1.getMessage());
+
+        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> new OrderBy(new LinkedHashMap<>()));
+        assertTrue(e2.getMessage().contains("orders"), e2.getMessage());
+
+        Map<String, SortDirection> nullDirection = new LinkedHashMap<>();
+        nullDirection.put("department", null);
+        IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class, () -> new OrderBy(nullDirection));
+        assertTrue(e3.getMessage().contains("department"), e3.getMessage());
+
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("department", SortDirection.ASC);
+        orders.put("salary", SortDirection.DESC);
+        assertEquals("ORDER BY department ASC, salary DESC", new OrderBy(orders).toString());
+    }
+
+    @Test
     public void testPracticalExamples() {
         // Simple ascending order (default)
         OrderBy orderBy1 = Filters.orderBy("lastName", "firstName");

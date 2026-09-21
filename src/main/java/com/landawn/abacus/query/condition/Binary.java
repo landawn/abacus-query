@@ -178,7 +178,7 @@ public class Binary extends ComposableCondition {
      *                  only as the direct right-hand side of {@code =}, {@code !=}, {@code <>}, {@code <},
      *                  {@code <=}, {@code >}, or {@code >=}. For an {@code IN}/{@code NOT_IN} operator, a
      *                  {@link Collection} or array value is copied defensively and must be non-empty;
-     *                  elements must be non-null scalar values or explicit scalar expressions. A
+     *                  elements must be non-null scalar values, explicit scalar expressions, or scalar sub-queries. A
      *                  {@link SqlExpression} or a {@link SubQuery} is also accepted as the whole right-hand
      *                  side of {@code IN}/{@code NOT IN}.
      *                  Every structured subquery with a known, non-wildcard projection must select exactly

@@ -139,9 +139,10 @@ public class On extends Cell {
      *            {@link SqlExpression}, {@link Equal}, {@link And}, {@link Or}, or {@link Between}.
      *            Must not be {@code null}.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or is or contains a {@link Criteria},
-     *                                  a null operator, a SQL clause, an {@code ON}/{@code USING} connector, an
-     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}. An empty {@link Junction}
+     *                                  a null operator, a SQL clause, an {@code ON}/{@code USING} connector, a standalone
+     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (one that is not
+     *                                  the direct right-hand side of a comparison such as {@code a = ANY (...)}), a
+     *                                  standalone {@link SubQuery}, or a blank {@link SqlExpression}. An empty {@link Junction}
      *                                  is accepted and renders its Boolean identity (for example {@code ON 1 = 1})
      */
     public On(final Condition condition) {

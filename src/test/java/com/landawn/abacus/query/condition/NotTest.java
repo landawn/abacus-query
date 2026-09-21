@@ -258,4 +258,12 @@ public class NotTest extends TestBase {
         assertEquals("NOT (1 = 1)", Filters.and().not().toString());
         assertTrue(new Not(Filters.and()).parameters().isEmpty());
     }
+
+    @Test
+    public void testNullConditionMessageNamesConstructorParameter() {
+        // the shared operand validator used to report the internal name 'cond'
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new Not(null));
+        assertTrue(e.getMessage().contains("condition"), e.getMessage());
+        assertTrue(!e.getMessage().contains("'cond'"), e.getMessage());
+    }
 }

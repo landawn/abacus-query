@@ -332,4 +332,24 @@ public class GroupByTest extends TestBase {
         Assertions.assertTrue(result.contains("col3"));
         Assertions.assertTrue(result.contains("ASC"));
     }
+
+    @Test
+    public void testMapConstructor_nullOrEmptyMap_messageNamesGroupings() {
+        // the message must name this constructor's parameter, not the OrderBy path's 'orders'
+        IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> new GroupBy((Map<String, SortDirection>) null));
+        assertTrue(e1.getMessage().contains("groupings"), e1.getMessage());
+
+        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> new GroupBy(new LinkedHashMap<>()));
+        assertTrue(e2.getMessage().contains("groupings"), e2.getMessage());
+
+        Map<String, SortDirection> nullDirection = new LinkedHashMap<>();
+        nullDirection.put("department", null);
+        IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class, () -> new GroupBy(nullDirection));
+        assertTrue(e3.getMessage().contains("department"), e3.getMessage());
+
+        Map<String, SortDirection> groupings = new LinkedHashMap<>();
+        groupings.put("department", SortDirection.ASC);
+        groupings.put("salary", SortDirection.DESC);
+        assertEquals("GROUP BY department ASC, salary DESC", new GroupBy(groupings).toString());
+    }
 }

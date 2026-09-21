@@ -3216,4 +3216,73 @@ public class FiltersTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account), Arrays.asList((String) null)));
         assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList("nonexistent")));
     }
+
+    @Test
+    public void testBinaryPlaceholder_rejectsIsAndIsNot() {
+        // 'propName IS ?' is not valid SQL, so the scalar-placeholder overload rejects IS/IS_NOT like IN/NOT_IN
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IS));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IS_NOT));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IN));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.NOT_IN));
+        assertEquals("price > ?", Filters.binary("price", Operator.GREATER_THAN).toString());
+
+        // the guard is deliberately limited to this overload: the 3-arg form lets the caller own the rendered
+        // SQL through an explicit SqlExpression right-hand side, so 'x IS ?' stays constructible there
+        assertEquals("x IS ?", Filters.binary("x", Operator.IS, Filters.QME).toString());
+        assertEquals("x IS NOT ?", Filters.binary("x", Operator.IS_NOT, Filters.QME).toString());
+        assertEquals("x IS ?", Filters.is("x", Filters.QME).toString());
+    }
+
+    @Test
+    public void testOn_stringExpr_blankRejectedUpFront() {
+        final String expectedMessage = assertThrows(IllegalArgumentException.class, () -> Filters.where("  ")).getMessage();
+        final String actualMessage = assertThrows(IllegalArgumentException.class, () -> Filters.on("  ")).getMessage();
+        assertEquals(expectedMessage, actualMessage);
+        assertThrows(IllegalArgumentException.class, () -> Filters.on((String) null));
+        assertThrows(IllegalArgumentException.class, () -> Filters.on(""));
+    }
+
+    @Test
+    public void testExpr_createsIndependentEqualInstances() {
+        final SqlExpression first = Filters.expr("a");
+        final SqlExpression second = Filters.expr("a");
+        assertNotSame(first, second);
+        assertEquals(first, second);
+    }
+
+    @Test
+    public void testIn_blankSqlExpressionElementRejected() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.in("category", Arrays.asList("a", Filters.expr(" "))));
+        assertThrows(IllegalArgumentException.class, () -> Filters.notIn("category", Arrays.asList("a", Filters.expr(" "))));
+        assertThrows(IllegalArgumentException.class, () -> Filters.in("category", "a", Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.notIn("category", "a", Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class,
+                () -> Filters.in(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
+        assertThrows(IllegalArgumentException.class,
+                () -> Filters.notIn(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
+    }
+
+    @Test
+    public void testSubQuery_rawExprStartingWithOnRejected() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("products", Arrays.asList("id"), "ON a = b"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("products", Arrays.asList("id"), "USING (id)"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), "ON a = b"));
+        assertEquals("SELECT id FROM products WHERE price > 10", Filters.subQuery("products", Arrays.asList("id"), "price > 10").toString());
+    }
+
+    @Test
+    public void testWhereString_rejectsClauseLeadingLiteral() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("ORDER BY a"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("WHERE a = 1"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("LEFT OUTER JOIN t"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("UNION SELECT 1"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("ON a.id = b.id"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("USING (id)"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.having("ORDER BY a"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.on("ORDER BY a"));
+        // only the SQL spelling counts: an identifier that merely starts with a keyword is accepted
+        assertEquals("WHERE where_flag = 1", Filters.where("where_flag = 1").toString());
+        assertEquals("HAVING having_flag = 1", Filters.having("having_flag = 1").toString());
+        assertEquals("ON on_flag = 1", Filters.on("on_flag = 1").toString());
+    }
 }

@@ -60,7 +60,7 @@ import com.landawn.abacus.util.Strings;
  * new Limit(10);                                      // LIMIT 10
  * new Limit(20, 50);                                  // LIMIT 20 OFFSET 50
  * new Limit("OFFSET 50 ROWS FETCH NEXT 20 ROWS ONLY");
- * new Limit("20, 10");                                // MySQL form: toSql() -> "LIMIT 20, 10"; count() -> 10; offset() -> 20
+ * new Limit("20, 10");                                // MySQL form: toString() -> "LIMIT 20, 10"; count() -> 10; offset() -> 20
  * new Limit("? OFFSET ?");                            // throws: raw placeholders cannot carry bindings
  * new Limit("LIMIT 1.0");                             // throws IllegalArgumentException
  * }</pre>

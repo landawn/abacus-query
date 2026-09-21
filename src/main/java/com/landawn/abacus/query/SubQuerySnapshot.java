@@ -107,7 +107,7 @@ final class SubQuerySnapshot extends SubQuery {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + parameters.hashCode();
+        result = 31 * result + deepParametersHashCode(parameters);
         result = 31 * result + sqlPolicy.hashCode();
         result = 31 * result + Boolean.hashCode(hasGeneratedParameterPlaceholder);
         result = 31 * result + Boolean.hashCode(requiresSetOperationIsolation);
@@ -134,8 +134,42 @@ final class SubQuerySnapshot extends SubQuery {
         final SubQuerySnapshot other = (SubQuerySnapshot) obj;
         return hasGeneratedParameterPlaceholder == other.hasGeneratedParameterPlaceholder
                 && requiresSetOperationIsolation == other.requiresSetOperationIsolation && sqlPolicy == other.sqlPolicy
-                && N.equals(parameters, other.parameters) && N.equals(namedParameterNameOccurrences, other.namedParameterNameOccurrences)
+                && deepParametersEquals(parameters, other.parameters) && N.equals(namedParameterNameOccurrences, other.namedParameterNameOccurrences)
                 && N.equals(generatedNamedParameterNames, other.generatedNamedParameterNames)
                 && N.equals(renderedNamedParameterTokens, other.renderedNamedParameterTokens);
+    }
+
+    /**
+     * Element-wise deep hash of the captured parameters, so that array-valued bindings (for example a
+     * {@code byte[]}) hash by content, matching {@link #deepParametersEquals(ImmutableList, ImmutableList)}
+     * and the raw {@code SubQuery(String, Collection)} path.
+     */
+    private static int deepParametersHashCode(final ImmutableList<Object> parameters) {
+        int h = 1;
+
+        for (final Object parameter : parameters) {
+            h = 31 * h + N.deepHashCode(parameter);
+        }
+
+        return h;
+    }
+
+    /**
+     * Element-wise deep equality of the captured parameters (array-valued bindings compare by content).
+     */
+    private static boolean deepParametersEquals(final ImmutableList<Object> left, final ImmutableList<Object> right) {
+        final int size = left.size();
+
+        if (size != right.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < size; i++) {
+            if (!N.deepEquals(left.get(i), right.get(i))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

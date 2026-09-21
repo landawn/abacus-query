@@ -2823,4 +2823,58 @@ public class ParsedSqlTest extends TestBase {
         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("::").build());
         Assertions.assertArrayEquals(new int[] { custom.indexOf('[') }, ParsedSql.subscriptOpeningOffsets(custom, tokenizer));
     }
+
+    @Test
+    public void positionalParameterOffsets_verticalTabGluedToIdentifier_alignsInSlowPath() {
+        // A vertical tab is Java whitespace but not tokenizer whitespace, so it stays inside the token
+        // "\u000Bx"; the source walk must not skip it, or the token is never found (used to throw ISE).
+        final String sql = "SELECT ?\u000Bx FROM t WHERE '?' = ?"; // the quoted '?' forces the source-alignment path
+        final ParsedSql parsed = ParsedSql.parse(sql);
+
+        assertEquals(2, parsed.parameterCount());
+        assertArrayEquals(new int[] { 7, 30 }, parsed.positionalParameterOffsets());
+
+        // and the raw-offset fast path agrees for the same shape without the quoted marker
+        final ParsedSql fast = ParsedSql.parse("SELECT ?\u000Bx FROM t WHERE a = ?");
+        assertArrayEquals(new int[] { 7, 28 }, fast.positionalParameterOffsets());
+    }
+
+    @Test
+    public void parameterizedSql_placeholderGluedToLineComment_dropsComment() {
+        // "?--" used to lex as the operator "?-" plus "-", so the comment survived, the newline was
+        // collapsed and the comment swallowed the second predicate (1 placeholder instead of 2).
+        final String sql = "SELECT * FROM t WHERE id = ?-- the id\nAND name = ?";
+        final ParsedSql parsed = ParsedSql.parse(sql);
+
+        assertEquals(2, parsed.parameterCount());
+        assertEquals("SELECT * FROM t WHERE id = ? AND name = ?", parsed.parameterizedSql());
+        assertArrayEquals(new int[] { 27, 49 }, parsed.positionalParameterOffsets());
+
+        // the same shape with a block comment glued to the placeholder
+        final ParsedSql block = ParsedSql.parse("SELECT * FROM t WHERE id = ?/* the id */AND name = ?");
+        assertEquals(2, block.parameterCount());
+        assertEquals("SELECT * FROM t WHERE id = ? AND name = ?", block.parameterizedSql());
+    }
+
+    @Test
+    public void quotedIdentifierSubscriptChain_documentedLimitation() {
+        // Documented: a subscript chain is only followed from an unquoted identifier root. After a quoted
+        // identifier the chain stops and a following group is classified by the standalone rules.
+        assertEquals(2, ParsedSql.parse("SELECT t.q[?]['a', ?] FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT \"q\"[?]['a', ?] FROM t").parameterCount());
+        assertArrayEquals(new int[] { 11 }, ParsedSql.parse("SELECT \"q\"[?]['a', ?] FROM t").positionalParameterOffsets());
+
+        // ... which does NOT mean the following group is ignored: a standalone "[?]" is a positional subscript
+        // and is still counted, only a bracket-quoted "['a', ?]" is left alone.
+        assertEquals(2, ParsedSql.parse("SELECT \"q\"[?][?] FROM t").parameterCount());
+        assertArrayEquals(new int[] { 11, 14 }, ParsedSql.parse("SELECT \"q\"[?][?] FROM t").positionalParameterOffsets());
+        assertEquals(3, ParsedSql.parse("SELECT \"q\"[?][?][?] FROM t").parameterCount());
+        assertEquals(2, ParsedSql.parse("SELECT t.\"q\"[?][?] FROM t").parameterCount());
+
+        // a backtick-quoted or bracket-quoted root behaves exactly like the double-quoted one
+        assertEquals(2, ParsedSql.parse("SELECT `q`[?][?] FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT `q`[?]['a', ?] FROM t").parameterCount());
+        assertEquals(2, ParsedSql.parse("SELECT [q][?][?] FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT [q][?]['a', ?] FROM t").parameterCount());
+    }
 }

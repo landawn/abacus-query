@@ -119,7 +119,7 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * @param subQuery the subquery that returns the values to check against (must not be {@code null}).
      *            If it has an explicit structured projection without {@code *} or {@code qualifier.*}, it must select
      *            exactly {@code propNames.size()} columns. Raw SQL and wildcard projections cannot be arity-checked here.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, if any element is {@code null}, empty, or blank,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any element is {@code null}, empty, or blank,
      *             if {@code subQuery} is {@code null}, or if the subquery has a known, non-wildcard structured projection
      *             whose number of selected columns does not match {@code propNames.size()}
      */

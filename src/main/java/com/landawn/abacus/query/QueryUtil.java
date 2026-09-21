@@ -1154,10 +1154,10 @@ public final class QueryUtil {
      * <p>{@link NamingPolicy#convert(String)} treats leading and trailing {@code '_'} runs as
      * separators and drops them, which would silently rename a column literally called
      * {@code _id}, {@code _1} or {@code t.__v}. This helper splits the leading and trailing underscore
-     * runs off each dot-separated segment, converts what is left with {@code namingPolicy} (as one
-     * qualified name, so segments without such runs render exactly as {@code namingPolicy.convert}
-     * renders the whole identifier), and re-attaches the runs unchanged. An all-underscore identifier
-     * or segment is returned as-is. Internal underscore runs are <i>not</i> preserved: they follow the
+     * runs off each dot-separated segment, converts what is left with {@code namingPolicy} one segment
+     * at a time (so a qualifier never acts as a word boundary of the segment that follows it:
+     * {@code acc.Id} renders as {@code acc.id}, not {@code acc._id}), and re-attaches the runs unchanged.
+     * An all-underscore identifier or segment is returned as-is. Internal underscore runs are <i>not</i> preserved: they follow the
      * naming policy (abacus-common 8.0.0 collapses {@code a__b} to {@code a_b} under
      * {@link NamingPolicy#SNAKE_CASE}), because keeping them would defeat snake-to-camel conversion.</p>
      *
@@ -1181,6 +1181,7 @@ public final class QueryUtil {
      * QueryUtil.convertIdentifier("__", NamingPolicy.SNAKE_CASE);                   // "__" (all underscores, returned as-is)
      * QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE);                // "t.__v" (runs preserved per segment)
      * QueryUtil.convertIdentifier("acc._id", NamingPolicy.SCREAMING_SNAKE_CASE);    // "ACC._ID"
+     * QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE);               // "acc.id" (segments converted independently)
      * QueryUtil.convertIdentifier("a__b", NamingPolicy.SNAKE_CASE);                 // "a_b" (internal runs follow the policy)
      * QueryUtil.convertIdentifier("_firstName", NamingPolicy.NO_CHANGE);            // "_firstName"
      * QueryUtil.convertIdentifier("", NamingPolicy.SNAKE_CASE);                     // ""
@@ -1197,68 +1198,70 @@ public final class QueryUtil {
             return identifier;
         }
 
-        final int len = identifier.length();
+        final int firstDot = identifier.indexOf('.');
 
-        if (identifier.charAt(0) != '_' && identifier.charAt(len - 1) != '_' && !identifier.contains("._") && !identifier.contains("_.")) {
-            return namingPolicy.convert(identifier); // no segment starts or ends with '_': nothing to preserve
+        if (firstDot < 0) {
+            return convertIdentifierSegment(identifier, namingPolicy);
         }
 
-        final String[] segments = identifier.split("\\.", -1);
-        final int segmentCount = segments.length;
-        final String[] leadingRuns = new String[segmentCount];
-        final String[] middles = new String[segmentCount];
-        final String[] trailingRuns = new String[segmentCount];
-        boolean hasMiddle = false;
+        // Convert each dot-separated segment on its own. Handing the whole qualified name to the policy lets the
+        // qualifier act as a word boundary of the segment that follows it (SNAKE_CASE turned "acc.Id" into
+        // "acc._id"), so the COLUMN segment now renders exactly as it does through a builder. The qualifier is
+        // still converted - a condition does not know the declared alias - so Filters.eq("acc.Id", 1) renders as
+        // "ACC.ID = 1" under SCREAMING_SNAKE_CASE where a builder with a known alias keeps "acc.ID": harmless for
+        // case-insensitive unquoted identifiers, but not full parity.
+        // Cost: one NamingPolicy.convert call per segment plus a StringBuilder and the substrings, measured at
+        // ~2-3x the single whole-name convert this replaced, on a path every rendered identifier goes through.
+        // Unqualified names - the common case - return above without entering this branch, and got faster.
+        final StringBuilder sb = new StringBuilder(identifier.length() + 8);
+        int start = 0;
+        int dot = firstDot;
 
-        for (int i = 0; i < segmentCount; i++) {
-            final String segment = segments[i];
-            final int segmentLen = segment.length();
-            int start = 0;
-
-            while (start < segmentLen && segment.charAt(start) == '_') {
-                start++;
-            }
-
-            int end = segmentLen;
-
-            while (end > start && segment.charAt(end - 1) == '_') {
-                end--;
-            }
-
-            leadingRuns[i] = segment.substring(0, start); // the whole segment when it is all underscores (or empty)
-            middles[i] = segment.substring(start, end);
-            trailingRuns[i] = segment.substring(end);
-            hasMiddle |= end > start;
+        while (dot >= 0) {
+            sb.append(convertIdentifierSegment(identifier.substring(start, dot), namingPolicy)).append('.');
+            start = dot + 1;
+            dot = identifier.indexOf('.', start);
         }
 
-        if (!hasMiddle) {
-            return identifier; // only underscores and dots: nothing to convert
-        }
-
-        // Convert the middles as ONE qualified name so that segments without edge runs render exactly as
-        // NamingPolicy.convert renders the whole identifier; fall back to per-segment conversion if the
-        // policy did not keep the dot structure.
-        String[] converted = namingPolicy.convert(String.join(".", middles)).split("\\.", -1);
-
-        if (converted.length != segmentCount) {
-            converted = new String[segmentCount];
-
-            for (int i = 0; i < segmentCount; i++) {
-                converted[i] = middles[i].isEmpty() ? middles[i] : namingPolicy.convert(middles[i]);
-            }
-        }
-
-        final StringBuilder sb = new StringBuilder(len + 8);
-
-        for (int i = 0; i < segmentCount; i++) {
-            if (i > 0) {
-                sb.append('.');
-            }
-
-            sb.append(leadingRuns[i]).append(converted[i]).append(trailingRuns[i]);
-        }
+        sb.append(convertIdentifierSegment(identifier.substring(start), namingPolicy));
 
         return sb.toString();
+    }
+
+    /**
+     * Converts one dot-free identifier segment with {@code namingPolicy} while preserving its leading and
+     * trailing underscore runs. Empty and all-underscore segments are returned as-is.
+     */
+    private static String convertIdentifierSegment(final String segment, final NamingPolicy namingPolicy) {
+        final int segmentLen = segment.length();
+
+        if (segmentLen == 0) {
+            return segment;
+        }
+
+        int start = 0;
+
+        while (start < segmentLen && segment.charAt(start) == '_') {
+            start++;
+        }
+
+        if (start == segmentLen) {
+            return segment; // all underscores: nothing to convert
+        }
+
+        int end = segmentLen;
+
+        // No end > start guard is needed: the all-underscore early return above leaves a non-'_' at start, so the
+        // scan always stops at or after start.
+        while (segment.charAt(end - 1) == '_') {
+            end--;
+        }
+
+        if (start == 0 && end == segmentLen) {
+            return namingPolicy.convert(segment); // no edge runs: nothing to preserve
+        }
+
+        return segment.substring(0, start) + namingPolicy.convert(segment.substring(start, end)) + segment.substring(end);
     }
 
     /**

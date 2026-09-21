@@ -55,8 +55,8 @@ import com.landawn.abacus.util.Strings;
  * including condition rendering, operator handling, and NULL semantics.
  *
  * <p>Instances are not thread-safe; create a new builder per thread or per query. Finish it with
- * {@code build()} or one of the terminal helpers ({@code apply(...)}, {@code accept(...)}, or
- * {@code debugPrint()}) to finalize construction and release internal resources.</p>
+ * {@code build()} or one of the terminal helpers ({@code apply(...)}, {@code accept(...)},
+ * {@code toSubQuery()}, or {@code debugPrint()}) to finalize construction and release internal resources.</p>
  *
  * <p>Use one of the predefined {@link Dsl} constants based on the desired parameter style and naming
  * convention. The constant name encodes both the parameter style and the identifier naming policy. The

@@ -95,7 +95,13 @@ import com.landawn.abacus.util.Strings;
  * placeholders exactly as {@code x[?]['c', ?]} does. A bracket group that instead follows a
  * bracket-<i>quoted identifier</i> ({@code SELECT [a] [b:c]}, {@code SELECT t.[a] [b:c]} &mdash; a SQL Server
  * column with a bracketed alias) is not chained and follows the standalone rules
- * below. A leading or embedded PostgreSQL-style subscript whose first non-blank content is a {@code :name}
+ * below. The chain root must be an unquoted identifier: after a quoted identifier the chain stops, and a
+ * following group is classified by the standalone rules instead of by the rules of the first group. So
+ * {@code "q"[?]['a', ?]} and {@code t."q"[?]['a', ?]} count only the first {@code ?} (the trailing
+ * {@code ['a', ?]} is a standalone bracket-quoted identifier), while {@code "q"[?][?]} still counts both,
+ * a standalone {@code [?]} being a positional subscript. A backtick-quoted ({@code `q`[?]['a', ?]}) or
+ * bracket-quoted ({@code [q][?]['a', ?]}) root behaves exactly like the double-quoted one.
+ * A leading or embedded PostgreSQL-style subscript whose first non-blank content is a {@code :name}
  * binding ({@code [:name]}, {@code [ :name ]}, {@code arr[:name]}) is the bracket-specific exception:
  * it is treated as a named binding rather than as a bracket-quoted identifier (a standalone
  * {@code [#{name}]} remains a bracket-quoted identifier). A bracket immediately after a qualification dot, such as {@code table.[:name]},
@@ -731,7 +737,7 @@ public final class ParsedSql {
      * {@code sql}. The tokenizer drops comments and collapses whitespace runs, so the token stream is walked
      * alongside the original text: whitespace and comments are skipped, then each non-blank token must be found
      * verbatim at the cursor. A null token-offset list denotes zero offsets (ordinary markers).
-     * Returns {@code null} if a token cannot be located (never expected, guarded anyway).
+     * Returns {@code null} if a token cannot be located (not expected for tokenizer output, guarded defensively).
      *
      * <p>A token is accepted at the cursor only when the cursor does not open a comment the tokenizer discarded,
      * because the openers share their first character with ordinary operator tokens: without that guard the token
@@ -758,12 +764,16 @@ public final class ParsedSql {
         for (int i = 0, size = words.size(); i < size && marker < markerCount; i++) {
             final String word = words.get(i);
 
-            if (Strings.isBlank(word)) {
+            // Only the tokenizer's own whitespace token (a collapsed run rendered as one space) is skipped
+            // here, and only the characters the tokenizer treats as whitespace are skipped in the source: a
+            // Java-whitespace character it does not recognize (vertical tab, U+2000-200A, ...) stays inside
+            // its token and must be matched verbatim, or the token would never be found at the cursor.
+            if (word.isEmpty() || " ".equals(word)) {
                 continue;
             }
 
             while (true) {
-                while (cursor < len && Character.isWhitespace(sql.charAt(cursor))) {
+                while (cursor < len && SqlParser.isTokenWhitespace(sql.charAt(cursor))) {
                     cursor++;
                 }
 

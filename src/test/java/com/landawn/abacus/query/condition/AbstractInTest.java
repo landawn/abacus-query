@@ -520,4 +520,64 @@ public class AbstractInTest extends TestBase {
         assertSame(scalars.parameters(), scalars.parameters());
         assertSame(scalars.values(), scalars.values());
     }
+
+    @Test
+    @Tag("2025")
+    public void testRowValueCollectionRowIsValidatedByCopiedWidthNotSize() {
+        // A Collection row whose size() disagrees with its iterator: the tuple that gets rendered is the
+        // iterated one, so its width (not size()) must match the arity.
+        final Collection<Object> oversized = new AbstractCollection<Object>() {
+            @Override
+            public Iterator<Object> iterator() {
+                return Arrays.<Object> asList(1, 2, 3).iterator();
+            }
+
+            @Override
+            public int size() {
+                return 2;
+            }
+        };
+
+        // the copied width is one past the arity, so it is reported as a lower bound
+        final IllegalArgumentException over = assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(oversized)));
+        assertEquals("Each value row must have exactly 2 element(s) to match the number of property names, but found at least 3", over.getMessage());
+
+        final Collection<Object> undersized = new AbstractCollection<Object>() {
+            @Override
+            public Iterator<Object> iterator() {
+                return Arrays.<Object> asList(1).iterator();
+            }
+
+            @Override
+            public int size() {
+                return 2;
+            }
+        };
+
+        // the iterator was exhausted before the arity, so the exact copied width is reported
+        final IllegalArgumentException under = assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(undersized)));
+        assertEquals("Each value row must have exactly 2 element(s) to match the number of property names, but found 1", under.getMessage());
+
+        // size() == arity but nothing to iterate: used to render "(a, b) IN (())"
+        final Collection<Object> emptyIterator = new AbstractCollection<Object>() {
+            @Override
+            public Iterator<Object> iterator() {
+                return Collections.emptyIterator();
+            }
+
+            @Override
+            public int size() {
+                return 2;
+            }
+        };
+
+        final IllegalArgumentException empty = assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(emptyIterator)));
+        assertEquals("Each value row must have exactly 2 element(s) to match the number of property names, but found 0", empty.getMessage());
+
+        // an honest Collection row is unaffected
+        assertEquals("(a, b) IN ((1, 2))", new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2))).toString());
+    }
 }

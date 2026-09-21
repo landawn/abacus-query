@@ -816,9 +816,15 @@ public final class SqlMapper {
      *
      * @param file the file to write to (will be created if it doesn't exist; parent directories will be created if needed)
      * @throws IllegalArgumentException if {@code file} is {@code null}
-     * @throws UncheckedIOException if an I/O error occurs while creating or writing to the file
-     * @throws UncheckedException if a stored SQL body or identifier contains a character
-     *         that is not legal in XML
+     * @throws UncheckedIOException if an I/O error occurs while creating or writing to the file, or if a stored
+     *         value contains a lone high surrogate followed by another character, which the XML serializer
+     *         rejects as an invalid UTF-16 surrogate
+     * @throws UncheckedException if a stored SQL body, identifier, or attribute value contains a lone low
+     *         surrogate, or a character below {@code U+0020} other than tab, LF, or CR; note that a lone high
+     *         surrogate at the very end of a value is silently dropped from the output, and that {@code U+FFFE}
+     *         and {@code U+FFFF} are written verbatim and make the output unloadable by {@code loadFrom}
+     *         (other noncharacters such as {@code U+FDD0}, and {@code U+007F} through {@code U+009F},
+     *         round-trip normally)
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void saveTo(final File file) {
@@ -851,9 +857,15 @@ public final class SqlMapper {
      *
      * @param filePath the target file path; must not be {@code null} or empty
      * @throws IllegalArgumentException if {@code filePath} is {@code null} or empty
-     * @throws UncheckedIOException if an I/O error occurs while creating or writing the file
-     * @throws UncheckedException if a stored SQL body or identifier contains a character
-     *         that is not legal in XML
+     * @throws UncheckedIOException if an I/O error occurs while creating or writing the file, or if a stored
+     *         value contains a lone high surrogate followed by another character, which the XML serializer
+     *         rejects as an invalid UTF-16 surrogate
+     * @throws UncheckedException if a stored SQL body, identifier, or attribute value contains a lone low
+     *         surrogate, or a character below {@code U+0020} other than tab, LF, or CR; note that a lone high
+     *         surrogate at the very end of a value is silently dropped from the output, and that {@code U+FFFE}
+     *         and {@code U+FFFF} are written verbatim and make the output unloadable by {@code loadFrom}
+     *         (other noncharacters such as {@code U+FDD0}, and {@code U+007F} through {@code U+009F},
+     *         round-trip normally)
      */
     public void saveTo(final String filePath) {
         N.checkArgNotEmpty(filePath, "filePath");
@@ -881,9 +893,15 @@ public final class SqlMapper {
      *
      * @param outputStream the output stream to write to (not closed by this method)
      * @throws IllegalArgumentException if {@code outputStream} is {@code null}
-     * @throws UncheckedIOException if an I/O error occurs while writing to the stream
-     * @throws UncheckedException if a stored SQL body or identifier contains a character
-     *         that is not legal in XML
+     * @throws UncheckedIOException if an I/O error occurs while writing to or flushing the stream, or if a stored
+     *         value contains a lone high surrogate followed by another character, which the XML serializer
+     *         rejects as an invalid UTF-16 surrogate
+     * @throws UncheckedException if a stored SQL body, identifier, or attribute value contains a lone low
+     *         surrogate, or a character below {@code U+0020} other than tab, LF, or CR; note that a lone high
+     *         surrogate at the very end of a value is silently dropped from the output, and that {@code U+FFFE}
+     *         and {@code U+FFFF} are written verbatim and make the output unloadable by {@code loadFrom}
+     *         (other noncharacters such as {@code U+FDD0}, and {@code U+007F} through {@code U+009F},
+     *         round-trip normally)
      */
     public void saveTo(final OutputStream outputStream) {
         N.checkArgNotNull(outputStream, "outputStream");
@@ -923,6 +941,32 @@ public final class SqlMapper {
             outputStream.flush();
         } catch (final IOException e) {
             throw new UncheckedIOException(e);
+        } catch (final UncheckedException e) {
+            // XmlUtil.transform wraps serializer failures as UncheckedException(TransformerException). A write or
+            // flush failure on outputStream arrives here as TransformerException <- SAXException <- IOException;
+            // surface it under the documented type instead of leaking the transformer wrapper. The chain is walked
+            // for the FIRST IOException rather than the root cause, because the IOException may itself carry a cause.
+            // UncheckedIOException extends UncheckedException, so an already-wrapped one - caught directly (a stream
+            // whose flush() throws it) or nested by the transformer (UncheckedException <- TransformerException <-
+            // UncheckedIOException("custom message") <- IOException) - is rethrown as it is: rebuilding it from its
+            // inner IOException would discard its own message.
+            if (e instanceof UncheckedIOException) {
+                throw e;
+            }
+
+            int depth = 0;
+
+            for (Throwable cause = e.getCause(); cause != null && depth < 64; cause = cause.getCause(), depth++) {
+                if (cause instanceof UncheckedIOException uioe) {
+                    throw uioe;
+                }
+
+                if (cause instanceof IOException ioe) {
+                    throw new UncheckedIOException(ioe);
+                }
+            }
+
+            throw e;
         }
     }
 

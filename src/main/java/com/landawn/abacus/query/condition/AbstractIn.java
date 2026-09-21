@@ -291,10 +291,12 @@ public abstract class AbstractIn extends ComposableCondition {
             if (row instanceof Collection) {
                 // A Collection knows its exact size, so report it instead of the truncated lower bound.
                 checkRowWidth(((Collection<?>) row).size(), arity, false);
-            } else {
-                // The loop above stops one element past the expected width, so an oversized count is a lower bound.
-                checkRowWidth(tuple.size(), arity, tuple.size() > arity);
             }
+
+            // The tuple was filled from the iterator, which a live or misbehaving Collection need not keep in
+            // step with size(); the copied width is what gets rendered, so it must match the arity as well.
+            // The loop above stops one element past the expected width, so an oversized count is a lower bound.
+            checkRowWidth(tuple.size(), arity, tuple.size() > arity);
 
             return tuple;
         } else if (Beans.isBeanClass(row.getClass())) {

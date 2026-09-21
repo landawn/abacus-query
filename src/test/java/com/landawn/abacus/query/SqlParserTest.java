@@ -2,7 +2,9 @@ package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -2007,9 +2009,11 @@ public class SqlParserTest extends TestBase {
         final String sql = "SELECT 1 #foo ; UPDATE t SET x=1";
         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("#foo").build());
 
-        // Under the built-in configuration, #foo starts a MySQL line comment and hides the rest
-        // of this line. The custom configuration makes it an operator, exposing the later UPDATE.
-        assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+        // Under the built-in configuration, #foo would start a MySQL line comment that hides the rest of
+        // this line; because the identifier-shaped "#foo" could equally be a SQL Server temp table and a ';'
+        // sits inside the would-be comment, the gate fails closed instead of trusting the comment.
+        // The custom configuration makes #foo an operator, exposing the later UPDATE directly.
+        assertFalse(SqlParser.isSyntacticallyReadQuery(sql));
         assertFalse(tokenizer.isSyntacticallyReadQuery(sql));
         assertFalse(tokenizer.isReadOnlyQuery(sql));
         assertTrue(java.lang.reflect.Modifier.isPublic(SqlParser.Tokenizer.class.getDeclaredMethod("isSyntacticallyReadQuery", String.class).getModifiers()));
@@ -3650,5 +3654,352 @@ public class SqlParserTest extends TestBase {
         assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT #{value} FROM t INTO OUTFILE 'result.txt'"));
         assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (:value) ON CONFLICT DO UPDATE SET v = :value"));
         assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (#{value}); DELETE FROM t"));
+    }
+
+    @Test
+    public void testWithClause_unrecognizedVerbAfterCteIsTheStatementVerb() {
+        // After a complete CTE list the next word is the statement verb: a verb the classifier does not
+        // know (SQLite REPLACE INTO, CockroachDB UPSERT INTO, CREATE/DROP) must not be skipped in favour
+        // of a SELECT that appears later inside that same statement (fail-open).
+        for (String sql : new String[] { "WITH t AS (SELECT 1) REPLACE INTO x SELECT * FROM t", "with t as (select 1) replace into x select * from t",
+                "WITH t AS (SELECT 1) UPSERT INTO x SELECT * FROM t", "WITH t AS (SELECT 1) CREATE TABLE x AS SELECT * FROM t",
+                "WITH t AS (SELECT 1) DROP TABLE x SELECT 1" }) {
+            assertFalse(SqlParser.isSelectQuery(sql), sql);
+            assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        // as a later statement the gates reject it too (isSelectQuery classifies the leading statement only)
+        final String second = "SELECT 1; WITH t AS (SELECT 1) REPLACE INTO x SELECT * FROM t";
+        assertFalse(SqlParser.isSyntacticallyReadQuery(second));
+        assertFalse(SqlParser.isReadOrInsertQuery(second));
+
+        // ordinary CTE statements and the SEARCH/CYCLE clauses that may follow a recursive CTE body still pass
+        assertTrue(SqlParser.isSelectQuery("WITH t AS (SELECT 1) SELECT * FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("WITH t AS (SELECT 1), u AS (SELECT 2) SELECT * FROM t, u"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("WITH RECURSIVE t(id) AS (SELECT 1) SEARCH BREADTH FIRST BY id SET ord SELECT * FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("WITH RECURSIVE t(id) AS (SELECT 1) CYCLE id SET looped USING path SELECT * FROM t"));
+        assertTrue(SqlParser.isReadOrInsertQuery("WITH t AS (SELECT 1) INSERT INTO x SELECT * FROM t"));
+    }
+
+    @Test
+    public void testIsReadOrInsertQuery_insertExecIsProcedureInvocation() {
+        // T-SQL "INSERT ... EXEC procedure" invokes a procedure mid-statement; it must be rejected like a
+        // leading EXEC, while a dot-qualified column called exec is still just an identifier.
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t EXEC dbo.proc"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t EXECUTE proc"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t (a, b) EXEC('DELETE FROM x')"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO #t EXEC sp_who"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t SELECT s.exec FROM s"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t SELECT 1; SELECT 2"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t DEFAULT VALUES"));
+
+        // The scan stops once SELECT/VALUES/DEFAULT settles the INSERT's source, so those words stay usable as
+        // ordinary column and table names afterwards (PostgreSQL allows "exec"/"execute" unquoted).
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t SELECT exec FROM s"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t SELECT execute FROM s"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t SELECT a FROM exec"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t (a) VALUES (1), (2) /* exec */"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t SELECT execute FROM s WHERE execute > 1"));
+
+        // identifiers, variables, temp tables and markers that merely CONTAIN the keyword are not procedure calls
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO _exec VALUES (1)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (@exec)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO #exec VALUES (1)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (:exec)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO exec_log VALUES (1)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t1exec VALUES (1)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES ('exec')"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES ($exec)"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t (a)EXEC p"));
+    }
+
+    @Test
+    public void testIsReadOrInsertQuery_execIdentifiersInInsertTarget() {
+        // EXEC/EXECUTE only invoke a procedure in the INSERT's source position. Target tables, AS aliases
+        // and target columns can use those names without changing an ordinary INSERT's classification.
+        for (String sql : new String[] { "INSERT INTO t (execute) VALUES (1)", "INSERT INTO execute VALUES (1)",
+                "INSERT INTO exec (execute, exec) VALUES (1, 2)", "INSERT INTO execute (execute) SELECT execute FROM s",
+                "insert into execute (exec, execute) values (1, 2)", "INSERT execute (exec) VALUES (1)",
+                "INSERT /* target */ INTO /* name */ execute /* columns */ (exec) VALUES (1)",
+                "INSERT INTO public.execute (exec) VALUES (1)", "INSERT INTO execute . t (execute) VALUES (1)",
+                "INSERT INTO public /* qualifier */ . execute (exec) VALUES (1)",
+                "INSERT INTO \"execute\" (execute) VALUES (1)", "INSERT INTO [execute] ([exec]) VALUES (1)",
+                "INSERT INTO `execute` (`exec`) VALUES (1)", "INSERT INTO t AS execute (exec) VALUES (1)",
+                "INSERT INTO t AS /* alias */ exec (execute) SELECT execute FROM s", "INSERT INTO execute DEFAULT VALUES",
+                "INSERT INTO t (execute[1]) VALUES (1)", "INSERT INTO t (SELECT execute FROM s) RETURNING execute",
+                "SELECT 1; INSERT INTO execute (exec) VALUES (1); INSERT INTO t (execute) VALUES (2)" }) {
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertTrue(SqlParser.tokenizer().isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    @Test
+    public void testIsReadOrInsertQuery_insertTargetDoesNotHideProcedureSource() {
+        // Consuming an identifier slot or a column list must leave the real procedure-source slot visible,
+        // including after quoted/qualified targets, table variables, comments, hints and statement boundaries.
+        for (String sql : new String[] { "INSERT INTO t EXEC p", "INSERT INTO t (execute) EXEC p", "INSERT INTO t (exec, execute) EXECUTE p",
+                "INSERT INTO execute EXEC p", "INSERT execute EXECUTE p", "INSERT INTO execute (exec) EXECUTE p",
+                "INSERT INTO public.execute (exec) EXEC p", "INSERT INTO execute.t (execute) EXECUTE p",
+                "INSERT INTO \"t\" EXEC p", "INSERT INTO [t] EXEC p", "INSERT INTO `t` EXEC p",
+                "INSERT INTO @t EXEC p", "INSERT INTO #t EXEC p", "INSERT INTO _t EXEC p",
+                "INSERT INTO t (a) /* source */ EXEC('SELECT 1')", "INSERT INTO t WITH (TABLOCK) (a) EXECUTE p",
+                "INSERT INTO t AS execute (a) EXEC p", "INSERT INTO t VALUES (1); INSERT INTO execute (exec) EXEC p",
+                "INSERT INTO execute VALUES (1); EXEC p" }) {
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertFalse(SqlParser.tokenizer().isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    @Test
+    public void tokenize_placeholderGluedToLineComment_isPlaceholderThenComment() {
+        // "?--" is the placeholder followed by a "--" line comment, not the operator "?-" and a stray "-":
+        // an operator name never contains "--" or "/*", so the comment must still be recognized (and dropped).
+        final String sql = "SELECT * FROM t WHERE id = ?-- the id\nAND name = ?";
+        final List<String> tokens = SqlParser.tokenize(sql);
+
+        assertEquals(2, java.util.Collections.frequency(tokens, "?"), tokens.toString());
+        assertFalse(tokens.contains("?-"), tokens.toString());
+        assertFalse(tokens.contains("the"), tokens.toString());
+        assertTrue(tokens.contains("AND"), tokens.toString());
+
+        // the same rule for a block comment glued to an operator ending in '/'
+        final List<String> block = SqlParser.tokenize("SELECT a ||/* c */ b FROM t");
+        assertTrue(block.contains("||"), block.toString());
+        assertFalse(block.contains("||/"), block.toString());
+        assertFalse(block.contains("c"), block.toString());
+
+        // a genuine "?-" operator followed by something other than '-' is untouched
+        assertTrue(SqlParser.tokenize("SELECT ?- ?:: line FROM t").contains("?-"));
+
+        // the skip must not apply at end of input, where no comment can follow
+        assertTrue(SqlParser.tokenize("SELECT ?-").contains("?-"));
+        assertTrue(SqlParser.tokenize("SELECT a||/").contains("||/"));
+
+        // the public token APIs move with the tokenizer
+        final String glued = "SELECT ?-- x\nAND 1";
+        assertEquals(7, SqlParser.indexOfToken(glued, "?", 0, true));
+        assertEquals(-1, SqlParser.indexOfToken(glued, "?-", 0, true));
+        assertEquals("?", SqlParser.nextToken(glued, 7));
+        assertEquals(8, SqlParser.nextTokenEndIndex(glued, 7));
+
+        // "#--c" is a MySQL hash comment, not the "#-" operator followed by "-c"
+        final List<String> hash = SqlParser.tokenize("SELECT a#--c\nFROM t");
+        assertFalse(hash.contains("#-"), hash.toString());
+        assertFalse(hash.contains("c"), hash.toString());
+        assertTrue(hash.contains("FROM"), hash.toString());
+    }
+
+    @Test
+    public void testTokenizerLetterBearingSeparatorMatchesInsideWord() {
+        // Documented: separator matching is a literal character-sequence comparison with no identifier-boundary
+        // check, and separator recognition itself is case-sensitive.
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("AND").build());
+
+        assertEquals(Arrays.asList("b", "AND"), tokenizer.tokenize("bAND"));
+        assertEquals(Arrays.asList("a", " ", "and", " ", "b"), tokenizer.tokenize("a and b"));
+    }
+
+    @Test
+    public void testSemicolonlessBatchIsNotSplit() {
+        // Documented model for the BUILT-IN configuration: only ';' separates statements. A T-SQL batch that
+        // chains statements without a semicolon is scanned as ONE statement, so its second verb is not at a
+        // statement-start position. Splitting is opt-in via TokenizerConfig.Builder.withSemicolonlessBatches(true).
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 DELETE FROM t"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT 1; DELETE FROM t"));
+    }
+
+    @Test
+    public void testHashCommentHidingSemicolonFailsClosed() {
+        // An identifier-shaped '#name' the temp-table heuristic cannot anchor used to become a MySQL comment that
+        // hid the ';' and the DELETE after it, although SQL Server executes that DELETE.
+        for (String sql : new String[] { "SELECT * FROM t1 WITH (NOLOCK), #t2; DELETE FROM x", "SELECT * FROM t1 a WITH (NOLOCK), #t2; DELETE FROM x",
+                "SELECT * FROM dbo.fn_table(1) AS f, #t2; DELETE FROM x", "SELECT * FROM (SELECT 1) AS d (c1), #t2; DELETE FROM x",
+                "SELECT * FROM t1 TABLESAMPLE (10 PERCENT), #t2; DELETE FROM x", "SELECT 1 #foo ; UPDATE t SET x=1", "SELECT 1 ##g; DROP TABLE t" }) {
+            assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        // '##name' (a SQL Server global temp table) is identifier-shaped too
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT 1 ## note; more"));
+
+        // a conventional MySQL comment (not identifier-shaped) keeps hiding its line, semicolon included
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 # note; more note"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 # note; more note\nFROM t"));
+        // an anchored temp table is a table, so the ';' is seen and the second statement classified as before
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t1, #t2; DELETE FROM x"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t1, #t2; SELECT 2"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t1 WITH (NOLOCK), #t2"));
+    }
+
+    @Test
+    public void testSemicolonlessBatchesOption() {
+        final SqlParser.Tokenizer batches = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(true).build());
+
+        // a second statement verb without a preceding ';' starts a new statement
+        for (String sql : new String[] { "SELECT 1 DELETE FROM t", "SELECT * FROM t\nDELETE FROM x", "SELECT * FROM t\nTRUNCATE TABLE x",
+                "SELECT * FROM t\nDROP TABLE x", "SELECT * FROM t\nEXEC p", "SELECT * FROM t\nEXEC('DELETE FROM x')", "SELECT 1 UPDATE t SET a = 2",
+                "SELECT 1 MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN DELETE", "SELECT 1 CREATE TABLE x (a int)",
+                "SELECT 1 ALTER TABLE t ADD b int", "select 1 delete from t", "INSERT INTO t VALUES (1) UPDATE t SET a = 2",
+                "INSERT INTO t SELECT 1 DELETE FROM t", "SELECT 1 CALL p", "SELECT 1 CALL p(1)", "select 1 call my_proc" }) {
+            assertFalse(batches.isSyntacticallyReadQuery(sql), sql);
+            assertFalse(batches.isReadOrInsertQuery(sql), sql);
+        }
+
+        assertFalse(batches.isReadOnlyQuery("SELECT 1 DELETE FROM t"));
+        assertTrue(batches.isReadOrInsertQuery("INSERT INTO t VALUES (1)"));
+        // a second INSERT chained without ';' is rejected by the insert gate under every configuration
+        assertFalse(batches.isReadOrInsertQuery("INSERT INTO t (a) SELECT 1 INSERT INTO t (a) SELECT 2"));
+        assertFalse(batches.isSyntacticallyReadQuery("INSERT INTO t (a) SELECT 1 INSERT INTO t (a) SELECT 2"));
+
+        // verbs that are part of a clause, inside parentheses, function calls, or a statement's own verb are not splits
+        for (String sql : new String[] { "SELECT * FROM t FOR UPDATE", "SELECT * FROM t ORDER BY id FOR UPDATE SKIP LOCKED",
+                "WITH t AS (SELECT 1) SELECT * FROM t", "WITH t AS (SELECT 1), u AS (SELECT 2) SELECT * FROM t, u",
+                "SELECT * FROM t WITH (UPDLOCK)", "SELECT delete_flag, update_time FROM t", "SELECT TRUNCATE(x, 2) FROM t",
+                "SELECT * FROM t WHERE x = 1 UNION SELECT 1", "SELECT * FROM t WHERE a = 'DELETE FROM x'", "SELECT [delete] FROM t",
+                "SELECT * FROM #tmp", "SELECT @@ROWCOUNT", "SELECT 1 -- DELETE FROM t", "SELECT 1 /* DELETE FROM t */" }) {
+            assertTrue(batches.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        assertTrue(batches.isReadOrInsertQuery("WITH t AS (SELECT 1) INSERT INTO x SELECT * FROM t"));
+        assertTrue(batches.isReadOrInsertQuery("INSERT INTO t SELECT 1 FROM s WHERE a = 'UPDATE'"));
+        assertFalse(batches.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON DUPLICATE KEY UPDATE a = 2"));
+        assertFalse(batches.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT DO UPDATE SET a = 2"));
+        assertFalse(batches.isReadOrInsertQuery("WITH t AS (SELECT 1) DELETE FROM t"));
+        assertFalse(batches.isSyntacticallyReadQuery("MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE SET a = 1 WHEN NOT MATCHED THEN INSERT (a) VALUES (1)"));
+
+        // the built-in configuration is unchanged
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 DELETE FROM t"));
+        assertTrue(SqlParser.tokenizer().isReadOrInsertQuery("INSERT INTO t VALUES (1) UPDATE t SET a = 2"));
+    }
+
+    @Test
+    public void testSemicolonlessBatches_verbAfterANonWordTokenIsStillASplit() {
+        // Every clause carve-out (FOR/KEY/DO/THEN/ON) applies only to the word IMMEDIATELY before the verb.
+        // A stale carve-out word used to survive intervening operators and numbers, hiding the next statement.
+        final SqlParser.Tokenizer batches = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(true).build());
+
+        for (String sql : new String[] { "SELECT * FROM a JOIN b ON 1=1 DELETE FROM u", "SELECT * FROM a JOIN b ON 1=1 UPDATE u SET x=1",
+                "SELECT * FROM a JOIN b ON 1=1 DROP TABLE u", "SELECT * FROM a JOIN b ON 1=1 EXEC sp_who",
+                "SELECT a, 1 FROM t GROUP BY key, 1 DELETE FROM z", "SELECT * FROM t WHERE do > 1 DELETE FROM u",
+                "SELECT * FROM a JOIN b ON (1=1) DELETE FROM u" }) {
+            assertFalse(batches.isSyntacticallyReadQuery(sql), sql);
+            assertFalse(batches.isReadOrInsertQuery(sql), sql);
+        }
+
+        // the carve-outs themselves still hold, because their keyword sits immediately before the verb
+        for (String sql : new String[] { "SELECT * FROM t FOR UPDATE", "SELECT * FROM a JOIN b ON a.id = b.id" }) {
+            assertTrue(batches.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        assertFalse(batches.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON DUPLICATE KEY UPDATE a = 2"));
+        assertFalse(batches.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT DO UPDATE SET a = 2"));
+    }
+
+    @Test
+    public void testSemicolonlessBatches_parenthesizedLeadingStatementIsStillSplit() {
+        // A statement that opens with a parenthesized query keeps its own verb out of the depth-0 scan, so the
+        // verb that follows the group used to be mistaken for the statement's first verb.
+        final SqlParser.Tokenizer batches = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(true).build());
+
+        for (String sql : new String[] { "(SELECT 1) DELETE FROM t", "(SELECT 1 FROM t) DROP TABLE x", "((SELECT 1)) DELETE FROM t",
+                "( SELECT 1 ) UPDATE t SET a=1", "(SELECT 1) UNION (SELECT 2) DELETE FROM t", "(SELECT 1) EXEC p",
+                "WITH c AS (SELECT 1) (SELECT * FROM c) DELETE FROM t" }) {
+            assertFalse(batches.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        // a parenthesized query with no following verb is still accepted
+        assertTrue(batches.isSyntacticallyReadQuery("(SELECT 1) UNION (SELECT 2)"));
+        assertTrue(batches.isSyntacticallyReadQuery("(SELECT 1)"));
+        assertTrue(batches.isReadOrInsertQuery("(SELECT 1) INSERT INTO t VALUES (1)"));
+    }
+
+    @Test
+    public void testSemicolonlessBatches_unanchoredTempTableCannotHideAStatement() {
+        // Without a ';' the '#t2' comment reading used to swallow the whole following statement. With batch
+        // mode on, an identifier-shaped '#' is the SQL Server temp table it looks like, so the rest of the line
+        // is scanned as SQL.
+        final SqlParser.Tokenizer batches = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(true).build());
+
+        for (String sql : new String[] { "SELECT * FROM t1 WITH (NOLOCK), #t2 DELETE FROM x", "SELECT * FROM t1 WITH (NOLOCK), #t2 UPDATE x SET a=1",
+                "SELECT * FROM t1, #t2 DELETE FROM x", "SELECT * FROM t1 WITH (NOLOCK), #t2; DELETE FROM x", "SELECT * FROM t1, ##g2 DELETE FROM x" }) {
+            assertFalse(batches.isSyntacticallyReadQuery(sql), sql);
+            assertFalse(batches.isReadOrInsertQuery(sql), sql);
+        }
+
+        // a read-only query that merely mentions a temp table is still accepted
+        assertTrue(batches.isSyntacticallyReadQuery("SELECT * FROM t1 WITH (NOLOCK), #t2"));
+        assertTrue(batches.isSyntacticallyReadQuery("SELECT * FROM #t2"));
+        // a non-identifier-shaped '#' is still a MySQL comment under both configurations
+        assertTrue(batches.isSyntacticallyReadQuery("SELECT 1 # note"));
+    }
+
+    @Test
+    public void testSemicolonlessBatches_qualifiedVerbNameIsNotAStatement() {
+        // A verb-like word used as a QUALIFIED column name is an identifier, not a statement verb.
+        final SqlParser.Tokenizer batches = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(true).build());
+
+        for (String sql : new String[] { "SELECT o.update FROM orders o", "SELECT t.merge FROM t", "SELECT a.drop FROM a",
+                "SELECT * FROM a JOIN b ON a.id = b.id AND b.delete = 0", "SELECT \"s\".update FROM s", "SELECT [s].update FROM s",
+                "SELECT update_time, delete_flag FROM t" }) {
+            assertTrue(batches.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        // an UNqualified verb word is still a split (that is the documented reason the option is opt-in)
+        assertFalse(batches.isSyntacticallyReadQuery("SELECT 1 DELETE FROM t"));
+    }
+
+    @Test
+    public void testSemicolonlessBatches_functionCallCarveOutSkipsComments() {
+        // "verb immediately followed by '(' is a function call" must look past comments as well as whitespace,
+        // or a comment turns MySQL's TRUNCATE() into an apparent second statement.
+        final SqlParser.Tokenizer batches = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(true).build());
+
+        for (String sql : new String[] { "SELECT TRUNCATE(amount, 2) FROM t", "SELECT TRUNCATE /* round */ (amount, 2) FROM t",
+                "SELECT TRUNCATE\n(amount, 2) FROM t", "SELECT TRUNCATE-- round\n(amount, 2) FROM t", "SELECT a, TRUNCATE /* c */ (b, 1) FROM t" }) {
+            assertTrue(batches.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        // EXEC/EXECUTE are procedure calls even with a parenthesized argument
+        assertFalse(batches.isSyntacticallyReadQuery("SELECT 1 EXEC('DROP TABLE t')"));
+
+        // CALL names its procedure separately, so the function-call rule still applies to it
+        assertFalse(batches.isSyntacticallyReadQuery("SELECT 1 CALL p"));
+        assertTrue(batches.isSyntacticallyReadQuery("SELECT CALL(x) FROM t"));
+    }
+
+    @Test
+    public void testPlaceholderGluedToHashCommentIsADocumentedAmbiguity() {
+        // Unlike "--" and "/*", '#' is a legal character in a PostgreSQL operator name, so "?#" is that
+        // dialect's intersection operator while MySQL reads a comment. The tokenizer keeps the operator
+        // reading; this pins it so a future change is deliberate.
+        final List<String> tokens = SqlParser.tokenize("SELECT * FROM t WHERE id = ?# the id\nAND name = ?");
+
+        assertTrue(tokens.contains("?#"), tokens.toString());
+        assertEquals(2, java.util.Collections.frequency(tokens, "?") + java.util.Collections.frequency(tokens, "?#"), tokens.toString());
+
+        // a spaced '#' is an ordinary MySQL comment
+        assertFalse(SqlParser.tokenize("SELECT 1 # c\nFROM t").contains("c"));
+    }
+
+    @Test
+    public void testTokenizerConfigSemicolonlessBatchesFlag() {
+        final SqlParser.TokenizerConfig defaults = SqlParser.defaultTokenizerConfig();
+        final SqlParser.TokenizerConfig batches = SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(true).build();
+
+        assertFalse(defaults.semicolonlessBatches());
+        assertTrue(batches.semicolonlessBatches());
+        assertEquals(defaults.separators(), batches.separators());
+        assertNotEquals(defaults, batches);
+        assertNotEquals(defaults.hashCode(), batches.hashCode());
+        assertTrue(batches.toString().contains("semicolonlessBatches=true"));
+
+        // the flag survives toBuilder(), an unchanged builder reuses its instance, and switching it off restores equality
+        assertTrue(batches.toBuilder().build().semicolonlessBatches());
+        assertSame(batches, batches.toBuilder().build());
+        assertEquals(defaults, batches.toBuilder().withSemicolonlessBatches(false).build());
+        assertSame(defaults, SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(false).build());
+        assertTrue(batches.toBuilder().withSeparator("::").build().semicolonlessBatches());
     }
 }

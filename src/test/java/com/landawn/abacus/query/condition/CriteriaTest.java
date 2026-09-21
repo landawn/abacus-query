@@ -1879,4 +1879,56 @@ public class CriteriaTest extends TestBase {
         assertEquals(" WHERE firstName = 'Ada'", criteria.toSql(null));
         assertEquals(" WHERE first_name = 'Ada'", criteria.toSql(NamingPolicy.SNAKE_CASE));
     }
+
+    @Test
+    public void testConditionOverloads_rejectSqlExpressionStartingWithClauseKeyword() {
+        // an SqlExpression whose literal spells a clause keyword is treated as a clause condition, exactly like
+        // the String overloads document; only the predicate/grouping/ordering text is accepted
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("WHERE a = 1")));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(Filters.expr("GROUP BY a")));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(Filters.expr("HAVING count(*) > 1")));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(Filters.expr("ORDER BY a")));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("LIMIT 10")));
+
+        // an identifier that merely starts with a keyword is fine
+        assertEquals(" WHERE WHERE_X = 1", Criteria.builder().where(Filters.expr("WHERE_X = 1")).build().toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testSelectModifier_trimsSurroundingWhitespace() {
+        final Criteria padded = Criteria.builder().selectModifier(" DISTINCT ").where(Filters.eq("a", 1)).build();
+        final Criteria plain = Criteria.builder().distinct().where(Filters.eq("a", 1)).build();
+
+        assertEquals("DISTINCT", padded.selectModifier());
+        assertEquals(plain, padded);
+        assertEquals(plain.hashCode(), padded.hashCode());
+        assertEquals(plain.toSql(NamingPolicy.NO_CHANGE), padded.toSql(NamingPolicy.NO_CHANGE));
+        assertFalse(padded.toSql(NamingPolicy.NO_CHANGE).contains("  "));
+
+        assertNull(Criteria.builder().selectModifier("   ").where(Filters.eq("a", 1)).build().selectModifier());
+    }
+
+    @Test
+    public void testSelectModifier_stripsUnicodeWhitespaceLikeIsBlank() {
+        // the blank check uses Character.isWhitespace (Strings.isBlank), so the normalization must strip the
+        // same set: " DISTINCT " padded with U+2003 EM SPACE used to keep both pad characters
+        final String emPadded = " DISTINCT ";
+        final Criteria padded = Criteria.builder().selectModifier(emPadded).where(Filters.eq("a", 1)).build();
+        final Criteria plain = Criteria.builder().distinct().where(Filters.eq("a", 1)).build();
+
+        assertEquals("DISTINCT", padded.selectModifier());
+        assertEquals(plain, padded);
+        assertEquals(plain.hashCode(), padded.hashCode());
+        assertNull(Criteria.builder().selectModifier("  ").where(Filters.eq("a", 1)).build().selectModifier());
+    }
+
+    @Test
+    public void testJoin_nullElement_messageNamesCondition() {
+        // the null-clause message must name the public parameter ('condition'), like the other clause validators
+        final IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join((Join) null));
+        assertTrue(e1.getMessage().contains("condition"), e1.getMessage());
+
+        final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join(Arrays.asList((Join) null)));
+        assertTrue(e2.getMessage().contains("condition"), e2.getMessage());
+    }
 }

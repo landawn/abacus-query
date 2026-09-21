@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -1221,6 +1222,186 @@ public class SqlMapperTest extends TestBase {
 
         mapper.saveTo(baos);
         assertFalse(closed[0]);
+    }
+
+    @Test
+    public void testSaveToOutputStream_writeFailureIsUncheckedIOException() {
+        // Regression (2026-09-20): XmlUtil.transform wraps a serializer failure as
+        // UncheckedException(TransformerException <- SAXException <- IOException), so an I/O failure on the target
+        // stream used to escape as UncheckedException instead of the documented UncheckedIOException.
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("q", "SELECT 1");
+
+        OutputStream failing = new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                throw new IOException("disk full");
+            }
+        };
+
+        com.landawn.abacus.exception.UncheckedIOException e = assertThrows(com.landawn.abacus.exception.UncheckedIOException.class,
+                () -> mapper.saveTo(failing));
+        assertEquals("disk full", e.getCause().getMessage());
+    }
+
+    @Test
+    public void testSaveToOutputStream_wrappedIOExceptionIsStillUncheckedIOException() {
+        // The IOException may itself carry a cause: the FIRST IOException in the chain is what counts, not the root.
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("q", "SELECT 1");
+
+        OutputStream failing = new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                throw new IOException("write failed", new IllegalArgumentException("root"));
+            }
+        };
+
+        com.landawn.abacus.exception.UncheckedIOException e = assertThrows(com.landawn.abacus.exception.UncheckedIOException.class,
+                () -> mapper.saveTo(failing));
+        assertEquals("write failed", e.getCause().getMessage());
+        assertTrue(e.getCause().getCause() instanceof IllegalArgumentException);
+    }
+
+    @Test
+    public void testSaveTo_illegalXmlCharInAttributeValueThrowsUncheckedException() {
+        // An XML-illegal control character is rejected wherever it is stored - attribute values go through the same
+        // serializer path as the SQL body and the id.
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("q", "SELECT 1", Map.of("k", "a\u0001b"));
+
+        com.landawn.abacus.exception.UncheckedException e = assertThrows(com.landawn.abacus.exception.UncheckedException.class,
+                () -> mapper.saveTo(new ByteArrayOutputStream()));
+        // The exact class matters: UncheckedIOException extends UncheckedException, so assertThrows alone would
+        // still pass if the IOException-unwrapping catch block re-typed this failure to UncheckedIOException.
+        assertEquals(com.landawn.abacus.exception.UncheckedException.class, e.getClass());
+    }
+
+    @Test
+    public void testSaveToOutputStream_preWrappedUncheckedIOExceptionKeepsItsOwnMessage() {
+        // Regression (2026-09-20): UncheckedIOException extends UncheckedException, so an already-wrapped
+        // UncheckedIOException was caught and rebuilt from its inner IOException, discarding its own message
+        // ("custom wrapper message" surfaced as "java.io.IOException: inner io").
+        SqlMapper mapper = new SqlMapper();
+        mapper.add("q", "SELECT 1");
+
+        final IOException inner = new IOException("inner io");
+
+        // (a) raised inside the transformer: UncheckedException <- TransformerException <- UncheckedIOException
+        OutputStream failingWrite = new OutputStream() {
+            @Override
+            public void write(int b) {
+                throw new com.landawn.abacus.exception.UncheckedIOException("custom wrapper message", inner);
+            }
+        };
+
+        com.landawn.abacus.exception.UncheckedIOException e = assertThrows(com.landawn.abacus.exception.UncheckedIOException.class,
+                () -> mapper.saveTo(failingWrite));
+        assertEquals("custom wrapper message", e.getMessage());
+        assertSame(inner, e.getCause());
+
+        // (b) raised outside the transformer, at flush time: caught directly as the UncheckedException subclass
+        OutputStream failingFlush = new OutputStream() {
+            @Override
+            public void write(int b) {
+                // accepts everything
+            }
+
+            @Override
+            public void flush() {
+                throw new com.landawn.abacus.exception.UncheckedIOException("flush wrapper message", inner);
+            }
+        };
+
+        com.landawn.abacus.exception.UncheckedIOException e2 = assertThrows(com.landawn.abacus.exception.UncheckedIOException.class,
+                () -> mapper.saveTo(failingFlush));
+        assertEquals("flush wrapper message", e2.getMessage());
+        assertSame(inner, e2.getCause());
+    }
+
+    @Test
+    public void testSaveTo_unpairedSurrogateMatrix() throws IOException {
+        // Pins the documented @throws split: a lone HIGH surrogate followed by another character is rejected by
+        // the serializer as an invalid UTF-16 surrogate (UncheckedIOException), a lone LOW surrogate is an
+        // invalid XML character (UncheckedException), and a TRAILING lone high surrogate is silently dropped.
+        SqlMapper midHigh = new SqlMapper();
+        midHigh.add("q", "SELECT '\uD800x'");
+        assertEquals(com.landawn.abacus.exception.UncheckedIOException.class,
+                assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> midHigh.saveTo(new ByteArrayOutputStream())).getClass());
+
+        SqlMapper midLow = new SqlMapper();
+        midLow.add("q", "SELECT '\uDC00x'");
+        assertEquals(com.landawn.abacus.exception.UncheckedException.class,
+                assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> midLow.saveTo(new ByteArrayOutputStream())).getClass());
+
+        SqlMapper trailingLow = new SqlMapper();
+        trailingLow.add("q", "SELECT '\uDC00");
+        assertEquals(com.landawn.abacus.exception.UncheckedException.class,
+                assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> trailingLow.saveTo(new ByteArrayOutputStream())).getClass());
+
+        // the id and an attribute value go through the same serializer path as the body
+        SqlMapper idMidHigh = new SqlMapper();
+        idMidHigh.add("q\uD800x", "SELECT 1");
+        assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> idMidHigh.saveTo(new ByteArrayOutputStream()));
+
+        SqlMapper attrMidLow = new SqlMapper();
+        attrMidLow.add("q", "SELECT 1", Map.of("k", "a\uDC00b"));
+        assertEquals(com.landawn.abacus.exception.UncheckedException.class,
+                assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> attrMidLow.saveTo(new ByteArrayOutputStream())).getClass());
+
+        // a trailing lone high surrogate: no exception at all, the character is dropped from the output
+        SqlMapper trailingHigh = new SqlMapper();
+        trailingHigh.add("q", "SELECT '\uD800");
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        trailingHigh.saveTo(bos);
+
+        try (InputStream is = new ByteArrayInputStream(bos.toByteArray())) {
+            assertEquals("SELECT '", SqlMapper.loadFrom(is).get("q").originalSql());
+        }
+
+        // a well-formed surrogate pair is written and reloads unchanged
+        SqlMapper pair = new SqlMapper();
+        pair.add("q", "SELECT '\uD800\uDC00'");
+        ByteArrayOutputStream pairOut = new ByteArrayOutputStream();
+        pair.saveTo(pairOut);
+
+        try (InputStream is = new ByteArrayInputStream(pairOut.toByteArray())) {
+            assertEquals("SELECT '\uD800\uDC00'", SqlMapper.loadFrom(is).get("q").originalSql());
+        }
+    }
+
+    @Test
+    public void testSaveTo_controlCharacterAndNoncharacterBoundaries() throws IOException {
+        // Pins the documented @throws boundary: only characters BELOW U+0020 other than tab, LF and CR are
+        // rejected - DEL and the C1 controls are written and reload, and of the XML noncharacters only
+        // U+FFFE/U+FFFF make the output unloadable (U+FDD0 round-trips).
+        for (char rejected : new char[] { '\u0000', '\u0001', '\u000B', '\u000C', '\u001F' }) {
+            SqlMapper mapper = new SqlMapper();
+            mapper.add("q", "SELECT '" + rejected + "'");
+            assertEquals(com.landawn.abacus.exception.UncheckedException.class,
+                    assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> mapper.saveTo(new ByteArrayOutputStream())).getClass());
+        }
+
+        for (char accepted : new char[] { '\t', '\n', '\r', '\u007F', '\u0080', '\u0085', '\u009F', '\uFDD0' }) {
+            SqlMapper mapper = new SqlMapper();
+            mapper.add("q", "SELECT '" + accepted + "'");
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            mapper.saveTo(bos);
+
+            try (InputStream is = new ByteArrayInputStream(bos.toByteArray())) {
+                assertEquals("SELECT '" + accepted + "'", SqlMapper.loadFrom(is).get("q").originalSql());
+            }
+        }
+
+        // U+FFFE is written verbatim but is outside XML 1.0's Char production, so the output cannot be reloaded
+        SqlMapper nonChar = new SqlMapper();
+        nonChar.add("q", "SELECT '\uFFFE'");
+        ByteArrayOutputStream nonCharOut = new ByteArrayOutputStream();
+        nonChar.saveTo(nonCharOut);
+
+        try (InputStream is = new ByteArrayInputStream(nonCharOut.toByteArray())) {
+            assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.loadFrom(is));
+        }
     }
 
     @Test

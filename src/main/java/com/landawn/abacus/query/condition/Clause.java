@@ -120,7 +120,7 @@ public abstract class Clause extends Cell {
 
     private static Condition validateClauseOperand(final Operator operator, final Condition cond) {
         N.requireNonNull(operator, "operator");
-        N.checkArgNotNull(cond, "cond");
+        N.checkArgNotNull(cond, "condition");
 
         if (!isClause(operator)) {
             throw new IllegalArgumentException("Clause operator must be a SQL clause operator, but was: " + operator);

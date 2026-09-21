@@ -462,7 +462,9 @@ public final class Dsl {
      * @param entity the entity object to insert
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if entity is null; if a String entity is blank; if a Map entity is empty or has a non-String or blank key;
-     *                                  or if a bean has no non-null, non-default insertable values
+     *                                  or if a bean has no insertable value left after its {@code null} values and
+     *                                  default-valued ID properties are skipped (a non-ID primitive still holding its
+     *                                  default, such as {@code 0}, is kept)
      */
     public SqlBuilder insert(final Object entity) {
         return insert(entity, null);
@@ -500,7 +502,9 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if entity is null; if a String entity is blank; if a Map entity is empty,
      *                                  has a non-String or blank key, or has no entries left after exclusions are applied;
-     *                                  or if a bean has no non-null, non-default insertable values after exclusions are applied
+     *                                  or if a bean has no insertable value left after exclusions are applied and its
+     *                                  {@code null} values and default-valued ID properties are skipped (a non-ID
+     *                                  primitive still holding its default, such as {@code 0}, is kept)
      */
     public SqlBuilder insert(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, SqlBuilder.INSERTION_PART_MSG);
@@ -1016,6 +1020,14 @@ public final class Dsl {
      * detected inside it are converted according to this DSL's naming policy (exactly as in the
      * multi-column {@code select(String...)} overload), while function names, SQL keywords,
      * quoted strings and an alias following {@code AS} are preserved unchanged.</p>
+     *
+     * <p>The argument is treated as <em>one</em> select item. A comma-separated list is not split, and an
+     * alias must be introduced with {@code AS}: under a naming policy that changes the text (for example
+     * {@code snake_case}), an implicit alias such as {@code "firstName fn"} is treated as part of the
+     * expression and the whole text is aliased as a single column (rendering
+     * {@code first_name fn AS "firstName fn"}), a comma list such as {@code "firstName, lastName"} is aliased
+     * as one column, and identifiers after the first top-level {@code AS} are left unconverted. Use
+     * {@link #select(String...)} or {@link #select(Collection)} for several columns.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

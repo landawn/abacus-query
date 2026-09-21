@@ -254,6 +254,6 @@ public class GroupBy extends Clause {
      *                                  or {@code null} values
      */
     public GroupBy(final Map<String, SortDirection> groupings) {
-        this(Filters.expr(AbstractCondition.createSortSpec(groupings)));
+        this(Filters.expr(AbstractCondition.createSortSpec(N.checkArgNotEmpty(groupings, "groupings"))));
     }
 }
