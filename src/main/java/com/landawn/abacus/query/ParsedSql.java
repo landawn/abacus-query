@@ -148,6 +148,41 @@ import com.landawn.abacus.util.Strings;
  * A genuine JSON operator may still take {@code NULL}, an identifier named {@code format}, or
  * a call to {@code format(...)} as its right operand.</p>
  *
+ * <p id="current-limitations"><b>Current limitations:</b> The following cases recorded in
+ * {@code docs/open_issues.txt} remain unsupported at present. Question marks can be misclassified
+ * in these forms, affecting both {@link #parameterCount()} and mixed-parameter-style validation:</p>
+ * <ul>
+ *   <li>SQL/JSON uniqueness clauses: {@code WITH UNIQUE KEYS} and {@code WITHOUT UNIQUE KEYS}
+ *       are not recognized as constructor options. For example,
+ *       {@code SELECT ARRAY[JSON_OBJECT('k' VALUE ? WITH UNIQUE KEYS)]} reports zero parameters
+ *       instead of one; {@code WITHOUT UNIQUE KEYS} behaves the same way. Adding a named binding
+ *       such as {@code :other} can therefore bypass mixed-style rejection.</li>
+ *   <li>Chained geometric casts: recognition can stop at an intermediate non-geometric type.
+ *       Both {@code SELECT ?- CAST(? AS text)::line} and {@code SELECT ?- ?::text ::line}
+ *       report two parameters instead of one because the unary operator is counted as a binding.</li>
+ *   <li>Qualified geometric literals without separating whitespace:
+ *       {@code SELECT ?-pg_catalog.line'(0,0),(1,0)'} reports one parameter instead of zero.
+ *       The adjacent-literal fallback recognizes unqualified {@code line'} and {@code lseg'}
+ *       prefixes only; whitespace before the quoted literal can change classification.</li>
+ *   <li>Parenthesized query terms in {@code JSON_ARRAY}: a leading parenthesized query is not
+ *       recognized as the query form, so query-body tokens can be mistaken for constructor options.
+ *       For example, the following statement reports one parameter instead of zero because
+ *       {@code NULL ON NULL}, spanning two join predicates, is treated as a constructor clause:
+ *       <pre>{@code
+ * SELECT JSON_ARRAY(
+ *   (SELECT 1) UNION
+ *   SELECT 1 FROM t JOIN u JOIN v ON v.payload ? NULL ON NULL
+ * )
+ *       }</pre>
+ *       Adding a named binding can consequently cause a false mixed-style rejection.</li>
+ * </ul>
+ * <p>A related column-mapping limitation in {@link QueryUtil}, also recorded in that issue file,
+ * affects automatic table qualification: a mapping such as
+ * {@code @Column("U&\"caf!00e9\" UESCAPE E'!'")} is not recognized as an unqualified identifier
+ * because the {@code E} prefix on the escape literal is unsupported. The table alias is therefore
+ * omitted, which can produce an ambiguous column reference in a self-join. The ordinary escape
+ * literal form {@code U&"caf!00e9" UESCAPE '!'} supports automatic qualification.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = :userId AND status = :status");
@@ -514,7 +549,10 @@ public final class ParsedSql {
      *   <li>Standard JDBC placeholders ({@code ?})</li>
      * </ul>
      *
-     * <p>Note: Mixing different parameter styles in the same SQL statement will result in an {@code IllegalArgumentException}.</p>
+     * <p>Mixing detected parameter styles in the same SQL statement results in an
+     * {@code IllegalArgumentException}. Detection is subject to the
+     * <a href="#current-limitations">current limitations</a> in the class-level documentation,
+     * which can cause missed or false mixed-style rejections.</p>
      *
      * <p>Parameter conversion is only applied when the SQL is a recognized data operation statement
      * (see the class-level documentation). All trailing semicolons and surrounding whitespace are
@@ -660,7 +698,8 @@ public final class ParsedSql {
      * {@code ABSENT ON NULL}, or {@code FORMAT JSON}. For example,
      * {@code SELECT JSON_OBJECT('k' VALUE ? NULL ON NULL)} contains one parameter, whereas
      * {@code SELECT ?- lseg '(0,0),(1,0)'} contains none. See the class-level documentation for the
-     * supported operator contexts. Constructor option words inside a {@code JSON_ARRAY} query body
+     * supported operator contexts and <a href="#current-limitations">current limitations</a>.
+     * Constructor option words inside a recognized {@code JSON_ARRAY} query body
      * retain their ordinary SQL meaning; {@code SELECT JSON_ARRAY(SELECT payload ? format JSON FROM t)}
      * contains no parameters.</p>
      *
