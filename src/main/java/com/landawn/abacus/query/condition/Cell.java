@@ -78,8 +78,7 @@ public abstract class Cell extends AbstractCondition {
      *
      * @param operator the operator to apply to the condition (must not be {@code null})
      * @param condition the condition to wrap (must not be {@code null})
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code condition} is {@code null}
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or {@code condition} is {@code null}
      */
     protected Cell(final Operator operator, final Condition condition) {
         super(operator);

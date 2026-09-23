@@ -713,10 +713,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class
      * @param namingPolicy the naming policy to apply
      * @return the table name
-     * @throws NullPointerException if {@code entityClass} is {@code null}
-     * @throws IllegalArgumentException if {@code entityClass} is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     protected static String getTableName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
+        N.checkArgNotNull(entityClass, cs.entityClass);
+
         String[] entityTableNames = classTableNameMap.get(entityClass);
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
@@ -799,8 +800,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class
      * @param namingPolicy the naming policy to apply
      * @return the table alias if defined, otherwise the table name
-     * @throws NullPointerException if {@code entityClass} is {@code null}
-     * @throws IllegalArgumentException if {@code entityClass} defines no {@link Table} alias and is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, or if it defines no {@link Table} alias and is
+     *         not a valid entity bean class
      */
     protected static String tableAliasOrName(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         return tableAliasOrName(null, entityClass, namingPolicy);
@@ -814,9 +815,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class
      * @param namingPolicy the naming policy to apply
      * @return the table alias if specified or defined, otherwise the table name
-     * @throws NullPointerException if {@code alias} is {@code null} or empty and {@code entityClass} is {@code null}
-     * @throws IllegalArgumentException if {@code alias} is {@code null} or empty, {@code entityClass} defines no {@link Table}
-     *         alias, and {@code entityClass} is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code alias} is {@code null} or empty and either {@code entityClass} is {@code null},
+     *         or {@code entityClass} defines no {@link Table} alias and is not a valid entity bean class
      */
     protected static String tableAliasOrName(final String alias, final Class<?> entityClass, final NamingPolicy namingPolicy) {
         String tableAliasOrName = alias;
@@ -881,6 +881,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     protected static Set<String>[] loadPropNamesByClass(final Class<?> entityClass) {
+        N.checkArgNotNull(entityClass, cs.entityClass);
+
         Set<String>[] val = defaultPropNamesPool.get(entityClass);
 
         if (val == null) {
@@ -997,6 +999,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      */
     protected static ImmutableSet<String> getSubEntityPropNames(final Class<?> entityClass) {
+        N.checkArgNotNull(entityClass, cs.entityClass);
+
         ImmutableSet<String> subEntityPropNames = subEntityPropNamesPool.get(entityClass);
         if (subEntityPropNames == null) {
             synchronized (subEntityPropNamesPool) {
@@ -1085,11 +1089,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Map<String, SqlExpression> params = namedPlaceholders("firstName", "lastName");
      * }</pre>
      *
-     * @param propNames the property names
+     * @param propNames the property names (must not be {@code null})
      * @return a map with property names mapped to {@code Filters.QME}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}
      */
     @Beta
     protected static Map<String, SqlExpression> namedPlaceholders(final String... propNames) {
+        N.checkArgNotNull(propNames, cs.propNames);
+
         final Map<String, SqlExpression> m = N.newLinkedHashMap(propNames.length);
 
         for (final String propName : propNames) {
@@ -1112,11 +1119,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Map<String, SqlExpression> params = namedPlaceholders(Arrays.asList("firstName", "lastName"));
      * }</pre>
      *
-     * @param propNames the collection of property names
+     * @param propNames the collection of property names (must not be {@code null})
      * @return a map with property names mapped to {@code Filters.QME}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}
      */
     @Beta
     protected static Map<String, SqlExpression> namedPlaceholders(final Collection<String> propNames) {
+        N.checkArgNotNull(propNames, cs.propNames);
+
         final Map<String, SqlExpression> m = N.newLinkedHashMap(propNames.size());
 
         for (final String propName : propNames) {
@@ -2210,12 +2220,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code AS} text inside quoted regions, comments, and nested parentheses. Also validates that
      * the operation is a QUERY and that column names have been set.
      *
-     * @param tableName the table name, optionally including an alias (e.g., "users u")
+     * @param tableName the table name, optionally including an alias (e.g., "users u"; must not be {@code null})
      * @throws IllegalStateException if this builder is closed, if the current operation is not {@code QUERY}, no columns have been set by
      *                               {@code select()}, or {@code from(...)} was already called for this query segment
+     * @throws IllegalArgumentException if {@code tableName} is {@code null}
      */
     protected void appendOperationBeforeFrom(final String tableName) {
         checkCanAppendFrom();
+        N.checkArgNotNull(tableName, cs.tableName);
 
         final String trimmedTableName = tableName.trim();
         final TopLevelAlias tableAlias = findTopLevelAlias(trimmedTableName, false);
@@ -3453,10 +3465,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * column list that is qualified anyway. The current entity mapping is retained, and the table alias
      * is restored even if column rendering fails.
      *
-     * @param appendColumns renders the parenthesized column list
-     * @throws IllegalArgumentException if a rendered column name carries a table or schema qualifier
+     * @param appendColumns renders the parenthesized column list (must not be {@code null})
+     * @throws IllegalArgumentException if {@code appendColumns} is {@code null}, or if a rendered column name carries a table
+     *         or schema qualifier
      */
     protected void appendUsingClause(final Runnable appendColumns) {
+        N.checkArgNotNull(appendColumns, cs.appendColumns);
+
         final String tableAlias = _tableAlias;
         _tableAlias = null;
 
@@ -5059,14 +5074,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * state that such a mutation can change so the caller may retry with a valid clause. Raw
      * {@link #append(String)} deliberately remains an unstructured escape hatch and is not wrapped.
      *
-     * @param mutation the structured-clause rendering operation
+     * @param mutation the structured-clause rendering operation; must not be {@code null}
      * @return this builder after successful rendering
      * @throws IllegalStateException if this builder is closed; any {@link RuntimeException} or {@link Error} thrown by
      *         {@code mutation} is rethrown unchanged after the builder state has been restored
+     * @throws IllegalArgumentException if {@code mutation} is {@code null}
      */
     @SuppressWarnings("unchecked")
     protected This mutateAtomically(final Runnable mutation) {
         assertNotClosed();
+        N.checkArgNotNull(mutation, cs.mutation);
 
         final MutationCheckpoint checkpoint = new MutationCheckpoint(this);
 
@@ -8397,9 +8414,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Seeds a nested or sibling builder with this builder's named-parameter occurrence counts so the
      * child cannot generate placeholders that already exist in the surrounding SQL.
      *
-     * @param childBuilder the nested or sibling builder to seed
+     * @param childBuilder the nested or sibling builder to seed; must not be {@code null}
+     * @throws IllegalArgumentException if {@code childBuilder} is {@code null}
      */
     protected final void seedNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
+        N.checkArgNotNull(childBuilder, cs.childBuilder);
+
         if (N.isEmpty(_namedParameterNameOccurrences)) {
             return;
         }
@@ -8415,9 +8435,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Copies back named-parameter occurrence counts after a nested or sibling builder has rendered.
      *
-     * @param childBuilder the nested or sibling builder whose occurrence counts to adopt
+     * @param childBuilder the nested or sibling builder whose occurrence counts to adopt; must not be {@code null}
+     * @throws IllegalArgumentException if {@code childBuilder} is {@code null} (checked before any state of this builder is changed)
      */
     protected final void adoptNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
+        N.checkArgNotNull(childBuilder, cs.childBuilder);
+
         _namedParameterNameOccurrences.clear();
         _namedParameterNameOccurrences.putAll(childBuilder._namedParameterNameOccurrences);
 
@@ -8533,22 +8556,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends the values for an INSERT operation, in the iteration order of the map's key set.
      *
-     * @param props a map of property names to values to be inserted
-     * @throws IllegalArgumentException under {@link SqlPolicy#RAW_SQL} if a value is a {@code Float} or {@code Double}
-     *         that is {@code NaN} or infinite, or another {@code Number} whose text is not a valid numeric literal
+     * @param props a map of property names to values to be inserted; must not be {@code null}
+     * @throws IllegalArgumentException if {@code props} is {@code null}; or, under {@link SqlPolicy#RAW_SQL}, if a value
+     *         is a {@code Float} or {@code Double} that is {@code NaN} or infinite, or another {@code Number} whose text is
+     *         not a valid numeric literal
      * @throws IllegalStateException under {@link SqlPolicy#NAMED_SQL} if the named-parameter handler emits an empty token
      */
     protected void appendInsertProps(final Map<String, Object> props) {
+        N.checkArgNotNull(props, cs.props);
+
         appendInsertProps(props, props.keySet(), -1);
     }
 
     /**
      * Appends the values for an INSERT operation in the specified column order.
      *
-     * @param props a map of property names to values to be inserted
-     * @param propNames the ordered column names
-     * @throws IllegalArgumentException under {@link SqlPolicy#RAW_SQL} if a value is a {@code Float} or {@code Double}
-     *         that is {@code NaN} or infinite, or another {@code Number} whose text is not a valid numeric literal
+     * @param props a map of property names to values to be inserted; must not be {@code null}
+     * @param propNames the ordered column names; must not be {@code null}
+     * @throws IllegalArgumentException if {@code props} or {@code propNames} is {@code null}; or, under
+     *         {@link SqlPolicy#RAW_SQL}, if a value is a {@code Float} or {@code Double} that is {@code NaN} or infinite,
+     *         or another {@code Number} whose text is not a valid numeric literal
      * @throws IllegalStateException under {@link SqlPolicy#NAMED_SQL} if the named-parameter handler emits an empty token
      */
     protected void appendInsertProps(final Map<String, Object> props, final Collection<String> propNames) {
@@ -8558,14 +8585,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends the values for an INSERT operation in the specified column order.
      *
-     * @param props a map of property names to values to be inserted
-     * @param propNames the ordered column names
+     * @param props a map of property names to values to be inserted; must not be {@code null}
+     * @param propNames the ordered column names; must not be {@code null}
      * @param rowIndex zero-based row index in batch insert mode; negative for single-row insert
-     * @throws IllegalArgumentException under {@link SqlPolicy#RAW_SQL} if a value is a {@code Float} or {@code Double}
-     *         that is {@code NaN} or infinite, or another {@code Number} whose text is not a valid numeric literal
+     * @throws IllegalArgumentException if {@code props} or {@code propNames} is {@code null}; or, under
+     *         {@link SqlPolicy#RAW_SQL}, if a value is a {@code Float} or {@code Double} that is {@code NaN} or infinite,
+     *         or another {@code Number} whose text is not a valid numeric literal
      * @throws IllegalStateException under {@link SqlPolicy#NAMED_SQL} if the named-parameter handler emits an empty token
      */
     protected void appendInsertProps(final Map<String, Object> props, final Collection<String> propNames, final int rowIndex) {
+        N.checkArgNotNull(props, cs.props);
+        N.checkArgNotNull(propNames, cs.propNames);
+
         final boolean indexedNames = rowIndex >= 0 && (_sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL);
         int i = 0;
         for (final String propName : propNames) {
@@ -8578,8 +8609,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Appends the given condition to the SQL string builder.
+     * Implementations must reject a {@code null} condition with an {@link IllegalArgumentException}.
      *
-     * @param cond the condition to append
+     * @param cond the condition to append; must not be {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null}
      */
     protected abstract void appendCondition(final Condition cond);
 
@@ -8587,7 +8620,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Appends the given condition as a parameter value expression. If the condition is a {@code SubQuery},
      * it is wrapped in parentheses; otherwise, it is appended directly.
      *
-     * @param cond the condition to append
+     * @param cond the condition to append; must not be {@code null}
+     * @throws IllegalArgumentException if {@code cond} is {@code null} (rejected by {@link #appendCondition(Condition)})
      */
     protected void appendConditionAsParameter(final Condition cond) {
         if (cond instanceof SubQuery) {
@@ -8879,19 +8913,21 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityInfo the bean info for the entity class, or {@code null}
      * @param propColumnNameMap the property-to-column-name mapping
      * @param tableAlias the table alias to prefix the column name, or {@code null}
-     * @param propName the property or column name to append
+     * @param propName the property or column name to append; must not be {@code null}
      * @param propAlias the column alias for the SELECT clause, or {@code null}
      * @param withClassAlias whether to prefix the alias with the class alias
      * @param classAlias the class alias to use when {@code withClassAlias} is {@code true}
      * @param isForSelect whether this column is being appended in a SELECT clause (adds AS alias)
      * @param quotePropAlias whether to wrap the property alias in the dialect's identifier quote
-     * @throws IllegalArgumentException if {@code propName} does not resolve to a mapped column or sub-entity property
-     *         and is empty, blank, or contains a SQL comment token, or if, in a SELECT clause, it carries a top-level
-     *         {@code AS} alias that is blank, quoted, or contains a line break or an SQL comment token
+     * @throws IllegalArgumentException if {@code propName} is {@code null}; if it does not resolve to a mapped column or
+     *         sub-entity property and is empty, blank, or contains a SQL comment token; or if, in a SELECT clause, it carries
+     *         a top-level {@code AS} alias that is blank, quoted, or contains a line break or an SQL comment token
      */
     protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo, final ImmutableMap<String, ColumnInfo> propColumnNameMap,
             final String tableAlias, final String propName, final String propAlias, final boolean withClassAlias, final String classAlias,
             final boolean isForSelect, boolean quotePropAlias) {
+        N.checkArgNotNull(propName, cs.propName);
+
         ColumnInfo tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
@@ -9061,11 +9097,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Checks whether the specified entity class has sub-entity properties that should be included in the query.
      *
-     * @param entityClass the entity class to check
+     * @param entityClass the entity class to check; must not be {@code null}
      * @param includeSubEntityProperties whether sub-entity properties are requested to be included
      * @return {@code true} if sub-entity properties should be included and the entity class has them
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     protected static boolean hasSubEntityToInclude(final Class<?> entityClass, final boolean includeSubEntityProperties) {
+        N.checkArgNotNull(entityClass, cs.entityClass);
+
         return includeSubEntityProperties && N.notEmpty(getSubEntityPropNames(entityClass));
     }
 
@@ -9078,9 +9117,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propOrColumnNames array of property or column names to check
      * @return {@code true} if the array contains a single inline query, {@code false} otherwise
-     * @throws NullPointerException if {@code propOrColumnNames} is {@code null}, or has exactly one element and that element is {@code null}
+     * @throws IllegalArgumentException if {@code propOrColumnNames} is {@code null}, or has exactly one element and that element is {@code null}
      */
     protected static boolean isInlineQuery(final String... propOrColumnNames) {
+        N.checkArgNotNull(propOrColumnNames, cs.propOrColumnNames);
+        N.checkArgument(propOrColumnNames.length != 1 || propOrColumnNames[0] != null, "The single element of 'propOrColumnNames' must not be null");
+
         return isInlineQuery(SqlParser.tokenizer(), propOrColumnNames);
     }
 
@@ -9254,10 +9296,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * An existing qualifier in a mapped column takes precedence over the property path's table alias.
      *
      * @param propColumnNameMap the property-to-column-name mapping, or {@code null}
-     * @param propName the property name to normalize
+     * @param propName the property name to normalize; must not be {@code null}
      * @return the normalized column name, optionally prefixed with a table alias
+     * @throws IllegalArgumentException if {@code propName} is {@code null}
      */
     protected String normalizeColumnName(final ImmutableMap<String, ColumnInfo> propColumnNameMap, final String propName) {
+        N.checkArgNotNull(propName, cs.propName);
+
         ColumnInfo tp = propColumnNameMap == null ? null : propColumnNameMap.get(propName);
 
         if (tp != null) {
@@ -9299,15 +9344,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * properties still holding their type's default value (for a composite ID, only when every ID
      * component is still default).
      *
-     * @param instance the query builder instance to populate
+     * @param instance the query builder instance to populate; must not be {@code null}
      * @param entity the entity to parse (a column name String, a Map of properties, or a bean object)
      * @param excludedPropNames property names to exclude from the insert, or {@code null}
-     * @throws IllegalArgumentException if {@code entity} is a Map that is empty, has a non-String/null/empty/blank key,
-     *                                  or has no entries left after exclusions are applied; if a String entity is empty
-     *                                  or blank; or if {@code entity} is {@code null} or is not an instance of an entity bean class
+     * @throws IllegalArgumentException if {@code instance} is {@code null}; if {@code entity} is a Map that is empty, has a
+     *                                  non-String/null/empty/blank key, or has no entries left after exclusions are applied;
+     *                                  if a String entity is empty or blank; or if {@code entity} is {@code null} or is not an
+     *                                  instance of an entity bean class
      */
     protected static void parseInsertEntity(@SuppressWarnings("rawtypes") final AbstractQueryBuilder instance, final Object entity,
             final Set<String> excludedPropNames) {
+        N.checkArgNotNull(instance, cs.instance);
+
         if (entity instanceof String) {
             checkSqlFragmentNotBlank((String) entity, "entity");
             instance._propOrColumnNames = Array.asList((String) entity);
@@ -9554,11 +9602,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * and any sub-entity tables referenced by the resolved projection. A selection whose properties
      * are all excluded contributes its own table but no sub-entity tables.
      *
-     * @param multiSelects the list of selections defining the tables and their properties
+     * @param multiSelects the list of selections defining the tables and their properties; must not be {@code null}
+     *        (its elements are expected to have passed {@link #checkMultiSelects(List)})
      * @param namingPolicy the naming policy for table name conversion
      * @return the constructed FROM clause string
+     * @throws IllegalArgumentException if {@code multiSelects} is {@code null}
      */
     protected static String getFromClause(final List<Selection> multiSelects, final NamingPolicy namingPolicy) {
+        N.checkArgNotNull(multiSelects, cs.multiSelects);
+
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {

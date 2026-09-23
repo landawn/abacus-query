@@ -124,8 +124,7 @@ public class Junction extends ComposableCondition {
      * @param operator the composable operator (must be {@link Operator#AND} or {@link Operator#OR})
      * @param ownedValidatedConditions a freshly created list whose elements have already been validated
      * @param marker disambiguation marker (ignored)
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR}
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not {@link Operator#AND} or {@link Operator#OR}
      */
     @SuppressWarnings({ "unchecked", "unused" })
     Junction(final Operator operator, final List<? extends Condition> ownedValidatedConditions, final boolean marker) {
@@ -167,8 +166,7 @@ public class Junction extends ComposableCondition {
      *
      * @param operator the composable operator to use; must be {@link Operator#AND} or {@link Operator#OR}
      * @param conditions the conditions to combine; may be {@code null} or empty (treated as no conditions)
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
@@ -209,8 +207,7 @@ public class Junction extends ComposableCondition {
      *
      * @param operator the composable operator to use; must be {@link Operator#AND} or {@link Operator#OR}
      * @param conditions the collection of conditions to combine; may be {@code null} or empty (treated as no conditions)
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an

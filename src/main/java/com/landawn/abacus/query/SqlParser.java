@@ -752,10 +752,12 @@ public final class SqlParser {
          *
          * @param sql the SQL statement to tokenize; must not be {@code null}
          * @return the lexical SQL tokens
-         * @throws NullPointerException if {@code sql} is {@code null}
+         * @throws IllegalArgumentException if {@code sql} is {@code null}
          * @see SqlParser#tokenize(String)
          */
         public List<String> tokenize(final String sql) {
+            N.checkArgNotNull(sql, cs.sql);
+
             return SqlParser.tokenize(sql, tokenizerConfig);
         }
 
@@ -765,10 +767,13 @@ public final class SqlParser {
          * @param sql the SQL statement to search; must not be {@code null}
          * @param token the token to find; must not be {@code null}
          * @return the token's character index, or {@code -1}
-         * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+         * @throws IllegalArgumentException if {@code sql} or {@code token} is {@code null}
          * @see SqlParser#indexOfToken(String, String)
          */
         public int indexOfToken(final String sql, final String token) {
+            N.checkArgNotNull(sql, cs.sql);
+            N.checkArgNotNull(token, cs.token);
+
             return SqlParser.indexOfToken(sql, token, 0, false, tokenizerConfig);
         }
 
@@ -779,10 +784,13 @@ public final class SqlParser {
          * @param token the token to find; must not be {@code null}
          * @param fromIndex the earliest character index to return
          * @return the token's character index, or {@code -1}
-         * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+         * @throws IllegalArgumentException if {@code sql} or {@code token} is {@code null}
          * @see SqlParser#indexOfToken(String, String, int)
          */
         public int indexOfToken(final String sql, final String token, final int fromIndex) {
+            N.checkArgNotNull(sql, cs.sql);
+            N.checkArgNotNull(token, cs.token);
+
             return SqlParser.indexOfToken(sql, token, fromIndex, false, tokenizerConfig);
         }
 
@@ -794,10 +802,13 @@ public final class SqlParser {
          * @param fromIndex the earliest character index to return
          * @param caseSensitive whether matching is case-sensitive
          * @return the token's character index, or {@code -1}
-         * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+         * @throws IllegalArgumentException if {@code sql} or {@code token} is {@code null}
          * @see SqlParser#indexOfToken(String, String, int, boolean)
          */
         public int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive) {
+            N.checkArgNotNull(sql, cs.sql);
+            N.checkArgNotNull(token, cs.token);
+
             return SqlParser.indexOfToken(sql, token, fromIndex, caseSensitive, tokenizerConfig);
         }
 
@@ -807,10 +818,12 @@ public final class SqlParser {
          * @param sql the SQL statement to scan; must not be {@code null}
          * @param fromIndex the starting character index
          * @return the next token, or an empty string if none remains
-         * @throws NullPointerException if {@code sql} is {@code null}
+         * @throws IllegalArgumentException if {@code sql} is {@code null}
          * @see SqlParser#nextToken(String, int)
          */
         public String nextToken(final String sql, final int fromIndex) {
+            N.checkArgNotNull(sql, cs.sql);
+
             return SqlParser.nextToken(sql, fromIndex, tokenizerConfig);
         }
 
@@ -820,10 +833,12 @@ public final class SqlParser {
          * @param sql the SQL statement to scan; must not be {@code null}
          * @param fromIndex the starting character index
          * @return the next token's exclusive end index, or {@code sql.length()} if none remains
-         * @throws NullPointerException if {@code sql} is {@code null}
+         * @throws IllegalArgumentException if {@code sql} is {@code null}
          * @see SqlParser#nextTokenEndIndex(String, int)
          */
         public int nextTokenEndIndex(final String sql, final int fromIndex) {
+            N.checkArgNotNull(sql, cs.sql);
+
             return SqlParser.nextTokenEndIndex(sql, fromIndex, tokenizerConfig);
         }
 
@@ -900,9 +915,11 @@ public final class SqlParser {
      *
      * @param sql the SQL statement to tokenize (must not be {@code null})
      * @return a list of tokens representing the tokenized SQL statement
-     * @throws NullPointerException if {@code sql} is {@code null}
+     * @throws IllegalArgumentException if {@code sql} is {@code null}
      */
     public static List<String> tokenize(final String sql) {
+        N.checkArgNotNull(sql, cs.sql);
+
         return tokenize(sql, DEFAULT_TOKENIZER_CONFIG);
     }
 
@@ -1063,11 +1080,14 @@ public final class SqlParser {
      * @param sql the SQL statement to search within (must not be {@code null})
      * @param token the token or composite keyword to find (must not be {@code null})
      * @return the index of the token if found, or {@code -1} if not found
-     * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+     * @throws IllegalArgumentException if {@code sql} or {@code token} is {@code null}
      * @see #indexOfToken(String, String, int, boolean)
      */
     public static int indexOfToken(final String sql, final String token) {
-        return indexOfToken(sql, token, 0, false);
+        N.checkArgNotNull(sql, cs.sql);
+        N.checkArgNotNull(token, cs.token);
+
+        return indexOfToken(sql, token, 0, false, DEFAULT_TOKENIZER_CONFIG);
     }
 
     /**
@@ -1091,11 +1111,14 @@ public final class SqlParser {
      * @param token the token or composite keyword to find (must not be {@code null})
      * @param fromIndex the earliest character position at which a match may be reported (0-based); scanning still begins at the start of {@code sql} for correct tokenization, but any match starting before {@code fromIndex} is skipped; negative values are treated as {@code 0}
      * @return the index of the token if found, or {@code -1} if not found
-     * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+     * @throws IllegalArgumentException if {@code sql} or {@code token} is {@code null}
      * @see #indexOfToken(String, String, int, boolean)
      */
     public static int indexOfToken(final String sql, final String token, final int fromIndex) {
-        return indexOfToken(sql, token, fromIndex, false);
+        N.checkArgNotNull(sql, cs.sql);
+        N.checkArgNotNull(token, cs.token);
+
+        return indexOfToken(sql, token, fromIndex, false, DEFAULT_TOKENIZER_CONFIG);
     }
 
     /**
@@ -1143,9 +1166,12 @@ public final class SqlParser {
      * @param fromIndex the earliest character position at which a match may be reported (0-based); scanning still begins at the start of {@code sql} for correct tokenization, but any match starting before {@code fromIndex} is skipped; negative values are treated as {@code 0}
      * @param caseSensitive whether the search should be case-sensitive
      * @return the index of the token if found, or {@code -1} if not found
-     * @throws NullPointerException if {@code sql} or {@code token} is {@code null}
+     * @throws IllegalArgumentException if {@code sql} or {@code token} is {@code null}
      */
     public static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive) {
+        N.checkArgNotNull(sql, cs.sql);
+        N.checkArgNotNull(token, cs.token);
+
         return indexOfToken(sql, token, fromIndex, caseSensitive, DEFAULT_TOKENIZER_CONFIG);
     }
 
@@ -1321,9 +1347,11 @@ public final class SqlParser {
      * @param sql the SQL statement to extract the token from (must not be {@code null})
      * @param fromIndex the starting position for extraction (0-based); negative values are treated as {@code 0}
      * @return the next token found, or an empty string if no more tokens exist
-     * @throws NullPointerException if {@code sql} is {@code null}
+     * @throws IllegalArgumentException if {@code sql} is {@code null}
      */
     public static String nextToken(final String sql, final int fromIndex) {
+        N.checkArgNotNull(sql, cs.sql);
+
         return nextToken(sql, fromIndex, DEFAULT_TOKENIZER_CONFIG);
     }
 
@@ -1369,10 +1397,12 @@ public final class SqlParser {
      * @param sql the SQL statement to scan (must not be {@code null})
      * @param fromIndex the starting position for scanning (0-based); negative values are treated as {@code 0}
      * @return the index immediately after the next token, or the length of {@code sql} if no further token exists
-     * @throws NullPointerException if {@code sql} is {@code null}
+     * @throws IllegalArgumentException if {@code sql} is {@code null}
      * @see #nextToken(String, int)
      */
     public static int nextTokenEndIndex(final String sql, final int fromIndex) {
+        N.checkArgNotNull(sql, cs.sql);
+
         return nextTokenEndIndex(sql, fromIndex, DEFAULT_TOKENIZER_CONFIG);
     }
 
@@ -2536,13 +2566,15 @@ public final class SqlParser {
      * boolean notFunc = SqlParser.isFunctionName(tokens, 0);  // false for "SELECT"
      * }</pre>
      *
-     * @param tokens the parsed SQL tokens (typically the result of {@link #tokenize(String)})
+     * @param tokens the parsed SQL tokens (typically the result of {@link #tokenize(String)}); must not be {@code null}
      * @param index the index of the token to check; invalid indices return {@code false}
      * @return {@code true} if the token at {@code index} is followed (after zero or more space tokens)
      *         by the {@code "("} token; {@code false} otherwise
-     * @throws NullPointerException if {@code tokens} is {@code null}
+     * @throws IllegalArgumentException if {@code tokens} is {@code null}
      */
     public static boolean isFunctionName(final List<String> tokens, final int index) {
+        N.checkArgNotNull(tokens, cs.tokens);
+
         final int size = tokens.size();
 
         if (index < 0 || index >= size) {

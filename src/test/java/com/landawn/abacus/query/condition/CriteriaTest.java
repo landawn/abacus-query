@@ -170,13 +170,15 @@ public class CriteriaTest extends TestBase {
     @Test
     public void testJoinVarargsNullArray() {
         Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.join((Join[]) null));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> builder.join((Join[]) null));
+        assertTrue(ex.getMessage().contains("joins"), ex.getMessage());
     }
 
     @Test
     public void testJoinCollectionNull() {
         Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.join((java.util.Collection<Join>) null));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> builder.join((java.util.Collection<Join>) null));
+        assertTrue(ex.getMessage().contains("joins"), ex.getMessage());
     }
 
     @Test

@@ -65,12 +65,27 @@ public final class cs { // NOSONAR
     public static final String additionalFilePaths = "additionalFilePaths";
 
     /**
+     * Parameter name for the callback that appends the column list of a {@code USING} clause.
+     */
+    public static final String appendColumns = "appendColumns";
+
+    /**
+     * Parameter name for a child (sub-query) builder whose named parameters are merged into its parent.
+     */
+    public static final String childBuilder = "childBuilder";
+
+    /**
      * Parameter name for the collection of database column names.
      */
     public static final String columnNames = "columnNames";
 
     /**
      * Parameter name for a condition object used in query filtering.
+     */
+    public static final String cond = "cond";
+
+    /**
+     * Parameter name for a single condition.
      */
     public static final String condition = "condition";
 
@@ -180,9 +195,19 @@ public final class cs { // NOSONAR
     public static final String inputStream = "inputStream";
 
     /**
+     * Parameter name for the builder instance an operation is applied to.
+     */
+    public static final String instance = "instance";
+
+    /**
      * Parameter name for the collection of entity classes or names to join.
      */
     public static final String joinEntities = "joinEntities";
+
+    /**
+     * Parameter name for the joins to add to a criteria.
+     */
+    public static final String joins = "joins";
 
     /**
      * Parameter name for a LIMIT condition.
@@ -205,9 +230,19 @@ public final class cs { // NOSONAR
     public static final String multiSelects = "multiSelects";
 
     /**
+     * Parameter name for a builder-state mutation executed atomically.
+     */
+    public static final String mutation = "mutation";
+
+    /**
      * Parameter name for the number of rows to skip before returning results.
      */
     public static final String offset = "offset";
+
+    /**
+     * Parameter name for the SQL operator of a condition.
+     */
+    public static final String operator = "operator";
 
     /**
      * Parameter name for the array of property or column names to order by.
@@ -245,6 +280,11 @@ public final class cs { // NOSONAR
     public static final String propInfo = "propInfo";
 
     /**
+     * Parameter name for a single property or column name.
+     */
+    public static final String propName = "propName";
+
+    /**
      * Parameter name for the collection or array of property names.
      */
     public static final String propNames = "propNames";
@@ -253,6 +293,11 @@ public final class cs { // NOSONAR
      * Parameter name for the value compared against a property.
      */
     public static final String propValue = "propValue";
+
+    /**
+     * Parameter name for the array or collection of property or column names.
+     */
+    public static final String propOrColumnNames = "propOrColumnNames";
 
     /**
      * Parameter name for the map of property names to values.
@@ -300,14 +345,34 @@ public final class cs { // NOSONAR
     public static final String subQuery = "subQuery";
 
     /**
+     * Parameter name for a table name.
+     */
+    public static final String tableName = "tableName";
+
+    /**
      * Parameter name for the collection or array of table names.
      */
     public static final String tableNames = "tableNames";
 
     /**
+     * Parameter name for a SQL token to search for.
+     */
+    public static final String token = "token";
+
+    /**
      * Parameter name for the tokenizer configuration used while splitting SQL.
      */
     public static final String tokenizerConfig = "tokenizerConfig";
+
+    /**
+     * Parameter name for a list of SQL tokens.
+     */
+    public static final String tokens = "tokens";
+
+    /**
+     * Parameter name for a single value.
+     */
+    public static final String value = "value";
 
     /**
      * Parameter name for the collection of value rows for a multi-column IN clause.

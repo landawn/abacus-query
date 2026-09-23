@@ -83,8 +83,7 @@ public abstract class ComposableCell extends ComposableCondition {
      * @param condition the condition to wrap (must not be {@code null}); for an {@code ALL},
      *                  {@code ANY}, or {@code SOME} operator this must be a {@link SubQuery} whose
      *                  known, non-wildcard structured projection contains exactly one column
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if a quantified
+     * @throws IllegalArgumentException if {@code operator} is {@code null}, if {@code condition} is {@code null}, or if a quantified
      *                                  operator does not wrap a valid one-column subquery
      */
     protected ComposableCell(final Operator operator, final Condition condition) {

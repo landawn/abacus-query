@@ -65,7 +65,9 @@ public class AbstractInTest extends TestBase {
     public void testRejectsUnsupportedOperator() {
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("status", Operator.EQUAL, Arrays.asList("A")));
         assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Operator.EQUAL));
-        assertThrows(NullPointerException.class, () -> new TestAbstractIn("status", null, Arrays.asList("A")));
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("status", null, Arrays.asList("A")));
+        assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn((Operator) null));
     }
 
     @Test

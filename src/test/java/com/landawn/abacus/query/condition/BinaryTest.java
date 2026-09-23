@@ -41,6 +41,15 @@ public class BinaryTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_NullOperatorThrowsIllegalArgumentException() {
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException),
+        // for the constructor and both Filters.binary factory overloads.
+        assertThrows(IllegalArgumentException.class, () -> new Binary("age", null, 25));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("age", null, 25));
+        assertThrows(IllegalArgumentException.class, () -> Filters.binary("age", null));
+    }
+
+    @Test
     public void testConstructor_EmptyPropertyName() {
         assertThrows(IllegalArgumentException.class, () -> new Binary("", Operator.EQUAL, 25));
     }

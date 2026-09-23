@@ -946,6 +946,8 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joins} is {@code null} or contains {@code null}
          */
         public Builder join(final Join... joins) {
+            N.checkArgNotNull(joins, cs.joins);
+
             addConditions(joins);
 
             return this;
@@ -973,6 +975,8 @@ public class Criteria extends AbstractCondition {
          * @throws IllegalArgumentException if {@code joins} is {@code null} or contains {@code null}
          */
         public Builder join(final Collection<Join> joins) {
+            N.checkArgNotNull(joins, cs.joins);
+
             addConditions(joins);
 
             return this;

@@ -236,6 +236,18 @@ public class SqlBuilderTest extends TestBase {
         assertEquals(32, builder.build().parameters().size());
     }
 
+    @Test
+    public void testAppendCondition_nullConditionThrowsIllegalArgumentException() {
+        final SqlBuilder builder = PSC.renderCondition(Filters.eq("id", 1));
+
+        try {
+            // previously threw NullPointerException from the unsupported-type fallback
+            assertThrows(IllegalArgumentException.class, () -> builder.appendCondition(null));
+        } finally {
+            builder.build();
+        }
+    }
+
     // Basic SELECT tests
     @Test
     public void testSelectAll() {
@@ -1406,6 +1418,33 @@ public class SqlBuilderTest extends TestBase {
     }
 
     @Test
+    public void testNullEntityClassTableNameHelpersThrowIllegalArgumentException() {
+        // previously threw NullPointerException from the ConcurrentHashMap cache lookup
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.getTableName(null, NamingPolicy.SNAKE_CASE));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.tableAliasOrName(null, NamingPolicy.SNAKE_CASE));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.tableAliasOrName(null, null, NamingPolicy.SNAKE_CASE));
+        // an explicit alias short-circuits before the entity class is consulted
+        assertEquals("custom", AbstractQueryBuilder.tableAliasOrName("custom", null, NamingPolicy.SNAKE_CASE));
+
+        // the cached property-name helpers report the caller's parameter name, not abacus-common's internal 'cls'
+        final IllegalArgumentException propNamesEx = assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.loadPropNamesByClass(null));
+        assertTrue(propNamesEx.getMessage().contains("entityClass"));
+        final IllegalArgumentException subEntityEx = assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.getSubEntityPropNames(null));
+        assertTrue(subEntityEx.getMessage().contains("entityClass"));
+    }
+
+    @Test
+    public void testProtectedBuilderHelpersRejectNullWithIllegalArgumentException() {
+        final SqlBuilder builder = PSC.select("id");
+
+        assertThrows(IllegalArgumentException.class, () -> builder.appendOperationBeforeFrom(null));
+        assertThrows(IllegalArgumentException.class, () -> builder.appendUsingClause(null));
+
+        // the rejected calls left the builder untouched
+        assertEquals("SELECT id FROM users", builder.from("users").build().query());
+    }
+
+    @Test
     public void testIsDefaultIdPropValue() {
         assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(null));
         assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0));
@@ -1467,6 +1506,12 @@ public class SqlBuilderTest extends TestBase {
         assertEquals(2, result.size());
         assertEquals(Filters.QME, result.get("email"));
         assertEquals(Filters.QME, result.get("status"));
+    }
+
+    @Test
+    public void testNamedPlaceholdersNullThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.namedPlaceholders((String[]) null));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.namedPlaceholders((Collection<String>) null));
     }
 
     @Test

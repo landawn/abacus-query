@@ -22,6 +22,12 @@ public class CellTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_NullOperatorThrowsIllegalArgumentException() {
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> new TestCell(null, Filters.eq("status", "ACTIVE")));
+    }
+
+    @Test
     public void testGetCondition() {
         final Equal wrapped = Filters.eq("status", "ACTIVE");
         final TestCell cell = new TestCell(Operator.WHERE, wrapped);

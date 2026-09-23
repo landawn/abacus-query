@@ -434,6 +434,14 @@ public class JoinTest extends TestBase {
     }
 
     @Test
+    public void testProtectedConstructors_NullOperatorThrowsIllegalArgumentException() {
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestJoin(null, "orders"));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestJoin(null, "orders", ON_AB));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestJoin(null, Arrays.asList("orders", "items"), ON_AB));
+    }
+
+    @Test
     public void testDefaultConstructor_EmptyState() {
         Join join = new Join();
         Join same = new Join();

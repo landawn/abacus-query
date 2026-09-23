@@ -118,10 +118,10 @@ public abstract class AbstractCondition implements Condition {
      * Subclass constructors must supply a non-{@code null} operator.
      *
      * @param operator the operator for this condition (must not be {@code null})
-     * @throws NullPointerException if {@code operator} is {@code null}
+     * @throws IllegalArgumentException if {@code operator} is {@code null}
      */
     protected AbstractCondition(final Operator operator) {
-        this.operator = N.requireNonNull(operator, "operator");
+        this.operator = N.checkArgNotNull(operator, cs.operator);
     }
 
     /**
@@ -553,13 +553,14 @@ public abstract class AbstractCondition implements Condition {
      * @param values the value-position operands to validate; must not be {@code null}, though individual
      *               elements may be {@code null}
      * @param argumentName the argument name used as the prefix in an exception message
-     * @throws NullPointerException if {@code values} is {@code null}
-     * @throws IllegalArgumentException if any element is a condition other than a {@link SqlExpression} or
+     * @throws IllegalArgumentException if {@code values} is {@code null}, or if any element is a condition other than a {@link SqlExpression} or
      *                                  {@link SubQuery} (including an {@code ALL}/{@code ANY}/{@code SOME} quantified
      *                                  operand), is a blank {@link SqlExpression}, or is a structured subquery whose
      *                                  known projection arity is not one
      */
     protected static void validateNonQuantifiedValueOperands(final Collection<?> values, final String argumentName) {
+        N.checkArgNotNull(values, cs.values);
+
         int index = 0;
 
         for (final Object value : values) {
@@ -767,13 +768,13 @@ public abstract class AbstractCondition implements Condition {
      * not allowed to smuggle arbitrary SQL through its {@link Number#toString()} implementation;
      * expressions must be supplied explicitly as {@link SqlExpression}s instead.
      *
-     * @param value the number to render
+     * @param value the number to render (must not be {@code null})
      * @return the validated numeric literal
-     * @throws IllegalArgumentException if {@code value} is non-finite or its text is not a decimal,
+     * @throws IllegalArgumentException if {@code value} is {@code null} or non-finite, or its text is not a decimal,
      *                                  integer, or scientific-notation literal
-     * @throws NullPointerException if {@code value} is {@code null}
      */
     protected static String formatNumberLiteral(final Number value) {
+        N.checkArgNotNull(value, cs.value);
         checkFiniteNumber(value);
 
         final String literal = value.toString();

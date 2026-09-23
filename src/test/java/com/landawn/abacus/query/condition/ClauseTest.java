@@ -36,6 +36,12 @@ public class ClauseTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_NullOperatorThrowsIllegalArgumentException() {
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new TestClause(null, Filters.eq("test", "value")));
+    }
+
+    @Test
     public void testGetCondition() {
         Condition condition = Filters.eq("status", "active");
         TestClause clause = new TestClause(Operator.WHERE, condition);

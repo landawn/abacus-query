@@ -29,6 +29,12 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_NullOperatorThrowsIllegalArgumentException() {
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
+        assertThrows(IllegalArgumentException.class, () -> new TestComposableCell(null, Filters.eq("status", "ACTIVE")));
+    }
+
+    @Test
     public void testGetCondition() {
         final Equal wrapped = Filters.eq("status", "ACTIVE");
         final TestComposableCell cell = new TestComposableCell(Operator.NOT, wrapped);

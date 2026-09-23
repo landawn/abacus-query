@@ -121,8 +121,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param values the collection of values to check membership against (must not be {@code null}, empty,
      *               or contain {@code null})
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *                                  if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}/empty or contains {@code null},
      *                                  or if any element is a {@link Condition} other than a non-blank {@link SqlExpression}
@@ -146,8 +145,8 @@ public abstract class AbstractIn extends ComposableCondition {
         }
 
         N.checkArgNotEmpty(valuesCopy, cs.values);
-        rejectNullElements(valuesCopy, "values");
-        validateNonQuantifiedValueOperands(valuesCopy, "values");
+        rejectNullElements(valuesCopy, cs.values);
+        validateNonQuantifiedValueOperands(valuesCopy, cs.values);
 
         this.propNames = ImmutableList.wrap(Collections.singletonList(propName));
         this.rowValueConstructor = false;
@@ -190,8 +189,7 @@ public abstract class AbstractIn extends ComposableCondition {
      *               non-{@code null} and resolve to exactly {@code propNames.size()} non-{@code null} values.
      *               A row may be a {@link Collection}, {@link Iterable}, object array,
      *               {@link Map} or bean
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *                                  if {@code propNames} is {@code null}/empty or contains any {@code null}, empty, or blank name,
      *                                  if {@code valueRows} is {@code null}/empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
@@ -242,9 +240,7 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     private static Operator validateOperator(final Operator operator) {
-        if (operator == null) {
-            throw new NullPointerException("operator");
-        }
+        N.checkArgNotNull(operator, cs.operator);
 
         if (operator != Operator.IN && operator != Operator.NOT_IN) {
             throw new IllegalArgumentException("Only IN and NOT_IN are supported: " + operator);

@@ -1754,6 +1754,33 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testProtectedHelpersRejectNullArgumentsWithIllegalArgumentException() {
+        // previously threw NullPointerException
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.isInlineQuery((String[]) null));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.isInlineQuery((String) null));
+        assertFalse(AbstractQueryBuilder.isInlineQuery(new String[] { null, null }));
+
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.parseInsertEntity(null, "id", null));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.getFromClause(null, NamingPolicy.SNAKE_CASE));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.hasSubEntityToInclude(null, true));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.hasSubEntityToInclude(null, false));
+
+        final SqlBuilder builder = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> builder.mutateAtomically(null));
+        assertThrows(IllegalArgumentException.class, () -> builder.appendInsertProps(null));
+        assertThrows(IllegalArgumentException.class, () -> builder.appendInsertProps(null, Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> builder.appendInsertProps(Collections.emptyMap(), null, -1));
+        assertThrows(IllegalArgumentException.class, () -> builder.seedNamedParameterOccurrences(null));
+        assertThrows(IllegalArgumentException.class, () -> builder.adoptNamedParameterOccurrences(null));
+        assertThrows(IllegalArgumentException.class, () -> builder.appendColumnName(null, null, null, null, null, null, false, null, false, false));
+        assertThrows(IllegalArgumentException.class,
+                () -> builder.normalizeColumnName((com.landawn.abacus.util.ImmutableMap<String, QueryUtil.ColumnInfo>) null, null));
+
+        // The rejected calls left the builder usable.
+        assertEquals("SELECT id FROM users", builder.build().query());
+    }
+
+    @Test
     public void testUnion_Collection() {
         final String sql = PSC.select("id").from("users").unionSelect(Collections.singletonList("id")).from("admins").build().query();
 

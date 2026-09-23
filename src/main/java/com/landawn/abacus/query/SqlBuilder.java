@@ -165,8 +165,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * {@link Junction} renders as its Boolean identity ({@code 1 = 1} for AND, {@code 1 = 0} for OR),
      * exactly as {@code Junction.toSql} does.</p>
      *
-     * @param cond the condition to render; must be one of the supported condition types
-     * @throws IllegalArgumentException if {@code cond} is an unsupported condition type; if a rendered column
+     * @param cond the condition to render; must not be {@code null} and must be one of the supported condition types
+     * @throws IllegalArgumentException if {@code cond} is {@code null} or an unsupported condition type; if a rendered column
      *         name contains a SQL comment token; if a {@link SqlExpression} is blank; if a {@link Using} condition
      *         renders a table- or schema-qualified column name; if a
      *         structured {@link SubQuery} (one not defined by raw SQL) has no selected property/column names;
@@ -179,6 +179,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      */
     @Override
     protected void appendCondition(final Condition cond) {
+        N.checkArgNotNull(cond, cs.cond);
+
         if (cond instanceof final Binary binary) {
             final String propName = binary.propName();
             final Object propValue = binary.propValue();

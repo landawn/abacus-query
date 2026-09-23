@@ -34,6 +34,19 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
+    public void testConstructor_NullOperatorThrowsIllegalArgumentException() {
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException),
+        // for both constructors and both Filters.junction factory overloads.
+        final Equal cond = Filters.eq("status", "active");
+        final List<Condition> conds = Arrays.asList(cond);
+
+        assertThrows(IllegalArgumentException.class, () -> new Junction(null, cond));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(null, conds));
+        assertThrows(IllegalArgumentException.class, () -> Filters.junction(null, cond));
+        assertThrows(IllegalArgumentException.class, () -> Filters.junction(null, conds));
+    }
+
+    @Test
     public void testConstructorWithOperatorAndConditions() {
         Equal cond1 = Filters.eq("status", "active");
         GreaterThan cond2 = Filters.gt("age", 18);

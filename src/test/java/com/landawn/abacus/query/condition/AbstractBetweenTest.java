@@ -34,7 +34,8 @@ public class AbstractBetweenTest extends TestBase {
     @Test
     public void testRejectsUnsupportedOperator() {
         org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("age", Operator.EQUAL, 18, 65));
-        org.junit.jupiter.api.Assertions.assertThrows(NullPointerException.class, () -> new TestAbstractBetween("age", null, 18, 65));
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> new TestAbstractBetween("age", null, 18, 65));
     }
 
     @Test

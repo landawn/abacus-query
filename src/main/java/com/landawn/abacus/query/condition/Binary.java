@@ -190,8 +190,7 @@ public class Binary extends ComposableCondition {
      *                  {@code FALSE} (the same literals {@code Filters.isTrue}/{@code Filters.isFalse} use), so it
      *                  is always rendered inline ({@code x IS TRUE}) and never bound as a parameter; consequently
      *                  {@code new Is("x", true)} equals {@code Filters.isTrue("x")}.
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
+     * @throws IllegalArgumentException if {@code operator} is {@code null}; if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not one of the operators listed above; or if, for an {@code IN}/{@code NOT_IN}
      *                                  operator, {@code propValue} is not a non-empty {@link Collection}, a non-empty
      *                                  array, a {@link SqlExpression}, or a {@link SubQuery}; if {@code propValue} is
@@ -477,7 +476,7 @@ public class Binary extends ComposableCondition {
         }
 
         if (propValue instanceof Condition) {
-            return validateNonQuantifiedValueOperand(propValue, "propValue");
+            return validateNonQuantifiedValueOperand(propValue, cs.propValue);
         }
 
         // The copies are wrapped unmodifiable so propValue() cannot leak a mutable view of the
@@ -558,7 +557,7 @@ public class Binary extends ComposableCondition {
             }
 
             if (propValue instanceof SqlExpression) {
-                return validateValueOperand(propValue, "propValue");
+                return validateValueOperand(propValue, cs.propValue);
             }
 
             throw new IllegalArgumentException(op + " requires null, a Boolean, or an explicit SqlExpression right-hand value");
@@ -569,10 +568,10 @@ public class Binary extends ComposableCondition {
                 throw new IllegalArgumentException(op + " does not support an ALL/ANY/SOME right-hand operand");
             }
 
-            return validateValueOperand(propValue, "propValue");
+            return validateValueOperand(propValue, cs.propValue);
         }
 
-        return snapshotMutableValue(validateNonQuantifiedValueOperand(propValue, "propValue"));
+        return snapshotMutableValue(validateNonQuantifiedValueOperand(propValue, cs.propValue));
     }
 
     /** Returns a safe public view while preserving identity for immutable and application-defined values. */

@@ -2150,11 +2150,34 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testTokenMethods_nullInputsThrow() {
-        assertThrows(NullPointerException.class, () -> SqlParser.tokenize(null));
-        assertThrows(NullPointerException.class, () -> SqlParser.indexOfToken(null, "SELECT"));
-        assertThrows(NullPointerException.class, () -> SqlParser.indexOfToken("SELECT 1", null));
-        assertThrows(NullPointerException.class, () -> SqlParser.nextToken(null, 0));
-        assertThrows(NullPointerException.class, () -> SqlParser.nextTokenEndIndex(null, 0));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenize(null));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.indexOfToken(null, "SELECT"));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.indexOfToken("SELECT 1", null));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.indexOfToken(null, "SELECT", 0));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.indexOfToken("SELECT 1", null, 0));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.indexOfToken(null, "SELECT", 0, true));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.indexOfToken("SELECT 1", null, 0, true));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.nextToken(null, 0));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.nextTokenEndIndex(null, 0));
+    }
+
+    @Test
+    public void testTokenizerInstanceMethods_nullInputsThrowIllegalArgument() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.tokenize(null));
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.indexOfToken(null, "SELECT"));
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.indexOfToken("SELECT 1", null));
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.indexOfToken(null, "SELECT", 0));
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.indexOfToken("SELECT 1", null, 0));
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.indexOfToken(null, "SELECT", 0, true));
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.indexOfToken("SELECT 1", null, 0, true));
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.nextToken(null, 0));
+        assertThrows(IllegalArgumentException.class, () -> tokenizer.nextTokenEndIndex(null, 0));
+
+        // The lexical classifiers stay null-tolerant.
+        assertFalse(tokenizer.isSyntacticallyReadQuery(null));
+        assertFalse(tokenizer.isReadOrInsertQuery(null));
     }
 
     @Test
@@ -2165,7 +2188,7 @@ public class SqlParserTest extends TestBase {
         assertFalse(SqlParser.isFunctionName(tokens, 0)); // "SELECT"
         assertFalse(SqlParser.isFunctionName(tokens, -1));
         assertFalse(SqlParser.isFunctionName(tokens, tokens.size()));
-        assertThrows(NullPointerException.class, () -> SqlParser.isFunctionName(null, 0));
+        assertThrows(IllegalArgumentException.class, () -> SqlParser.isFunctionName(null, 0));
     }
 
     @Test

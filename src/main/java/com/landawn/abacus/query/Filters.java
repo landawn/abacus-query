@@ -331,8 +331,7 @@ public final class Filters {
      *                  {@code IN}/{@code NOT_IN} a non-empty {@link Collection} or array without {@code null}
      *                  elements is copied defensively
      * @return a {@link Binary} condition
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
+     * @throws IllegalArgumentException if {@code operator} is {@code null}; if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not a valid binary comparison/membership operator (e.g. a structural
      *                                  operator); if {@code propValue} is {@code null} for any operator other than
@@ -378,9 +377,8 @@ public final class Filters {
      * @param operator the binary comparison operator to use (must not be {@code null}; membership, {@code IS}/{@code IS NOT},
      *                 and structural operators are rejected)
      * @return a {@link Binary} condition with a {@code ?} placeholder value
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code operator}
-     *                                  is {@code IN}, {@code NOT_IN}, {@code IS}, {@code IS_NOT}, or is not a valid
+     * @throws IllegalArgumentException if {@code operator} is {@code null}, if {@code propName} is {@code null}, empty, or blank,
+     *                                  or if {@code operator} is {@code IN}, {@code NOT_IN}, {@code IS}, {@code IS_NOT}, or is not a valid
      *                                  binary comparison operator
      * @see #binary(String, Operator, Object)
      */
@@ -2402,8 +2400,7 @@ public final class Filters {
      * @param conditions the array of conditions to combine; {@code null} or empty is permitted and yields
      *                   {@code 1 = 1} for AND or {@code 1 = 0} for OR
      * @return a {@link Junction} with the specified operator
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element of {@code conditions} is {@code null}, or is or contains a Criteria, a condition
      *             with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
      *             {@code ON}/{@code USING} connector, an
@@ -2431,8 +2428,7 @@ public final class Filters {
      * @param conditions the collection of conditions to combine; {@code null} or empty is permitted and yields
      *                   {@code 1 = 1} for AND or {@code 1 = 0} for OR
      * @return a {@link Junction} with the specified operator
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not {@link Operator#AND} or {@link Operator#OR},
      *             or if any element of {@code conditions} is {@code null}, or is or contains a Criteria, a condition
      *             with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
      *             {@code ON}/{@code USING} connector, an

@@ -150,8 +150,7 @@ public class Join extends AbstractCondition {
      *
      * @param operator the join operator; only {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} succeeds here
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntity} is
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not a JOIN operator; if {@code joinEntity} is
      *                                  {@code null}, empty, or blank; or if {@code operator} is any JOIN operator other than
      *                                  {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} (those require a non-{@code null}
      *                                  {@code ON}/{@code USING} predicate)
@@ -222,8 +221,7 @@ public class Join extends AbstractCondition {
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. Must be {@code null} for
      *            {@link Operator#CROSS_JOIN}/{@link Operator#NATURAL_JOIN} and non-{@code null} for every other JOIN operator.
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntity} is {@code null}, empty, or blank;
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not a JOIN operator; if {@code joinEntity} is {@code null}, empty, or blank;
      *                                  if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
      *                                  {@code joinCondition} is non-{@code null}; if {@code operator} is any other JOIN operator and
      *                                  {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
@@ -291,8 +289,7 @@ public class Join extends AbstractCondition {
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. Must be {@code null} for
      *            {@link Operator#CROSS_JOIN}/{@link Operator#NATURAL_JOIN} and non-{@code null} for every other JOIN operator.
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not a JOIN operator; if {@code joinEntities} is
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not a JOIN operator; if {@code joinEntities} is
      *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements;
      *                                  if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
      *                                  {@code joinCondition} is non-{@code null}; if {@code operator} is any other JOIN operator and

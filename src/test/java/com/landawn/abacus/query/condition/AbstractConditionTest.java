@@ -365,6 +365,13 @@ public class AbstractConditionTest extends TestBase {
         assertTrue(str.contains("col5"));
     }
 
+    @Test
+    public void testConstructor_NullOperatorThrowsIllegalArgumentException() {
+        // AbstractCondition(Operator) via ComposableCondition(Operator): a null operator is an
+        // IllegalArgumentException (previously threw NullPointerException).
+        assertThrows(IllegalArgumentException.class, () -> new TestCondition(null, "value"));
+    }
+
     // Create a concrete implementation for testing
     private static class TestCondition extends ComposableCondition {
         private String value;
@@ -758,5 +765,15 @@ public class AbstractConditionTest extends TestBase {
         Assertions.assertEquals("123", AbstractCondition.formatParameter(123, NamingPolicy.NO_CHANGE));
         Assertions.assertEquals("123.45", AbstractCondition.formatParameter(123.45, NamingPolicy.NO_CHANGE));
         Assertions.assertEquals("true", AbstractCondition.formatParameter(Boolean.TRUE, NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testProtectedHelpers_NullArgumentsThrowIllegalArgumentException() {
+        // previously threw NullPointerException
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatNumberLiteral(null));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.validateNonQuantifiedValueOperands(null, "values"));
+
+        assertEquals("42", AbstractCondition.formatNumberLiteral(42));
+        AbstractCondition.validateNonQuantifiedValueOperands(Arrays.asList(1, null, "a"), "values");
     }
 }

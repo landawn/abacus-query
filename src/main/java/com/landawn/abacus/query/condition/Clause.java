@@ -104,8 +104,7 @@ public abstract class Clause extends Cell {
      * @param operator the SQL clause operator to apply to the condition (must not be {@code null}), such as
      *                 {@code WHERE}, {@code GROUP_BY}, or {@code HAVING}
      * @param condition the condition to wrap (must not be {@code null})
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is not a SQL clause operator, is a JOIN operator
+     * @throws IllegalArgumentException if {@code operator} is {@code null}, is not a SQL clause operator, is a JOIN operator
      *         (JOINs use {@link Join} rather than this prefix-wrapper representation), or if {@code condition} is
      *         {@code null}, is a {@link Criteria} or another clause (e.g. {@code WHERE}, {@code HAVING}), is a
      *         standalone {@link SubQuery} except as the required operand of a set-operation clause, is not a
@@ -120,7 +119,7 @@ public abstract class Clause extends Cell {
     }
 
     private static Condition validateClauseOperand(final Operator operator, final Condition cond) {
-        N.requireNonNull(operator, "operator");
+        N.checkArgNotNull(operator, cs.operator);
 
         if (!isClause(operator)) {
             throw new IllegalArgumentException("Clause operator must be a SQL clause operator, but was: " + operator);

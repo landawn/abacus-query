@@ -72,8 +72,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *             if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is
      *             {@code null}, or if the subquery has an explicit structured projection with a number of columns other than 1
      */
@@ -99,8 +98,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery (must not be {@code null})
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *             if {@code propNames} is {@code null}/empty, if any element is
      *             {@code null}, empty, or blank, if {@code subQuery} is {@code null}, or if the subquery has an explicit
      *             structured projection whose number of selected columns does not match {@code propNames.size()}
@@ -121,13 +119,10 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      *
      * @param operator the operator to validate
      * @return {@code operator}, unchanged
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN}
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is neither {@link Operator#IN} nor {@link Operator#NOT_IN}
      */
     private static Operator validateOperator(final Operator operator) {
-        if (operator == null) {
-            throw new NullPointerException("operator");
-        }
+        N.checkArgNotNull(operator, cs.operator);
 
         if (operator != Operator.IN && operator != Operator.NOT_IN) {
             throw new IllegalArgumentException("Only IN and NOT_IN are supported: " + operator);

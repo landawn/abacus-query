@@ -62,7 +62,10 @@ public class AbstractInSubQueryTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("id", Operator.EQUAL, one));
         assertThrows(IllegalArgumentException.class,
                 () -> new TestAbstractInSubQuery(Arrays.asList("a", "b"), Operator.EQUAL, Filters.subQuery("SELECT a, b FROM t")));
-        assertThrows(NullPointerException.class, () -> new TestAbstractInSubQuery("id", null, one));
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("id", null, one));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TestAbstractInSubQuery(Arrays.asList("a", "b"), (Operator) null, Filters.subQuery("SELECT a, b FROM t")));
     }
 
     @Test

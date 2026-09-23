@@ -100,8 +100,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      *                 excluded range for {@code NOT_BETWEEN} (values strictly above it match); may be a
      *                 non-null literal value, an explicit {@link SqlExpression}, or a scalar
      *                 {@link SubQuery} whose parameters will be spliced into {@link #parameters()}
-     * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
      *                                  if {@code propName} is {@code null}, empty, or blank,
      *                                  if either bound is {@code null}, an ordinary predicate or query clause,
      *                                  a blank {@link SqlExpression}, an {@link All}, {@link Any}, or {@link Some}
@@ -134,9 +133,7 @@ public abstract class AbstractBetween extends ComposableCondition {
     }
 
     private static Operator validateOperator(final Operator operator) {
-        if (operator == null) {
-            throw new NullPointerException("operator");
-        }
+        N.checkArgNotNull(operator, cs.operator);
 
         if (operator != Operator.BETWEEN && operator != Operator.NOT_BETWEEN) {
             throw new IllegalArgumentException("Only BETWEEN and NOT_BETWEEN are supported: " + operator);
