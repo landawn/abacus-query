@@ -65,7 +65,7 @@ package com.landawn.abacus.query.condition;
  * // Find all customers except those who have placed orders
  * SubQuery customersWithOrders = Filters.subQuery("SELECT DISTINCT customer_id FROM orders");
  * Except customersWithoutOrders = new Except(customersWithOrders);
- * // When combined with all customers query:
+ * // When combined with an active-customers query:
  * // SELECT customer_id FROM customers WHERE status = 'active'
  * // EXCEPT
  * // SELECT DISTINCT customer_id FROM orders

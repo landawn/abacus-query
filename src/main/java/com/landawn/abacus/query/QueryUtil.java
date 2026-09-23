@@ -1154,7 +1154,9 @@ public final class QueryUtil {
      * runs off each dot-separated segment, converts what is left with {@code namingPolicy} one segment
      * at a time (so a qualifier never acts as a word boundary of the segment that follows it:
      * {@code acc.Id} renders as {@code acc.id}, not {@code acc._id}), and re-attaches the runs unchanged.
-     * An all-underscore identifier or segment is returned as-is. Internal underscore runs are <i>not</i> preserved: they follow the
+     * An all-underscore identifier or segment is returned as-is. A quoted segment ({@code "..."}, {@code `...`},
+     * {@code [...]}, {@code U&"..."}) is returned verbatim, and a dot inside it does not split segments.
+     * Internal underscore runs are <i>not</i> preserved: they follow the
      * naming policy (abacus-common 8.0.0 collapses {@code a__b} to {@code a_b} under
      * {@link NamingPolicy#SNAKE_CASE}), because keeping them would defeat snake-to-camel conversion.</p>
      *
@@ -1180,6 +1182,7 @@ public final class QueryUtil {
      * QueryUtil.convertIdentifier("acc._id", NamingPolicy.SCREAMING_SNAKE_CASE);    // "ACC._ID"
      * QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE);               // "acc.id" (segments converted independently)
      * QueryUtil.convertIdentifier("a__b", NamingPolicy.SNAKE_CASE);                 // "a_b" (internal runs follow the policy)
+     * QueryUtil.convertIdentifier("t.\"First.Name\"", NamingPolicy.SNAKE_CASE);     // "t.\"First.Name\"" (quoted segment kept)
      * QueryUtil.convertIdentifier("_firstName", NamingPolicy.NO_CHANGE);            // "_firstName"
      * QueryUtil.convertIdentifier("", NamingPolicy.SNAKE_CASE);                     // ""
      * }</pre>
@@ -1196,6 +1199,10 @@ public final class QueryUtil {
     public static String convertIdentifier(final String identifier, final NamingPolicy namingPolicy) {
         if (Strings.isEmpty(identifier) || namingPolicy == null || namingPolicy == NamingPolicy.NO_CHANGE) {
             return identifier;
+        }
+
+        if (containsIdentifierQuote(identifier)) {
+            return convertQuoteAwareIdentifier(identifier, namingPolicy);
         }
 
         final int firstDot = identifier.indexOf('.');
@@ -1229,6 +1236,48 @@ public final class QueryUtil {
         sb.append(convertIdentifierSegment(identifier.substring(start), namingPolicy));
 
         return sb.toString();
+    }
+
+    private static boolean containsIdentifierQuote(final String identifier) {
+        for (int i = 0, len = identifier.length(); i < len; i++) {
+            final char ch = identifier.charAt(i);
+
+            if (ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Splits {@code identifier} only at dots outside quoted identifiers, keeps every segment that starts with a
+     * delimiter ({@code "..."}, {@code `...`}, {@code [...]}, {@code U&"..."}) verbatim, and converts the others.
+     * A delimited identifier is exact, case-sensitive text; converting inside it would target a different column.
+     */
+    private static String convertQuoteAwareIdentifier(final String identifier, final NamingPolicy namingPolicy) {
+        final StringBuilder sb = new StringBuilder(identifier.length() + 8);
+        int start = 0;
+
+        while (true) {
+            final int relativeDot = indexOfQualifyingDot(identifier.substring(start));
+            final int end = relativeDot < 0 ? identifier.length() : start + relativeDot;
+            final String segment = identifier.substring(start, end);
+            final char first = segment.isEmpty() ? 0 : segment.charAt(0);
+
+            if (first == SK._DOUBLE_QUOTE || first == SK._BACKTICK || first == '[' || isUnicodeQuotedIdentifierStart(segment, 0)) {
+                sb.append(segment);
+            } else {
+                sb.append(convertIdentifierSegment(segment, namingPolicy));
+            }
+
+            if (relativeDot < 0) {
+                return sb.toString();
+            }
+
+            sb.append('.');
+            start = end + 1;
+        }
     }
 
     /** Only lowercase ASCII letters and dots are proven unchanged; all other spellings use the converter. */

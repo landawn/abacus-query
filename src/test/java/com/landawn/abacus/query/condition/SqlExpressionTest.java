@@ -1487,4 +1487,18 @@ public class SqlExpressionTest extends TestBase {
                 Filters.expr("firstName = #{firstName, jdbcType=VARCHAR}").toSql(NamingPolicy.SNAKE_CASE));
     }
 
+    @Test
+    public void testToSqlPreservesDelimitedSegmentOfQualifiedIdentifier() {
+        assertEquals("t.\"firstName\" = 1", SqlExpression.of("t.\"firstName\" = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("T.\"firstName\" = 1", SqlExpression.of("t.\"firstName\" = 1").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("t.[firstName] = 1", SqlExpression.of("t.[firstName] = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("t.`firstName` = 1", SqlExpression.of("t.`firstName` = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("t.\"first Name\" = 1", SqlExpression.of("t.\"first Name\" = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("t.\"aB\"\"c\" = 1", SqlExpression.of("t.\"aB\"\"c\" = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("my_schema.t.\"firstName\" = last_name", SqlExpression.of("mySchema.t.\"firstName\" = lastName").toSql(NamingPolicy.SNAKE_CASE));
+        // unchanged neighbours
+        assertEquals("\"firstName\" = 1", SqlExpression.of("\"firstName\" = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("t.first_name = 1", SqlExpression.of("t.firstName = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("user_ids[1] = x", SqlExpression.of("userIds[1] = x").toSql(NamingPolicy.SNAKE_CASE));
+    }
 }

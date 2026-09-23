@@ -790,8 +790,8 @@ public abstract class AbstractCondition implements Condition {
      * Concatenates property names into a formatted string.
      * Handles different array sizes efficiently, adding parentheses for multiple names.
      *
-     * <p>This utility method is used internally for formatting multiple property names
-     * in conditions like GROUP BY or ORDER BY.</p>
+     * <p>This utility method is available to subclasses for formatting a list of property names
+     * as a single name or a parenthesized, comma-separated list.</p>
      *
      * <p>Formatting rules:</p>
      * <ul>
@@ -857,7 +857,7 @@ public abstract class AbstractCondition implements Condition {
      * Handles different collection sizes efficiently, adding parentheses for multiple names.
      *
      * <p>This utility method is used internally for formatting multiple property names
-     * from collections in conditions like IN or GROUP BY.</p>
+     * from collections, for example the column list of a USING clause.</p>
      *
      * <p>Formatting rules:</p>
      * <ul>

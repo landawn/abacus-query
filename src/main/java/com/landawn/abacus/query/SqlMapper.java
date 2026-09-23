@@ -65,7 +65,7 @@ import com.landawn.abacus.util.XmlUtil;
  * </sqlMapper>
  * }</pre>
  * 
- * <p>Recognized XML attributes on {@code <sql>} elements are copied after structural validation:
+ * <p>All XML attributes on {@code <sql>} elements other than {@code id} are copied after structural validation:
  * names must be nonempty, valid non-namespace XML attribute names (and not {@code xmlns}), and
  * values must be non-null. This class interprets only the {@code id} contract; remaining attributes
  * are stored verbatim for downstream callers such as JDBC executors:</p>
@@ -817,10 +817,10 @@ public final class SqlMapper {
      * entry in a SQL's attributes map is ignored when emitting attributes.</p>
      *
      * <p>Structure of the output (the actual output is written on a single line, prefixed by an XML declaration,
-     * with attributes in name order):</p>
+     * with attributes in name order; the {@code id} attribute is sorted together with the others):</p>
      * <pre>{@code
      * <sqlMapper>
-     *     <sql id="findUser" fetchSize="100">select * from users where id = ?</sql>
+     *     <sql fetchSize="100" id="findUser">select * from users where id = ?</sql>
      *     <sql id="updateUser">update users set name = ? where id = ?</sql>
      * </sqlMapper>
      * }</pre>

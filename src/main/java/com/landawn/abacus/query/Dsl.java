@@ -1332,7 +1332,8 @@ public final class Dsl {
      * @param tableAlias the table alias to use
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
-     *                                  or, when no table alias is supplied, resolves to a blank mapped table name
+     *                                  or resolves to a blank mapped table name, or if {@code tableAlias}
+     *                                  contains a line break or a SQL comment token
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias) {
         return selectFrom(entityClass, tableAlias, false);
@@ -1384,7 +1385,8 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
-     *                                  or, when no table alias is supplied, resolves to a blank mapped table name
+     *                                  or resolves to a blank mapped table name, or if {@code tableAlias}
+     *                                  contains a line break or a SQL comment token
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties) {
         return selectFrom(entityClass, tableAlias, includeSubEntityProperties, null);
@@ -1435,7 +1437,8 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or, when no table alias is supplied, the class resolves to a blank mapped table name
+     *                                  or the class resolves to a blank mapped table name, or if
+     *                                  {@code tableAlias} contains a line break or a SQL comment token
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final Set<String> excludedPropNames) {
         return selectFrom(entityClass, tableAlias, false, excludedPropNames);
@@ -1492,7 +1495,8 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or, when no table alias is supplied, the class resolves to a blank mapped table name
+     *                                  or the class resolves to a blank mapped table name, or if
+     *                                  {@code tableAlias} contains a line break or a SQL comment token
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
@@ -1506,6 +1510,9 @@ public final class Dsl {
         final SqlBuilder builder = select(entityClass, includeSubEntityProperties, excludedPropNameSnapshot);
 
         try {
+            // The sub-entity path does not go through from(Class, String), so check the alias here for both paths.
+            builder.checkEntityTableAlias(entityClass, tableAlias);
+
             return includesSubEntityTables ? builder.from(entityClass, selectTableNames) : builder.from(entityClass, tableAlias);
         } catch (final RuntimeException | Error e) {
             releaseFailedBuilder(builder, e);

@@ -17,8 +17,8 @@ package com.landawn.abacus.query.condition;
 /**
  * Represents an SQL {@code IS} predicate (e.g. {@code IS NULL}).
  * This class is used to create conditions that test a property using the SQL {@code IS} operator,
- * which is used for {@code NULL}, Boolean truth values, and explicit database-specific SQL
- * expressions such as {@code UNKNOWN}, {@code NAN}, or {@code INFINITE}.
+ * which is used for {@code NULL}, Boolean truth values (including the standard {@code UNKNOWN}), and explicit
+ * database-specific SQL expressions such as {@code NAN} or {@code INFINITE}.
  *
  * <p>The {@code IS} operator differs from the equals ({@code =}) operator in that it properly handles
  * SQL three-valued logic for these special values. The most common use case is checking for
@@ -32,7 +32,7 @@ package com.landawn.abacus.query.condition;
  *
  * <p>Common use cases:</p>
  * <ul>
- *   <li>Custom IS expressions for database-specific values such as {@code IS UNKNOWN}</li>
+ *   <li>Custom IS expressions such as the standard boolean test {@code IS UNKNOWN} or database-specific keywords</li>
  *   <li>Building IS predicates programmatically when the right-hand side is dynamic</li>
  * </ul>
  *

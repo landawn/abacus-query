@@ -256,7 +256,9 @@ public final class Selection {
         }
 
         /**
-         * Sets the result class alias.
+         * Sets the result class alias. {@code null} or an empty string means no alias; a non-empty alias is
+         * validated when the selection is rendered and must not be blank, quoted, or contain SQL comment tokens
+         * (it prefixes every rendered column alias, e.g. {@code "acc.id"}).
          *
          * @param classAlias the class alias
          * @return this builder

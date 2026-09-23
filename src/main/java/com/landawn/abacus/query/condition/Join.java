@@ -195,7 +195,7 @@ public class Join extends AbstractCondition {
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public Join(final String joinEntity, final Condition joinCondition) {
         this(Operator.JOIN, joinEntity, joinCondition);
@@ -227,7 +227,7 @@ public class Join extends AbstractCondition {
      *                                  {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     protected Join(final Operator operator, final String joinEntity, final Condition joinCondition) {
         this(operator, Collections.singletonList(joinEntity), joinCondition);
@@ -263,7 +263,7 @@ public class Join extends AbstractCondition {
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins
      *                                  with {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank {@link SqlExpression}
      */
     public Join(final Collection<String> joinEntities, final Condition joinCondition) {
         this(Operator.JOIN, joinEntities, joinCondition);
@@ -357,7 +357,7 @@ public class Join extends AbstractCondition {
      * Validates that {@code joinCondition} is usable as a join predicate: an {@link On} or {@link Using}
      * connector is unwrapped to the condition it carries, and the result must not be or contain a
      * non-predicate component (a {@link Criteria}, a SQL clause, a nested ON/USING connector, an
-     * {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a
+     * {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a
      * blank {@link SqlExpression}).
      *
      * @param joinCondition the join condition; may be {@code null} (CROSS/NATURAL joins)
@@ -478,9 +478,10 @@ public class Join extends AbstractCondition {
      * Returns all parameters from the join condition.
      * Returns any bound parameters used in the join condition. Returns an empty
      * list if there's no condition or the condition has no parameters.
-     * The list is built afresh on every call (it is not memoized here), so mutable parameter values
-     * such as arrays or {@code Date}s come from the join condition's own per-call defensive copies
-     * and are never shared between callers.
+     * This join does not memoize the list itself; it returns the join condition's own
+     * {@link Condition#parameters()} result, which that condition may memoize when all of its values are
+     * plain scalars. Mutable parameter values such as arrays or {@code Date}s come from the join
+     * condition's own per-call defensive copies and are never shared between callers.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

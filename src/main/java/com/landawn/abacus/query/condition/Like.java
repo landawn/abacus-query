@@ -100,8 +100,10 @@ public class Like extends Binary {
      *
      * // Escape special characters if needed (syntax varies by database)
      * Like escaped = new Like("path", "%\\_%");   // To match literal underscore
-     * // Note: the query must include an ESCAPE clause (e.g., ESCAPE '\') for the
-     * // escape character to be honored by the database engine.
+     * // SQL: path LIKE '%\_%'
+     * // Note: Like never renders an ESCAPE clause. Backslash is the default LIKE escape in
+     * // MySQL and PostgreSQL; on databases without a default escape character use an explicit
+     * // expression instead, e.g. Filters.expr("path LIKE '%!_%' ESCAPE '!'").
      * }</pre>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)

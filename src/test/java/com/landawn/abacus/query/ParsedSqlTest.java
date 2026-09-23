@@ -2877,4 +2877,46 @@ public class ParsedSqlTest extends TestBase {
         assertEquals(2, ParsedSql.parse("SELECT [q][?][?] FROM t").parameterCount());
         assertEquals(1, ParsedSql.parse("SELECT [q][?]['a', ?] FROM t").parameterCount());
     }
+
+    @Test
+    public void testParse_MultiDimensionalArrayConstructorDoesNotHideLaterBindings() {
+        final ParsedSql named = ParsedSql.parse("SELECT * FROM t WHERE m = ARRAY[[1,2],[3,4]] AND id = :id");
+        assertEquals("SELECT * FROM t WHERE m = ARRAY[[1,2],[3,4]] AND id = ?", named.parameterizedSql());
+        assertEquals(Arrays.asList("id"), named.namedParameters());
+
+        assertEquals(Arrays.asList("id"), ParsedSql.parse("SELECT * FROM t WHERE m = ARRAY[[1,2],[3,4]] AND id = #{id}").namedParameters());
+
+        final String positionalSql = "SELECT * FROM t WHERE m = ARRAY[[1,2],[3,4]] AND id = ?";
+        final ParsedSql positional = ParsedSql.parse(positionalSql);
+        assertEquals(1, positional.parameterCount());
+        assertArrayEquals(new int[] { positionalSql.lastIndexOf('?') }, positional.positionalParameterOffsets());
+
+        assertEquals(Arrays.asList("a"), ParsedSql.parse("SELECT ARRAY[[1,2],[3,:a]]").namedParameters());
+        assertEquals(1, ParsedSql.parse("SELECT ARRAY[[1,2],[3,?]]").parameterCount());
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE m = ARRAY[[1,2],[3,?]] AND id = :id"));
+    }
+
+    @Test
+    public void testParse_UnescapedJsonOperatorGluedToIbatisBinding() {
+        final ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE doc ?#{key}");
+        assertEquals(Arrays.asList("key"), parsed.namedParameters());
+        assertEquals(1, parsed.parameterCount());
+        assertFalse(parsed.parameterizedSql().contains("#{"), parsed.parameterizedSql());
+        assertEquals(parsed.namedParameters(), ParsedSql.parse("SELECT ARRAY[doc ?#{key}]").namedParameters());
+
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ?#{key}"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[?#{key}]"));
+    }
+
+    @Test
+    public void testParse_WindowFrameOffsetPlaceholderIsCounted() {
+        for (final String unit : new String[] { "ROWS", "RANGE", "GROUPS" }) {
+            final String sql = "SELECT sum(x) OVER (ORDER BY d " + unit + " ? PRECEDING) FROM t";
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+            assertArrayEquals(new int[] { sql.indexOf('?') }, parsed.positionalParameterOffsets(), sql);
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT sum(x) OVER (ORDER BY d RANGE ? PRECEDING) FROM t WHERE id = :id"));
+    }
 }

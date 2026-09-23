@@ -2573,9 +2573,11 @@ public class Criteria extends AbstractCondition {
          * The expression is formatted (whitespace collapsed, keywords upper-cased) and validated against the
          * accepted limit grammar; see {@link Limit#Limit(String)}.
          * If a LIMIT clause already exists, it will be replaced.
-         * When rendered by a SQL builder whose dialect paginates with {@code OFFSET}/{@code FETCH}
-         * (Oracle, DB2 or SQL Server), a generic {@code LIMIT count [OFFSET offset]} expression is
-         * re-rendered in that dialect's syntax.
+         * When rendered by a SQL builder, the parsed count/offset is re-emitted in that builder dialect's
+         * pagination syntax whichever accepted form was passed (for example
+         * {@code OFFSET m ROWS FETCH NEXT n ROWS ONLY} on Oracle, DB2 or SQL Server, {@code LIMIT n OFFSET m}
+         * elsewhere); an expression whose numbers exceed the {@code int} range is re-rendered only when it is a
+         * generic {@code LIMIT count [OFFSET offset]} form.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2611,8 +2613,7 @@ public class Criteria extends AbstractCondition {
          * c.toSql(NamingPolicy.NO_CHANGE);
          * // returns " WHERE status = 'active' UNION SELECT * FROM archived_users WHERE active = true"
          *
-         * // Multiple set operations accumulate in order.
-         * c.setOperations().size();   // returns 1
+         * c.setOperations().size();   // returns 1 (further set-operation calls accumulate in order)
          * }</pre>
          *
          * @param subQuery the subquery to union with (must not be {@code null})
@@ -2987,16 +2988,22 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds a single condition to this builder. If the condition is a singleton clause
          * (WHERE, GROUP BY, HAVING, ORDER BY, or LIMIT), any previously added clause of the same
-         * kind is replaced; otherwise the condition is appended.
+         * kind is replaced in place (keeping its position in {@link Criteria#conditions()}); otherwise the
+         * condition is appended.
          *
          * @param cond the condition to add; assumed already validated by {@link #checkCondition(Condition)}
          */
         private void addCondition(final Condition cond) {
             if (isSingletonClause(cond.operator())) {
-                final Condition clause = findConditionByOperator(this.conditions, cond.operator());
+                final Operator operator = cond.operator();
 
-                if (clause != null) {
-                    conditions.remove(clause); // NOSONAR
+                for (int i = 0, size = conditions.size(); i < size; i++) {
+                    if (conditions.get(i).operator() == operator) {
+                        // Replace in place so the clause keeps its position; equals()/hashCode() compare the
+                        // ordered list, so re-setting a clause must not depend on replacement history.
+                        conditions.set(i, cond);
+                        return;
+                    }
                 }
             }
 

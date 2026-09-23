@@ -23,6 +23,7 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
+import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -143,7 +144,9 @@ public class Using extends Cell {
      *                    {@code (}, or {@code )}).
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
-     *                                  {@code ,}, {@code (}, or {@code )}
+     *                                  {@code ,}, {@code (}, or {@code )}, or an unquoted name containing a SQL comment
+     *                                  token ({@code --}, {@code #}, or {@code /*}) whose rendering would drop the closing
+     *                                  parenthesis
      */
     @Beta
     public Using(final String... columnNames) {
@@ -186,7 +189,9 @@ public class Using extends Cell {
      *                    {@code LinkedHashSet} or {@code List} to preserve insertion order.
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
-     *                                  {@code ,}, {@code (}, or {@code )}
+     *                                  {@code ,}, {@code (}, or {@code )}, or an unquoted name containing a SQL comment
+     *                                  token ({@code --}, {@code #}, or {@code /*}) whose rendering would drop the closing
+     *                                  parenthesis
      */
     @Beta
     public Using(final Collection<String> columnNames) {
@@ -297,7 +302,9 @@ public class Using extends Cell {
      * @return a condition representing the USING clause
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
-     *                                  {@code ,}, {@code (}, or {@code )}
+     *                                  {@code ,}, {@code (}, or {@code )}, or an unquoted name containing a SQL comment
+     *                                  token ({@code --}, {@code #}, or {@code /*}) whose rendering would drop the closing
+     *                                  parenthesis
      */
     static Condition createUsingCondition(final String... columnNames) {
         return prepare(columnNames).condition;
@@ -329,14 +336,25 @@ public class Using extends Cell {
      * @return a condition representing the USING clause
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
-     *                                  {@code ,}, {@code (}, or {@code )}
+     *                                  {@code ,}, {@code (}, or {@code )}, or an unquoted name containing a SQL comment
+     *                                  token ({@code --}, {@code #}, or {@code /*}) whose rendering would drop the closing
+     *                                  parenthesis
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
         return prepare(columnNames).condition;
     }
 
     private static Condition createUsingConditionFromSnapshot(final List<String> columnNames) {
-        return Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
+        final SqlExpression expr = Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
+
+        // SqlExpression rendering strips SQL comments (--, #, /*); a comment token in a column name would
+        // also swallow the closing parenthesis and render "USING (a". Reject it, as the query builder's
+        // using(...) does.
+        if (!expr.toSql(NamingPolicy.NO_CHANGE).endsWith(")")) {
+            throw new IllegalArgumentException("SQL comment token is not allowed in USING column names: " + columnNames);
+        }
+
+        return expr;
     }
 
     private static void validateColumnName(final String columnName) {

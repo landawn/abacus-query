@@ -963,4 +963,15 @@ public class SubQueryTest extends TestBase {
     private static final class SinglePropEntity {
         private long id;
     }
+
+    @Test
+    public void testToSqlKeepsQuotedIdentifiersVerbatim() {
+        final SubQuery quoted = new SubQuery("\"UserAccount\"", "\"firstName\"", Filters.equal("\"isActive\"", true));
+        assertEquals("SELECT \"firstName\" FROM \"UserAccount\" WHERE \"isActive\" = true", quoted.toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT [FirstName] FROM `UserAccount`", new SubQuery("`UserAccount`", "[FirstName]", (Condition) null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("\"UserAccount\" = 1", Filters.equal("\"UserAccount\"", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("`FirstName` BETWEEN 1 AND 2", Filters.between("`FirstName`", 1, 2).toSql(NamingPolicy.SNAKE_CASE));
+        // unquoted names are still converted
+        assertEquals("SELECT first_name FROM user_account", new SubQuery("userAccount", "firstName", (Condition) null).toSql(NamingPolicy.SNAKE_CASE));
+    }
 }

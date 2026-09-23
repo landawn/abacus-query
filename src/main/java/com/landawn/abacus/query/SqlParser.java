@@ -384,7 +384,10 @@ public final class SqlParser {
      * multi-character separator beginning with whitespace is emitted as a complete token before
      * ordinary whitespace skipping is considered, by tokenization, next-token scanning, token bounds
      * and token search alike; searching for such a separator requires its exact spelling, including the
-     * leading whitespace.</p>
+     * leading whitespace. Exception: {@code nextToken}, {@code nextTokenEndIndex} and {@code indexOfToken}
+     * consume the line terminator that ends a {@code --} or {@code #} line comment, so a whitespace separator
+     * (or a separator beginning with one) immediately after a line comment is not reported by them, although
+     * {@code tokenize} emits it.</p>
      */
     public static final class TokenizerConfig {
         private static final Comparator<String> LONGEST_SEPARATOR_FIRST = Comparator.comparingInt(String::length).reversed();
@@ -846,7 +849,8 @@ public final class SqlParser {
          * Lexically classifies the statement as SELECT-only using this tokenizer's configured
          * separator rules and its {@linkplain TokenizerConfig#semicolonlessBatches() semicolon-less batch}
          * setting. In particular, configured hash-prefixed operators are not mistaken for
-         * MySQL hash comments while scanning later statements. This method does not resolve functions,
+         * MySQL hash comments while scanning later statements; the additional MySQL reading, in which every
+         * {@code #} starts a line comment, can only reject. This method does not resolve functions,
          * triggers, locking clauses, or other database semantics and must not be used as a security boundary.
          *
          * @param sql the SQL statement to classify; may be empty or {@code null}
@@ -1035,7 +1039,26 @@ public final class SqlParser {
 
     /** Finds a quoted token's closing delimiter, or the source length for an unterminated token. */
     private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote) {
+        if (quote == ']' && fromIndex >= 2 && isIdentifierChar(sql.charAt(fromIndex - 2))) {
+            return subscriptEndIndex(sql, fromIndex);
+        }
         return quotedTokenEndIndex(sql, fromIndex, quote, quote != ']');
+    }
+
+    /** A bracket glued to an identifier is an array subscript/constructor: it nests, and "]]" closes two groups. */
+    private static int subscriptEndIndex(final String sql, final int fromIndex) {
+        int depth = 1;
+        for (int i = fromIndex, len = sql.length(); i < len; i++) {
+            final char c = sql.charAt(i);
+            if (c == SK._SINGLE_QUOTE || c == SK._DOUBLE_QUOTE || c == SK._BACKTICK) {
+                i = quotedTokenEndIndex(sql, i + 1, c, true);
+            } else if (c == '[') {
+                depth++;
+            } else if (c == ']' && --depth == 0) {
+                return i;
+            }
+        }
+        return sql.length();
     }
 
     private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote, final boolean backslashEscapes) {
@@ -1149,7 +1172,10 @@ public final class SqlParser {
      * casing or whitespace can make {@code ORDER BY} tokenize separately from a configured
      * {@code "order by"} separator. The earliest complete match of either form is returned. An explicit
      * search for a configured single whitespace separator matches that source character, including
-     * within a whitespace run; ordinary next-token scanning still skips whitespace.</p>
+     * within a whitespace run; ordinary next-token scanning still skips whitespace. Exception:
+     * {@code nextToken}, {@code nextTokenEndIndex} and {@code indexOfToken} consume the line terminator that
+     * ends a {@code --} or {@code #} line comment, so a whitespace separator (or a separator beginning with
+     * one) immediately after a line comment is not reported by them, although {@code tokenize} emits it.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1506,7 +1532,8 @@ public final class SqlParser {
      *       after {@code FROM}, {@code JOIN}, {@code INTO}, {@code UPDATE} or {@code TABLE}, or as
      *       an {@code INSERT}, {@code UPDATE}, {@code DELETE} or {@code MERGE} target after an optional {@code TOP} clause,
      *       with optional whitespace/comments in between, including as a later element of a
-     *       comma-separated list such as {@code "FROM #t1, #t2"}) is not considered a separator</li>
+     *       comma-separated list such as {@code "FROM #t1, #t2"}; a line comment between list elements is
+     *       not crossed, so such a {@code '#'} falls back to a comment) is not considered a separator</li>
      *   <li>All configured single-character and multi-character separators are checked</li>
      * </ul>
      *
@@ -2680,9 +2707,15 @@ public final class SqlParser {
      * This includes statements that start with a {@code WITH} clause or leading parentheses. The
      * mutation-keyword scan matches only statement-start positions, so the
      * {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL <i>functions</i> inside a SELECT do not
-     * affect the classification. The complete SQL is checked under both backslash-escaped and
-     * doubled-quote-only string rules, independently combined with standard and MySQL {@code --}
-     * line-comment rules. Hash-comment/operator treatment follows the active tokenizer configuration.
+     * affect the classification. The complete SQL is checked under every combination of these lexical
+     * readings: backslash-escaped and doubled-quote-only string rules, varied independently for
+     * {@code '}, {@code "} and {@code `} quotes (a PostgreSQL {@code E'...'} string is read both as always
+     * escaping and as a plain string), SQL Server bracket identifiers and PostgreSQL array brackets,
+     * PostgreSQL dollar quoting on and off, and standard and MySQL {@code --} line-comment rules. Hash
+     * comments and hash-prefixed operators follow the active tokenizer configuration; in addition, the SQL is
+     * read as MySQL/MariaDB read it, with every {@code #} (except a MyBatis {@code #{...}} marker) starting a
+     * line comment and with the statements before an unterminated quote or comment still executing. A block
+     * comment containing a nested {@code /*} is rejected, because its extent differs between dialects.
      * Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot
      * hide a mutation clause. MySQL/MariaDB executable comments are rejected because their apparent
      * comment body may run.
@@ -2995,11 +3028,17 @@ public final class SqlParser {
      * {@code execute} remain usable as ordinary column names after it. Procedure calls are
      * conservatively rejected because their effects cannot be determined from the SQL text; the keyword scan matches
      * only statement-start positions, so the {@code REPLACE(...)}/{@code TRUNCATE(...)} SQL
-     * <i>functions</i> do not affect the classification. The complete SQL is checked under both
-     * backslash-escaped and doubled-quote-only string rules, independently combined with standard
-     * and MySQL {@code --} line-comment rules. Hash-comment/operator treatment follows the active
-     * tokenizer configuration. Every lexically valid interpretation must have the accepted shape, so an ambiguous
-     * quote or comment cannot hide an upsert or overwrite clause. MySQL/MariaDB executable comments
+     * <i>functions</i> do not affect the classification. The complete SQL is checked under every
+     * combination of these lexical readings: backslash-escaped and doubled-quote-only string rules, varied
+     * independently for {@code '}, {@code "} and {@code `} quotes (a PostgreSQL {@code E'...'} string is
+     * read both as always escaping and as a plain string), SQL Server bracket identifiers and PostgreSQL
+     * array brackets, PostgreSQL dollar quoting on and off, and standard and MySQL {@code --} line-comment
+     * rules. Hash comments and hash-prefixed operators follow the active tokenizer configuration; in
+     * addition, the SQL is read as MySQL/MariaDB read it, with every {@code #} (except a MyBatis
+     * {@code #{...}} marker) starting a line comment and with the statements before an unterminated quote or
+     * comment still executing. A block comment containing a nested {@code /*} is rejected, because its
+     * extent differs between dialects. Every lexically valid interpretation must have the accepted shape, so
+     * an ambiguous quote or comment cannot hide an upsert or overwrite clause. MySQL/MariaDB executable comments
      * are rejected because their apparent comment body may run.
      * </p>
      *
@@ -3027,9 +3066,10 @@ public final class SqlParser {
 
     /**
      * Applies the statement-shape classification under every lexically complete combination of supported quote
-     * and {@code --} line-comment conventions. These choices are independent: MySQL with
-     * {@code NO_BACKSLASH_ESCAPES}, for example, combines doubled-quote-only strings with MySQL's
-     * whitespace requirement after {@code --}.
+     * (per quote character, {@code E'...'}, bracket and dollar-quote) and {@code --} line-comment conventions.
+     * These choices are independent: MySQL with {@code NO_BACKSLASH_ESCAPES}, for example, combines
+     * doubled-quote-only strings with MySQL's whitespace requirement after {@code --}. The MySQL/MariaDB
+     * reading of {@code #} comments and of statements before a lexing error is then classified as a veto.
      */
     private static boolean isAcceptedQueryUnderEveryLexicalMode(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert) {
         // The leading unquoted verb is invariant across quote/comment modes. Resolve it once,
@@ -3053,27 +3093,68 @@ public final class SqlParser {
 
         // Without a backslash or dash pair, that lexical choice cannot change the input.
         // Keep both independent axes when present (including NO_BACKSLASH_ESCAPES + MySQL comments).
-        final int quoteModes = sql.indexOf('\\') >= 0 ? 2 : 1;
+        final int quoteAxes = lexicalAxes(sql);
         final int commentModes = sql.indexOf("--") >= 0 ? 2 : 1;
-        for (int quoteMode = 0; quoteMode < quoteModes; quoteMode++) {
-            final boolean backslashEscapes = quoteMode == 0;
+        boolean hasInvalidMode = false;
+        for (int noEscapeQuotes = 0; noEscapeQuotes <= quoteAxes; noEscapeQuotes++) {
+            if (isSkippedLexicalMode(noEscapeQuotes, quoteAxes)) {
+                continue;
+            }
 
             for (int commentMode = 0; commentMode < commentModes; commentMode++) {
                 final boolean mysqlCommentRules = commentMode == 0;
-                final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules, memo);
+                final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, noEscapeQuotes, mysqlCommentRules, memo, false);
 
-                if (maskedSql != null) {
-                    hasValidMode = true;
+                if (maskedSql == null) {
+                    hasInvalidMode = true;
+                    continue;
+                }
 
-                    if (!isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules, maskedSql == sql ? memo : hashScanMemo(maskedSql),
-                            knownAllowedLeadingVerb)) {
-                        return false;
-                    }
+                hasValidMode = true;
+                final HashScanMemo maskedMemo = maskedSql == sql ? memo : hashScanMemo(maskedSql);
+
+                // Masking classified each '#' on the raw text, where every "--" pair still reads as a line
+                // comment; the scanners below classify it on the masked text, where MySQL-mode masking broke
+                // non-comment "--" pairs (e.g. "--@from #t"). If that changes a '#' from comment to identifier,
+                // unmasked quotes on its line become visible and can hide a later statement: fail closed.
+                if (maskedSql != sql && !maskedSql
+                        .equals(maskQuotedRegionsForClassification(maskedSql, tokenizerConfig, noEscapeQuotes, mysqlCommentRules, maskedMemo, false))) {
+                    return false;
+                }
+
+                if (!isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules, maskedMemo, knownAllowedLeadingVerb)) {
+                    return false;
                 }
             }
         }
 
-        return hasValidMode;
+        if (!hasValidMode) {
+            return false;
+        }
+
+        // MySQL/MariaDB read every '#' outside quotes and comments as a line comment, including one the
+        // temp-table heuristic anchored as "#name" or one a configured operator such as "?#" covered; they
+        // also execute the statements before one that fails to lex. Those readings can hide a quote or
+        // block-comment opener that, read as SQL, swallows a later "; DELETE ...", or run a DELETE that
+        // precedes a quote left unterminated only under MySQL rules. Classify them too, only as a veto.
+        if (hasInvalidMode || sql.indexOf('#') >= 0) {
+            final int backslashAxes = quoteAxes & ALL_QUOTE_AXES;
+
+            for (int noEscapeQuotes = 0; noEscapeQuotes <= backslashAxes; noEscapeQuotes++) {
+                if ((noEscapeQuotes & ~backslashAxes) != 0) {
+                    continue;
+                }
+
+                final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, noEscapeQuotes, true, memo, true);
+
+                if (maskedSql != null
+                        && !isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, true, hashScanMemo(maskedSql), knownAllowedLeadingVerb, true)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -3082,14 +3163,27 @@ public final class SqlParser {
      */
     private static boolean isAcceptedMaskedQuery(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert,
             final boolean mysqlCommentRules, final HashScanMemo memo, final boolean knownAllowedLeadingVerb) {
+        return isAcceptedMaskedQuery(sql, tokenizerConfig, allowInsert, mysqlCommentRules, memo, knownAllowedLeadingVerb, false);
+    }
+
+    /**
+     * @param vetoOnly {@code true} when classifying an extra reading that may only reject: a first statement
+     *        whose leading verb cannot be resolved there (e.g. a {@code WITH} clause cut short by a MySQL
+     *        {@code #} comment, which MySQL rejects as a syntax error) is then not itself a reason to reject
+     */
+    private static boolean isAcceptedMaskedQuery(final String sql, final TokenizerConfig tokenizerConfig, final boolean allowInsert,
+            final boolean mysqlCommentRules, final HashScanMemo memo, final boolean knownAllowedLeadingVerb, final boolean vetoOnly) {
         if (!knownAllowedLeadingVerb) {
             final int leading = getLeadingQueryKeywordIndex(sql, tokenizerConfig, memo);
             if (leading < 0) {
-                return false;
-            }
-            final int end = identifierEnd(sql, leading);
-            if (!(matchesToken(sql, leading, end, "SELECT", false) || allowInsert && matchesToken(sql, leading, end, "INSERT", false))) {
-                return false;
+                if (!vetoOnly) {
+                    return false;
+                }
+            } else {
+                final int end = identifierEnd(sql, leading);
+                if (!(matchesToken(sql, leading, end, "SELECT", false) || allowInsert && matchesToken(sql, leading, end, "INSERT", false))) {
+                    return false;
+                }
             }
         }
 
@@ -3133,20 +3227,36 @@ public final class SqlParser {
      * Comments are preserved for the comment-aware classification scanners, but are skipped here
      * so quotes inside comments cannot affect lexical validity.
      *
-     * @return the masked SQL, or {@code null} if a quoted region or block comment is unterminated
+     * <p>With {@code mysqlReading}, the text is read as MySQL/MariaDB would read it instead: brackets are
+     * punctuation, {@code $} is ordinary, {@code E'...'} has no special escape rule, block comments do not
+     * nest, and every {@code #} outside quotes and comments (except a single-line MyBatis {@code #{...}}
+     * marker) starts a line comment, which is blanked together with its {@code #}. Because MySQL executes the
+     * statements before one that fails to lex, an unterminated quoted region or block comment then blanks the
+     * statement containing it and all text after it instead of making the reading invalid.</p>
+     *
+     * @return the masked SQL, or {@code null} if a quoted region or block comment is unterminated (never
+     *         for {@code mysqlReading}) or a block comment contains a nested {@code /*}
      */
-    private static String maskQuotedRegionsForClassification(final String sql, final TokenizerConfig tokenizerConfig, final boolean backslashEscapes,
-            final boolean mysqlCommentRules, final HashScanMemo memo) {
+    private static String maskQuotedRegionsForClassification(final String sql, final TokenizerConfig tokenizerConfig, final int noEscapeQuotes,
+            final boolean mysqlCommentRules, final HashScanMemo memo, final boolean mysqlReading) {
         char[] masked = null;
         final int len = sql.length();
         int index = 0;
+        int statementStart = 0; // mysqlReading: start of the statement after the last top-level ';'
 
         while (index < len) {
             final char ch = sql.charAt(index);
 
             if (ch == '\'' || ch == '"' || ch == '`') {
+                // Each quote character follows its own escape convention (MySQL: '...' escapes, `...` never
+                // does; PostgreSQL: "..." never escapes, E'...' always does), so vary them independently.
+                final boolean backslashEscapes = (noEscapeQuotes & quoteAxisBit(ch)) == 0
+                        || ch == '\'' && !mysqlReading && (noEscapeQuotes & ESCAPE_STRING_AXIS) != 0 && isEscapeStringPrefix(sql, index);
                 final int close = quotedTokenEndIndex(sql, index + 1, ch, backslashEscapes);
                 if (close == len) {
+                    if (mysqlReading) {
+                        return new String(maskRange(sql, masked, statementStart, len));
+                    }
                     return null;
                 }
 
@@ -3154,8 +3264,30 @@ public final class SqlParser {
                 masked = maskRange(sql, masked, index + 1, endIndex - 1);
                 index = endIndex;
                 continue;
+            } else if ((ch == '[' || ch == ']') && (mysqlReading || (noEscapeQuotes & BRACKET_PUNCT_AXIS) != 0)) {
+                // Hide the bracket itself so the downstream scanners cannot re-read it as a T-SQL identifier.
+                masked = maskRange(sql, masked, index, index + 1);
+            } else if (ch == '#' && mysqlReading && !(index + 1 < len && sql.charAt(index + 1) == '{' && isSingleLineMarker(sql, index + 2))) {
+                final int start = index;
+
+                while (index < len && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2) {
+                    index++;
+                }
+
+                masked = maskRange(sql, masked, start, index);
+                continue;
+            } else if (ch == '$' && !mysqlReading && (noEscapeQuotes & DOLLAR_QUOTE_AXIS) != 0) {
+                final int endIndex = dollarQuoteEnd(sql, index);
+                if (endIndex < 0) {
+                    return null;
+                }
+                if (endIndex > 0) {
+                    masked = maskRange(sql, masked, index + 1, endIndex - 1);
+                    index = endIndex;
+                    continue;
+                }
             } else if (ch == '[') {
-                final int close = quotedTokenEndIndex(sql, index + 1, ']');
+                final int close = bracketIdentifierEndIndex(sql, index + 1);
                 if (close == len) {
                     return null;
                 }
@@ -3184,7 +3316,9 @@ public final class SqlParser {
             } else if (ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{') {
                 final int endIndex = sql.indexOf('}', index + 2);
 
-                if (endIndex >= 0) {
+                // A MySQL reader sees "#{" as a line comment that ends at the line break, so a marker
+                // spanning lines must not hide the text after that break.
+                if (endIndex >= 0 && !containsLineBreak(sql, index + 2, endIndex)) {
                     masked = maskRange(sql, masked, index + 2, endIndex);
                     index = endIndex + 1;
                     continue;
@@ -3213,21 +3347,134 @@ public final class SqlParser {
                 index += 2;
 
                 while (index + 1 < len && !(sql.charAt(index) == '*' && sql.charAt(index + 1) == '/')) {
+                    if (!mysqlReading && sql.charAt(index) == '/' && sql.charAt(index + 1) == '*') {
+                        // PostgreSQL and SQL Server nest block comments, MySQL does not: the comment's
+                        // extent is dialect-dependent, so fail closed rather than pick one reading.
+                        return null;
+                    }
                     index++;
                 }
 
                 if (index + 1 >= len) {
+                    if (mysqlReading) {
+                        return new String(maskRange(sql, masked, statementStart, len));
+                    }
                     return null;
                 }
 
                 index += 2;
                 continue;
+            } else if (ch == ';') {
+                statementStart = index + 1;
             }
 
             index++;
         }
 
         return masked == null ? sql : new String(masked);
+    }
+
+    private static int quoteAxisBit(final char quote) {
+        return quote == '\'' ? 1 : quote == '"' ? 2 : 4;
+    }
+
+    private static boolean isSingleLineMarker(final String sql, final int fromIndex) {
+        final int endIndex = sql.indexOf('}', fromIndex);
+        return endIndex >= 0 && !containsLineBreak(sql, fromIndex, endIndex);
+    }
+
+    /**
+     * {@link #ESCAPE_STRING_AXIS} only matters once {@code '...'} is read without backslash escapes
+     * (PostgreSQL with standard_conforming_strings); otherwise the combination duplicates another mode.
+     */
+    private static boolean isSkippedLexicalMode(final int mode, final int axes) {
+        return (mode & ~axes) != 0 || (mode & ESCAPE_STRING_AXIS) != 0 && (mode & 1) == 0;
+    }
+
+    /** Bits of the quote characters whose backslash-escape reading must be varied (none without a backslash). */
+    private static int backslashQuoteAxes(final String sql) {
+        if (sql.indexOf('\\') < 0) {
+            return 0;
+        }
+        return (sql.indexOf('\'') >= 0 ? 1 : 0) | (sql.indexOf('"') >= 0 ? 2 : 0) | (sql.indexOf('`') >= 0 ? 4 : 0);
+    }
+
+    private static final int ALL_QUOTE_AXES = 7; // backslash-escape axes of ', " and `
+    private static final int BRACKET_PUNCT_AXIS = 8; // PostgreSQL ARRAY[...] / subscripts: '[' is not a quote
+    private static final int DOLLAR_QUOTE_AXIS = 16; // PostgreSQL $tag$...$tag$
+    // PostgreSQL E'...' always honors backslash escapes, but SQL Server and MySQL (NO_BACKSLASH_ESCAPES) read
+    // E'\' as the identifier E followed by the complete string '\'; check both readings.
+    private static final int ESCAPE_STRING_AXIS = 32;
+
+    private static int lexicalAxes(final String sql) {
+        final int backslashAxes = backslashQuoteAxes(sql);
+        return backslashAxes | (hasAmbiguousBracketRegion(sql) ? BRACKET_PUNCT_AXIS : 0) | (sql.indexOf('$') >= 0 ? DOLLAR_QUOTE_AXIS : 0)
+                | ((backslashAxes & 1) != 0 && containsEscapeStringPrefix(sql) ? ESCAPE_STRING_AXIS : 0);
+    }
+
+    private static boolean containsEscapeStringPrefix(final String sql) {
+        for (int quote = sql.indexOf('\''); quote >= 0; quote = sql.indexOf('\'', quote + 1)) {
+            if (isEscapeStringPrefix(sql, quote)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A T-SQL bracket identifier and a PostgreSQL array bracket end at the same ']' and hide nothing executable
+     * unless the bracketed text contains a nested '[', a doubled "]]", a quote, or a comment/dollar-quote/parameter
+     * delimiter. Only then is the second (bracket-as-punctuation) reading worth checking, which keeps plain
+     * identifiers such as [into] or [delete] accepted.
+     */
+    private static boolean hasAmbiguousBracketRegion(final String sql) {
+        for (int open = sql.indexOf('['); open >= 0; open = sql.indexOf('[', open + 1)) {
+            final int close = bracketIdentifierEndIndex(sql, open + 1);
+            for (int i = open + 1; i < close; i++) {
+                switch (sql.charAt(i)) {
+                    case '[', ']', '\'', '"', '`', '$', '-', '/', '#', '{' -> {
+                        return true;
+                    }
+                    default -> {
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /** Returns the index just past the closing {@code $tag$}, 0 if no dollar quote opens here, or -1 if unterminated. */
+    private static int dollarQuoteEnd(final String sql, final int index) {
+        if (index > 0 && isIdentifierChar(sql.charAt(index - 1))) {
+            return 0;
+        }
+        int tagEnd = index + 1;
+        if (tagEnd < sql.length() && (Character.isLetter(sql.charAt(tagEnd)) || sql.charAt(tagEnd) == '_')) {
+            while (tagEnd < sql.length() && (Character.isLetterOrDigit(sql.charAt(tagEnd)) || sql.charAt(tagEnd) == '_')) {
+                tagEnd++;
+            }
+        }
+        if (tagEnd >= sql.length() || sql.charAt(tagEnd) != '$') {
+            return 0;
+        }
+        final String tag = sql.substring(index, tagEnd + 1);
+        final int close = sql.indexOf(tag, tagEnd + 1);
+        return close < 0 ? -1 : close + tag.length();
+    }
+
+    /** PostgreSQL escape-string constant {@code E'...'}: backslash escapes regardless of standard_conforming_strings. */
+    private static boolean isEscapeStringPrefix(final String sql, final int quoteIndex) {
+        return quoteIndex > 0 && (sql.charAt(quoteIndex - 1) == 'E' || sql.charAt(quoteIndex - 1) == 'e')
+                && (quoteIndex == 1 || !isIdentifierChar(sql.charAt(quoteIndex - 2)));
+    }
+
+    private static boolean containsLineBreak(final String sql, final int fromIndex, final int toIndex) {
+        for (int i = fromIndex; i < toIndex; i++) {
+            if (sql.charAt(i) == ENTER || sql.charAt(i) == ENTER_2) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isParameterIdentifierStart(final int codePoint) {
@@ -3331,6 +3578,9 @@ public final class SqlParser {
         boolean mainVerbSeen = false;
         int previousWordStart = -1;
         int previousWordEnd = -1;
+        int beforePreviousWordStart = -1;
+        int beforePreviousWordEnd = -1;
+        boolean onConflictSeen = false;
 
         while (index < sqlLength) {
             final char ch = sql.charAt(index);
@@ -3406,6 +3656,7 @@ public final class SqlParser {
                 statementStart = index + 1;
                 mainVerbSeen = false;
                 previousWordStart = -1;
+                onConflictSeen = false;
                 depth = 0;
             } else if (batchMode) {
                 if (ch == '(') {
@@ -3429,16 +3680,23 @@ public final class SqlParser {
                 } else if (depth == 0 && Character.isLetter(ch) && isWordStart(sql, index)) {
                     final int end = identifierEnd(sql, index);
 
+                    if (previousWordStart >= 0 && matchesToken(sql, index, end, "CONFLICT", false)
+                            && matchesToken(sql, previousWordStart, previousWordEnd, "ON", false)) {
+                        onConflictSeen = true;
+                    }
+
                     if (isBatchStatementVerb(sql, index, end, sqlLength, tokenizerConfig, memo)
                             && !isDotQualifiedToken(sql, index, end, tokenizerConfig, memo)) {
                         // The first verb of a statement is its own verb (also after a CTE list); a later one
                         // that is not part of a clause starts the next statement of a semicolon-less batch.
-                        if (mainVerbSeen && !isBatchVerbClauseContext(sql, previousWordStart, previousWordEnd)) {
+                        if (mainVerbSeen && !isBatchVerbClauseContext(sql, previousWordStart, previousWordEnd, beforePreviousWordStart, beforePreviousWordEnd,
+                                onConflictSeen)) {
                             if (!isAllowedTopLevelStatement(sql, statementStart, index, tokenizerConfig, allowInsert, memo)) {
                                 return false;
                             }
 
                             statementStart = index;
+                            onConflictSeen = false;
                         }
 
                         mainVerbSeen = true;
@@ -3446,6 +3704,8 @@ public final class SqlParser {
                         mainVerbSeen = true;
                     }
 
+                    beforePreviousWordStart = previousWordStart;
+                    beforePreviousWordEnd = previousWordEnd;
                     previousWordStart = index;
                     previousWordEnd = end;
                     index = end;
@@ -3502,15 +3762,20 @@ public final class SqlParser {
      * new statement: {@code FOR UPDATE}, {@code ON DUPLICATE KEY UPDATE}, {@code ON CONFLICT DO UPDATE},
      * {@code WHEN [NOT] MATCHED THEN UPDATE/INSERT/DELETE} and {@code ON DELETE}/{@code ON UPDATE}.
      */
-    private static boolean isBatchVerbClauseContext(final String sql, final int previousWordStart, final int previousWordEnd) {
+    private static boolean isBatchVerbClauseContext(final String sql, final int previousWordStart, final int previousWordEnd, final int beforePreviousWordStart,
+            final int beforePreviousWordEnd, final boolean onConflictSeen) {
         if (previousWordStart < 0) {
             return false;
         }
 
+        // DO and KEY are not reserved in T-SQL (DO is a legal alias), so they count only inside the upsert
+        // clauses they belong to: ON CONFLICT ... DO UPDATE and ON DUPLICATE KEY UPDATE.
         return switch (previousWordEnd - previousWordStart) {
-            case 2 -> matchesToken(sql, previousWordStart, previousWordEnd, "ON", false) || matchesToken(sql, previousWordStart, previousWordEnd, "DO", false);
+            case 2 -> matchesToken(sql, previousWordStart, previousWordEnd, "ON", false)
+                    || onConflictSeen && matchesToken(sql, previousWordStart, previousWordEnd, "DO", false);
             case 3 -> matchesToken(sql, previousWordStart, previousWordEnd, "FOR", false)
-                    || matchesToken(sql, previousWordStart, previousWordEnd, "KEY", false);
+                    || beforePreviousWordStart >= 0 && matchesToken(sql, beforePreviousWordStart, beforePreviousWordEnd, "DUPLICATE", false)
+                            && matchesToken(sql, previousWordStart, previousWordEnd, "KEY", false);
             case 4 -> matchesToken(sql, previousWordStart, previousWordEnd, "THEN", false);
             default -> false;
         };
@@ -3936,7 +4201,10 @@ public final class SqlParser {
                 }
 
                 beforePreviousKeyword = previousKeyword;
-                previousKeyword = token;
+                // A dot-qualified word ("t.insert") is a column name, never the INSERT statement verb whose
+                // INTO introduces a table name, so it must not exempt a following INTO OUTFILE.
+                final int previousIndex = skipBackwardWhitespaceAndComments(sql, index - 1, tokenizerConfig, memo);
+                previousKeyword = previousIndex >= 0 && sql.charAt(previousIndex) == '.' ? "" : token;
                 index += token.length();
                 continue;
             }
@@ -4114,14 +4382,16 @@ public final class SqlParser {
 
         // Without a backslash or dash pair, that lexical choice cannot change the input.
         // Keep both independent axes when present (including NO_BACKSLASH_ESCAPES + MySQL comments).
-        final int quoteModes = sql.indexOf('\\') >= 0 ? 2 : 1;
+        final int quoteAxes = lexicalAxes(sql);
         final int commentModes = sql.indexOf("--") >= 0 ? 2 : 1;
-        for (int quoteMode = 0; quoteMode < quoteModes; quoteMode++) {
-            final boolean backslashEscapes = quoteMode == 0;
+        for (int noEscapeQuotes = 0; noEscapeQuotes <= quoteAxes; noEscapeQuotes++) {
+            if (isSkippedLexicalMode(noEscapeQuotes, quoteAxes)) {
+                continue;
+            }
 
             for (int commentMode = 0; commentMode < commentModes; commentMode++) {
                 final boolean mysqlCommentRules = commentMode == 0;
-                final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, backslashEscapes, mysqlCommentRules, memo);
+                final String maskedSql = maskQuotedRegionsForClassification(sql, tokenizerConfig, noEscapeQuotes, mysqlCommentRules, memo, false);
 
                 if (maskedSql == null) {
                     continue;
@@ -4380,10 +4650,9 @@ public final class SqlParser {
     }
 
     /**
-     * Checks whether the quoted region opened at {@code fromIndex} is closed before the end of {@code sql},
-     * under either the MySQL reading (backslash escapes honoured) or the SQL-standard reading (only doubled
-     * quotes escape). A literal such as {@code 'C:\'} is unterminated under the first reading and complete
-     * under the second, so callers that must not over-reject try both.
+     * Checks whether the quoted region opened at {@code fromIndex} is closed before the end of {@code sql}
+     * under one quote convention: with {@code backslashEscapes}, a backslash escapes the next character
+     * (MySQL); otherwise only doubled quotes escape (SQL standard).
      *
      * @param sql the SQL to inspect
      * @param fromIndex the index of the opening quote character
@@ -4416,12 +4685,23 @@ public final class SqlParser {
      * @return {@code true} if a matching closing bracket was found
      */
     private static boolean isBracketQuotedIdentifierTerminated(final String sql, final int fromIndex) {
-        return quotedTokenEndIndex(sql, fromIndex + 1, ']') < sql.length();
+        return bracketIdentifierEndIndex(sql, fromIndex + 1) < sql.length();
     }
 
     private static int skipBracketQuotedIdentifier(final String sql, final int fromIndex) {
-        final int close = quotedTokenEndIndex(sql, fromIndex + 1, ']');
+        final int close = bracketIdentifierEndIndex(sql, fromIndex + 1);
         return close < sql.length() ? close + 1 : sql.length();
+    }
+
+    /**
+     * Finds the {@code ']'} closing a SQL Server bracket identifier (doubled {@code "]]"} escapes), even
+     * when the {@code '['} is glued to an identifier. Unlike the tokenizer's subscript-aware
+     * {@link #quotedTokenEndIndex(String, int, char)}, classification must keep this SQL Server reading
+     * (e.g. {@code a[']} is column {@code a} aliased {@code '}); the PostgreSQL reading is checked
+     * separately as a mode in which brackets are plain punctuation.
+     */
+    private static int bracketIdentifierEndIndex(final String sql, final int fromIndex) {
+        return quotedTokenEndIndex(sql, fromIndex, ']', false);
     }
 
     private static String readKeyword(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {

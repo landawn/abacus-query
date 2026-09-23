@@ -4064,4 +4064,199 @@ public class SqlParserTest extends TestBase {
         assertEquals(java.util.List.of("x/", "z"), tokenizer.tokenize("x/z"));
         assertEquals(java.util.List.of("π/", "z"), tokenizer.tokenize("π/z"));
     }
+
+    private static void assertReadGatesReject(final String sql) {
+        assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
+        assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+    }
+
+    @Test
+    public void testClassificationVariesBackslashEscapesPerQuoteCharacter() {
+        // MySQL default mode: '...' honors backslash escapes, `...` never does, so DELETE runs.
+        assertReadGatesReject("SELECT `\\`, '\\'' ; DELETE FROM t -- `");
+        assertReadGatesReject("SELECT '\\'' , `\\` ; DELETE FROM t -- '");
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO `t\\` VALUES ('\\''); DELETE FROM t -- `"));
+        // PostgreSQL: "..." never escapes, E'...' always does, standard '...' does not.
+        assertReadGatesReject("SELECT \"\\\", E'\\'' ; DELETE FROM t -- \"");
+        assertReadGatesReject("SELECT E'\\'', '\\' ; DELETE FROM t -- '");
+
+        // Legitimate mixed-convention queries remain accepted.
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT `a\\` FROM t WHERE x = 'y\\'z'"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT E'it\\'s', \"col\\\" FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 'it\\'s' FROM `t` WHERE a = \"b\\\"c\""));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT 'x' FROM `t` WHERE p = 'C:\\'"));
+    }
+
+    @Test
+    public void testEscapeStringPrefixIsAlsoReadWithoutBackslashEscapes() {
+        // SQL Server and MySQL NO_BACKSLASH_ESCAPES read E'\' as the column E aliased by the complete string '\',
+        // so the DELETE runs there although PostgreSQL's E'...' escape string would swallow it.
+        assertReadGatesReject("SELECT E'\\'; DELETE FROM t; -- '");
+        assertReadGatesReject("SELECT e'\\'; DELETE FROM t; -- '");
+        assertReadGatesReject("SELECT E'\\' FROM (SELECT 1 AS E) q; DELETE FROM t; -- '");
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT E'it\\'s' FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("WITH x AS (SELECT E'C:\\\\' AS p) SELECT * FROM x"));
+    }
+
+    @Test
+    public void testClassificationDoesNotLetPostgresArraysDollarQuotesOrNestedCommentsHideStatements() {
+        // PostgreSQL ARRAY[...] / subscripts: '[' is not a quoted identifier there.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT ARRAY[']'] ; DELETE FROM t; -- '"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT j[']'] FROM t; DELETE FROM t; -- '"));
+        // Nested arrays: "]]" is not an escaped ']' there.
+        assertReadGatesReject("SELECT ARRAY[ARRAY[1]]; DELETE FROM t; SELECT ARRAY[1]");
+        assertReadGatesReject("SELECT ARRAY[ARRAY[1]]; DELETE FROM t -- ]");
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (ARRAY[ARRAY[1]]); DELETE FROM t; SELECT ARRAY[1]"));
+        // PostgreSQL dollar quoting.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT $$'$$; DELETE FROM t; -- '"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT $a$'$a$; DELETE FROM t; -- '"));
+        // PostgreSQL / SQL Server nested block comments.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT 1 /* /* */ ' */ ; DELETE FROM t; -- '"));
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT [it's] FROM t WHERE x = 'y'"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT [a] FROM [dbo].[t]"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT ARRAY['a', 'b'], a[1:2] FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT ARRAY[[1,2],[3,4]] AS m"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$it's$$ FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM v$session WHERE x = $1"));
+    }
+
+    @Test
+    public void testGluedBracketKeepsSqlServerIdentifierReadingInReadGates() {
+        // SQL Server reads a['] as column a aliased by the bracket identifier ['], so the DELETE runs; the
+        // tokenizer's subscript reading of a '[' glued to an identifier must not replace that reading in the gates.
+        assertReadGatesReject("SELECT a[']; DELETE FROM t; --']");
+        assertReadGatesReject("SELECT a[']; DELETE FROM t; SELECT ']'");
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT col[x]]y] FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a[1], b[2:3] FROM t WHERE c = 'd'"));
+    }
+
+    @Test
+    public void testSemicolonlessBatchDoesNotTreatDoOrKeyAliasAsUpsertClause() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSemicolonlessBatches(true).build());
+
+        assertFalse(tokenizer.isSyntacticallyReadQuery("SELECT 1 do DELETE FROM t"));
+        assertFalse(tokenizer.isReadOrInsertQuery("SELECT * FROM t AS do UPDATE t SET a = 1"));
+        assertFalse(tokenizer.isSyntacticallyReadQuery("SELECT 1 AS key DELETE FROM t"));
+
+        assertTrue(tokenizer.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT (a) DO NOTHING"));
+        assertFalse(tokenizer.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT (a) DO UPDATE SET a = 1"));
+        assertFalse(tokenizer.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON DUPLICATE KEY UPDATE a = 1"));
+        assertTrue(tokenizer.isSyntacticallyReadQuery("SELECT a FROM t FOR UPDATE"));
+    }
+
+    @Test
+    public void testIbatisMarkerSpanningLineBreakDoesNotHideStatement() {
+        // Sent to MySQL as-is, "#{" is a line comment that ends at the line break.
+        assertReadGatesReject("SELECT 1 #{\n; DELETE FROM t; -- }");
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t WHERE a = #{a} AND b = #{b}"));
+    }
+
+    @Test
+    public void testQualifiedInsertColumnDoesNotExemptIntoOutfile() {
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT a FROM t ORDER BY t.insert INTO OUTFILE '/tmp/x'"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT a FROM (SELECT 1 AS `insert`, 1 AS a) t ORDER BY t.insert INTO OUTFILE '/tmp/x'"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT a FROM t WHERE b = t.insert INTO DUMPFILE '/tmp/x'"));
+
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO outfile VALUES (1)"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT IGNORE INTO outfile VALUES (1)"));
+    }
+
+    @Test
+    public void testMySqlHashCommentReadingCannotHideMutation() {
+        // SQL Server reads an anchored "#name" (or the "?#" operator) as SQL; MySQL/MariaDB read the rest of that
+        // line as a comment, hiding the quote/comment opener that the SQL Server reading uses to swallow the DELETE.
+        for (final String sql : new String[] { "SELECT * FROM #x it's\na; DELETE FROM t WHERE c = 'q' -- '",
+                "SELECT * FROM a, #x it's\nb; DELETE FROM t WHERE c = 'q' -- '", "SELECT * FROM a JOIN #x it's\nb ON 1=1; DELETE FROM t WHERE c = 'q' -- '",
+                "SELECT * FROM #x /*\na; DELETE FROM t WHERE c = 1 -- */", "SELECT * FROM #x `\na; DELETE FROM t WHERE c = `q` -- `",
+                "SELECT * FROM #x /*\na; UPDATE t SET c = 1 -- */", "SELECT a = ?# 'x\n; DELETE FROM t WHERE c = ' -- '",
+                // MySQL's "--x" (no space) is not a comment; masking and the clause scanners disagreed on the '#'
+                "SELECT 1 --@from #t2 it's\n; DELETE FROM t WHERE b = 'q' -- '\nAND c = 1 --CONCAT('\n')",
+                // the same disagreement under NO_BACKSLASH_ESCAPES
+                "SELECT 'a\\'' --x' FROM #t2 it's\ndual; DELETE FROM t WHERE b = 'q' -- '\nAND c = '\\'",
+                // a data-changing CTE body hidden from the SQL Server reading
+                "WITH c AS (SELECT 1 AS a FROM #x it's\n t) DELETE FROM t -- ') SELECT * FROM c" }) {
+            assertReadGatesReject(sql);
+        }
+
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t SELECT * FROM #x it's\na; DELETE FROM t WHERE c = 'q' -- '"));
+
+        // legitimate temp-table queries are unaffected
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM #t WHERE a = 'x\ny'"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM #t1 a JOIN ##t2 b ON a.id = b.id WHERE a.x = 'y'; SELECT 2"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a, b FROM #t1, #t2 WHERE x = 'it''s' -- note\nAND y = 1"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO #t (a) SELECT a FROM #s WHERE b = 'c'"));
+    }
+
+    @Test
+    public void testMySqlReadingRunsStatementsBeforeUnterminatedQuote() {
+        // MySQL executes multi-statement SQL one statement at a time, so a quote left unterminated only under
+        // its rules does not stop the statements before it: here the DELETE runs, then the last statement fails.
+        assertReadGatesReject("SELECT '\\'; DELETE FROM t; '");
+        assertReadGatesReject("SELECT 1 FROM dual, #x it's\n dual; DELETE FROM t; SELECT 'q");
+        assertReadGatesReject("SELECT 1 FROM #x /*\n t; UPDATE t SET a = 1; SELECT '");
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("WITH x AS (SELECT 'C:\\' AS p) SELECT * FROM x"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t WHERE p LIKE 'a\\%' ESCAPE '\\'"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT [a;b], [it's] FROM t WHERE [c] = 'd'; SELECT 1"));
+    }
+
+    @Test
+    public void testPostgresSubscriptCannotPoseAsBracketIdentifierToHideStatement() {
+        // "[b[1]]" reads as ONE bracket identifier (with "]]" as an escaped ']') that swallows "; DELETE ...",
+        // while PostgreSQL reads nested / jsonb subscripts and runs the DELETE.
+        for (final String sql : new String[] { "SELECT a[b[1]] FROM t; DELETE FROM t; SELECT c[1] FROM t", "SELECT j[' ]'] FROM t; DELETE FROM t; SELECT ' -- '",
+                "SELECT a[1 /* ] ' */ ] FROM t; DELETE FROM t; SELECT ' -- '" }) {
+            assertReadGatesReject(sql);
+        }
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT [a;b], [it's], [x]]y] FROM [dbo].[t] WHERE [c] = 'd'; SELECT 1"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT ';', [a;b] FROM t /* ; DELETE */"));
+    }
+
+    @Test
+    public void testNonCommentHashLineCannotHideFollowingLinesFromReadGates() {
+        // A '#' read as SQL (temp table "#x", "##", "?#") is a line comment to MySQL; a quote, bracket or block
+        // comment opened after it on the same line must not hide the following lines, which MySQL executes.
+        for (final String sql : new String[] { "SELECT * FROM #x'\nt; DELETE FROM y; SELECT 1 #'", "SELECT * FROM t, #x'\nu; DELETE FROM y; SELECT 1 #'",
+                "SELECT * FROM t ## don't\n; DELETE FROM t; SELECT 1 #'", "SELECT 1 ## x'\nINTO OUTFILE '/tmp/f' -- '",
+                "SELECT 1 ## x /*\nINTO OUTFILE '/tmp/f' -- */", "SELECT * FROM #x /*\nt; DELETE FROM y; -- */", "SELECT * FROM #x \"\nt; DELETE FROM y; -- \"",
+                "SELECT * FROM #x [\nt; DELETE FROM y; -- ]", "SELECT * FROM #x `\nt; DELETE FROM y; -- `", "SELECT a ?# b'\n; DELETE FROM y; -- '",
+                "SELECT * FROM #x'\nt; DELETE FROM y; SELECT 1 -- '" }) {
+            assertReadGatesReject(sql);
+        }
+
+        for (final String sql : new String[] { "SELECT * FROM #t WHERE a = 'x' AND b = 1", "WITH c AS (SELECT * FROM #t) SELECT * FROM c",
+                "SELECT * FROM #t1, #t2 WHERE a = 'x'\nAND b = 'y'", "SELECT a ## b, 'x' FROM t", "SELECT * FROM t # it's a comment\nWHERE a = 'b'",
+                "SELECT * FROM #t WHERE note = 'line1\nline2'", "SELECT * FROM #t /* multi\nline */ WHERE a = 1" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    @Test
+    public void testUnmodelledPostgresLexiconFailsClosed() {
+        // PostgreSQL dollar quotes, nested block comments and array brackets can each hide or fake a quote.
+        for (final String sql : new String[] { "SELECT $$'$$; DELETE FROM t; -- '", "SELECT $tag$ ' $tag$; DELETE FROM t; SELECT ' -- '",
+                "SELECT 1 /* /* */ ' */ ; DELETE FROM t; -- '", "SELECT 1 /* a /* b */ ; DELETE FROM t; -- */", "SELECT ARRAY[']'] ; DELETE FROM t; -- '",
+                "SELECT a['x'']'] FROM t; DELETE FROM t; SELECT ']'" }) {
+            assertReadGatesReject(sql);
+        }
+
+        final SqlParser.Tokenizer batch = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSemicolonlessBatches(true).build());
+        assertFalse(batch.isSyntacticallyReadQuery("SELECT $$'$$; DELETE FROM t; -- '"));
+        assertFalse(batch.isReadOrInsertQuery("SELECT ARRAY[']'] ; DELETE FROM t; -- '"));
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$it's$$, $q$a;b$q$ FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 /* one comment */ FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a[1], ARRAY['x'] FROM t WHERE b = $1"));
+    }
+
+    @Test
+    public void testTokenize_MultiDimensionalArrayConstructorIsOneToken() {
+        assertEquals(Arrays.asList("SELECT", " ", "ARRAY[[1,2],[3,4]]", " ", "AS", " ", "m"), SqlParser.tokenize("SELECT ARRAY[[1,2],[3,4]] AS m"));
+    }
 }

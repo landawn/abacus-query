@@ -1933,4 +1933,20 @@ public class CriteriaTest extends TestBase {
         final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join(Arrays.asList((Join) null)));
         assertTrue(e2.getMessage().contains("condition"), e2.getMessage());
     }
+
+    @Test
+    public void testReplacingSingletonClauseKeepsPositionAndEquality() {
+        final Criteria c1 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build();
+        final Criteria c2 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").where(Filters.eq("a", 1)).build();
+
+        assertEquals(c1.toSql(NamingPolicy.NO_CHANGE), c2.toSql(NamingPolicy.NO_CHANGE));
+        assertEquals(c1, c2);
+        assertEquals(c1.hashCode(), c2.hashCode());
+        assertEquals(Operator.WHERE, c2.conditions().get(0).operator());
+
+        final Criteria c3 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").where(Filters.eq("a", 2)).build();
+        assertEquals(" WHERE a = 2 ORDER BY b", c3.toSql(NamingPolicy.NO_CHANGE));
+        assertEquals(Operator.WHERE, c3.conditions().get(0).operator());
+        assertEquals(2, c3.conditions().size());
+    }
 }

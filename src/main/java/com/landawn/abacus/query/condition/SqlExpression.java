@@ -705,7 +705,9 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Creates a SQL expression that tests whether the specified string expression is both
-     * non-{@code NULL} and different from the empty string.
+     * non-{@code NULL} and different from the empty string. On Oracle, where {@code ''} is {@code NULL}, the
+     * {@code <> ''} comparison is never true, so the rendered predicate matches no rows there; use
+     * {@link #isNotNull(String)} for Oracle.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1535,7 +1537,9 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Creates a LOG function expression with specified base.
-     * LOG returns the logarithm of a number to the specified base.
+     * LOG returns the logarithm of a number to the specified base. The base is emitted first
+     * ({@code LOG(base, value)}, as in PostgreSQL, Oracle and MySQL); SQL Server's {@code LOG(value, base)} takes the
+     * arguments in the opposite order.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2016,7 +2020,9 @@ public class SqlExpression extends ComposableCondition {
     /**
      * Returns the string form of this expression, with the naming policy applied to any
      * identifiers (column or property names) that can be detected within the literal.
-     * Function names, quoted strings (including prefixed literals such as {@code N'text'}), SQL
+     * Function names, quoted strings (including prefixed literals such as {@code N'text'}), delimited
+     * identifiers ({@code "name"}, {@code `name`}, {@code [name]}, including the delimited part of a qualified
+     * name such as {@code t."firstName"}, whose unquoted qualifier is still converted), SQL
      * variables (such as {@code @name}), parameter placeholders written compactly ({@code ?},
      * {@code :name}, {@code #{name}}, {@code ${name}}), and numeric literals are left unchanged.
      * A {@code #{...}} or {@code ${...}} marker that contains internal whitespace or MyBatis attributes

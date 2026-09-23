@@ -15,6 +15,7 @@ import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.SqlDialect.ProductInfo;
 import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.query.condition.Limit;
 
 /**
  * Per-product detection predicates on {@link ProductInfo} ({@code isMySQL()}, {@code isOracle()}, ...)
@@ -397,5 +398,32 @@ public class SqlDialectPaginationTest extends TestBase {
         public void setFirstName(final String firstName) {
             this.firstName = firstName;
         }
+    }
+
+    @Test
+    public void testUnresolvedFetchLimitRejectedOnUpdateAndDelete() {
+        final Dsl mysql = dslFor("MySQL");
+        assertThrows(IllegalStateException.class, () -> mysql.deleteFrom("t").fetchFirstRows(5));
+        assertThrows(IllegalStateException.class, () -> mysql.deleteFrom("t").append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
+        assertThrows(IllegalStateException.class,
+                () -> mysql.update("t").set("a").append(Criteria.builder().where(Filters.eq("b", 1)).limit("FETCH NEXT 99999999999 ROWS ONLY").build()));
+        final SqlBuilder builder = mysql.update("t").set("a");
+        assertThrows(IllegalStateException.class, () -> builder.append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
+        assertEquals("UPDATE t SET a = ? LIMIT 5", builder.limit(5).build().query());
+        assertEquals("UPDATE t SET a = ? LIMIT 99999999999", mysql.update("t").set("a").append(new Limit("LIMIT 99999999999")).build().query());
+    }
+
+    @Test
+    public void testResolvedFetchLimitAfterOffsetRowsOnLimitStyleDialect() {
+        final Dsl postgres = dslFor("PostgreSQL");
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY", postgres.select("*").from("users").offsetRows(5).fetchNextRows(10).build().query());
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 99999999999 ROWS ONLY",
+                postgres.select("*").from("users").offsetRows(5).append(new Limit("FETCH NEXT 99999999999 ROWS ONLY")).build().query());
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
+                postgres.select("*").from("users").offsetRows(5).append(new Limit("FETCH NEXT 10 ROWS ONLY")).build().query());
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
+                postgres.select("*").from("users").offsetRows(5).append(Criteria.builder().limit("FETCH NEXT 10 ROWS ONLY").build()).build().query());
+        assertEquals("SELECT * FROM users LIMIT 10", postgres.select("*").from("users").append(new Limit("FETCH NEXT 10 ROWS ONLY")).build().query());
+        assertThrows(IllegalStateException.class, () -> postgres.select("*").from("users").offset(5).append(new Limit("FETCH NEXT 10 ROWS ONLY")));
     }
 }

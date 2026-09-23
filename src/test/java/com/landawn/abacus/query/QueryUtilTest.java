@@ -1610,4 +1610,22 @@ public class QueryUtilTest extends TestBase {
             this.hiddenByTable = hiddenByTable;
         }
     }
+
+    @Test
+    public void testConvertIdentifierPreservesQuotedSegments() {
+        assertEquals("t.\"First.Name\"", QueryUtil.convertIdentifier("t.\"First.Name\"", NamingPolicy.SNAKE_CASE));
+        assertEquals("\"firstName\"", QueryUtil.convertIdentifier("\"firstName\"", NamingPolicy.SNAKE_CASE));
+        assertEquals("[firstName]", QueryUtil.convertIdentifier("[firstName]", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("my_table.`firstName`", QueryUtil.convertIdentifier("myTable.`firstName`", NamingPolicy.SNAKE_CASE));
+        assertEquals("\"My.Schema\".first_name", QueryUtil.convertIdentifier("\"My.Schema\".firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("U&\"aB\".first_name", QueryUtil.convertIdentifier("U&\"aB\".firstName", NamingPolicy.SNAKE_CASE));
+        // unquoted behavior unchanged
+        assertEquals("acc.id", QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE));
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE));
+        assertEquals("user_ids[1]", QueryUtil.convertIdentifier("userIds[1]", NamingPolicy.SNAKE_CASE));
+        // condition and builder paths now agree
+        assertEquals("t.\"First.Name\" = 1", Filters.eq("t.\"First.Name\"", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("\"firstName\" = 1", Filters.eq("\"firstName\"", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT a FROM t WHERE t.\"First.Name\" = ?", PSC.select("a").from("t").where(Filters.eq("t.\"First.Name\"", 1)).build().query());
+    }
 }

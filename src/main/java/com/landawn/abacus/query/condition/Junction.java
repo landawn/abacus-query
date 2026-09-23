@@ -170,7 +170,7 @@ public class Junction extends ComposableCondition {
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
      *             or a blank {@link SqlExpression}
      */
     public Junction(final Operator operator, final Condition... conditions) {
@@ -211,7 +211,7 @@ public class Junction extends ComposableCondition {
      *             or if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
      *             or a blank {@link SqlExpression}
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
@@ -264,7 +264,7 @@ public class Junction extends ComposableCondition {
      * @return a freshly allocated list holding the validated conditions
      * @throws IllegalArgumentException if any element is {@code null}, or is or contains a non-predicate
      *         component (a {@link Criteria}, a clause, an {@code ON}/{@code USING} connector, an
-     *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
      *         or a blank {@link SqlExpression})
      */
     private static List<Condition> validateAndCopy(final Collection<? extends Condition> conditions) {

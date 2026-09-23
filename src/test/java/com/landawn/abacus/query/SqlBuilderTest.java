@@ -14905,4 +14905,49 @@ public class SqlBuilderTest extends TestBase {
         assertTrue(NSC.select("*").from("x").where(Filters.in("id", keyword)).build().query().contains("a=:param AND b=:param_2"),
                 NSC.select("*").from("x").where(Filters.in("id", keyword)).build().query());
     }
+
+    @Test
+    public void testInsertSelectColumnListOmitsSelectAlias() {
+        assertEquals("INSERT INTO bk (first_name) SELECT first_name AS fn FROM account", PSC.select("firstName AS fn").into("bk").from("account").build().query());
+        assertEquals("INSERT INTO bk (first_name) SELECT first_name AS \"fn\" FROM account",
+                PSC.select(Map.of("firstName", "fn")).into("bk").from("account").build().query());
+    }
+
+    @Test
+    public void testSelectFromRejectsUnsafeTableAlias() {
+        for (final String alias : new String[] { "a--", "a#", "a /* x */", "a\nb" }) {
+            assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, alias, false), "alias: " + alias);
+            assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, alias, true), "alias: " + alias);
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(com.landawn.abacus.query.entity.Account.class, alias), "alias: " + alias);
+        }
+
+        // Plain aliases, quoted aliases and the class-level @Table alias are unaffected.
+        assertTrue(PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, "a")
+                .where(Filters.eq("a.status", 1))
+                .build()
+                .query()
+                .contains("FROM account a WHERE a.status = ?"));
+        assertTrue(PSC.select("*").from(com.landawn.abacus.query.entity.Account.class, "\"A\"").build().query().endsWith("FROM account \"A\""));
+        assertTrue(PSC.selectFrom(com.landawn.abacus.query.entity.Account.class).build().query().startsWith("SELECT acc.id AS \"id\""));
+    }
+
+    @Test
+    public void testUnionNamedParameterRenameHandlesTempTableInChildOnDefaultDialect() {
+        SP sp = NSB.select("id").from("t").where(Filters.eq("id", 1)).union(NSB.select("id").from("#tmp").where(Filters.eq("id", 2))).build();
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM #tmp WHERE id = :id_2", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+        assertEquals(Arrays.asList("id", "id_2"), ParsedSql.parse(sp.query()).namedParameters());
+
+        sp = MSB.select("id").from("t").where(Filters.eq("id", 1)).union(MSB.select("id").from("#tmp").where(Filters.eq("id", 2))).build();
+        assertEquals("SELECT id FROM t WHERE id = #{id} UNION SELECT id FROM #tmp WHERE id = #{id_2}", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+        // Builder-backed condition subquery: same rename path.
+        sp = NSB.select("id")
+                .from("t")
+                .where(Filters.and(Filters.eq("id", 1), Filters.in("id", NSB.select("id").from("#tmp").where(Filters.eq("id", 2)).toSubQuery())))
+                .build();
+        assertEquals("SELECT id FROM t WHERE (id = :id) AND (id IN (SELECT id FROM #tmp WHERE id = :id_2))", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
 }

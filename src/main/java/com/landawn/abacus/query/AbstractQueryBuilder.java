@@ -1375,7 +1375,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(_COMMA_SPACE);
             }
 
-            appendColumnName(columnName);
+            if (_op == OperationType.QUERY) {
+                // INSERT ... SELECT: the target column list takes the source expression, never its SELECT alias
+                // (consistent with select(Map), whose keys -- not alias values -- are used here).
+                final TopLevelAlias selectAlias = findTopLevelAlias(columnName, true);
+                appendColumnName(selectAlias == null ? columnName : columnName.substring(0, selectAlias.expressionEnd()).trim());
+            } else {
+                appendColumnName(columnName);
+            }
         }
 
         _sb.append(SK._PARENTHESIS_R);
@@ -1734,7 +1741,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final int separatorIdx = findFirstTopLevelFromSeparator(firstTableName, _dialectFamily == DialectFamily.SQL_SERVER);
         final String localTableName = (separatorIdx > 0 ? firstTableName.substring(0, separatorIdx) : firstTableName).trim();
 
-        return appendFromClause(localTableName, Strings.join(normalizedTableNames, SK.COMMA_SPACE));
+        final boolean sqlServerTempIdentifiers = _dialectFamily == DialectFamily.SQL_SERVER;
+        final StringBuilder fromBody = new StringBuilder();
+
+        for (final String normalizedTableName : normalizedTableNames) {
+            if (fromBody.length() > 0) {
+                fromBody.append(SK.COMMA_SPACE);
+            }
+
+            fromBody.append(normalizedTableName);
+
+            // trim() may have removed the newline that ended a trailing line comment; restore it so the
+            // comment cannot swallow the separator and the following table reference.
+            if (endsInsideLineComment(normalizedTableName, sqlServerTempIdentifiers)) {
+                fromBody.append('\n');
+            }
+        }
+
+        return appendFromClause(localTableName, fromBody.toString());
     }
 
     /**
@@ -1775,8 +1799,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Uses a complete SELECT built by another builder as a derived table in this query's {@code FROM}
      * clause. After argument, parent-state, and SQL-policy prevalidation succeeds, the child builder is
-     * finalized and consumed. A failure during the preceding prevalidation leaves the child reusable;
-     * a failure while finalizing or validating the child's built SQL consumes it. Child parameters are
+     * finalized and consumed. A failure while rendering this builder's staged select list, or during the
+     * preceding prevalidation, leaves the child reusable; a failure while finalizing or validating the child's
+     * built SQL consumes it. Child parameters are
      * merged before parameters from subsequent outer clauses, and generated named parameters are renamed
      * when necessary to avoid collisions with the parent query.
      *
@@ -1794,7 +1819,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                               or already has a FROM clause, or if the child is incomplete or was already consumed
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this builder, does not build a
      *                                  complete, lexically SELECT-only {@code SELECT} query, uses an incompatible parameter policy, or
-     *                                  {@code alias} is {@code null}, empty, or blank
+     *                                  {@code alias} is {@code null}, empty, or blank, or if a staged select column name contains a
+     *                                  SQL comment token or has an explicit top-level {@code AS} alias containing a quote character
+     *                                  or line break
      */
     public This from(final This sqlBuilder, final String alias) {
         checkCanAppendFrom();
@@ -1806,12 +1833,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         + sqlBuilder._sqlPolicy);
 
         final String normalizedAlias = alias.trim();
-        final SubQuerySnapshot subQuery = sqlBuilder.buildSubQuery();
 
         return mutateAtomically(() -> {
-            final String query = prepareSubQuerySnapshot(subQuery);
-            final String fromClause = "(" + query + ") " + normalizedAlias;
-            appendSelectListAndFromClause(fromClause, fromClause);
+            // Render (and thereby validate) this builder's own staged select list BEFORE finalizing the child,
+            // so a parent-side rejection leaves the child reusable.
+            appendSelectListAndFromClause("(?) " + normalizedAlias, "");
+            final String query = prepareSubQuerySnapshot(sqlBuilder.buildSubQuery());
+            _sb.append(SK._PARENTHESIS_L).append(query).append(SK._PARENTHESIS_R).append(_SPACE).append(normalizedAlias);
+            _tableName = "(" + query + ")";
         });
     }
 
@@ -1863,8 +1892,40 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         return isSqlWordAt(sql, index, SK.JOIN) || isSqlWordAt(sql, index, "INNER") || isSqlWordAt(sql, index, "LEFT") || isSqlWordAt(sql, index, "RIGHT")
                 || isSqlWordAt(sql, index, "FULL") || isSqlWordAt(sql, index, "CROSS") || isSqlWordAt(sql, index, "NATURAL") || isSqlWordAt(sql, index, "OUTER")
-                || isSqlWordAt(sql, index, "STRAIGHT_JOIN") || isSqlWordAt(sql, index, "ASOF") || isSqlWordAt(sql, index, "SEMI")
-                || isSqlWordAt(sql, index, "ANTI");
+                || isSqlWordAt(sql, index, "STRAIGHT_JOIN")
+                // ASOF/SEMI/ANTI are not reserved words and are legal table aliases ("account semi");
+                // treat them as a JOIN start only when a JOIN keyword actually follows.
+                || ((isSqlWordAt(sql, index, "ASOF") || isSqlWordAt(sql, index, "SEMI") || isSqlWordAt(sql, index, "ANTI"))
+                        && isFollowedByJoinKeyword(sql, index + 4));
+    }
+
+    /** Reports whether only JOIN-modifier words (and trivia) separate {@code index} from a {@code JOIN} keyword. */
+    private static boolean isFollowedByJoinKeyword(final String sql, int index) {
+        while (true) {
+            index = skipAliasTrivia(sql, index);
+
+            if (index < 0 || index >= sql.length()) {
+                return false;
+            }
+
+            if (isSqlWordAt(sql, index, SK.JOIN)) {
+                return true;
+            }
+
+            boolean matched = false;
+
+            for (final String modifier : new String[] { "LEFT", "RIGHT", "FULL", "INNER", "OUTER", "ASOF", "SEMI", "ANTI", "ANY", "ALL", "GLOBAL" }) {
+                if (isSqlWordAt(sql, index, modifier)) {
+                    index += modifier.length();
+                    matched = true;
+                    break;
+                }
+            }
+
+            if (!matched) {
+                return false;
+            }
+        }
     }
 
     /** Reports whether the character before {@code index} can separate a table reference from a JOIN keyword. */
@@ -1904,7 +1965,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (depth > 0) {
                     depth--;
                 }
-            } else if (depth == 0 && isAliasKeywordBoundary(joinExpr, i - 1) && (isSqlWordAt(joinExpr, i, SK.ON) || isSqlWordAt(joinExpr, i, SK.USING))) {
+            } else if (depth == 0 && isAliasKeywordBoundary(joinExpr, i - 1) && (i == 0 || !isAliasIdentifierChar(joinExpr.charAt(i - 1)))
+                    && (isSqlWordAt(joinExpr, i, SK.ON) || isSqlWordAt(joinExpr, i, SK.USING))) {
                 return true;
             }
         }
@@ -1962,7 +2024,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Sets the FROM clause using an entity class.
-     * <p>The table name will be derived from the entity class.</p>
+     * <p>The table name will be derived from the entity class. If the class declares a table alias
+     * ({@code @Table(alias = ...)}), it is used as the table alias, exactly as by {@link #from(Class, String)};
+     * pass an empty alias to that overload to render the table without one.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1997,12 +2061,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, if the current operation is not {@code QUERY}, no columns have been set by
      *                               {@code select()}, or {@code from(...)} was already called for this query segment
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if a staged select
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, if {@code alias}
+     *         contains a line break or a SQL comment token, or if a staged select
      *         column name contains a SQL comment token or has an explicit top-level {@code AS} alias containing a quote character or line break
      */
     public This from(final Class<?> entityClass, final String alias) {
         checkCanAppendFrom();
         N.checkArgNotNull(entityClass, cs.entityClass);
+        checkEntityTableAlias(entityClass, alias);
 
         return mutateAtomically(() -> {
             setEntityClass(entityClass);
@@ -2013,6 +2079,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 from(getTableName(entityClass, _namingPolicy) + " " + alias);
             }
         });
+    }
+
+    /**
+     * Rejects a table alias for {@code entityClass} that contains a line break or an (unquoted) SQL comment token.
+     * The alias is emitted verbatim after the table name and prefixed to every mapped column, so a comment
+     * token would silently swallow the rest of the statement (for example the WHERE clause).
+     *
+     * @param entityClass the entity class the alias belongs to (used in the error message)
+     * @param alias the table alias; {@code null} or empty means no alias and is accepted
+     * @throws IllegalArgumentException if {@code alias} contains a line break or an SQL comment token
+     */
+    void checkEntityTableAlias(final Class<?> entityClass, final String alias) {
+        if (Strings.isNotEmpty(alias) && (alias.indexOf('\r') >= 0 || alias.indexOf('\n') >= 0 || containsSqlCommentToken(alias))) {
+            throw new IllegalArgumentException(
+                    "Table alias for '" + entityClass.getSimpleName() + "' must not contain a line break or SQL comment token: " + alias);
+        }
     }
 
     /**
@@ -2116,7 +2198,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final boolean isForSelect = _op == OperationType.QUERY;
 
         if (N.notEmpty(_propOrColumnNames)) {
-            if (_entityClass != null && !withAlias && _propOrColumnNames == QueryUtil.selectPropNames(_entityClass, false, null)) { // NOSONAR
+            if (_entityClass != null && _entityInfo != null && !withAlias && _propOrColumnNames == QueryUtil.selectPropNames(_entityClass, false, null)) { // NOSONAR
                 final Map<Class<?>, String> fullSelectPartsCache = (_identifierQuote == SK._BACKTICK ? fullSelectPartsPoolForBacktick : fullSelectPartsPool)
                         .get(_namingPolicy);
                 String fullSelectParts = fullSelectPartsCache.get(_entityClass);
@@ -2211,7 +2293,30 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb.append(fromClause);
 
+        // A FROM body ending in a line comment ("t -- hint", possibly with its newline trimmed away by
+        // from(String)) would otherwise swallow every clause appended after it (WHERE, ORDER BY, ...).
+        if (endsInsideLineComment(fromClause, _dialectFamily == DialectFamily.SQL_SERVER)) {
+            _sb.append('\n');
+        }
+
         _hasFromBeenSet = true;
+    }
+
+    /** Reports whether {@code sql} ends inside an unterminated {@code --} or {@code #} line comment. */
+    private static boolean endsInsideLineComment(final String sql, final boolean sqlServerTempIdentifiers) {
+        for (int i = 0, len = sql.length(); i < len; i++) {
+            final int next = skipSqlQuotedOrComment(sql, i, sqlServerTempIdentifiers);
+
+            if (next != i) {
+                if (next == len && (sql.charAt(i) == '-' || sql.charAt(i) == '#')) {
+                    return true;
+                }
+
+                i = next - 1;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -2693,7 +2798,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                 .on("users.id = orders.user_id")
      *                 .build().query();
      * // Output: SELECT * FROM users JOIN orders ON users.id = orders.user_id
-     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // (assumes @Table(name = "users") / @Table(name = "orders") with no alias; a declared @Table alias is appended; otherwise the table
      * // names are derived from the class names)
      * }</pre>
      *
@@ -2807,7 +2912,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).innerJoin(Order.class).on("users.id = orders.user_id").build().query();
      * // Output: SELECT * FROM users INNER JOIN orders ON users.id = orders.user_id
-     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // (assumes @Table(name = "users") / @Table(name = "orders") with no alias; a declared @Table alias is appended; otherwise the table
      * // names are derived from the class names)
      * }</pre>
      *
@@ -2875,7 +2980,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).leftJoin(Order.class).on("users.id = orders.user_id").build().query();
      * // Output: SELECT * FROM users LEFT JOIN orders ON users.id = orders.user_id
-     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // (assumes @Table(name = "users") / @Table(name = "orders") with no alias; a declared @Table alias is appended; otherwise the table
      * // names are derived from the class names)
      * }</pre>
      *
@@ -2943,7 +3048,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).rightJoin(Order.class).on("users.id = orders.user_id").build().query();
      * // Output: SELECT * FROM users RIGHT JOIN orders ON users.id = orders.user_id
-     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // (assumes @Table(name = "users") / @Table(name = "orders") with no alias; a declared @Table alias is appended; otherwise the table
      * // names are derived from the class names)
      * }</pre>
      *
@@ -3011,7 +3116,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).fullJoin(Order.class).on("users.id = orders.user_id").build().query();
      * // Output: SELECT * FROM users FULL JOIN orders ON users.id = orders.user_id
-     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // (assumes @Table(name = "users") / @Table(name = "orders") with no alias; a declared @Table alias is appended; otherwise the table
      * // names are derived from the class names)
      * }</pre>
      *
@@ -3080,7 +3185,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).crossJoin(Order.class).build().query();
      * // Output: SELECT * FROM users CROSS JOIN orders
-     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // (assumes @Table(name = "users") / @Table(name = "orders") with no alias; a declared @Table alias is appended; otherwise the table
      * // names are derived from the class names)
      * }</pre>
      *
@@ -3149,7 +3254,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <pre>{@code
      * String sql = PSC.select("*").from(User.class).naturalJoin(Order.class).build().query();
      * // Output: SELECT * FROM users NATURAL JOIN orders
-     * // (assumes @Table(name = "users") / @Table(name = "orders"); otherwise the table
+     * // (assumes @Table(name = "users") / @Table(name = "orders") with no alias; a declared @Table alias is appended; otherwise the table
      * // names are derived from the class names)
      * }</pre>
      *
@@ -4491,7 +4596,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *   <li>Oracle, DB2: {@code FETCH FIRST count ROWS ONLY}</li>
      *   <li>SQL Server: {@code OFFSET 0 ROWS FETCH NEXT count ROWS ONLY} (SQL Server only allows
      *       {@code OFFSET ... FETCH} together with an {@code ORDER BY} clause); the {@code OFFSET 0 ROWS}
-     *       prefix is omitted when {@link #offset(int)} has already been called</li>
+     *       prefix is omitted when {@link #offset(int)} or {@link #offsetRows(int)} has already been called</li>
      *   <li>any other product, or no product info: {@code LIMIT count}</li>
      * </ul>
      *
@@ -4675,7 +4780,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@link #limit(int)} / {@link #limit(int, int)} based on the offset, so it is rendered in the dialect's
      * pagination syntax. An unresolved out-of-range numeric expression is re-rendered
      * in the dialect's FETCH pagination syntax when this builder uses one (Oracle, DB2, SQL Server) and the
-     * expression is a generic {@code LIMIT count [OFFSET offset]} form.
+     * expression is a generic {@code LIMIT count [OFFSET offset]} form. A FETCH-form expression that follows
+     * {@code OFFSET n ROWS} on a LIMIT-style dialect is emitted verbatim; a FETCH-form expression is rejected on
+     * UPDATE/DELETE.
      * Shared by the {@link Criteria} and standalone-{@link Limit} branches of {@link #append(Condition)}.
      *
      * @param limit the limit condition to render (must not be {@code null})
@@ -4689,7 +4796,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // validated numeric expression. Everything else —
         // the numeric constructors and string expressions parsed into concrete count/offset — is emitted
         // in the dialect's pagination syntax via limit(int) / limit(int, int).
-        if (Strings.isNotEmpty(limit.expression()) && !limit.isResolved()) {
+        final boolean fetchAfterOffsetRows = !usesFetchPagination() && Strings.isNotEmpty(limit.expression()) && isFetchLimitExpression(limit.expression())
+                && calledOpSet.contains(OFFSET_ROWS_SLOT);
+
+        if (Strings.isNotEmpty(limit.expression()) && (!limit.isResolved() || fetchAfterOffsetRows)) {
             if (usesFetchPagination() && appendLimitExpressionInFetchSyntax(limit.expression())) {
                 return;
             }
@@ -4706,6 +4816,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (limitExpressionHasOffset(limit.expression())) {
                 claimClauseSlots(SK.LIMIT, SK.OFFSET);
             } else {
+                if (isFetchLimitExpression(limit.expression())) {
+                    // FETCH is not valid on UPDATE/DELETE; report it exactly as fetchFirstRows(...) does.
+                    checkClauseCanBeAppended(SK.FETCH_FIRST);
+                }
+
                 checkIfAlreadyCalled(SK.LIMIT);
 
                 // A FETCH clause is terminal with respect to OFFSET: an existing OFFSET may legally
@@ -4815,7 +4930,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if this builder is closed, if {@code OFFSET} has already been set on this builder,
+     * @throws IllegalStateException if this builder is closed, if {@code OFFSET} has already been set on this builder (a FETCH-style
+     *         dialect's {@link #limit(int)} and any {@link #fetchFirstRows(int)}/{@link #fetchNextRows(int)} call also consume the
+     *         OFFSET slot),
      *                               for SQL Server if {@code ORDER BY} has not been set, if a preceding qualified JOIN has
      *                               not been completed with {@code on(...)}/{@code using(...)}, on INSERT VALUES,
      *                               UPDATE, or DELETE statements, if the current SELECT segment has no {@code FROM}
@@ -4853,7 +4970,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param offset the number of rows to skip
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if this builder is closed, if {@code OFFSET} has already been set on this builder,
+     * @throws IllegalStateException if this builder is closed, if {@code OFFSET} has already been set on this builder (a FETCH-style
+     *         dialect's {@link #limit(int)} and any {@link #fetchFirstRows(int)}/{@link #fetchNextRows(int)} call also consume the
+     *         OFFSET slot),
      *                               for SQL Server if {@code ORDER BY} has not been set, if a preceding qualified JOIN has
      *                               not been completed with {@code on(...)}/{@code using(...)}, on INSERT VALUES,
      *                               UPDATE, or DELETE statements, if the current SELECT segment has no {@code FROM}
@@ -5241,7 +5360,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if the builder is closed, a preceding qualified JOIN has not been
      *                               completed, {@code op} is not valid for the current statement type or
      *                               dialect (any clause on an INSERT VALUES statement, GROUP BY/HAVING or
-     *                               OFFSET/FETCH on UPDATE/DELETE, SQL Server pagination without ORDER BY),
+     *                               OFFSET/FETCH on UPDATE/DELETE, LIMIT on UPDATE/DELETE for a FETCH-style dialect,
+     *                               FOR UPDATE on a non-SELECT or condition-only builder, SQL Server pagination
+     *                               without ORDER BY),
      *                               a SELECT clause is requested before FROM, WHERE/GROUP BY/HAVING is
      *                               requested after a completed set-operation operand, an earlier SQL clause
      *                               is requested after a later one, {@code op} has already been recorded, or
@@ -5258,6 +5379,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // placement/duplicate check, and reserve the slot only after initialization succeeds.
         init(true);
         calledOpSet.add(op);
+
+        // ORDER BY after a set operation sorts the combined result: the alias of the last operand's
+        // FROM (e.g. unionSelect(...).from(entityClass, alias)) must not qualify its columns.
+        if (_hasSetOperation && SK.ORDER_BY.equals(op)) {
+            _tableAlias = null;
+        }
     }
 
     /**
@@ -5399,7 +5526,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * is rendered with its own keyword. A set-operation clause ({@code Union}, {@code UnionAll},
      * {@code Intersect}, {@code Except}, {@code Minus}) is validated like the corresponding
      * {@code union(...)}/{@code intersect(...)}/... method: it must follow a SELECT segment completed by
-     * {@code from(...)}, must precede {@code ORDER BY}, pagination, and {@code FOR UPDATE}, its operand
+     * {@code from(...)}, must precede {@code ORDER BY}, pagination, and {@code FOR UPDATE}, and its operand
      * must be a complete, lexically SELECT-only {@code SELECT} sub-query (a syntactic check, not a read-only
      * guarantee). Structured and builder-backed operands with their own set operations, ORDER BY,
      * pagination, or FOR UPDATE require explicit derived-table isolation first. ORDER BY and pagination
@@ -5687,8 +5814,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         if (limit != null) {
             checkClauseSlotAvailable(SK.LIMIT);
 
-            final boolean unresolvedFetchCanFollowOffsetRows = !limit.isResolved() && Strings.isNotEmpty(limit.expression())
-                    && isFetchLimitExpression(limit.expression()) && calledOpSet.contains(OFFSET_ROWS_SLOT);
+            final boolean unresolvedFetchCanFollowOffsetRows = Strings.isNotEmpty(limit.expression()) && isFetchLimitExpression(limit.expression())
+                    && calledOpSet.contains(OFFSET_ROWS_SLOT);
 
             if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET) && !unresolvedFetchCanFollowOffsetRows) {
                 throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
@@ -6013,7 +6140,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed with {@code on(...)}/{@code using(...)}, this builder is not building a SELECT query (or is
      *         in condition-only mode), its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY,
      *         pagination, or FOR UPDATE has already been added; or if {@code sqlBuilder}'s statement is incomplete
-     *         (see {@link #build()})
+     *         (see {@link #build()}), or this builder's named-parameter handler emits an empty token while the
+     *         child's placeholders are rewritten
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
      *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
@@ -6107,7 +6235,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed with {@code on(...)}/{@code using(...)}, this builder is not building a SELECT query (or is
      *         in condition-only mode), its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY,
      *         pagination, or FOR UPDATE has already been added; or if {@code sqlBuilder}'s statement is incomplete
-     *         (see {@link #build()})
+     *         (see {@link #build()}), or this builder's named-parameter handler emits an empty token while the
+     *         child's placeholders are rewritten
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
      *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
@@ -6201,7 +6330,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed with {@code on(...)}/{@code using(...)}, this builder is not building a SELECT query (or is
      *         in condition-only mode), its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY,
      *         pagination, or FOR UPDATE has already been added; or if {@code sqlBuilder}'s statement is incomplete
-     *         (see {@link #build()})
+     *         (see {@link #build()}), or this builder's named-parameter handler emits an empty token while the
+     *         child's placeholders are rewritten
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
      *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
@@ -6295,7 +6425,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed with {@code on(...)}/{@code using(...)}, this builder is not building a SELECT query (or is
      *         in condition-only mode), its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY,
      *         pagination, or FOR UPDATE has already been added; or if {@code sqlBuilder}'s statement is incomplete
-     *         (see {@link #build()})
+     *         (see {@link #build()}), or this builder's named-parameter handler emits an empty token while the
+     *         child's placeholders are rewritten
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
      *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
@@ -6390,7 +6521,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         has not been completed with {@code on(...)}/{@code using(...)}, this builder is not building a SELECT query (or is
      *         in condition-only mode), its current SELECT segment has not been completed by {@code from(...)}, or ORDER BY,
      *         pagination, or FOR UPDATE has already been added; or if {@code sqlBuilder}'s statement is incomplete
-     *         (see {@link #build()})
+     *         (see {@link #build()}), or this builder's named-parameter handler emits an empty token while the
+     *         child's placeholders are rewritten
      * @throws IllegalArgumentException if {@code sqlBuilder} is {@code null}, is this same builder instance,
      *         has generated parameter placeholders under a different SQL policy, requires explicit branch isolation,
      *         or does not build a complete, lexically SELECT-only SELECT query. Only the last check occurs after
@@ -6811,7 +6943,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // The combined query executes on this (the parent) builder's target server: on SQL Server a
         // #name/##name temporary-table identifier is a data token, never a MySQL hash comment, so the
         // token-replacement scanners must not skip the rest of the line after one.
-        final boolean sqlServerTempIdentifiers = _dialectFamily == DialectFamily.SQL_SERVER;
+        final boolean sqlServerTempIdentifiers = _dialectFamily != DialectFamily.MYSQL;
 
         String result = sql;
 
@@ -8299,7 +8431,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (inlineAsLiterals) {
                 // Same literal rendering as setParameterForRawSql applies to a structured condition's value:
                 // strings quoted/escaped, numbers/booleans verbatim, null as NULL, SqlExpression embedded verbatim.
-                sb.append(SqlExpression.renderValue(rawParameters.get(bindingIndex++)));
+                final String literal = SqlExpression.renderValue(rawParameters.get(bindingIndex++));
+
+                // A negative literal after a '-' ("a = -?" / "10-?") would fuse into a "--" line comment
+                // that swallows the rest of the statement: separate the two with a space.
+                if (i > 0 && rawSql.charAt(i - 1) == '-' && literal.startsWith("-")) {
+                    sb.append(' ');
+                }
+
+                sb.append(literal);
             } else {
                 final String parameterName = nextNamedParameterName(RAW_SUB_QUERY_PARAMETER_NAME);
 
@@ -8845,8 +8985,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (i < len - 1) {
                     final char nextChar = expr.charAt(i + 1);
 
-                    if (nextChar == '>' || nextChar == '#' || nextChar == '{' || nextChar == '-') {
-                        i++; // consume both chars of the ##, #>, #{, or #- token as a unit
+                    if (nextChar == '-') {
+                        // #- operator: do NOT consume the '-', it may start a "--" comment ("#--x" is the
+                        // operator '#' followed by a line comment in PostgreSQL, and a hash comment in MySQL).
+                        continue;
+                    }
+
+                    if (nextChar == '>' || nextChar == '#' || nextChar == '{') {
+                        i++; // consume both chars of the ##, #>, or #{ token as a unit
                         continue;
                     }
                 }

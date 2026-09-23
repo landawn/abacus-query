@@ -148,7 +148,7 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias.
-     * @param joinCondition the join condition; must not be {@code null}. A plain non-empty predicate is automatically prefixed with
+     * @param joinCondition the join condition; must not be {@code null}. A plain predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
@@ -182,7 +182,7 @@ public class RightJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @param joinCondition the join condition; must not be {@code null}. A plain non-empty predicate is automatically prefixed with
+     * @param joinCondition the join condition; must not be {@code null}. A plain predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements;
      *                                  if {@code joinCondition} is {@code null};

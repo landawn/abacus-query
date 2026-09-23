@@ -469,4 +469,16 @@ public class UsingTest extends TestBase {
         Assertions.assertEquals(Arrays.asList("company_id", "branch_id"), using.columnNames());
         Assertions.assertEquals("USING (company_id, branch_id)", using.toString());
     }
+
+    @Test
+    public void testUsingRejectsCommentTokenThatSwallowsClosingParen() {
+        // SqlExpression rendering strips comments; before the fix these rendered "USING (emp" / "USING (a " / "USING (id, a"
+        assertThrows(IllegalArgumentException.class, () -> new Using("emp#no"));
+        assertThrows(IllegalArgumentException.class, () -> new Using("a -- b"));
+        assertThrows(IllegalArgumentException.class, () -> new Using(Arrays.asList("id", "a/*b")));
+
+        // quoted identifiers keep their characters and still render a closed column list
+        assertEquals("USING (\"a--b\")", new Using("\"a--b\"").toString());
+        assertEquals("USING (`x#y`)", new Using("`x#y`").toString());
+    }
 }

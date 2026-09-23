@@ -44,8 +44,8 @@ package com.landawn.abacus.query.condition;
  *   <li>NULL values: if the column value is NULL the predicate is UNKNOWN (treated as false in a
  *       WHERE clause). A NULL boundary does <i>not</i> force UNKNOWN — because NOT BETWEEN is
  *       equivalent to {@code property < minValue OR property > maxValue}, a row can still match on
- *       the other bound (for example, value 5 with {@code minValue = 10} and a NULL {@code maxValue}
- *       matches)</li>
+ *       the other bound (for example, value 5 with {@code minValue = 10} and a {@code maxValue} subquery/expression
+ *       that evaluates to NULL matches; Java {@code null} bounds are rejected at construction)</li>
  * </ul>
  *
  * <p><b>Usage Examples:</b></p>

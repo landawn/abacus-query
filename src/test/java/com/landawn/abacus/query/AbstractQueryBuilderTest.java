@@ -3109,4 +3109,116 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("SELECT * FROM t GROUP BY a ASC ORDER BY b DESC",
                 PSC.select("*").from("t").groupBy("a", SortDirection.ASC).orderBy("b", SortDirection.DESC).build().query());
     }
+
+    @Test
+    public void testRawSqlInlinedNegativeBindingAfterMinusDoesNotFormLineComment() {
+        final String sql = SCSB.select("id")
+                .from("t")
+                .where(Filters.in("id", Filters.subQuery("SELECT x FROM u WHERE a = -? AND b = 1", List.of(-5))))
+                .build()
+                .query();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM u WHERE a = - -5 AND b = 1)", sql);
+        assertFalse(sql.contains("--"));
+
+        final String sql2 = SCSB.select("id")
+                .from("t")
+                .where(Filters.in("id", Filters.subQuery("SELECT x FROM u WHERE a = 10-? AND b = ?", List.of(-5.5, 3))))
+                .build()
+                .query();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM u WHERE a = 10- -5.5 AND b = 3)", sql2);
+
+        // Positive values are unchanged.
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM u WHERE a = 10-5)",
+                SCSB.select("id").from("t").where(Filters.in("id", Filters.subQuery("SELECT x FROM u WHERE a = 10-?", List.of(5)))).build().query());
+    }
+
+    @Test
+    public void testHashMinusOperatorFollowedByLineCommentIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").where(Filters.eq("id #--x\n OR 1", 1)).build());
+        assertThrows(IllegalArgumentException.class, () -> PSB.select("id #-- x\n, secret").from("t").build());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").groupBy("id #--x").build());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").orderBy("id #--x").build());
+
+        // The PostgreSQL #- operator itself is still accepted.
+        assertEquals("SELECT id FROM t WHERE doc #- '{a}' = ?", PSB.select("id").from("t").where(Filters.eq("doc #- '{a}'", 1)).build().query());
+    }
+
+    @Test
+    public void testFromWithNonBeanEntityClassDoesNotDependOnAlias() {
+        assertEquals("SELECT a FROM t x", PSC.select("a").from("t x", Map.class).build().query());
+        assertEquals("SELECT a FROM t", PSC.select("a").from("t", Map.class).build().query());
+        assertEquals("INSERT INTO bk (a) SELECT a FROM t", PSC.select("a").into("bk", Map.class).from("t").build().query());
+    }
+
+    @Test
+    public void testJoinOnDetectionIgnoresHashOrAtPrefixedIdentifier() {
+        assertEquals("SELECT * FROM users u JOIN #on o ON u.id = o.uid", PSC.select("*").from("users u").join("#on o").on("u.id = o.uid").build().query());
+        assertEquals("SELECT * FROM users u JOIN @on o ON u.id = o.uid", PSC.select("*").from("users u").join("@on o").on("u.id = o.uid").build().query());
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users u").join("orders o ON u.id = o.uid").on("x = y"));
+    }
+
+    @Test
+    public void testFromNonReservedJoinModifierWordAsTableAlias() {
+        assertEquals("SELECT semi.first_name AS \"firstName\" FROM account semi, device d",
+                PSC.select("firstName").from("account semi, device d", Account.class).build().query());
+        assertEquals("SELECT anti.first_name AS \"firstName\" FROM account anti", PSC.select("firstName").from("account anti", Account.class).build().query());
+        assertEquals("SELECT a.first_name AS \"firstName\" FROM account a SEMI JOIN device d ON a.id = d.account_id",
+                PSC.select("firstName").from("account a SEMI JOIN device d ON a.id = d.account_id", Account.class).build().query());
+        assertEquals("SELECT a.first_name AS \"firstName\" FROM account a ASOF LEFT JOIN device d ON a.id = d.account_id",
+                PSC.select("firstName").from("account a ASOF LEFT JOIN device d ON a.id = d.account_id", Account.class).build().query());
+    }
+
+    @Test
+    public void testFromDerivedTableParentSelectListFailureLeavesChildReusable() {
+        final SqlBuilder child = PSC.select("id").from("users");
+        final SqlBuilder parent = PSC.select("id -- x");
+        assertThrows(IllegalArgumentException.class, () -> parent.from(child, "u"));
+        assertEquals("SELECT id FROM users", child.build().query());
+    }
+
+    @Test
+    public void testFromTrailingLineCommentDoesNotSwallowLaterClauses() {
+        // from(String) trims the expression; the newline that ended the trailing comment must not be lost
+        assertEquals("SELECT * FROM account a -- shard hint\n WHERE id = ?",
+                PSC.select("*").from("account a -- shard hint\n").where(Filters.eq("id", 1)).build().query());
+        assertEquals("SELECT * FROM account a # shard hint\n WHERE id = ?",
+                PSC.select("*").from("account a # shard hint\n").where(Filters.eq("id", 1)).build().query());
+        assertEquals("SELECT * FROM account a -- hint\n ORDER BY id", PSC.select("*").from("account a -- hint").orderBy("id").build().query());
+        // from(Collection) trims each element and joins with ", "; the comment must not swallow the next table
+        assertEquals("SELECT * FROM account a -- hint\n, orders o WHERE a.id = ?",
+                PSC.select("*").from(List.of("account a -- hint\n", "orders o")).where(Filters.eq("a.id", 1)).build().query());
+        // block comments and comment-like text inside quoted identifiers are unaffected
+        assertEquals("SELECT * FROM account a /* hint */ WHERE id = ?", PSC.select("*").from("account a /* hint */").where(Filters.eq("id", 1)).build().query());
+        assertEquals("SELECT * FROM \"a -- b\" x WHERE id = ?", PSC.select("*").from("\"a -- b\" x").where(Filters.eq("id", 1)).build().query());
+    }
+
+    @Test
+    public void testOrderByAfterUnionSelectFromEntityAliasIsUnqualified() {
+        String sql = PSB.select("firstName")
+                .from(Account.class, "acc")
+                .unionSelect(Arrays.asList("firstName"))
+                .from(Account.class, "acc2")
+                .orderBy("firstName")
+                .build()
+                .query();
+        assertEquals("SELECT acc.firstName FROM account acc UNION SELECT acc2.firstName FROM account acc2 ORDER BY firstName", sql);
+
+        // The right-hand operand's own WHERE still resolves through its alias; only the combined-result ORDER BY drops it.
+        sql = PSB.select("firstName")
+                .from(Account.class, "acc")
+                .unionSelect(Arrays.asList("firstName"))
+                .from(Account.class, "acc2")
+                .where(Filters.eq("firstName", 1))
+                .orderByDesc("firstName")
+                .build()
+                .query();
+        assertEquals("SELECT acc.firstName FROM account acc UNION SELECT acc2.firstName FROM account acc2 WHERE acc2.firstName = ? ORDER BY firstName DESC", sql);
+
+        // Same result as the builder-operand overload, which already dropped the alias.
+        sql = PSB.select("firstName").from(Account.class, "acc").union(PSB.select("firstName").from(Account.class, "acc2")).orderBy("firstName").build().query();
+        assertEquals("SELECT acc.firstName FROM account acc UNION SELECT acc2.firstName FROM account acc2 ORDER BY firstName", sql);
+
+        // A plain (non-compound) query keeps alias-qualified ORDER BY columns.
+        assertEquals("SELECT acc.firstName FROM account acc ORDER BY acc.firstName", PSB.select("firstName").from(Account.class, "acc").orderBy("firstName").build().query());
+    }
 }

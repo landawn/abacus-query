@@ -175,7 +175,7 @@ public final class cs { // NOSONAR
     public static final String function = "function";
 
     /**
-     * Parameter name for the array of property or column names to group by.
+     * Parameter name for the map of property names to sort directions to group by.
      */
     public static final String groupings = "groupings";
 
@@ -245,7 +245,7 @@ public final class cs { // NOSONAR
     public static final String operator = "operator";
 
     /**
-     * Parameter name for the array of property or column names to order by.
+     * Parameter name for the map of property names to sort directions to order by.
      */
     public static final String orders = "orders";
 

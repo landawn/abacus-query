@@ -18,8 +18,8 @@ package com.landawn.abacus.query.condition;
  * Represents an SQL {@code IS NOT} predicate (e.g. {@code IS NOT NULL}).
  * This class creates conditions that test a property using the SQL {@code IS NOT} operator,
  * which is the negation of the {@code IS} operator and is used for {@code NULL}, Boolean truth
- * values, and explicit database-specific SQL expressions such as {@code UNKNOWN}, {@code NAN},
- * or {@code INFINITE}.
+ * values (including the standard {@code UNKNOWN}), and explicit database-specific SQL expressions such as
+ * {@code NAN} or {@code INFINITE}.
  *
  * <p>The {@code IS NOT} operator is essential for:</p>
  * <ul>

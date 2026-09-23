@@ -329,7 +329,7 @@ public final class Filters {
      *                  {@link #binary(String, Operator)}) still lets {@code Filters.QME} through and produces the
      *                  unbindable {@code propName IS ?}; for
      *                  {@code IN}/{@code NOT_IN} a non-empty {@link Collection} or array without {@code null}
-     *                  elements is copied defensively
+     *                  elements (copied defensively), an {@link SqlExpression}, or a single-column {@link SubQuery}
      * @return a {@link Binary} condition
      * @throws IllegalArgumentException if {@code operator} is {@code null}; if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank; if {@code operator}
@@ -521,6 +521,7 @@ public final class Filters {
      * <pre>{@code
      * User user = new User("John", "john@example.com");
      * Or condition = Filters.anyEqual(user);
+     * // If User's only selectable properties are name followed by email:
      * // SQL fragment: ((name = 'John') OR (email = 'john@example.com'))
      * }</pre>
      *
@@ -4550,8 +4551,9 @@ public final class Filters {
      * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
      *                  {@code null}, empty, or blank elements)
      * @param condition the WHERE condition for the subquery; may be {@code null} for no WHERE clause.
-     *                  A blank {@link SqlExpression} is likewise treated as no filter; an empty
-     *                  {@link Junction} is preserved as its Boolean identity
+     *                  A blank {@link SqlExpression} or an empty {@link com.landawn.abacus.query.condition.Criteria Criteria}
+     *                  is likewise treated as no filter; an empty {@link Junction} is preserved as its Boolean identity
+     *                  (for example {@code WHERE 1 = 1})
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propNames} is
      *         {@code null} or empty, contains a {@code null}, empty, or blank element, if {@code condition}
@@ -4580,7 +4582,8 @@ public final class Filters {
      *
      * @param entityClass the entity class (must not be {@code null})
      * @param propName the property to select (must not be {@code null}, empty, or blank)
-     * @param condition the optional query condition; may be {@code null}
+     * @param condition the optional query condition; may be {@code null} (a blank {@link SqlExpression} or an empty
+     *                  {@link com.landawn.abacus.query.condition.Criteria Criteria} is likewise treated as no filter)
      * @return a structured subquery
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propName} is
      *         {@code null}, empty, or blank, if {@code condition} uses an {@code ON}/{@code USING} operator, if
@@ -4611,7 +4614,9 @@ public final class Filters {
      * @param entityClass the entity class representing the table (must not be {@code null})
      * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
      *                  {@code null}, empty, or blank elements)
-     * @param expr the WHERE condition as a raw SQL string (must not be {@code null}; may be empty for no filter condition)
+     * @param expr the WHERE condition as a raw SQL string (must not be {@code null}; may be empty or blank for no filter
+     *             condition; text that itself begins with a clause keyword such as {@code WHERE ...} or {@code ORDER BY ...}
+     *             is appended verbatim rather than wrapped in {@code WHERE})
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityClass} is {@code null},
      *         if {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
@@ -4641,8 +4646,9 @@ public final class Filters {
      * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
      *                  {@code null}, empty, or blank elements)
      * @param condition the WHERE condition for the subquery; may be {@code null} for no WHERE clause.
-     *                  A blank {@link SqlExpression} is likewise treated as no filter; an empty
-     *                  {@link Junction} is preserved as its Boolean identity
+     *                  A blank {@link SqlExpression} or an empty {@link com.landawn.abacus.query.condition.Criteria Criteria}
+     *                  is likewise treated as no filter; an empty {@link Junction} is preserved as its Boolean identity
+     *                  (for example {@code WHERE 1 = 1})
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank, if
      *         {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
@@ -4671,7 +4677,8 @@ public final class Filters {
      *
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propName the property to select (must not be {@code null}, empty, or blank)
-     * @param condition the optional query condition; may be {@code null}
+     * @param condition the optional query condition; may be {@code null} (a blank {@link SqlExpression} or an empty
+     *                  {@link com.landawn.abacus.query.condition.Criteria Criteria} is likewise treated as no filter)
      * @return a structured subquery
      * @throws IllegalArgumentException if {@code entityName} or {@code propName} is {@code null}, empty,
      *         or blank, if {@code condition} uses an {@code ON}/{@code USING} operator, if {@code condition} is a
@@ -4702,7 +4709,9 @@ public final class Filters {
      * @param entityName the entity/table name (must not be {@code null}, empty, or blank)
      * @param propNames collection of property names to select (must not be {@code null} or empty, and must not contain
      *                  {@code null}, empty, or blank elements)
-     * @param expr the WHERE condition as a raw SQL string (must not be {@code null}; may be empty for no filter condition)
+     * @param expr the WHERE condition as a raw SQL string (must not be {@code null}; may be empty or blank for no filter
+     *             condition; text that itself begins with a clause keyword such as {@code WHERE ...} or {@code ORDER BY ...}
+     *             is appended verbatim rather than wrapped in {@code WHERE})
      * @return a {@link SubQuery}
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank,
      *         if {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
@@ -4721,7 +4730,8 @@ public final class Filters {
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery("orders",
      *     "SELECT COUNT(*) FROM orders WHERE user_id = 42");
-     * // Generates: SELECT COUNT(*) FROM orders WHERE user_id = 42   (entityName is ignored when full SQL is supplied)
+     * // Generates: SELECT COUNT(*) FROM orders WHERE user_id = 42   (entityName is not used to build the SQL,
+     * //   but it is retained and participates in equals/hashCode)
      * }</pre>
      *
      * @param entityName the entity/table name (not used to build the subquery when the full SQL is

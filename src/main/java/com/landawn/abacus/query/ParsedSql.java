@@ -256,9 +256,9 @@ public final class ParsedSql {
         hashCode = this.sql.hashCode();
 
         final List<String> tokens = SqlParser.tokenize(this.sql);
-        // The tokenizer can split an adjacent escaped operator and MyBatis binding as ?, ?#, {name}.
+        // The tokenizer can split an adjacent question mark and MyBatis binding as ?#, {name}.
         // Repair only that boundary before either scanner runs; ordinary SQL needs no extra token pass.
-        final List<String> words = this.sql.indexOf("??#{") >= 0 ? restoreEscapedIbatisOpeners(tokens) : tokens;
+        final List<String> words = this.sql.indexOf("?#{") >= 0 ? restoreEscapedIbatisOpeners(tokens) : tokens;
         final String firstOpWord = resolveFirstOpWord(words);
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && isOpSqlPrefixWord(firstOpWord);
 
@@ -689,7 +689,8 @@ public final class ParsedSql {
      * literal, placeholder, column, or function expression. Adjacent question marks in the pgJDBC
      * operator escape {@code ??} (also {@code ??|}, {@code ??&}, and {@code @??}) contribute no parameters;
      * any following placeholder is still counted, so {@code doc ?? ?} has one parameter.
-     * SQL ordering/pagination placeholders remain ordinary JDBC parameters, and so does a {@code ?}
+     * SQL ordering/pagination and window-frame offset placeholders ({@code ROWS|RANGE|GROUPS ? PRECEDING}) remain
+     * ordinary JDBC parameters, and so does a {@code ?}
      * that directly follows a SQL operator or a value-taking keyword such as {@code INTERVAL},
      * {@code ILIKE}, {@code SIMILAR TO} or {@code ESCAPE} (for example {@code INTERVAL ? DAY}).
      * Parameters are only counted for recognized data operation statements (see the class-level
@@ -1188,7 +1189,7 @@ public final class ParsedSql {
 
     /**
      * Keeps the MyBatis opener intact when longest-match tokenization borrows its '#' for a preceding
-     * escaped question-mark operator. Moving that character to the next token preserves the exact SQL,
+     * question mark ({@code ?#{name}}, {@code ??#{name}}, {@code @??#{name}}). Moving that character to the next token preserves the exact SQL,
      * so source offsets still follow from the resulting token lengths. The copy is lazy and the scan is linear.
      * Legitimate {@code ?#} operators without an immediately adjacent '{' are left unchanged.
      *
@@ -1198,9 +1199,8 @@ public final class ParsedSql {
     private static List<String> restoreEscapedIbatisOpeners(final List<String> tokens) {
         List<String> result = tokens;
 
-        for (int i = 1, size = tokens.size(); i + 1 < size; i++) {
-            if (tokens.get(i).equals("?#") && tokens.get(i + 1).startsWith("{")
-                    && (tokens.get(i - 1).equals(SK.QUESTION_MARK) || tokens.get(i - 1).equals("@?"))) {
+        for (int i = 0, size = tokens.size(); i + 1 < size; i++) {
+            if (tokens.get(i).equals("?#") && tokens.get(i + 1).startsWith("{")) {
                 if (result == tokens) {
                     result = new ArrayList<>(tokens);
                 }
@@ -2196,9 +2196,9 @@ public final class ParsedSql {
                     || "MOD".equalsIgnoreCase(word);
             case 4 -> "THEN".equalsIgnoreCase(word) || "ELSE".equalsIgnoreCase(word) || "WHEN".equalsIgnoreCase(word) || "CASE".equalsIgnoreCase(word)
                     || "ZONE".equalsIgnoreCase(word);
-            case 5 -> "WHERE".equalsIgnoreCase(word) || "ILIKE".equalsIgnoreCase(word) || "RLIKE".equalsIgnoreCase(word);
+            case 5 -> "WHERE".equalsIgnoreCase(word) || "ILIKE".equalsIgnoreCase(word) || "RLIKE".equalsIgnoreCase(word) || "RANGE".equalsIgnoreCase(word);
             case 6 -> "SELECT".equalsIgnoreCase(word) || "HAVING".equalsIgnoreCase(word) || "VALUES".equalsIgnoreCase(word) || "REGEXP".equalsIgnoreCase(word)
-                    || "ESCAPE".equalsIgnoreCase(word);
+                    || "ESCAPE".equalsIgnoreCase(word) || "GROUPS".equalsIgnoreCase(word);
             case 8 -> "INTERVAL".equalsIgnoreCase(word);
             default -> false;
         };
