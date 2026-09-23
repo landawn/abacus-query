@@ -332,6 +332,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @param namingPolicy the naming policy to apply to property names;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return the SQL representation of the condition
+     * @throws IllegalArgumentException if the subquery cannot be rendered, as documented for
+     *         {@link SubQuery#toSql(NamingPolicy)}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

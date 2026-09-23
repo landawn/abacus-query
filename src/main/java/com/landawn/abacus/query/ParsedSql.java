@@ -1024,6 +1024,7 @@ public final class ParsedSql {
      *
      * @param sql the SQL text to inspect
      * @return sorted bracket-opening offsets
+     * @throws NullPointerException if {@code sql} is {@code null}
      * @throws IllegalArgumentException if a standalone bracket group in {@code sql} starts with a {@code ':'} or
      *         {@code '?'} marker followed by an unpaired UTF-16 surrogate
      * @throws IllegalStateException if the token stream cannot be aligned with the original SQL text
@@ -1047,6 +1048,8 @@ public final class ParsedSql {
      * @param sql the original SQL text to inspect
      * @param tokenizer the tokenizer configured for that SQL
      * @return sorted original-text offsets, or an empty array when no subscript is recognized
+     * @throws NullPointerException if {@code sql} is {@code null}, or if {@code tokenizer} is {@code null} and
+     *         {@code sql} contains a {@code '['}
      * @throws IllegalArgumentException if a standalone bracket group in {@code sql} starts with a {@code ':'} or
      *         {@code '?'} marker followed by an unpaired UTF-16 surrogate
      * @throws IllegalStateException if the token stream cannot be aligned with the original SQL text

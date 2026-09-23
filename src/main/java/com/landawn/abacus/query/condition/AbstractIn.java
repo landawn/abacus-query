@@ -122,9 +122,9 @@ public abstract class AbstractIn extends ComposableCondition {
      * @param values the collection of values to check membership against (must not be {@code null}, empty,
      *               or contain {@code null})
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}/empty/blank, {@code values} is {@code null}/empty
-     *                                  or contains {@code null},
-     *                                  or {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
+     *                                  if {@code propName} is {@code null}, empty, or blank, if {@code values} is
+     *                                  {@code null}/empty or contains {@code null},
      *                                  or if any element is a {@link Condition} other than a non-blank {@link SqlExpression}
      *                                  or a scalar {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING
      *                                  connectors and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
@@ -608,7 +608,9 @@ public abstract class AbstractIn extends ComposableCondition {
      * @return the SQL representation, e.g., {@code "status IN ('active', 'pending')"} or, for a
      *         multi-column condition, {@code "(first_name, last_name) IN (('John', 'Doe'), ('Jane', 'Roe'))"}
      * @throws IllegalArgumentException if a scalar or row value is a {@code NaN} or infinite {@link Float}/{@link Double},
-     *                                  or a {@link Number} whose text is not a valid numeric literal
+     *                                  or a {@link Number} whose text is not a valid numeric literal, or if a
+     *                                  {@link SubQuery} value cannot be rendered, as documented for
+     *                                  {@link SubQuery#toSql(NamingPolicy)}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

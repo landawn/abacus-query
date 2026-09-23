@@ -533,6 +533,9 @@ public class Join extends AbstractCondition {
      * @param namingPolicy the naming policy passed through to the join condition's {@link Condition#toSql(NamingPolicy)} method;
      *                     if {@code null}, it is normalized to {@link NamingPolicy#NO_CHANGE} before delegation
      * @return the SQL representation, e.g., "JOIN orders o ON customers.id = o.customer_id"
+     * @throws IllegalArgumentException if rendering the join condition rejects one of its values (for example a
+     *                                  {@code NaN} or infinite {@link Float}/{@link Double}), or if a nested
+     *                                  {@link SubQuery} cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

@@ -297,7 +297,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a SQL representation of the equality expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     public static String equal(final String expr, final Object value) { //NOSONAR
         return link(Operator.EQUAL, expr, value);
@@ -317,7 +318,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a SQL representation of the equality expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     @Beta
     public static String eq(final String expr, final Object value) {
@@ -344,7 +346,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a SQL representation of the not-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     public static String notEqual(final String expr, final Object value) {
         return link(Operator.NOT_EQUAL, expr, value);
@@ -364,7 +367,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a SQL representation of the not-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     @Beta
     public static String ne(final String expr, final Object value) {
@@ -387,7 +391,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the greater-than expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     public static String greaterThan(final String expr, final Object value) {
         return link(Operator.GREATER_THAN, expr, value);
@@ -407,7 +412,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the greater-than expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     @Beta
     public static String gt(final String expr, final Object value) {
@@ -427,7 +433,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the greater-than-or-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     public static String greaterThanOrEqual(final String expr, final Object value) {
         return link(Operator.GREATER_THAN_OR_EQUAL, expr, value);
@@ -447,7 +454,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the greater-than-or-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     @Beta
     public static String ge(final String expr, final Object value) {
@@ -467,7 +475,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the less-than expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     public static String lessThan(final String expr, final Object value) {
         return link(Operator.LESS_THAN, expr, value);
@@ -487,7 +496,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the less-than expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     @Beta
     public static String lt(final String expr, final Object value) {
@@ -507,7 +517,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the less-than-or-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     public static String lessThanOrEqual(final String expr, final Object value) {
         return link(Operator.LESS_THAN_OR_EQUAL, expr, value);
@@ -527,7 +538,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the less-than-or-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     @Beta
     public static String le(final String expr, final Object value) {
@@ -552,7 +564,8 @@ public class SqlExpression extends ComposableCondition {
      * @param maxValue the maximum value (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the BETWEEN expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code minValue} or {@code maxValue} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code minValue} or {@code maxValue} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     public static String between(final String expr, final Object minValue, final Object maxValue) {
         return link(Operator.BETWEEN, expr, minValue, maxValue);
@@ -578,7 +591,8 @@ public class SqlExpression extends ComposableCondition {
      * @param maxValue the upper bound of the excluded range (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the NOT BETWEEN expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code minValue} or {@code maxValue} is a {@link Float}
-     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code minValue} or {@code maxValue} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     public static String notBetween(final String expr, final Object minValue, final Object maxValue) {
         return link(Operator.NOT_BETWEEN, expr, minValue, maxValue);
@@ -767,7 +781,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values to add; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the addition expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String plus(final Object... operands) {
         return link(PLUS, operands);
@@ -790,7 +805,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values to subtract; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String subtract(final Object... operands) {
         return link(MINUS, operands);
@@ -819,7 +835,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values to subtract; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      * @deprecated Use {@link #subtract(Object...)} instead to avoid confusion with the SQL {@code MINUS} set operation.
      */
     @Deprecated
@@ -844,7 +861,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values to multiply; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the multiplication expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String multiply(final Object... operands) {
         return link(ASTERISK, operands);
@@ -867,7 +885,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values to divide; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the division expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String divide(final Object... operands) {
         return link(SLASH, operands);
@@ -890,7 +909,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values for modulus operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the modulus expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String modulus(final Object... operands) {
         return link(PERCENT, operands);
@@ -910,7 +930,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values for left shift operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the left shift expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String leftShift(final Object... operands) {
         return link(LEFT_SHIFT, operands);
@@ -930,7 +951,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values for right shift operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the right shift expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String rightShift(final Object... operands) {
         return link(RIGHT_SHIFT, operands);
@@ -952,7 +974,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values for bitwise AND operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise AND expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String bitwiseAnd(final Object... operands) {
         return link(AMPERSAND, operands);
@@ -971,7 +994,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values for bitwise OR operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise OR expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String bitwiseOr(final Object... operands) {
         return link(VERTICAL_BAR, operands);
@@ -990,7 +1014,8 @@ public class SqlExpression extends ComposableCondition {
      * @param operands the values for bitwise XOR operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise XOR expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String bitwiseXor(final Object... operands) {
         return link(CIRCUMFLEX, operands);
@@ -1024,7 +1049,8 @@ public class SqlExpression extends ComposableCondition {
      * @param value the right-hand side value; may be {@code null}
      * @return a SQL representation of the linked expression
      * @throws IllegalArgumentException if {@code literal} is {@code null}, empty, or blank, or if {@code value}
-     *             is a {@link Float} or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal
+     *             is a {@link Float} or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     static String link(final Operator operator, final String literal, final Object value) {
         checkExpr(literal);
@@ -1064,7 +1090,8 @@ public class SqlExpression extends ComposableCondition {
      * @param max the upper bound value
      * @return the rendered SQL fragment
      * @throws IllegalArgumentException if {@code literal} is {@code null}, empty, or blank, or if {@code min}
-     *             or {@code max} is a {@code NaN} or infinite {@link Float}/{@link Double}, or a {@link Number} whose text is not a valid numeric literal
+     *             or {@code max} is a {@code NaN} or infinite {@link Float}/{@link Double}, or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code min} or {@code max} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
      */
     static String link(final Operator operator, final String literal, final Object min, final Object max) {
         checkExpr(literal);
@@ -1172,7 +1199,8 @@ public class SqlExpression extends ComposableCondition {
      * @param objects the objects to link; a {@code null} or empty array yields an empty string
      * @return the joined SQL expression string, or an empty string if no objects are supplied
      * @throws IllegalArgumentException if any object is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
-     *             or a {@link Number} whose text is not a valid numeric literal
+     *             or a {@link Number} whose text is not a valid numeric literal, or if any object is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     static String link(String linkedSymbol, final Object... objects) {
         if (N.isEmpty(objects)) {
@@ -1239,7 +1267,8 @@ public class SqlExpression extends ComposableCondition {
      * @return the SQL representation of the value
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      *             (these have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead), or a
-     *             {@link Number} whose text is not a valid numeric literal
+     *             {@link Number} whose text is not a valid numeric literal, or if {@code value} is a {@link Condition}
+     *             whose rendering rejects one of its own values for the same reasons
      */
     public static String renderValue(final Object value) {
         if (value == null) {

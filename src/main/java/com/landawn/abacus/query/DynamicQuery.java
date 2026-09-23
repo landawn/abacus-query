@@ -403,9 +403,10 @@ public final class DynamicQuery {
         public Builder limit(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, cs.count);
-
-            selectPaginationSyntax(PaginationSyntax.LIMIT);
+            checkPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(limitCount, "LIMIT count");
+
+            paginationSyntax = PaginationSyntax.LIMIT;
             limitCount = count;
 
             return this;
@@ -442,10 +443,11 @@ public final class DynamicQuery {
             checkNotBuilt();
             N.checkArgNotNegative(count, cs.count);
             N.checkArgNotNegative(offset, cs.offset);
-
-            selectPaginationSyntax(PaginationSyntax.LIMIT);
+            checkPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(limitCount, "LIMIT count");
             checkPaginationPartUnset(plainOffset, "plain OFFSET");
+
+            paginationSyntax = PaginationSyntax.LIMIT;
             limitCount = count;
             plainOffset = offset;
 
@@ -477,9 +479,10 @@ public final class DynamicQuery {
         public Builder offset(final int offset) {
             checkNotBuilt();
             N.checkArgNotNegative(offset, cs.offset);
-
-            selectPaginationSyntax(PaginationSyntax.LIMIT);
+            checkPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(plainOffset, "plain OFFSET");
+
+            paginationSyntax = PaginationSyntax.LIMIT;
             plainOffset = offset;
 
             return this;
@@ -506,9 +509,10 @@ public final class DynamicQuery {
         public Builder offsetRows(final int offset) {
             checkNotBuilt();
             N.checkArgNotNegative(offset, cs.offset);
-
-            selectPaginationSyntax(PaginationSyntax.FETCH);
+            checkPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(rowsOffset, "OFFSET ... ROWS");
+
+            paginationSyntax = PaginationSyntax.FETCH;
             rowsOffset = offset;
 
             return this;
@@ -533,9 +537,10 @@ public final class DynamicQuery {
         public Builder fetchNextRows(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, cs.count);
-
-            selectPaginationSyntax(PaginationSyntax.FETCH);
+            checkPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(fetchCount, "FETCH count");
+
+            paginationSyntax = PaginationSyntax.FETCH;
             fetchCount = count;
             fetchFirst = false;
 
@@ -563,9 +568,10 @@ public final class DynamicQuery {
         public Builder fetchFirstRows(final int count) {
             checkNotBuilt();
             N.checkArgNotNegative(count, cs.count);
-
-            selectPaginationSyntax(PaginationSyntax.FETCH);
+            checkPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(fetchCount, "FETCH count");
+
+            paginationSyntax = PaginationSyntax.FETCH;
             fetchCount = count;
             fetchFirst = true;
 
@@ -839,18 +845,18 @@ public final class DynamicQuery {
         }
 
         /**
-         * Selects a typed pagination family and rejects attempts to combine grammatically incompatible
-         * {@code LIMIT/OFFSET} and {@code OFFSET ... ROWS/FETCH} clauses.
+         * Rejects attempts to combine grammatically incompatible {@code LIMIT/OFFSET} and
+         * {@code OFFSET ... ROWS/FETCH} clauses. Validation only: the caller records the selected
+         * family in {@code paginationSyntax} after all of its validation has passed.
          *
+         * @param requested the typed pagination family the caller is about to select
          * @throws IllegalStateException if a different typed pagination family was already selected by a prior
          *         pagination call
          */
-        private void selectPaginationSyntax(final PaginationSyntax requested) {
+        private void checkPaginationSyntax(final PaginationSyntax requested) {
             if (paginationSyntax != PaginationSyntax.NONE && paginationSyntax != requested) {
                 throw new IllegalStateException("Cannot combine " + requested + " pagination with " + paginationSyntax + " pagination");
             }
-
-            paginationSyntax = requested;
         }
 
         /**
@@ -908,6 +914,7 @@ public final class DynamicQuery {
          * the merged SQL contains a doubled space).
          *
          * @param rawClause the non-blank text to append verbatim
+         * @throws IllegalStateException if this builder has already been closed by a prior call to {@link #build()}
          */
         private void appendRawWithSpace(final String rawClause) {
             final StringBuilder sb = getStringBuilderForMoreParts();

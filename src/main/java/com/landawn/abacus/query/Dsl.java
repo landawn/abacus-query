@@ -256,9 +256,9 @@ public final class Dsl {
      *        contain no {@code null} element, and resolve to at least one property in total)
      * @return a snapshot copy of {@code selections}, detached from later caller mutations
      * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a
-     *         {@code null} element, an element with a {@code null} entity class, a blank included
-     *         property name, or an unsafe (whitespace-only, quoted, or comment-bearing) table or
-     *         class alias, or resolves to no properties in total
+     *         {@code null} element, a {@code null}, empty, or blank included property name, or an
+     *         unsafe (whitespace-only, quoted, or comment-bearing) table or class alias, or resolves
+     *         to no properties in total
      */
     private static List<Selection> snapshotSelections(final List<Selection> selections) {
         N.checkArgNotNull(selections, cs.selections);
@@ -465,6 +465,7 @@ public final class Dsl {
      * @param entity the entity object to insert
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if entity is null; if a String entity is blank; if a Map entity is empty or has a non-String or blank key;
+     *                                  if any other entity is not a valid entity bean;
      *                                  or if a bean has no insertable value left after its {@code null} values and
      *                                  default-valued ID properties are skipped (a non-ID primitive still holding its
      *                                  default, such as {@code 0}, is kept)
@@ -505,6 +506,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if entity is null; if a String entity is blank; if a Map entity is empty,
      *                                  has a non-String or blank key, or has no entries left after exclusions are applied;
+     *                                  if any other entity is not a valid entity bean;
      *                                  or if a bean has no insertable value left after exclusions are applied and its
      *                                  {@code null} values and default-valued ID properties are skipped (a non-ID
      *                                  primitive still holding its default, such as {@code 0}, is kept)
@@ -742,7 +744,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for batch INSERT operation
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is null or empty, if every element is
      *         {@code null}; if a map is empty, contains a non-string or blank key, or does not share
-     *         the same key set as the other rows; if elements have mixed types (some {@code Map}, some
+     *         the same key set as the other rows; if the first non-{@code null} element is neither a
+     *         {@code Map} nor a valid entity bean; if elements have mixed types (some {@code Map}, some
      *         bean); if bean rows do not have the same runtime class; or if no bean column remains
      *         after columns that are null/default in every row are removed
      */
@@ -1154,7 +1157,7 @@ public final class Dsl {
      * @param propOrColumnNameAliases map of property/column names to their aliases
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code propOrColumnNameAliases} is null or empty, if any key is null,
-     *                                  empty, or blank, or if any alias is blank, contains a quote character,
+     *                                  empty, or blank, or if any alias is {@code null} or blank, contains a quote character,
      *                                  a line break, or an SQL comment token
      */
     public SqlBuilder select(final Map<String, String> propOrColumnNameAliases) {
@@ -1535,7 +1538,9 @@ public final class Dsl {
      * @param tableAliasB table alias for second entity
      * @param classAliasB property prefix for second entity results
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if either entity class is {@code null} or declares no selectable property
+     * @throws IllegalArgumentException if either entity class is {@code null}; if a non-empty table or class alias is
+     *                                  blank, quoted, or contains a line break or SQL comment token; or if the two
+     *                                  selections together resolve to no selectable property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
@@ -1575,8 +1580,9 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity results
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if either entity class is {@code null}, or if the two selections together
-     *                                  resolve to no selectable property after exclusions are applied
+     * @throws IllegalArgumentException if either entity class is {@code null}; if a non-empty table or class alias is
+     *                                  blank, quoted, or contains a line break or SQL comment token; or if the two
+     *                                  selections together resolve to no selectable property after exclusions are applied
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
@@ -1615,8 +1621,9 @@ public final class Dsl {
      *
      * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code selection} is {@code null} or resolves to no selectable property,
-     *                                  or carries a blank, quoted, or comment-bearing table or class alias
+     * @throws IllegalArgumentException if {@code selection} is {@code null}, has a {@code null}, empty, or blank
+     *                                  included property name, carries a blank, quoted, or comment-bearing table or
+     *                                  class alias, or resolves to no selectable property
      * @see #select(List)
      * @see Selection
      */
@@ -1655,9 +1662,9 @@ public final class Dsl {
      *
      * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains invalid data (including a
-     *                                  blank, quoted, or comment-bearing table or class alias),
-     *                                  or resolves to no properties in total
+     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a {@code null} element,
+     *                                  a {@code null}, empty, or blank included property name, or a blank, quoted, or
+     *                                  comment-bearing table or class alias, or resolves to no properties in total
      */
     public SqlBuilder select(final List<Selection> selections) {
         return createSelectBuilder(snapshotSelections(selections));
@@ -1686,8 +1693,10 @@ public final class Dsl {
      * @param tableAliasB table alias for second entity
      * @param classAliasB property prefix for second entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if either entity class is {@code null} or declares no selectable property,
-     *                                  or if the generated FROM clause is blank
+     * @throws IllegalArgumentException if either entity class is {@code null}; if a non-empty table or class alias is
+     *                                  blank, quoted, or contains a line break or SQL comment token; if the two
+     *                                  selections together resolve to no selectable property; if either entity class
+     *                                  is not a valid entity bean class; or if the generated FROM clause is blank
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
@@ -1723,8 +1732,10 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if either entity class is {@code null}, if the two selections together
-     *                                  resolve to no selectable property after exclusions are applied, or if the
+     * @throws IllegalArgumentException if either entity class is {@code null}; if a non-empty table or class alias is
+     *                                  blank, quoted, or contains a line break or SQL comment token; if the two
+     *                                  selections together resolve to no selectable property after exclusions are
+     *                                  applied; if either entity class is not a valid entity bean class; or if the
      *                                  generated FROM clause is blank
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
@@ -1763,9 +1774,10 @@ public final class Dsl {
      *
      * @param selection the selection descriptor defining the entity, aliases, and property filtering; must not be {@code null}
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if {@code selection} is {@code null}, resolves to no selectable property,
-     *                                  carries a blank, quoted, or comment-bearing table or class alias,
-     *                                  or produces a blank generated FROM clause
+     * @throws IllegalArgumentException if {@code selection} is {@code null}, has a {@code null}, empty, or blank
+     *                                  included property name, carries a blank, quoted, or comment-bearing table or
+     *                                  class alias, resolves to no selectable property, has an entity class that is
+     *                                  not a valid entity bean class, or produces a blank generated FROM clause
      * @see #selectFrom(List)
      * @see Selection
      */
@@ -1800,9 +1812,11 @@ public final class Dsl {
      *
      * @param selections list of Selection objects defining what to select from each entity
      * @return a new SqlBuilder instance with SELECT and FROM configured
-     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains invalid data (including a
-     *                                  blank, quoted, or comment-bearing table or class alias),
-     *                                  produces a blank generated FROM clause, or resolves to no properties in total
+     * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a {@code null} element,
+     *                                  a {@code null}, empty, or blank included property name, or a blank, quoted, or
+     *                                  comment-bearing table or class alias, resolves to no properties in total,
+     *                                  contains an entity class that is not a valid entity bean class, or produces a
+     *                                  blank generated FROM clause
      */
     public SqlBuilder selectFrom(final List<Selection> selections) {
         final List<Selection> selectionSnapshots = snapshotSelections(selections);
@@ -1917,7 +1931,12 @@ public final class Dsl {
      * @param condition the condition to render (must not be {@code null})
      * @param entityClass the entity class used for property-to-column mapping (may be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
-     * @throws IllegalArgumentException if {@code condition} is {@code null} or contains a condition type that cannot be rendered
+     * @throws IllegalArgumentException if {@code condition} is {@code null}; if it is a {@code Where} or {@code Having} clause
+     *                                  whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL
+     *                                  clause, JOIN, or {@code ON}/{@code USING} connector); if it is a clause other than a
+     *                                  {@code Where}, {@code GroupBy}, {@code Having}, {@code OrderBy}, {@code Limit}, or
+     *                                  set-operation clause (for example a custom {@code OFFSET} clause);
+     *                                  or if it is or contains a condition type that cannot be rendered
      * @throws IllegalStateException if {@code condition} is a {@link com.landawn.abacus.query.condition.Criteria} carrying joins,
      *                               set operations, or a select modifier, or is a standalone set-operation clause:
      *                               a condition-only builder has no SELECT segment for them to attach to
@@ -1954,7 +1973,12 @@ public final class Dsl {
      *
      * @param condition the condition to render (must not be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
-     * @throws IllegalArgumentException if {@code condition} is {@code null} or contains a condition type that cannot be rendered
+     * @throws IllegalArgumentException if {@code condition} is {@code null}; if it is a {@code Where} or {@code Having} clause
+     *                                  whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL
+     *                                  clause, JOIN, or {@code ON}/{@code USING} connector); if it is a clause other than a
+     *                                  {@code Where}, {@code GroupBy}, {@code Having}, {@code OrderBy}, {@code Limit}, or
+     *                                  set-operation clause (for example a custom {@code OFFSET} clause);
+     *                                  or if it is or contains a condition type that cannot be rendered
      * @throws IllegalStateException if {@code condition} is a {@link com.landawn.abacus.query.condition.Criteria} carrying joins,
      *                               set operations, or a select modifier, or is a standalone set-operation clause:
      *                               a condition-only builder has no SELECT segment for them to attach to
@@ -1985,7 +2009,7 @@ public final class Dsl {
      * Validates the alias of every entry in the given property/column-name-to-alias map.
      *
      * @param propOrColumnNameAliases map of property/column names to their aliases (must not be {@code null})
-     * @throws IllegalArgumentException if any alias is blank, contains a quote character, a line break,
+     * @throws IllegalArgumentException if any alias is {@code null} or blank, contains a quote character, a line break,
      *                                  or an SQL comment token
      * @see #validateColumnAlias(String, String)
      */

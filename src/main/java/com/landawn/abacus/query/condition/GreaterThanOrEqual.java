@@ -101,7 +101,8 @@ public class GreaterThanOrEqual extends Binary {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; {@code propValue}
      *                                  is {@code null}, an ordinary predicate or query clause, or a blank
      *                                  {@link SqlExpression}; or if a structured subquery has a known,
-     *                                  non-wildcard projection with a column count other than one
+     *                                  non-wildcard projection with a column count other than one; or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public GreaterThanOrEqual(final String propName, final Object propValue) {
         super(propName, Operator.GREATER_THAN_OR_EQUAL, propValue);

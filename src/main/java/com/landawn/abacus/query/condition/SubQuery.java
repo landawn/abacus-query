@@ -798,6 +798,9 @@ public class SubQuery extends AbstractCondition {
      * @param namingPolicy the naming policy to apply; if {@code null},
      *            {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return SQL representation of the subquery
+     * @throws IllegalArgumentException if this is a structured subquery whose entity class is not a valid entity
+     *         bean class, or if rendering its trailing condition rejects one of its values (for example a
+     *         {@code NaN} or infinite {@link Float}/{@link Double})
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

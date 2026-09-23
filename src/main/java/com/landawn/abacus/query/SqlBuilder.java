@@ -166,12 +166,16 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * exactly as {@code Junction.toSql} does.</p>
      *
      * @param cond the condition to render; must be one of the supported condition types
-     * @throws IllegalArgumentException if {@code cond} is an unsupported condition type; if a
+     * @throws IllegalArgumentException if {@code cond} is an unsupported condition type; if a rendered column
+     *         name contains a SQL comment token; if a {@link SqlExpression} is blank; if a {@link Using} condition
+     *         renders a table- or schema-qualified column name; if a
      *         structured {@link SubQuery} (one not defined by raw SQL) has no selected property/column names;
      *         or if, under {@code NAMED_SQL}/{@code IBATIS_SQL}/{@code RAW_SQL}, the positional placeholder count
      *         of a bound raw sub-query cannot be matched to its bindings. Placeholder detection follows
      *         {@link ParsedSql}: array-subscript bindings are included, while JSON operators and quoted or
      *         commented question marks are excluded
+     * @throws IllegalStateException under {@code NAMED_SQL} if the named-parameter handler emits an empty token
+     *         for a rendered placeholder
      */
     @Override
     protected void appendCondition(final Condition cond) {

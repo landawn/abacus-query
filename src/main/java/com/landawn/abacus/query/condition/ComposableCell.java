@@ -200,6 +200,9 @@ public abstract class ComposableCell extends ComposableCondition {
      * @param namingPolicy the naming policy to apply to property names within the wrapped condition;
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a SQL representation of this ComposableCell
+     * @throws IllegalArgumentException if rendering the wrapped condition rejects one of its values (for example a
+     *                                  {@code NaN} or infinite {@link Float}/{@link Double}), or if a wrapped
+     *                                  {@link SubQuery} cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

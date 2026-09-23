@@ -203,7 +203,7 @@ public final class SqlMapper {
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
      * @throws IllegalArgumentException if {@code filePaths} is {@code null}, empty, or resolves to no non-empty paths
      *         after splitting, if no file can be found for one of the paths, or if a loaded {@code <sql>} element has
-     *         an invalid id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated),
+     *         an invalid id (missing, empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated),
      *         a SQL body that {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed
      *         {@code #{...}} marker), or a {@code <sql>} attribute whose name is not a valid non-namespace XML name
      *         or whose value is {@code null}
@@ -254,10 +254,12 @@ public final class SqlMapper {
      * @param firstFilePath the first XML mapper path; must not be {@code null} or empty
      * @param additionalFilePaths additional XML mapper paths; no element may be {@code null} or empty
      * @return a new mapper containing definitions from every supplied path
-     * @throws IllegalArgumentException if either argument is {@code null}, if the first path or any additional path is empty,
-     *         if a path cannot be found, if a loaded SQL definition is invalid or duplicated, if a SQL body is one that
-     *         {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed {@code #{...}} marker),
-     *         or if a {@code <sql>} attribute has a name that is not a valid non-namespace XML name or a {@code null} value
+     * @throws IllegalArgumentException if {@code firstFilePath} is {@code null} or empty, if {@code additionalFilePaths}
+     *         is {@code null} or contains a {@code null} or empty element, if no file can be found for one of the paths,
+     *         or if a loaded {@code <sql>} element has an invalid id (missing, empty, containing whitespace, exceeding
+     *         {@link #MAX_ID_LENGTH} characters, or duplicated), a SQL body that {@link ParsedSql#parse(String)} rejects
+     *         (blank, mixed parameter styles, or a malformed {@code #{...}} marker), or a {@code <sql>} attribute whose
+     *         name is not a valid non-namespace XML name or whose value is {@code null}
      * @throws UncheckedIOException if an I/O error occurs while reading a file
      * @throws ParsingException if any XML document is invalid or does not have {@code <sqlMapper>} as its root element
      */
@@ -265,11 +267,14 @@ public final class SqlMapper {
         N.checkArgNotEmpty(firstFilePath, cs.firstFilePath);
         N.checkArgNotNull(additionalFilePaths, cs.additionalFilePaths);
 
+        for (final String filePath : additionalFilePaths) {
+            N.checkArgNotEmpty(filePath, cs.additionalFilePath);
+        }
+
         final SqlMapper sqlMapper = new SqlMapper();
         loadPath(sqlMapper, firstFilePath);
 
         for (final String filePath : additionalFilePaths) {
-            N.checkArgNotEmpty(filePath, cs.additionalFilePath);
             loadPath(sqlMapper, filePath);
         }
 
@@ -310,21 +315,26 @@ public final class SqlMapper {
      * @param files one or more XML files to load (must not be {@code null} or empty, and no element may be {@code null})
      * @return a new SqlMapper instance loaded with SQL definitions from the specified files
      * @throws IllegalArgumentException if {@code files} is {@code null} or empty, if any element of {@code files} is
-     *         {@code null}, or if a loaded {@code <sql>} element has an invalid id (empty, containing whitespace,
+     *         {@code null}, or if a loaded {@code <sql>} element has an invalid id (missing, empty, containing whitespace,
      *         exceeding {@link #MAX_ID_LENGTH} characters, or duplicated), a SQL body that
      *         {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed
      *         {@code #{...}} marker), or an attribute whose name is not a valid non-namespace XML name
      *         or whose value is {@code null}
-     * @throws UncheckedIOException if an I/O error occurs reading the files
+     * @throws UncheckedIOException if a file does not exist, is not a regular file, or cannot be opened, or if an I/O
+     *         error occurs reading the files (unlike {@link #loadFrom(String)}, a missing file is not an
+     *         {@code IllegalArgumentException} here)
      * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper loadFrom(final File... files) {
         N.checkArgNotEmpty(files, cs.files);
 
+        for (final File file : files) {
+            N.checkArgNotNull(file, cs.file);
+        }
+
         final SqlMapper sqlMapper = new SqlMapper();
 
         for (final File file : files) {
-            N.checkArgNotNull(file, cs.file);
             loadFile(sqlMapper, file);
         }
 
@@ -349,7 +359,7 @@ public final class SqlMapper {
      * @param inputStream the input stream to read the XML SQL definitions from (must not be {@code null})
      * @return a new SqlMapper instance loaded with SQL definitions from the stream
      * @throws IllegalArgumentException if {@code inputStream} is {@code null}, or if a loaded {@code <sql>} element has an invalid
-     *         id (empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated), a SQL body that
+     *         id (missing, empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated), a SQL body that
      *         {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed {@code #{...}} marker),
      *         or an attribute whose name is not a valid non-namespace XML name or whose value is {@code null}
      * @throws UncheckedIOException if an I/O error occurs reading the stream

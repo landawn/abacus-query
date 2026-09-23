@@ -194,9 +194,11 @@ public class Binary extends ComposableCondition {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; if {@code operator}
      *                                  is not one of the operators listed above; or if, for an {@code IN}/{@code NOT_IN}
      *                                  operator, {@code propValue} is not a non-empty {@link Collection}, a non-empty
-     *                                  array, a {@link SqlExpression}, or a {@link SubQuery}; if a value that must be non-null is
-     *                                  {@code null}; if {@code IS}/{@code IS NOT} receives an arbitrary literal; if a
-     *                                  condition-valued operand is an ordinary predicate or query clause or a blank
+     *                                  array, a {@link SqlExpression}, or a {@link SubQuery}; if {@code propValue} is
+     *                                  {@code null} for an operator other than {@code =}, {@code !=}, {@code <>}, {@code IS},
+     *                                  or {@code IS NOT}, or an {@code IN}/{@code NOT IN} element is {@code null}; if
+     *                                  {@code IS}/{@code IS NOT} receives a value other than {@code null}, a Boolean, or a
+     *                                  {@link SqlExpression}; if a condition-valued operand is an ordinary predicate or query clause or a blank
      *                                  {@link SqlExpression}; or if an {@link All}/{@link Any}/{@link Some} operand is used
      *                                  anywhere other than the direct RHS of a compatible scalar comparison; if a
      *                                  scalar {@link SubQuery} has a known, non-wildcard projection with multiple columns;
@@ -418,7 +420,9 @@ public class Binary extends ComposableCondition {
      * @return a SQL representation of this condition
      * @throws IllegalArgumentException if the value (or a value in an {@code IN}/{@code NOT IN} collection)
      *                                  is a {@code NaN} or infinite {@link Float}/{@link Double}, or a
-     *                                  {@link Number} whose text is not a valid numeric literal
+     *                                  {@link Number} whose text is not a valid numeric literal, or if a
+     *                                  {@link SubQuery} value (directly or inside an {@code ALL}/{@code ANY}/{@code SOME}
+     *                                  operand) cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
@@ -529,9 +533,12 @@ public class Binary extends ComposableCondition {
      * @param op the comparison operator; not {@code null}
      * @param propValue the raw right-hand-side value; may be {@code null}
      * @return the validated value
-     * @throws IllegalArgumentException if a quantified operand is used with an incompatible operator,
-     *         the operand is an unsupported condition, a required value is {@code null}, or the value is a
-     *         cyclic object array
+     * @throws IllegalArgumentException if {@code propValue} is {@code null} for an operator other than {@code =},
+     *         {@code !=}, {@code <>}, {@code IS}, or {@code IS NOT}; if {@code IS}/{@code IS NOT} receives a value other
+     *         than {@code null}, a Boolean, or a non-blank {@link SqlExpression}; if a quantified operand is used with an
+     *         incompatible operator; if the operand is any other unsupported condition (an ordinary predicate or query
+     *         clause, a blank {@link SqlExpression}, or a structured {@link SubQuery} with a known multi-column
+     *         projection); or if the value is a cyclic object array
      */
     private static Object validateScalarValueOperand(final Operator op, final Object propValue) {
         if (propValue == null) {

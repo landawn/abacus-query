@@ -527,7 +527,10 @@ public abstract class AbstractCondition implements Condition {
      * @param operand the operand to validate
      * @param argumentName the argument name used in an exception message
      * @return {@code operand}, unchanged
-     * @throws IllegalArgumentException if the operand is an unsupported condition or a quantified operand
+     * @throws IllegalArgumentException if {@code operand} is a condition other than a {@link SqlExpression} or
+     *                                  {@link SubQuery} (including an {@code ALL}/{@code ANY}/{@code SOME} quantified
+     *                                  operand), is a blank {@link SqlExpression}, or is a structured subquery whose
+     *                                  known projection arity is not one
      */
     protected static <T> T validateNonQuantifiedValueOperand(final T operand, final String argumentName) {
         validateValueOperand(operand, argumentName);
@@ -551,7 +554,10 @@ public abstract class AbstractCondition implements Condition {
      *               elements may be {@code null}
      * @param argumentName the argument name used as the prefix in an exception message
      * @throws NullPointerException if {@code values} is {@code null}
-     * @throws IllegalArgumentException if any element is an unsupported condition or a quantified operand
+     * @throws IllegalArgumentException if any element is a condition other than a {@link SqlExpression} or
+     *                                  {@link SubQuery} (including an {@code ALL}/{@code ANY}/{@code SOME} quantified
+     *                                  operand), is a blank {@link SqlExpression}, or is a structured subquery whose
+     *                                  known projection arity is not one
      */
     protected static void validateNonQuantifiedValueOperands(final Collection<?> values, final String argumentName) {
         int index = 0;
@@ -983,11 +989,15 @@ public abstract class AbstractCondition implements Condition {
      * @param propNames collection of property names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
      * @param direction the sort direction to apply to all properties (must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, {@code direction} is {@code null},
-     *                                  or {@code propNames} contains {@code null}, empty, or blank elements
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains {@code null}, empty, or blank
+     *                                  elements, or if {@code direction} is {@code null}
      */
     protected static String createSortSpec(final Collection<String> propNames, final SortDirection direction) {
         N.checkArgNotEmpty(propNames, cs.propNames);
+
+        for (final String propName : propNames) {
+            checkPropName(propName);
+        }
 
         if (direction == null) {
             throw new IllegalArgumentException("direction must not be null");
@@ -998,8 +1008,6 @@ public abstract class AbstractCondition implements Condition {
         try {
             int i = 0;
             for (final String propName : propNames) {
-                checkPropName(propName);
-
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }

@@ -361,6 +361,12 @@ public class AbstractQueryBuilderTest extends TestBase {
         final SqlBuilder joined = PSC.select("id").from("users");
         assertThrows(IllegalArgumentException.class, () -> joined.join((Class<?>) null, "n"));
         assertEquals("SELECT id FROM users", joined.build().query());
+
+        // A non-bean join class must be rejected before any JOIN text or alias mapping is written.
+        final SqlBuilder nonBeanJoin = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> nonBeanJoin.leftJoin(String.class, "s"));
+        assertThrows(IllegalArgumentException.class, () -> nonBeanJoin.crossJoin(String.class));
+        assertEquals("SELECT id FROM users", nonBeanJoin.build().query());
     }
 
     @Test

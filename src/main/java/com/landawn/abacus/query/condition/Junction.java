@@ -391,6 +391,9 @@ public class Junction extends ComposableCondition {
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return the SQL representation with proper parentheses and spacing, or the operator's Boolean
      *         identity if the junction has no conditions
+     * @throws IllegalArgumentException if rendering a contained condition rejects one of its values (for example a
+     *                                  {@code NaN} or infinite {@link Float}/{@link Double}), or if a contained
+     *                                  {@link SubQuery} cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {

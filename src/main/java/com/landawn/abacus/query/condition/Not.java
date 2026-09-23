@@ -118,7 +118,7 @@ public class Not extends ComposableCell {
      *             It must not be a clause condition (such as
      *             {@link Where} or {@link Having}); such conditions are rejected as non-composable.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is non-composable —
-     *             a {@link Criteria}, a {@link Clause} condition (for example {@link Where}, {@link Having}, or
+     *             a condition with a {@code null} operator, a {@link Criteria}, a {@link Clause} condition (for example {@link Where}, {@link Having}, or
      *             {@link OrderBy}), an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
      *             quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}.
      *             An empty {@link Junction} is accepted and negates its Boolean identity (for example {@code NOT (1 = 1)})

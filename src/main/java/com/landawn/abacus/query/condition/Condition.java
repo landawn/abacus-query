@@ -144,6 +144,10 @@ public interface Condition {
      * @param namingPolicy the policy for formatting property names; a {@code null} naming policy is
      *                     treated as {@link NamingPolicy#NO_CHANGE} by the standard implementations
      * @return a SQL representation of this condition
+     * @throws IllegalArgumentException if this condition, or a condition nested in it, holds a value that cannot be
+     *                                  rendered (for example a {@code NaN} or infinite {@link Float}/{@link Double}),
+     *                                  or if a {@link SubQuery} it contains cannot be rendered, as documented for
+     *                                  {@link SubQuery#toSql(NamingPolicy)}
      */
     String toSql(NamingPolicy namingPolicy);
 }

@@ -121,7 +121,6 @@ public abstract class Clause extends Cell {
 
     private static Condition validateClauseOperand(final Operator operator, final Condition cond) {
         N.requireNonNull(operator, "operator");
-        N.checkArgNotNull(cond, cs.condition);
 
         if (!isClause(operator)) {
             throw new IllegalArgumentException("Clause operator must be a SQL clause operator, but was: " + operator);
@@ -130,6 +129,8 @@ public abstract class Clause extends Cell {
         if (isJoinOperator(operator)) {
             throw new IllegalArgumentException("JOIN operators must be represented by Join, not Clause: " + operator);
         }
+
+        N.checkArgNotNull(cond, cs.condition);
 
         if (isSetOperation(operator)) {
             if (!(cond instanceof SubQuery)) {

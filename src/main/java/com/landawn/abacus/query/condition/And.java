@@ -197,9 +197,10 @@ public class And extends Junction {
      *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank expression).
      * @return a new {@link And} condition containing all existing conditions plus the new one
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is or contains a
-     *             non-composable component — a {@link Criteria}, a {@link Clause} condition (such as {@link Where} or {@link OrderBy}),
-     *             an {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *             non-composable component — a condition with a {@code null} operator, a {@link Criteria}, a {@link Clause}
+     *             condition (such as {@link Where} or {@link OrderBy}), an {@code ON}/{@code USING} connector, an
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank
+     *             {@link SqlExpression}
      */
     @Override
     public And and(final Condition condition) {

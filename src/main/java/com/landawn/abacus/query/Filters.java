@@ -285,7 +285,8 @@ public final class Filters {
      *
      * @param condition the condition to negate (must not be {@code null} and must be a composable condition)
      * @return a {@link Not} condition that wraps and negates the provided condition
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is non-composable — a Criteria, a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or is or contains a non-composable component — a
+     *             condition with a {@code null} operator, a Criteria, a clause
      *             (for example {@code WHERE}, {@code HAVING}, or {@code ORDER BY}), an {@code ON}/{@code USING} connector,
      *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank
      *             {@link SqlExpression}
@@ -343,7 +344,8 @@ public final class Filters {
      *                                  any other {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or
      *                                  {@code ON}/{@code USING} connector) or a blank {@link SqlExpression}; or if an
      *                                  {@link All}/{@link Any}/{@link Some} operand is used anywhere other than the direct
-     *                                  RHS of a compatible scalar comparison
+     *                                  RHS of a compatible scalar comparison; or if {@code propValue}, or an element of an
+     *                                  {@code IN}/{@code NOT_IN} collection or array, is a cyclic object array
      */
     public static Binary binary(final String propName, final Operator operator, final Object propValue) {
         return new Binary(propName, operator, propValue);
@@ -412,7 +414,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
-     *                                  nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue} is a cyclic
+     *                                  object array
      */
     public static Equal equal(final String propName, final Object propValue) { //NOSONAR
         return new Equal(propName, propValue);
@@ -455,7 +458,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
-     *                                  nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue} is a cyclic
+     *                                  object array
      */
     public static Equal eq(final String propName, final Object propValue) {
         return equal(propName, propValue);
@@ -502,7 +506,8 @@ public final class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      * @see NamedProperty#equalsAny(Object...)
      */
     public static Or anyEqual(final Map<String, ?> props) {
@@ -526,7 +531,8 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code entity} is {@code null}, is a map (use {@link #anyEqual(Map)}),
      *                                  or its class declares no selectable property;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, cs.entity);
@@ -553,9 +559,11 @@ public final class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if
      *                                  {@code includedPropNames} is {@code null}, empty, or contains a
-     *                                  {@code null}, empty, blank, or unreadable name;
+     *                                  {@code null}, empty, blank, or unreadable name; if the class of
+     *                                  {@code entity} is not a bean class (declares no bean property);
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static Or anyEqual(final Object entity, final Collection<String> includedPropNames) {
         return or(equalConditions(entity, includedPropNames));
@@ -578,7 +586,8 @@ public final class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).or(equal(propName2, propValue2));
@@ -608,7 +617,8 @@ public final class Filters {
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -633,7 +643,8 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static And allEqual(final Map<String, ?> props) {
         return and(equalConditions(props));
@@ -647,8 +658,9 @@ public final class Filters {
      * @param props map of property names to values (must not be {@code null} or empty, and every key must
      *              be a non-{@code null} {@link String})
      * @return a non-empty list of {@link Equal} conditions, one per map entry
-     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or if any key is not a
-     *                                  non-blank {@link String}
+     * @throws IllegalArgumentException if {@code props} is {@code null} or empty, if any key is not a
+     *                                  non-blank {@link String}, or if any value is rejected by
+     *                                  {@link #equal(String, Object)}
      */
     private static List<Condition> equalConditions(final Map<?, ?> props) {
         N.checkArgNotEmpty(props, cs.props);
@@ -683,7 +695,8 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code entity} is {@code null}, is a map (use {@link #allEqual(Map)}),
      *                                  or its class declares no selectable property;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, cs.entity);
@@ -710,9 +723,11 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null} or is a map, or if
      *                                  {@code includedPropNames} is {@code null}, empty, or contains a
-     *                                  {@code null}, empty, blank, or unreadable name;
+     *                                  {@code null}, empty, blank, or unreadable name; if the class of
+     *                                  {@code entity} is not a bean class (declares no bean property);
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static And allEqual(final Object entity, final Collection<String> includedPropNames) {
         return and(equalConditions(entity, includedPropNames));
@@ -726,9 +741,11 @@ public final class Filters {
      * @param entity the bean whose property values are read (must not be {@code null} or a {@link Map})
      * @param includedPropNames the property names to read (must not be {@code null} or empty)
      * @return a non-empty list of {@link Equal} conditions, one per included property name
-     * @throws IllegalArgumentException if {@code entity} is {@code null} or a {@link Map}, or if
-     *                                  {@code includedPropNames} is {@code null}, empty, or contains a
-     *                                  {@code null}, empty, blank, or unreadable name
+     * @throws IllegalArgumentException if {@code entity} is {@code null} or a {@link Map}, if
+     *                                  {@code includedPropNames} is {@code null} or empty, if the class of
+     *                                  {@code entity} is not a bean class, if {@code includedPropNames} contains a
+     *                                  {@code null}, empty, blank, or unreadable name, or if a property value is
+     *                                  rejected by {@link #equal(String, Object)}
      */
     private static List<Condition> equalConditions(final Object entity, final Collection<String> includedPropNames) {
         N.checkArgNotNull(entity, cs.entity);
@@ -763,7 +780,8 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2) {
         return equal(propName1, propValue1).and(equal(propName2, propValue2));
@@ -793,7 +811,8 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      */
     public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3,
             final Object propValue3) {
@@ -841,7 +860,8 @@ public final class Filters {
      *                                  are mixed, if a map is empty, if a map key is not a non-blank {@link String}, if the first entity class declares
      *                                  no selectable property, or if a selected property is unreadable from an entity;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      * @see #anyOfAllEqual(Collection, Collection)
      * @see #anyEqual(Map)
      * @see #allEqual(Map)
@@ -889,10 +909,11 @@ public final class Filters {
      *                          snapshotted during the call
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entities} or {@code includedPropNames} is {@code null} or empty,
-     *                                  all entities are null, an element is a map, or a property name is {@code null},
-     *                                  empty, blank, or not readable;
+     *                                  all entities are null, an element is a map, an entity's class is not a bean class,
+     *                                  or a property name is {@code null}, empty, blank, or not readable;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
-     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column
+     *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
+     *                                  or if a value is a cyclic object array
      * @see #anyOfAllEqual(Collection)
      * @see #allEqual(Object, Collection)
      */
@@ -939,7 +960,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
      *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if either is a
+     *                                  cyclic object array
      */
     public static And gtAndLt(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(lt(propName, maxValue));
@@ -987,7 +1009,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
      *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if either is a
+     *                                  cyclic object array
      */
     public static And geAndLt(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(lt(propName, maxValue));
@@ -1035,7 +1058,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
      *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if either is a
+     *                                  cyclic object array
      */
     public static And geAndLe(final String propName, final Object minValue, final Object maxValue) {
         return ge(propName, minValue).and(le(propName, maxValue));
@@ -1083,7 +1107,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
      *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if either is a
+     *                                  cyclic object array
      */
     public static And gtAndLe(final String propName, final Object minValue, final Object maxValue) {
         return gt(propName, minValue).and(le(propName, maxValue));
@@ -1125,7 +1150,9 @@ public final class Filters {
      * @param entityId the {@link EntityId} containing key-value pairs (must not be {@code null}). Entries are
      *                 consumed once as key/value pairs during this call
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entityId} is {@code null} or contains no keys
+     * @throws IllegalArgumentException if {@code entityId} is {@code null} or contains no keys, or if a key/value pair
+     *                                  is rejected by {@link #equal(String, Object)} (for example an empty or blank key,
+     *                                  or a value that is invalid as a scalar operand or is a cyclic object array)
      */
     public static And idToCond(final EntityId entityId) {
         N.checkArgNotNull(entityId, cs.entityId);
@@ -1157,7 +1184,7 @@ public final class Filters {
      * @param entityIds collection of {@link EntityId}s (must not be {@code null}, empty, or contain {@code null})
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, contains {@code null}, or contains an
-     *         {@link EntityId} with no keys
+     *         {@link EntityId} with no keys or with a key/value pair rejected by {@link #equal(String, Object)}
      */
     public static Or idToCond(final Collection<? extends EntityId> entityIds) {
         N.checkArgNotNull(entityIds, cs.entityIds);
@@ -1178,7 +1205,8 @@ public final class Filters {
      *
      * @param entityId the {@link EntityId} containing key-value pairs (must not be {@code null})
      * @return an {@link And} condition
-     * @throws IllegalArgumentException if {@code entityId} is {@code null} or contains no keys
+     * @throws IllegalArgumentException if {@code entityId} is {@code null} or contains no keys, or if a key/value pair
+     *                                  is rejected by {@link #equal(String, Object)}
      * @deprecated the digit-abbreviation name is inconsistent with this class's spelled-out naming
      *             convention; use {@link #idToCond(EntityId)} instead
      */
@@ -1194,7 +1222,7 @@ public final class Filters {
      * @param entityIds collection of {@link EntityId}s (must not be {@code null}, empty, or contain {@code null})
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entityIds} is {@code null}, empty, contains {@code null},
-     *         or contains an {@link EntityId} with no keys
+     *         or contains an {@link EntityId} with no keys or with a key/value pair rejected by {@link #equal(String, Object)}
      * @deprecated the digit-abbreviation name is inconsistent with this class's spelled-out naming
      *             convention; use {@link #idToCond(Collection)} instead
      */
@@ -1220,7 +1248,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
-     *                                  nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue} is a cyclic
+     *                                  object array
      */
     public static NotEqual notEqual(final String propName, final Object propValue) {
         return new NotEqual(propName, propValue);
@@ -1263,7 +1292,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
-     *                                  nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue} is a cyclic
+     *                                  object array
      */
     public static NotEqual ne(final String propName, final Object propValue) {
         return notEqual(propName, propValue);
@@ -1306,7 +1336,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public static GreaterThan greaterThan(final String propName, final Object propValue) {
         return new GreaterThan(propName, propValue);
@@ -1349,7 +1380,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public static GreaterThan gt(final String propName, final Object propValue) {
         return greaterThan(propName, propValue);
@@ -1392,7 +1424,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public static GreaterThanOrEqual greaterThanOrEqual(final String propName, final Object propValue) {
         return new GreaterThanOrEqual(propName, propValue);
@@ -1435,7 +1468,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public static GreaterThanOrEqual ge(final String propName, final Object propValue) {
         return greaterThanOrEqual(propName, propValue);
@@ -1478,7 +1512,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public static LessThan lessThan(final String propName, final Object propValue) {
         return new LessThan(propName, propValue);
@@ -1521,7 +1556,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public static LessThan lt(final String propName, final Object propValue) {
         return lessThan(propName, propValue);
@@ -1564,7 +1600,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public static LessThanOrEqual lessThanOrEqual(final String propName, final Object propValue) {
         return new LessThanOrEqual(propName, propValue);
@@ -1607,7 +1644,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
      *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
-     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand)
+     *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
+     *                                  is a cyclic object array
      */
     public static LessThanOrEqual le(final String propName, final Object propValue) {
         return lessThanOrEqual(propName, propValue);
@@ -1650,7 +1688,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if either bound is
      *                                  {@code null} or a blank {@link SqlExpression}, or if either bound is any other {@link Condition}
      *                                  than an {@link SqlExpression} or a scalar {@link SubQuery} (an ordinary predicate, Criteria,
-     *                                  clause, JOIN or {@code ON}/{@code USING} connector, or an {@link All}/{@link Any}/{@link Some} operand)
+     *                                  clause, JOIN or {@code ON}/{@code USING} connector, or an {@link All}/{@link Any}/{@link Some} operand);
+     *                                  or if either bound is a cyclic object array
      */
     public static Between between(final String propName, final Object minValue, final Object maxValue) {
         return new Between(propName, minValue, maxValue);
@@ -1693,7 +1732,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if either bound is
      *                                  {@code null} or a blank {@link SqlExpression}, or if either bound is any other {@link Condition}
      *                                  than an {@link SqlExpression} or a scalar {@link SubQuery} (an ordinary predicate, Criteria,
-     *                                  clause, JOIN or {@code ON}/{@code USING} connector, or an {@link All}/{@link Any}/{@link Some} operand)
+     *                                  clause, JOIN or {@code ON}/{@code USING} connector, or an {@link All}/{@link Any}/{@link Some} operand);
+     *                                  or if either bound is a cyclic object array
      */
     public static NotBetween notBetween(final String propName, final Object minValue, final Object maxValue) {
         return new NotBetween(propName, minValue, maxValue);
@@ -1753,7 +1793,7 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue} is
      *                                  {@code null}, a blank {@link SqlExpression}, or an {@link All}/{@link Any}/{@link Some} operand, or if
      *                                  {@code propValue} is any other {@link Condition} (an ordinary predicate, Criteria, clause,
-     *                                  JOIN or {@code ON}/{@code USING} connector)
+     *                                  JOIN or {@code ON}/{@code USING} connector); or if {@code propValue} is a cyclic object array
      */
     public static Like like(final String propName, final Object propValue) {
         return new Like(propName, propValue);
@@ -1813,7 +1853,7 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue} is
      *                                  {@code null}, a blank {@link SqlExpression}, or an {@link All}/{@link Any}/{@link Some} operand, or if
      *                                  {@code propValue} is any other {@link Condition} (an ordinary predicate, Criteria, clause,
-     *                                  JOIN or {@code ON}/{@code USING} connector)
+     *                                  JOIN or {@code ON}/{@code USING} connector); or if {@code propValue} is a cyclic object array
      */
     public static NotLike notLike(final String propName, final Object propValue) {
         return new NotLike(propName, propValue);
@@ -2253,8 +2293,9 @@ public final class Filters {
      * @param conditions the array of conditions to combine with {@code OR}; {@code null} or empty
      *                   is permitted and yields the false identity {@code 1 = 0}
      * @return an {@link Or} junction
-     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
-     *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is or contains a Criteria,
+     *             a condition with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
+     *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
      *             or a blank {@link SqlExpression}
      */
@@ -2279,8 +2320,9 @@ public final class Filters {
      * @param conditions the collection of conditions to combine with {@code OR}; {@code null} or
      *                   empty is permitted and yields the false identity {@code 1 = 0}
      * @return an {@link Or} junction
-     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
-     *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is or contains a Criteria,
+     *             a condition with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
+     *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
      *             or a blank {@link SqlExpression}
      */
@@ -2305,8 +2347,9 @@ public final class Filters {
      * @param conditions the array of conditions to combine with {@code AND}; {@code null} or
      *                   empty is permitted and yields the true identity {@code 1 = 1}
      * @return an {@link And} junction
-     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
-     *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is or contains a Criteria,
+     *             a condition with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
+     *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
      *             or a blank {@link SqlExpression}
      */
@@ -2331,8 +2374,9 @@ public final class Filters {
      * @param conditions the collection of conditions to combine with {@code AND}; {@code null} or
      *                   empty is permitted and yields the true identity {@code 1 = 1}
      * @return an {@link And} junction
-     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is a Criteria,
-     *             a clause (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     * @throws IllegalArgumentException if any element of {@code conditions} is {@code null}, or is or contains a Criteria,
+     *             a condition with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
+     *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
      *             or a blank {@link SqlExpression}
      */
@@ -2360,8 +2404,9 @@ public final class Filters {
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
-     *             or if any element of {@code conditions} is {@code null}, or is a Criteria, a clause
-     *             (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     *             or if any element of {@code conditions} is {@code null}, or is or contains a Criteria, a condition
+     *             with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
+     *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
      *             or a blank {@link SqlExpression}
      */
@@ -2388,8 +2433,9 @@ public final class Filters {
      * @return a {@link Junction} with the specified operator
      * @throws NullPointerException if {@code operator} is {@code null}
      * @throws IllegalArgumentException if {@code operator} is not {@link Operator#AND} or {@link Operator#OR},
-     *             or if any element of {@code conditions} is {@code null}, or is a Criteria, a clause
-     *             (WHERE, JOIN variants, ORDER BY, etc.), an {@code ON}/{@code USING} connector, an
+     *             or if any element of {@code conditions} is {@code null}, or is or contains a Criteria, a condition
+     *             with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
+     *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
      *             or a blank {@link SqlExpression}
      */
@@ -2454,7 +2500,10 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code propOrColumnName}
+     *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
+     *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
+     *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
      */
     public static GroupBy groupByAsc(final String propOrColumnName) {
         return new GroupBy(propOrColumnName, SortDirection.ASC);
@@ -2471,7 +2520,11 @@ public final class Filters {
      *
      * @param propNames the property/column names to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupByAsc(final String... propNames) {
         return new GroupBy(Array.asList(propNames), SortDirection.ASC);
@@ -2489,7 +2542,11 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupByAsc(final Collection<String> propNames) {
         return new GroupBy(propNames, SortDirection.ASC);
@@ -2506,7 +2563,10 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code propOrColumnName}
+     *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
+     *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
+     *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
      */
     public static GroupBy groupByDesc(final String propOrColumnName) {
         return new GroupBy(propOrColumnName, SortDirection.DESC);
@@ -2523,7 +2583,11 @@ public final class Filters {
      *
      * @param propNames the property/column names to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupByDesc(final String... propNames) {
         return new GroupBy(Array.asList(propNames), SortDirection.DESC);
@@ -2541,7 +2605,11 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupByDesc(final Collection<String> propNames) {
         return new GroupBy(propNames, SortDirection.DESC);
@@ -2560,7 +2628,11 @@ public final class Filters {
      *
      * @param propNames the property/column names to group by
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupBy(final String... propNames) {
         return new GroupBy(propNames);
@@ -2581,7 +2653,11 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to group by
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupBy(final Collection<String> propNames) {
         return new GroupBy(propNames);
@@ -2599,7 +2675,11 @@ public final class Filters {
      * @param propNames collection of property/column names to group by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null}, empty, or blank, if {@code direction} is {@code null},
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupBy(final Collection<String> propNames, final SortDirection direction) {
         return new GroupBy(propNames, direction);
@@ -2617,7 +2697,11 @@ public final class Filters {
      * @param propName the property/column name to group by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code direction} is {@code null},
+     *                                  or if {@code propName} begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupBy(final String propName, final SortDirection direction) {
         return new GroupBy(propName, direction);
@@ -2638,7 +2722,10 @@ public final class Filters {
      * @param direction2 second property sort direction
      * @return a {@link GroupBy} clause
      * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the property names are not
-     *                                  distinct, or if any sort direction is {@code null}
+     *                                  distinct, if any sort direction is {@code null}, or if {@code propName1} begins with a SQL clause
+     *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
+     *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
+     *                                  accepted), which cannot be nested inside a clause
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
         checkDistinctPropNames(propName1, propName2);
@@ -2663,7 +2750,10 @@ public final class Filters {
      * @param direction3 third property sort direction
      * @return a {@link GroupBy} clause
      * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the property names are not
-     *                                  distinct, or if any sort direction is {@code null}
+     *                                  distinct, if any sort direction is {@code null}, or if {@code propName1} begins with a SQL clause
+     *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
+     *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
+     *                                  accepted), which cannot be nested inside a clause
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
@@ -2687,7 +2777,11 @@ public final class Filters {
      *
      * @param groupings map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
+     * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, if any property name is {@code null}, empty, or blank, if any sort direction is {@code null},
+     *                                  or if the first key begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static GroupBy groupBy(final Map<String, SortDirection> groupings) {
         return new GroupBy(groupings);
@@ -2770,7 +2864,10 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code propOrColumnName}
+     *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
+     *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
+     *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
      */
     public static OrderBy orderByAsc(final String propOrColumnName) {
         return new OrderBy(propOrColumnName, SortDirection.ASC);
@@ -2787,7 +2884,11 @@ public final class Filters {
      *
      * @param propNames the property/column names to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderByAsc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.ASC);
@@ -2805,7 +2906,11 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderByAsc(final Collection<String> propNames) {
         return new OrderBy(propNames, SortDirection.ASC);
@@ -2822,7 +2927,10 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code propOrColumnName}
+     *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
+     *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
+     *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
      */
     public static OrderBy orderByDesc(final String propOrColumnName) {
         return new OrderBy(propOrColumnName, SortDirection.DESC);
@@ -2839,7 +2947,11 @@ public final class Filters {
      *
      * @param propNames the property/column names to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderByDesc(final String... propNames) {
         return new OrderBy(Array.asList(propNames), SortDirection.DESC);
@@ -2857,7 +2969,11 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderByDesc(final Collection<String> propNames) {
         return new OrderBy(propNames, SortDirection.DESC);
@@ -2875,7 +2991,11 @@ public final class Filters {
      *
      * @param propNames the property/column names to order by
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderBy(final String... propNames) {
         return new OrderBy(propNames);
@@ -2897,7 +3017,11 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to order by
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderBy(final Collection<String> propNames) {
         return new OrderBy(propNames);
@@ -2915,7 +3039,11 @@ public final class Filters {
      * @param propNames collection of property/column names to order by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null}, empty, or blank, if {@code direction} is {@code null},
+     *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderBy(final Collection<String> propNames, final SortDirection direction) {
         return new OrderBy(propNames, direction);
@@ -2933,7 +3061,11 @@ public final class Filters {
      * @param propName the property/column name to order by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code direction} is {@code null},
+     *                                  or if {@code propName} begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderBy(final String propName, final SortDirection direction) {
         return new OrderBy(propName, direction);
@@ -2954,7 +3086,10 @@ public final class Filters {
      * @param direction2 second property sort direction
      * @return an {@link OrderBy} clause
      * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the property names are not
-     *                                  distinct, or if any sort direction is {@code null}
+     *                                  distinct, if any sort direction is {@code null}, or if {@code propName1} begins with a SQL clause
+     *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
+     *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
+     *                                  accepted), which cannot be nested inside a clause
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
         checkDistinctPropNames(propName1, propName2);
@@ -2979,7 +3114,10 @@ public final class Filters {
      * @param direction3 third property sort direction
      * @return an {@link OrderBy} clause
      * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the property names are not
-     *                                  distinct, or if any sort direction is {@code null}
+     *                                  distinct, if any sort direction is {@code null}, or if {@code propName1} begins with a SQL clause
+     *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
+     *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
+     *                                  accepted), which cannot be nested inside a clause
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
@@ -3026,7 +3164,11 @@ public final class Filters {
      *
      * @param orders map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, if any property name is {@code null}, empty, or blank, or if any sort direction is {@code null}
+     * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, if any property name is {@code null}, empty, or blank, if any sort direction is {@code null},
+     *                                  or if the first key begins with a SQL clause keyword (for example {@code WHERE},
+     *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
+     *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
+     *                                  inside a clause
      */
     public static OrderBy orderBy(final Map<String, SortDirection> orders) {
         return new OrderBy(orders);
@@ -3203,7 +3345,8 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always, because a qualified {@code JOIN} requires a non-null
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     *                                  first; otherwise because a qualified {@code JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #join(String, Condition)} or {@link #crossJoin(String)} instead
      */
@@ -3281,7 +3424,8 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always, because a qualified {@code LEFT JOIN} requires a non-null
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     *                                  first; otherwise because a qualified {@code LEFT JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #leftJoin(String, Condition)} or {@link #crossJoin(String)} instead
      */
@@ -3359,7 +3503,8 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always, because a qualified {@code RIGHT JOIN} requires a non-null
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     *                                  first; otherwise because a qualified {@code RIGHT JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #rightJoin(String, Condition)} or {@link #crossJoin(String)} instead
      */
@@ -3472,7 +3617,8 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always, because a qualified {@code FULL JOIN} requires a non-null
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     *                                  first; otherwise because a qualified {@code FULL JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #fullJoin(String, Condition)} or {@link #crossJoin(String)} instead
      */
@@ -3550,7 +3696,8 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always, because a qualified {@code INNER JOIN} requires a non-null
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     *                                  first; otherwise because a qualified {@code INNER JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #innerJoin(String, Condition)} or {@link #crossJoin(String)} instead
      */
@@ -3806,7 +3953,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
      *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
-     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
+     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if an element of {@code values}
+     *                                  is a cyclic object array
      */
     public static In in(final String propName, final Object... values) {
         return in(propName, values == null ? (Collection<?>) null : Arrays.asList(values));
@@ -3829,7 +3977,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
      *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
-     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
+     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if an element of {@code values}
+     *                                  is a cyclic object array
      */
     public static In in(final String propName, final Collection<?> values) {
         return new In(propName, values);
@@ -3866,7 +4015,8 @@ public final class Filters {
      *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
      *                                  or if any row element is a {@link Condition} other than a non-blank {@link SqlExpression}
      *                                  or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
-     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
+     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if a row element
+     *                                  is a cyclic object array
      */
     public static In in(final Collection<String> propNames, final Collection<?> valueRows) {
         return new In(propNames, valueRows);
@@ -4076,7 +4226,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
      *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
-     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
+     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if an element of {@code values}
+     *                                  is a cyclic object array
      */
     public static NotIn notIn(final String propName, final Object... values) {
         return notIn(propName, values == null ? (Collection<?>) null : Arrays.asList(values));
@@ -4099,7 +4250,8 @@ public final class Filters {
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
      *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
-     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
+     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if an element of {@code values}
+     *                                  is a cyclic object array
      */
     public static NotIn notIn(final String propName, final Collection<?> values) {
         return new NotIn(propName, values);
@@ -4136,7 +4288,8 @@ public final class Filters {
      *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
      *                                  or if any row element is a {@link Condition} other than a non-blank {@link SqlExpression}
      *                                  or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
-     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected)
+     *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if a row element
+     *                                  is a cyclic object array
      */
     public static NotIn notIn(final Collection<String> propNames, final Collection<?> valueRows) {
         return new NotIn(propNames, valueRows);
@@ -4433,8 +4586,12 @@ public final class Filters {
      * @param propName the property to select (must not be {@code null}, empty, or blank)
      * @param condition the optional query condition; may be {@code null}
      * @return a structured subquery
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, {@code propName} is
-     *         {@code null}, empty, or blank, or {@code condition} is not valid in a structured subquery
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code propName} is
+     *         {@code null}, empty, or blank, if {@code condition} uses an {@code ON}/{@code USING} operator, if
+     *         {@code condition} is a {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT
+     *         modifier (e.g. {@code DISTINCT}), or if {@code condition} is an {@code ANY}/{@code ALL}/{@code SOME}
+     *         quantified-subquery operand or a standalone {@link SubQuery}
+     *         (neither of which can be nested inside the generated {@code WHERE} clause)
      */
     public static SubQuery subQuery(final Class<?> entityClass, final String propName, final Condition condition) {
         return new SubQuery(entityClass, propName, condition);
@@ -4521,7 +4678,11 @@ public final class Filters {
      * @param condition the optional query condition; may be {@code null}
      * @return a structured subquery
      * @throws IllegalArgumentException if {@code entityName} or {@code propName} is {@code null}, empty,
-     *         or blank, or {@code condition} is not valid in a structured subquery
+     *         or blank, if {@code condition} uses an {@code ON}/{@code USING} operator, if {@code condition} is a
+     *         {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT modifier
+     *         (e.g. {@code DISTINCT}), or if {@code condition} is an {@code ANY}/{@code ALL}/{@code SOME}
+     *         quantified-subquery operand or a standalone {@link SubQuery}
+     *         (neither of which can be nested inside the generated {@code WHERE} clause)
      */
     public static SubQuery subQuery(final String entityName, final String propName, final Condition condition) {
         return new SubQuery(entityName, propName, condition);
@@ -4571,7 +4732,9 @@ public final class Filters {
      *                   supplied; may be {@code null} or empty)
      * @param sql the complete SQL for the subquery (must not be {@code null}, empty, or blank)
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, or contains an unbound parameter placeholder
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
+     *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
+     *         or contains a positional {@code ?} placeholder (this overload carries no bindings)
      * @see #subQuery(String)
      * @deprecated when the full SQL is supplied, {@code entityName} is not used to build the
      *             subquery; use {@link #subQuery(String)} instead.
@@ -4599,7 +4762,9 @@ public final class Filters {
      *
      * @param sql the complete SQL for the subquery (must not be {@code null}, empty, or blank)
      * @return a {@link SubQuery}
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, or contains an unbound parameter placeholder
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
+     *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
+     *         or contains a positional {@code ?} placeholder (this overload carries no bindings)
      */
     public static SubQuery subQuery(final String sql) {
         return new SubQuery(sql);
@@ -4627,9 +4792,10 @@ public final class Filters {
      * @param parameters positional binding values in placeholder encounter order (must not be {@code null});
      *                   individual values may be {@code null}
      * @return a raw {@link SubQuery} carrying an immutable binding snapshot
-     * @throws IllegalArgumentException if the SQL is blank, {@code parameters} is {@code null}, a named/MyBatis
-     *         marker is present, the placeholder and binding counts differ, or an object-array binding contains
-     *         a direct or indirect cycle
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters} is {@code null};
+     *         the SQL contains malformed placeholder text such as an unclosed {@code #{...}} marker; a named
+     *         ({@code :name}) or MyBatis {@code #{...}} marker is present; the placeholder and binding counts differ;
+     *         or an object-array binding contains a direct or indirect cycle
      */
     public static SubQuery subQuery(final String sql, final Collection<?> parameters) {
         return new SubQuery(sql, parameters);

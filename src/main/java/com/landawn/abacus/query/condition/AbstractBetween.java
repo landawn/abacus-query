@@ -101,8 +101,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      *                 non-null literal value, an explicit {@link SqlExpression}, or a scalar
      *                 {@link SubQuery} whose parameters will be spliced into {@link #parameters()}
      * @throws NullPointerException if {@code operator} is {@code null}
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code operator}
-     *                                  is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
+     * @throws IllegalArgumentException if {@code operator} is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
+     *                                  if {@code propName} is {@code null}, empty, or blank,
      *                                  if either bound is {@code null}, an ordinary predicate or query clause,
      *                                  a blank {@link SqlExpression}, an {@link All}, {@link Any}, or {@link Some}
      *                                  quantified operand, or a scalar {@link SubQuery} with a known, non-wildcard
@@ -290,7 +290,9 @@ public abstract class AbstractBetween extends ComposableCondition {
      *                     if {@code null}, {@link com.landawn.abacus.util.NamingPolicy#NO_CHANGE} is used
      * @return a SQL representation of this condition
      * @throws IllegalArgumentException if either bound is a {@code NaN} or infinite {@link Float}/{@link Double},
-     *                                  or a {@link Number} whose text is not a valid numeric literal
+     *                                  or a {@link Number} whose text is not a valid numeric literal, or if a
+     *                                  {@link SubQuery} bound cannot be rendered, as documented for
+     *                                  {@link SubQuery#toSql(NamingPolicy)}
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
