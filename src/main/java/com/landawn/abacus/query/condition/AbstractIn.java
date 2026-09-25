@@ -200,19 +200,18 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
      *                                  if a scalar {@link SubQuery} has a known, non-wildcard projection containing
      *                                  multiple columns, or if a tuple element is a cyclic object array
+     * @throws RuntimeException if inspecting bean-row metadata or invoking a requested property getter fails
      */
     protected AbstractIn(final Collection<String> propNames, final Operator operator, final Collection<?> valueRows) {
         super(validateOperator(operator));
 
-        this.propNames = copyAndValidatePropNames(propNames);
+        final ImmutableList<String> validatedPropNames = copyAndValidatePropNames(propNames);
         N.checkArgNotNull(valueRows, cs.valueRows);
-
-        this.rowValueConstructor = true;
 
         final List<?> valueRowsCopy = new ArrayList<>(valueRows);
         N.checkArgNotEmpty(valueRowsCopy, cs.valueRows);
 
-        final int arity = this.propNames.size();
+        final int arity = validatedPropNames.size();
         final List<List<Object>> copy = new ArrayList<>(valueRowsCopy.size());
 
         int rowIndex = 0;
@@ -222,7 +221,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
             // Each tuple is wrapped unmodifiable so values() is immutable in depth, not just at the
             // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).
-            final List<Object> tuple = toRowTuple(row, this.propNames, arity);
+            final List<Object> tuple = toRowTuple(row, validatedPropNames, arity);
             final String rowPath = "valueRows[" + rowIndex++ + "]";
 
             // Snapshot array/Date/Calendar tuple elements like the single-column form and Binary.IN.
@@ -235,10 +234,19 @@ public abstract class AbstractIn extends ComposableCondition {
             copy.add(Collections.unmodifiableList(tuple));
         }
 
+        this.propNames = validatedPropNames;
+        this.rowValueConstructor = true;
         this.rebuildPerCall = containsSnapshotMutableValue(copy, true);
         this.values = copy;
     }
 
+    /**
+     * Validates the operator used by a membership condition.
+     *
+     * @param operator the membership operator to validate
+     * @return the validated operator
+     * @throws IllegalArgumentException if {@code operator} is null or is neither IN nor NOT_IN
+     */
     private static Operator validateOperator(final Operator operator) {
         N.checkArgNotNull(operator, cs.operator);
 
@@ -253,6 +261,14 @@ public abstract class AbstractIn extends ComposableCondition {
      * Normalizes a single row-value row into a list of exactly {@code arity} values, ordered to
      * match {@code propNames}. See {@link #AbstractIn(Collection, Operator, Collection)} for the accepted
      * row forms.
+     *
+     * @param row the non-null row to read
+     * @param propNames the validated property names, in tuple order
+     * @param arity the required tuple width
+     * @return the row values in property order
+     * @throws IllegalArgumentException if the row type is unsupported, a positional row has the wrong width,
+     *         or a map or bean row does not expose a requested property
+     * @throws RuntimeException if inspecting bean-row metadata or invoking a requested property getter fails
      */
     private static List<Object> toRowTuple(final Object row, final Collection<String> propNames, final int arity) {
         if (row instanceof Map) {
@@ -312,8 +328,13 @@ public abstract class AbstractIn extends ComposableCondition {
     }
 
     /**
+     * Checks that a positional value row has the required width.
+     *
+     * @param actual the observed row width
+     * @param arity the required row width
      * @param truncated {@code true} when {@code actual} is only a lower bound because the row was read from an
      *                  {@link Iterable} that was not consumed past {@code arity + 1} elements
+     * @throws IllegalArgumentException if {@code actual} differs from {@code arity}
      */
     private static void checkRowWidth(final int actual, final int arity, final boolean truncated) {
         if (actual != arity) {
@@ -323,6 +344,13 @@ public abstract class AbstractIn extends ComposableCondition {
         }
     }
 
+    /**
+     * Rejects null membership values.
+     *
+     * @param values the non-null values to validate
+     * @param path the path included in the error message
+     * @throws IllegalArgumentException if {@code values} contains a null element
+     */
     private static void rejectNullElements(final Collection<?> values, final String path) {
         int index = 0;
 
@@ -335,6 +363,14 @@ public abstract class AbstractIn extends ComposableCondition {
         }
     }
 
+    /**
+     * Snapshots and validates the row-value projection.
+     *
+     * @param propNames the property names to copy
+     * @return an immutable, validated snapshot
+     * @throws IllegalArgumentException if {@code propNames} is null, yields no elements, or contains
+     *         a null, empty, or blank property name
+     */
     private static ImmutableList<String> copyAndValidatePropNames(final Collection<String> propNames) {
         N.checkArgNotNull(propNames, cs.propNames);
 
@@ -607,6 +643,9 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  or a {@link Number} whose text is not a valid numeric literal, or if a
      *                                  {@link SubQuery} value cannot be rendered, as documented for
      *                                  {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
@@ -624,7 +663,7 @@ public abstract class AbstractIn extends ComposableCondition {
                 if (p++ > 0) {
                     sb.append(SK.COMMA_SPACE);
                 }
-                sb.append(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy));
+                sb.append(QueryUtil.terminateLineComment(String.valueOf(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy))));
             }
             sb.append(SK._PARENTHESIS_R).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
 
@@ -649,7 +688,10 @@ public abstract class AbstractIn extends ComposableCondition {
             return sb.toString();
         }
 
-        sb.append(QueryUtil.convertIdentifier(propName(), effectiveNamingPolicy)).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L);
+        sb.append(QueryUtil.terminateLineComment(String.valueOf(QueryUtil.convertIdentifier(propName(), effectiveNamingPolicy))))
+                .append(SK._SPACE)
+                .append(opStr)
+                .append(SK.SPACE_PARENTHESIS_L);
 
         if (values != null) {
             for (int i = 0; i < size; i++) {

@@ -145,6 +145,7 @@ public class NotIn extends AbstractIn {
      *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
      *                                  or if a scalar {@link SubQuery} has a known, non-wildcard projection containing multiple columns,
      *                                  or if a row element is a cyclic object array
+     * @throws RuntimeException if inspecting bean-row metadata or invoking a requested property getter fails
      */
     public NotIn(final Collection<String> propNames, final Collection<?> valueRows) {
         super(propNames, Operator.NOT_IN, valueRows);

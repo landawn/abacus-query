@@ -150,6 +150,14 @@ public class On extends Cell {
         super(Operator.ON, validateOnCondition(condition));
     }
 
+    /**
+     * Validates an ON predicate.
+     *
+     * @param cond the predicate to wrap
+     * @return the validated predicate
+     * @throws IllegalArgumentException if {@code cond} is null or contains a null operator, Criteria,
+     *         clause, ON/USING connector, quantified operand, standalone SubQuery, or blank SqlExpression
+     */
     private static Condition validateOnCondition(final Condition cond) {
         N.checkArgNotNull(cond, cs.condition);
 

@@ -140,48 +140,18 @@ import com.landawn.abacus.util.Strings;
  * identifies a {@code line} or {@code lseg} literal, constructor or cast (for example
  * {@code ?- lseg '(0,0),(1,0)'} or {@code ?| ?::line}). Cast type names may be separated by whitespace
  * or comments, double-quoted, or qualified with {@code pg_catalog}; quoted names retain their case
- * sensitivity (for example {@code ?- CAST(? AS "line")}). Without type information, {@code ?-column}
+ * sensitivity (for example {@code ?- CAST(? AS "line")}). Chained casts use their final type, so
+ * {@code ?- CAST(? AS text)::line} contains only the operand's binding. Qualified typed literals may be
+ * adjacent to their quoted value, as in {@code ?-pg_catalog.line'(0,0),(1,0)'}. Without type information, {@code ?-column}
  * is ambiguous with a placeholder followed by subtraction and is treated as a binding. SQL/JSON clauses
- * {@code NULL ON NULL}, {@code ABSENT ON NULL} and {@code FORMAT JSON} are recognized in constructor
+ * {@code NULL ON NULL}, {@code ABSENT ON NULL}, {@code FORMAT JSON}, and
+ * {@code WITH}/{@code WITHOUT UNIQUE [KEYS]} are recognized in constructor
  * value-argument context, not in the query body of {@code JSON_ARRAY(SELECT ...)} or
- * {@code JSON_ARRAY(WITH ... SELECT ...)}. Nested constructors establish their own value context.
+ * {@code JSON_ARRAY(WITH ... SELECT ...)}, including a query beginning with a parenthesized term.
+ * A scalar subquery followed by a comma still belongs to a constructor value list.
+ * Nested constructors establish their own value context.
  * A genuine JSON operator may still take {@code NULL}, an identifier named {@code format}, or
  * a call to {@code format(...)} as its right operand.</p>
- *
- * <p id="current-limitations"><b>Current limitations:</b> The following cases recorded in
- * {@code docs/open_issues.txt} remain unsupported at present. Question marks can be misclassified
- * in these forms, affecting both {@link #parameterCount()} and mixed-parameter-style validation:</p>
- * <ul>
- *   <li>SQL/JSON uniqueness clauses: {@code WITH UNIQUE KEYS} and {@code WITHOUT UNIQUE KEYS}
- *       are not recognized as constructor options. For example,
- *       {@code SELECT ARRAY[JSON_OBJECT('k' VALUE ? WITH UNIQUE KEYS)]} reports zero parameters
- *       instead of one; {@code WITHOUT UNIQUE KEYS} behaves the same way. Adding a named binding
- *       such as {@code :other} can therefore bypass mixed-style rejection.</li>
- *   <li>Chained geometric casts: recognition can stop at an intermediate non-geometric type.
- *       Both {@code SELECT ?- CAST(? AS text)::line} and {@code SELECT ?- ?::text ::line}
- *       report two parameters instead of one because the unary operator is counted as a binding.</li>
- *   <li>Qualified geometric literals without separating whitespace:
- *       {@code SELECT ?-pg_catalog.line'(0,0),(1,0)'} reports one parameter instead of zero.
- *       The adjacent-literal fallback recognizes unqualified {@code line'} and {@code lseg'}
- *       prefixes only; whitespace before the quoted literal can change classification.</li>
- *   <li>Parenthesized query terms in {@code JSON_ARRAY}: a leading parenthesized query is not
- *       recognized as the query form, so query-body tokens can be mistaken for constructor options.
- *       For example, the following statement reports one parameter instead of zero because
- *       {@code NULL ON NULL}, spanning two join predicates, is treated as a constructor clause:
- *       <pre>{@code
- * SELECT JSON_ARRAY(
- *   (SELECT 1) UNION
- *   SELECT 1 FROM t JOIN u JOIN v ON v.payload ? NULL ON NULL
- * )
- *       }</pre>
- *       Adding a named binding can consequently cause a false mixed-style rejection.</li>
- * </ul>
- * <p>A related column-mapping limitation in {@link QueryUtil}, also recorded in that issue file,
- * affects automatic table qualification: a mapping such as
- * {@code @Column("U&\"caf!00e9\" UESCAPE E'!'")} is not recognized as an unqualified identifier
- * because the {@code E} prefix on the escape literal is unsupported. The table alias is therefore
- * omitted, which can produce an ambiguous column reference in a self-join. The ordinary escape
- * literal form {@code U&"caf!00e9" UESCAPE '!'} supports automatic qualification.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -251,6 +221,15 @@ public final class ParsedSql {
     /** Cached hash code. This object is immutable, so {@code sql.hashCode()} is computed once. */
     private final int hashCode;
 
+    /**
+     * Parses a nonblank SQL string whose outer argument validation has already completed.
+     *
+     * @param sql the nonblank SQL string
+     * @throws IllegalArgumentException if a recognized data-operation statement mixes parameter styles,
+     *         contains an iBatis/MyBatis marker without a closing brace, or contains an unpaired UTF-16
+     *         surrogate in a prospective colon-style name, its preceding boundary, or immediately after
+     *         a positional marker opening a standalone bracket group
+     */
     private ParsedSql(final String sql) {
         this.sql = sql.trim();
         hashCode = this.sql.hashCode();
@@ -525,7 +504,7 @@ public final class ParsedSql {
         if ((type & QUESTION_MARK_TYPE) != 0) {
             msg.append(" Recognized PostgreSQL JSON existence operators ('?', '?|', '?&') and typed unary geometric operators ('?-', '?|')")
                     .append(" are not parameters. Value placeholders before SQL/JSON constructor clauses")
-                    .append(" (NULL ON NULL, ABSENT ON NULL, FORMAT JSON) are still parameters.")
+                    .append(" (NULL ON NULL, ABSENT ON NULL, FORMAT JSON, WITH/WITHOUT UNIQUE KEYS) are still parameters.")
                     .append(" In compact expressions such as ?-1 and ?||'x', the leading '?' is a positional parameter.");
         }
 
@@ -550,9 +529,8 @@ public final class ParsedSql {
      * </ul>
      *
      * <p>Mixing detected parameter styles in the same SQL statement results in an
-     * {@code IllegalArgumentException}. Detection is subject to the
-     * <a href="#current-limitations">current limitations</a> in the class-level documentation,
-     * which can cause missed or false mixed-style rejections.</p>
+     * {@code IllegalArgumentException}. The class-level documentation describes the supported
+     * operator contexts and the treatment of ambiguous bracket quoting.</p>
      *
      * <p>Parameter conversion is only applied when the SQL is a recognized data operation statement
      * (see the class-level documentation). All trailing semicolons and surrounding whitespace are
@@ -575,16 +553,14 @@ public final class ParsedSql {
      *
      * @param sql the SQL string to parse (must not be {@code null}, empty, or blank)
      * @return a {@code ParsedSql} instance for the given SQL (typically a cached instance)
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, if it mixes different
-     *         parameter styles ({@code ?}, {@code :propName}, {@code #{propName}}), or if it contains
-     *         a malformed iBatis/MyBatis parameter that is missing its closing brace, or an unpaired
-     *         UTF-16 surrogate in, or immediately before, a prospective colon-style parameter name,
-     *         or directly after a {@code '?'} that opens the content of a bracket group
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; or if parameter detection
+     *         in a recognized data-operation statement finds mixed styles ({@code ?}, {@code :propName},
+     *         {@code #{propName}}), an iBatis/MyBatis parameter missing its closing brace, an unpaired UTF-16
+     *         surrogate in or immediately before a prospective colon-style name, or an unpaired surrogate
+     *         directly after a {@code '?'} opening the content of a standalone bracket group
      */
     public static ParsedSql parse(final String sql) {
-        if (Strings.isBlank(sql)) {
-            throw new IllegalArgumentException("sql must not be null, empty, or blank");
-        }
+        N.checkArgument(!Strings.isBlank(sql), "sql must not be null, empty, or blank");
 
         final String normalizedSql = sql.trim();
         PoolableAdapter<ParsedSql> w = pool.get(normalizedSql);
@@ -697,10 +673,10 @@ public final class ParsedSql {
      * documentation); for other SQL this returns {@code 0}.
      *
      * <p>A value placeholder in a SQL/JSON constructor remains counted before {@code NULL ON NULL},
-     * {@code ABSENT ON NULL}, or {@code FORMAT JSON}. For example,
+     * {@code ABSENT ON NULL}, {@code FORMAT JSON}, or {@code WITH}/{@code WITHOUT UNIQUE [KEYS]}. For example,
      * {@code SELECT JSON_OBJECT('k' VALUE ? NULL ON NULL)} contains one parameter, whereas
      * {@code SELECT ?- lseg '(0,0),(1,0)'} contains none. See the class-level documentation for the
-     * supported operator contexts and <a href="#current-limitations">current limitations</a>.
+     * supported operator contexts and the treatment of ambiguous bracket quoting.
      * Constructor option words inside a recognized {@code JSON_ARRAY} query body
      * retain their ordinary SQL meaning; {@code SELECT JSON_ARRAY(SELECT payload ? format JSON FROM t)}
      * contains no parameters.</p>
@@ -978,6 +954,15 @@ public final class ParsedSql {
         return "CALL".equalsIgnoreCase(next) ? "CALL" : null;
     }
 
+    /**
+     * Finds the end of a colon-style name, including its dot-separated segments.
+     *
+     * @param token the token containing the name
+     * @param fromIndex the first character after the colon
+     * @return the exclusive end of the name
+     * @throws IllegalArgumentException if an unpaired UTF-16 surrogate is encountered while scanning
+     *         the name or the first character after a segment separator
+     */
     private static int findNamedParameterEndIndex(final String token, final int fromIndex) {
         int index = fromIndex;
 
@@ -1023,7 +1008,7 @@ public final class ParsedSql {
     /**
      * Returns the original-text offsets of bracket openers recognized as subscripts by the default tokenizer.
      *
-     * @param sql the SQL text to inspect
+     * @param sql the SQL text to inspect; must not be {@code null}
      * @return sorted bracket-opening offsets
      * @throws NullPointerException if {@code sql} is {@code null}
      * @throws IllegalArgumentException if a standalone bracket group in {@code sql} starts with a {@code ':'} or
@@ -1046,8 +1031,9 @@ public final class ParsedSql {
      * standalone {@code [?]} has been rendered into that shape, its original subscript role cannot be
      * recovered from the resulting text alone.</p>
      *
-     * @param sql the original SQL text to inspect
-     * @param tokenizer the tokenizer configured for that SQL
+     * @param sql the original SQL text to inspect; must not be {@code null}
+     * @param tokenizer the tokenizer configured for that SQL; unused and may be {@code null} when
+     *        {@code sql} contains no {@code '['} character
      * @return sorted original-text offsets, or an empty array when no subscript is recognized
      * @throws NullPointerException if {@code sql} is {@code null}, or if {@code tokenizer} is {@code null} and
      *         {@code sql} contains a {@code '['}
@@ -1182,6 +1168,12 @@ public final class ParsedSql {
                 && !precededByQuote(token, bracketIndex, '\'') && !precededByQuote(token, bracketIndex, '"') && !precededByQuote(token, bracketIndex, '`');
     }
 
+    /**
+     * Checks whether a token can contain a colon-style binding.
+     *
+     * @throws IllegalArgumentException if a non-chained standalone bracket token containing a colon has
+     *         {@code ':'} or {@code '?'} as its first non-whitespace content, followed by an unpaired UTF-16 surrogate
+     */
     private static boolean mayContainNamedParameter(final String token, final boolean chainedSubscript) {
         return token.length() >= 2 && token.indexOf(_PREFIX_OF_NAMED_PARAMETER) >= 0
                 && (chainedSubscript || !isQuotedToken(token) || hasQuotedCastSuffix(token)) && !isCommentOrSpaceToken(token);
@@ -1213,6 +1205,12 @@ public final class ParsedSql {
         return result;
     }
 
+    /**
+     * Checks whether a token can contain an iBatis/MyBatis binding.
+     *
+     * @throws IllegalArgumentException if a non-chained standalone bracket token containing an iBatis/MyBatis opener
+     *         has {@code ':'} or {@code '?'} as its first non-whitespace content, followed by an unpaired UTF-16 surrogate
+     */
     private static boolean mayContainIbatisParameter(final String token, final boolean chainedSubscript) {
         // The minimum length of 2 admits the standalone "#{" token the tokenizer emits when
         // whitespace immediately follows the opener (e.g. "#{ id }"); the marker-assembly loop
@@ -1230,6 +1228,12 @@ public final class ParsedSql {
         return cast >= 0 && token.indexOf('"') > cast && token.indexOf('[') < 0 && !precededByQuote(token, cast, '\'') && !precededByQuote(token, cast, '`');
     }
 
+    /**
+     * Distinguishes quoted SQL tokens from parameter-bearing subscripts.
+     *
+     * @throws IllegalArgumentException if a standalone bracket token has {@code ':'} or {@code '?'} as its first
+     *         non-whitespace content, followed by an unpaired UTF-16 surrogate
+     */
     private static boolean isQuotedToken(final String token) {
         final int bracketIndex = token.indexOf('[');
 
@@ -1312,8 +1316,8 @@ public final class ParsedSql {
      * {@code standard_conforming_strings} is set to, so {@code backslashEscapes} is forced for it and both
      * readings see the same literal.</p>
      *
-     * <p>Otherwise no scanner calls this with a single reading: because the two readings disagree on where a
-     * literal such as {@code 'a\''} ends, {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}
+     * <p>When scanning markers inside bracket literals, the two readings can disagree on where a
+     * literal such as {@code 'a\''} ends. {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}
      * evaluates a token under BOTH readings and commits to a marker position only when they agree; a token on
      * which they disagree is left verbatim ({@code ARRAY['a\'', :id]} binds nothing and is emitted unchanged),
      * so an unbound marker fails loudly at the driver instead of a literal being silently corrupted.</p>
@@ -1424,6 +1428,9 @@ public final class ParsedSql {
      * {@code "N'a[?]'"}, {@code "\"col[?]\""}), one that follows a qualification dot ({@code "t.[what?]"}),
      * and a standalone bracket-quoted identifier that merely contains {@code '?'} ({@code "[what?]"},
      * {@code "[?foo]"}) do not qualify.
+     *
+     * @throws IllegalArgumentException if a standalone bracket token has {@code ':'} or {@code '?'} as its first
+     *         non-whitespace content, followed by an unpaired UTF-16 surrogate
      */
     private static boolean isParameterSubscriptToken(final String token) {
         final int bracketIndex = token.indexOf('[');
@@ -1489,6 +1496,9 @@ public final class ParsedSql {
      * subscript whose content starts with a named binding: the named-parameter prefix {@code ':'}
      * immediately followed by a valid parameter-name start. Shapes such as {@code "[:]"},
      * {@code "[::int]"} or {@code "[column]"} do not qualify and remain bracket-quoted identifiers.
+     *
+     * @throws IllegalArgumentException if the first non-whitespace character after the bracket is a colon followed by
+     *         an unpaired UTF-16 surrogate
      */
     private static boolean isNamedParameterSubscript(final String token, final int bracketIndex) {
         final int len = token.length();
@@ -1528,12 +1538,21 @@ public final class ParsedSql {
      * ({@code "::int"}), a qualified name and a {@code ':'} inside a name are not parameters.
      * {@code fromIndex} is where the scan resumed, that is the end of the previously extracted parameter, so
      * the second marker of {@code ":a:b"} is a parameter although a name character precedes it.
+     *
+     * @throws IllegalArgumentException if the character after the prospective colon or the preceding name-boundary
+     *         character is an unpaired UTF-16 surrogate
      */
     private static boolean isNamedParameterStart(final String token, final int index, final int fromIndex) {
         return index + 1 < token.length() && isNamedParameterIdentifierStart(namedParameterCodePointAt(token, index + 1))
                 && isNamedParameterStartBoundary(token, index, fromIndex);
     }
 
+    /**
+     * Checks the character immediately before a prospective colon-style marker.
+     *
+     * @throws IllegalArgumentException if the marker is not at the scan boundary and its preceding character is an
+     *         unpaired UTF-16 surrogate
+     */
     private static boolean isNamedParameterStartBoundary(final String token, final int parameterStartIndex, final int fromIndex) {
         if (parameterStartIndex == 0 || parameterStartIndex == fromIndex) {
             return true;
@@ -1574,6 +1593,9 @@ public final class ParsedSql {
      * {@code ARRAY[?+?+...]} take linear time as well as comma-separated arrays. The preliminary marker
      * agreement check and the two classification readings are needed only when backslashes can change
      * quote boundaries. Plain comma-separated bindings need neither tokenization nor operand checks.</p>
+     *
+     * @throws IllegalArgumentException if operand classification encounters an unpaired UTF-16 surrogate immediately
+     *         after a prospective colon-style marker
      */
     private static int[] findSubscriptPositionalParameterIndexes(final String token, final int fromIndex) {
         final int[] commaSeparated = commaSeparatedSubscriptBindings(token, fromIndex);
@@ -1632,6 +1654,9 @@ public final class ParsedSql {
      * Scans a bracket interior using SqlParser's default separators and this class's shared quote rules.
      * SqlParser itself keeps brackets opaque and uses a single escape reading, so invoking its next-token
      * methods would neither expose these operands nor preserve the subscript ambiguity contract.
+     *
+     * @throws IllegalArgumentException if operand classification encounters an unpaired UTF-16 surrogate immediately
+     *         after a prospective colon-style marker
      */
     private static int[] collectSubscriptPositionalParameterIndexes(final String token, final int fromIndex, final boolean backslashEscapes) {
         final List<String> words = new ArrayList<>();
@@ -1700,10 +1725,10 @@ public final class ParsedSql {
      * {@code ?||} ends in an operator even when its first character is a binding; inspecting only its
      * spelling as the previous token loses the middle binding in {@code ?||?||?}.
      *
-     * <p>Lookahead visits a bounded number of significant words. Matching parentheses for explicitly typed
-     * geometric operands are indexed lazily, once, instead of searching a suffix for each marker. JSON
-     * constructor scopes use an amortized constant-time stack. Scanning and auxiliary storage are linear
-     * in the token count; the ordinary no-question-mark path never creates this classifier.</p>
+     * <p>Lookahead follows operand grouping and consecutive cast suffixes. Matching parentheses for explicitly typed
+     * geometric operands and cast modifiers are indexed lazily, once, instead of searching a suffix for each marker. JSON
+     * constructor scopes use an amortized constant-time stack. Scanning is linear in the SQL length and
+     * auxiliary storage is linear in the token count; the ordinary no-question-mark path never creates this classifier.</p>
      */
     private static final class QuestionMarkClassifier {
         private final List<String> words;
@@ -1715,6 +1740,12 @@ public final class ParsedSql {
             this.wordOffsets = wordOffsets;
         }
 
+        /**
+         * Classifies positional markers while tracking SQL operand and constructor context.
+         *
+         * @throws IllegalArgumentException if a prospective colon-style operand marker, or the first non-whitespace
+         *         {@code ':'} or {@code '?'} in a standalone bracket group, is followed by an unpaired UTF-16 surrogate
+         */
         private int[] classify() {
             IntList indexes = null;
             boolean previousIsOperand = false;
@@ -1755,9 +1786,7 @@ public final class ParsedSql {
 
                         // A negative depth marks JSON_ARRAY's query form. FORMAT JSON in its SELECT
                         // list can be an operand and alias, while a nested constructor gets a new scope.
-                        final int next = "JSON_ARRAY".equalsIgnoreCase(previousWord) ? nextNonCommentWord(words, i + 1) : -1;
-                        final boolean query = next >= 0 && ("SELECT".equalsIgnoreCase(words.get(next)) || "WITH".equalsIgnoreCase(words.get(next))
-                                || "VALUES".equalsIgnoreCase(words.get(next)) || "TABLE".equalsIgnoreCase(words.get(next)));
+                        final boolean query = "JSON_ARRAY".equalsIgnoreCase(previousWord) && startsJsonArrayQuery(i);
                         jsonDepths[jsonDepthCount++] = query ? -depth : depth;
                     }
                 } else if (word.equals(")") || word.equals("]")) {
@@ -1820,6 +1849,37 @@ public final class ParsedSql {
             return indexes == null ? N.EMPTY_INT_ARRAY : indexes.toArray();
         }
 
+        /**
+         * Distinguishes a query expression from a value list whose first value is a scalar subquery.
+         *
+         * @throws IllegalArgumentException if parenthesis indexing encounters a split MyBatis token whose standalone
+         *         bracket group starts with a colon or question mark followed by an unpaired UTF-16 surrogate
+         */
+        private boolean startsJsonArrayQuery(final int opening) {
+            int first = nextNonCommentWord(words, opening + 1);
+
+            if (first >= 0 && words.get(first).equals("(")) {
+                final int close = closingParenthesis(first);
+                final int after = close > first ? nextNonCommentWord(words, close + 1) : -1;
+
+                // A comma, arithmetic operator, or value-constructor option after the scalar subquery
+                // keeps the enclosing constructor in its value form. Set operations extend the query.
+                if (after < 0 || !(words.get(after).equals(")") || "UNION".equalsIgnoreCase(words.get(after)) || "INTERSECT".equalsIgnoreCase(words.get(after))
+                        || "EXCEPT".equalsIgnoreCase(words.get(after)) || "ORDER".equalsIgnoreCase(words.get(after))
+                        || "LIMIT".equalsIgnoreCase(words.get(after)) || "OFFSET".equalsIgnoreCase(words.get(after))
+                        || "FETCH".equalsIgnoreCase(words.get(after)) || "RETURNING".equalsIgnoreCase(words.get(after)))) {
+                    return false;
+                }
+
+                do {
+                    first = nextNonCommentWord(words, first + 1);
+                } while (first >= 0 && words.get(first).equals("("));
+            }
+
+            return first >= 0 && ("SELECT".equalsIgnoreCase(words.get(first)) || "WITH".equalsIgnoreCase(words.get(first))
+                    || "VALUES".equalsIgnoreCase(words.get(first)) || "TABLE".equalsIgnoreCase(words.get(first)));
+        }
+
         /** SQL/JSON phrases are clauses only in a constructor's value scope, never its query body or a global keyword ban. */
         private boolean startsSqlJsonClause(final int start) {
             if (start < 0) {
@@ -1839,6 +1899,11 @@ public final class ParsedSql {
                 return last >= 0 && "NULL".equalsIgnoreCase(words.get(last));
             }
 
+            if ("WITH".equalsIgnoreCase(word) || "WITHOUT".equalsIgnoreCase(word)) {
+                final int next = nextNonCommentWord(words, start + 1);
+                return next >= 0 && "UNIQUE".equalsIgnoreCase(words.get(next)); // KEYS is optional.
+            }
+
             return false;
         }
 
@@ -1846,6 +1911,9 @@ public final class ParsedSql {
          * Recognizes the unary geometric operators only when the operand explicitly identifies line/lseg
          * syntax. Untyped {@code ?-column} is ambiguous with a JDBC binding minus a column and stays a
          * binding; a type literal, constructor or cast resolves that ambiguity without schema inspection.
+         *
+         * @throws IllegalArgumentException if inspecting a split MyBatis binding encounters a standalone bracket
+         *         group whose first non-whitespace {@code ':'} or {@code '?'} is followed by an unpaired UTF-16 surrogate
          */
         private boolean isExplicitGeometricOperand(int start) {
             int end = words.size();
@@ -1870,8 +1938,8 @@ public final class ParsedSql {
 
                     final int after = nextNonCommentWord(words, close + 1);
 
-                    if (after >= 0 && after < end && isGeometricCast(after, end)) {
-                        return true;
+                    if (after >= 0 && after < end && words.get(after).startsWith("::")) {
+                        return isGeometricCast(after, end);
                     }
 
                     end = close;
@@ -1881,6 +1949,12 @@ public final class ParsedSql {
 
                 if ("CAST".equalsIgnoreCase(word) && next >= 0 && next < end && words.get(next).equals("(")) {
                     final int close = closingParenthesis(next);
+                    final int after = close > next && close < end ? nextNonCommentWord(words, close + 1) : -1;
+
+                    if (after >= 0 && after < end && words.get(after).startsWith("::")) {
+                        return isGeometricCast(after, end);
+                    }
+
                     int type = close > next && close < end ? previousNonCommentWord(words, close - 1) : -1;
 
                     // A qualified type occupies at most three significant tokens: schema, dot, name.
@@ -1899,9 +1973,14 @@ public final class ParsedSql {
                     return false;
                 }
 
-                final int typeEnd = geometricTypeEnd(start, 0, end);
+                final int typeEnd = geometricTypeEnd(start, 0, end, true);
 
                 if (typeEnd >= 0) {
+                    if (words.get(typeEnd - 1).indexOf('\'') >= 0) {
+                        // The lexer can keep an adjacent typed literal in the type token.
+                        return hasGeometricFinalType(typeEnd - 1, end);
+                    }
+
                     final int followingIndex = nextNonCommentWord(words, typeEnd);
 
                     if (followingIndex < 0 || followingIndex >= end) {
@@ -1910,8 +1989,13 @@ public final class ParsedSql {
 
                     final String following = words.get(followingIndex);
 
-                    if (isSqlStringLiteral(following) || following.equals("(")) {
-                        return true;
+                    if (isSqlStringLiteral(following)) {
+                        return hasGeometricFinalType(followingIndex, end);
+                    }
+
+                    if (following.equals("(")) {
+                        final int close = closingParenthesis(followingIndex);
+                        return close > followingIndex && close < end && hasGeometricFinalType(close, end);
                     }
 
                     // The bracket lexer exposes a string prefix separately; SqlParser glues it to the
@@ -1919,18 +2003,18 @@ public final class ParsedSql {
                     final int literal = nextNonCommentWord(words, followingIndex + 1);
 
                     if ("E".equalsIgnoreCase(following) || "N".equalsIgnoreCase(following)) {
-                        return literal >= 0 && literal < end && words.get(literal).startsWith("'");
+                        return literal >= 0 && literal < end && words.get(literal).startsWith("'") && hasGeometricFinalType(literal, end);
                     }
 
                     if ("U".equalsIgnoreCase(following) && literal >= 0 && literal < end && words.get(literal).equals("&")) {
                         final int quoted = nextNonCommentWord(words, literal + 1);
-                        return quoted >= 0 && quoted < end && words.get(quoted).startsWith("'");
+                        return quoted >= 0 && quoted < end && words.get(quoted).startsWith("'") && hasGeometricFinalType(quoted, end);
                     }
 
                     return false;
                 }
 
-                if ((word.regionMatches(true, 0, "line'", 0, 5) || word.regionMatches(true, 0, "lseg'", 0, 5)) || isGeometricCast(start, end)) {
+                if (isGeometricCast(start, end)) {
                     return true;
                 }
 
@@ -1952,10 +2036,273 @@ public final class ParsedSql {
             return false;
         }
 
-        /** Recognizes a cast suffix even when the tokenizer splits its type after {@code ::} or a quote. */
-        private boolean isGeometricCast(final int index, final int end) {
-            final int cast = words.get(index).lastIndexOf("::");
-            return cast >= 0 && geometricTypeEnd(index, cast + 2, end) >= 0;
+        /**
+         * A geometric literal or constructor keeps its type unless an explicit trailing cast changes it.
+         *
+         * @throws IllegalArgumentException if inspecting a cast modifier encounters a split MyBatis token whose
+         *         standalone bracket group starts with a colon or question mark followed by an unpaired UTF-16 surrogate
+         */
+        private boolean hasGeometricFinalType(final int operandEnd, final int end) {
+            if (lastUnquotedCast(operandEnd) >= 0) {
+                return isGeometricCast(operandEnd, end);
+            }
+
+            final int next = nextNonCommentWord(words, operandEnd + 1);
+            return next < 0 || next >= end || !words.get(next).startsWith("::") || isGeometricCast(next, end);
+        }
+
+        /**
+         * Recognizes the final cast type even when trivia, quoting, type modifiers, or standard multiword type names
+         * split a chain across tokens.
+         *
+         * @throws IllegalArgumentException if indexing a cast modifier's parentheses encounters a split MyBatis token
+         *         whose standalone bracket group starts with a colon or question mark followed by an unpaired UTF-16 surrogate
+         */
+        private boolean isGeometricCast(int index, final int end) {
+            while (index >= 0 && index < end) {
+                final int cast = lastUnquotedCast(index);
+
+                if (cast < 0) {
+                    return false;
+                }
+
+                final int geometricEnd = geometricTypeEnd(index, cast + 2, end);
+                final int typeEnd = geometricEnd >= 0 ? geometricEnd : castTypeEnd(index, cast + 2, end);
+                final int next = typeEnd >= 0 ? nextCastAfterType(typeEnd, end) : -1;
+
+                if (next < 0) {
+                    final int suffix = geometricEnd >= 0 ? nextNonCommentWord(words, geometricEnd) : -1;
+                    return geometricEnd >= 0 && !(suffix >= 0 && suffix < end && (words.get(suffix).startsWith("[") || isArrayTypeKeyword(words.get(suffix))));
+                }
+
+                index = next; // The final cast, including casts split by trivia, determines the type.
+            }
+
+            return false;
+        }
+
+        /** Quoted type names and string literals can contain colons that are not cast delimiters. */
+        private int lastUnquotedCast(final int index) {
+            final String word = words.get(index);
+            final int previous = word.startsWith("'") ? previousNonCommentWord(words, index - 1) : -1;
+            // The bracket lexer separates E from its literal; SqlParser retains the prefix in the token.
+            final boolean backslashEscapes = previous >= 0 && "E".equalsIgnoreCase(words.get(previous));
+            int cast = -1;
+
+            for (int offset = 0; offset < word.length(); offset++) {
+                if (isQuoteChar(word.charAt(offset))) {
+                    offset = skipQuotedRegion(word, offset, backslashEscapes);
+                } else if (word.startsWith("::", offset)) {
+                    cast = offset++;
+                }
+            }
+
+            return cast;
+        }
+
+        /**
+         * Locates the next cast after an identifier type, optional standard type words, type modifiers, and array dimensions.
+         *
+         * @throws IllegalArgumentException if indexing a type modifier's parentheses encounters a split MyBatis token
+         *         whose standalone bracket group starts with a colon or question mark followed by an unpaired UTF-16 surrogate
+         */
+        private int nextCastAfterType(final int typeEnd, final int end) {
+            final String type = words.get(typeEnd - 1);
+            int next = nextNonCommentWord(words, typeEnd);
+            final String continuation = typeNameEndsWith(type, "double") ? "precision"
+                    : typeNameEndsWith(type, "character") || typeNameEndsWith(type, "char") || typeNameEndsWith(type, "bit") ? "varying" : null;
+
+            if (next >= 0 && next < end && continuation != null && typeWordMatches(words.get(next), continuation)) {
+                if (words.get(next).length() > continuation.length()) {
+                    return next; // e.g. character varying::line, with the cast glued to the final type word
+                }
+
+                next = nextNonCommentWord(words, next + 1);
+            }
+
+            if (next >= 0 && next < end && words.get(next).equals("(")) {
+                final int close = closingParenthesis(next);
+                next = close > next && close < end ? nextNonCommentWord(words, close + 1) : -1;
+            }
+
+            if (next >= 0 && next < end && (typeNameEndsWith(type, "time") || typeNameEndsWith(type, "timestamp"))
+                    && ("WITH".equalsIgnoreCase(words.get(next)) || "WITHOUT".equalsIgnoreCase(words.get(next)))) {
+                final int time = nextNonCommentWord(words, next + 1);
+                final int zone = time >= 0 && time < end && "TIME".equalsIgnoreCase(words.get(time)) ? nextNonCommentWord(words, time + 1) : -1;
+
+                if (zone < 0 || zone >= end || !typeWordMatches(words.get(zone), "zone")) {
+                    return -1;
+                }
+
+                if (words.get(zone).length() > "zone".length()) {
+                    return zone;
+                }
+
+                next = nextNonCommentWord(words, zone + 1);
+            }
+
+            // The SQL-standard ARRAY keyword optionally introduces a dimension instead of [] syntax.
+            if (next >= 0 && next < end && isArrayTypeKeyword(words.get(next))) {
+                final String word = words.get(next);
+                final int suffixEnd = arrayTypeSuffixEnd(word, "ARRAY".length());
+
+                if (suffixEnd < word.length()) {
+                    return word.startsWith("::", suffixEnd) ? next : -1;
+                }
+
+                next = nextNonCommentWord(words, next + 1);
+            }
+
+            // SqlParser keeps bracket groups in one token; the bracket-interior lexer exposes
+            // their delimiters separately. Both forms are type suffixes before a following cast.
+            while (next >= 0 && next < end && words.get(next).startsWith("[")) {
+                final String word = words.get(next);
+
+                if (word.equals("[")) {
+                    int close = nextNonCommentWord(words, next + 1);
+
+                    if (close >= 0 && close < end && isArrayDimension(words.get(close))) {
+                        close = nextNonCommentWord(words, close + 1);
+                    }
+
+                    if (close < 0 || close >= end || !words.get(close).equals("]")) {
+                        return -1;
+                    }
+
+                    next = nextNonCommentWord(words, close + 1);
+                } else {
+                    final int suffixEnd = arrayTypeSuffixEnd(word, 0);
+
+                    if (suffixEnd == 0) {
+                        return -1;
+                    }
+
+                    if (suffixEnd < word.length()) {
+                        return word.startsWith("::", suffixEnd) ? next : -1;
+                    }
+
+                    next = nextNonCommentWord(words, next + 1);
+                }
+            }
+
+            return next >= 0 && next < end && words.get(next).startsWith("::") ? next : -1;
+        }
+
+        /** Recognizes the unquoted ARRAY type keyword, including glued dimensions or a following cast. */
+        private static boolean isArrayTypeKeyword(final String word) {
+            return typeWordMatches(word, "ARRAY") || word.regionMatches(true, 0, "ARRAY[", 0, "ARRAY[".length());
+        }
+
+        /** Skips empty or integer array dimensions glued to a type token, leaving any cast suffix visible. */
+        private static int arrayTypeSuffixEnd(final String word, int offset) {
+            while (offset < word.length() && word.charAt(offset) == '[') {
+                int close = offset + 1;
+
+                while (close < word.length() && Character.isWhitespace(word.charAt(close))) {
+                    close++;
+                }
+
+                while (close < word.length() && word.charAt(close) >= '0' && word.charAt(close) <= '9') {
+                    close++;
+                }
+
+                while (close < word.length() && Character.isWhitespace(word.charAt(close))) {
+                    close++;
+                }
+
+                if (close >= word.length() || word.charAt(close) != ']') {
+                    break;
+                }
+
+                offset = close + 1;
+            }
+
+            return offset;
+        }
+
+        /** Array type bounds are integer constants, not arbitrary subscript expressions. */
+        private static boolean isArrayDimension(final String word) {
+            for (int i = 0; i < word.length(); i++) {
+                if (word.charAt(i) < '0' || word.charAt(i) > '9') {
+                    return false;
+                }
+            }
+
+            return !word.isEmpty();
+        }
+
+        /** Matches a standard multiword type's final keyword, optionally followed by a glued cast suffix. */
+        private static boolean typeWordMatches(final String word, final String name) {
+            return word.regionMatches(true, 0, name, 0, name.length()) && (word.length() == name.length() || word.startsWith("::", name.length()));
+        }
+
+        /** Recognizes the final identifier of a possibly qualified cast type without matching longer identifiers. */
+        private static boolean typeNameEndsWith(final String word, final String name) {
+            final int start = word.length() - name.length();
+            return start >= 0 && word.regionMatches(true, start, name, 0, name.length())
+                    && (start == 0 || word.charAt(start - 1) == '.' || word.charAt(start - 1) == ':');
+        }
+
+        /** Skips a non-geometric cast's qualified identifier so a following cast remains visible. */
+        private int castTypeEnd(int index, int offset, final int end) {
+            boolean expectsIdentifier = true;
+
+            while (index >= 0 && index < end) {
+                final String word = words.get(index);
+
+                if (offset == word.length()) {
+                    index = nextNonCommentWord(words, index + 1);
+                    offset = 0;
+                    continue;
+                }
+
+                if (expectsIdentifier) {
+                    if (word.charAt(offset) == '"') {
+                        final int close = skipQuotedRegion(word, offset, false);
+
+                        if (close >= word.length()) {
+                            return -1;
+                        }
+
+                        offset = close + 1;
+                    } else {
+                        if (!isNamedParameterIdentifierStart(word.codePointAt(offset))) {
+                            return -1;
+                        }
+
+                        do {
+                            offset += Character.charCount(word.codePointAt(offset));
+                        } while (offset < word.length() && isNamedParameterIdentifierPart(word.codePointAt(offset)));
+                    }
+
+                    expectsIdentifier = false;
+                }
+
+                if (offset < word.length()) {
+                    if (word.charAt(offset) == '[' && arrayTypeSuffixEnd(word, offset) == word.length()) {
+                        return index + 1;
+                    }
+
+                    if (word.charAt(offset) != '.') {
+                        return -1;
+                    }
+
+                    offset++;
+                    expectsIdentifier = true;
+                } else {
+                    final int next = nextNonCommentWord(words, index + 1);
+
+                    if (next < 0 || next >= end || !words.get(next).startsWith(".")) {
+                        return index + 1;
+                    }
+
+                    index = next;
+                    offset = 1;
+                    expectsIdentifier = true;
+                }
+            }
+
+            return -1;
         }
 
         /**
@@ -1964,6 +2311,11 @@ public final class ParsedSql {
          * ordinary and bracket lexers can glue a cast prefix or qualification dot to either name.
          */
         private int geometricTypeEnd(int index, int offset, final int end) {
+            return geometricTypeEnd(index, offset, end, false);
+        }
+
+        /** Optionally accepts an adjacent single-quoted literal after the complete type name. */
+        private int geometricTypeEnd(int index, int offset, final int end, final boolean allowLiteral) {
             if (offset == words.get(index).length()) {
                 index = nextNonCommentWord(words, index + 1);
                 offset = 0;
@@ -2006,8 +2358,8 @@ public final class ParsedSql {
                 }
             }
 
-            return geometricIdentifierEnd(word, offset, "line") == word.length() || geometricIdentifierEnd(word, offset, "lseg") == word.length() ? index + 1
-                    : -1;
+            final int nameEnd = Math.max(geometricIdentifierEnd(word, offset, "line"), geometricIdentifierEnd(word, offset, "lseg"));
+            return nameEnd == word.length() || allowLiteral && nameEnd >= 0 && word.charAt(nameEnd) == '\'' ? index + 1 : -1;
         }
 
         /** Unquoted PostgreSQL names fold to lowercase; quoted names must match the built-in name exactly. */
@@ -2025,10 +2377,15 @@ public final class ParsedSql {
             }
 
             final int identifierEnd = nameEnd + (quoted ? 1 : 0);
-            return identifierEnd == word.length() || word.charAt(identifierEnd) == '.' ? identifierEnd : -1;
+            return identifierEnd == word.length() || word.charAt(identifierEnd) == '.' || word.charAt(identifierEnd) == '\'' ? identifierEnd : -1;
         }
 
-        /** Builds matching-parenthesis indexes at most once; never rescans nested expression suffixes. */
+        /**
+         * Builds matching-parenthesis indexes at most once; never rescans nested expression suffixes.
+         *
+         * @throws IllegalArgumentException if scanning a split MyBatis binding encounters a standalone bracket
+         *         group whose first non-whitespace {@code ':'} or {@code '?'} is followed by an unpaired UTF-16 surrogate
+         */
         private int closingParenthesis(final int opening) {
             if (closingParentheses == null) {
                 final int size = words.size();
@@ -2065,7 +2422,12 @@ public final class ParsedSql {
             return closingParentheses[opening];
         }
 
-        /** Returns the last token of a split MyBatis binding, or the input index for an ordinary token. */
+        /**
+         * Returns the last token of a split MyBatis binding, or the input index for an ordinary token.
+         *
+         * @throws IllegalArgumentException if an incomplete MyBatis token is a standalone bracket group whose
+         *         first non-whitespace {@code ':'} or {@code '?'} is followed by an unpaired UTF-16 surrogate
+         */
         private int splitIbatisBindingEnd(final int start) {
             final String word = words.get(start);
 
@@ -2204,6 +2566,12 @@ public final class ParsedSql {
         };
     }
 
+    /**
+     * Checks whether a token can be the right operand of a JSON question-mark operator.
+     *
+     * @throws IllegalArgumentException if the colon at the start of {@code word} is immediately followed by
+     *         an unpaired UTF-16 surrogate
+     */
     private static boolean canFollowJsonQuestionOperator(final String word) {
         if (Strings.isEmpty(word)) {
             return false;
@@ -2266,6 +2634,12 @@ public final class ParsedSql {
         return codePoint == '_' || Character.isUnicodeIdentifierPart(codePoint);
     }
 
+    /**
+     * Reads a complete UTF-16 code point at a prospective parameter-name position.
+     *
+     * @throws IllegalArgumentException if the character at {@code index} is a low surrogate or a high surrogate
+     *         without a following low surrogate
+     */
     private static int namedParameterCodePointAt(final String token, final int index) {
         final char first = token.charAt(index);
 
@@ -2286,6 +2660,12 @@ public final class ParsedSql {
         return first;
     }
 
+    /**
+     * Reads a complete UTF-16 code point immediately before a parameter marker.
+     *
+     * @throws IllegalArgumentException if the character before {@code index} is a high surrogate or a low surrogate
+     *         without a preceding high surrogate
+     */
     private static int namedParameterCodePointBefore(final String token, final int index) {
         final char last = token.charAt(index - 1);
 

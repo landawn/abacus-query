@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -207,7 +208,9 @@ public final class SqlMapper {
      *         a SQL body that {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed
      *         {@code #{...}} marker), or a {@code <sql>} attribute whose name is not a valid non-namespace XML name
      *         or whose value is {@code null}
-     * @throws UncheckedIOException if an I/O error occurs reading the files
+     * @throws SecurityException if access to a mapper file or a searched configuration directory is denied
+     * @throws UncheckedIOException if a mapper file cannot be opened, read, or closed
+     * @throws UncheckedException if the XML parser cannot be configured to load or validate a mapper document
      * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper loadFrom(final String filePaths) {
@@ -221,9 +224,7 @@ public final class SqlMapper {
             }
         }
 
-        if (parsedFilePaths.isEmpty()) {
-            throw new IllegalArgumentException("File path is empty after splitting: " + filePaths);
-        }
+        N.checkArgument(!parsedFilePaths.isEmpty(), "File path is empty after splitting: %s", filePaths);
 
         final SqlMapper sqlMapper = new SqlMapper();
 
@@ -233,9 +234,7 @@ public final class SqlMapper {
             // findFile returns null when the path exists neither literally nor in the common
             // configuration directories; without this check formatPath would throw a bare NPE.
             // It can also resolve to a directory, which is not a loadable file.
-            if (foundFile == null || !foundFile.isFile()) {
-                throw new IllegalArgumentException("No file found for path: " + subFilePath);
-            }
+            N.checkArgument(foundFile != null && foundFile.isFile(), "No file found for path: %s", subFilePath);
 
             loadFile(sqlMapper, PropertiesUtil.formatPath(foundFile));
         }
@@ -260,7 +259,9 @@ public final class SqlMapper {
      *         {@link #MAX_ID_LENGTH} characters, or duplicated), a SQL body that {@link ParsedSql#parse(String)} rejects
      *         (blank, mixed parameter styles, or a malformed {@code #{...}} marker), or a {@code <sql>} attribute whose
      *         name is not a valid non-namespace XML name or whose value is {@code null}
-     * @throws UncheckedIOException if an I/O error occurs while reading a file
+     * @throws SecurityException if access to a mapper file or a searched configuration directory is denied
+     * @throws UncheckedIOException if a mapper file cannot be opened, read, or closed
+     * @throws UncheckedException if the XML parser cannot be configured to load or validate a mapper document
      * @throws ParsingException if any XML document is invalid or does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper loadFrom(final String firstFilePath, final String... additionalFilePaths) {
@@ -288,16 +289,18 @@ public final class SqlMapper {
      * @param sqlMapper the mapper to populate
      * @param filePath the XML mapper path to resolve and load
      * @throws IllegalArgumentException if no file can be found for {@code filePath}, or if a loaded
-     *         {@code <sql>} definition is invalid or duplicated
-     * @throws UncheckedIOException if an I/O error occurs reading the file
+     *         {@code <sql>} has a missing, whitespace-containing, overlong, or duplicate id; a blank SQL body,
+     *         mixed parameter styles, or malformed parameter text; or an invalid or namespace-qualified XML
+     *         attribute name or a null attribute value
+     * @throws SecurityException if access to {@code filePath} or a searched configuration directory is denied
+     * @throws UncheckedIOException if the resolved mapper file cannot be opened, read, or closed
+     * @throws UncheckedException if the XML parser cannot be configured to load or validate the mapper document
      * @throws ParsingException if the XML content is invalid or does not have {@code <sqlMapper>} as its root element
      */
     private static void loadPath(final SqlMapper sqlMapper, final String filePath) {
         final File foundFile = PropertiesUtil.findFile(filePath);
 
-        if (foundFile == null || !foundFile.isFile()) {
-            throw new IllegalArgumentException("No file found for path: " + filePath);
-        }
+        N.checkArgument(foundFile != null && foundFile.isFile(), "No file found for path: %s", filePath);
 
         loadFile(sqlMapper, PropertiesUtil.formatPath(foundFile));
     }
@@ -320,9 +323,11 @@ public final class SqlMapper {
      *         {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed
      *         {@code #{...}} marker), or an attribute whose name is not a valid non-namespace XML name
      *         or whose value is {@code null}
-     * @throws UncheckedIOException if a file does not exist, is not a regular file, or cannot be opened, or if an I/O
-     *         error occurs reading the files (unlike {@link #loadFrom(String)}, a missing file is not an
+     * @throws SecurityException if access to a supplied mapper file is denied
+     * @throws UncheckedIOException if a file does not exist, is not a regular file, or cannot be opened, read, or
+     *         closed (unlike {@link #loadFrom(String)}, a missing file is not an
      *         {@code IllegalArgumentException} here)
+     * @throws UncheckedException if the XML parser cannot be configured to load or validate a mapper document
      * @throws ParsingException if the XML content is invalid, or if any loaded document does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper loadFrom(final File... files) {
@@ -362,7 +367,8 @@ public final class SqlMapper {
      *         id (missing, empty, containing whitespace, exceeding {@link #MAX_ID_LENGTH} characters, or duplicated), a SQL body that
      *         {@link ParsedSql#parse(String)} rejects (blank, mixed parameter styles, or a malformed {@code #{...}} marker),
      *         or an attribute whose name is not a valid non-namespace XML name or whose value is {@code null}
-     * @throws UncheckedIOException if an I/O error occurs reading the stream
+     * @throws UncheckedException if the XML parser cannot be configured to load or validate the mapper document
+     * @throws UncheckedIOException if the XML parser cannot read {@code inputStream}
      * @throws ParsingException if the XML content is invalid, or does not have {@code <sqlMapper>} as its root element
      */
     public static SqlMapper loadFrom(final InputStream inputStream) {
@@ -379,9 +385,13 @@ public final class SqlMapper {
      *
      * @param sqlMapper the mapper to populate
      * @param file the XML file to read
-     * @throws UncheckedIOException if {@code file} cannot be opened or an I/O error occurs while reading it
+     * @throws SecurityException if access to {@code file} is denied
+     * @throws UncheckedIOException if {@code file} cannot be opened, read, or closed
+     * @throws UncheckedException if the XML parser cannot be configured to load or validate the mapper document
      * @throws ParsingException if the XML content is invalid or does not have {@code <sqlMapper>} as its root element
-     * @throws IllegalArgumentException if a loaded {@code <sql>} definition is invalid or duplicated
+     * @throws IllegalArgumentException if a loaded {@code <sql>} has a missing, whitespace-containing, overlong,
+     *         or duplicate id; a blank SQL body, mixed parameter styles, or malformed parameter text; or an
+     *         invalid or namespace-qualified XML attribute name or a null attribute value
      */
     private static void loadFile(final SqlMapper sqlMapper, final File file) {
         if (logger.isInfoEnabled()) {
@@ -405,9 +415,12 @@ public final class SqlMapper {
      * @param sourceLabel a human-readable label identifying the source, used in log and error messages
      *        (an {@code IllegalArgumentException} raised by an invalid {@code <sql>} definition is
      *        rethrown with this label prepended to its message)
-     * @throws UncheckedIOException if an I/O error occurs while reading {@code inputStream}
+     * @throws UncheckedException if the XML parser cannot be configured to load or validate the mapper document
+     * @throws UncheckedIOException if the XML parser cannot read {@code inputStream}
      * @throws ParsingException if the XML content is invalid or does not have {@code <sqlMapper>} as its root element
-     * @throws IllegalArgumentException if a loaded {@code <sql>} definition is invalid or duplicated
+     * @throws IllegalArgumentException if a loaded {@code <sql>} has a missing, whitespace-containing, overlong,
+     *         or duplicate id; a blank SQL body, mixed parameter styles, or malformed parameter text; or an
+     *         invalid or namespace-qualified XML attribute name or a null attribute value
      */
     private static void loadStream(final SqlMapper sqlMapper, final InputStream inputStream, final String sourceLabel) {
         try {
@@ -599,6 +612,8 @@ public final class SqlMapper {
      *                                  {@link #MAX_ID_LENGTH} characters, or already exists; if {@code sql} is {@code null};
      *                                  or if {@code attributes} contains a {@code null}/empty/invalid or namespace-qualified
      *                                  XML attribute name, or a {@code null} value
+     * @throws UncheckedException if {@code attributes} is nonempty and the XML parser cannot be configured
+     *         to validate its attribute names
      */
     public void add(final String id, final ParsedSql sql, final Map<String, String> attributes) {
         checkId(id);
@@ -657,6 +672,8 @@ public final class SqlMapper {
      *                                  or is rejected by {@link ParsedSql#parse(String)} (blank SQL, mixed parameter styles,
      *                                  or malformed parameters); or if {@code attributes} contains a {@code null}/empty/invalid
      *                                  or namespace-qualified XML attribute name, or a {@code null} value
+     * @throws UncheckedException if {@code attributes} is nonempty and the XML parser cannot be configured
+     *         to validate its attribute names
      */
     public void add(final String id, final String sql, final Map<String, String> attributes) {
         checkId(id);
@@ -688,17 +705,9 @@ public final class SqlMapper {
     private void checkId(final String id) {
         N.checkArgNotEmpty(id, cs.id);
 
-        if (Strings.containsWhitespace(id)) {
-            throw new IllegalArgumentException("SQL id '" + id + "' contains whitespace characters");
-        }
-
-        if (id.length() > MAX_ID_LENGTH) {
-            throw new IllegalArgumentException("SQL id '" + id + "' exceeds maximum length of " + MAX_ID_LENGTH + " characters");
-        }
-
-        if (sqlMap.containsKey(id)) {
-            throw new IllegalArgumentException("SQL id '" + id + "' already exists. Use a unique identifier");
-        }
+        N.checkArgument(!Strings.containsWhitespace(id), "SQL id '%s' contains whitespace characters", id);
+        N.checkArgument(id.length() <= MAX_ID_LENGTH, "SQL id '%s' exceeds maximum length of %s characters", id, MAX_ID_LENGTH);
+        N.checkArgument(!sqlMap.containsKey(id), "SQL id '%s' already exists. Use a unique identifier", id);
     }
 
     /**
@@ -708,6 +717,8 @@ public final class SqlMapper {
      *
      * @param attrs the attributes to copy (may be {@code null} or empty)
      * @return an immutable copy of {@code attrs}, or an empty immutable map if {@code attrs} is {@code null} or empty
+     * @throws UncheckedException if {@code attrs} is nonempty and the XML parser cannot be configured
+     *         to validate its attribute names
      * @throws IllegalArgumentException if an attribute name is {@code null}, empty, namespace-qualified,
      *         or not a valid XML attribute name, or if an attribute value is {@code null}
      */
@@ -725,9 +736,8 @@ public final class SqlMapper {
             N.checkArgNotEmpty(entry.getKey(), "XML attribute name must not be null or empty");
             N.checkArgNotNull(entry.getValue(), "XML attribute value for '" + entry.getKey() + "' must not be null");
 
-            if (entry.getKey().indexOf(':') >= 0 || "xmlns".equals(entry.getKey())) {
-                throw new IllegalArgumentException("Namespace-qualified XML attributes are not supported: " + entry.getKey());
-            }
+            N.checkArgument(entry.getKey().indexOf(':') < 0 && !"xmlns".equals(entry.getKey()), "Namespace-qualified XML attributes are not supported: %s",
+                    entry.getKey());
 
             try {
                 // Delegate XML Name validation to the same DOM implementation used by saveTo(...), rather
@@ -834,19 +844,16 @@ public final class SqlMapper {
      *
      * @param file the file to write to (will be created if it doesn't exist; parent directories will be created if needed)
      * @throws IllegalArgumentException if {@code file} is {@code null}
-     * @throws UncheckedIOException if an I/O error occurs while creating or writing to the file, or if a stored
-     *         value contains a lone high surrogate followed by another character, which the XML serializer
-     *         rejects as an invalid UTF-16 surrogate
-     * @throws UncheckedException if a stored SQL body, identifier, or attribute value contains a lone low
-     *         surrogate, or a character below {@code U+0020} other than tab, LF, or CR; note that a lone high
-     *         surrogate at the very end of a value is silently dropped from the output, and that {@code U+FFFE}
-     *         and {@code U+FFFF} are written verbatim and make the output unloadable by {@code loadFrom}
-     *         (other noncharacters such as {@code U+FDD0}, and {@code U+007F} through {@code U+009F},
-     *         round-trip normally)
+     * @throws IllegalStateException if a stored identifier, SQL body, or emitted attribute value contains an
+     *         unpaired surrogate or an XML 1.0-invalid character; checked before creating directories or opening the file
+     * @throws SecurityException if creating parent directories or opening {@code file} for writing is denied
+     * @throws UncheckedIOException if creating, opening, writing, flushing, or closing the file fails
+     * @throws UncheckedException if the XML parser or transformer cannot be configured or XML serialization fails
      */
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void saveTo(final File file) {
         N.checkArgNotNull(file, cs.file);
+        checkXmlContent();
 
         final File parent = file.getParentFile();
 
@@ -875,15 +882,11 @@ public final class SqlMapper {
      *
      * @param filePath the target file path; must not be {@code null} or empty
      * @throws IllegalArgumentException if {@code filePath} is {@code null} or empty
-     * @throws UncheckedIOException if an I/O error occurs while creating or writing the file, or if a stored
-     *         value contains a lone high surrogate followed by another character, which the XML serializer
-     *         rejects as an invalid UTF-16 surrogate
-     * @throws UncheckedException if a stored SQL body, identifier, or attribute value contains a lone low
-     *         surrogate, or a character below {@code U+0020} other than tab, LF, or CR; note that a lone high
-     *         surrogate at the very end of a value is silently dropped from the output, and that {@code U+FFFE}
-     *         and {@code U+FFFF} are written verbatim and make the output unloadable by {@code loadFrom}
-     *         (other noncharacters such as {@code U+FDD0}, and {@code U+007F} through {@code U+009F},
-     *         round-trip normally)
+     * @throws IllegalStateException if a stored identifier, SQL body, or emitted attribute value contains an
+     *         unpaired surrogate or an XML 1.0-invalid character; checked before creating directories or opening the file
+     * @throws SecurityException if creating parent directories or opening {@code filePath} for writing is denied
+     * @throws UncheckedIOException if creating, opening, writing, flushing, or closing the file fails
+     * @throws UncheckedException if the XML parser or transformer cannot be configured or XML serialization fails
      */
     public void saveTo(final String filePath) {
         N.checkArgNotEmpty(filePath, cs.filePath);
@@ -911,18 +914,14 @@ public final class SqlMapper {
      *
      * @param outputStream the output stream to write to (not closed by this method)
      * @throws IllegalArgumentException if {@code outputStream} is {@code null}
-     * @throws UncheckedIOException if an I/O error occurs while writing to or flushing the stream, or if a stored
-     *         value contains a lone high surrogate followed by another character, which the XML serializer
-     *         rejects as an invalid UTF-16 surrogate
-     * @throws UncheckedException if a stored SQL body, identifier, or attribute value contains a lone low
-     *         surrogate, or a character below {@code U+0020} other than tab, LF, or CR; note that a lone high
-     *         surrogate at the very end of a value is silently dropped from the output, and that {@code U+FFFE}
-     *         and {@code U+FFFF} are written verbatim and make the output unloadable by {@code loadFrom}
-     *         (other noncharacters such as {@code U+FDD0}, and {@code U+007F} through {@code U+009F},
-     *         round-trip normally)
+     * @throws IllegalStateException if a stored identifier, SQL body, or emitted attribute value contains an
+     *         unpaired surrogate or an XML 1.0-invalid character; checked before writing or flushing the stream
+     * @throws UncheckedException if the XML parser or transformer cannot be configured or XML serialization fails
+     * @throws UncheckedIOException if an I/O error occurs while writing to or flushing the stream
      */
     public void saveTo(final OutputStream outputStream) {
         N.checkArgNotNull(outputStream, cs.outputStream);
+        checkXmlContent();
 
         try {
             final Document doc = XmlUtil.createDOMParser(true, true).newDocument();
@@ -985,6 +984,46 @@ public final class SqlMapper {
             }
 
             throw e;
+        }
+    }
+
+    /**
+     * Checks every value that will be serialized before a destination file or stream is modified.
+     *
+     * @throws IllegalStateException if a stored identifier, SQL body, or emitted attribute value contains
+     *         an unpaired surrogate or a character excluded by the XML 1.0 {@code Char} production
+     */
+    private void checkXmlContent() {
+        for (final Map.Entry<String, ParsedSql> entry : sqlMap.entrySet()) {
+            checkXmlCharacters(entry.getKey(), "SQL identifier");
+            checkXmlCharacters(entry.getValue().originalSql(), "SQL body for '" + entry.getKey() + "'");
+
+            for (final Map.Entry<String, String> attribute : attrsMap.get(entry.getKey()).entrySet()) {
+                if (!ID.equals(attribute.getKey())) {
+                    checkXmlCharacters(attribute.getValue(), "Attribute '" + attribute.getKey() + "' for '" + entry.getKey() + "'");
+                }
+            }
+        }
+    }
+
+    /**
+     * Validates XML 1.0 text without depending on a serializer's handling of malformed UTF-16.
+     *
+     * @param value the stored non-null value to inspect
+     * @param description the context used to identify invalid stored content
+     * @throws IllegalStateException if {@code value} contains a character that XML 1.0 cannot represent
+     */
+    private static void checkXmlCharacters(final String value, final String description) {
+        for (int index = 0; index < value.length();) {
+            final int codePoint = value.codePointAt(index);
+
+            if (!(codePoint == '\t' || codePoint == '\n' || codePoint == '\r' || codePoint >= 0x20 && codePoint <= 0xD7FF
+                    || codePoint >= 0xE000 && codePoint <= 0xFFFD || codePoint >= 0x10000)) {
+                throw new IllegalStateException(description + " contains an invalid XML 1.0 character at index " + index + ": U+"
+                        + Integer.toHexString(codePoint).toUpperCase(Locale.ROOT));
+            }
+
+            index += Character.charCount(codePoint);
         }
     }
 

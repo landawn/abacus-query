@@ -169,6 +169,60 @@ public class QueryUtilTest extends TestBase {
         @Column("U&\"caf[00e9\" UESCAPE '['")
         private String bracketEscape;
 
+        @Column("U&\"caf!00e9\" UESCAPE E'!'")
+        private String escapeString;
+
+        @Column("U&\"caf.00e9\" UESCAPE e'.'")
+        private String lowercaseEscapeString;
+
+        @Column("U&\"caf\\00e9\" UESCAPE E'\\\\'")
+        private String escapedBackslash;
+
+        @Column("U&\"caf!00e9\" UESCAPE E'\\041'")
+        private String octalEscapeString;
+
+        @Column("U&\"caf!00e9\" UESCAPE E'\\x21'")
+        private String hexEscapeString;
+
+        @Column("U&\"caf!00e9\" UESCAPE E'\\u0021'")
+        private String unicodeEscapeString;
+
+        @Column("U&\"name\" UESCAPE E'\\x'")
+        private String literalXEscapeString;
+
+        @Column("U&\"value\" UESCAPE E'\\n'")
+        private String invalidWhitespaceEscape;
+
+        @Column("U&\"value\" UESCAPE E'\\u002b'")
+        private String invalidPlusEscape;
+
+        @Column("U&\"value\" UESCAPE E'!!'")
+        private String invalidMultipleEscapes;
+
+        @Column("U&\"value\" UESCAPEE'!'")
+        private String invalidEscapeKeyword;
+
+        @Column("U&\"value\" UESCAPE E''")
+        private String invalidEmptyEscape;
+
+        @Column("U&\"value\" UESCAPE E'\\u021'")
+        private String invalidShortUnicodeEscape;
+
+        @Column("U&\"value\" UESCAPE E'\\U00110000'")
+        private String invalidOutOfRangeUnicodeEscape;
+
+        @Column("U&\"value\" UESCAPE E'\\000'")
+        private String invalidNullEscape;
+
+        @Column("U&\"value\" UESCAPE E'\\uD800'")
+        private String invalidSurrogateEscape;
+
+        @Column("U&\"value\" UESCAPE E'\\x41'")
+        private String invalidHexDigitEscape;
+
+        @Column("U&\"value\" UESCAPE E'!' || 'suffix'")
+        private String escapeStringExpression;
+
         @Column("t.U&\"caf\\00e9\"")
         private String qualifiedUnicode;
 
@@ -684,6 +738,69 @@ public class QueryUtilTest extends TestBase {
             assertEquals("SELECT a." + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a JOIN unicode_columns b ON a.id = b.id",
                     PSC.select(propName).from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on("a.id = b.id").build().query(), propName);
             assertEquals("u." + column.columnName(), nestedMap.get("child." + propName), propName);
+        }
+    }
+
+    @Test
+    public void testUnicodeEscapeStringClausesRetainTableAndNestedQualifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("escapeString", "lowercaseEscapeString", "escapedBackslash", "octalEscapeString", "hexEscapeString",
+                "unicodeEscapeString", "literalXEscapeString")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertTrue(column.isUnqualified(), propName);
+            assertEquals("SELECT a." + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a JOIN unicode_columns b ON a.id = b.id",
+                    PSC.select(propName).from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on("a.id = b.id").build().query(), propName);
+            assertEquals("u." + column.columnName(), nestedMap.get("child." + propName), propName);
+        }
+    }
+
+    @Test
+    public void testUnicodeEscapeStringClausesDoNotHideOrInventQualifyingDots() {
+        for (final String escape : List.of("E'.'", "e'['", "E'\\\\'", "E'\\056'", "E'\\x2e'", "E'\\u002e'", "E'\\U0000002e'")) {
+            final String identifier = "U&\"name\" UESCAPE " + escape;
+            assertEquals(-1, QueryUtil.indexOfQualifyingDot(identifier), escape);
+            assertEquals(identifier.length(), QueryUtil.indexOfQualifyingDot(identifier + ".value"), escape);
+            assertEquals(identifier + ".first_name", QueryUtil.convertIdentifier(identifier + ".firstName", NamingPolicy.SNAKE_CASE), escape);
+        }
+    }
+
+    @Test
+    public void testUnicodeEscapeStringsDoNotTreatInvalidClausesOrExpressionsAsIdentifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("invalidWhitespaceEscape", "invalidPlusEscape", "invalidMultipleEscapes", "invalidEscapeKeyword",
+                "invalidEmptyEscape", "invalidShortUnicodeEscape", "invalidOutOfRangeUnicodeEscape", "invalidNullEscape", "invalidSurrogateEscape",
+                "invalidHexDigitEscape", "escapeStringExpression")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertFalse(column.isUnqualified(), propName);
+            assertEquals("SELECT " + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a",
+                    PSC.select(propName).from(UnicodeColumnNames.class, "a").build().query(), propName);
+        }
+    }
+
+    @Test
+    public void testTerminateLineCommentProtectsOnlyOpenCommentBoundaries() {
+        for (final String sql : List.of("SELECT 1 -- tail", "SELECT 1 # tail", "SELECT '-- quoted' -- tail")) {
+            assertEquals(sql + '\n', QueryUtil.terminateLineComment(sql));
+        }
+
+        for (final String sql : List.of("", "SELECT 1", "SELECT '-- quoted'", "SELECT '# quoted'", "SELECT [-- quoted]", "SELECT 1 /* tail */",
+                "SELECT 1 -- tail\n", "SELECT 1 # tail\r\n")) {
+            assertSame(sql, QueryUtil.terminateLineComment(sql), sql);
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.terminateLineComment(null));
+    }
+
+    @Test
+    public void testTerminateLineCommentSupportsStandardAndEscapeStrings() {
+        for (final String sql : List.of("'a\\' -- tail", "'a\\' # tail", "N'a\\' -- tail", "E'a\\' -- quoted' -- tail", "a\u0301E'a\\' -- tail")) {
+            assertEquals(sql + '\n', QueryUtil.terminateLineComment(sql), sql);
+        }
+        for (final String sql : List.of("'a\\' -- tail\n", "'a\\'", "E'a\\' -- quoted'", "e'a\\' # quoted'")) {
+            assertSame(sql, QueryUtil.terminateLineComment(sql), sql);
         }
     }
 

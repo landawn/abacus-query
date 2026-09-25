@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -391,6 +392,9 @@ public class Junction extends ComposableCondition {
      * @throws IllegalArgumentException if rendering a contained condition rejects one of its values (for example a
      *                                  {@code NaN} or infinite {@link Float}/{@link Double}), or if a contained
      *                                  {@link SubQuery} cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
@@ -419,7 +423,7 @@ public class Junction extends ComposableCondition {
                 }
 
                 sb.append(_PARENTHESIS_L);
-                sb.append(condition.toSql(effectiveNamingPolicy));
+                sb.append(QueryUtil.terminateLineComment(String.valueOf(condition.toSql(effectiveNamingPolicy))));
                 sb.append(_PARENTHESIS_R);
 
                 isFirst = false;

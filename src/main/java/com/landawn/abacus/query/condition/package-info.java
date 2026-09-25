@@ -126,6 +126,10 @@
  * parameter binding happens when a query builder renders the condition, according to the builder's
  * {@link com.landawn.abacus.query.SqlDialect}.</p>
  *
+ * <p>When a renderer combines SQL fragments, it inserts a newline after an unterminated line comment
+ * before adding an operator, clause, separator, or closing parenthesis. Raw subquery text returned
+ * directly by {@code SubQuery.toSql(...)} and raw-text accessors remains unchanged.</p>
+ *
  * <h2>Usage example</h2>
  * <pre>{@code
  * Condition cond = Filters.and(Filters.eq("status", "ACTIVE"), Filters.gt("age", 18));

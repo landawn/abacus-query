@@ -126,6 +126,8 @@ public interface Condition {
     /**
      * Returns a SQL representation of this condition using the specified naming policy.
      * The naming policy determines how property names are formatted in the output.
+     * Standard renderers terminate trailing SQL line comments in embedded fragments with a newline
+     * before appending operators, separators, or closing parentheses.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -148,6 +150,9 @@ public interface Condition {
      *                                  rendered (for example a {@code NaN} or infinite {@link Float}/{@link Double}),
      *                                  or if a {@link SubQuery} it contains cannot be rendered, as documented for
      *                                  {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     String toSql(NamingPolicy namingPolicy);
 }

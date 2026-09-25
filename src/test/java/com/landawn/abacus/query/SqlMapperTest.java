@@ -35,6 +35,32 @@ import com.landawn.abacus.util.ImmutableSet;
 @Tag("2025")
 public class SqlMapperTest extends TestBase {
     @Test
+    public void testSaveToRejectsInvalidXmlBeforeTouchingDestination(@TempDir final File directory) throws IOException {
+        for (final String invalid : new String[] { "\u0001", "\uD800", "\uDC00", "\uFFFE", "\uFFFF" }) {
+            for (int location = 0; location < 3; location++) {
+                final SqlMapper mapper = new SqlMapper();
+                mapper.add("valid", "SELECT 1");
+                mapper.add(location == 0 ? "id" + invalid : "bad", location == 1 ? "SELECT '" + invalid + "'" : "SELECT 2",
+                        location == 2 ? Map.of("note", "text" + invalid) : Map.of());
+
+                final ByteArrayOutputStream output = new ByteArrayOutputStream();
+                output.write("existing".getBytes(StandardCharsets.UTF_8));
+                assertThrows(IllegalStateException.class, () -> mapper.saveTo(output));
+                assertEquals("existing", output.toString(StandardCharsets.UTF_8));
+
+                final File file = new File(directory, "existing.xml");
+                java.nio.file.Files.writeString(file.toPath(), "existing", StandardCharsets.UTF_8);
+                assertThrows(IllegalStateException.class, () -> mapper.saveTo(file));
+                assertEquals("existing", java.nio.file.Files.readString(file.toPath(), StandardCharsets.UTF_8));
+
+                final File newFile = new File(directory, "not-created/output.xml");
+                assertThrows(IllegalStateException.class, () -> mapper.saveTo(newFile.getAbsolutePath()));
+                assertFalse(newFile.getParentFile().exists());
+            }
+        }
+    }
+
+    @Test
     public void testLoadMissingFilePathThrowsPointedIae() {
         // Regression (2026-07-03): a path that resolves to no file used to surface as a bare NPE
         // from PropertiesUtil.formatPath(null) instead of the documented IllegalArgumentException.
@@ -1264,17 +1290,14 @@ public class SqlMapperTest extends TestBase {
     }
 
     @Test
-    public void testSaveTo_illegalXmlCharInAttributeValueThrowsUncheckedException() {
-        // An XML-illegal control character is rejected wherever it is stored - attribute values go through the same
-        // serializer path as the SQL body and the id.
+    public void testSaveTo_illegalXmlCharInAttributeValueThrowsIllegalStateException() {
+        // Validate stored state before the serializer can write a partial document.
         SqlMapper mapper = new SqlMapper();
         mapper.add("q", "SELECT 1", Map.of("k", "a\u0001b"));
 
-        com.landawn.abacus.exception.UncheckedException e = assertThrows(com.landawn.abacus.exception.UncheckedException.class,
+        IllegalStateException e = assertThrows(IllegalStateException.class,
                 () -> mapper.saveTo(new ByteArrayOutputStream()));
-        // The exact class matters: UncheckedIOException extends UncheckedException, so assertThrows alone would
-        // still pass if the IOException-unwrapping catch block re-typed this failure to UncheckedIOException.
-        assertEquals(com.landawn.abacus.exception.UncheckedException.class, e.getClass());
+        assertTrue(e.getMessage().contains("Attribute 'k' for 'q'"));
     }
 
     @Test
@@ -1321,43 +1344,35 @@ public class SqlMapperTest extends TestBase {
 
     @Test
     public void testSaveTo_unpairedSurrogateMatrix() throws IOException {
-        // Pins the documented @throws split: a lone HIGH surrogate followed by another character is rejected by
-        // the serializer as an invalid UTF-16 surrogate (UncheckedIOException), a lone LOW surrogate is an
-        // invalid XML character (UncheckedException), and a TRAILING lone high surrogate is silently dropped.
+        // Every unpaired surrogate is rejected before serialization, including a trailing high surrogate
+        // that the underlying serializer otherwise silently drops.
         SqlMapper midHigh = new SqlMapper();
         midHigh.add("q", "SELECT '\uD800x'");
-        assertEquals(com.landawn.abacus.exception.UncheckedIOException.class,
-                assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> midHigh.saveTo(new ByteArrayOutputStream())).getClass());
+        assertThrows(IllegalStateException.class, () -> midHigh.saveTo(new ByteArrayOutputStream()));
 
         SqlMapper midLow = new SqlMapper();
         midLow.add("q", "SELECT '\uDC00x'");
-        assertEquals(com.landawn.abacus.exception.UncheckedException.class,
-                assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> midLow.saveTo(new ByteArrayOutputStream())).getClass());
+        assertThrows(IllegalStateException.class, () -> midLow.saveTo(new ByteArrayOutputStream()));
 
         SqlMapper trailingLow = new SqlMapper();
         trailingLow.add("q", "SELECT '\uDC00");
-        assertEquals(com.landawn.abacus.exception.UncheckedException.class,
-                assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> trailingLow.saveTo(new ByteArrayOutputStream())).getClass());
+        assertThrows(IllegalStateException.class, () -> trailingLow.saveTo(new ByteArrayOutputStream()));
 
         // the id and an attribute value go through the same serializer path as the body
         SqlMapper idMidHigh = new SqlMapper();
         idMidHigh.add("q\uD800x", "SELECT 1");
-        assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> idMidHigh.saveTo(new ByteArrayOutputStream()));
+        assertThrows(IllegalStateException.class, () -> idMidHigh.saveTo(new ByteArrayOutputStream()));
 
         SqlMapper attrMidLow = new SqlMapper();
         attrMidLow.add("q", "SELECT 1", Map.of("k", "a\uDC00b"));
-        assertEquals(com.landawn.abacus.exception.UncheckedException.class,
-                assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> attrMidLow.saveTo(new ByteArrayOutputStream())).getClass());
+        assertThrows(IllegalStateException.class, () -> attrMidLow.saveTo(new ByteArrayOutputStream()));
 
-        // a trailing lone high surrogate: no exception at all, the character is dropped from the output
+        // A trailing lone high surrogate must not silently disappear from a stored definition.
         SqlMapper trailingHigh = new SqlMapper();
         trailingHigh.add("q", "SELECT '\uD800");
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        trailingHigh.saveTo(bos);
-
-        try (InputStream is = new ByteArrayInputStream(bos.toByteArray())) {
-            assertEquals("SELECT '", SqlMapper.loadFrom(is).get("q").originalSql());
-        }
+        assertThrows(IllegalStateException.class, () -> trailingHigh.saveTo(bos));
+        assertEquals(0, bos.size());
 
         // a well-formed surrogate pair is written and reloads unchanged
         SqlMapper pair = new SqlMapper();
@@ -1372,36 +1387,27 @@ public class SqlMapperTest extends TestBase {
 
     @Test
     public void testSaveTo_controlCharacterAndNoncharacterBoundaries() throws IOException {
-        // Pins the documented @throws boundary: only characters BELOW U+0020 other than tab, LF and CR are
-        // rejected - DEL and the C1 controls are written and reload, and of the XML noncharacters only
-        // U+FFFE/U+FFFF make the output unloadable (U+FDD0 round-trips).
-        for (char rejected : new char[] { '\u0000', '\u0001', '\u000B', '\u000C', '\u001F' }) {
+        // XML 1.0 excludes C0 controls other than tab/LF/CR, unpaired surrogates, and U+FFFE/U+FFFF.
+        // DEL, C1 controls, and other noncharacters remain legal XML text.
+        for (char rejected : new char[] { '\u0000', '\u0001', '\u000B', '\u000C', '\u001F', '\uFFFE', '\uFFFF' }) {
             SqlMapper mapper = new SqlMapper();
             mapper.add("q", "SELECT '" + rejected + "'");
-            assertEquals(com.landawn.abacus.exception.UncheckedException.class,
-                    assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> mapper.saveTo(new ByteArrayOutputStream())).getClass());
+            assertThrows(IllegalStateException.class, () -> mapper.saveTo(new ByteArrayOutputStream()));
         }
 
         for (char accepted : new char[] { '\t', '\n', '\r', '\u007F', '\u0080', '\u0085', '\u009F', '\uFDD0' }) {
             SqlMapper mapper = new SqlMapper();
-            mapper.add("q", "SELECT '" + accepted + "'");
+            mapper.add("q", "SELECT '" + accepted + "'", Map.of("note", "a" + accepted + "b", "id", "ignored\uD800"));
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             mapper.saveTo(bos);
 
             try (InputStream is = new ByteArrayInputStream(bos.toByteArray())) {
-                assertEquals("SELECT '" + accepted + "'", SqlMapper.loadFrom(is).get("q").originalSql());
+                final SqlMapper loaded = SqlMapper.loadFrom(is);
+                assertEquals("SELECT '" + accepted + "'", loaded.get("q").originalSql());
+                assertEquals("a" + accepted + "b", loaded.attributes("q").get("note"));
             }
         }
 
-        // U+FFFE is written verbatim but is outside XML 1.0's Char production, so the output cannot be reloaded
-        SqlMapper nonChar = new SqlMapper();
-        nonChar.add("q", "SELECT '\uFFFE'");
-        ByteArrayOutputStream nonCharOut = new ByteArrayOutputStream();
-        nonChar.saveTo(nonCharOut);
-
-        try (InputStream is = new ByteArrayInputStream(nonCharOut.toByteArray())) {
-            assertThrows(com.landawn.abacus.exception.ParsingException.class, () -> SqlMapper.loadFrom(is));
-        }
     }
 
     @Test

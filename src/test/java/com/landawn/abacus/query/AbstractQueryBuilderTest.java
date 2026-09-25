@@ -47,6 +47,157 @@ import com.landawn.abacus.util.Throwables;
 public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
+    public void testComposedFragmentsProtectStandardBackslashLiteralBoundaries() {
+        assertEquals("SELECT * FROM users CROSS JOIN (SELECT 'a\\') a -- tail\n WHERE id = ?",
+                PSC.select("*").from("users").crossJoin("(SELECT 'a\\') a -- tail").where(Filters.eq("id", 1)).build().query());
+        assertEquals("SELECT * FROM users CROSS JOIN (SELECT E'a\\' -- quoted') a WHERE id = ?",
+                PSC.select("*").from("users").crossJoin("(SELECT E'a\\' -- quoted') a").where(Filters.eq("id", 1)).build().query());
+
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        assertEquals("SELECT * FROM users CROSS JOIN (SELECT 'a\\' -- quoted') a WHERE id = ?",
+                mysql.select("*").from("users").crossJoin("(SELECT 'a\\' -- quoted') a").where(Filters.eq("id", 1)).build().query());
+    }
+
+    @Test
+    public void testComposedQueriesRejectTerminatorsAfterStandardBackslashLiterals() {
+        final SqlBuilder parent = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> parent.union("SELECT 'a\\';"));
+        assertEquals("SELECT id FROM users", parent.build().query());
+
+        final SqlBuilder snapshot = PSC.select("id").from("users").append("WHERE value = 'a\\';");
+        assertThrows(IllegalArgumentException.class, snapshot::toSubQuery);
+    }
+
+    @Test
+    public void testMySqlArithmeticDashPairDoesNotHideStatementTerminators() {
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        final SqlBuilder parent = mysql.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> parent.union("SELECT 2--1;"));
+        assertEquals("SELECT id FROM users UNION SELECT 2--1 ORDER BY id", parent.union("SELECT 2--1").orderBy("id").build().query());
+        assertEquals("SELECT id FROM users UNION SELECT 2-- comment;\n ORDER BY id",
+                mysql.select("id").from("users").union("SELECT 2-- comment;").orderBy("id").build().query());
+        for (final String comment : List.of("#>;", "#-;", "##;")) {
+            assertEquals("SELECT id FROM users UNION SELECT 2 " + comment + "\n ORDER BY id",
+                    mysql.select("id").from("users").union("SELECT 2 " + comment).orderBy("id").build().query());
+        }
+    }
+
+    @Test
+    public void testSetOperationRejectsStatementTerminatorsWithoutChangingParent() {
+        for (final String query : new String[] { "SELECT id FROM archived_users;", "SELECT id FROM archived_users; SELECT id FROM another_table",
+                "SELECT id FROM #tmp;", "SELECT id FROM #tmp, ##other; SELECT id FROM another_table" }) {
+            final SqlBuilder parent = PSC.select("id").from("users");
+            assertThrows(IllegalArgumentException.class, () -> parent.union(query));
+            assertEquals("SELECT id FROM users UNION SELECT id FROM active_users ORDER BY id",
+                    parent.union("SELECT id FROM active_users").orderBy("id").build().query());
+        }
+        assertEquals("SELECT id FROM users UNION SELECT ';' FROM archived_users /* ; */ ORDER BY id",
+                PSC.select("id").from("users").union("SELECT ';' FROM archived_users /* ; */").orderBy("id").build().query());
+        assertEquals("SELECT id FROM users UNION SELECT [;] FROM archived_users -- ;\n ORDER BY id",
+                PSC.select("id").from("users").union("SELECT [;] FROM archived_users -- ;").orderBy("id").build().query());
+
+        final SqlBuilder criteriaParent = PSC.select("id").from("users");
+        assertThrows(IllegalArgumentException.class, () -> criteriaParent.append(new Union(Filters.subQuery("SELECT id FROM archived_users;"))));
+        assertEquals("SELECT id FROM users", criteriaParent.build().query());
+    }
+
+    @Test
+    public void testComposedFragmentsDistinguishTemporaryTablesFromHashComments() {
+        final Dsl sqlServer = Dsl.forDialect(NSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        for (final Dsl dsl : new Dsl[] { NSB, sqlServer }) {
+            assertEquals("SELECT id FROM (SELECT id FROM #tmp) t", dsl.select("id").from(dsl.select("id").from("#tmp"), "t").build().query());
+            assertEquals("SELECT id FROM users WHERE id IN (SELECT id FROM #tmp)",
+                    dsl.select("id").from("users").where(Filters.in("id", Filters.subQuery("SELECT id FROM #tmp"))).build().query());
+            final SqlBuilder parent = dsl.select("id").from("users");
+            assertThrows(IllegalArgumentException.class, () -> parent.union("SELECT id FROM #tmp;"));
+            assertEquals("SELECT id FROM users", parent.build().query());
+        }
+
+        final Dsl mysql = Dsl.forDialect(NSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        for (final Dsl dsl : new Dsl[] { NSB, mysql }) {
+            assertEquals("SELECT id FROM users UNION SELECT id FROM archive WHERE id = 1 # note;\n ORDER BY id",
+                    dsl.select("id").from("users").union("SELECT id FROM archive WHERE id = 1 # note;").orderBy("id").build().query());
+            assertEquals("SELECT id FROM users UNION SELECT id FROM archive WHERE id = 1 #note\n ORDER BY id",
+                    dsl.select("id").from("users").union("SELECT id FROM archive WHERE id = 1 #note").orderBy("id").build().query());
+
+            // The existing SELECT classifier conservatively rejects an unanchored #name whose
+            // line contains ';', even when the comment-boundary scanner recognizes a hash comment.
+            final SqlBuilder parent = dsl.select("id").from("users");
+            assertThrows(IllegalArgumentException.class, () -> parent.union("SELECT id FROM archive WHERE id = 1 #note;"));
+            assertEquals("SELECT id FROM users", parent.build().query());
+        }
+    }
+
+    @Test
+    public void testBuilderBackedSubqueriesRejectStatementTerminatorsBeforeMergingBindings() {
+        final SqlBuilder parent = NSC.select("id");
+        final SqlBuilder rejected = NSC.select("id").from("archived_users").where(Filters.eq("status", 7)).append("; SELECT id FROM another_table");
+        assertThrows(IllegalArgumentException.class, () -> parent.from(rejected, "a"));
+        assertTrue(parent._parameters.isEmpty());
+        assertTrue(parent._generatedNamedParameterNames.isEmpty());
+        assertEquals("SELECT id FROM users WHERE status = :status", parent.from("users").where(Filters.eq("status", 8)).build().query());
+
+        final SqlBuilder snapshot = PSC.select("id").from("users").append(";");
+        assertThrows(IllegalArgumentException.class, snapshot::toSubQuery);
+
+        final SqlBuilder unionParent = NSC.select("id").from("users").where(Filters.eq("status", 1));
+        assertThrows(IllegalArgumentException.class,
+                () -> unionParent.union(NSC.select("id").from("archived_users").where(Filters.eq("status", 2)).append(";")));
+        final AbstractQueryBuilder.SP result = unionParent.union(NSC.select("id").from("active_users").where(Filters.eq("status", 3))).build();
+        assertEquals("SELECT id FROM users WHERE status = :status UNION SELECT id FROM active_users WHERE status = :status_2", result.query());
+        assertEquals(List.of(1, 3), result.parameters());
+    }
+
+    @Test
+    public void testJoinTrailingLineCommentsDoNotSwallowConnectorsOrClauses() {
+        for (final String comment : new String[] { "-- join hint", "# join hint" }) {
+            assertEquals("SELECT * FROM users u JOIN orders o " + comment + "\n ON u.id = o.user_id WHERE u.id = ?",
+                    PSC.select("*").from("users u").join("orders o " + comment).on("u.id = o.user_id").where(Filters.eq("u.id", 1)).build().query());
+            assertEquals("SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id " + comment + "\n WHERE u.id = ?",
+                    PSC.select("*").from("users u").leftJoin("orders o ON u.id = o.user_id " + comment).where(Filters.eq("u.id", 1)).build().query());
+            assertEquals("SELECT * FROM users u CROSS JOIN orders o " + comment + "\n WHERE u.id = ?",
+                    PSC.select("*").from("users u").crossJoin("orders o " + comment).where(Filters.eq("u.id", 1)).build().query());
+            final Criteria criteria = Criteria.builder().join("orders o " + comment, Filters.expr("u.id = o.user_id")).build();
+            assertEquals("SELECT * FROM users u JOIN orders o " + comment + "\n ON u.id = o.user_id",
+                    PSC.select("*").from("users u").append(criteria).build().query());
+        }
+        assertEquals("SELECT * FROM users u JOIN orders o /* hint */ ON u.id = o.user_id",
+                PSC.select("*").from("users u").join("orders o /* hint */").on("u.id = o.user_id").build().query());
+    }
+
+    @Test
+    public void testSetOperationTrailingLineCommentsDoNotSwallowFollowingOperandsOrOrderBy() {
+        for (final String comment : new String[] { "-- branch hint", "# branch hint" }) {
+            assertEquals("SELECT id FROM users UNION SELECT id FROM archived_users " + comment + "\n ORDER BY id",
+                    PSC.select("id").from("users").union("SELECT id FROM archived_users " + comment).orderBy("id").build().query());
+            assertEquals("SELECT id FROM users UNION SELECT id FROM archived_users " + comment + "\n INTERSECT SELECT id FROM active_users",
+                    PSC.select("id").from("users").union("SELECT id FROM archived_users " + comment).intersect("SELECT id FROM active_users").build().query());
+        }
+    }
+
+    @Test
+    public void testRawAndSnapshotSubqueryTrailingCommentsDoNotSwallowClosingParenthesis() {
+        for (final String comment : new String[] { "-- subquery hint", "# subquery hint" }) {
+            final SubQuery raw = Filters.subQuery("SELECT id FROM archived_users WHERE status = ? " + comment, List.of(7));
+            final AbstractQueryBuilder.SP rawResult = PSC.select("id").from("users").where(Filters.in("id", raw)).build();
+            assertEquals("SELECT id FROM users WHERE id IN (SELECT id FROM archived_users WHERE status = ? " + comment + "\n)", rawResult.query());
+            assertEquals(List.of(7), rawResult.parameters());
+
+            final SqlBuilder child = NSC.select("id").from("archived_users").where(Filters.eq("status", 7)).append(comment);
+            final AbstractQueryBuilder.SP derivedResult = NSC.select("id").from(child, "a").where(Filters.eq("status", 8)).build();
+            assertEquals("SELECT id FROM (SELECT id FROM archived_users WHERE status = :status " + comment + "\n) a WHERE status = :status_2",
+                    derivedResult.query());
+            assertEquals(List.of(7, 8), derivedResult.parameters());
+
+            final SubQuery snapshot = NSC.select("id").from("archived_users").where(Filters.eq("status", 7)).append(comment).toSubQuery();
+            final AbstractQueryBuilder.SP snapshotResult = NSC.select("id").from("users").where(Filters.in("id", snapshot)).build();
+            assertEquals("SELECT id FROM users WHERE id IN (SELECT id FROM archived_users WHERE status = :status " + comment + "\n)",
+                    snapshotResult.query());
+            assertEquals(List.of(7), snapshotResult.parameters());
+        }
+    }
+
+    @Test
     public void testParameterNameSanitizationPreservesCornerCases() {
         // Returning valid names directly must retain the old normalization of every other shape.
         final String[][] cases = { { "firstName", "firstName" }, { " u.id ", "id" }, { "COUNT(*)", "COUNT" },

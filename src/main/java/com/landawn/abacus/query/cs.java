@@ -140,6 +140,11 @@ public final class cs { // NOSONAR
     public static final String entityIds = "entityIds";
 
     /**
+     * Parameter name for a map entry.
+     */
+    public static final String entry = "entry";
+
+    /**
      * Parameter name for a raw SQL expression fragment.
      */
     public static final String expr = "expr";
@@ -235,6 +240,11 @@ public final class cs { // NOSONAR
     public static final String mutation = "mutation";
 
     /**
+     * Parameter name for the policy used to convert property and column names.
+     */
+    public static final String namingPolicy = "namingPolicy";
+
+    /**
      * Parameter name for the number of rows to skip before returning results.
      */
     public static final String offset = "offset";
@@ -293,6 +303,11 @@ public final class cs { // NOSONAR
      * Parameter name for the value compared against a property.
      */
     public static final String propValue = "propValue";
+
+    /**
+     * Parameter name for the map of property or column names to aliases.
+     */
+    public static final String propOrColumnNameAliases = "propOrColumnNameAliases";
 
     /**
      * Parameter name for the array or collection of property or column names.

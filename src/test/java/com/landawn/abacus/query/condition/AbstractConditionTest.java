@@ -6,8 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -20,11 +23,52 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Dsl;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class AbstractConditionTest extends TestBase {
+    @Test
+    public void testPropertyLineCommentsDoNotConsumePredicateSyntax() {
+        final String propName = "id -- trailing comment";
+        final String prefix = propName + "\n ";
+
+        assertEquals(prefix + "= 1", new Equal(propName, 1).toString());
+        assertEquals(prefix + "IS NULL", new Equal(propName, null).toString());
+        assertEquals(prefix + "BETWEEN 1 AND 2", new Between(propName, 1, 2).toString());
+        assertEquals(prefix + "IN (1, 2)", new In(propName, List.of(1, 2)).toString());
+        assertEquals(prefix + "IN (SELECT id FROM users)", new InSubQuery(propName, new SubQuery("SELECT id FROM users")).toString());
+        assertEquals("(" + propName + "\n, tenantId) IN ((1, 2))", new In(List.of(propName, "tenantId"), List.of(List.of(1, 2))).toString());
+        assertEquals("\"id--tail\" = 1", new Equal("\"id--tail\"", 1).toString());
+        assertEquals(prefix + "= 1", new Equal(propName + "\n", 1).toString());
+    }
+
+    @Test
+    public void testCustomRendererLineCommentsDoNotConsumeWrapperParentheses() {
+        final SqlExpression condition = new SqlExpression("active = 1") {
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                return "active = 1 -- trailing comment";
+            }
+        };
+
+        assertEquals("NOT (active = 1 -- trailing comment\n)", new Not(condition).toString());
+        assertEquals("((active = 1 -- trailing comment\n) AND (id = 1))", new And(condition, new Equal("id", 1)).toString());
+        assertEquals("score BETWEEN active = 1 -- trailing comment\n AND 10", new Between("score", condition, 10).toString());
+    }
+
+    @Test
+    public void testSortLineCommentsDoNotConsumeDirectionsOrLaterColumns() {
+        final String propName = "firstName -- trailing comment";
+        assertEquals(propName + "\n, lastName", AbstractCondition.createSortSpec(propName, "lastName"));
+        assertEquals(propName + "\n DESC", AbstractCondition.createSortSpec(propName, SortDirection.DESC));
+        assertEquals(propName + "\n DESC, lastName DESC", AbstractCondition.createSortSpec(List.of(propName, "lastName"), SortDirection.DESC));
+        assertEquals(propName + "\n DESC", AbstractCondition.createSortSpec(java.util.Map.of(propName, SortDirection.DESC)));
+        assertEquals("ORDER BY first_name DESC, last_name DESC",
+                new OrderBy(List.of(propName, "lastName"), SortDirection.DESC).toSql(NamingPolicy.SNAKE_CASE));
+    }
+
     @Test
     public void testScalarSubqueryOperandsRejectKnownMultiColumnProjections() {
         final SubQuery multiColumn = new SubQuery("accounts", Arrays.asList("id", "tenantId"), null);
@@ -675,6 +719,47 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testCreateSortExpression_CollectionRejectsNullDirection() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(Arrays.asList("id"), null));
+    }
+
+    @Test
+    public void testSortCollectionRendersTheValidatedSnapshot() {
+        for (final boolean grouping : new boolean[] { false, true }) {
+            final Collection<String> propNames = new AbstractCollection<>() {
+                private int traversal;
+
+                @Override
+                public Iterator<String> iterator() {
+                    return (traversal++ == 0 ? List.of("firstName", "lastName") : List.of(" ")).iterator();
+                }
+
+                @Override
+                public int size() {
+                    return 2;
+                }
+            };
+
+            final Condition condition = grouping ? new GroupBy(propNames, SortDirection.DESC) : new OrderBy(propNames, SortDirection.DESC);
+            assertEquals((grouping ? "GROUP BY" : "ORDER BY") + " first_name DESC, last_name DESC", condition.toSql(NamingPolicy.SNAKE_CASE));
+        }
+    }
+
+    @Test
+    public void testSortCollectionRejectsAnEmptySnapshot() {
+        final Collection<String> propNames = new AbstractCollection<>() {
+            @Override
+            public Iterator<String> iterator() {
+                return List.<String>of().iterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(propNames, SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy(propNames, SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(propNames, SortDirection.ASC));
     }
 
     @Test

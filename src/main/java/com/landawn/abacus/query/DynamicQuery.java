@@ -402,9 +402,9 @@ public final class DynamicQuery {
          */
         public Builder limit(final int count) {
             checkNotBuilt();
-            N.checkArgNotNegative(count, cs.count);
             checkPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(limitCount, "LIMIT count");
+            N.checkArgNotNegative(count, cs.count);
 
             paginationSyntax = PaginationSyntax.LIMIT;
             limitCount = count;
@@ -441,11 +441,11 @@ public final class DynamicQuery {
          */
         public Builder limit(final int count, final int offset) {
             checkNotBuilt();
-            N.checkArgNotNegative(count, cs.count);
-            N.checkArgNotNegative(offset, cs.offset);
             checkPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(limitCount, "LIMIT count");
             checkPaginationPartUnset(plainOffset, "plain OFFSET");
+            N.checkArgNotNegative(count, cs.count);
+            N.checkArgNotNegative(offset, cs.offset);
 
             paginationSyntax = PaginationSyntax.LIMIT;
             limitCount = count;
@@ -478,9 +478,9 @@ public final class DynamicQuery {
          */
         public Builder offset(final int offset) {
             checkNotBuilt();
-            N.checkArgNotNegative(offset, cs.offset);
             checkPaginationSyntax(PaginationSyntax.LIMIT);
             checkPaginationPartUnset(plainOffset, "plain OFFSET");
+            N.checkArgNotNegative(offset, cs.offset);
 
             paginationSyntax = PaginationSyntax.LIMIT;
             plainOffset = offset;
@@ -508,9 +508,9 @@ public final class DynamicQuery {
          */
         public Builder offsetRows(final int offset) {
             checkNotBuilt();
-            N.checkArgNotNegative(offset, cs.offset);
             checkPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(rowsOffset, "OFFSET ... ROWS");
+            N.checkArgNotNegative(offset, cs.offset);
 
             paginationSyntax = PaginationSyntax.FETCH;
             rowsOffset = offset;
@@ -536,9 +536,9 @@ public final class DynamicQuery {
          */
         public Builder fetchNextRows(final int count) {
             checkNotBuilt();
-            N.checkArgNotNegative(count, cs.count);
             checkPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(fetchCount, "FETCH count");
+            N.checkArgNotNegative(count, cs.count);
 
             paginationSyntax = PaginationSyntax.FETCH;
             fetchCount = count;
@@ -567,9 +567,9 @@ public final class DynamicQuery {
          */
         public Builder fetchFirstRows(final int count) {
             checkNotBuilt();
-            N.checkArgNotNegative(count, cs.count);
             checkPaginationSyntax(PaginationSyntax.FETCH);
             checkPaginationPartUnset(fetchCount, "FETCH count");
+            N.checkArgNotNegative(count, cs.count);
 
             paginationSyntax = PaginationSyntax.FETCH;
             fetchCount = count;
@@ -1558,9 +1558,9 @@ public final class DynamicQuery {
          */
         public FromClause join(final String joinExpr, final String expr) {
             assertNotClosed();
+            requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            requireFromInitialized();
             sb.append(" JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
@@ -1586,9 +1586,9 @@ public final class DynamicQuery {
          */
         public FromClause innerJoin(final String joinExpr, final String expr) {
             assertNotClosed();
+            requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            requireFromInitialized();
             sb.append(" INNER JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
@@ -1614,9 +1614,9 @@ public final class DynamicQuery {
          */
         public FromClause leftJoin(final String joinExpr, final String expr) {
             assertNotClosed();
+            requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            requireFromInitialized();
             sb.append(" LEFT JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
@@ -1642,9 +1642,9 @@ public final class DynamicQuery {
          */
         public FromClause rightJoin(final String joinExpr, final String expr) {
             assertNotClosed();
+            requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            requireFromInitialized();
             sb.append(" RIGHT JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
@@ -1671,9 +1671,9 @@ public final class DynamicQuery {
          */
         public FromClause fullJoin(final String joinExpr, final String expr) {
             assertNotClosed();
+            requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            requireFromInitialized();
             sb.append(" FULL JOIN ").append(joinExpr).append(" ON ").append(expr);
 
             return this;
@@ -1699,8 +1699,8 @@ public final class DynamicQuery {
          */
         public FromClause join(final String joinExpr) {
             assertNotClosed();
-            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             sb.append(" JOIN ").append(joinExpr);
 
             return this;
@@ -1726,8 +1726,8 @@ public final class DynamicQuery {
          */
         public FromClause innerJoin(final String joinExpr) {
             assertNotClosed();
-            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             sb.append(" INNER JOIN ").append(joinExpr);
 
             return this;
@@ -1753,8 +1753,8 @@ public final class DynamicQuery {
          */
         public FromClause leftJoin(final String joinExpr) {
             assertNotClosed();
-            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             sb.append(" LEFT JOIN ").append(joinExpr);
 
             return this;
@@ -1780,8 +1780,8 @@ public final class DynamicQuery {
          */
         public FromClause rightJoin(final String joinExpr) {
             assertNotClosed();
-            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             sb.append(" RIGHT JOIN ").append(joinExpr);
 
             return this;
@@ -1807,8 +1807,8 @@ public final class DynamicQuery {
          */
         public FromClause fullJoin(final String joinExpr) {
             assertNotClosed();
-            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             sb.append(" FULL JOIN ").append(joinExpr);
 
             return this;
@@ -1833,8 +1833,8 @@ public final class DynamicQuery {
          */
         public FromClause crossJoin(final String joinExpr) {
             assertNotClosed();
-            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             sb.append(" CROSS JOIN ").append(joinExpr);
 
             return this;
@@ -1859,8 +1859,8 @@ public final class DynamicQuery {
          */
         public FromClause naturalJoin(final String joinExpr) {
             assertNotClosed();
-            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             requireFromInitialized();
+            checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             sb.append(" NATURAL JOIN ").append(joinExpr);
 
             return this;
@@ -2035,8 +2035,8 @@ public final class DynamicQuery {
          */
         public WhereClause appendPlaceholders(final int placeholderCount) {
             assertNotClosed();
-            N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
             requireInitializedForPlaceholders("WHERE");
+            N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
 
             appendPlaceholderSequence(placeholderCount);
 
@@ -2066,10 +2066,10 @@ public final class DynamicQuery {
          */
         public WhereClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
             assertNotClosed();
+            requireInitializedForPlaceholders("WHERE");
             N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
             N.checkArgNotNull(prefix, cs.prefix);
             N.checkArgNotNull(postfix, cs.postfix);
-            requireInitializedForPlaceholders("WHERE");
 
             if (placeholderCount > 0) {
                 sb.append(prefix);
@@ -2455,8 +2455,8 @@ public final class DynamicQuery {
          */
         public HavingClause appendPlaceholders(final int placeholderCount) {
             assertNotClosed();
-            N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
             requireInitializedForPlaceholders("HAVING");
+            N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
 
             appendPlaceholderSequence(placeholderCount);
 
@@ -2486,10 +2486,10 @@ public final class DynamicQuery {
          */
         public HavingClause appendPlaceholders(final int placeholderCount, final String prefix, final String postfix) {
             assertNotClosed();
+            requireInitializedForPlaceholders("HAVING");
             N.checkArgNotNegative(placeholderCount, cs.placeholderCount);
             N.checkArgNotNull(prefix, cs.prefix);
             N.checkArgNotNull(postfix, cs.postfix);
-            requireInitializedForPlaceholders("HAVING");
 
             if (placeholderCount > 0) {
                 sb.append(prefix);

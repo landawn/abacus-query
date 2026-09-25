@@ -14,6 +14,7 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -82,9 +83,11 @@ public abstract class ComposableCell extends ComposableCondition {
      * @param operator the operator to apply to the condition (must not be {@code null})
      * @param condition the condition to wrap (must not be {@code null}); for an {@code ALL},
      *                  {@code ANY}, or {@code SOME} operator this must be a {@link SubQuery} whose
-     *                  known, non-wildcard structured projection contains exactly one column
-     * @throws IllegalArgumentException if {@code operator} is {@code null}, if {@code condition} is {@code null}, or if a quantified
-     *                                  operator does not wrap a valid one-column subquery
+     *                  known, non-wildcard structured projection contains exactly one column;
+     *                  raw SQL and wildcard projection arity are left to the database
+     * @throws IllegalArgumentException if {@code operator} or {@code condition} is {@code null}, or if a quantified
+     *                                  operator does not wrap a {@link SubQuery}, or its known, non-wildcard projection
+     *                                  contains a number of columns other than one
      */
     protected ComposableCell(final Operator operator, final Condition condition) {
         super(operator);
@@ -100,8 +103,8 @@ public abstract class ComposableCell extends ComposableCondition {
      * @param condition the condition to wrap
      * @return the validated condition
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code operator} is
-     *         {@code ALL}, {@code ANY}, or {@code SOME} and {@code condition} is not a {@link SubQuery} with a
-     *         known one-column projection
+     *         {@code ALL}, {@code ANY}, or {@code SOME} and {@code condition} is not a {@link SubQuery},
+     *         or its known, non-wildcard projection contains a number of columns other than one
      */
     private static Condition validateWrappedCondition(final Operator operator, final Condition condition) {
         N.checkArgNotNull(condition, cs.condition);
@@ -202,12 +205,15 @@ public abstract class ComposableCell extends ComposableCondition {
      * @throws IllegalArgumentException if rendering the wrapped condition rejects one of its values (for example a
      *                                  {@code NaN} or infinite {@link Float}/{@link Double}), or if a wrapped
      *                                  {@link SubQuery} cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Condition cond = condition();
-        final String conditionString = cond == null ? "" : cond.toSql(effectiveNamingPolicy);
+        final String conditionString = cond == null ? "" : QueryUtil.terminateLineComment(String.valueOf(cond.toSql(effectiveNamingPolicy)));
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
         return opStr + SK._SPACE + SK._PARENTHESIS_L + conditionString + SK._PARENTHESIS_R;

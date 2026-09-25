@@ -329,11 +329,14 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * @return the SQL representation of the condition
      * @throws IllegalArgumentException if the subquery cannot be rendered, as documented for
      *         {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-        final String subQueryString = subQuery == null ? Strings.EMPTY : subQuery.toSql(effectiveNamingPolicy);
+        final String subQueryString = subQuery == null ? Strings.EMPTY : QueryUtil.terminateLineComment(String.valueOf(subQuery.toSql(effectiveNamingPolicy)));
         final Operator op = operator();
         final String opStr = op == null ? Strings.NULL : op.toString();
 
@@ -343,8 +346,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
             if (size == 1) {
                 final String singleProp = propNames.iterator().next();
 
-                return QueryUtil.convertIdentifier(singleProp, effectiveNamingPolicy) + SK._SPACE + opStr + SK.SPACE_PARENTHESIS_L + subQueryString
-                        + SK.PARENTHESIS_R;
+                return QueryUtil.terminateLineComment(QueryUtil.convertIdentifier(singleProp, effectiveNamingPolicy)) + SK._SPACE + opStr
+                        + SK.SPACE_PARENTHESIS_L + subQueryString + SK.PARENTHESIS_R;
             }
 
             final StringBuilder sb = new StringBuilder(16 + (size << 4) + subQueryString.length());
@@ -356,7 +359,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
                     sb.append(SK.COMMA_SPACE);
                 }
 
-                sb.append(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy));
+                sb.append(QueryUtil.terminateLineComment(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy)));
             }
 
             sb.append(SK._PARENTHESIS_R).append(SK._SPACE).append(opStr).append(SK.SPACE_PARENTHESIS_L).append(subQueryString).append(SK.PARENTHESIS_R);

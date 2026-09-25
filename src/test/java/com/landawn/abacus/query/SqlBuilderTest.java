@@ -13523,7 +13523,7 @@ public class SqlBuilderTest extends TestBase {
                 .build();
 
         assertTrue(sp.query().contains("archive WHERE id = :id_2"), sp.query());
-        assertTrue(sp.query().endsWith("# note :id"), sp.query());
+        assertTrue(sp.query().endsWith("# note :id\n"), sp.query());
         assertFalse(sp.query().contains("# note :id_2"), sp.query());
         assertEquals(Arrays.asList(1, 2), sp.parameters());
     }

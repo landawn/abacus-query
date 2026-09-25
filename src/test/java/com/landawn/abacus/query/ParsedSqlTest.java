@@ -24,6 +24,128 @@ import com.landawn.abacus.util.Strings;
 public class ParsedSqlTest extends TestBase {
 
     @Test
+    public void testParse_GeometricLiteralsAndConstructorsHonorFinalCasts() {
+        for (final String operand : List.of("line '(0,0),(1,0)'::text", "pg_catalog.line'(0,0),(1,0)' ::text",
+                "line E'(0,0),(1,0)'::text", "line N'(0,0),(1,0)'::text", "line U&'(0,0),(1,0)'::text",
+                "line(point(0,0), point(1,0))::text", "pg_catalog.lseg(point(0,0), point(1,0)) /* gap */ ::text")) {
+            for (final boolean grouped : new boolean[] { false, true }) {
+                final String sql = grouped ? "SELECT ARRAY[?- " + operand + "]" : "SELECT ?- " + operand;
+                final ParsedSql parsed = ParsedSql.parse(sql);
+                assertEquals(1, parsed.parameterCount(), sql);
+                assertArrayEquals(new int[] { sql.indexOf('?') }, parsed.positionalParameterOffsets(), sql);
+                assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql + ", :other"), sql);
+            }
+        }
+    }
+
+    @Test
+    public void testParse_CastChainsSkipQuotedColonsAndArraySuffixes() {
+        for (final String operand : List.of("?::\"odd::type\" ::line", "?::\"odd\"\"::type\" ::line", "?::text[]::text ::line",
+                "?::text [] ::text ::line", "?::text[ ][]::text ::line", "?::varchar(30)[] ::line", "?::line [] ::line",
+                "?::text[3] ::line", "?::text [ 30 ][] ::line", "?::text ARRAY::text ::line", "?::text ARRAY[3]::text ::line",
+                "?::text array [3] ::text ::line")) {
+            for (final boolean grouped : new boolean[] { false, true }) {
+                final String sql = grouped ? "SELECT ARRAY[?- " + operand + "]" : "SELECT ?- " + operand;
+                final ParsedSql parsed = ParsedSql.parse(sql);
+                assertEquals(1, parsed.parameterCount(), sql);
+                assertArrayEquals(new int[] { sql.lastIndexOf('?') }, parsed.positionalParameterOffsets(), sql);
+            }
+        }
+
+        for (final String operand : List.of("?::\"odd::line\"", "?::line[]", "?::line []", "?::line[ ][]", "?::line [3]",
+                "?::line ARRAY", "?::line ARRAY[3]", "?::line ARRAY [3]", "?::text[3] + other::line", "?::text[x] ::line",
+                "?::text ARRAY[3] + other::line", "?::text ARRAY[x] ::line")) {
+            for (final boolean grouped : new boolean[] { false, true }) {
+                final String sql = grouped ? "SELECT ARRAY[?- " + operand + "]" : "SELECT ?- " + operand;
+                assertEquals(2, ParsedSql.parse(sql).parameterCount(), sql);
+            }
+        }
+    }
+
+    @Test
+    public void testParse_QuotedColonsInEscapeLiteralsAreNotCasts() {
+        for (final boolean grouped : new boolean[] { false, true }) {
+            final String expression = "?- line E'escaped\\'::text'";
+            final String sql = grouped ? "SELECT ARRAY[" + expression + "]" : "SELECT " + expression;
+            assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
+            assertEquals(List.of("other"), ParsedSql.parse(sql + ", :other").namedParameters(), sql);
+        }
+    }
+
+    @Test
+    public void testParse_SqlJsonUniquenessClausesKeepRealBindings() {
+        for (final String clause : List.of("WITH UNIQUE KEYS", "WITHOUT UNIQUE KEYS", "WITH UNIQUE", "without /* gap */ unique keys")) {
+            for (final boolean grouped : new boolean[] { false, true }) {
+                final String expression = "JSON_OBJECT('k' VALUE ? " + clause + ")";
+                final String sql = grouped ? "SELECT ARRAY[" + expression + "]" : "SELECT " + expression;
+                final ParsedSql parsed = ParsedSql.parse(sql);
+                assertEquals(1, parsed.parameterCount(), sql);
+                assertArrayEquals(new int[] { sql.indexOf('?') }, parsed.positionalParameterOffsets(), sql);
+                assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql + ", :other"), sql);
+                assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql + ", #{other}"), sql);
+            }
+        }
+    }
+
+    @Test
+    public void testParse_ParenthesizedJsonArrayQueryKeepsQueryScope() {
+        for (final String query : List.of("(SELECT 1) UNION SELECT 1 FROM t JOIN u JOIN v ON v.payload ? NULL ON NULL",
+                "((SELECT 1)) UNION SELECT 1 FROM t JOIN u JOIN v ON v.payload ? NULL ON NULL")) {
+            for (final boolean grouped : new boolean[] { false, true }) {
+                final String expression = "JSON_ARRAY(" + query + ")";
+                final String sql = grouped ? "SELECT ARRAY[" + expression + "]" : "SELECT " + expression;
+                final ParsedSql parsed = ParsedSql.parse(sql);
+                assertEquals(0, parsed.parameterCount(), sql);
+                assertArrayEquals(new int[0], parsed.positionalParameterOffsets(), sql);
+                assertEquals(List.of("other"), ParsedSql.parse(sql + ", :other").namedParameters(), sql);
+            }
+        }
+
+        // A scalar subquery can instead be the first value in a constructor's value list.
+        final String values = "SELECT JSON_ARRAY((SELECT 1), ? NULL ON NULL)";
+        assertEquals(1, ParsedSql.parse(values).parameterCount());
+        assertArrayEquals(new int[] { values.indexOf('?') }, ParsedSql.parse(values).positionalParameterOffsets());
+    }
+
+    @Test
+    public void testParse_ChainedGeometricCastsUseTheFinalType() {
+        for (final String operand : List.of("CAST(? AS text)::line", "?::text ::line", "? :: text :: line",
+                "CAST(? AS text) :: pg_catalog . \"line\"", "?::text /* cast */ ::lseg", "?::varchar(30)::line",
+                "?::character varying::line", "?::character varying(30) ::line", "?::double precision::text ::line",
+                "?::timestamp(3) without time zone::text ::line")) {
+            for (final boolean grouped : new boolean[] { false, true }) {
+                final String sql = grouped ? "SELECT ARRAY[?- " + operand + "]" : "SELECT ?- " + operand;
+                final ParsedSql parsed = ParsedSql.parse(sql);
+                assertEquals(1, parsed.parameterCount(), sql);
+                assertArrayEquals(new int[] { sql.lastIndexOf('?') }, parsed.positionalParameterOffsets(), sql);
+            }
+        }
+
+        for (final String operand : List.of("?::line ::text", "CAST(? AS line)::text", "?::text + other::line",
+                "?::line ::varchar(30)", "?::line ::character varying", "?::varchar(30) + other::line")) {
+            final String sql = "SELECT ?- " + operand;
+            assertEquals(2, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+    }
+
+    @Test
+    public void testParse_QualifiedAdjacentGeometricLiteralsMatchSpacedLiterals() {
+        for (final String type : List.of("pg_catalog.line", "pg_catalog.lseg", "PG_CATALOG.LINE", "\"pg_catalog\".\"line\"")) {
+            for (final boolean grouped : new boolean[] { false, true }) {
+                final String expression = "?-" + type + "'(0,0),(1,0)'";
+                final String sql = grouped ? "SELECT ARRAY[" + expression + "]" : "SELECT " + expression;
+                assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
+                assertArrayEquals(new int[0], ParsedSql.parse(sql).positionalParameterOffsets(), sql);
+                assertEquals(List.of("other"), ParsedSql.parse(sql + ", :other").namedParameters(), sql);
+            }
+        }
+
+        for (final String type : List.of("other.line", "\"PG_CATALOG\".line", "pg_catalog.line_extra")) {
+            assertEquals(1, ParsedSql.parse("SELECT ?-" + type + "'(0,0),(1,0)'").parameterCount(), type);
+        }
+    }
+
+    @Test
     public void testParse_QuotePrefixesAndSparseOffsetFallbackAcrossSeveralGroups() {
         // Prefix-only quote checks must leave prefixed literals opaque. Extra literal markers force
         // the sparse ordinary/group positions to merge back into their original source order.

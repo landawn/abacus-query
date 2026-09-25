@@ -1,40 +1,34 @@
-• 1. [P2] JSON uniqueness clauses hide real bindings — src/main/java/com/landawn/abacus/query/ParsedSql.java:1648.
-     SELECT ARRAY[JSON_OBJECT('k' VALUE ? WITH UNIQUE KEYS)] reports zero parameters instead of one. WITHOUT UNIQUE
-     KEYS behaves identically. The clause recognizer omits these options, causing the placeholder to be classified
-     as an operator. Adding :other incorrectly bypasses mixed-style rejection. HEAD handles both cases correctly;
-     current tests omit uniqueness clauses.
+Resolved issues from the deep source review (2026-09-24)
 
-  2. [P2] Chained geometric casts introduce phantom parameters — src/main/java/com/landawn/abacus/query/
-     ParsedSql.java:1715.
-     Both statements report two parameters instead of one:
+The five cases previously listed here are fixed and covered by regression tests
+in the existing test classes. This list is not a claim that all SQL grammar
+variants are supported.
 
-     SELECT ?- CAST(? AS text)::line
-     SELECT ?- ?::text ::line
+1. JSON uniqueness clauses no longer hide real bindings.
+   SELECT ARRAY[JSON_OBJECT('k' VALUE ? WITH UNIQUE KEYS)] reports one parameter.
+   WITHOUT UNIQUE KEYS and mixed-style rejection are covered as well.
+   Test: ParsedSqlTest.testParse_SqlJsonUniquenessClausesKeepRealBindings
 
-     Recognition stops at the intermediate text cast instead of following the final geometric cast. HEAD reports
-     one. Tests cover individual formatted casts but omit cast chains.
+2. Chained geometric casts follow the final type without phantom parameters.
+   SELECT ?- CAST(? AS text)::line and SELECT ?- ?::text ::line each report one
+   parameter. Intermediate type modifiers and multiword types are also covered.
+   Test: ParsedSqlTest.testParse_ChainedGeometricCastsUseTheFinalType
 
-  3. [P2] Qualified geometric literals lose unary-operator recognition — src/main/java/com/landawn/abacus/query/
-     ParsedSql.java:1757.
-     SELECT ?-pg_catalog.line'(0,0),(1,0)' reports one parameter instead of zero. The fallback recognizes only
-     unqualified line' and lseg' prefixes. Adding whitespace before the literal changes classification despite
-     equivalent SQL. HEAD reports zero; tests omit this spelling.
+3. Qualified adjacent geometric literals retain unary-operator recognition.
+   SELECT ?-pg_catalog.line'(0,0),(1,0)' reports zero parameters and agrees with
+   the equivalent form containing whitespace before the literal.
+   Test: ParsedSqlTest.testParse_QualifiedAdjacentGeometricLiteralsMatchSpacedLiterals
 
-  4. [P2] Parenthesized JSON_ARRAY queries retain constructor-value scope — src/main/java/com/landawn/abacus/query/
-     ParsedSql.java:1591.
-     Query-form detection misses the leading parenthesized SELECT:
+4. Parenthesized JSON_ARRAY queries retain query scope.
+   A parenthesized SELECT followed by UNION and nested JOIN predicates no longer
+   mistakes NULL ON NULL across predicate boundaries for a constructor option.
+   Real named bindings no longer cause a false mixed-style error in this case.
+   Test: ParsedSqlTest.testParse_ParenthesizedJsonArrayQueryKeepsQueryScope
 
-     SELECT JSON_ARRAY(
-       (SELECT 1) UNION
-       SELECT 1 FROM t JOIN u JOIN v ON v.payload ? NULL ON NULL
-     )
-
-     NULL ON NULL, spanning two JOIN predicates, is mistaken for a constructor clause. Current parsing reports one
-     phantom parameter; HEAD reports zero. Named bindings consequently trigger false mixed-style errors. Tests omit
-     this query form.
-
-  5. [P2] Unicode identifier mappings using escape-string syntax lose table aliases — src/main/java/com/landawn/
-     abacus/query/QueryUtil.java:353.
-     @Column("U&\"caf!00e9\" UESCAPE E'!'") loses its table qualification because the helper rejects the valid E
-     prefix. A self-join therefore produces an ambiguous column reference. HEAD prefixes the alias correctly.
-     Existing tests cover only ordinary escape literals.
+5. Unicode identifier mappings accept UESCAPE escape-string literals.
+   U&"caf!00e9" UESCAPE E'!' retains table aliases, including in self-joins and
+   nested mappings. Backslash, octal, hex and Unicode escapes are checked, while
+   invalid escape clauses and expressions are not treated as bare identifiers.
+   Tests: QueryUtilTest.testUnicodeEscapeStringClausesRetainTableAndNestedQualifiers
+          QueryUtilTest.testUnicodeEscapeStringClausesDoNotHideOrInventQualifyingDots
+          QueryUtilTest.testUnicodeEscapeStringsDoNotTreatInvalidClausesOrExpressionsAsIdentifiers

@@ -98,7 +98,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @param condition the condition to AND with this condition (must not be {@code null})
      * @return a new {@link And} condition containing both conditions
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
+     * @throws IllegalArgumentException if {@code this} is non-composable, if {@code condition} is {@code null}, or if {@code condition}
      *                                  is or contains a non-composable component — a condition with a {@code null} operator,
      *                                  a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
@@ -106,8 +106,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  {@link SqlExpression}
      */
     public And and(final Condition condition) {
-        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(this, "and");
+        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(condition, "and");
 
         return new And(this, condition);
@@ -127,7 +127,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @param condition the condition to OR with this condition (must not be {@code null})
      * @return a new {@link Or} condition containing both conditions
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
+     * @throws IllegalArgumentException if {@code this} is non-composable, if {@code condition} is {@code null}, or if {@code condition}
      *                                  is or contains a non-composable component — a condition with a {@code null} operator,
      *                                  a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
@@ -135,8 +135,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  {@link SqlExpression}
      */
     public Or or(final Condition condition) {
-        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(this, "or");
+        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(condition, "or");
 
         return new Or(this, condition);
@@ -164,7 +164,7 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @param condition the condition to XOR with this condition (must not be {@code null})
      * @return a composable condition representing the exclusive-or {@code (this AND NOT condition) OR (NOT this AND condition)}
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, or if either {@code this} or {@code condition}
+     * @throws IllegalArgumentException if {@code this} is non-composable, if {@code condition} is {@code null}, or if {@code condition}
      *                                  is or contains a non-composable component — a condition with a {@code null} operator,
      *                                  a {@link Criteria}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
@@ -172,8 +172,8 @@ public abstract class ComposableCondition extends AbstractCondition {
      *                                  {@link SqlExpression}
      */
     public Or xor(final Condition condition) {
-        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(this, "xor");
+        N.checkArgNotNull(condition, cs.condition);
         validateComposableOperand(condition, "xor");
 
         return new Or(new And(this, new Not(condition)), new And(new Not(this), condition));

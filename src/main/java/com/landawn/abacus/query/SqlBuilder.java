@@ -161,11 +161,15 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * mixes parameter styles, and the bindings are appended in that order; under {@code RAW_SQL} each one is
      * replaced by the literal rendering of its binding (exactly as a structured condition's value is inlined:
      * strings quoted and escaped, {@code null} as the {@code null} literal, a {@link SqlExpression} verbatim) and nothing
-     * is added to the parameter list (see {@link #renameRawSubQueryPlaceholders(String, List)}). An empty
+     * is added to the parameter list (see {@link #renameRawSubQueryPlaceholders(String, List)}). Subquery text
+     * ending in a line comment receives a terminating line feed before a closing parenthesis or subsequent
+     * clause is appended. An empty
      * {@link Junction} renders as its Boolean identity ({@code 1 = 1} for AND, {@code 1 = 0} for OR),
      * exactly as {@code Junction.toSql} does.</p>
      *
      * @param cond the condition to render; must not be {@code null} and must be one of the supported condition types
+     * @throws IllegalStateException if this builder is closed, a structured subquery is incomplete or contains duplicate or
+     *         out-of-order clauses, or a named-parameter handler emits an empty token under {@code NAMED_SQL}
      * @throws IllegalArgumentException if {@code cond} is {@code null} or an unsupported condition type; if a rendered column
      *         name contains a SQL comment token; if a {@link SqlExpression} is blank; if a {@link Using} condition
      *         renders a table- or schema-qualified column name; if a
@@ -173,12 +177,16 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *         or if, under {@code NAMED_SQL}/{@code IBATIS_SQL}/{@code RAW_SQL}, the positional placeholder count
      *         of a bound raw sub-query cannot be matched to its bindings. Placeholder detection follows
      *         {@link ParsedSql}: array-subscript bindings are included, while JSON operators and quoted or
-     *         commented question marks are excluded
-     * @throws IllegalStateException under {@code NAMED_SQL} if the named-parameter handler emits an empty token
-     *         for a rendered placeholder
+     *         commented question marks are excluded. This exception is also thrown if a builder-backed subquery uses an
+     *         incompatible parameter policy, contains a semicolon outside quoted text or comments, or is not a syntactic SELECT,
+     *         or a RAW_SQL value is non-finite or its Number text is not a decimal SQL literal.
+     * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
+     * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception;
+     *         or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
      */
     @Override
     protected void appendCondition(final Condition cond) {
+        assertNotClosed();
         N.checkArgNotNull(cond, cs.cond);
 
         if (cond instanceof final Binary binary) {
@@ -290,7 +298,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 // Under RAW_SQL the "?"s are replaced by the bindings' literal renderings, so nothing is bound.
                 final List<Object> rawParameters = subQuery.parameters();
 
-                _sb.append(renameRawSubQueryPlaceholders(subQuery.rawSql(), rawParameters));
+                appendSqlFragment(renameRawSubQueryPlaceholders(subQuery.rawSql(), rawParameters));
 
                 if (N.notEmpty(rawParameters) && _sqlPolicy != SqlPolicy.RAW_SQL) {
                     // The rendered statement now carries placeholders bound under this builder's policy, so a
@@ -316,7 +324,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                     final SP subSP = subBuilder.build();
                     adoptNamedParameterOccurrences(subBuilder);
 
-                    _sb.append(subSP.query());
+                    appendSqlFragment(subSP.query());
 
                     if (N.notEmpty(subSP.parameters())) {
                         _parameters.addAll(subSP.parameters());
@@ -341,6 +349,12 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
      * @param minValue the lower bound (inclusive)
      * @param maxValue the upper bound (inclusive)
+     * @throws IllegalStateException if this builder is closed, a nested structured subquery has incomplete or out-of-order clauses,
+     *         or a named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws IllegalArgumentException if a rendered column is blank or contains a SQL comment token, or a nested condition, subquery,
+     *         or raw numeric literal is rejected as described by {@link #appendCondition(Condition)}
+     * @throws UnsupportedOperationException if nested entity metadata configures a LocalDate or LocalTime property with date format {@code long}
+     * @throws RuntimeException if a configured named-parameter handler or a raw value's custom string conversion throws an unchecked exception
      */
     private void appendBetweenClause(final String propName, final Operator operator, final Object minValue, final Object maxValue) {
         appendColumnName(propName);
@@ -374,6 +388,12 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @param propNames the property/column names (one or more)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param values the membership values; a {@code null} list renders as an empty value list
+     * @throws IllegalStateException if this builder is closed, a nested structured subquery has incomplete or out-of-order clauses,
+     *         or a named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws IllegalArgumentException if a rendered column is blank or contains a SQL comment token, or a nested condition, subquery,
+     *         or raw numeric literal is rejected as described by {@link #appendCondition(Condition)}
+     * @throws UnsupportedOperationException if nested entity metadata configures a LocalDate or LocalTime property with date format {@code long}
+     * @throws RuntimeException if a configured named-parameter handler or a raw value's custom string conversion throws an unchecked exception
      */
     private void appendInClause(final Collection<String> propNames, final Operator operator, final List<?> values) {
         if (propNames.size() > 1) {
@@ -410,6 +430,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     /**
      * Copies runs of ordinary positional bindings together, rendering expressions in their original
      * position between runs. Subclasses retain individual setter calls so their hooks still run.
+     * @throws IllegalArgumentException if a condition in {@code values} contains an unsupported condition type, an unsafe column, or an incompatible subquery
+     * @throws IllegalStateException if rendering a condition in {@code values} encounters an incomplete or out-of-order structured subquery
+     * @throws UnsupportedOperationException if a structured subquery's entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     private boolean appendPositionalInValues(final String propName, final List<?> values) {
         final int size = values.size();
@@ -450,6 +473,12 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @param propNames the property/column names (one or more)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param values the value tuples; each element is a {@link Collection} of the row's values
+     * @throws IllegalStateException if this builder is closed, a nested structured subquery has incomplete or out-of-order clauses,
+     *         or a named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws IllegalArgumentException if a rendered column is blank or contains a SQL comment token, or a nested condition, subquery,
+     *         or raw numeric literal is rejected as described by {@link #appendCondition(Condition)}
+     * @throws UnsupportedOperationException if nested entity metadata configures a LocalDate or LocalTime property with date format {@code long}
+     * @throws RuntimeException if a configured named-parameter handler or a raw value's custom string conversion throws an unchecked exception
      */
     private void appendMultiColumnInClause(final Collection<String> propNames, final Operator operator, final List<?> values) {
         final String[] colNames = propNames.toArray(new String[0]);
@@ -509,6 +538,12 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @param propNames the property/column names (one or more)
      * @param operator the operator ({@link Operator#IN} or {@link Operator#NOT_IN})
      * @param subQuery the subquery whose result set the column value(s) are tested against
+     * @throws IllegalStateException if this builder is closed, a nested structured subquery has incomplete or out-of-order clauses,
+     *         or a named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws IllegalArgumentException if a rendered column is blank or contains a SQL comment token, or a nested condition, subquery,
+     *         or raw numeric literal is rejected as described by {@link #appendCondition(Condition)}
+     * @throws UnsupportedOperationException if nested entity metadata configures a LocalDate or LocalTime property with date format {@code long}
+     * @throws RuntimeException if a configured named-parameter handler or a raw value's custom string conversion throws an unchecked exception
      */
     private void appendInSubQueryClause(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
         if (propNames.size() == 1) {
@@ -545,6 +580,12 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *
      * @param operator the cell operator (for example {@link Operator#NOT} or {@link Operator#EXISTS})
      * @param inner the condition to wrap in parentheses
+     * @throws IllegalStateException if this builder is closed, a nested structured subquery has incomplete or out-of-order clauses,
+     *         or a named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws IllegalArgumentException if a rendered column is blank or contains a SQL comment token, or a nested condition, subquery,
+     *         or raw numeric literal is rejected as described by {@link #appendCondition(Condition)}
+     * @throws UnsupportedOperationException if nested entity metadata configures a LocalDate or LocalTime property with date format {@code long}
+     * @throws RuntimeException if a configured named-parameter handler or a raw value's custom string conversion throws an unchecked exception
      */
     private void appendParenthesizedCondition(final Operator operator, final Condition inner) {
         // Clause methods already leave a trailing space (for example, "WHERE "). Add one only when
@@ -568,7 +609,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *
      * @param subQuery the sub-query condition being rendered
      * @return a fresh sub-query builder bound to the same {@link SqlDialect} as {@code this}
-     * @throws IllegalArgumentException if {@code subQuery} has no selected property/column names
+     * @throws IllegalArgumentException if {@code subQuery} has no selected property/column names;
+     *         or if its entity name is blank, its entity class is not a bean class, or a selected column contains an unsafe SQL fragment.
+     * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     private SqlBuilder newSubQueryBuilder(final SubQuery subQuery) {
         final Collection<String> selectPropNames = subQuery.selectPropNames();

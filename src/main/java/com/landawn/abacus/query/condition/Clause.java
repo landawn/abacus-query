@@ -118,6 +118,16 @@ public abstract class Clause extends Cell {
         super(operator, validateClauseOperand(operator, condition));
     }
 
+    /**
+     * Validates the operator and operand of a clause.
+     *
+     * @param operator the clause operator
+     * @param cond the condition to wrap
+     * @return the validated condition
+     * @throws IllegalArgumentException if {@code operator} is null, is not a clause operator, or is a JOIN
+     *         operator; if {@code cond} is null; if a set operation does not wrap a SubQuery; or if another
+     *         clause wraps a condition containing a non-predicate component
+     */
     private static Condition validateClauseOperand(final Operator operator, final Condition cond) {
         N.checkArgNotNull(operator, cs.operator);
 

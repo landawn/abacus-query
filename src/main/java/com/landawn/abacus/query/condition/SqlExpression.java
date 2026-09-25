@@ -68,6 +68,7 @@ import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.SqlParser;
+import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
@@ -95,6 +96,10 @@ import com.landawn.abacus.util.Strings;
  * When an operand is a compound {@code SqlExpression}, include any parentheses needed to preserve its
  * meaning; for example, {@code multiply(of("(price + tax)"), 2)} produces {@code (price + tax) * 2}.
  * A plain Java string is a quoted value in these helpers, so wrap SQL fragments with {@link #of(String)}.</p>
+ *
+ * <p>When a helper appends generated SQL after a raw operand, it terminates any trailing line comment
+ * with a newline so the comment cannot consume an operator, separator, or closing parenthesis.
+ * Quoted comment markers and comments that already end with a line break are preserved.</p>
  *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
@@ -298,7 +303,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the equality expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String equal(final String expr, final Object value) { //NOSONAR
         return link(Operator.EQUAL, expr, value);
@@ -319,7 +328,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the equality expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Beta
     public static String eq(final String expr, final Object value) {
@@ -347,7 +360,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the not-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String notEqual(final String expr, final Object value) {
         return link(Operator.NOT_EQUAL, expr, value);
@@ -368,7 +385,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the not-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Beta
     public static String ne(final String expr, final Object value) {
@@ -392,7 +413,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the greater-than expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String greaterThan(final String expr, final Object value) {
         return link(Operator.GREATER_THAN, expr, value);
@@ -413,7 +438,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the greater-than expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Beta
     public static String gt(final String expr, final Object value) {
@@ -434,7 +463,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the greater-than-or-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String greaterThanOrEqual(final String expr, final Object value) {
         return link(Operator.GREATER_THAN_OR_EQUAL, expr, value);
@@ -455,7 +488,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the greater-than-or-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Beta
     public static String ge(final String expr, final Object value) {
@@ -476,7 +513,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the less-than expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String lessThan(final String expr, final Object value) {
         return link(Operator.LESS_THAN, expr, value);
@@ -497,7 +538,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the less-than expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Beta
     public static String lt(final String expr, final Object value) {
@@ -518,7 +563,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the less-than-or-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String lessThanOrEqual(final String expr, final Object value) {
         return link(Operator.LESS_THAN_OR_EQUAL, expr, value);
@@ -539,7 +588,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the less-than-or-equal expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Beta
     public static String le(final String expr, final Object value) {
@@ -565,7 +618,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the BETWEEN expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code minValue} or {@code maxValue} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code minValue} or {@code maxValue} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code minValue} or {@code maxValue} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String between(final String expr, final Object minValue, final Object maxValue) {
         return link(Operator.BETWEEN, expr, minValue, maxValue);
@@ -592,7 +649,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the NOT BETWEEN expression
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code minValue} or {@code maxValue} is a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code minValue} or {@code maxValue} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     *             or if {@code minValue} or {@code maxValue} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String notBetween(final String expr, final Object minValue, final Object maxValue) {
         return link(Operator.NOT_BETWEEN, expr, minValue, maxValue);
@@ -700,7 +761,8 @@ public class SqlExpression extends ComposableCondition {
             throw new IllegalArgumentException("expr must not be null or blank");
         }
 
-        return "(" + expr + " IS NULL OR " + expr + " = '')";
+        final String terminatedExpr = QueryUtil.terminateLineComment(expr);
+        return "(" + terminatedExpr + " IS NULL OR " + terminatedExpr + " = '')";
     }
 
     /**
@@ -724,7 +786,8 @@ public class SqlExpression extends ComposableCondition {
             throw new IllegalArgumentException("expr must not be null or blank");
         }
 
-        return "(" + expr + " IS NOT NULL AND " + expr + " <> '')";
+        final String terminatedExpr = QueryUtil.terminateLineComment(expr);
+        return "(" + terminatedExpr + " IS NOT NULL AND " + terminatedExpr + " <> '')";
     }
 
     /**
@@ -784,7 +847,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the addition expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String plus(final Object... operands) {
         return link(PLUS, operands);
@@ -808,7 +875,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String subtract(final Object... operands) {
         return link(MINUS, operands);
@@ -838,7 +909,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      * @deprecated Use {@link #subtract(Object...)} instead to avoid confusion with the SQL {@code MINUS} set operation.
      */
     @Deprecated
@@ -864,7 +939,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the multiplication expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String multiply(final Object... operands) {
         return link(ASTERISK, operands);
@@ -888,7 +967,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the division expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String divide(final Object... operands) {
         return link(SLASH, operands);
@@ -912,7 +995,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the modulus expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String modulus(final Object... operands) {
         return link(PERCENT, operands);
@@ -933,7 +1020,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the left shift expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String leftShift(final Object... operands) {
         return link(LEFT_SHIFT, operands);
@@ -954,7 +1045,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the right shift expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String rightShift(final Object... operands) {
         return link(RIGHT_SHIFT, operands);
@@ -977,7 +1072,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the bitwise AND expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String bitwiseAnd(final Object... operands) {
         return link(AMPERSAND, operands);
@@ -997,7 +1096,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the bitwise OR expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String bitwiseOr(final Object... operands) {
         return link(VERTICAL_BAR, operands);
@@ -1017,7 +1120,11 @@ public class SqlExpression extends ComposableCondition {
      * @return a SQL representation of the bitwise XOR expression, or an empty string if no operands are supplied
      * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String bitwiseXor(final Object... operands) {
         return link(CIRCUMFLEX, operands);
@@ -1046,15 +1153,21 @@ public class SqlExpression extends ComposableCondition {
      * {@code "literal IS NOT NULL"}. For all other operators (or non-null values)
      * the value is rendered via {@link #renderValue(Object)}.</p>
      *
-     * @param operator the operator to use
+     * @param operator the non-null operator to use
      * @param literal the left-hand side literal
      * @param value the right-hand side value; may be {@code null}
      * @return a SQL representation of the linked expression
-     * @throws IllegalArgumentException if {@code literal} is {@code null}, empty, or blank, or if {@code value}
-     *             is a {@link Float} or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     * @throws IllegalArgumentException if {@code operator} is {@code null}; if {@code literal} is {@code null}, empty, or blank;
+     *             or if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     *             or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     static String link(final Operator operator, final String literal, final Object value) {
+        N.checkArgNotNull(operator, cs.operator);
         checkExpr(literal);
 
         if (value == null) {
@@ -1068,7 +1181,7 @@ public class SqlExpression extends ComposableCondition {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
-            sb.append(literal);
+            sb.append(QueryUtil.terminateLineComment(literal));
             sb.append(SK._SPACE);
             sb.append(operator.sqlToken());
             sb.append(SK._SPACE);
@@ -1086,26 +1199,33 @@ public class SqlExpression extends ComposableCondition {
      * the connector between {@code min} and {@code max} is always the literal {@code AND}.
      * Both {@code min} and {@code max} are rendered via {@link #renderValue(Object)}.
      *
-     * @param operator the range operator (typically {@link Operator#BETWEEN})
+     * @param operator the non-null range operator (typically {@link Operator#BETWEEN})
      * @param literal the left-hand side literal
      * @param min the lower bound value
      * @param max the upper bound value
      * @return the rendered SQL fragment
-     * @throws IllegalArgumentException if {@code literal} is {@code null}, empty, or blank, or if {@code min}
-     *             or {@code max} is a {@code NaN} or infinite {@link Float}/{@link Double}, or a {@link Number} whose text is not a valid numeric literal,
-     *             or if {@code min} or {@code max} is a {@link Condition} whose rendering rejects one of its own values for the same reasons
+     * @throws IllegalArgumentException if {@code operator} is {@code null}; if {@code literal} is {@code null}, empty, or blank;
+     *             or if {@code min} or {@code max} is a {@code NaN} or infinite {@link Float}/{@link Double},
+     *             or a {@link Number} whose text is not a valid numeric literal,
+     *             or if {@code min} or {@code max} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     static String link(final Operator operator, final String literal, final Object min, final Object max) {
+        N.checkArgNotNull(operator, cs.operator);
         checkExpr(literal);
 
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
-            sb.append(literal);
+            sb.append(QueryUtil.terminateLineComment(literal));
             sb.append(SK._SPACE);
             sb.append(operator.sqlToken());
             sb.append(SK._SPACE);
-            sb.append(renderValue(min));
+            // Preserve StringBuilder's literal "null" for a custom renderer that returns null.
+            sb.append(QueryUtil.terminateLineComment(String.valueOf(renderValue(min))));
             sb.append(SK._SPACE);
             sb.append(SK.AND);
             sb.append(SK._SPACE);
@@ -1122,19 +1242,20 @@ public class SqlExpression extends ComposableCondition {
      * appended verbatim (no quoting or escaping). Used to build {@code IS NULL} and
      * {@code IS NOT NULL} expressions where the right-hand side is a SQL keyword rather than a value.
      *
-     * @param operator the operator whose {@link Operator#sqlToken() sqlToken} appears between the literal and the postfix
+     * @param operator the non-null operator whose {@link Operator#sqlToken() sqlToken} appears between the literal and the postfix
      * @param literal the left-hand side literal
      * @param operatorPostfix the literal keyword/token appended after the operator (emitted verbatim)
      * @return the rendered SQL fragment
-     * @throws IllegalArgumentException if {@code literal} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code operator} is {@code null}, or if {@code literal} is {@code null}, empty, or blank
      */
     static String link2(final Operator operator, final String literal, final String operatorPostfix) {
+        N.checkArgNotNull(operator, cs.operator);
         checkExpr(literal);
 
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
-            sb.append(literal);
+            sb.append(QueryUtil.terminateLineComment(literal));
             sb.append(SK._SPACE);
             sb.append(operator.sqlToken());
             sb.append(SK._SPACE);
@@ -1152,14 +1273,20 @@ public class SqlExpression extends ComposableCondition {
      * parenthesized so an operand containing a lower-precedence operator retains its meaning.
      * A {@code null} or empty array yields an empty string.
      *
-     * @param operator the operator whose {@link Operator#sqlToken() sqlToken} is used as the separator
+     * @param operator the operator whose {@link Operator#sqlToken() sqlToken} is used as the separator;
+     *                 may be {@code null} when fewer than two literals are supplied because no separator is emitted
      * @param literals the literals to join
      * @return the joined string
-     * @throws IllegalArgumentException if any element of {@code literals} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code operator} is {@code null} and at least two literals are supplied,
+     *                                  or if any element of {@code literals} is {@code null}, empty, or blank
      */
     static String link2(final Operator operator, final String... literals) {
         if (N.isEmpty(literals)) {
             return Strings.EMPTY;
+        }
+
+        if (literals.length > 1) {
+            N.checkArgNotNull(operator, cs.operator);
         }
 
         for (int i = 0; i < literals.length; i++) {
@@ -1181,7 +1308,7 @@ public class SqlExpression extends ComposableCondition {
                 // Parenthesizing each operand preserves its internal precedence when callers
                 // nest OR inside AND (or vice versa) without requiring an expression parser here.
                 sb.append('(');
-                sb.append(literals[i]);
+                sb.append(QueryUtil.terminateLineComment(literals[i]));
                 sb.append(')');
             }
 
@@ -1202,7 +1329,11 @@ public class SqlExpression extends ComposableCondition {
      * @return the joined SQL expression string, or an empty string if no objects are supplied
      * @throws IllegalArgumentException if any object is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any object is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     static String link(String linkedSymbol, final Object... objects) {
         if (N.isEmpty(objects)) {
@@ -1221,7 +1352,7 @@ public class SqlExpression extends ComposableCondition {
                     sb.append(linkedSymbol);
                 }
 
-                sb.append(renderValue(objects[i]));
+                sb.append(QueryUtil.terminateLineComment(String.valueOf(renderValue(objects[i]))));
             }
 
             return sb.toString();
@@ -1246,7 +1377,8 @@ public class SqlExpression extends ComposableCondition {
      *       {@link Boolean} values are converted via {@code toString()} without quoting.</li>
      *   <li>{@link SqlExpression} objects return their literal SQL text (or {@code "null"} if the literal is {@code null})</li>
      *   <li>{@link Condition} values render through {@link Condition#toSql(NamingPolicy)} with
-     *       {@link NamingPolicy#NO_CHANGE}; {@link SubQuery} SQL is wrapped in parentheses. Diagnostic
+     *       {@link NamingPolicy#NO_CHANGE}; {@link SubQuery} SQL is wrapped in parentheses, with a newline
+     *       inserted before the closing parenthesis if the SQL ends inside a line comment. Diagnostic
      *       {@code toString()} overrides do not affect the generated SQL</li>
      *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
      * </ul>
@@ -1266,11 +1398,16 @@ public class SqlExpression extends ComposableCondition {
      * }</pre>
      *
      * @param value the value to render
-     * @return the SQL representation of the value
+     * @return the SQL representation of the value, or {@code null} if a custom non-subquery
+     *         {@link Condition} renderer returns {@code null}; helpers composing that result emit the literal {@code "null"}
      * @throws IllegalArgumentException if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite
      *             (these have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead), or a
      *             {@link Number} whose text is not a valid numeric literal, or if {@code value} is a {@link Condition}
-     *             whose rendering rejects one of its own values for the same reasons
+     *             whose rendering rejects one of its own values for the same reasons,
+     *             or a nested {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     public static String renderValue(final Object value) {
         if (value == null) {
@@ -1290,7 +1427,7 @@ public class SqlExpression extends ComposableCondition {
             final String conditionStr = ((Condition) value).toSql(NamingPolicy.NO_CHANGE);
 
             if (value instanceof SubQuery) {
-                return SK.PARENTHESIS_L + conditionStr + SK.PARENTHESIS_R;
+                return SK.PARENTHESIS_L + QueryUtil.terminateLineComment(String.valueOf(conditionStr)) + SK.PARENTHESIS_R;
             }
 
             return conditionStr;
@@ -1966,7 +2103,7 @@ public class SqlExpression extends ComposableCondition {
                     sb.append(COMMA_SPACE);
                 }
 
-                sb.append(N.stringOf(args[i]));
+                sb.append(QueryUtil.terminateLineComment(N.stringOf(args[i])));
             }
 
             sb.append(SK._PARENTHESIS_R);

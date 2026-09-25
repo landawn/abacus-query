@@ -32,6 +32,39 @@ import com.landawn.abacus.util.NamingPolicy;
 @Tag("2025")
 public class SubQueryTest extends TestBase {
     @Test
+    public void testEmbeddingRawSubqueryTerminatesTrailingLineComments() {
+        for (final String comment : List.of("-- trailing comment", "# trailing comment")) {
+            final String rawSql = "SELECT id FROM users " + comment;
+            final SubQuery subQuery = new SubQuery(rawSql);
+            final String parenthesized = "(" + rawSql + "\n)";
+
+            assertEquals(rawSql, subQuery.rawSql());
+            assertEquals(rawSql, subQuery.toSql(NamingPolicy.NO_CHANGE));
+            assertEquals("id = " + parenthesized, new Equal("id", subQuery).toString());
+            assertEquals("id IN " + parenthesized, new InSubQuery("id", subQuery).toString());
+            assertEquals("EXISTS " + parenthesized, new Exists(subQuery).toString());
+            assertEquals("ALL " + parenthesized, new All(subQuery).toString());
+            assertEquals(parenthesized, SqlExpression.renderValue(subQuery));
+        }
+    }
+
+    @Test
+    public void testStructuredSubqueryTerminatesTableLineCommentBeforeWhere() {
+        final SubQuery subQuery = new SubQuery("users -- trailing comment", "id", new Equal("active", true));
+
+        assertEquals("SELECT id FROM users -- trailing comment\n WHERE active = true", subQuery.toString());
+    }
+
+    @Test
+    public void testStructuredSubqueryTerminatesProjectionLineComments() {
+        assertEquals("SELECT id -- trailing comment\n, name FROM users",
+                new SubQuery("users", List.of("id -- trailing comment", "name"), null).toString());
+        assertEquals("SELECT id -- trailing comment\n FROM users", new SubQuery("users", "id -- trailing comment", null).toString());
+        assertEquals("SELECT \"id--suffix\" FROM \"users--archive\"",
+                new SubQuery("\"users--archive\"", "\"id--suffix\"", null).toString());
+    }
+
+    @Test
     public void testConstructorWithRawSQL() {
         String sql = "SELECT id FROM users WHERE status = 'active'";
         SubQuery subQuery = Filters.subQuery(sql);

@@ -275,18 +275,22 @@ public class SubQuery extends AbstractCondition {
         }
     }
 
+    /**
+     * Creates a validated raw-SQL snapshot.
+     *
+     * @param entityName the optional entity name retained for compatibility
+     * @param sql the raw SQL text
+     * @param parameters the positional bindings
+     * @param validateBindings whether placeholders must match the bindings
+     * @throws IllegalArgumentException if {@code sql} is null, empty, or blank; {@code parameters} is null;
+     *         binding validation is enabled and the SQL has malformed, named, or mismatched placeholders;
+     *         or a binding is a cyclic object array
+     */
     private SubQuery(final String entityName, final String sql, final Collection<?> parameters, final boolean validateBindings) {
         super(Operator.EMPTY);
-        this.entityName = entityName == null ? Strings.EMPTY : entityName;
-        entityClass = null;
-
         if (Strings.isBlank(sql)) {
             throw new IllegalArgumentException("SQL statement must not be null, empty, or blank");
         }
-
-        propNames = null;
-        condition = null;
-        this.sql = sql;
 
         final List<Object> bindings = copyRawParameters(parameters);
 
@@ -294,7 +298,14 @@ public class SubQuery extends AbstractCondition {
             validateRawBindings(sql, bindings);
         }
 
-        rawParameters = snapshotRawParameters(bindings);
+        final ImmutableList<Object> parameterSnapshot = snapshotRawParameters(bindings);
+
+        this.entityName = entityName == null ? Strings.EMPTY : entityName;
+        entityClass = null;
+        propNames = null;
+        condition = null;
+        this.sql = sql;
+        rawParameters = parameterSnapshot;
         rebuildParametersPerCall = containsSnapshotMutableValue(rawParameters);
     }
 
@@ -359,10 +370,13 @@ public class SubQuery extends AbstractCondition {
             throw new IllegalArgumentException("Entity name must not be null, empty, or blank");
         }
 
+        final List<String> validatedPropNames = copyAndValidatePropNames(propNames);
+        final Condition validatedCondition = normalizeCondition(condition);
+
         this.entityName = entityName;
         this.entityClass = null;
-        this.propNames = copyAndValidatePropNames(propNames);
-        this.condition = normalizeCondition(condition);
+        this.propNames = validatedPropNames;
+        this.condition = validatedCondition;
 
         sql = null;
         rawParameters = ImmutableList.empty();
@@ -434,10 +448,13 @@ public class SubQuery extends AbstractCondition {
             throw new IllegalArgumentException("Entity class must not be null");
         }
 
+        final List<String> validatedPropNames = copyAndValidatePropNames(propNames);
+        final Condition validatedCondition = normalizeCondition(condition);
+
         this.entityName = ClassUtil.getSimpleClassName(entityClass);
         this.entityClass = entityClass;
-        this.propNames = copyAndValidatePropNames(propNames);
-        this.condition = normalizeCondition(condition);
+        this.propNames = validatedPropNames;
+        this.condition = validatedCondition;
 
         sql = null;
         rawParameters = ImmutableList.empty();
@@ -562,6 +579,14 @@ public class SubQuery extends AbstractCondition {
         return view;
     }
 
+    /**
+     * Snapshots a structured projection.
+     *
+     * @param propNames the projection names to copy
+     * @return the validated projection snapshot
+     * @throws IllegalArgumentException if {@code propNames} is null, empty, yields no elements, or
+     *         contains a null, empty, or blank name
+     */
     private static List<String> copyAndValidatePropNames(final Collection<String> propNames) {
         if (propNames == null) {
             throw new IllegalArgumentException("Property names must not be null");
@@ -590,6 +615,13 @@ public class SubQuery extends AbstractCondition {
         return result;
     }
 
+    /**
+     * Copies the supplied raw bindings.
+     *
+     * @param parameters the raw bindings to copy
+     * @return a mutable binding snapshot
+     * @throws IllegalArgumentException if {@code parameters} is null
+     */
     private static List<Object> copyRawParameters(final Collection<?> parameters) {
         if (parameters == null) {
             throw new IllegalArgumentException("Raw subquery parameters must not be null");
@@ -637,6 +669,14 @@ public class SubQuery extends AbstractCondition {
         return false;
     }
 
+    /**
+     * Checks the raw SQL against its positional bindings.
+     *
+     * @param sql the non-blank raw SQL to inspect
+     * @param parameters the non-null binding snapshot
+     * @throws IllegalArgumentException if SQL placeholder syntax is malformed, named or MyBatis placeholders
+     *         are present, or the positional placeholder count differs from the binding count
+     */
     private static void validateRawBindings(final String sql, final Collection<?> parameters) {
         // ParsedSql supplies the project's quote/comment-aware placeholder scan and also distinguishes
         // PostgreSQL JSON question-mark operators from JDBC parameters.
@@ -652,6 +692,15 @@ public class SubQuery extends AbstractCondition {
         }
     }
 
+    /**
+     * Normalizes an optional structured-subquery filter.
+     *
+     * @param cond the optional trailing condition
+     * @return the clause or normalized predicate, or null for an absent filter
+     * @throws IllegalArgumentException if a Criteria carries a SELECT modifier, or a non-clause filter
+     *         contains a null operator, ON/USING connector, quantified operand, standalone SubQuery,
+     *         nested Criteria, or another non-predicate component
+     */
     private static Condition normalizeCondition(final Condition cond) {
         if (cond == null || isClause(cond)) {
             return cond;
@@ -764,7 +813,8 @@ public class SubQuery extends AbstractCondition {
      * {@code namingPolicy} is ignored because builder-backed SQL was already rendered by its source builder).
      * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition-or-clauses]}
      * statement, applying the naming policy to property names, the entity/table name, and to
-     * the trailing condition or clauses.</p>
+     * the trailing condition or clauses. Trailing line comments in a projection or table fragment are
+     * terminated with a newline before generated separators or clauses are appended.</p>
      *
      * <p>This direct rendering is intended for diagnostics. For an entity-class subquery, table
      * metadata and explicit column mappings are applied to the SELECT list, while trailing conditions
@@ -801,6 +851,9 @@ public class SubQuery extends AbstractCondition {
      * @throws IllegalArgumentException if this is a structured subquery whose entity class is not a valid entity
      *         bean class, or if rendering its trailing condition rejects one of its values (for example a
      *         {@code NaN} or infinite {@link Float}/{@link Double})
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
@@ -822,9 +875,10 @@ public class SubQuery extends AbstractCondition {
                         }
 
                         if (propToColumnNameMap == null) {
-                            sb.append(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy));
+                            sb.append(QueryUtil.terminateLineComment(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy)));
                         } else {
-                            sb.append(propToColumnNameMap.getOrDefault(propName, QueryUtil.convertIdentifier(propName, effectiveNamingPolicy)));
+                            sb.append(QueryUtil.terminateLineComment(
+                                    propToColumnNameMap.getOrDefault(propName, QueryUtil.convertIdentifier(propName, effectiveNamingPolicy))));
                         }
                     }
                 } else {
@@ -837,12 +891,12 @@ public class SubQuery extends AbstractCondition {
                     sb.append(_SPACE);
                     sb.append(SK.FROM);
                     sb.append(_SPACE);
-                    sb.append(QueryUtil.tableNameAndAlias(entityClass, effectiveNamingPolicy));
+                    sb.append(QueryUtil.terminateLineComment(QueryUtil.tableNameAndAlias(entityClass, effectiveNamingPolicy)));
                 } else if (!Strings.isEmpty(entityName)) {
                     sb.append(_SPACE);
                     sb.append(SK.FROM);
                     sb.append(_SPACE);
-                    sb.append(QueryUtil.convertIdentifier(entityName, effectiveNamingPolicy));
+                    sb.append(QueryUtil.terminateLineComment(QueryUtil.convertIdentifier(entityName, effectiveNamingPolicy)));
                 }
 
                 if (condition != null) {

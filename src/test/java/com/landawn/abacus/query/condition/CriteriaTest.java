@@ -29,6 +29,26 @@ import com.landawn.abacus.util.NamingPolicy;
 @Tag("2025")
 public class CriteriaTest extends TestBase {
     @Test
+    public void testModifierLineCommentsDoNotConsumeGeneratedSyntax() {
+        final Criteria customModifier = Criteria.builder().selectModifier("DISTINCT -- trailing comment").where(Filters.eq("active", true)).build();
+        final Criteria distinctOn = Criteria.builder().distinctOn("id -- trailing comment").where(Filters.eq("active", true)).build();
+
+        org.junit.jupiter.api.Assertions.assertAll(
+                () -> assertEquals(" DISTINCT -- trailing comment\n WHERE active = true", customModifier.toString()),
+                () -> assertEquals(" DISTINCT ON (id -- trailing comment\n) WHERE active = true", distinctOn.toString()),
+                () -> assertEquals("DISTINCT -- trailing comment", customModifier.selectModifier()),
+                () -> assertEquals(" DISTINCT -- trailing comment", Criteria.builder().selectModifier("DISTINCT -- trailing comment").build().toString()),
+                () -> assertEquals(" DISTINCT ON (\"id--suffix\")", Criteria.builder().distinctOn("\"id--suffix\"").build().toString()));
+    }
+
+    @Test
+    public void testSetOperationLineCommentsDoNotConsumeFollowingClauses() {
+        final Criteria criteria = Criteria.builder().union(new SubQuery("SELECT id FROM archived_users -- trailing comment")).orderBy("id").build();
+
+        assertEquals(" UNION SELECT id FROM archived_users -- trailing comment\n ORDER BY id", criteria.toString());
+    }
+
+    @Test
     public void testConstructor() {
         Criteria criteria = Criteria.builder().build();
         assertNotNull(criteria);

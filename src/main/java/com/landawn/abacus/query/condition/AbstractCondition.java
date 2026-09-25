@@ -18,15 +18,19 @@ import static com.landawn.abacus.util.SK.COMMA_SPACE;
 import static com.landawn.abacus.util.SK.SPACE;
 
 import java.lang.reflect.Array;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.SqlParser;
 import com.landawn.abacus.query.cs;
@@ -479,11 +483,12 @@ public abstract class AbstractCondition implements Condition {
      * projections, or determine how many rows a subquery returns.</p>
      *
      * @param expectedArity the number of columns required by the enclosing SQL construct
-     * @param subQuery the subquery whose explicit structured projection is inspected
-     * @throws NullPointerException if {@code subQuery} is {@code null}
-     * @throws IllegalArgumentException if a known projection has a different number of columns
+     * @param subQuery the non-null subquery whose explicit structured projection is inspected
+     * @throws IllegalArgumentException if {@code subQuery} is {@code null}, or if a known projection has a different number of columns
      */
     static void validateSubQuerySelectArity(final int expectedArity, final SubQuery subQuery) {
+        N.checkArgNotNull(subQuery, cs.subQuery);
+
         final Collection<String> subQuerySelectPropNames = subQuery.selectPropNames();
 
         if (subQuerySelectPropNames != null && !hasWildcardProjection(subQuerySelectPropNames) && subQuerySelectPropNames.size() != expectedArity) {
@@ -582,6 +587,14 @@ public abstract class AbstractCondition implements Condition {
         return snapshotMutableValue(value, new IdentityHashMap<>());
     }
 
+    /**
+     * Copies known mutable values while detecting object-array cycles.
+     *
+     * @param value the value to snapshot
+     * @param arraysBeingCopied the arrays on the active recursion path
+     * @return the snapshot, or the original immutable/unsupported value
+     * @throws IllegalArgumentException if {@code value} contains an object-array cycle
+     */
     private static Object snapshotMutableValue(final Object value, final IdentityHashMap<Object, Boolean> arraysBeingCopied) {
         if (value == null) {
             return null;
@@ -650,7 +663,8 @@ public abstract class AbstractCondition implements Condition {
      *       {@code 'O''Brien'}). Double quotes and backslashes are preserved.</li>
      *   <li>{@link Condition} values use the recursive {@link Condition#toSql(NamingPolicy)} rendering; a {@link SubQuery} is additionally
      *       wrapped in parentheses, and the {@code IsNull.NULL}, {@code IsNaN.NAN}, and {@code IsInfinite.INFINITE}
-     *       sentinels use their plain {@code toString()}</li>
+     *       sentinels use their plain {@code toString()}. Trailing line comments in rendered conditions
+     *       are terminated with a newline before embedding the result.</li>
      *   <li>{@link Number} values must produce a decimal, integer, or scientific-notation literal from
      *       {@code toString()}, and {@link Boolean} values are emitted without quoting.
      *       {@link Float#NaN}/{@link Double#NaN}/infinity values cause an {@link IllegalArgumentException} because
@@ -677,7 +691,11 @@ public abstract class AbstractCondition implements Condition {
      * @return the SQL representation of the parameter, or {@code null} if {@code parameter} is {@code null}
      * @throws IllegalArgumentException if {@code parameter} is a {@code NaN} or infinite {@link Float}/{@link Double},
      *                                  or a {@link Number} whose text is not a valid numeric literal, or if rendering a
-     *                                  nested {@link Condition} rejects one of its own values for the same reasons
+     *                                  nested {@link Condition} rejects one of its own values for the same reasons, or a nested
+     *                                  {@link SubQuery} has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     protected static String formatParameter(final Object parameter, final NamingPolicy namingPolicy) {
         if (parameter == null) {
@@ -692,7 +710,7 @@ public abstract class AbstractCondition implements Condition {
             if (parameter == IsNull.NULL || parameter == IsNaN.NAN || parameter == IsInfinite.INFINITE) { //NOSONAR
                 return parameter.toString();
             } else {
-                final String conditionString = ((Condition) parameter).toSql(namingPolicy);
+                final String conditionString = QueryUtil.terminateLineComment(String.valueOf(((Condition) parameter).toSql(namingPolicy)));
 
                 if (parameter instanceof SubQuery) {
                     return SK.PARENTHESIS_L + conditionString + SK.PARENTHESIS_R;
@@ -772,6 +790,7 @@ public abstract class AbstractCondition implements Condition {
      * @return the validated numeric literal
      * @throws IllegalArgumentException if {@code value} is {@code null} or non-finite, or its text is not a decimal,
      *                                  integer, or scientific-notation literal
+     * @throws RuntimeException if the supplied Number's {@code toString()} implementation throws an unchecked exception
      */
     protected static String formatNumberLiteral(final Number value) {
         N.checkArgNotNull(value, cs.value);
@@ -937,18 +956,20 @@ public abstract class AbstractCondition implements Condition {
     protected static String createSortSpec(final String... propNames) {
         N.checkArgNotEmpty(propNames, cs.propNames);
 
+        for (final String propName : propNames) {
+            checkPropName(propName);
+        }
+
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
             int i = 0;
             for (final String propName : propNames) {
-                checkPropName(propName);
-
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
 
-                sb.append(propName);
+                sb.append(QueryUtil.terminateLineComment(propName));
             }
 
             return sb.toString();
@@ -976,13 +997,15 @@ public abstract class AbstractCondition implements Condition {
         if (direction == null) {
             throw new IllegalArgumentException("direction must not be null");
         }
-        return propName + SPACE + direction;
+        return QueryUtil.terminateLineComment(propName) + SPACE + direction;
     }
 
     /**
      * Creates a sort expression for multiple properties, all using the same direction,
      * for use in ORDER BY or GROUP BY clauses.
      * This is an internal helper method used by {@link OrderBy} and {@link GroupBy} constructors.
+     * Property names are validated and copied in one traversal, so rendering uses exactly the
+     * validated snapshot even when the supplied collection is live.
      *
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
@@ -990,15 +1013,18 @@ public abstract class AbstractCondition implements Condition {
      * @param propNames collection of property names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
      * @param direction the sort direction to apply to all properties (must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty or contains {@code null}, empty, or blank
-     *                                  elements, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, yields no elements when copied,
+     *                                  or contains {@code null}, empty, or blank elements, or if {@code direction} is {@code null}
      */
     protected static String createSortSpec(final Collection<String> propNames, final SortDirection direction) {
         N.checkArgNotEmpty(propNames, cs.propNames);
 
+        final List<String> validatedPropNames = new ArrayList<>(propNames.size());
         for (final String propName : propNames) {
             checkPropName(propName);
+            validatedPropNames.add(propName);
         }
+        N.checkArgNotEmpty(validatedPropNames, cs.propNames);
 
         if (direction == null) {
             throw new IllegalArgumentException("direction must not be null");
@@ -1008,12 +1034,12 @@ public abstract class AbstractCondition implements Condition {
 
         try {
             int i = 0;
-            for (final String propName : propNames) {
+            for (final String propName : validatedPropNames) {
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
 
-                sb.append(propName);
+                sb.append(QueryUtil.terminateLineComment(propName));
                 sb.append(SPACE);
                 sb.append(direction);
             }
@@ -1034,33 +1060,40 @@ public abstract class AbstractCondition implements Condition {
      * Use a {@link java.util.LinkedHashMap} to preserve the desired column order.</p>
      *
      * @param orders map of property names to their sort directions (must not be {@code null} or empty; keys must not be {@code null}, empty, or blank
-     *               and values must not be {@code null})
+     *               and entries and values must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries in map iteration order
-     * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, or contains {@code null}, empty, or blank keys
-     *                                  or {@code null} values
+     * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, contains a {@code null} entry,
+     *                                  {@code null}, empty, or blank keys, or {@code null} values
      */
     protected static String createSortSpec(final Map<String, SortDirection> orders) {
         N.checkArgNotEmpty(orders, cs.orders);
+
+        final List<Map.Entry<String, SortDirection>> validatedOrders = new ArrayList<>(orders.size());
+
+        for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+            N.checkArgNotNull(entry, cs.entry);
+
+            final String propName = entry.getKey();
+            final SortDirection direction = entry.getValue();
+
+            checkPropName(propName);
+            N.checkArgument(direction != null, "SortDirection for '" + propName + "' in the sort map must not be null");
+            validatedOrders.add(new SimpleImmutableEntry<>(propName, direction));
+        }
 
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
             int i = 0;
-            for (final Map.Entry<String, SortDirection> entry : orders.entrySet()) {
+            for (final Map.Entry<String, SortDirection> entry : validatedOrders) {
                 final String propName = entry.getKey();
                 final SortDirection direction = entry.getValue();
-
-                checkPropName(propName);
-
-                if (direction == null) {
-                    throw new IllegalArgumentException("SortDirection for '" + propName + "' in the sort map must not be null");
-                }
 
                 if (i++ > 0) {
                     sb.append(COMMA_SPACE);
                 }
 
-                sb.append(propName);
+                sb.append(QueryUtil.terminateLineComment(propName));
                 sb.append(SPACE);
                 sb.append(direction);
             }
@@ -1173,6 +1206,11 @@ public abstract class AbstractCondition implements Condition {
      * }</pre>
      *
      * @return a SQL representation of this condition
+     * @throws IllegalArgumentException if rendering this condition rejects a non-finite number, an invalid
+     *         numeric literal, or a structured subquery with an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toString() {

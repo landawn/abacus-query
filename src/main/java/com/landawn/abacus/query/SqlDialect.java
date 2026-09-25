@@ -18,6 +18,7 @@ package com.landawn.abacus.query;
 
 import java.util.function.BiConsumer;
 
+import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.Strings;
 
@@ -106,6 +107,10 @@ public class SqlDialect {
     /**
      * Default renderer for {@link SqlPolicy#NAMED_SQL} placeholders. It appends a colon followed by
      * the generated parameter name, for example {@code :customerId}.
+     *
+     * <p>The SQL buffer must be non-{@code null}; passing a {@code null} buffer to this consumer throws
+     * {@link NullPointerException}. The name follows {@link StringBuilder#append(String)} semantics:
+     * a {@code null} name is appended as the literal text {@code "null"}.</p>
      */
     public static final BiConsumer<StringBuilder, String> DEFAULT_NAMED_PARAMETER_HANDLER = (sql, name) -> sql.append(':').append(name);
 
@@ -204,12 +209,12 @@ public class SqlDialect {
          * representation. This keeps {@code equals}/{@code hashCode} consistent whether the version was
          * omitted (via {@link #of(String)}) or passed as {@code null}.
          *
+         * @param name the nonblank database product name
+         * @param version the database product version, or {@code null} for an empty version
          * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank
          */
         public ProductInfo {
-            if (Strings.isBlank(name)) {
-                throw new IllegalArgumentException("Database product name must not be null, empty, or blank");
-            }
+            N.checkArgument(!Strings.isBlank(name), "Database product name must not be null, empty, or blank");
 
             version = version == null ? "" : version;
         }

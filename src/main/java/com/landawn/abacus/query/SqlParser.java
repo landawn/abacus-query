@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.IntPredicate;
 
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.SK;
@@ -522,10 +523,13 @@ public final class SqlParser {
          * Returns whether {@code token} is spelled exactly like a configured separator, honoring the
          * caller's case sensitivity. Case-insensitive lookup uses the same comparison as token matching,
          * without allocating a normalized copy of the search text.
+         * A {@code null} candidate returns {@code false} unless a case-insensitive comparison is required.
          *
          * @param token the candidate separator spelling
          * @param caseSensitive whether the spelling must match exactly
          * @return {@code true} if a configured separator is spelled this way
+         * @throws NullPointerException if {@code token} is {@code null}, {@code caseSensitive} is
+         *         {@code false}, and this configuration contains a separator with case variants
          */
         boolean isConfiguredSeparator(final String token, final boolean caseSensitive) {
             return separators.contains(token) || (!caseSensitive && !caseInsensitiveSeparators.isEmpty() && caseInsensitiveSeparators.contains(token));
@@ -1550,6 +1554,8 @@ public final class SqlParser {
      * @param ch the character to check; expected to equal {@code str.charAt(index)}
      * @return {@code true} if the character is a separator in this context, {@code false} otherwise
      * @throws NullPointerException if {@code str} is {@code null}
+     * @throws IndexOutOfBoundsException if an invalid {@code index} or {@code len} causes separator
+     *         or hash-identifier scanning to access a character outside {@code str}
      */
     static boolean isSeparator(final String str, final int len, final int index, final char ch) {
         return isSeparator(str, len, index, ch, DEFAULT_TOKENIZER_CONFIG, new HashScanMemo(str));
@@ -1665,6 +1671,21 @@ public final class SqlParser {
         }
 
         return !isLikelyHashPrefixedIdentifier(str, len, index, tokenizerConfig, memo);
+    }
+
+    /**
+     * Creates a per-scan matcher for the tokenizer's contextual temporary-table identifier rule.
+     * The matcher shares one memo across hash positions in the same SQL fragment and is not thread-safe.
+     * Internal callers supply non-null SQL/configuration and test only valid offsets pointing at {@code '#'}.
+     *
+     * @param sql the SQL fragment to inspect
+     * @param tokenizerConfig the separators used to distinguish operators from comments
+     * @return a predicate reporting whether a hash position belongs to an identifier in a table or data-modification target position
+     * @throws NullPointerException if {@code sql} is {@code null}
+     */
+    static IntPredicate hashPrefixedIdentifierMatcher(final String sql, final TokenizerConfig tokenizerConfig) {
+        final HashScanMemo memo = new HashScanMemo(sql);
+        return index -> isLikelyHashPrefixedIdentifier(sql, sql.length(), index, tokenizerConfig, memo);
     }
 
     /**

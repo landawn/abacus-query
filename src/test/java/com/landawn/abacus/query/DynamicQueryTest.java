@@ -646,7 +646,7 @@ public class DynamicQueryTest extends TestBase {
     @Test
     public void testHavingAppendPlaceholdersNegativeThrows() {
         Builder builder = DynamicQuery.builder();
-        DynamicQuery.HavingClause having = builder.having();
+        DynamicQuery.HavingClause having = builder.having().append("COUNT(*) IN ");
         assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(-1));
         assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(-1, "(", ")"));
     }
@@ -654,7 +654,7 @@ public class DynamicQueryTest extends TestBase {
     @Test
     public void testHavingAppendPlaceholdersNullPrefixOrPostfixThrows() {
         Builder builder = DynamicQuery.builder();
-        DynamicQuery.HavingClause having = builder.having();
+        DynamicQuery.HavingClause having = builder.having().append("COUNT(*) IN ");
         assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(3, null, ")"));
         assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(3, "(", null));
     }
@@ -888,6 +888,33 @@ public class DynamicQueryTest extends TestBase {
         Builder fetchThenLimit = DynamicQuery.builder();
         fetchThenLimit.offsetRows(20);
         assertThrows(IllegalStateException.class, () -> fetchThenLimit.offset(10));
+    }
+
+    @Test
+    public void testPaginationStatePrecedesInvalidArgumentsWithoutChangingValues() {
+        // Invalid arguments must not mask a duplicate/incompatible clause, or consume an unset slot.
+        final Builder limit = DynamicQuery.builder().limit(5, 2);
+        assertThrows(IllegalStateException.class, () -> limit.limit(-1));
+        assertThrows(IllegalStateException.class, () -> limit.limit(-1, -1));
+        assertThrows(IllegalStateException.class, () -> limit.offset(-1));
+        assertThrows(IllegalStateException.class, () -> limit.offsetRows(-1));
+        assertThrows(IllegalStateException.class, () -> limit.fetchNextRows(-1));
+        assertThrows(IllegalStateException.class, () -> limit.fetchFirstRows(-1));
+        assertEquals("LIMIT 5 OFFSET 2", limit.build());
+
+        final Builder fetch = DynamicQuery.builder().offsetRows(2).fetchFirstRows(5);
+        assertThrows(IllegalStateException.class, () -> fetch.limit(-1));
+        assertThrows(IllegalStateException.class, () -> fetch.limit(-1, -1));
+        assertThrows(IllegalStateException.class, () -> fetch.offset(-1));
+        assertThrows(IllegalStateException.class, () -> fetch.offsetRows(-1));
+        assertThrows(IllegalStateException.class, () -> fetch.fetchNextRows(-1));
+        assertThrows(IllegalStateException.class, () -> fetch.fetchFirstRows(-1));
+        assertEquals("OFFSET 2 ROWS FETCH FIRST 5 ROWS ONLY", fetch.build());
+
+        final Builder untouched = DynamicQuery.builder();
+        assertThrows(IllegalArgumentException.class, () -> untouched.limit(5, -1));
+        assertThrows(IllegalArgumentException.class, () -> untouched.fetchNextRows(-1));
+        assertEquals("LIMIT 3", untouched.limit(3).build());
     }
 
     @Test
@@ -1827,6 +1854,31 @@ public class DynamicQueryTest extends TestBase {
     }
 
     @Test
+    public void testEveryJoinChecksClauseStateBeforeNullArguments() {
+        final Builder builder = DynamicQuery.builder();
+        final DynamicQuery.FromClause from = builder.from();
+        assertThrows(IllegalStateException.class, () -> from.join(null, null));
+        assertThrows(IllegalStateException.class, () -> from.innerJoin(null, null));
+        assertThrows(IllegalStateException.class, () -> from.leftJoin(null, null));
+        assertThrows(IllegalStateException.class, () -> from.rightJoin(null, null));
+        assertThrows(IllegalStateException.class, () -> from.fullJoin(null, null));
+        assertThrows(IllegalStateException.class, () -> from.join(null));
+        assertThrows(IllegalStateException.class, () -> from.innerJoin(null));
+        assertThrows(IllegalStateException.class, () -> from.leftJoin(null));
+        assertThrows(IllegalStateException.class, () -> from.rightJoin(null));
+        assertThrows(IllegalStateException.class, () -> from.fullJoin(null));
+        assertThrows(IllegalStateException.class, () -> from.crossJoin(null));
+        assertThrows(IllegalStateException.class, () -> from.naturalJoin(null));
+
+        // Rejections leave the same clause usable once its prerequisite has been supplied.
+        from.append("users u");
+        assertThrows(IllegalArgumentException.class, () -> from.join("orders o", null));
+        from.join("orders o", "u.id = o.user_id");
+        assertEquals("FROM users u JOIN orders o ON u.id = o.user_id", builder.build());
+        assertThrows(IllegalStateException.class, () -> from.join(null, null));
+    }
+
+    @Test
     public void testBuilderMethodsRejectUseAfterBuild() {
         Builder builder = DynamicQuery.builder();
         builder.select().append("*");
@@ -1910,9 +1962,9 @@ public class DynamicQueryTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> where.appendPlaceholders(3));
         assertThrows(IllegalStateException.class, () -> where.appendPlaceholders(3, "(", ")"));
 
-        // Argument validation still comes first (matches the FromClause join ordering).
-        assertThrows(IllegalArgumentException.class, () -> where.appendPlaceholders(-1));
-        assertThrows(IllegalArgumentException.class, () -> where.appendPlaceholders(3, null, ")"));
+        // Clause state is checked before argument validation.
+        assertThrows(IllegalStateException.class, () -> where.appendPlaceholders(-1));
+        assertThrows(IllegalStateException.class, () -> where.appendPlaceholders(3, null, ")"));
 
         // Once initialized, placeholders work as before.
         where.append("id IN ").appendPlaceholders(2, "(", ")");
@@ -1931,9 +1983,9 @@ public class DynamicQueryTest extends TestBase {
         assertThrows(IllegalStateException.class, () -> having.appendPlaceholders(2));
         assertThrows(IllegalStateException.class, () -> having.appendPlaceholders(2, "(", ")"));
 
-        // Argument validation still comes first (matches the FromClause join ordering).
-        assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(-1));
-        assertThrows(IllegalArgumentException.class, () -> having.appendPlaceholders(2, "(", null));
+        // Clause state is checked before argument validation.
+        assertThrows(IllegalStateException.class, () -> having.appendPlaceholders(-1));
+        assertThrows(IllegalStateException.class, () -> having.appendPlaceholders(2, "(", null));
 
         // Once initialized, placeholders work as before.
         having.append("COUNT(*) IN ").appendPlaceholders(2, "(", ")");

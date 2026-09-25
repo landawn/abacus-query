@@ -153,6 +153,8 @@ public final class QueryUtil {
      * @param slot the {@code loadPropNamesByClass} array index (0, 1, 2, 3, or 4)
      * @return the memoized immutable list for that (class, slot)
      * @throws IllegalArgumentException if {@code entityClass} is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     private static ImmutableList<String> getNoExclusionPropNames(final Class<?> entityClass, final int slot) {
         final AtomicReferenceArray<ImmutableList<String>> cache = noExclusionPropNamesPool.computeIfAbsent(entityClass, cls -> new AtomicReferenceArray<>(5));
@@ -216,6 +218,8 @@ public final class QueryUtil {
      *         already a property-name key, an additional column-name key. Each value contains the
      *         mapped column name and whether that column name is a single unqualified identifier.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, or is neither a {@link Map} type nor a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #propToColumnNameMap(Class, NamingPolicy)
      */
     @Beta
@@ -258,15 +262,16 @@ public final class QueryUtil {
      * Reports whether a mapped column may still receive a table alias or sub-entity qualifier, which is
      * true only when the mapping is one bare identifier: either unquoted, or a single quoted identifier
      * whose delimiters enclose the whole value. PostgreSQL {@code U&"..."} identifiers may also carry
-     * an optional {@code UESCAPE} clause. A dot inside a quoted identifier belongs to the name
+     * an optional {@code UESCAPE} clause with an ordinary or {@code E'...'} escape-string literal.
+     * A dot inside a quoted identifier belongs to the name
      * ({@code "a.b"}) and does not qualify it.
      *
      * <p>Testing the shape, rather than only scanning for a qualifying dot, is what keeps an expression
      * mapping safe. A qualifier may not be prepended to {@code COALESCE(x, 'N.A')} whatever punctuation
-     * the expression happens to contain, and no dot-scan can decide that reliably: this is a rendered
-     * column reference, not a SQL script, so it has no string literals or comments to parse, and reading
-     * the {@code [} of {@code COALESCE(x, '[')} as a quoted identifier would swallow a genuine qualifier
-     * that follows it.</p>
+     * the expression happens to contain, and no dot-scan can decide that reliably. Identifier quoting
+     * and the optional {@code UESCAPE} literal belong to a column reference; arbitrary expression
+     * literals and comments do not. Reading the {@code [} of {@code COALESCE(x, '[')} as a quoted
+     * identifier would swallow a genuine qualifier that follows it.</p>
      *
      * @param columnName the non-null mapped column name
      * @return {@code true} if the mapping is a single unqualified identifier
@@ -328,7 +333,10 @@ public final class QueryUtil {
      * Returns the exclusive end of a {@code U&"..."} identifier and its optional {@code UESCAPE}
      * clause, or {@code -1} for an unterminated identifier or malformed escape clause. The escape
      * character is one non-hexadecimal, non-whitespace character other than {@code +}, {@code '},
-     * or {@code "}. No identifier or escape text is decoded or rewritten.
+     * or {@code "}. Escape-string literals are decoded only to validate that single character,
+     * including the literal fallback for a backslash followed by a nonnumeric escape.
+     * The {@code UESCAPE} keyword must remain a separate token; the identifier and its escape clause
+     * are never rewritten.
      */
     private static int unicodeQuotedIdentifierEnd(final String text, final int startIndex) {
         final int closingQuote = skipQuotedIdentifier(text, startIndex + 3, SK._DOUBLE_QUOTE);
@@ -344,22 +352,86 @@ public final class QueryUtil {
             return identifierEnd;
         }
 
-        index = skipIdentifierWhitespace(text, index + 7);
+        final int escapeKeywordEnd = index + 7;
+        index = skipIdentifierWhitespace(text, escapeKeywordEnd);
+
+        final boolean escapeString = index < text.length() && (text.charAt(index) == 'E' || text.charAt(index) == 'e');
+
+        if (escapeString) {
+            if (index == escapeKeywordEnd) {
+                return -1;
+            }
+
+            index++;
+        }
 
         if (index + 1 >= text.length() || text.charAt(index) != SK._SINGLE_QUOTE) {
             return -1;
         }
 
-        final int escape = text.codePointAt(index + 1);
-        final int closingEscapeQuote = index + 1 + Character.charCount(escape);
+        int escape = text.codePointAt(++index);
+        index += Character.charCount(escape);
 
-        if (closingEscapeQuote >= text.length() || text.charAt(closingEscapeQuote) != SK._SINGLE_QUOTE || escape == '+' || escape == SK._SINGLE_QUOTE
-                || escape == SK._DOUBLE_QUOTE || Character.isWhitespace(escape) || (escape >= '0' && escape <= '9') || (escape >= 'a' && escape <= 'f')
-                || (escape >= 'A' && escape <= 'F')) {
+        if (escapeString && escape == '\\') {
+            if (index >= text.length()) {
+                return -1;
+            }
+
+            escape = text.codePointAt(index);
+            index += Character.charCount(escape);
+
+            if ((escape >= '0' && escape <= '7') || escape == 'x' || escape == 'u' || escape == 'U') {
+                final boolean octal = escape >= '0' && escape <= '7';
+                final int radix = octal ? 8 : 16;
+                final int maxDigits = octal ? 3 : escape == 'x' ? 2 : escape == 'u' ? 4 : 8;
+                final int minDigits = escape == 'u' || escape == 'U' ? maxDigits : escape == 'x' ? 0 : 1;
+
+                if (octal) {
+                    index--;
+                }
+
+                long decoded = 0;
+                int digits = 0;
+
+                while (index < text.length() && digits < maxDigits) {
+                    final char ch = text.charAt(index);
+                    final int digit = ch <= 0x7f ? Character.digit(ch, radix) : -1;
+
+                    if (digit < 0) {
+                        break;
+                    }
+
+                    decoded = decoded * radix + digit;
+                    digits++;
+                    index++;
+                }
+
+                if (digits < minDigits || decoded > Character.MAX_CODE_POINT) {
+                    return -1;
+                }
+
+                // A hex introducer without a digit uses the ordinary literal 'x' fallback.
+                // PostgreSQL octal escapes denote bytes; Unicode escapes denote code points.
+                escape = digits == 0 ? 'x' : octal ? (int) decoded & 0xff : (int) decoded;
+            } else {
+                escape = switch (escape) {
+                    case 'b' -> '\b';
+                    case 'f' -> '\f';
+                    case 'n' -> '\n';
+                    case 'r' -> '\r';
+                    case 't' -> '\t';
+                    default -> escape;
+                };
+            }
+        }
+
+        if (index >= text.length() || text.charAt(index) != SK._SINGLE_QUOTE || escape == 0 || (escape >= 0xd800 && escape <= 0xdfff) || escape == '+'
+                || escape == SK._SINGLE_QUOTE || escape == SK._DOUBLE_QUOTE || Character.isWhitespace(escape) || (escape >= '0' && escape <= '9')
+                || (escape >= 'a' && escape <= 'f') || (escape >= 'A' && escape <= 'F')) {
             return -1;
         }
 
-        return closingEscapeQuote + 1;
+        return index + 1;
     }
 
     /** Skips whitespace between the parts of a Unicode-quoted identifier without changing the rendered text. */
@@ -389,6 +461,7 @@ public final class QueryUtil {
      *
      * @param text the non-null column name, or a rendered list of column names
      * @return the index of the first qualifying dot, or {@code -1} if there is none
+     * @throws NullPointerException if {@code text} is {@code null}
      */
     static int indexOfQualifyingDot(final String text) {
         for (int i = 0, len = text.length(); i < len; i++) {
@@ -413,6 +486,23 @@ public final class QueryUtil {
         }
 
         return -1;
+    }
+
+    /**
+     * Terminates a trailing SQL line comment before a renderer appends a separator, keyword, or closing parenthesis.
+     * Quoted text and block comments are skipped using the query builder's default lexical rules.
+     * Complete fragments are checked with both standard and backslash-escaped string literals;
+     * PostgreSQL {@code E'...'} literals retain their escape semantics in both readings.
+     * This helper does not validate the SQL or change a fragment whose final line is outside a comment.
+     *
+     * @param sql the non-null SQL fragment to compose with generated syntax
+     * @return {@code sql}, or {@code sql} followed by a newline when it ends inside a {@code --} or {@code #} comment
+     * @throws IllegalArgumentException if {@code sql} is {@code null}
+     */
+    @Internal
+    public static String terminateLineComment(final String sql) {
+        N.checkArgNotNull(sql, cs.sql);
+        return AbstractQueryBuilder.endsInsideLineComment(sql, false) ? sql + '\n' : sql;
     }
 
     /**
@@ -468,6 +558,8 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return an immutable map of column names (including upper- and lower-case variations) to property names
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     @Internal
     public static ImmutableMap<String, String> columnToPropNameMap(final Class<?> entityClass) {
@@ -536,6 +628,8 @@ public final class QueryUtil {
      * @param namingPolicy the naming policy to use for column name conversion. If {@code null}, defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return an immutable map of property names to column names, or an empty immutable map if {@code entityClass} is {@code null} or is a {@link Map} type
      * @throws IllegalArgumentException if {@code entityClass} is non-{@code null} and is neither a {@link Map} type nor a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     @Internal
     public static ImmutableMap<String, String> propToColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
@@ -562,10 +656,15 @@ public final class QueryUtil {
      * classes already on the recursion stack so cyclic bean references terminate.
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
-     * @param namingPolicy the naming policy used to derive column names for properties without an explicit column name
-     * @param registeringClasses classes already on the recursion stack, or {@code null} for a top-level call
+     * @param namingPolicy the naming policy used to derive column names for properties without an explicit column name;
+     *         must not be {@code null} for a top-level call
+     * @param registeringClasses a mutable set of classes already on the recursion stack, or {@code null} for a top-level call
      * @return an immutable map of property names to column names
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code namingPolicy} is {@code null}
+     *         for a top-level call, or if metadata inspection rejects {@code entityClass} as an entity bean class
+     * @throws UnsupportedOperationException if a non-null {@code registeringClasses} does not contain {@code entityClass}
+     *         and does not support adding it, or inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses) {
@@ -579,15 +678,24 @@ public final class QueryUtil {
      * entirely when a class already on the recursion stack is encountered again (a cyclic reference).
      *
      * @param entityClass the entity class to analyze (must not be {@code null})
-     * @param namingPolicy the naming policy used to derive column names for properties without an explicit column name
-     * @param registeringClasses classes already on the recursion stack, or {@code null} for a top-level call
+     * @param namingPolicy the naming policy used to derive column names for properties without an explicit column name;
+     *         must not be {@code null} for a top-level call
+     * @param registeringClasses a mutable set of classes already on the recursion stack, or {@code null} for a top-level call
      * @param remainingNestedPropDepth the number of further nested bean hops to expand
      * @return an immutable map of property names to column names
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, if {@code namingPolicy} is {@code null}
+     *         for a top-level call, or if metadata inspection rejects {@code entityClass} as an entity bean class
+     * @throws UnsupportedOperationException if a non-null {@code registeringClasses} does not contain {@code entityClass}
+     *         and does not support adding it, or inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     private static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses, final int remainingNestedPropDepth) {
         N.checkArgNotNull(entityClass, cs.entityClass);
+
+        if (registeringClasses == null) {
+            N.checkArgNotNull(namingPolicy, cs.namingPolicy);
+        }
 
         if (registeringClasses != null) {
             if (registeringClasses.contains(entityClass)) {
@@ -712,6 +820,9 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for INSERT operations
      * @throws IllegalArgumentException if {@code entity} is {@code null}, or its class is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading an ID property of {@code entity} or invoking its getter fails
      */
     @Internal
     public static ImmutableList<String> insertPropNames(final Object entity, final Set<String> excludedPropNames) {
@@ -793,6 +904,8 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for INSERT operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     @Internal
     public static ImmutableList<String> insertPropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -842,6 +955,8 @@ public final class QueryUtil {
      *        {@code "address.street"}.
      * @return an immutable list of property names suitable for SELECT operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     @Internal
     public static ImmutableList<String> selectPropNames(final Class<?> entityClass, final boolean includeSubEntityProperties,
@@ -896,6 +1011,8 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for SELECT operations
      * @throws IllegalArgumentException if {@code entity} is {@code null}, or its class is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #selectPropNames(Class, boolean, Set)
      */
     @Internal
@@ -935,6 +1052,8 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for UPDATE operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     @Internal
     public static ImmutableList<String> updatePropNames(final Class<?> entityClass, final Set<String> excludedPropNames) {
@@ -969,6 +1088,8 @@ public final class QueryUtil {
      * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
      * @return an immutable list of property names suitable for UPDATE operations
      * @throws IllegalArgumentException if {@code entity} is {@code null}, or its class is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #updatePropNames(Class, Set)
      */
     @Internal
@@ -1006,6 +1127,8 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return an immutable list of ID property names, or an empty list if no ID properties are defined
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     @Internal
     @Immutable
@@ -1388,6 +1511,8 @@ public final class QueryUtil {
      * @param entityClass the entity class to analyze (must not be {@code null})
      * @return the table name, optionally followed by space and alias
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #tableNameAndAlias(Class, NamingPolicy)
      */
     @Internal
@@ -1427,6 +1552,8 @@ public final class QueryUtil {
      *        defaults to {@code NamingPolicy.SNAKE_CASE}.
      * @return the table name, optionally followed by space and alias
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     @Internal
     public static String tableNameAndAlias(final Class<?> entityClass, final NamingPolicy namingPolicy) {

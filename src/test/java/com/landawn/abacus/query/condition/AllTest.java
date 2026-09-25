@@ -19,6 +19,20 @@ import com.landawn.abacus.util.NamingPolicy;
 @Tag("2025")
 public class AllTest extends TestBase {
     @Test
+    public void testQuantifiedOperandsAcceptUnknownProjectionArity() {
+        for (final SubQuery unknownArity : List.of(new SubQuery("SELECT id, tenant_id FROM accounts"), new SubQuery("accounts", "*", null))) {
+            Assertions.assertSame(unknownArity, new All(unknownArity).subQuery());
+            Assertions.assertSame(unknownArity, new Any(unknownArity).subQuery());
+            Assertions.assertSame(unknownArity, new Some(unknownArity).subQuery());
+        }
+
+        final SubQuery knownTwoColumns = new SubQuery("accounts", List.of("id", "tenantId"), null);
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new All(knownTwoColumns));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Any(knownTwoColumns));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Some(knownTwoColumns));
+    }
+
+    @Test
     public void testConstructor_WithRawSQLSubQuery() {
         SubQuery subQuery = Filters.subQuery("SELECT price FROM products WHERE category = 'Electronics'");
         All condition = new All(subQuery);

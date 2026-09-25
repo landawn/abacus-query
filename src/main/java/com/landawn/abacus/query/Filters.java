@@ -83,6 +83,7 @@ import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.EntityId;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.SK;
+import com.landawn.abacus.util.Strings;
 
 /**
  * Factory class for creating SQL {@link Condition} objects used in query construction.
@@ -532,6 +533,9 @@ public final class Filters {
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      */
     public static Or anyEqual(final Object entity) {
         N.checkArgNotNull(entity, cs.entity);
@@ -563,6 +567,9 @@ public final class Filters {
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      */
     public static Or anyEqual(final Object entity, final Collection<String> includedPropNames) {
         return or(equalConditions(entity, includedPropNames));
@@ -696,6 +703,9 @@ public final class Filters {
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      */
     public static And allEqual(final Object entity) {
         N.checkArgNotNull(entity, cs.entity);
@@ -727,6 +737,9 @@ public final class Filters {
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      */
     public static And allEqual(final Object entity, final Collection<String> includedPropNames) {
         return and(equalConditions(entity, includedPropNames));
@@ -745,21 +758,51 @@ public final class Filters {
      *                                  {@code entity} is not a bean class, if {@code includedPropNames} contains a
      *                                  {@code null}, empty, blank, or unreadable name, or if a property value is
      *                                  rejected by {@link #equal(String, Object)}
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      */
     private static List<Condition> equalConditions(final Object entity, final Collection<String> includedPropNames) {
         N.checkArgNotNull(entity, cs.entity);
         N.checkArgument(!(entity instanceof Map), "entity must be a bean object; use the map overload for maps");
         N.checkArgNotEmpty(includedPropNames, cs.includedPropNames);
+        final List<String> propNameSnapshot = new ArrayList<>(includedPropNames);
+        N.checkArgNotEmpty(propNameSnapshot, cs.includedPropNames);
 
-        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
+        for (final String propName : propNameSnapshot) {
+            N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
+        }
+
+        final BeanInfo entityInfo = checkReadableProperties(entity, propNameSnapshot);
         final List<Condition> conditions = new ArrayList<>();
 
-        for (final String propName : includedPropNames) {
+        for (final String propName : propNameSnapshot) {
             conditions.add(equal(propName, entityInfo.getPropValue(entity, propName)));
         }
 
         N.checkArgNotEmpty(conditions, cs.includedPropNames);
         return conditions;
+    }
+
+    /**
+     * Resolves every requested property before any bean getter is invoked.
+     *
+     * @param entity the non-null entity whose metadata is inspected
+     * @param propNames the non-null, nonblank property names to resolve
+     * @return the entity metadata used to read the properties
+     * @throws IllegalArgumentException if the entity class has invalid bean metadata or a property name cannot be resolved
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     */
+    private static BeanInfo checkReadableProperties(final Object entity, final Collection<String> propNames) {
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entity.getClass());
+
+        for (final String propName : propNames) {
+            N.checkArgument(entityInfo.getPropInfo(propName) != null || !entityInfo.getPropInfoChain(propName).isEmpty(),
+                    "No getter method found with property name: %s in class: %s", propName, entity.getClass().getCanonicalName());
+        }
+
+        return entityInfo;
     }
 
     /**
@@ -861,6 +904,9 @@ public final class Filters {
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      * @see #anyOfAllEqual(Collection, Collection)
      * @see #anyEqual(Map)
      * @see #allEqual(Map)
@@ -913,28 +959,50 @@ public final class Filters {
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      * @see #anyOfAllEqual(Collection)
      * @see #allEqual(Object, Collection)
      */
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames) {
         N.checkArgNotNull(entities, cs.entities);
-        N.checkArgNotNull(includedPropNames, cs.includedPropNames);
         final List<?> entitySnapshot = new ArrayList<>(entities);
-        final List<String> propNameSnapshot = new ArrayList<>(includedPropNames);
         N.checkArgNotEmpty(entitySnapshot, cs.entities);
+
+        boolean hasEntity = false;
+
+        for (final Object entity : entitySnapshot) {
+            if (entity != null) {
+                N.checkArgument(!(entity instanceof Map), "All non-null elements must be entity objects; maps require the map overload");
+                hasEntity = true;
+            }
+        }
+
+        N.checkArgument(hasEntity, "All specified entities are null.");
+        N.checkArgNotNull(includedPropNames, cs.includedPropNames);
+        final List<String> propNameSnapshot = new ArrayList<>(includedPropNames);
         N.checkArgNotEmpty(propNameSnapshot, cs.includedPropNames);
+
+        for (final String propName : propNameSnapshot) {
+            N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
+        }
+
+        for (final Object entity : entitySnapshot) {
+            if (entity != null) {
+                checkReadableProperties(entity, propNameSnapshot);
+            }
+        }
 
         final List<Condition> condList = new ArrayList<>();
 
         for (final Object entity : entitySnapshot) {
             if (entity != null) {
-                N.checkArgument(!(entity instanceof Map), "All non-null elements must be entity objects; maps require the map overload");
                 condList.add(and(equalConditions(entity, propNameSnapshot)));
             }
         }
 
-        N.checkArgument(!condList.isEmpty(), "All specified entities are null.");
         return or(condList);
     }
 
@@ -1894,6 +1962,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like contains(final String propName, final String propValue) {
+        N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         N.checkArgNotNull(propValue, cs.propValue);
         return new Like(propName, SK._PERCENT + propValue + SK._PERCENT);
     }
@@ -1916,6 +1985,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notContains(final String propName, final String propValue) {
+        N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         N.checkArgNotNull(propValue, cs.propValue);
         return new NotLike(propName, SK._PERCENT + propValue + SK._PERCENT);
     }
@@ -1938,6 +2008,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like startsWith(final String propName, final String propValue) {
+        N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         N.checkArgNotNull(propValue, cs.propValue);
         return new Like(propName, propValue + SK._PERCENT);
     }
@@ -1960,6 +2031,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notStartsWith(final String propName, final String propValue) {
+        N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         N.checkArgNotNull(propValue, cs.propValue);
         return new NotLike(propName, propValue + SK._PERCENT);
     }
@@ -1982,6 +2054,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static Like endsWith(final String propName, final String propValue) {
+        N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         N.checkArgNotNull(propValue, cs.propValue);
         return new Like(propName, SK._PERCENT + propValue);
     }
@@ -2004,6 +2077,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue} is {@code null}
      */
     public static NotLike notEndsWith(final String propName, final String propValue) {
+        N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         N.checkArgNotNull(propValue, cs.propValue);
         return new NotLike(propName, SK._PERCENT + propValue);
     }
@@ -2539,7 +2613,8 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
+     *                                  or if any property name is {@code null}, empty, or blank,
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2602,7 +2677,8 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
+     *                                  or if any property name is {@code null}, empty, or blank,
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2672,7 +2748,8 @@ public final class Filters {
      * @param propNames collection of property/column names to group by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null}, empty, or blank, if {@code direction} is {@code null},
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
+     *                                  if any property name is {@code null}, empty, or blank, if {@code direction} is {@code null},
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2718,13 +2795,15 @@ public final class Filters {
      * @param propName2 second property name
      * @param direction2 second property sort direction
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the property names are not
-     *                                  distinct, if any sort direction is {@code null}, or if {@code propName1} begins with a SQL clause
+     * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its direction is {@code null}
+     *                                  (pairs are checked in signature order), if the names are not distinct, or if {@code propName1} begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
      *                                  accepted), which cannot be nested inside a clause
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
+        checkSortEntry(propName1, direction1);
+        checkSortEntry(propName2, direction2);
         checkDistinctPropNames(propName1, propName2);
 
         return groupBy(N.asMap(propName1, direction1, propName2, direction2));
@@ -2746,14 +2825,17 @@ public final class Filters {
      * @param propName3 third property name
      * @param direction3 third property sort direction
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the property names are not
-     *                                  distinct, if any sort direction is {@code null}, or if {@code propName1} begins with a SQL clause
+     * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its direction is {@code null}
+     *                                  (pairs are checked in signature order), if the names are not distinct, or if {@code propName1} begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
      *                                  accepted), which cannot be nested inside a clause
      */
     public static GroupBy groupBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
+        checkSortEntry(propName1, direction1);
+        checkSortEntry(propName2, direction2);
+        checkSortEntry(propName3, direction3);
         checkDistinctPropNames(propName1, propName2, propName3);
 
         return groupBy(N.asMap(propName1, direction1, propName2, direction2, propName3, direction3));
@@ -2774,7 +2856,8 @@ public final class Filters {
      *
      * @param groupings map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, if any property name is {@code null}, empty, or blank, if any sort direction is {@code null},
+     * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, if any map entry is {@code null},
+     *                                  if any property name is {@code null}, empty, or blank, if any sort direction is {@code null},
      *                                  or if the first key begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2903,7 +2986,8 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
+     *                                  or if any property name is {@code null}, empty, or blank,
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2966,7 +3050,8 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, or blank,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
+     *                                  or if any property name is {@code null}, empty, or blank,
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3036,7 +3121,8 @@ public final class Filters {
      * @param propNames collection of property/column names to order by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any property name is {@code null}, empty, or blank, if {@code direction} is {@code null},
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
+     *                                  if any property name is {@code null}, empty, or blank, if {@code direction} is {@code null},
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3082,13 +3168,15 @@ public final class Filters {
      * @param propName2 second property name
      * @param direction2 second property sort direction
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the property names are not
-     *                                  distinct, if any sort direction is {@code null}, or if {@code propName1} begins with a SQL clause
+     * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its direction is {@code null}
+     *                                  (pairs are checked in signature order), if the names are not distinct, or if {@code propName1} begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
      *                                  accepted), which cannot be nested inside a clause
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2) {
+        checkSortEntry(propName1, direction1);
+        checkSortEntry(propName2, direction2);
         checkDistinctPropNames(propName1, propName2);
 
         return orderBy(N.asMap(propName1, direction1, propName2, direction2));
@@ -3110,23 +3198,39 @@ public final class Filters {
      * @param propName3 third property name
      * @param direction3 third property sort direction
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the property names are not
-     *                                  distinct, if any sort direction is {@code null}, or if {@code propName1} begins with a SQL clause
+     * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its direction is {@code null}
+     *                                  (pairs are checked in signature order), if the names are not distinct, or if {@code propName1} begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
      *                                  accepted), which cannot be nested inside a clause
      */
     public static OrderBy orderBy(final String propName1, final SortDirection direction1, final String propName2, final SortDirection direction2,
             final String propName3, final SortDirection direction3) {
+        checkSortEntry(propName1, direction1);
+        checkSortEntry(propName2, direction2);
+        checkSortEntry(propName3, direction3);
         checkDistinctPropNames(propName1, propName2, propName3);
 
         return orderBy(N.asMap(propName1, direction1, propName2, direction2, propName3, direction3));
     }
 
     /**
+     * Validates one property/direction pair before a multi-property sort is assembled.
+     *
+     * @param propName the property name
+     * @param direction the sort direction
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank,
+     *         or {@code direction} is {@code null}
+     */
+    private static void checkSortEntry(final String propName, final SortDirection direction) {
+        N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
+        N.checkArgument(direction != null, "SortDirection for '" + propName + "' in the sort map must not be null");
+    }
+
+    /**
      * Rejects a repeated property name in the fixed-arity {@code groupBy}/{@code orderBy} overloads, which would
-     * otherwise collapse silently into a single map entry keeping only the last direction. {@code null} names are
-     * left for the clause constructor to report.
+     * otherwise collapse silently into a single map entry keeping only the last direction. The caller validates
+     * each property/direction pair before checking for duplicates.
      *
      * @param propNames the property names supplied to the overload
      * @throws IllegalArgumentException if any non-null name occurs more than once
@@ -3161,7 +3265,8 @@ public final class Filters {
      *
      * @param orders map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, if any property name is {@code null}, empty, or blank, if any sort direction is {@code null},
+     * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, if any map entry is {@code null},
+     *                                  if any property name is {@code null}, empty, or blank, if any sort direction is {@code null},
      *                                  or if the first key begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -4014,6 +4119,9 @@ public final class Filters {
      *                                  or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if a row element
      *                                  is a cyclic object array
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      */
     public static In in(final Collection<String> propNames, final Collection<?> valueRows) {
         return new In(propNames, valueRows);
@@ -4287,6 +4395,9 @@ public final class Filters {
      *                                  or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if a row element
      *                                  is a cyclic object array
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
      */
     public static NotIn notIn(final Collection<String> propNames, final Collection<?> valueRows) {
         return new NotIn(propNames, valueRows);
@@ -4831,7 +4942,7 @@ public final class Filters {
     //     * @throws IllegalStateException if the builder is incomplete or was already consumed
     //     */
     //    public static SubQuery subQuery(final SqlBuilder sqlBuilder) {
-    //        N.checkArgNotNull(sqlBuilder, "sqlBuilder");
+    //        N.checkArgNotNull(sqlBuilder, cs.sqlBuilder);
     //        return sqlBuilder.buildSubQuery();
     //    }
 

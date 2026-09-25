@@ -186,9 +186,10 @@ public final class Dsl {
      * predefined dialect combinations.
      *
      * @param sqlDialect the rendering and tokenizer configuration to bind to (must not be {@code null})
-     * @throws NullPointerException if {@code sqlDialect} is {@code null}
+     * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}
      */
     Dsl(final SqlDialect sqlDialect) {
+        N.checkArgNotNull(sqlDialect, cs.sqlDialect);
         this.sqlDialect = sqlDialect;
         namingPolicy = sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : sqlDialect.namingPolicy();
     }
@@ -259,6 +260,8 @@ public final class Dsl {
      *         {@code null} element, a {@code null}, empty, or blank included property name, or an
      *         unsafe (whitespace-only, quoted, or comment-bearing) table or class alias, or resolves
      *         to no properties in total
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     private static List<Selection> snapshotSelections(final List<Selection> selections) {
         N.checkArgNotNull(selections, cs.selections);
@@ -302,6 +305,9 @@ public final class Dsl {
      * @param selectionSnapshots validated, snapshotted selection descriptors (as returned by
      *        {@link #snapshotSelections(List)})
      * @return a new {@code SqlBuilder} instance configured for SELECT operation
+     * @throws IllegalArgumentException if the first selection's entity metadata contains invalid property mappings
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     private SqlBuilder createSelectBuilder(final List<Selection> selectionSnapshots) {
         final SqlBuilder instance = createSqlBuilderInstance();
@@ -469,6 +475,9 @@ public final class Dsl {
      *                                  or if a bean has no insertable value left after its {@code null} values and
      *                                  default-valued ID properties are skipped (a non-ID primitive still holding its
      *                                  default, such as {@code 0}, is kept)
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading an inserted bean property or invoking its getter fails
      */
     public SqlBuilder insert(final Object entity) {
         return insert(entity, null);
@@ -510,6 +519,9 @@ public final class Dsl {
      *                                  or if a bean has no insertable value left after exclusions are applied and its
      *                                  {@code null} values and default-valued ID properties are skipped (a non-ID
      *                                  primitive still holding its default, such as {@code 0}, is kept)
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading an inserted bean property or invoking its getter fails
      */
     public SqlBuilder insert(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, SqlBuilder.INSERTION_PART_MSG);
@@ -566,6 +578,9 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code entity} is {@code null} or is not a valid entity bean,
      *         or if no insertable value remains after its {@code null} values and default-valued ID
      *         properties are removed
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading an inserted bean property or invoking its getter fails
      */
     private static Map<String, Object> snapshotInsertBean(final Object entity, final Set<String> excludedPropNames) {
         final Collection<String> propNames = QueryUtil.insertPropNames(entity, excludedPropNames);
@@ -619,6 +634,8 @@ public final class Dsl {
      * @param entityClass the entity class to generate INSERT for
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or declares no insertable property
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder insert(final Class<?> entityClass) {
         return insert(entityClass, null);
@@ -642,6 +659,8 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or no insertable property remains after exclusions are applied
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder insert(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.INSERTION_PART_MSG);
@@ -679,6 +698,10 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no insertable property,
      *                                  or resolves to a blank mapped table name
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws IllegalStateException if a named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws RuntimeException if the configured named-parameter handler throws an unchecked exception
      */
     public SqlBuilder insertInto(final Class<?> entityClass) {
         return insertInto(entityClass, null);
@@ -702,6 +725,10 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no insertable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws IllegalStateException if a named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws RuntimeException if the configured named-parameter handler throws an unchecked exception
      */
     public SqlBuilder insertInto(final Class<?> entityClass, final Set<String> excludedPropNames) {
         final SqlBuilder builder = insert(entityClass, excludedPropNames);
@@ -748,6 +775,9 @@ public final class Dsl {
      *         {@code Map} nor a valid entity bean; if elements have mixed types (some {@code Map}, some
      *         bean); if bean rows do not have the same runtime class; or if no bean column remains
      *         after columns that are null/default in every row are removed
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if reading an inserted bean property or invoking its getter fails
      */
     @Beta
     public SqlBuilder batchInsert(final Collection<?> entitiesOrPropMaps) {
@@ -828,7 +858,10 @@ public final class Dsl {
      * @param tableName the name of the table to update
      * @param entityClass the entity class for property mapping
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or {@code entityClass} is null
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or {@code entityClass} is null,
+     *         or inspected entity metadata has invalid property mappings
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder update(final String tableName, final Class<?> entityClass) {
         AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
@@ -867,6 +900,8 @@ public final class Dsl {
      * @param entityClass the entity class to update
      * @return a new SqlBuilder instance configured for UPDATE operation
      * @throws IllegalArgumentException if entityClass is null or declares no updatable property
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder update(final Class<?> entityClass) {
         return update(entityClass, null);
@@ -896,6 +931,8 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from the update
      * @return a new SqlBuilder instance configured for UPDATE operation
      * @throws IllegalArgumentException if entityClass is null or no updatable property remains after exclusions are applied
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder update(final Class<?> entityClass, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.UPDATE_PART_MSG);
@@ -966,7 +1003,10 @@ public final class Dsl {
      * @param tableName the name of the table to delete from
      * @param entityClass the entity class for property mapping
      * @return a new SqlBuilder instance configured for DELETE operation
-     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or {@code entityClass} is null
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or {@code entityClass} is null,
+     *         or inspected entity metadata has invalid property mappings
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
         AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
@@ -1004,6 +1044,8 @@ public final class Dsl {
      * @param entityClass the entity class to delete from
      * @return a new SqlBuilder instance configured for DELETE operation
      * @throws IllegalArgumentException if entityClass is null or is not a valid entity bean class
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder deleteFrom(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, SqlBuilder.DELETION_PART_MSG);
@@ -1192,6 +1234,8 @@ public final class Dsl {
      * @param entityClass the entity class to select properties from
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClass is null or declares no selectable property
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder select(final Class<?> entityClass) {
         return select(entityClass, false);
@@ -1221,6 +1265,8 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClass is null or declares no selectable property
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties) {
         return select(entityClass, includeSubEntityProperties, null);
@@ -1245,6 +1291,8 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClass is null or no selectable property remains after exclusions are applied
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames) {
         return select(entityClass, false, excludedPropNames);
@@ -1270,6 +1318,8 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if entityClass is null or no selectable property remains after exclusions are applied
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
@@ -1309,6 +1359,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final Class<?> entityClass) {
         return selectFrom(entityClass, false);
@@ -1334,6 +1386,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name, or if {@code tableAlias}
      *                                  contains a line break or a SQL comment token
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias) {
         return selectFrom(entityClass, tableAlias, false);
@@ -1361,6 +1415,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties) {
         return selectFrom(entityClass, includeSubEntityProperties, null);
@@ -1387,6 +1443,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name, or if {@code tableAlias}
      *                                  contains a line break or a SQL comment token
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties) {
         return selectFrom(entityClass, tableAlias, includeSubEntityProperties, null);
@@ -1412,6 +1470,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames) {
         return selectFrom(entityClass, false, excludedPropNames);
@@ -1439,6 +1499,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name, or if
      *                                  {@code tableAlias} contains a line break or a SQL comment token
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final Set<String> excludedPropNames) {
         return selectFrom(entityClass, tableAlias, false, excludedPropNames);
@@ -1465,6 +1527,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames) {
         return selectFrom(entityClass, QueryUtil.tableAlias(entityClass), includeSubEntityProperties, excludedPropNames);
@@ -1497,6 +1561,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name, or if
      *                                  {@code tableAlias} contains a line break or a SQL comment token
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
@@ -1548,6 +1614,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if either entity class is {@code null}; if a non-empty table or class alias is
      *                                  blank, quoted, or contains a line break or SQL comment token; or if the two
      *                                  selections together resolve to no selectable property
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
@@ -1590,6 +1658,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if either entity class is {@code null}; if a non-empty table or class alias is
      *                                  blank, quoted, or contains a line break or SQL comment token; or if the two
      *                                  selections together resolve to no selectable property after exclusions are applied
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #select(List)}, which is self-documenting and supports any
@@ -1631,6 +1701,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code selection} is {@code null}, has a {@code null}, empty, or blank
      *                                  included property name, carries a blank, quoted, or comment-bearing table or
      *                                  class alias, or resolves to no selectable property
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #select(List)
      * @see Selection
      */
@@ -1672,6 +1744,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a {@code null} element,
      *                                  a {@code null}, empty, or blank included property name, or a blank, quoted, or
      *                                  comment-bearing table or class alias, or resolves to no properties in total
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder select(final List<Selection> selections) {
         return createSelectBuilder(snapshotSelections(selections));
@@ -1704,6 +1778,8 @@ public final class Dsl {
      *                                  blank, quoted, or contains a line break or SQL comment token; if the two
      *                                  selections together resolve to no selectable property; if either entity class
      *                                  is not a valid entity bean class; or if the generated FROM clause is blank
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
@@ -1744,6 +1820,8 @@ public final class Dsl {
      *                                  selections together resolve to no selectable property after exclusions are
      *                                  applied; if either entity class is not a valid entity bean class; or if the
      *                                  generated FROM clause is blank
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
      *             entities. Build a {@link Selection} per table (e.g. with {@code Selection.builder(Entity.class)})
      *             and pass them to {@link #selectFrom(List)}, which is self-documenting and supports any
@@ -1785,6 +1863,8 @@ public final class Dsl {
      *                                  included property name, carries a blank, quoted, or comment-bearing table or
      *                                  class alias, resolves to no selectable property, has an entity class that is
      *                                  not a valid entity bean class, or produces a blank generated FROM clause
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #selectFrom(List)
      * @see Selection
      */
@@ -1824,6 +1904,8 @@ public final class Dsl {
      *                                  comment-bearing table or class alias, resolves to no properties in total,
      *                                  contains an entity class that is not a valid entity bean class, or produces a
      *                                  blank generated FROM clause
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final List<Selection> selections) {
         final List<Selection> selectionSnapshots = snapshotSelections(selections);
@@ -1897,6 +1979,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class,
      *                                  or resolves to a blank mapped table name
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectCountFrom(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
@@ -1938,15 +2022,22 @@ public final class Dsl {
      * @param condition the condition to render (must not be {@code null})
      * @param entityClass the entity class used for property-to-column mapping (may be {@code null})
      * @return a new SqlBuilder instance containing the rendered condition SQL
-     * @throws IllegalArgumentException if {@code condition} is {@code null}; if it is a {@code Where} or {@code Having} clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, or inspected entity metadata has invalid property mappings;
+     *                                  if it is a {@code Where} or {@code Having} clause
      *                                  whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL
      *                                  clause, JOIN, or {@code ON}/{@code USING} connector); if it is a clause other than a
      *                                  {@code Where}, {@code GroupBy}, {@code Having}, {@code OrderBy}, {@code Limit}, or
      *                                  set-operation clause (for example a custom {@code OFFSET} clause);
-     *                                  or if it is or contains a condition type that cannot be rendered
+     *                                  if it is or contains a condition type that cannot be rendered or an incompatible subquery;
+     *                                  or, under {@code RAW_SQL}, a value is a non-finite floating-point number or
+     *                                  a {@code Number} whose text is not a decimal SQL literal
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      * @throws IllegalStateException if {@code condition} is a {@link com.landawn.abacus.query.condition.Criteria} carrying joins,
      *                               set operations, or a select modifier, or is a standalone set-operation clause:
-     *                               a condition-only builder has no SELECT segment for them to attach to
+     *                               a condition-only builder has no SELECT segment for them to attach to; or a
+     *                               named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws RuntimeException if a custom condition renderer, value renderer, or named-parameter handler throws an exception
      */
     public SqlBuilder renderCondition(final Condition condition, final Class<?> entityClass) {
         N.checkArgNotNull(condition, cs.condition);
@@ -1985,10 +2076,16 @@ public final class Dsl {
      *                                  clause, JOIN, or {@code ON}/{@code USING} connector); if it is a clause other than a
      *                                  {@code Where}, {@code GroupBy}, {@code Having}, {@code OrderBy}, {@code Limit}, or
      *                                  set-operation clause (for example a custom {@code OFFSET} clause);
-     *                                  or if it is or contains a condition type that cannot be rendered
+     *                                  if it is or contains a condition type that cannot be rendered or an incompatible subquery;
+     *                                  or, under {@code RAW_SQL}, a value is a non-finite floating-point number or
+     *                                  a {@code Number} whose text is not a decimal SQL literal
      * @throws IllegalStateException if {@code condition} is a {@link com.landawn.abacus.query.condition.Criteria} carrying joins,
      *                               set operations, or a select modifier, or is a standalone set-operation clause:
-     *                               a condition-only builder has no SELECT segment for them to attach to
+     *                               a condition-only builder has no SELECT segment for them to attach to; or a
+     *                               named-parameter handler emits an empty token under {@code NAMED_SQL}
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer, value renderer, or named-parameter handler throws an exception
      * @see #renderCondition(Condition, Class)
      */
     public SqlBuilder renderCondition(final Condition condition) {
@@ -2016,11 +2113,13 @@ public final class Dsl {
      * Validates the alias of every entry in the given property/column-name-to-alias map.
      *
      * @param propOrColumnNameAliases map of property/column names to their aliases (must not be {@code null})
-     * @throws IllegalArgumentException if any alias is {@code null} or blank, contains a quote character, a line break,
-     *                                  or an SQL comment token
+     * @throws IllegalArgumentException if {@code propOrColumnNameAliases} is {@code null}, or any alias is {@code null}
+     *                                  or blank, contains a quote character, a line break, or an SQL comment token
      * @see #validateColumnAlias(String, String)
      */
     static void validateColumnAliases(final Map<String, String> propOrColumnNameAliases) {
+        N.checkArgNotNull(propOrColumnNameAliases, cs.propOrColumnNameAliases);
+
         for (final Map.Entry<String, String> entry : propOrColumnNameAliases.entrySet()) {
             validateColumnAlias(entry.getKey(), entry.getValue());
         }

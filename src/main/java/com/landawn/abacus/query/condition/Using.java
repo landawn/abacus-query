@@ -245,6 +245,15 @@ public class Using extends Cell {
     private record Prepared(List<String> columnNames, Condition condition) {
     }
 
+    /**
+     * Prepares USING columns from an array.
+     *
+     * @param columnNames the names to copy
+     * @return a validated column and expression snapshot
+     * @throws IllegalArgumentException if {@code columnNames} is null or empty, a name is null, empty,
+     *         blank, qualified, contains comma or parentheses, or an unquoted SQL comment token
+     *         removes the rendered closing parenthesis
+     */
     private static Prepared prepare(final String... columnNames) {
         N.checkArgNotEmpty(columnNames, cs.columnNames);
 
@@ -260,6 +269,15 @@ public class Using extends Cell {
         return new Prepared(copy, createUsingConditionFromSnapshot(copy));
     }
 
+    /**
+     * Prepares USING columns from a collection.
+     *
+     * @param columnNames the names to copy
+     * @return a validated column and expression snapshot
+     * @throws IllegalArgumentException if {@code columnNames} is null, empty, or yields no elements,
+     *         a name is null, empty, blank, qualified, contains comma or parentheses, or an unquoted
+     *         SQL comment token removes the rendered closing parenthesis
+     */
     private static Prepared prepare(final Collection<String> columnNames) {
         N.checkArgNotEmpty(columnNames, cs.columnNames);
 
@@ -344,6 +362,14 @@ public class Using extends Cell {
         return prepare(columnNames).condition;
     }
 
+    /**
+     * Renders the validated USING columns.
+     *
+     * @param columnNames the validated non-empty column snapshot
+     * @return the parenthesized USING expression
+     * @throws IllegalArgumentException if an unquoted SQL comment token in a name removes the
+     *         rendered closing parenthesis
+     */
     private static Condition createUsingConditionFromSnapshot(final List<String> columnNames) {
         final SqlExpression expr = Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
 
@@ -357,6 +383,13 @@ public class Using extends Cell {
         return expr;
     }
 
+    /**
+     * Validates one unqualified USING column.
+     *
+     * @param columnName the name to validate
+     * @throws IllegalArgumentException if {@code columnName} is null, empty, blank, or contains
+     *         a dot, comma, or parenthesis
+     */
     private static void validateColumnName(final String columnName) {
         if (Strings.isBlank(columnName)) {
             throw new IllegalArgumentException("columnName in columnNames must not be null, empty, or blank");

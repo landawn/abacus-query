@@ -214,8 +214,10 @@ public class Binary extends ComposableCondition {
                     "Binary condition operator must be a comparison operator (one of " + COMPARISON_OPERATORS + "), but was: " + operator);
         }
 
+        final Object validatedPropValue = normalizePropValue(operator, propValue);
+
         this.propName = propName;
-        this.propValue = normalizePropValue(operator, propValue);
+        this.propValue = validatedPropValue;
         this.rebuildParametersPerCall = requiresPerCallParameters(this.propValue);
     }
 
@@ -422,28 +424,31 @@ public class Binary extends ComposableCondition {
      *                                  {@link Number} whose text is not a valid numeric literal, or if a
      *                                  {@link SubQuery} value (directly or inside an {@code ALL}/{@code ANY}/{@code SOME}
      *                                  operand) cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         final Operator op = operator();
+        final String renderedPropName = QueryUtil.terminateLineComment(String.valueOf(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy)));
 
         if (propValue == null) {
             if (op == Operator.EQUAL || op == Operator.IS) {
-                return QueryUtil.convertIdentifier(propName, effectiveNamingPolicy) + SK._SPACE + SK.IS_NULL;
+                return renderedPropName + SK._SPACE + SK.IS_NULL;
             } else if (op == Operator.NOT_EQUAL || op == Operator.NOT_EQUAL_ANSI || op == Operator.IS_NOT) {
-                return QueryUtil.convertIdentifier(propName, effectiveNamingPolicy) + SK._SPACE + SK.IS_NOT_NULL;
+                return renderedPropName + SK._SPACE + SK.IS_NOT_NULL;
             }
         }
 
         final String opStr = op == null ? Strings.NULL : op.toString();
 
         if (isCollectionOperator(op) && propValue instanceof final Collection<?> values) {
-            return QueryUtil.convertIdentifier(propName, effectiveNamingPolicy) + SK._SPACE + opStr + SK._SPACE
-                    + formatCollection(values, effectiveNamingPolicy);
+            return renderedPropName + SK._SPACE + opStr + SK._SPACE + formatCollection(values, effectiveNamingPolicy);
         }
 
-        return QueryUtil.convertIdentifier(propName, effectiveNamingPolicy) + SK._SPACE + opStr + SK._SPACE + formatParameter(propValue, effectiveNamingPolicy);
+        return renderedPropName + SK._SPACE + opStr + SK._SPACE + formatParameter(propValue, effectiveNamingPolicy);
     }
 
     /**
@@ -618,6 +623,11 @@ public class Binary extends ComposableCondition {
      * @param values the non-empty membership values
      * @param namingPolicy the naming policy applied to condition-valued elements
      * @return the parenthesized value list (e.g. {@code "(1, 'a', 3)"})
+     * @throws IllegalArgumentException if a value is a non-finite number or has an invalid numeric literal,
+     *         or a nested structured subquery has an invalid entity class
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     private static String formatCollection(final Collection<?> values, final NamingPolicy namingPolicy) {
         final StringBuilder sb = new StringBuilder();

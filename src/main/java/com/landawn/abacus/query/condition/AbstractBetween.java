@@ -89,6 +89,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      * Creates a new BETWEEN or NOT BETWEEN condition.
      * A structured subquery bound with a known, non-wildcard projection must select exactly one column;
      * raw SQL and wildcard projection arity are left to the database.
+     * The minimum bound is fully validated before the maximum bound.
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
@@ -112,13 +113,16 @@ public abstract class AbstractBetween extends ComposableCondition {
 
         checkPropName(propName);
         N.checkArgNotNull(minValue, cs.minValue);
-        N.checkArgNotNull(maxValue, cs.maxValue);
         validateNonQuantifiedValueOperand(minValue, cs.minValue);
+        final Object minValueSnapshot = snapshotMutableValue(minValue);
+
+        N.checkArgNotNull(maxValue, cs.maxValue);
         validateNonQuantifiedValueOperand(maxValue, cs.maxValue);
+        final Object maxValueSnapshot = snapshotMutableValue(maxValue);
 
         this.propName = propName;
-        this.minValue = snapshotMutableValue(minValue);
-        this.maxValue = snapshotMutableValue(maxValue);
+        this.minValue = minValueSnapshot;
+        this.maxValue = maxValueSnapshot;
         this.rebuildParametersPerCall = requiresPerCallParameters(this.minValue) || requiresPerCallParameters(this.maxValue);
     }
 
@@ -132,6 +136,13 @@ public abstract class AbstractBetween extends ComposableCondition {
         return isSnapshotMutableValue(bound) || bound instanceof Condition;
     }
 
+    /**
+     * Validates the operator used by a range condition.
+     *
+     * @param operator the range operator to validate
+     * @return the validated operator
+     * @throws IllegalArgumentException if {@code operator} is null or is neither BETWEEN nor NOT_BETWEEN
+     */
     private static Operator validateOperator(final Operator operator) {
         N.checkArgNotNull(operator, cs.operator);
 
@@ -290,6 +301,9 @@ public abstract class AbstractBetween extends ComposableCondition {
      *                                  or a {@link Number} whose text is not a valid numeric literal, or if a
      *                                  {@link SubQuery} bound cannot be rendered, as documented for
      *                                  {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
@@ -298,7 +312,7 @@ public abstract class AbstractBetween extends ComposableCondition {
         final String opStr = op == null ? Strings.NULL : op.toString();
 
         final StringBuilder sb = new StringBuilder();
-        sb.append(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy))
+        sb.append(QueryUtil.terminateLineComment(String.valueOf(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy))))
                 .append(SK._SPACE)
                 .append(opStr)
                 .append(SK._SPACE)

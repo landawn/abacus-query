@@ -22,6 +22,7 @@ import java.util.Set;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
@@ -504,6 +505,8 @@ public class Criteria extends AbstractCondition {
      * Clauses are emitted in SQL order: select modifier, JOINs, WHERE, GROUP BY, HAVING,
      * set operations (UNION/UNION ALL/INTERSECT/EXCEPT/MINUS), ORDER BY, LIMIT. Each clause is prefixed by a
      * leading space, so a non-empty result starts with a space.
+     * A trailing line comment in a custom select modifier is terminated before any following clause;
+     * the stored modifier returned by {@link #selectModifier()} is unchanged.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -518,13 +521,16 @@ public class Criteria extends AbstractCondition {
      * @throws IllegalArgumentException if rendering a clause's condition rejects one of its values (for example a
      *                                  {@code NaN} or infinite {@link Float}/{@link Double}), or if a nested
      *                                  {@link SubQuery} cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
         // Single pass into per-clause buffers, then assembled in SQL order
         // (selectModifier + join + where + groupBy + having + setOps + orderBy + limit).
-        // Output is byte-identical to the previous O(n^2) string-concatenation version.
+        // Each rendered clause terminates a trailing line comment before the next clause is added.
         final StringBuilder join = new StringBuilder();
         final StringBuilder where = new StringBuilder();
         final StringBuilder groupBy = new StringBuilder();
@@ -553,7 +559,7 @@ public class Criteria extends AbstractCondition {
                 target = setOps;
             }
 
-            target.append(SK._SPACE).append(cond.toSql(effectiveNamingPolicy));
+            target.append(SK._SPACE).append(QueryUtil.terminateLineComment(String.valueOf(cond.toSql(effectiveNamingPolicy))));
         }
 
         final int modifierLen = Strings.isEmpty(this.selectModifier) ? 0 : 1 + this.selectModifier.length();
@@ -561,7 +567,7 @@ public class Criteria extends AbstractCondition {
                 modifierLen + join.length() + where.length() + groupBy.length() + having.length() + setOps.length() + orderBy.length() + limit.length());
 
         if (modifierLen > 0) {
-            sb.append(SK.SPACE).append(this.selectModifier);
+            sb.append(SK.SPACE).append(conditions.isEmpty() ? this.selectModifier : QueryUtil.terminateLineComment(this.selectModifier));
         }
 
         sb.append(join).append(where).append(groupBy).append(having).append(setOps).append(orderBy).append(limit);
@@ -751,6 +757,8 @@ public class Criteria extends AbstractCondition {
      * }</pre>
      *
      * @return a new mutable Builder initialized from this criteria
+     * @throws IllegalArgumentException if a stored condition reports a null or non-clause operator,
+     *         or no longer matches the clause type required by its operator
      */
     public Builder toBuilder() {
         final Builder builder = new Builder();
@@ -842,6 +850,7 @@ public class Criteria extends AbstractCondition {
          * The database dialect used to execute the generated SQL must support this syntax.
          * If {@code columnNames} is {@code null}, empty, or blank, a plain {@code DISTINCT}
          * modifier is used.
+         * A trailing line comment in {@code columnNames} is terminated with a newline before the closing parenthesis.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -860,7 +869,7 @@ public class Criteria extends AbstractCondition {
          * @return this Builder instance for method chaining
          */
         public Builder distinctOn(final String columnNames) {
-            selectModifier = Strings.isBlank(columnNames) ? SK.DISTINCT : SK.DISTINCT + " ON (" + columnNames + ")";
+            selectModifier = Strings.isBlank(columnNames) ? SK.DISTINCT : SK.DISTINCT + " ON (" + QueryUtil.terminateLineComment(columnNames) + ")";
 
             return this;
         }
@@ -943,7 +952,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param joins the JOIN clauses to add
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joins} is {@code null} or contains {@code null}
+         * @throws IllegalArgumentException if {@code joins} is {@code null}, contains {@code null}, or contains
+         *         a join whose operator is null or is not a JOIN operator
          */
         public Builder join(final Join... joins) {
             N.checkArgNotNull(joins, cs.joins);
@@ -972,7 +982,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param joins the collection of JOIN clauses to add
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joins} is {@code null} or contains {@code null}
+         * @throws IllegalArgumentException if {@code joins} is {@code null}, contains {@code null}, or contains
+         *         a join whose operator is null or is not a JOIN operator
          */
         public Builder join(final Collection<Join> joins) {
             N.checkArgNotNull(joins, cs.joins);
@@ -1876,13 +1887,15 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to group by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the two property names
-         *                                  are equal (duplicate property name), if any sort direction is {@code null}, or if
+         * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its sort direction is {@code null}
+         *                                  (pairs are checked in signature order), if the two property names are equal, or if
          *                                  {@code propName} begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN},
          *                                  {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively
          *                                  as a whole token (so {@code where_x} is accepted), which cannot be nested inside a clause
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+            checkSortEntry(propName, direction);
+            checkSortEntry(propName2, direction2);
             checkNoDuplicatePropName(propName, propName2);
 
             groupBy(N.asMap(propName, direction, propName2, direction2));
@@ -1908,14 +1921,17 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to group by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if any two property names
-         *                                  are equal (duplicate property name), if any sort direction is {@code null}, or if
+         * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its sort direction is {@code null}
+         *                                  (pairs are checked in signature order), if any two property names are equal, or if
          *                                  {@code propName} begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN},
          *                                  {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively
          *                                  as a whole token (so {@code where_x} is accepted), which cannot be nested inside a clause
          */
         public Builder groupBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
+            checkSortEntry(propName, direction);
+            checkSortEntry(propName2, direction2);
+            checkSortEntry(propName3, direction3);
             checkNoDuplicatePropName(propName, propName2, propName3);
 
             groupBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
@@ -2002,7 +2018,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param groupings a map of property names to sort directions
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, or contains {@code null}, empty, or blank keys
+         * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, contains a {@code null} entry,
+         *                                  or contains {@code null}, empty, or blank keys
          *                                  or {@code null} values, or if the first key begins with a SQL clause keyword (for example
          *                                  {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING},
          *                                  matched case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be
@@ -2354,13 +2371,15 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to order by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if the two property names
-         *                                  are equal (duplicate property name), if any sort direction is {@code null}, or if
+         * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its sort direction is {@code null}
+         *                                  (pairs are checked in signature order), if the two property names are equal, or if
          *                                  {@code propName} begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN},
          *                                  {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively
          *                                  as a whole token (so {@code where_x} is accepted), which cannot be nested inside a clause
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2) {
+            checkSortEntry(propName, direction);
+            checkSortEntry(propName2, direction2);
             checkNoDuplicatePropName(propName, propName2);
 
             orderBy(N.asMap(propName, direction, propName2, direction2));
@@ -2386,14 +2405,17 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to order by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if any property name is {@code null}, empty, or blank, if any two property names
-         *                                  are equal (duplicate property name), if any sort direction is {@code null}, or if
+         * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its sort direction is {@code null}
+         *                                  (pairs are checked in signature order), if any two property names are equal, or if
          *                                  {@code propName} begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN},
          *                                  {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively
          *                                  as a whole token (so {@code where_x} is accepted), which cannot be nested inside a clause
          */
         public Builder orderBy(final String propName, final SortDirection direction, final String propName2, final SortDirection direction2,
                 final String propName3, final SortDirection direction3) {
+            checkSortEntry(propName, direction);
+            checkSortEntry(propName2, direction2);
+            checkSortEntry(propName3, direction3);
             checkNoDuplicatePropName(propName, propName2, propName3);
 
             orderBy(N.asMap(propName, direction, propName2, direction2, propName3, direction3));
@@ -2481,7 +2503,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param orders a map of property names to sort directions
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, or contains {@code null}, empty, or blank keys
+         * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, contains a {@code null} entry,
+         *                                  or contains {@code null}, empty, or blank keys
          *                                  or {@code null} values, or if the first key begins with a SQL clause keyword (for example
          *                                  {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING},
          *                                  matched case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be
@@ -2506,9 +2529,9 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @param limit the LIMIT condition (must not be {@code null}); its operator must be
-         *             {@link Operator#LIMIT}, which is guaranteed for any {@link Limit} instance
+         *             {@link Operator#LIMIT}, as supplied by the public {@link Limit} constructors
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code limit} is {@code null}
+         * @throws IllegalArgumentException if {@code limit} is {@code null} or does not report the LIMIT operator
          */
         public Builder limit(final Limit limit) {
             N.checkArgNotNull(limit, cs.limit);
@@ -2845,6 +2868,18 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
+         * Validates one property and direction pair before the sort map is constructed.
+         *
+         * @param propName the property name
+         * @param direction the direction associated with the property
+         * @throws IllegalArgumentException if {@code propName} is null, empty, or blank, or if {@code direction} is null
+         */
+        private static void checkSortEntry(final String propName, final SortDirection direction) {
+            checkPropName(propName);
+            N.checkArgument(direction != null, "SortDirection for '" + propName + "' in the sort map must not be null");
+        }
+
+        /**
          * Rejects a repeated property name in the fixed-arity {@code groupBy}/{@code orderBy} overloads.
          * Those overloads are backed by a map keyed on the property name, so a repeated name would otherwise
          * collapse silently (keeping only the last sort direction). {@code null} names are left to the
@@ -3061,6 +3096,8 @@ public class Criteria extends AbstractCondition {
          * }</pre>
          *
          * @return a new Criteria instance
+         * @throws IllegalArgumentException if a stored condition reports a null or non-clause operator,
+         *         no longer matches the clause type required by its operator, or duplicates a singleton clause
          */
         public Criteria build() {
             return new Criteria(this.selectModifier, conditions);

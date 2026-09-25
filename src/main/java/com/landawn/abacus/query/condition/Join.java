@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -309,7 +310,7 @@ public class Join extends AbstractCondition {
 
         // Validate the entities before the condition policy so that a null/blank entity is reported as such
         // rather than as a missing (or unexpected) join predicate.
-        this.joinEntities = copyAndValidateJoinEntities(joinEntities);
+        final List<String> validatedJoinEntities = copyAndValidateJoinEntities(joinEntities);
 
         if ((operator == Operator.CROSS_JOIN || operator == Operator.NATURAL_JOIN) && joinCondition != null) {
             throw new IllegalArgumentException(operator + " derives its row combinations without an explicit join condition");
@@ -319,7 +320,10 @@ public class Join extends AbstractCondition {
             throw new IllegalArgumentException(operator + " requires a non-null ON/USING predicate; use CROSS JOIN for an unconditional join");
         }
 
-        this.condition = validateJoinCondition(joinCondition);
+        final Condition validatedJoinCondition = validateJoinCondition(joinCondition);
+
+        this.joinEntities = validatedJoinEntities;
+        this.condition = validatedJoinCondition;
     }
 
     /**
@@ -508,7 +512,8 @@ public class Join extends AbstractCondition {
      * Converts this JOIN clause to its SQL representation, propagating the specified naming policy
      * to the join condition. The output format includes the join operator, the joined entities, and
      * the optional join condition; the join operator keyword and entity strings themselves are emitted
-     * verbatim. The condition's SQL representation depends on its type (On, Using, SqlExpression, etc.).
+     * verbatim, with a newline added after an unterminated line comment so it cannot consume the next
+     * join keyword, predicate, or closing parenthesis. The condition's SQL representation depends on its type (On, Using, SqlExpression, etc.).
      * A single join entity is rendered bare while multiple entities are combined as a parenthesized
      * {@code CROSS JOIN} tree (e.g. {@code "JOIN (orders o CROSS JOIN customers c) ..."}). A non-{@code On}/{@code Using} condition is
      * prepended with the {@code ON} keyword before being appended.
@@ -534,6 +539,9 @@ public class Join extends AbstractCondition {
      * @throws IllegalArgumentException if rendering the join condition rejects one of its values (for example a
      *                                  {@code NaN} or infinite {@link Float}/{@link Double}), or if a nested
      *                                  {@link SubQuery} cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
@@ -569,7 +577,7 @@ public class Join extends AbstractCondition {
         }
 
         if (joinEntities.size() == 1) {
-            return joinEntities.get(0);
+            return QueryUtil.terminateLineComment(joinEntities.get(0));
         }
 
         final StringBuilder sb = new StringBuilder();
@@ -580,7 +588,7 @@ public class Join extends AbstractCondition {
                 sb.append(" CROSS JOIN ");
             }
 
-            sb.append(joinEntities.get(i));
+            sb.append(QueryUtil.terminateLineComment(joinEntities.get(i)));
         }
 
         return sb.append(')').toString();

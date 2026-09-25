@@ -25,6 +25,63 @@ import com.landawn.abacus.util.NamingPolicy;
  */
 @Tag("2025")
 public class SqlExpressionTest extends TestBase {
+    @Test
+    public void testComposingNullCustomRenderResultsPreservesLiteralNull() {
+        final Condition condition = new Condition() {
+            @Override
+            public Operator operator() {
+                return Operator.EQUAL;
+            }
+
+            @Override
+            public com.landawn.abacus.util.ImmutableList<Object> parameters() {
+                return com.landawn.abacus.util.ImmutableList.empty();
+            }
+
+            @Override
+            public String toSql(final NamingPolicy namingPolicy) {
+                return null;
+            }
+        };
+
+        Assertions.assertAll(() -> assertEquals("null + 1", SqlExpression.plus(condition, 1)),
+                () -> assertEquals("value BETWEEN null AND 10", SqlExpression.between("value", condition, 10)),
+                () -> assertThrows(IllegalArgumentException.class, () -> SqlExpression.plus(customNumber(null), 1)));
+    }
+
+    @Test
+    public void testStandardQuotedBackslashDoesNotHideTrailingLineComment() {
+        final String expr = "'a\\' -- trailing comment";
+
+        Assertions.assertAll(() -> assertEquals(expr + "\n + 1", SqlExpression.plus(SqlExpression.of(expr), 1)),
+                () -> assertEquals("COUNT(" + expr + "\n)", SqlExpression.count(expr)),
+                () -> assertEquals("value BETWEEN " + expr + "\n AND 10", SqlExpression.between("value", SqlExpression.of(expr), 10)));
+    }
+
+    @Test
+    public void testHelpersTerminateLineCommentsBeforeGeneratedSyntax() {
+        final String expr = "price -- trailing comment";
+        assertEquals(expr + "\n = 1", SqlExpression.equal(expr, 1));
+        assertEquals(expr + "\n IS NULL", SqlExpression.isNull(expr));
+        assertEquals("(" + expr + "\n IS NULL OR " + expr + "\n = '')", SqlExpression.isNullOrEmpty(expr));
+        assertEquals("(" + expr + "\n IS NOT NULL AND " + expr + "\n <> '')", SqlExpression.isNotNullAndNotEmpty(expr));
+        assertEquals("price BETWEEN " + expr + "\n AND 10", SqlExpression.between("price", SqlExpression.of(expr), 10));
+        assertEquals("(" + expr + "\n) AND (active = 1)", SqlExpression.and(expr, "active = 1"));
+        assertEquals(expr + "\n + 1", SqlExpression.plus(SqlExpression.of(expr), 1));
+        assertEquals("COUNT(" + expr + "\n)", SqlExpression.count(expr));
+        assertEquals("CONCAT(" + expr + "\n, 'x')", SqlExpression.concat(expr, "'x'"));
+    }
+
+    @Test
+    public void testCommentBoundaryHandlingPreservesSafeFragments() {
+        assertEquals("'-- text' + 1", SqlExpression.plus(SqlExpression.of("'-- text'"), 1));
+        assertEquals("COUNT(\"name--suffix\")", SqlExpression.count("\"name--suffix\""));
+        assertEquals("price -- comment\n = 1", SqlExpression.equal("price -- comment\n", 1));
+        assertEquals("price /* comment */ = 1", SqlExpression.equal("price /* comment */", 1));
+        assertEquals("price -- comment", SqlExpression.of("price -- comment").literal());
+        assertEquals("price -- comment", SqlExpression.renderValue(SqlExpression.of("price -- comment")));
+    }
+
 
     private static Number customNumber(final String literal) {
         return new Number() {

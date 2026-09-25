@@ -168,6 +168,9 @@ public abstract class Cell extends AbstractCondition {
      * @throws IllegalArgumentException if rendering the wrapped condition rejects one of its values (for example a
      *                                  {@code NaN} or infinite {@link Float}/{@link Double}), or if a wrapped
      *                                  {@link SubQuery} cannot be rendered, as documented for {@link SubQuery#toSql(NamingPolicy)}
+     * @throws UnsupportedOperationException if a structured subquery inspects bean metadata that uses
+     *         the {@code long} date format for a {@code LocalDate} or {@code LocalTime} property
+     * @throws RuntimeException if a custom condition renderer or a value's string conversion throws an unchecked exception
      */
     @Override
     public String toSql(final NamingPolicy namingPolicy) {
