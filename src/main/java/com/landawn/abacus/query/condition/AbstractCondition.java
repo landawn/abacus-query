@@ -1076,8 +1076,7 @@ public abstract class AbstractCondition implements Condition {
             final String propName = entry.getKey();
             final SortDirection direction = entry.getValue();
 
-            checkPropName(propName);
-            N.checkArgument(direction != null, "SortDirection for '" + propName + "' in the sort map must not be null");
+            checkSortEntry(propName, direction);
             validatedOrders.add(new SimpleImmutableEntry<>(propName, direction));
         }
 
@@ -1169,6 +1168,18 @@ public abstract class AbstractCondition implements Condition {
         if (Strings.isBlank(propName)) {
             throw new IllegalArgumentException("Property name must not be null, empty, or blank");
         }
+    }
+
+    /**
+     * Validates one property and direction pair of a sort specification.
+     *
+     * @param propName the property name
+     * @param direction the direction associated with the property
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     */
+    static void checkSortEntry(final String propName, final SortDirection direction) {
+        checkPropName(propName);
+        N.checkArgument(direction != null, "SortDirection for '" + propName + "' in the sort map must not be null");
     }
 
     /**

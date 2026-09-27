@@ -2868,18 +2868,6 @@ public class Criteria extends AbstractCondition {
         }
 
         /**
-         * Validates one property and direction pair before the sort map is constructed.
-         *
-         * @param propName the property name
-         * @param direction the direction associated with the property
-         * @throws IllegalArgumentException if {@code propName} is null, empty, or blank, or if {@code direction} is null
-         */
-        private static void checkSortEntry(final String propName, final SortDirection direction) {
-            checkPropName(propName);
-            N.checkArgument(direction != null, "SortDirection for '" + propName + "' in the sort map must not be null");
-        }
-
-        /**
          * Rejects a repeated property name in the fixed-arity {@code groupBy}/{@code orderBy} overloads.
          * Those overloads are backed by a map keyed on the property name, so a repeated name would otherwise
          * collapse silently (keeping only the last sort direction). {@code null} names are left to the

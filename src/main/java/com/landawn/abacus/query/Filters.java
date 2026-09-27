@@ -773,14 +773,27 @@ public final class Filters {
             N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         }
 
-        final BeanInfo entityInfo = checkReadableProperties(entity, propNameSnapshot);
-        final List<Condition> conditions = new ArrayList<>();
+        return equalConditions(entity, checkReadableProperties(entity, propNameSnapshot), propNameSnapshot);
+    }
 
-        for (final String propName : propNameSnapshot) {
+    /**
+     * Builds one {@link Equal} condition per property from an entity whose property names were
+     * already validated by {@link #checkReadableProperties(Object, Collection)}.
+     *
+     * @param entity the non-null bean whose property values are read
+     * @param entityInfo the entity metadata returned by {@code checkReadableProperties}
+     * @param propNames the non-empty, already-resolved property names to read
+     * @return a non-empty list of {@link Equal} conditions, one per property name
+     * @throws IllegalArgumentException if a property value is rejected by {@link #equal(String, Object)}
+     * @throws RuntimeException if reading a selected bean property or invoking its getter fails
+     */
+    private static List<Condition> equalConditions(final Object entity, final BeanInfo entityInfo, final List<String> propNames) {
+        final List<Condition> conditions = new ArrayList<>(propNames.size());
+
+        for (final String propName : propNames) {
             conditions.add(equal(propName, entityInfo.getPropValue(entity, propName)));
         }
 
-        N.checkArgNotEmpty(conditions, cs.includedPropNames);
         return conditions;
     }
 
@@ -989,18 +1002,20 @@ public final class Filters {
             N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         }
 
+        final List<Object> nonNullEntities = new ArrayList<>(entitySnapshot.size());
+        final List<BeanInfo> entityInfos = new ArrayList<>(entitySnapshot.size());
+
         for (final Object entity : entitySnapshot) {
             if (entity != null) {
-                checkReadableProperties(entity, propNameSnapshot);
+                nonNullEntities.add(entity);
+                entityInfos.add(checkReadableProperties(entity, propNameSnapshot));
             }
         }
 
-        final List<Condition> condList = new ArrayList<>();
+        final List<Condition> condList = new ArrayList<>(nonNullEntities.size());
 
-        for (final Object entity : entitySnapshot) {
-            if (entity != null) {
-                condList.add(and(equalConditions(entity, propNameSnapshot)));
-            }
+        for (int i = 0, size = nonNullEntities.size(); i < size; i++) {
+            condList.add(and(equalConditions(nonNullEntities.get(i), entityInfos.get(i), propNameSnapshot)));
         }
 
         return or(condList);
