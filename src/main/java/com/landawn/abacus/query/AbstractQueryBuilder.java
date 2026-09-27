@@ -719,7 +719,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code CAMEL_CASE}; any other policy (including {@code NO_CHANGE}) returns the simple class name unchanged.
      *
      * @param entityClass the entity class
-     * @param namingPolicy the naming policy to apply
+     * @param namingPolicy the naming policy to apply; {@code null} defaults to {@code SNAKE_CASE}
      * @return the table name
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
@@ -3006,12 +3006,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param entityClass the entity class to join
      * @param alias the table alias; may be {@code null} or empty
      * @return this builder instance for method chaining
+     * @throws IllegalStateException if this builder is closed, has no current SELECT with a FROM clause, has an
+     *         unfinished qualified JOIN, or has already emitted a later clause or complete set-operation operand
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if
+     *         {@code alias} contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     @SuppressWarnings("unchecked")
     private This appendJoin(final char[] joinKeyword, final Class<?> entityClass, final String alias) {
         checkCanAppendJoin();
         N.checkArgNotNull(entityClass, cs.entityClass);
+        checkEntityTableAlias(entityClass, alias);
 
         // Resolve the table name (which rejects a non-bean class) before any builder state is changed.
         final String tableName = getTableName(entityClass, _namingPolicy);
@@ -3061,7 +3066,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if {@code alias}
+     *         contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     public This join(final Class<?> entityClass, final String alias) {
@@ -3132,7 +3138,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if {@code alias}
+     *         contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     public This innerJoin(final Class<?> entityClass, final String alias) {
@@ -3203,7 +3210,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if {@code alias}
+     *         contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     public This leftJoin(final Class<?> entityClass, final String alias) {
@@ -3274,7 +3282,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if {@code alias}
+     *         contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     public This rightJoin(final Class<?> entityClass, final String alias) {
@@ -3345,7 +3354,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if {@code alias}
+     *         contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     public This fullJoin(final Class<?> entityClass, final String alias) {
@@ -3417,7 +3427,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if {@code alias}
+     *         contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     public This crossJoin(final Class<?> entityClass, final String alias) {
@@ -3489,7 +3500,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class, or if {@code alias}
+     *         contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     public This naturalJoin(final Class<?> entityClass, final String alias) {
