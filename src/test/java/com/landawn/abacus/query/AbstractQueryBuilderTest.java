@@ -2283,6 +2283,30 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Test
+    public void testEntityJoinAliasRejectsLineBreakAndCommentTokens() {
+        // Like from(Class, String), the entity JOIN overloads emit the alias verbatim after the table name, so a
+        // comment token in it would swallow the ON connector and every later clause.
+        final SqlBuilder builder = PSC.select("firstName").from(Account.class, "a");
+
+        final IllegalArgumentException comment = assertThrows(IllegalArgumentException.class, () -> builder.join(Account.class, "b -- x"));
+        assertTrue(comment.getMessage().startsWith("Table alias for 'Account' must not contain a line break or SQL comment token"), comment.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> builder.innerJoin(Account.class, "b /* x */"));
+        assertThrows(IllegalArgumentException.class, () -> builder.leftJoin(Account.class, "b #x"));
+        assertThrows(IllegalArgumentException.class, () -> builder.rightJoin(Account.class, "b\n"));
+        assertThrows(IllegalArgumentException.class, () -> builder.fullJoin(Account.class, "b\r"));
+        assertThrows(IllegalArgumentException.class, () -> builder.crossJoin(Account.class, "b -- x"));
+        assertThrows(IllegalArgumentException.class, () -> builder.naturalJoin(Account.class, "b -- x"));
+
+        // The rejection happens before any state changes, so the builder is still usable.
+        assertEquals("SELECT a.first_name AS \"firstName\" FROM account a JOIN account b ON a.id = b.id WHERE a.first_name = ?",
+                builder.join(Account.class, "b").on("a.id = b.id").where(Filters.eq("firstName", "x")).build().query());
+
+        // A null or empty alias still means "no alias" and is accepted.
+        assertEquals("SELECT a.first_name AS \"firstName\" FROM account a LEFT JOIN account ON a.id = account.id",
+                PSC.select("firstName").from(Account.class, "a").leftJoin(Account.class, "").on("a.id = account.id").build().query());
+    }
+
+    @Test
     public void testOrderByRejectsBlockAndHashCommentTokens() {
         assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy("id/*comment*/").build().query());
         assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").orderBy("id#comment").build().query());
