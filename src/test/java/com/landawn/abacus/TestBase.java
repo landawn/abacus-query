@@ -1,15 +1,12 @@
 package com.landawn.abacus;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import java.util.Collection;
 
 import org.junit.jupiter.api.Tag;
 
 import com.landawn.abacus.type.Type;
-import com.landawn.abacus.util.BufferedJsonWriter;
-import com.landawn.abacus.util.CharacterWriter;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.TypeReference;
 
@@ -72,10 +69,6 @@ public abstract class TestBase {
 
     protected static <T extends Type> T createType(String typeName) {
         return (T) Type.of(typeName);
-    }
-
-    protected static CharacterWriter createCharacterWriter() {
-        return mock(BufferedJsonWriter.class);
     }
 
 }
