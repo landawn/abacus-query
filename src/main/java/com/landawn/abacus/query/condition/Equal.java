@@ -102,7 +102,7 @@ public class Equal extends Binary {
      *                                  {@code propValue} is an ordinary predicate or query clause (any
      *                                  {@link Condition} other than an {@link SqlExpression}, a scalar
      *                                  {@link SubQuery}, or a direct {@link All}/{@link Any}/{@link Some} operand),
-     *                                  or a blank {@link SqlExpression}; or if a structured subquery has a known,
+     *                                  or a blank or comment-only {@link SqlExpression}; or if a structured subquery has a known,
      *                                  non-wildcard projection with a column count other than one; or if {@code propValue}
      *                                  is a cyclic object array
      */

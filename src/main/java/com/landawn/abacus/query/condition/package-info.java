@@ -114,6 +114,13 @@
  * ({@code All}, {@code Any}, {@code Some}) inherit the composition methods for type compatibility but
  * are rejected when composed directly.</p>
  *
+ * <p>A raw {@code SqlExpression} used as a predicate or scalar value must contain a SQL token.
+ * Blank text and text containing only SQL comments are rejected, because comment removal would
+ * otherwise leave a missing predicate or comparison operand. Quoted comment markers are ordinary
+ * literal contents and do not make an expression empty. Leading {@code #name}/{@code ##name}
+ * references remain accepted because they can identify SQL Server temporary tables; their
+ * interpretation is deferred to the configured query builder.</p>
+ *
  * <h2>Immutability and rendering</h2>
  * <p>Conditions are structurally immutable: nothing can be added or removed after construction, and
  * collection accessors return unmodifiable views. Arrays, {@link java.util.Date}, and

@@ -186,8 +186,10 @@ public final class DynamicQuery {
      * one-shot: invoking {@link #build()} permanently closes it and all retained clause handles,
      * including when building terminates exceptionally.
      *
-     * <p>String fragments are appended verbatim; this builder validates presence and clause ordering,
-     * not SQL syntax or trustworthiness.</p>
+     * <p>String fragments are appended verbatim. Typed clauses are emitted in a fixed order, and
+     * mutually incompatible pagination methods are rejected. The builder does not validate SQL
+     * syntax or require a complete SELECT statement; for example, a builder with only a WHERE
+     * clause produces a WHERE fragment.</p>
      */
     public static class Builder {
 
@@ -998,7 +1000,8 @@ public final class DynamicQuery {
          * // Returns: "SELECT * FROM users WHERE active = true"
          * }</pre>
          *
-         * @return the complete SQL query string
+         * @return the assembled SQL text; an empty builder returns an empty string, and partial
+         *         clause builders return their fragments without checking statement completeness
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@code build()}
          */
         public String build() {

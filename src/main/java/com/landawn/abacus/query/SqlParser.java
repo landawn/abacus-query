@@ -48,6 +48,14 @@ import com.landawn.abacus.util.Strings;
  *       Exception: block comments are retained as tokens when the SQL begins
  *       (case-insensitively) with the marker {@code "-- Keep comments"}; line and hash
  *       comments are always discarded regardless of this marker.
+ *       An identifier-glued array/subscript such as {@code ARRAY[1, 2]}, a group continuing that
+ *       subscript chain, or a standalone group beginning with a named/positional marker is emitted as one token;
+ *       block and dash-line comments inside it are preserved, and their quotes and brackets do not
+ *       affect the subscript's closing boundary. A chain may continue across whitespace and comments
+ *       ({@code x[1] [2]}). These standalone groups follow the PostgreSQL subscript reading even though
+ *       SQL Server would read them as bracket-quoted identifiers; a SQL Server identifier that begins
+ *       with {@code :} or {@code ?} and contains a comment opener, such as {@code [:a/*]}, is therefore
+ *       tokenized up to its matching subscript bracket rather than its first {@code ]}.
  *       Nested block comments and PostgreSQL dollar-quoting ({@code $$...$$}) are NOT
  *       supported.</li>
  *   <li>With the built-in separator configuration, ASCII space, horizontal tab, line feed,
@@ -988,7 +996,10 @@ public final class SqlParser {
                 if (tokenStart < 0) {
                     tokenStart = index;
                 }
-                index = quotedTokenEndIndex(sql, index + 1, ch == '[' ? ']' : ch);
+                if (ch == '[' && memo == null) {
+                    memo = new HashScanMemo(sql);
+                }
+                index = quotedTokenEndIndex(sql, index + 1, ch == '[' ? ']' : ch, tokenizerConfig, memo);
                 tokens.add(tokenText(sql, tokenStart, index < sqlLength ? index + 1 : sqlLength));
                 tokenStart = -1;
             } else if (!hashWord && (separator != null || (separator = matchMultiCharSeparator(sql, sqlLength, index, tokenizerConfig)) != null
@@ -1042,20 +1053,130 @@ public final class SqlParser {
     }
 
     /** Finds a quoted token's closing delimiter, or the source length for an unterminated token. */
-    private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote) {
-        if (quote == ']' && fromIndex >= 2 && isIdentifierChar(sql.charAt(fromIndex - 2))) {
+    private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote, final TokenizerConfig tokenizerConfig,
+            final HashScanMemo memo) {
+        if (quote == ']'
+                && (fromIndex >= 2 && isIdentifierChar(sql.charAt(fromIndex - 2)) || isStandaloneSubscriptBracket(sql, fromIndex - 1, tokenizerConfig, memo))) {
             return subscriptEndIndex(sql, fromIndex);
         }
         return quotedTokenEndIndex(sql, fromIndex, quote, quote != ']');
     }
 
-    /** A bracket glued to an identifier is an array subscript/constructor: it nests, and "]]" closes two groups. */
+    /** Bounds the backward walk over consecutive standalone groups before deferring to the prefix scan. */
+    private static final int MAX_LOCAL_CHAIN_GROUPS = 16;
+
+    /** {@link #previousNonWhitespaceIndex} result when a crossed line may end with a line comment. */
+    private static final int UNKNOWN_PREDECESSOR = -1;
+
+    /** {@link #previousNonWhitespaceIndex} result when only whitespace precedes the index. */
+    private static final int NO_PREDECESSOR = -2;
+
+    /**
+     * Classifies a bracket that is not glued to an identifier. When the bracket certainly does not continue
+     * a subscript chain, it is classified from its own content; only a possible chain needs the memo's
+     * forward prefix scan. Answering locally keeps token-by-token callers such as
+     * {@link #nextToken(String, int)}, which start each call with a fresh memo, linear on bracket-quoted
+     * identifier lists like {@code [c1] [a1], [c2] [a2], ...}.
+     */
+    private static boolean isStandaloneSubscriptBracket(final String sql, final int opening, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        return isSubscriptChainResetLocally(sql, opening) ? isMarkerLedSubscript(sql, opening) : memo.isSubscriptBracket(opening, tokenizerConfig);
+    }
+
+    /**
+     * Reports, without the forward prefix scan, that the group opening at {@code opening} certainly does not
+     * continue a subscript chain. Mirrors {@link HashScanMemo#isSubscriptBracket}: a chain continues across
+     * whitespace only after a closed group that is glued to an identifier or itself continues a chain. A
+     * backward walk cannot tell whether an identifier-glued bracket is itself inside an earlier bracket-quoted
+     * identifier (as in {@code [a x[1] [b]}), so a glued predecessor, a comment, a quote, a nested bracket or a
+     * doubled {@code ]]} returns {@code false} and defers to the prefix scan.
+     */
+    private static boolean isSubscriptChainResetLocally(final String sql, int opening) {
+        for (int groups = 0; groups < MAX_LOCAL_CHAIN_GROUPS; groups++) {
+            final int predecessor = previousNonWhitespaceIndex(sql, opening);
+
+            if (predecessor == NO_PREDECESSOR) {
+                return true;
+            }
+
+            if (predecessor == UNKNOWN_PREDECESSOR) {
+                return false;
+            }
+
+            final char ch = sql.charAt(predecessor);
+
+            if (ch == '/') {
+                // "*/" may close a comment that the forward scan treats as trivia; any other '/' is division.
+                return predecessor == 0 || sql.charAt(predecessor - 1) != '*';
+            }
+
+            if (ch != ']') {
+                return true;
+            }
+
+            // Walk back over a simple preceding group whose content cannot hide a bracket, quote or comment.
+            int groupOpening = predecessor - 1;
+
+            while (groupOpening >= 0 && isSimpleBracketContentChar(sql.charAt(groupOpening))) {
+                groupOpening--;
+            }
+
+            if (groupOpening < 0 || sql.charAt(groupOpening) != '[' || (groupOpening > 0 && isIdentifierChar(sql.charAt(groupOpening - 1)))) {
+                return false;
+            }
+
+            // A standalone predecessor continues a chain only if it continues one itself.
+            opening = groupOpening;
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns the index of the last non-whitespace character before {@code index}, {@link #NO_PREDECESSOR}
+     * when only whitespace precedes it, or {@link #UNKNOWN_PREDECESSOR} when a crossed line may end with a
+     * line comment.
+     */
+    private static int previousNonWhitespaceIndex(final String sql, final int index) {
+        for (int i = index - 1; i >= 0; i--) {
+            final char ch = sql.charAt(i);
+
+            if (ch == ENTER || ch == ENTER_2) {
+                // Scan only the preceding line: a line-comment opener there may hide the real predecessor.
+                for (int k = i - 1; k >= 0 && sql.charAt(k) != ENTER && sql.charAt(k) != ENTER_2; k--) {
+                    final char c = sql.charAt(k);
+
+                    if (c == '#' || (c == '-' && k > 0 && sql.charAt(k - 1) == '-')) {
+                        return UNKNOWN_PREDECESSOR;
+                    }
+                }
+            } else if (!isTokenWhitespace(ch)) {
+                return i;
+            }
+        }
+
+        return NO_PREDECESSOR;
+    }
+
+    private static boolean isSimpleBracketContentChar(final char ch) {
+        return ch != '[' && ch != ']' && ch != '\'' && ch != '"' && ch != '`' && ch != '/' && ch != '-' && ch != '#' && ch != '*' && ch != ENTER
+                && ch != ENTER_2;
+    }
+
+    /** A recognized array subscript/constructor nests, and "]]" closes two groups rather than escaping a bracket. */
     private static int subscriptEndIndex(final String sql, final int fromIndex) {
         int depth = 1;
         for (int i = fromIndex, len = sql.length(); i < len; i++) {
             final char c = sql.charAt(i);
             if (c == SK._SINGLE_QUOTE || c == SK._DOUBLE_QUOTE || c == SK._BACKTICK) {
                 i = quotedTokenEndIndex(sql, i + 1, c, true);
+            } else if (c == '/' && i + 1 < len && sql.charAt(i + 1) == '*') {
+                // The whole subscript remains one token, including comments. Their brackets and
+                // quotes are inert: exposing a commented-out closing bracket would let parameter
+                // conversion read the rest of the comment as executable SQL.
+                final int close = sql.indexOf("*/", i + 2);
+                i = close < 0 ? len : close + 1;
+            } else if (c == '-' && i + 1 < len && sql.charAt(i + 1) == '-') {
+                i = lineCommentEnd(sql, i + 2);
             } else if (c == '[') {
                 depth++;
             } else if (c == ']' && --depth == 0) {
@@ -1063,6 +1184,25 @@ public final class SqlParser {
             }
         }
         return sql.length();
+    }
+
+    /** Matches the standalone named/positional bracket exceptions used by ParsedSql, without validating names. */
+    private static boolean isMarkerLedSubscript(final String sql, final int opening) {
+        if (opening > 0 && sql.charAt(opening - 1) == '.') {
+            return false;
+        }
+        int first = opening + 1;
+        while (first < sql.length() && Character.isWhitespace(sql.charAt(first))) {
+            first++;
+        }
+        if (first >= sql.length()) {
+            return false;
+        }
+        final char marker = sql.charAt(first);
+        if (marker == ':') {
+            return first + 1 < sql.length() && isParameterIdentifierStart(sql.codePointAt(first + 1));
+        }
+        return marker == '?' && (first + 1 == sql.length() || !Character.isUnicodeIdentifierPart(sql.codePointAt(first + 1)));
     }
 
     private static int quotedTokenEndIndex(final String sql, final int fromIndex, final char quote, final boolean backslashEscapes) {
@@ -1207,7 +1347,7 @@ public final class SqlParser {
 
     private static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
             final TokenizerConfig tokenizerConfig) {
-        final HashScanMemo memo = sql.indexOf('#') >= 0 ? new HashScanMemo(sql) : null;
+        final HashScanMemo memo = sql.indexOf('#') >= 0 || sql.indexOf('[') >= 0 ? new HashScanMemo(sql) : null;
         final String trimmedToken = token.trim();
         String searchToken = token;
         String[] componentTokens = null;
@@ -1486,7 +1626,10 @@ public final class SqlParser {
                 final int close = sql.indexOf("*/", index + 2);
                 index = close < 0 ? len : close + 1;
             } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
-                final int close = quotedTokenEndIndex(sql, index + 1, ch == '[' ? ']' : ch);
+                if (ch == '[' && memo == null) {
+                    memo = new HashScanMemo(sql);
+                }
+                final int close = quotedTokenEndIndex(sql, index + 1, ch == '[' ? ']' : ch, tokenizerConfig, memo);
                 return tokenBounds(start < 0 ? index : start, close < len ? close + 1 : len);
             } else if (!hashWord && (separator != null || (separator = matchMultiCharSeparator(sql, len, index, tokenizerConfig)) != null
                     || tokenizerConfig.isSingleCharSeparator(ch))) {
@@ -2278,7 +2421,7 @@ public final class SqlParser {
     }
 
     /**
-     * Per-scan memo shared by every helper that classifies a {@code '#'} while one public scan
+     * Per-scan memo shared by every helper that classifies a {@code '#'} or contextual bracket while one public scan
      * ({@code tokenize}, {@code nextToken}, {@code indexOfToken}, the query-classification
      * predicates, ...) walks a single string.
      *
@@ -2304,7 +2447,9 @@ public final class SqlParser {
      * <p>A memo is bound to one string, one {@link TokenizerConfig} and one scan (every creation site
      * pairs a fresh memo with the single configuration that scan uses; the memo does not record the
      * configuration itself) and is never shared between threads. Its arrays are allocated on first
-     * use, so scans of SQL without a context-dependent {@code '#'} pay nothing beyond the object itself.</p>
+     * use. A separate lazy prefix pass tracks bracket roles so chained subscripts share the same token
+     * boundaries across tokenization and token search, without confusing a bracket-quoted root with an
+     * unquoted identifier root.</p>
      */
     private static final class HashScanMemo {
         private static final byte LINE_AWARE_KNOWN = 1;
@@ -2328,9 +2473,56 @@ public final class SqlParser {
         private int passLineCommentOpener = -1;
         private boolean extendingPass;
 
+        /** Subscript roles at bracket openers already visited by the lazy lexical prefix scan. */
+        private boolean[] subscriptBrackets;
+        private int bracketPassEnd;
+        private boolean bracketChainOpen;
+
         HashScanMemo(final String str) {
             this.str = str;
             length = str.length();
+        }
+
+        /**
+         * Resolves chained brackets with one forward prefix scan. A backward bracket count cannot
+         * distinguish SQL Server's doubled closing brackets from nested array groups, and rescanning
+         * the whole prefix for each group makes a long subscript chain quadratic.
+         */
+        boolean isSubscriptBracket(final int opening, final TokenizerConfig tokenizerConfig) {
+            if (subscriptBrackets == null) {
+                subscriptBrackets = new boolean[length];
+            }
+
+            while (bracketPassEnd <= opening) {
+                final int index = bracketPassEnd;
+                final char ch = str.charAt(index);
+
+                if (ch == '[') {
+                    final boolean identifierRoot = index > 0 && isIdentifierChar(str.charAt(index - 1));
+                    final boolean subscript = identifierRoot || bracketChainOpen || isMarkerLedSubscript(str, index);
+                    subscriptBrackets[index] = subscript;
+                    final int close = subscript ? subscriptEndIndex(str, index + 1) : quotedTokenEndIndex(str, index + 1, ']', false);
+                    bracketChainOpen = close < length && (identifierRoot || bracketChainOpen);
+                    bracketPassEnd = close < length ? close + 1 : length;
+                } else if (ch == '\'' || ch == '"' || ch == '`') {
+                    final int close = quotedTokenEndIndex(str, index + 1, ch, true);
+                    bracketPassEnd = close < length ? close + 1 : length;
+                    bracketChainOpen = false;
+                } else if (ch == '/' && index + 1 < length && str.charAt(index + 1) == '*') {
+                    final int close = str.indexOf("*/", index + 2);
+                    bracketPassEnd = close < 0 ? length : close + 2;
+                } else if (ch == '-' && index + 1 < length && str.charAt(index + 1) == '-'
+                        || ch == '#' && isHashCommentStart(str, length, index, tokenizerConfig, this)) {
+                    bracketPassEnd = lineCommentEnd(str, index + 1);
+                } else {
+                    if (!isTokenWhitespace(ch)) {
+                        bracketChainOpen = false;
+                    }
+                    bracketPassEnd++;
+                }
+            }
+
+            return subscriptBrackets[opening];
         }
 
         /**
@@ -4717,7 +4909,7 @@ public final class SqlParser {
     /**
      * Finds the {@code ']'} closing a SQL Server bracket identifier (doubled {@code "]]"} escapes), even
      * when the {@code '['} is glued to an identifier. Unlike the tokenizer's subscript-aware
-     * {@link #quotedTokenEndIndex(String, int, char)}, classification must keep this SQL Server reading
+     * {@link #quotedTokenEndIndex(String, int, char, TokenizerConfig, HashScanMemo)}, classification must keep this SQL Server reading
      * (e.g. {@code a[']} is column {@code a} aliased {@code '}); the PostgreSQL reading is checked
      * separately as a mode in which brackets are plain punctuation.
      */

@@ -89,6 +89,11 @@ import com.landawn.abacus.util.Strings;
  * Factory class for creating SQL {@link Condition} objects used in query construction.
  * Provides methods for all standard SQL comparison, logical, pattern matching, and subquery operations.
  *
+ * <p>Unless an example explicitly uses a builder, its SQL fragment shows the condition's standalone
+ * literal rendering. A parameterized or named {@link SqlBuilder} renders ordinary values as
+ * placeholders and collects their bindings instead. Parameterless comparison factories such as
+ * {@link #equal(String)} use {@link #QME} and do not supply a binding value.</p>
+ *
  * <p><b>Warning:</b> Value-based methods (e.g., {@code equal}, {@code in}, {@code between}) capture structured
  * values that are later rendered according to the {@link SqlBuilder} policy. APIs that accept raw SQL fragments
  * (e.g., {@code expr(...)}) treat those fragments as SQL rather than bind values; detected identifiers may still
@@ -289,7 +294,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or is or contains a non-composable component — a
      *             condition with a {@code null} operator, a Criteria, a clause
      *             (for example {@code WHERE}, {@code HAVING}, or {@code ORDER BY}), an {@code ON}/{@code USING} connector,
-     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank
+     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only
      *             {@link SqlExpression}
      * @see Not
      * @see Condition
@@ -342,7 +347,7 @@ public final class Filters {
      *                                  is not a non-empty {@link Collection}, a non-empty array, or a {@link Condition}, or the
      *                                  collection or array contains a {@code null} element; if a condition-valued operand is
      *                                  any other {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or
-     *                                  {@code ON}/{@code USING} connector) or a blank {@link SqlExpression}; or if an
+     *                                  {@code ON}/{@code USING} connector) or a blank or comment-only {@link SqlExpression}; or if an
      *                                  {@link All}/{@link Any}/{@link Some} operand is used anywhere other than the direct
      *                                  RHS of a compatible scalar comparison; or if {@code propValue}, or an element of an
      *                                  {@code IN}/{@code NOT_IN} collection or array, is a cyclic object array
@@ -411,7 +416,7 @@ public final class Filters {
      * @return an {@link Equal} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
+     *                                  is a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
      *                                  nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue} is a cyclic
      *                                  object array
@@ -455,7 +460,7 @@ public final class Filters {
      * @return an {@link Equal} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
+     *                                  is a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
      *                                  nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue} is a cyclic
      *                                  object array
@@ -501,7 +506,8 @@ public final class Filters {
      * several properties, while {@code equalsAny} tests several candidate values for one property.</p>
      *
      * @param props map of property names to values (must not be empty). Entries are consumed once during
-     *              this call; subsequent mutations do not affect the returned condition
+     *              this call; later additions, removals, and value replacements in the map do not affect
+     *              the returned condition. Mutable value objects follow {@link Binary}'s copying rules
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
@@ -645,7 +651,8 @@ public final class Filters {
      * }</pre>
      *
      * @param props map of property names to values (must not be empty). Entries are consumed once during
-     *              this call; subsequent mutations do not affect the returned condition
+     *              this call; later additions, removals, and value replacements in the map do not affect
+     *              the returned condition. Mutable value objects follow {@link Binary}'s copying rules
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code props} is {@code null} or empty, or any property name key is {@code null}, empty, or blank;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
@@ -1040,7 +1047,7 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
-     *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
+     *                                  or {@code maxValue} is {@code null} or a blank or comment-only {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if either is a
      *                                  cyclic object array
@@ -1089,7 +1096,7 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
-     *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
+     *                                  or {@code maxValue} is {@code null} or a blank or comment-only {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if either is a
      *                                  cyclic object array
@@ -1138,7 +1145,7 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
-     *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
+     *                                  or {@code maxValue} is {@code null} or a blank or comment-only {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if either is a
      *                                  cyclic object array
@@ -1187,7 +1194,7 @@ public final class Filters {
      * @return an {@link And} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code minValue}
-     *                                  or {@code maxValue} is {@code null} or a blank {@link SqlExpression}, or if either is any other
+     *                                  or {@code maxValue} is {@code null} or a blank or comment-only {@link SqlExpression}, or if either is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if either is a
      *                                  cyclic object array
@@ -1328,7 +1335,7 @@ public final class Filters {
      * @return a {@link NotEqual} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
+     *                                  is a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
      *                                  nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue} is a cyclic
      *                                  object array
@@ -1372,7 +1379,7 @@ public final class Filters {
      * @return a {@link NotEqual} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is a blank {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
+     *                                  is a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other {@link Condition}
      *                                  (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING} connector, or a
      *                                  nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue} is a cyclic
      *                                  object array
@@ -1416,7 +1423,7 @@ public final class Filters {
      * @return a {@link GreaterThan} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
+     *                                  is {@code null} or a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
      *                                  is a cyclic object array
@@ -1460,7 +1467,7 @@ public final class Filters {
      * @return a {@link GreaterThan} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
+     *                                  is {@code null} or a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
      *                                  is a cyclic object array
@@ -1504,7 +1511,7 @@ public final class Filters {
      * @return a {@link GreaterThanOrEqual} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
+     *                                  is {@code null} or a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
      *                                  is a cyclic object array
@@ -1548,7 +1555,7 @@ public final class Filters {
      * @return a {@link GreaterThanOrEqual} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
+     *                                  is {@code null} or a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
      *                                  is a cyclic object array
@@ -1592,7 +1599,7 @@ public final class Filters {
      * @return a {@link LessThan} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
+     *                                  is {@code null} or a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
      *                                  is a cyclic object array
@@ -1636,7 +1643,7 @@ public final class Filters {
      * @return a {@link LessThan} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
+     *                                  is {@code null} or a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
      *                                  is a cyclic object array
@@ -1680,7 +1687,7 @@ public final class Filters {
      * @return a {@link LessThanOrEqual} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
+     *                                  is {@code null} or a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
      *                                  is a cyclic object array
@@ -1724,7 +1731,7 @@ public final class Filters {
      * @return a {@link LessThanOrEqual} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue}
-     *                                  is {@code null} or a blank {@link SqlExpression}, or if {@code propValue} is any other
+     *                                  is {@code null} or a blank or comment-only {@link SqlExpression}, or if {@code propValue} is any other
      *                                  {@link Condition} (an ordinary predicate, Criteria, clause, JOIN or {@code ON}/{@code USING}
      *                                  connector, or a nested {@link All}/{@link Any}/{@link Some} operand); or if {@code propValue}
      *                                  is a cyclic object array
@@ -1768,7 +1775,7 @@ public final class Filters {
      * @return a {@link Between} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if either bound is
-     *                                  {@code null} or a blank {@link SqlExpression}, or if either bound is any other {@link Condition}
+     *                                  {@code null} or a blank or comment-only {@link SqlExpression}, or if either bound is any other {@link Condition}
      *                                  than an {@link SqlExpression} or a scalar {@link SubQuery} (an ordinary predicate, Criteria,
      *                                  clause, JOIN or {@code ON}/{@code USING} connector, or an {@link All}/{@link Any}/{@link Some} operand);
      *                                  or if either bound is a cyclic object array
@@ -1812,7 +1819,7 @@ public final class Filters {
      * @return a {@link NotBetween} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if either bound is
-     *                                  {@code null} or a blank {@link SqlExpression}, or if either bound is any other {@link Condition}
+     *                                  {@code null} or a blank or comment-only {@link SqlExpression}, or if either bound is any other {@link Condition}
      *                                  than an {@link SqlExpression} or a scalar {@link SubQuery} (an ordinary predicate, Criteria,
      *                                  clause, JOIN or {@code ON}/{@code USING} connector, or an {@link All}/{@link Any}/{@link Some} operand);
      *                                  or if either bound is a cyclic object array
@@ -1873,7 +1880,7 @@ public final class Filters {
      * @return a {@link Like} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue} is
-     *                                  {@code null}, a blank {@link SqlExpression}, or an {@link All}/{@link Any}/{@link Some} operand, or if
+     *                                  {@code null}, a blank or comment-only {@link SqlExpression}, or an {@link All}/{@link Any}/{@link Some} operand, or if
      *                                  {@code propValue} is any other {@link Condition} (an ordinary predicate, Criteria, clause,
      *                                  JOIN or {@code ON}/{@code USING} connector); or if {@code propValue} is a cyclic object array
      */
@@ -1933,7 +1940,7 @@ public final class Filters {
      * @return a {@link NotLike} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code propValue} is
-     *                                  {@code null}, a blank {@link SqlExpression}, or an {@link All}/{@link Any}/{@link Some} operand, or if
+     *                                  {@code null}, a blank or comment-only {@link SqlExpression}, or an {@link All}/{@link Any}/{@link Some} operand, or if
      *                                  {@code propValue} is any other {@link Condition} (an ordinary predicate, Criteria, clause,
      *                                  JOIN or {@code ON}/{@code USING} connector); or if {@code propValue} is a cyclic object array
      */
@@ -2302,7 +2309,7 @@ public final class Filters {
      *                  naming the SQL keyword
      * @return an {@link Is} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue}
-     *                                  is a blank {@link SqlExpression} or is not {@code null}, a {@code Boolean}, or an {@link SqlExpression}
+     *                                  is a blank or comment-only {@link SqlExpression} or is not {@code null}, a {@code Boolean}, or an {@link SqlExpression}
      */
     public static Is is(final String propName, final Object propValue) {
         return new Is(propName, propValue);
@@ -2358,7 +2365,7 @@ public final class Filters {
      *                  {@link SqlExpression} naming the SQL keyword
      * @return an {@link IsNot} condition
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code propValue}
-     *                                  is a blank {@link SqlExpression} or is not {@code null}, a {@code Boolean}, or an {@link SqlExpression}
+     *                                  is a blank or comment-only {@link SqlExpression} or is not {@code null}, a {@code Boolean}, or an {@link SqlExpression}
      */
     public static IsNot isNot(final String propName, final Object propValue) {
         return new IsNot(propName, propValue);
@@ -2385,7 +2392,7 @@ public final class Filters {
      *             a condition with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
      *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     public static Or or(final Condition... conditions) {
         return new Or(conditions);
@@ -2412,7 +2419,7 @@ public final class Filters {
      *             a condition with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
      *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     public static Or or(final Collection<? extends Condition> conditions) {
         return new Or(conditions);
@@ -2439,7 +2446,7 @@ public final class Filters {
      *             a condition with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
      *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     public static And and(final Condition... conditions) {
         return new And(conditions);
@@ -2466,7 +2473,7 @@ public final class Filters {
      *             a condition with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
      *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     public static And and(final Collection<? extends Condition> conditions) {
         return new And(conditions);
@@ -2495,7 +2502,7 @@ public final class Filters {
      *             with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
      *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     @Beta
     public static Junction junction(final Operator operator, final Condition... conditions) {
@@ -2523,7 +2530,7 @@ public final class Filters {
      *             with a {@code null} operator, a clause (WHERE, JOIN variants, ORDER BY, etc.), an
      *             {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     @Beta
     public static Junction junction(final Operator operator, final Collection<? extends Condition> conditions) {
@@ -2541,7 +2548,7 @@ public final class Filters {
      *
      * @param condition the condition for the {@code WHERE} clause (must not be {@code null})
      * @return a {@link Where} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank {@link SqlExpression} — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank or comment-only {@link SqlExpression} — none of which can be nested inside a clause
      */
     public static Where where(final Condition condition) {
         return new Where(condition);
@@ -2896,7 +2903,7 @@ public final class Filters {
      *
      * @param condition the grouping condition (must not be {@code null})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank {@link SqlExpression} — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank or comment-only {@link SqlExpression} — none of which can be nested inside a clause
      */
     public static GroupBy groupBy(final Condition condition) {
         return new GroupBy(condition);
@@ -2914,7 +2921,7 @@ public final class Filters {
      *
      * @param condition the condition for the {@code HAVING} clause (must not be {@code null})
      * @return a {@link Having} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank {@link SqlExpression} — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank or comment-only {@link SqlExpression} — none of which can be nested inside a clause
      */
     public static Having having(final Condition condition) {
         return new Having(condition);
@@ -3305,7 +3312,7 @@ public final class Filters {
      *
      * @param condition the ordering condition (must not be {@code null})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank {@link SqlExpression} — none of which can be nested inside a clause
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a Criteria, is a standalone {@link SubQuery} or another clause, contains an {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, or is a blank or comment-only {@link SqlExpression} — none of which can be nested inside a clause
      */
     public static OrderBy orderBy(final Condition condition) {
         return new OrderBy(condition);
@@ -3327,7 +3334,7 @@ public final class Filters {
      *
      * @param condition the join condition (must not be {@code null})
      * @return an {@link On} clause
-     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is/contains a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is/contains a Criteria, another clause, an {@code ON}/{@code USING} condition, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static On on(final Condition condition) {
         return new On(condition);
@@ -3492,7 +3499,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static Join join(final String joinEntity, final Condition joinCondition) {
         return new Join(joinEntity, joinCondition);
@@ -3518,7 +3525,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static Join join(final Collection<String> joinEntities, final Condition joinCondition) {
         return new Join(joinEntities, joinCondition);
@@ -3571,7 +3578,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static LeftJoin leftJoin(final String joinEntity, final Condition joinCondition) {
         return new LeftJoin(joinEntity, joinCondition);
@@ -3597,7 +3604,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static LeftJoin leftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         return new LeftJoin(joinEntities, joinCondition);
@@ -3650,7 +3657,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static RightJoin rightJoin(final String joinEntity, final Condition joinCondition) {
         return new RightJoin(joinEntity, joinCondition);
@@ -3676,7 +3683,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static RightJoin rightJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         return new RightJoin(joinEntities, joinCondition);
@@ -3764,7 +3771,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static FullJoin fullJoin(final String joinEntity, final Condition joinCondition) {
         return new FullJoin(joinEntity, joinCondition);
@@ -3790,7 +3797,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static FullJoin fullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         return new FullJoin(joinEntities, joinCondition);
@@ -3843,7 +3850,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static InnerJoin innerJoin(final String joinEntity, final Condition joinCondition) {
         return new InnerJoin(joinEntity, joinCondition);
@@ -3869,7 +3876,7 @@ public final class Filters {
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
      *                                  connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone
-     *                                  {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public static InnerJoin innerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         return new InnerJoin(joinEntities, joinCondition);
@@ -4069,7 +4076,7 @@ public final class Filters {
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
-     *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
+     *                                  {@link SqlExpression} containing a SQL token or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if an element of {@code values}
      *                                  is a cyclic object array
      */
@@ -4093,7 +4100,7 @@ public final class Filters {
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
-     *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
+     *                                  {@link SqlExpression} containing a SQL token or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if an element of {@code values}
      *                                  is a cyclic object array
      */
@@ -4130,7 +4137,7 @@ public final class Filters {
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
-     *                                  or if any row element is a {@link Condition} other than a non-blank {@link SqlExpression}
+     *                                  or if any row element is a {@link Condition} other than a {@link SqlExpression} containing a SQL token
      *                                  or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if a row element
      *                                  is a cyclic object array
@@ -4345,7 +4352,7 @@ public final class Filters {
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
-     *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
+     *                                  {@link SqlExpression} containing a SQL token or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if an element of {@code values}
      *                                  is a cyclic object array
      */
@@ -4369,7 +4376,7 @@ public final class Filters {
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}, empty, or contains {@code null}, or if any element is a {@link Condition} other than a
-     *                                  non-blank {@link SqlExpression} or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
+     *                                  {@link SqlExpression} containing a SQL token or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if an element of {@code values}
      *                                  is a cyclic object array
      */
@@ -4406,7 +4413,7 @@ public final class Filters {
      *                                  if {@code valueRows} is {@code null} or empty, if any row is {@code null} or of an
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map key or bean property is missing/unreadable, or if a row element is {@code null},
-     *                                  or if any row element is a {@link Condition} other than a non-blank {@link SqlExpression}
+     *                                  or if any row element is a {@link Condition} other than a {@link SqlExpression} containing a SQL token
      *                                  or a scalar {@link SubQuery} (predicates, clauses, JOIN/ON/USING connectors and
      *                                  {@link All}/{@link Any}/{@link Some} operands are all rejected); or if a row element
      *                                  is a cyclic object array
@@ -4687,7 +4694,8 @@ public final class Filters {
      *         {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT modifier
      *         (e.g. {@code DISTINCT}), or if {@code condition} is an {@code ANY}/{@code ALL}/{@code SOME}
      *         quantified-subquery operand or a standalone {@link SubQuery}
-     *         (neither of which can be nested inside the generated {@code WHERE} clause)
+     *         (neither of which can be nested inside the generated {@code WHERE} clause), or if a nonblank
+     *         {@code condition} expression contains only SQL comments
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final Condition condition) {
         return new SubQuery(entityClass, propNames, condition);
@@ -4716,7 +4724,8 @@ public final class Filters {
      *         {@code condition} is a {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT
      *         modifier (e.g. {@code DISTINCT}), or if {@code condition} is an {@code ANY}/{@code ALL}/{@code SOME}
      *         quantified-subquery operand or a standalone {@link SubQuery}
-     *         (neither of which can be nested inside the generated {@code WHERE} clause)
+     *         (neither of which can be nested inside the generated {@code WHERE} clause), or if a nonblank
+     *         {@code condition} expression contains only SQL comments
      */
     public static SubQuery subQuery(final Class<?> entityClass, final String propName, final Condition condition) {
         return new SubQuery(entityClass, propName, condition);
@@ -4747,7 +4756,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null},
      *         if {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
      *         or if {@code expr} is {@code null}, or if {@code expr} begins with an {@code ON}/{@code USING} keyword
-     *         (not a valid subquery filter)
+     *         (not a valid subquery filter), or if a nonblank {@code expr} contains only SQL comments
      * @see #subQuery(String, Collection, String)
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final String expr) {
@@ -4782,7 +4791,8 @@ public final class Filters {
      *         {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT modifier
      *         (e.g. {@code DISTINCT}), or if {@code condition} is an {@code ANY}/{@code ALL}/{@code SOME}
      *         quantified-subquery operand or a standalone {@link SubQuery}
-     *         (neither of which can be nested inside the generated {@code WHERE} clause)
+     *         (neither of which can be nested inside the generated {@code WHERE} clause), or if a nonblank
+     *         {@code condition} expression contains only SQL comments
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final Condition condition) {
         return new SubQuery(entityName, propNames, condition);
@@ -4811,7 +4821,8 @@ public final class Filters {
      *         {@link com.landawn.abacus.query.condition.Criteria Criteria} carrying a SELECT modifier
      *         (e.g. {@code DISTINCT}), or if {@code condition} is an {@code ANY}/{@code ALL}/{@code SOME}
      *         quantified-subquery operand or a standalone {@link SubQuery}
-     *         (neither of which can be nested inside the generated {@code WHERE} clause)
+     *         (neither of which can be nested inside the generated {@code WHERE} clause), or if a nonblank
+     *         {@code condition} expression contains only SQL comments
      */
     public static SubQuery subQuery(final String entityName, final String propName, final Condition condition) {
         return new SubQuery(entityName, propName, condition);
@@ -4842,7 +4853,7 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code entityName} is {@code null}, empty, or blank,
      *         if {@code propNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
      *         or if {@code expr} is {@code null}, or if {@code expr} begins with an {@code ON}/{@code USING} keyword
-     *         (not a valid subquery filter)
+     *         (not a valid subquery filter), or if a nonblank {@code expr} contains only SQL comments
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr) {
         return new SubQuery(entityName, propNames, expr(expr));

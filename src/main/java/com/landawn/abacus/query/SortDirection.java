@@ -23,6 +23,10 @@ package com.landawn.abacus.query;
  * {@code ORDER BY} clause keywords, so {@link #toString()} (the default {@link Enum#toString()}, which
  * is not overridden here) returns the matching SQL fragment.</p>
  *
+ * <p>This enum specifies direction only. String collation and the placement of {@code NULL} values
+ * are determined by the database and any explicit collation or {@code NULLS FIRST}/{@code NULLS LAST}
+ * clause in the query.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Check sort direction

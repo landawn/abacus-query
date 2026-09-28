@@ -112,7 +112,7 @@ public class And extends Junction {
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     public And(final Condition... conditions) {
         super(Operator.AND, conditions);
@@ -145,7 +145,7 @@ public class And extends Junction {
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     public And(final Collection<? extends Condition> conditions) {
         super(Operator.AND, conditions);
@@ -194,12 +194,12 @@ public class And extends Junction {
      *
      * @param condition the condition to add to this AND. Must not be {@code null} and must be
      *             composable (i.e. must not be or contain a {@link Criteria}, a {@link Clause}, an {@code ON}/{@code USING} connector,
-     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank expression).
+     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only expression).
      * @return a new {@link And} condition containing all existing conditions plus the new one
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is or contains a
      *             non-composable component — a condition with a {@code null} operator, a {@link Criteria}, a {@link Clause}
      *             condition (such as {@link Where} or {@link OrderBy}), an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only
      *             {@link SqlExpression}
      */
     @Override

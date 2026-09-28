@@ -27,7 +27,30 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
+@Tag("2025")
 public class AbstractInTest extends TestBase {
+
+    @Test
+    public void testScalarCollectionsInMembershipListsRetainTheirEqualityContract() {
+        final java.util.Set<Integer> forward = new java.util.LinkedHashSet<>(List.of(1, 2));
+        final java.util.Set<Integer> reverse = new java.util.LinkedHashSet<>(List.of(2, 1));
+        final In first = new In("payload", List.of(forward));
+        final In second = new In("payload", List.of(reverse));
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+        assertNotEquals(first, new In("payload", List.of(List.of(1, 2))));
+
+        final In rowFirst = new In(List.of("id", "payload"), List.of(List.of(1, forward)));
+        final In rowSecond = new In(List.of("id", "payload"), List.of(List.of(1, reverse)));
+        assertEquals(rowFirst, rowSecond);
+        assertEquals(rowFirst.hashCode(), rowSecond.hashCode());
+        assertNotEquals(rowFirst, new In(List.of("id", "payload"), List.of(List.of(1, List.of(1, 2)))));
+
+        final NotIn notFirst = new NotIn("payload", List.of(forward));
+        final NotIn notSecond = new NotIn("payload", List.of(reverse));
+        assertEquals(notFirst, notSecond);
+        assertEquals(notFirst.hashCode(), notSecond.hashCode());
+    }
 
     private static final class TestAbstractIn extends AbstractIn {
         TestAbstractIn(final String propName, final Collection<?> values) {

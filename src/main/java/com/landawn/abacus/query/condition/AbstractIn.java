@@ -124,7 +124,7 @@ public abstract class AbstractIn extends ComposableCondition {
      * @throws IllegalArgumentException if {@code operator} is {@code null} or is neither {@link Operator#IN} nor {@link Operator#NOT_IN},
      *                                  if {@code propName} is {@code null}, empty, or blank, if {@code values} is
      *                                  {@code null}/empty or contains {@code null},
-     *                                  or if any element is a {@link Condition} other than a non-blank {@link SqlExpression}
+     *                                  or if any element is a {@link Condition} other than a {@link SqlExpression} containing a SQL token
      *                                  or a scalar {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING
      *                                  connectors and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
      *                                  if a scalar {@link SubQuery} has a known, non-wildcard projection containing
@@ -195,7 +195,7 @@ public abstract class AbstractIn extends ComposableCondition {
      *                                  unsupported type, if a positional row's width does not match {@code propNames.size()},
      *                                  if a map row is missing a requested key, if a tuple element is {@code null},
      *                                  if a bean row does not expose a requested property, if any tuple element is a
-     *                                  {@link Condition} other than a non-blank {@link SqlExpression} or a scalar
+     *                                  {@link Condition} other than a {@link SqlExpression} containing a SQL token or a scalar
      *                                  {@link SubQuery} (predicates, clauses, {@link Criteria}, JOIN/ON/USING connectors
      *                                  and {@link All}/{@link Any}/{@link Some} quantified operands are all rejected),
      *                                  if a scalar {@link SubQuery} has a known, non-wildcard projection containing
@@ -729,9 +729,9 @@ public abstract class AbstractIn extends ComposableCondition {
         h = (h * 31) + N.hashCode(propNames);
         h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
         h = (h * 31) + (rowValueConstructor ? 1231 : 1237);
-        // Deep-walk membership values so array (and nested collection) elements match Binary's
-        // scalar array contract rather than List.equals identity semantics for array elements.
-        h = (h * 31) + deepMembershipHashCode(values);
+        // Traverse only the membership list and optional row tuples. Collections stored in scalar
+        // positions retain their own contract, including order-independent Set equality and hashing.
+        h = (h * 31) + deepMembershipHashCode(values, rowValueConstructor ? 2 : 1);
 
         return h == 0 ? 1 : h;
     }
@@ -743,7 +743,8 @@ public abstract class AbstractIn extends ComposableCondition {
      *
      * <p>Membership values are compared deeply: array elements use content equality (the same
      * contract as a scalar array RHS on {@link Binary}), and nested collections (row-value tuples)
-     * are walked element-wise.</p>
+     * are walked element-wise. Collections used as individual scalar values retain their own
+     * equality contract, so a set value is independent of iteration order and differs from a list.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -776,16 +777,17 @@ public abstract class AbstractIn extends ComposableCondition {
 
         final AbstractIn other = (AbstractIn) obj;
         return rowValueConstructor == other.rowValueConstructor && N.equals(propNames, other.propNames) && N.equals(operator, other.operator)
-                && deepMembershipEquals(values, other.values);
+                && deepMembershipEquals(values, other.values, rowValueConstructor ? 2 : 1);
     }
 
     /**
      * Deep equality for membership values / row tuples. Collections are compared element-wise so
      * array members use content equality ({@link N#deepEquals(Object, Object)}, aligned with the
      * {@link N#deepHashCode(Object)} leaf in {@link #deepMembershipHashCode}) rather than reference
-     * identity from {@link List#equals(Object)}.
+     * identity from {@link List#equals(Object)}. The depth limits traversal to structural lists;
+     * scalar collection values retain their own equality contract.
      */
-    private static boolean deepMembershipEquals(final Object left, final Object right) {
+    private static boolean deepMembershipEquals(final Object left, final Object right, final int structuralDepth) {
         if (left == right) {
             return true;
         }
@@ -794,7 +796,7 @@ public abstract class AbstractIn extends ComposableCondition {
             return false;
         }
 
-        if (left instanceof final Collection<?> leftValues && right instanceof final Collection<?> rightValues) {
+        if (structuralDepth > 0 && left instanceof final Collection<?> leftValues && right instanceof final Collection<?> rightValues) {
             if (leftValues.size() != rightValues.size()) {
                 return false;
             }
@@ -803,7 +805,7 @@ public abstract class AbstractIn extends ComposableCondition {
             final Iterator<?> rightIter = rightValues.iterator();
 
             while (leftIter.hasNext()) {
-                if (!deepMembershipEquals(leftIter.next(), rightIter.next())) {
+                if (!deepMembershipEquals(leftIter.next(), rightIter.next(), structuralDepth - 1)) {
                     return false;
                 }
             }
@@ -817,16 +819,16 @@ public abstract class AbstractIn extends ComposableCondition {
     /**
      * Deep hash for membership values / row tuples, aligned with {@link #deepMembershipEquals}.
      */
-    private static int deepMembershipHashCode(final Object value) {
+    private static int deepMembershipHashCode(final Object value, final int structuralDepth) {
         if (value == null) {
             return 0;
         }
 
-        if (value instanceof final Collection<?> values) {
+        if (structuralDepth > 0 && value instanceof final Collection<?> values) {
             int h = 1;
 
             for (final Object element : values) {
-                h = (31 * h) + deepMembershipHashCode(element);
+                h = (31 * h) + deepMembershipHashCode(element, structuralDepth - 1);
             }
 
             return h;

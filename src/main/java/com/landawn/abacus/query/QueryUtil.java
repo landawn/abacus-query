@@ -930,7 +930,8 @@ public final class QueryUtil {
      *
      * <p>When {@code includeSubEntityProperties} is {@code true}, the method returns nested properties using
      * dot notation (e.g., {@code "address.street"}). This is useful for building SELECT statements
-     * that need to retrieve data for nested entity relationships.</p>
+     * that need to retrieve data for nested entity relationships. A sub-entity excluded by the parent's
+     * {@code @Table} column configuration or non-column metadata contributes no nested properties.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

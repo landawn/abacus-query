@@ -1040,4 +1040,31 @@ public class BinaryTest extends TestBase {
         final ArrayList<Integer> listValue = new ArrayList<>(Arrays.asList(1, 2));
         assertSame(listValue, new NotEqual("payload", listValue).propValueAs(ArrayList.class));
     }
+
+    @Test
+    public void testScalarCollectionEqualityRetainsCollectionContract() {
+        final java.util.Set<Integer> forward = new java.util.LinkedHashSet<>(Arrays.asList(1, 2));
+        final java.util.Set<Integer> reverse = new java.util.LinkedHashSet<>(Arrays.asList(2, 1));
+        final Equal first = new Equal("payload", forward);
+        final Equal second = new Equal("payload", reverse);
+
+        assertEquals(first, second);
+        assertEquals(first.hashCode(), second.hashCode());
+        assertNotEquals(first, new Equal("payload", Arrays.asList(1, 2)));
+        assertNotEquals(new Equal("payload", Arrays.asList(1, 2)), first);
+        assertNotEquals(new Equal("payload", Arrays.asList(1, 2)), new Equal("payload", Arrays.asList(2, 1)));
+
+        for (final Operator operator : new Operator[] { Operator.IN, Operator.NOT_IN }) {
+            final Binary firstMember = new Binary("payload", operator, List.of(forward));
+            final Binary secondMember = new Binary("payload", operator, List.of(reverse));
+            assertEquals(firstMember, secondMember);
+            assertEquals(firstMember.hashCode(), secondMember.hashCode());
+            assertNotEquals(firstMember, new Binary("payload", operator, List.of(List.of(1, 2))));
+        }
+
+        final Binary inFirst = new Binary("payload", Operator.IN, Arrays.asList(new byte[] { 1, 2 }));
+        final Binary inSecond = new Binary("payload", Operator.IN, Arrays.asList(new byte[] { 1, 2 }));
+        assertEquals(inFirst, inSecond);
+        assertEquals(inFirst.hashCode(), inSecond.hashCode());
+    }
 }

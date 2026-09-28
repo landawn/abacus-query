@@ -1515,9 +1515,67 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("flags ", Filters.expr("flags # 1 = 0").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("", Filters.expr("#tmp.id = x.id").toSql(NamingPolicy.NO_CHANGE));
 
-        // consequence of the line above: when the whole literal is consumed as a comment the predicate
-        // disappears and the surrounding clause is rendered without one
-        assertEquals("WHERE ", new Where(Filters.expr("#tmp.id = x.id")).toString());
+        Assertions.assertDoesNotThrow(() -> new Where(Filters.expr("#tmp.id = x.id")));
+    }
+
+    @Test
+    public void testCommentOnlyExpressionsCannotBecomePredicatesOrScalarOperands() {
+        for (final String literal : new String[] { "-- comment", "/* comment */", "# comment", " /* first */ -- second\n /* third */ ",
+                "-- Keep comments\n/* only comment */" }) {
+            final SqlExpression expression = SqlExpression.of(literal);
+            assertThrows(IllegalArgumentException.class, () -> new Where(expression));
+            assertThrows(IllegalArgumentException.class, () -> new On(expression));
+            assertThrows(IllegalArgumentException.class, () -> new And(expression));
+            assertThrows(IllegalArgumentException.class, () -> new Not(expression));
+            assertThrows(IllegalArgumentException.class, () -> new Equal("value", expression));
+            assertThrows(IllegalArgumentException.class, () -> new Between("value", expression, 10));
+            assertThrows(IllegalArgumentException.class, () -> new In("value", java.util.List.of(expression)));
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery("records", "id", expression));
+        }
+
+        assertEquals("WHERE '-- comment' = '-- comment'", new Where(SqlExpression.of("'-- comment' = '-- comment'")).toString());
+        assertEquals("WHERE value = 1", new Where(SqlExpression.of("/* comment */value = 1")).toString());
+        assertEquals("value = '/* comment */'", new Equal("value", SqlExpression.of("'/* comment */'")).toString());
+    }
+
+    @Test
+    public void testRejectedCommentOnlyPredicateLeavesBuilderUsable() {
+        final com.landawn.abacus.query.SqlBuilder builder = com.landawn.abacus.query.Dsl.PSC.select("id").from("records");
+        assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.expr("/* only comment */")));
+        final com.landawn.abacus.query.SqlBuilder.SP result = builder.where(Filters.eq("id", 1)).build();
+        assertEquals("SELECT id FROM records WHERE id = ?", result.query());
+        assertEquals(List.of(1), result.parameters());
+    }
+
+    @Test
+    public void testSqlServerTemporaryTablePredicatesRemainAccepted() {
+        final com.landawn.abacus.query.Dsl sqlServer = com.landawn.abacus.query.Dsl.forDialect(com.landawn.abacus.query.Dsl.PSC.sqlDialect()
+                .toBuilder().productInfo(com.landawn.abacus.query.SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        for (final String table : List.of("#tmp", "##tmp")) {
+            final String predicate = table + ".id = 1";
+            final String rawQuery = sqlServer.select("*").from(table).where(predicate).build().query();
+            final String conditionQuery = sqlServer.select("*").from(table).where(Filters.expr(predicate)).build().query();
+            assertEquals("SELECT * FROM " + table + " WHERE " + predicate, conditionQuery);
+            assertEquals(rawQuery, conditionQuery);
+        }
+
+        // The retained forms use the builders' temporary-name characters, including '@' and non-ASCII letters.
+        for (final String predicate : List.of("#@t.id = 1", "#übersicht.id = 1")) {
+            Assertions.assertDoesNotThrow(() -> new Where(Filters.expr(predicate)));
+            assertEquals("SELECT * FROM t WHERE " + predicate, sqlServer.select("*").from("t").where(Filters.expr(predicate)).build().query());
+        }
+
+        // A comment before the name cannot render on any builder: SQL Server rejects a temporary-table
+        // expression containing a comment token, and other dialects read the '#' as a comment.
+        assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("/* c */ #tmp.id = 1")));
+        assertThrows(IllegalArgumentException.class, () -> sqlServer.select("*").from("#tmp").where("/* c */ #tmp.id = 1"));
+        assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("#　tmp.id = 1")));
+    }
+
+    @Test
+    public void testUnterminatedMybatisMarkerIsConvertedLikeOrdinarySql() {
+        assertEquals("foo_bar = #{ foo_bar AND bar_baz = 1", Filters.expr("fooBar = #{ fooBar AND barBaz = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("foo_bar = #{ fooBar } AND bar_baz = 1", Filters.expr("fooBar = #{ fooBar } AND barBaz = 1").toSql(NamingPolicy.SNAKE_CASE));
     }
 
     /**
@@ -1535,13 +1593,17 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("first_name = ?", Filters.expr("firstName = ?").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("first_name = @firstName", Filters.expr("firstName = @firstName").toSql(NamingPolicy.SNAKE_CASE));
 
-        // Documented limitation: only the compact spellings are protected. A marker written with internal
-        // whitespace (a spelling ParsedSql accepts) or with MyBatis attributes has its inner text tokenized
-        // like ordinary SQL, so the BIND NAME itself is rewritten and the statement binds a different parameter.
-        assertEquals("first_name = #{ first_name }", Filters.expr("firstName = #{ firstName }").toSql(NamingPolicy.SNAKE_CASE));
-        assertEquals("first_name = ${ first_name }", Filters.expr("firstName = ${ firstName }").toSql(NamingPolicy.SNAKE_CASE));
-        assertEquals("first_name = #{firstName, jdbc_type=varchar}",
+        assertEquals("first_name = #{ firstName }", Filters.expr("firstName = #{ firstName }").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = ${ firstName }", Filters.expr("firstName = ${ firstName }").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = #{firstName, jdbcType=VARCHAR}",
                 Filters.expr("firstName = #{firstName, jdbcType=VARCHAR}").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = #{ firstName, jdbcType = VARCHAR } AND last_name = ${ lastName }",
+                Filters.expr("firstName = #{ firstName, jdbcType = VARCHAR } AND lastName = ${ lastName }").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("FIRST_NAME = #{ firstName } + LAST_NAME",
+                Filters.expr("firstName = #{ firstName } + lastName").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("SELECT id FROM records WHERE first_name = #{ firstName, jdbcType=VARCHAR }",
+                com.landawn.abacus.query.Dsl.PSC.select("id").from("records")
+                        .where(Filters.expr("firstName = #{ firstName, jdbcType=VARCHAR }")).build().query());
     }
 
     @Test

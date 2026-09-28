@@ -24,6 +24,59 @@ import com.landawn.abacus.util.Strings;
 public class ParsedSqlTest extends TestBase {
 
     @Test
+    public void testSubscriptCommentsCannotExposeNamedMarkers() {
+        for (final String comment : List.of("/* ] :ghost */", "/* [ ' :ghost */", "-- ] ' :ghost\n", "-- [ :ghost\r\n")) {
+            final String sql = "SELECT ARRAY[1 " + comment + ", :id]";
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(List.of("id"), parsed.namedParameters(), sql);
+            assertEquals(sql.replace(":id", "?"), parsed.parameterizedSql(), sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+        }
+    }
+
+    @Test
+    public void testSubscriptOperatorsDoNotConsumeCommentOpeners() {
+        for (final String sql : List.of("SELECT ARRAY[?-- ?\n, ?]", "SELECT ARRAY[?||/* ? */?]")) {
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(2, parsed.parameterCount(), sql);
+            assertArrayEquals(new int[] { sql.indexOf('?'), sql.lastIndexOf('?') }, parsed.positionalParameterOffsets(), sql);
+            assertEquals(sql, parsed.parameterizedSql(), sql);
+        }
+    }
+
+    @Test
+    public void testSubscriptCommentsCannotExposePositionalOrMyBatisMarkers() {
+        for (final String comment : List.of("/* ] ? #{ghost} */", "/* [ ' ? #{ghost} */", "-- ] ' ? #{ghost}\n")) {
+            final String positionalSql = "SELECT ARRAY[1 " + comment + ", ?], ?";
+            final ParsedSql positional = ParsedSql.parse(positionalSql);
+            final int firstBinding = positionalSql.indexOf(", ?") + 2;
+            assertEquals(2, positional.parameterCount(), positionalSql);
+            assertArrayEquals(new int[] { firstBinding, positionalSql.lastIndexOf('?') }, positional.positionalParameterOffsets(), positionalSql);
+            assertEquals(positionalSql, positional.parameterizedSql(), positionalSql);
+
+            final String namedSql = "SELECT ARRAY[1 " + comment + ", #{id}]";
+            final ParsedSql named = ParsedSql.parse(namedSql);
+            assertEquals(List.of("id"), named.namedParameters(), namedSql);
+            assertEquals(namedSql.replace("#{id}", "?"), named.parameterizedSql(), namedSql);
+        }
+    }
+
+    @Test
+    public void testChainedAndMarkerLedSubscriptCommentsPreserveBindingRoles() {
+        for (final String sql : List.of("SELECT x[1][1 /* ] :ghost */ , :id]", "SELECT x[1] /* gap */ [1 -- ] :ghost\n, :id]",
+                "SELECT [:id /* ] :ghost */]", "SELECT x[1][1 /* [ ' :ghost */ , :id]")) {
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(List.of("id"), parsed.namedParameters(), sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+            assertTrue(parsed.parameterizedSql().contains(":ghost"), sql);
+        }
+        final String sql = "SELECT x[1][1 /* ] ? */ , ?], ?";
+        assertArrayEquals(new int[] { sql.indexOf(", ?") + 2, sql.lastIndexOf('?') }, ParsedSql.parse(sql).positionalParameterOffsets());
+        assertEquals(1, ParsedSql.parse("SELECT [q][?]['a', ?]").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT \"q\"[?]['a', ?]").parameterCount());
+    }
+
+    @Test
     public void testParse_GeometricLiteralsAndConstructorsHonorFinalCasts() {
         for (final String operand : List.of("line '(0,0),(1,0)'::text", "pg_catalog.line'(0,0),(1,0)' ::text",
                 "line E'(0,0),(1,0)'::text", "line N'(0,0),(1,0)'::text", "line U&'(0,0),(1,0)'::text",

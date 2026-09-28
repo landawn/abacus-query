@@ -196,7 +196,7 @@ public class Join extends AbstractCondition {
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public Join(final String joinEntity, final Condition joinCondition) {
         this(Operator.JOIN, joinEntity, joinCondition);
@@ -228,7 +228,7 @@ public class Join extends AbstractCondition {
      *                                  {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     protected Join(final Operator operator, final String joinEntity, final Condition joinCondition) {
         this(operator, Collections.singletonList(joinEntity), joinCondition);
@@ -264,7 +264,7 @@ public class Join extends AbstractCondition {
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins
      *                                  with {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public Join(final Collection<String> joinEntities, final Condition joinCondition) {
         this(Operator.JOIN, joinEntities, joinCondition);
@@ -298,7 +298,7 @@ public class Join extends AbstractCondition {
      *                                  if {@code joinCondition} is or contains a {@link Criteria}, a null operator,
      *                                  a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *                                  operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition joinCondition) {
         super(operator);
@@ -362,7 +362,7 @@ public class Join extends AbstractCondition {
      * connector is unwrapped to the condition it carries, and the result must not be or contain a
      * non-predicate component (a {@link Criteria}, a SQL clause, a nested ON/USING connector, an
      * {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a
-     * blank {@link SqlExpression}).
+     * blank or comment-only {@link SqlExpression}).
      *
      * @param joinCondition the join condition; may be {@code null} (CROSS/NATURAL joins)
      * @return the validated join condition, or {@code null} when none was supplied

@@ -103,7 +103,7 @@ public class On extends Cell {
     /**
      * Creates an ON clause with a custom condition.
      * This is the most flexible constructor, accepting any predicate that does not
-     * contain a clause, connector, quantified-subquery operand, or blank {@link SqlExpression}. It is typically used for
+     * contain a clause, connector, quantified-subquery operand, or blank or comment-only {@link SqlExpression}. It is typically used for
      * complex joins that go beyond simple column equality.
      *
      * <p><b>Usage Examples:</b></p>
@@ -143,7 +143,7 @@ public class On extends Cell {
      *                                  a null operator, a SQL clause, an {@code ON}/{@code USING} connector, a standalone
      *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (one that is not
      *                                  the direct right-hand side of a comparison such as {@code a = ANY (...)}), a
-     *                                  standalone {@link SubQuery}, or a blank {@link SqlExpression}. An empty {@link Junction}
+     *                                  standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}. An empty {@link Junction}
      *                                  is accepted and renders its Boolean identity (for example {@code ON 1 = 1})
      */
     public On(final Condition condition) {
@@ -156,7 +156,7 @@ public class On extends Cell {
      * @param cond the predicate to wrap
      * @return the validated predicate
      * @throws IllegalArgumentException if {@code cond} is null or contains a null operator, Criteria,
-     *         clause, ON/USING connector, quantified operand, standalone SubQuery, or blank SqlExpression
+     *         clause, ON/USING connector, quantified operand, standalone SubQuery, or blank or comment-only SqlExpression
      */
     private static Condition validateOnCondition(final Condition cond) {
         N.checkArgNotNull(cond, cs.condition);

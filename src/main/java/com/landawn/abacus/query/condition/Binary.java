@@ -197,7 +197,7 @@ public class Binary extends ComposableCondition {
      *                                  {@code null} for an operator other than {@code =}, {@code !=}, {@code <>}, {@code IS},
      *                                  or {@code IS NOT}, or an {@code IN}/{@code NOT IN} element is {@code null}; if
      *                                  {@code IS}/{@code IS NOT} receives a value other than {@code null}, a Boolean, or a
-     *                                  {@link SqlExpression}; if a condition-valued operand is an ordinary predicate or query clause or a blank
+     *                                  {@link SqlExpression}; if a condition-valued operand is an ordinary predicate or query clause or a blank or comment-only
      *                                  {@link SqlExpression}; or if an {@link All}/{@link Any}/{@link Some} operand is used
      *                                  anywhere other than the direct RHS of a compatible scalar comparison; if a
      *                                  scalar {@link SubQuery} has a known, non-wildcard projection with multiple columns;
@@ -539,9 +539,9 @@ public class Binary extends ComposableCondition {
      * @return the validated value
      * @throws IllegalArgumentException if {@code propValue} is {@code null} for an operator other than {@code =},
      *         {@code !=}, {@code <>}, {@code IS}, or {@code IS NOT}; if {@code IS}/{@code IS NOT} receives a value other
-     *         than {@code null}, a Boolean, or a non-blank {@link SqlExpression}; if a quantified operand is used with an
+     *         than {@code null}, a Boolean, or a {@link SqlExpression} containing a SQL token; if a quantified operand is used with an
      *         incompatible operator; if the operand is any other unsupported condition (an ordinary predicate or query
-     *         clause, a blank {@link SqlExpression}, or a structured {@link SubQuery} with a known multi-column
+     *         clause, a blank or comment-only {@link SqlExpression}, or a structured {@link SubQuery} with a known multi-column
      *         projection); or if the value is a cyclic object array
      */
     private static Object validateScalarValueOperand(final Operator op, final Object propValue) {
@@ -668,8 +668,9 @@ public class Binary extends ComposableCondition {
         int h = 17;
         h = (h * 31) + ((propName == null) ? 0 : propName.hashCode());
         h = (h * 31) + ((operator == null) ? 0 : operator.hashCode());
-        // Membership lists deep-walk array elements so IN content-equality matches scalar arrays.
-        h = (h * 31) + deepPropValueHashCode(propValue);
+        // Only membership operands are ordered value lists. A scalar Collection remains one bound
+        // value and must retain its own equality/hash contract (notably order-independent Set equality).
+        h = (h * 31) + (isCollectionOperator(operator) ? deepPropValueHashCode(propValue) : N.deepHashCode(propValue));
 
         return h == 0 ? 1 : h;
     }
@@ -683,6 +684,9 @@ public class Binary extends ComposableCondition {
      *
      * <p>For {@code IN}/{@code NOT IN} membership lists, array elements are compared by content
      * (the same contract as a scalar array RHS) rather than by {@link List#equals(Object)} identity.</p>
+     * <p>A collection supplied as a scalar value to another operator retains its own equality
+     * contract. For example, scalar sets compare without regard to iteration order and do not
+     * compare equal to lists containing the same elements.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -712,7 +716,8 @@ public class Binary extends ComposableCondition {
         }
 
         final Binary other = (Binary) obj;
-        return N.equals(propName, other.propName) && N.equals(operator, other.operator) && deepPropValueEquals(propValue, other.propValue);
+        return N.equals(propName, other.propName) && N.equals(operator, other.operator)
+                && (isCollectionOperator(operator) ? deepPropValueEquals(propValue, other.propValue) : N.deepEquals(propValue, other.propValue));
     }
 
     /**
@@ -738,7 +743,7 @@ public class Binary extends ComposableCondition {
             final Iterator<?> rightIter = rightValues.iterator();
 
             while (leftIter.hasNext()) {
-                if (!deepPropValueEquals(leftIter.next(), rightIter.next())) {
+                if (!N.deepEquals(leftIter.next(), rightIter.next())) {
                     return false;
                 }
             }
@@ -761,7 +766,7 @@ public class Binary extends ComposableCondition {
             int h = 1;
 
             for (final Object element : values) {
-                h = (31 * h) + deepPropValueHashCode(element);
+                h = (31 * h) + N.deepHashCode(element);
             }
 
             return h;

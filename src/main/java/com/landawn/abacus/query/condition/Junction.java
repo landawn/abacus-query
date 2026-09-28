@@ -172,7 +172,7 @@ public class Junction extends ComposableCondition {
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     public Junction(final Operator operator, final Condition... conditions) {
         super(operator);
@@ -213,7 +213,7 @@ public class Junction extends ComposableCondition {
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
      *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
-     *             or a blank {@link SqlExpression}
+     *             or a blank or comment-only {@link SqlExpression}
      */
     public Junction(final Operator operator, final Collection<? extends Condition> conditions) {
         super(operator);
@@ -266,7 +266,7 @@ public class Junction extends ComposableCondition {
      * @throws IllegalArgumentException if any element is {@code null}, or is or contains a non-predicate
      *         component (a {@link Criteria}, a clause, an {@code ON}/{@code USING} connector, an
      *         {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
-     *         or a blank {@link SqlExpression})
+     *         or a blank or comment-only {@link SqlExpression})
      */
     private static List<Condition> validateAndCopy(final Collection<? extends Condition> conditions) {
         if (N.isEmpty(conditions)) {
@@ -297,7 +297,7 @@ public class Junction extends ComposableCondition {
     /**
      * Validates a single constructor operand: it must be non-{@code null} and must not be or contain a
      * non-predicate component (a {@link Criteria}, a clause, an {@code ON}/{@code USING} connector, a
-     * quantified {@code ALL}/{@code ANY}/{@code SOME} operand, a standalone {@link SubQuery}, or a blank
+     * quantified {@code ALL}/{@code ANY}/{@code SOME} operand, a standalone {@link SubQuery}, or a blank or comment-only
      * {@link SqlExpression}). Empty junctions are complete predicates through their Boolean identities.
      *
      * @param condition the condition to validate

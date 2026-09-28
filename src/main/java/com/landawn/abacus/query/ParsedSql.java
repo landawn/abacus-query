@@ -635,6 +635,8 @@ public final class ParsedSql {
 
     /**
      * Returns the list of named parameters extracted from the SQL in order of appearance.
+     * Repeated names are retained once per binding occurrence, so {@code :id OR :id} contributes
+     * two entries named {@code id}, corresponding to the two generated JDBC placeholders.
      * The list is empty if the SQL has no named parameters, or if the SQL is not a
      * recognized data operation statement (see the class-level documentation), in which
      * case no parameter extraction is performed.
@@ -2516,6 +2518,15 @@ public final class ParsedSql {
         if (first < SUBSCRIPT_SEPARATORS.length) {
             for (final String separator : SUBSCRIPT_SEPARATORS[first]) {
                 if (token.startsWith(separator, index)) {
+                    // Match SqlParser's comment precedence: the '/' of ||/* and the first '-'
+                    // of ?-- belong to a comment opener, not to a longer operator. Consuming
+                    // them here would expose question marks inside the comment as bindings.
+                    final int after = index + separator.length();
+                    final char last = separator.charAt(separator.length() - 1);
+                    if (separator.length() > 1 && after < token.length()
+                            && (last == '-' && token.charAt(after) == '-' || last == '/' && token.charAt(after) == '*')) {
+                        continue;
+                    }
                     return separator.length();
                 }
             }

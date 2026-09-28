@@ -22,6 +22,87 @@ import com.landawn.abacus.TestBase;
 public class SqlParserTest extends TestBase {
 
     @Test
+    public void testSubscriptTokenBoundsIgnoreCommentDelimiters() {
+        for (final String expression : List.of("ARRAY[1 /* ] :ghost */ , :id]", "ARRAY[1 /* [ ' */ , :id]",
+                "ARRAY[1 -- ] ' :ghost\n, :id]", "ARRAY[1 -- [ :ghost\r\n, :id]")) {
+            final String sql = "SELECT " + expression + " FROM t";
+            assertEquals(List.of("SELECT", " ", expression, " ", "FROM", " ", "t"), SqlParser.tokenize(sql), sql);
+            assertEquals(expression, SqlParser.nextToken(sql, 7), sql);
+            assertEquals(7 + expression.length(), SqlParser.nextTokenEndIndex(sql, 7), sql);
+            assertEquals(sql.indexOf("FROM"), SqlParser.indexOfToken(sql, "FROM"), sql);
+            assertEquals(-1, SqlParser.indexOfToken(sql, ":ghost"), sql);
+        }
+    }
+
+    @Test
+    public void testChainedAndMarkerLedSubscriptCommentBounds() {
+        for (final String prefix : List.of("x[1]", "x[1] /* between */ ", "")) {
+            final String group = "[:id /* ] :ghost */]";
+            final String sql = "SELECT " + prefix + group + " FROM t";
+            final int start = sql.indexOf(group);
+            assertEquals(group, SqlParser.nextToken(sql, start), sql);
+            assertEquals(start + group.length(), SqlParser.nextTokenEndIndex(sql, start), sql);
+            assertEquals(sql.indexOf("FROM"), SqlParser.indexOfToken(sql, "FROM"), sql);
+        }
+        assertEquals(List.of("[q]", "[?]", "['a', ?]"), SqlParser.tokenize("[q][?]['a', ?]"));
+        assertEquals("[text /* ]", SqlParser.nextToken("[text /* ] rest", 0));
+    }
+
+    @Test
+    public void testTokenByTokenScanMatchesTokenizeForStandaloneBrackets() {
+        for (final String sql : List.of("SELECT [a] [b]]c], x[1] [2 /* ] */], [q] [:id /* ] */] FROM [t]",
+                "SELECT x[1] -- c\n[1 /* ] :ghost */], [a]]b] [c]\n, x[1]\n[2] FROM t", "SELECT [a x[1] [b /* ] */] FROM t",
+                "SELECT x[1] /* gap */ [2 -- ]\n], a / [b] FROM t", "SELECT [c1] [a1],\n[c2] [a2] # c\n[c3] FROM t")) {
+            final List<String> expected = SqlParser.tokenize(sql).stream().filter(token -> !token.isBlank()).toList();
+            final List<String> actual = new java.util.ArrayList<>();
+
+            for (int index = 0; index < sql.length();) {
+                final int end = SqlParser.nextTokenEndIndex(sql, index);
+                final String token = SqlParser.nextToken(sql, index);
+
+                if (token.isEmpty()) {
+                    break;
+                }
+
+                actual.add(token);
+                index = end;
+            }
+
+            assertEquals(expected, actual, sql);
+        }
+    }
+
+    @Test
+    public void testTokenByTokenScanOfBracketQuotedIdentifierListsIsLinear() {
+        // Each public nextToken call starts with a fresh lexical memo. Classifying a standalone bracket
+        // must not rescan the SQL prefix, or iterating the tokens of a bracket-heavy list is quadratic.
+        final StringBuilder sb = new StringBuilder("SELECT ");
+
+        for (int i = 0; i < 20000; i++) {
+            sb.append(i == 0 ? "" : ",\n").append("[c").append(i).append("] [a").append(i).append(']');
+        }
+
+        final String sql = sb.append(" FROM [t]").toString();
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            int count = 0;
+
+            for (int index = 0; index < sql.length();) {
+                final int end = SqlParser.nextTokenEndIndex(sql, index);
+
+                if (end <= index) {
+                    break;
+                }
+
+                count++;
+                index = end;
+            }
+
+            assertEquals(60002, count);
+        });
+    }
+
+    @Test
     public void testLeadingVerbFastPathDoesNotBypassReadClassification() {
         // Leading-verb predicates deliberately work on malformed tails; read/write gates still
         // require complete lexical structure and inspect every statement and modifying clause.

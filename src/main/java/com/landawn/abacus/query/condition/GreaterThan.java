@@ -99,7 +99,7 @@ public class GreaterThan extends Binary {
      * @param propValue the non-{@code null} literal value, explicit {@link SqlExpression}, scalar
      *                  {@link SubQuery}, or direct {@link All}/{@link Any}/{@link Some} operand to compare against
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank; {@code propValue}
-     *                                  is {@code null}, an ordinary predicate or query clause, or a blank
+     *                                  is {@code null}, an ordinary predicate or query clause, or a blank or comment-only
      *                                  {@link SqlExpression}; or if a structured subquery has a known,
      *                                  non-wildcard projection with a column count other than one; or if {@code propValue}
      *                                  is a cyclic object array

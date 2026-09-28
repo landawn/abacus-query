@@ -62,6 +62,10 @@ import com.landawn.abacus.util.Strings;
  * their projection width is left to the database. This check does not determine how many rows a
  * subquery returns.</p>
  *
+ * <p>A structured subquery treats a blank expression filter as absent. A nonblank expression
+ * containing only SQL comments is rejected, because rendering it would leave a WHERE clause
+ * without a predicate.</p>
+ *
  * <p>Use {@link Filters#in(Collection, SubQuery)} or {@link Filters#notIn(Collection, SubQuery)} to
  * compare multiple properties with a matching multi-column projection. These tuple membership APIs
  * require one selected column per compared property. When only row existence matters, use

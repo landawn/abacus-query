@@ -159,7 +159,7 @@ public class LeftJoin extends Join {
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public LeftJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.LEFT_JOIN, joinEntity, joinCondition);
@@ -194,7 +194,7 @@ public class LeftJoin extends Join {
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.LEFT_JOIN, joinEntities, joinCondition);

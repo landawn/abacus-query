@@ -2160,14 +2160,11 @@ public class SqlExpression extends ComposableCondition {
      * Function names, quoted strings (including prefixed literals such as {@code N'text'}), delimited
      * identifiers ({@code "name"}, {@code `name`}, {@code [name]}, including the delimited part of a qualified
      * name such as {@code t."firstName"}, whose unquoted qualifier is still converted), SQL
-     * variables (such as {@code @name}), parameter placeholders written compactly ({@code ?},
-     * {@code :name}, {@code #{name}}, {@code ${name}}), and numeric literals are left unchanged.
-     * A {@code #{...}} or {@code ${...}} marker that contains internal whitespace or MyBatis attributes
-     * is <b>not</b> protected: its content is tokenized like ordinary SQL, so the bind name itself is
-     * converted and the rendered statement refers to a different parameter — under
-     * {@link NamingPolicy#SNAKE_CASE}, {@code #{ firstName }} becomes {@code #{ first_name }} and
-     * {@code #{firstName, jdbcType=VARCHAR}} becomes {@code #{firstName, jdbc_type=varchar}}. Write such
-     * markers without inner spaces, or keep them out of an expression literal. Recognized SQL
+     * variables (such as {@code @name}), parameter placeholders ({@code ?}, {@code :name},
+     * {@code #{name}}, {@code ${name}}), and numeric literals are left unchanged by the naming policy.
+     * Bind names and MyBatis attributes inside a {@code #{...}} or {@code ${...}} marker are also
+     * protected when the marker contains whitespace; tokenization can still normalize whitespace
+     * runs. A marker without a closing {@code '}'} is not a binding and is converted like ordinary SQL. Recognized SQL
      * keyword tokens are also left unchanged when written in their canonical upper-case form
      * (for example {@code CURRENT_DATE}); a lower-case token is treated as an identifier and
      * converted. Leading and trailing underscore runs of an identifier are preserved and only the
@@ -2180,9 +2177,11 @@ public class SqlExpression extends ComposableCondition {
      * the {@code #{...}}, {@code #>}, {@code #>>} and {@code #-} forms, a {@code #} and the rest of the
      * line are dropped, so PostgreSQL's {@code #} bitwise-XOR operator cannot be used inside an
      * expression literal. An expression whose whole text is consumed this way renders as the empty
-     * string, which silently leaves a dangling clause instead of a filter: a {@code Where} (or {@code On},
-     * or a builder {@code where(...)}) over {@code SqlExpression.of("#tmp.id = x.id")} renders as
-     * {@code WHERE} with no predicate at all.
+     * string. Standard predicate and scalar-value constructors reject unambiguous comment-only
+     * expressions, such as {@code -- comment} or {@code # comment}. A leading
+     * {@code #name} or {@code ##name} is retained during construction because it can reference a
+     * SQL Server temporary table; use a SQL Server query builder to render that form, since this
+     * dialect-neutral rendering still treats it as a hash comment.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2236,8 +2235,18 @@ public class SqlExpression extends ComposableCondition {
 
         try {
             String word = null;
+            boolean inBracedPlaceholder = false;
             for (int i = 0, len = words.size(); i < len; i++) {
                 word = words.get(i);
+
+                // The SQL tokenizer can split MyBatis bind names and attributes at spaces or operators.
+                // Keep the entire marker out of identifier conversion, then resume with the next SQL token.
+                // An unterminated marker is not a binding, so the rest of the expression is converted normally.
+                if (inBracedPlaceholder || ((word.startsWith("#{") || word.startsWith("${")) && closesBracedPlaceholder(words, i))) {
+                    sb.append(word);
+                    inBracedPlaceholder = !isBracedPlaceholderEnd(word);
+                    continue;
+                }
 
                 if (word.isEmpty() || !isIdentifierStart(word.charAt(0)) || SqlParser.isFunctionName(words, i) || isSqlKeyword(word)
                         || containsQuotedLiteral(word) || isSqlVariable(words, i)) {
@@ -2250,6 +2259,35 @@ public class SqlExpression extends ComposableCondition {
         } finally {
             Objectory.recycle(sb);
         }
+    }
+
+    /**
+     * Returns whether {@code word} closes a braced MyBatis marker: it contains a {@code '}'} and is not a
+     * quoted literal. Mirrors the builder's raw-expression rendering path.
+     *
+     * @param word the token to check
+     * @return {@code true} if {@code word} ends a {@code #{...}} or {@code ${...}} marker
+     */
+    private static boolean isBracedPlaceholderEnd(final String word) {
+        return word.indexOf('}') >= 0 && !word.startsWith("'") && !word.startsWith("\"");
+    }
+
+    /**
+     * Returns whether the braced marker opened by the token at {@code start} is closed by that token or a
+     * later one.
+     *
+     * @param words the parsed tokens of the expression literal
+     * @param start the index of the token opening the marker
+     * @return {@code true} if a closing token exists
+     */
+    private static boolean closesBracedPlaceholder(final List<String> words, final int start) {
+        for (int i = start, len = words.size(); i < len; i++) {
+            if (isBracedPlaceholderEnd(words.get(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

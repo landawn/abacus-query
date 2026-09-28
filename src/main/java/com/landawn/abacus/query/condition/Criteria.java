@@ -1044,7 +1044,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder join(final String joinEntity, final Condition joinCondition) {
             addConditions(new Join(joinEntity, joinCondition));
@@ -1078,7 +1078,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
          *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-         *                                  or a blank {@link SqlExpression}
+         *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder join(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new Join(joinEntities, joinCondition));
@@ -1140,7 +1140,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder innerJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new InnerJoin(joinEntity, joinCondition));
@@ -1173,7 +1173,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
          *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-         *                                  or a blank {@link SqlExpression}
+         *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder innerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new InnerJoin(joinEntities, joinCondition));
@@ -1234,7 +1234,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder leftJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new LeftJoin(joinEntity, joinCondition));
@@ -1267,7 +1267,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
          *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-         *                                  or a blank {@link SqlExpression}
+         *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder leftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new LeftJoin(joinEntities, joinCondition));
@@ -1328,7 +1328,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder rightJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new RightJoin(joinEntity, joinCondition));
@@ -1361,7 +1361,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
          *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-         *                                  or a blank {@link SqlExpression}
+         *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder rightJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new RightJoin(joinEntities, joinCondition));
@@ -1422,7 +1422,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder fullJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new FullJoin(joinEntity, joinCondition));
@@ -1455,7 +1455,7 @@ public class Criteria extends AbstractCondition {
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
          *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
-         *                                  or a blank {@link SqlExpression}
+         *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder fullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
             addConditions(new FullJoin(joinEntities, joinCondition));
@@ -1575,7 +1575,7 @@ public class Criteria extends AbstractCondition {
          *             {@link Operator#WHERE} it is added directly, otherwise it is wrapped in a {@link Where}
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
-         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
+         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank or comment-only
          *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, reports a {@code null} operator,
          *                                  reports the {@code WHERE} operator without being a {@link Where}, or is a clause condition
@@ -1796,7 +1796,7 @@ public class Criteria extends AbstractCondition {
          *             {@link Operator#GROUP_BY} it is added directly, otherwise it is wrapped in a {@link GroupBy}
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
-         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
+         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank or comment-only
          *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, reports a {@code null} operator,
          *                                  reports the {@code GROUP_BY} operator without being a {@link GroupBy}, or is a clause condition
@@ -2052,7 +2052,7 @@ public class Criteria extends AbstractCondition {
          *             {@link Operator#HAVING} it is added directly, otherwise it is wrapped in a {@link Having}
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
-         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
+         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank or comment-only
          *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, reports a {@code null} operator,
          *                                  reports the {@code HAVING} operator without being a {@link Having}, or is a clause condition
@@ -2279,7 +2279,7 @@ public class Criteria extends AbstractCondition {
          *             {@link Operator#ORDER_BY} it is added directly, otherwise it is wrapped in an {@link OrderBy}
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code condition} is {@code null}, is a {@link Criteria},
-         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank
+         *                                  uses {@code ON}/{@code USING}, is an empty predicate (a blank or comment-only
          *                                  {@link SqlExpression}), is an {@code ANY}/{@code ALL}/{@code SOME}
          *                                  quantified operand, is a standalone {@link SubQuery}, reports a {@code null} operator,
          *                                  reports the {@code ORDER_BY} operator without being an {@link OrderBy}, or is a clause condition
@@ -2782,7 +2782,7 @@ public class Criteria extends AbstractCondition {
          *         is a nested {@link Criteria}, uses an
          *         {@code ON}/{@code USING} operator, is an {@code ANY}/{@code ALL}/{@code SOME} quantified operand,
          *         is a standalone {@link SubQuery},
-         *         is an empty predicate (a blank {@link SqlExpression}), reports a routed
+         *         is an empty predicate (a blank or comment-only {@link SqlExpression}), reports a routed
          *         operator without being the corresponding clause type, or is a clause condition that cannot be
          *         routed: an {@link SqlExpression} whose literal begins with a clause keyword (for example
          *         {@code LIMIT 10}), or a non-{@link Join} condition reporting a JOIN, {@code OFFSET}, or

@@ -27,9 +27,9 @@ package com.landawn.abacus.query;
  * of typos when the same name is referenced across many call sites.</p>
  *
  * <p><b>Contract:</b> each constant's name and its string value are identical, and both must equal
- * the declared name of the method parameter it validates. Renaming a method parameter therefore
- * requires renaming the corresponding constant (and its value) in the same change, and vice versa,
- * so the three names never drift apart.</p>
+ * the declared name of the method parameter it validates. When a parameter is renamed, update its
+ * validation calls to use the constant matching the new name, adding one if needed. Keep the old
+ * constant while other parameters still use that name.</p>
  *
  * <p>The constants are primarily used in:</p>
  * <ul>

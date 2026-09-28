@@ -103,7 +103,7 @@ public class NotLike extends Binary {
      *                  {@code _} to match a single character.
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or
      *                                  {@code propValue} is {@code null}, an ordinary predicate or query
-     *                                  clause, a blank {@link SqlExpression}, or a quantified {@link All}/{@link Any}/{@link Some} operand;
+     *                                  clause, a blank or comment-only {@link SqlExpression}, or a quantified {@link All}/{@link Any}/{@link Some} operand;
      *                                  or if a structured subquery has a known, non-wildcard projection with a column count other than one;
      *                                  or if {@code propValue} is a cyclic object array
      */

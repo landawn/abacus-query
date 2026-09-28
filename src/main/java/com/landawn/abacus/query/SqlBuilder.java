@@ -171,7 +171,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @throws IllegalStateException if this builder is closed, a structured subquery is incomplete or contains duplicate or
      *         out-of-order clauses, or a named-parameter handler emits an empty token under {@code NAMED_SQL}
      * @throws IllegalArgumentException if {@code cond} is {@code null} or an unsupported condition type; if a rendered column
-     *         name contains a SQL comment token; if a {@link SqlExpression} is blank; if a {@link Using} condition
+     *         name contains a SQL comment token; if a {@link SqlExpression} is blank or contains only comments under this
+     *         builder's tokenizer (for example a leading {@code #name}, which is a hash comment outside SQL Server
+     *         dialects); if a {@link Using} condition
      *         renders a table- or schema-qualified column name; if a
      *         structured {@link SubQuery} (one not defined by raw SQL) has no selected property/column names;
      *         or if, under {@code NAMED_SQL}/{@code IBATIS_SQL}/{@code RAW_SQL}, the positional placeholder count

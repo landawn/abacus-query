@@ -1004,7 +1004,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Gets the sub-entity property names for the specified entity class.
-     * Sub-entity properties are properties that represent related entities.
+     * Sub-entity properties represent related entities and must remain included by the parent
+     * entity's column mapping ({@code @NonColumn}, transient properties, and {@code @Table}
+     * column inclusion/exclusion lists are respected).
      *
      * @param entityClass the entity class
      * @return an immutable set of sub-entity property names
@@ -1022,6 +1024,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (subEntityPropNames == null) {
                     final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
                     final Set<String> subEntityPropNameSet = N.newLinkedHashSet(entityInfo.subEntityPropNameList);
+                    final Table table = entityClass.getAnnotation(Table.class);
+                    final Set<String> columnFields = table == null ? N.emptySet() : N.toSet(table.columnFields());
+                    final Set<String> nonColumnFields = table == null ? N.emptySet() : N.toSet(table.nonColumnFields());
+
+                    // Filter roots before either projection expansion or FROM-table discovery. Removing a
+                    // root after expansion cannot remove its child.column entries or the extra Cartesian table.
+                    subEntityPropNameSet.removeIf(name -> QueryUtil.isNonColumn(columnFields, nonColumnFields, entityInfo.getPropInfo(name)));
                     subEntityPropNames = ImmutableSet.wrap(subEntityPropNameSet);
 
                     subEntityPropNamesPool.put(entityClass, subEntityPropNames);
@@ -2084,7 +2093,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return the validated predicate condition
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or
      *         is/contains a {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
-     *         connector, quantified-subquery operand, or blank {@link SqlExpression}. An empty {@link com.landawn.abacus.query.condition.Junction} is
+     *         connector, quantified-subquery operand, or blank or comment-only {@link SqlExpression}. An empty {@link com.landawn.abacus.query.condition.Junction} is
      *         accepted and renders its Boolean identity (for example {@code 1 = 1})
      */
     private static Condition validatePredicateCondition(final Condition condition) {
@@ -2856,14 +2865,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return index;
     }
 
-    /** Reports whether {@code ch} can be part of a bare alias identifier (letter, digit, {@code _}, {@code $}, {@code #}, or {@code @}). */
+    /** Reports whether {@code ch} belongs to a bare alias, including non-ASCII text as in mapped column identifiers. */
     private static boolean isAliasIdentifierChar(final char ch) {
-        return ch == '_' || ch == '$' || ch == '#' || ch == '@' || Character.isLetterOrDigit(ch);
+        // Preserve combining marks and both halves of supplementary characters while finding token
+        // boundaries; this scanner identifies aliases, rather than validating a database's identifier grammar.
+        // Unicode whitespace (e.g. U+3000) still separates tokens, matching the alias scanner's trivia rule.
+        return (ch >= 0x80 && !Character.isWhitespace(ch)) || ch == '_' || ch == '$' || ch == '#' || ch == '@' || Character.isLetterOrDigit(ch);
     }
 
     /**
      * Reports whether {@code index} is at a keyword boundary: out of range, or not inside an identifier
-     * or qualified name (the character is not a letter, digit, dot, {@code _}, or {@code $}).
+     * or qualified name (the character is neither an alias-identifier character nor a dot).
      */
     private static boolean isAliasKeywordBoundary(final String sqlFragment, final int index) {
         if (index < 0 || index >= sqlFragment.length()) {
@@ -2871,7 +2883,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         final char ch = sqlFragment.charAt(index);
-        return ch != '.' && ch != '_' && ch != '$' && !Character.isLetterOrDigit(ch);
+        return ch != '.' && !isAliasIdentifierChar(ch);
     }
 
     /**
@@ -3000,7 +3012,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Shared implementation for the entity-class {@code *Join(Class, alias)} overloads: registers the
      * alias-to-column mapping (when an alias is given), appends the join keyword, then appends the
-     * table name (optionally followed by the alias).
+     * table name (optionally followed by the alias). Mapping keys use the actual alias token,
+     * excluding surrounding whitespace and an optional {@code AS} keyword.
      *
      * @param joinKeyword the leading join keyword token (e.g. {@link #_SPACE_LEFT_JOIN_SPACE})
      * @param entityClass the entity class to join
@@ -3020,18 +3033,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         // Resolve the table name (which rejects a non-bean class) before any builder state is changed.
         final String tableName = getTableName(entityClass, _namingPolicy);
+        final String tableReference = Strings.isNotEmpty(alias) ? tableName + " " + alias : tableName;
 
         if (Strings.isNotEmpty(alias)) {
-            addPropColumnMapForAlias(entityClass, alias);
+            // Match FROM's alias extraction: SQL accepts padding and AS before the alias, but those
+            // characters must not become part of the lookup key for a later alias.property reference.
+            final TopLevelAlias parsedAlias = findTopLevelAlias(tableReference, false);
+            if (parsedAlias != null) {
+                addPropColumnMapForAlias(entityClass, tableReference.substring(parsedAlias.aliasStart(), parsedAlias.aliasEnd()));
+            }
         }
 
         _sb.append(joinKeyword);
-
-        if (Strings.isNotEmpty(alias)) {
-            _sb.append(tableName).append(" ").append(alias);
-        } else {
-            _sb.append(tableName);
-        }
+        _sb.append(tableReference);
 
         _joinConditionAllowed = joinKeyword != _SPACE_CROSS_JOIN_SPACE && joinKeyword != _SPACE_NATURAL_JOIN_SPACE;
 
@@ -3521,12 +3535,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id
      * }</pre>
      *
-     * @param expr the join condition expression (must not be {@code null}, empty, or blank)
+     * @param expr the join condition expression (must not be {@code null}, empty, blank, or comment-only)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, if there is no immediately preceding JOIN that accepts an
      *         {@code ON}/{@code USING} connector, or if a completed set-operation operand or a later clause (WHERE,
      *         GROUP BY, HAVING, ORDER BY, pagination, FOR UPDATE) has already been emitted
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or, on a SQL Server dialect, contains a
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or, on a SQL Server dialect, contains a
      *                                  temporary-table identifier ({@code #name}) together with a SQL comment token
      */
     public This on(final String expr) {
@@ -3569,8 +3583,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if there is no immediately preceding JOIN that accepts an
      *         {@code ON}/{@code USING} connector, or if a completed set-operation operand or a later clause (WHERE,
      *         GROUP BY, HAVING, ORDER BY, pagination, FOR UPDATE) has already been emitted
-     * @throws IllegalArgumentException if {@code exprs} is {@code null} or empty, or contains a {@code null}, empty, or blank element,
-     *                                  or, on a SQL Server dialect, an element that contains a temporary-table identifier
+     * @throws IllegalArgumentException if {@code exprs} is {@code null} or empty, or contains a {@code null}, empty, blank, or comment-only
+     *                                  element, or, on a SQL Server dialect, an element that contains a temporary-table identifier
      *                                  ({@code #name}) together with a SQL comment token
      */
     public This on(final String... exprs) {
@@ -3622,11 +3636,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if a condition other than an explicit
      *                                  {@link On}/{@link Using} has a {@code null} operator or is/contains a {@link Criteria},
      *                                  standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING} connector,
-     *                                  quantified-subquery operand, or blank {@link SqlExpression}. An empty
+     *                                  quantified-subquery operand, or blank or comment-only {@link SqlExpression}. An empty
      *                                  {@link com.landawn.abacus.query.condition.Junction} is accepted and renders its Boolean identity (for example {@code ON 1 = 1}).
      *                                  A {@link Using} connector is rendered like {@link #using(String)}, so it is also rejected when a
      *                                  column maps to a qualified name, which {@code USING (...)} does not accept;
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception;
@@ -3845,7 +3859,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT * FROM users WHERE age > 18
      * }</pre>
      *
-     * @param expr the WHERE condition expression (must not be {@code null}, empty, or blank)
+     * @param expr the WHERE condition expression (must not be {@code null}, empty, blank, or comment-only)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, if {@code WHERE} has already been set on this builder,
      *         if a preceding qualified JOIN has not been completed with {@code on(...)}/{@code using(...)}, if this is an
@@ -3853,7 +3867,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         {@code FROM} clause yet or a completed set-operation operand has already been emitted, or if a later clause
      *         (GROUP BY, HAVING, ORDER BY, pagination, FOR UPDATE) has already been emitted;
      *         or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or, on a SQL Server dialect, contains a
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or, on a SQL Server dialect, contains a
      *                                  temporary-table identifier ({@code #name}) together with a SQL comment token;
      *         or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -3893,9 +3907,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is/contains a
      *                                  {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
-     *                                  connector, quantified-subquery operand, or blank {@link SqlExpression}. An empty
+     *                                  connector, quantified-subquery operand, or blank or comment-only {@link SqlExpression}. An empty
      *                                  {@link com.landawn.abacus.query.condition.Junction} is accepted and renders its Boolean identity (for example {@code WHERE 1 = 1});
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)};
      *         or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
@@ -4356,14 +4370,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * // Output: SELECT category, COUNT(*) AS count FROM products GROUP BY category HAVING COUNT(*) > 10
      * }</pre>
      *
-     * @param expr the HAVING condition expression (must not be {@code null}, empty, or blank)
+     * @param expr the HAVING condition expression (must not be {@code null}, empty, blank, or comment-only)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, if {@code HAVING} has already been set on this builder,
      *         if a preceding qualified JOIN has not been completed with {@code on(...)}/{@code using(...)}, if this is an
      *         INSERT VALUES, UPDATE, or DELETE statement, if the current SELECT segment has no {@code FROM} clause yet or a
      *         completed set-operation operand has already been emitted, or if a later clause (ORDER BY, pagination,
      *         FOR UPDATE) has already been emitted
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or, on a SQL Server dialect, contains a
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or, on a SQL Server dialect, contains a
      *                                  temporary-table identifier ({@code #name}) together with a SQL comment token
      */
     public This having(final String expr) {
@@ -4402,9 +4416,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or is/contains a
      *                                  {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
-     *                                  connector, quantified-subquery operand, or blank {@link SqlExpression}. An empty
+     *                                  connector, quantified-subquery operand, or blank or comment-only {@link SqlExpression}. An empty
      *                                  {@link com.landawn.abacus.query.condition.Junction} is accepted and renders its Boolean identity (for example {@code HAVING 1 = 1});
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception;
@@ -5867,7 +5881,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                                  (standalone or carried by a Criteria) is not a complete, lexically SELECT-only {@code SELECT} query,
      *                                  contains a semicolon outside quoted text or comments, or requires explicit branch isolation, or if a Criteria JOIN's {@link Using} connector
      *                                  renders a qualified column name;
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception;
@@ -6294,7 +6308,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         When the selected branch renders SQL, also if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
      * @throws IllegalArgumentException if {@code b} is {@code true} and {@code condition} is {@code null} or is rejected by
      *                                  the argument checks of {@link #append(Condition)};
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if the selected branch invokes a configured named-parameter handler that throws an unchecked exception;
@@ -6372,7 +6386,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         When the selected branch renders SQL, also if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
      * @throws IllegalArgumentException if the selected condition (the one chosen by {@code b}) is {@code null} or is
      *                                  rejected by the argument checks of {@link #append(Condition)};
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if the selected branch invokes a configured named-parameter handler that throws an unchecked exception;
@@ -8762,7 +8776,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed; or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}
      * @throws IllegalArgumentException if {@code propValue} is a {@code Float} or {@code Double} that is {@code NaN} or
      *         infinite, or another {@code Number} whose text is not a valid numeric literal;
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception;
@@ -8791,7 +8805,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param propValue the value to bind to the {@code ?} placeholder
      * @throws IllegalStateException if this builder is closed; or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}
-     * @throws IllegalArgumentException if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     * @throws IllegalArgumentException if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -8817,7 +8831,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propName the property or parameter name for the named SQL placeholder
      * @param propValue the value to bind to the named parameter
      * @throws IllegalStateException if this builder is closed; or if the named-parameter handler emits an empty token
-     * @throws IllegalArgumentException if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     * @throws IllegalArgumentException if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -9022,7 +9036,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propName the property or parameter name for the ibatis named SQL placeholder
      * @param propValue the value to bind to the ibatis named parameter
      * @throws IllegalStateException if this builder is closed; or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}
-     * @throws IllegalArgumentException if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     * @throws IllegalArgumentException if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -9201,7 +9215,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed; or under {@link SqlPolicy#NAMED_SQL} if the named-parameter handler emits an empty token
      * @throws IllegalArgumentException under {@link SqlPolicy#RAW_SQL} if {@code propValue} is a {@code Float} or
      *         {@code Double} that is {@code NaN} or infinite, or another {@code Number} whose text is not a valid numeric literal;
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -9231,7 +9245,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code props} is {@code null}; or, under {@link SqlPolicy#RAW_SQL}, if a value
      *         is a {@code Float} or {@code Double} that is {@code NaN} or infinite, or another {@code Number} whose text is
      *         not a valid numeric literal;
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -9252,7 +9266,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code props} or {@code propNames} is {@code null}; or, under
      *         {@link SqlPolicy#RAW_SQL}, if a value is a {@code Float} or {@code Double} that is {@code NaN} or infinite,
      *         or another {@code Number} whose text is not a valid numeric literal;
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -9272,7 +9286,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalArgumentException if {@code props} or {@code propNames} is {@code null}; or, under
      *         {@link SqlPolicy#RAW_SQL}, if a value is a {@code Float} or {@code Double} that is {@code NaN} or infinite,
      *         or another {@code Number} whose text is not a valid numeric literal;
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -9300,7 +9314,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, a structured subquery is incomplete or contains duplicate or
      *         out-of-order clauses, or a named-parameter handler emits an empty token under {@code NAMED_SQL}
      * @throws IllegalArgumentException if {@code cond} is {@code null};
-     *         or if a rendered condition type is unsupported, a column or expression is blank or unsafe,
+     *         or if a rendered condition type is unsupported, a column or expression is blank, comment-only, or unsafe,
      *         a USING column is qualified, a structured subquery has no projection, a subquery parameter policy is
      *         incompatible, raw subquery bindings cannot be matched to their placeholders, or a RAW_SQL number is non-finite
      *         or has text that is not a decimal SQL literal
@@ -9317,7 +9331,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param cond the condition to append; must not be {@code null}
      * @throws IllegalStateException if this builder is closed; or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}
      * @throws IllegalArgumentException if {@code cond} is {@code null} (rejected by {@link #appendCondition(Condition)});
-     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment,
+     *         or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression,
      *         an incompatible subquery parameter policy, or an invalid raw numeric literal; see {@link #appendCondition(Condition)}.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      * @throws RuntimeException if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
@@ -9336,6 +9350,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Appends a string expression to the SQL string builder, normalizing column names according to the current naming policy.
      * Simple alphanumeric column names are normalized directly; complex expressions are parsed and each identifier is normalized individually.
+     * Binding names and attributes inside a closed braced MyBatis marker ({@code #{...}} or {@code ${...}})
+     * remain unchanged by the naming policy; an unterminated marker is converted like ordinary SQL.
      * A SQL Server expression containing a local or global temporary-table identifier ({@code #name} or
      * {@code ##name}) is emitted verbatim after comment validation, because a dialect-neutral tokenizer
      * otherwise has to interpret a context-free {@code #name} as a MySQL hash comment.
@@ -9344,7 +9360,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param isFromAppendColumn {@code true} if the expression originates from an append-column call (applies stricter validation and naming policy conversion),
      *                           {@code false} otherwise
      * @throws IllegalStateException if this builder is closed
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code expr} contains a SQL comment token and either
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or contains only comments, or if {@code expr} contains a SQL comment token and either
      *                                  {@code isFromAppendColumn} is {@code true} or {@code expr} contains a SQL Server temporary-table identifier
      */
     protected void appendStringExpr(final String expr, final boolean isFromAppendColumn) {
@@ -9384,9 +9400,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final List<String> words = _tokenizer.tokenize(expr);
 
+        if (!containsSqlToken(words)) {
+            throw new IllegalArgumentException("SQL expression must contain more than comments: " + expr);
+        }
+
         String word = null;
+        boolean inBracedPlaceholder = false;
         for (int i = 0, len = words.size(); i < len; i++) {
             word = words.get(i);
+
+            // A MyBatis marker can span several tokenizer words. Its binding name and options are
+            // application metadata, so preserve them while converting the surrounding SQL identifiers.
+            // An unterminated marker is not a binding, so the rest of the expression is converted normally.
+            if (inBracedPlaceholder || ((word.startsWith("#{") || word.startsWith("${")) && closesBracedPlaceholder(words, i))) {
+                _sb.append(word);
+                inBracedPlaceholder = !isBracedPlaceholderEnd(word);
+                continue;
+            }
 
             if (word.isEmpty() || !isIdentifierStart(word.charAt(0)) || SqlParser.isFunctionName(words, i) || containsQuotedLiteral(word)
                     || isSqlVariable(words, i)) {
@@ -9395,6 +9425,36 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(normalizeColumnName(_propColumnNameMap, word));
             }
         }
+    }
+
+    /**
+     * Reports whether a tokenized expression contains a token other than whitespace or a block comment
+     * retained under the {@code "-- Keep comments"} marker.
+     */
+    private static boolean containsSqlToken(final List<String> words) {
+        for (final String word : words) {
+            if (!word.isBlank() && !word.startsWith("/*")) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Reports whether {@code word} closes a braced MyBatis marker: it contains a '}' and is not a quoted literal. */
+    private static boolean isBracedPlaceholderEnd(final String word) {
+        return word.indexOf('}') >= 0 && !word.startsWith("'") && !word.startsWith("\"");
+    }
+
+    /** Reports whether the braced marker opened by the word at {@code start} is closed by that word or a later one. */
+    private static boolean closesBracedPlaceholder(final List<String> words, final int start) {
+        for (int i = start, len = words.size(); i < len; i++) {
+            if (isBracedPlaceholderEnd(words.get(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Same ASCII identifier shape as the short-expression fast path, without a Matcher allocation. */
@@ -9618,7 +9678,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Appends a column name to the SQL string builder with full control over aliasing, table prefix, and sub-entity expansion.
      * A mapped column that already includes a qualifier is emitted as-is; table aliases and sub-entity
      * table names are prefixed only to unqualified mappings. Explicit SELECT aliases are honored under
-     * every naming policy, including {@link NamingPolicy#NO_CHANGE}.
+     * every naming policy, including {@link NamingPolicy#NO_CHANGE}. Expanding a sub-entity root
+     * retains the result class alias on every expanded property.
      *
      * @param entityClass the entity class for resolving sub-entity properties
      * @param entityInfo the bean info for the entity class, or {@code null}
@@ -9679,6 +9740,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                         if (quotePropAlias) {
                             _sb.append(_identifierQuote);
+                        }
+
+                        // Root expansion must use the same result path as selecting child.property
+                        // explicitly, so the enclosing Selection's class alias is not lost.
+                        if (withClassAlias) {
+                            _sb.append(classAlias).append(SK._PERIOD);
                         }
 
                         _sb.append(propInfo.name).append(SK._PERIOD).append(subPropName);
@@ -10359,13 +10426,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     final Class<?> entityClass = selection.entityClass();
                     final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
                             : QueryUtil.selectPropNames(entityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
-                    final Set<String> subEntityPropNames = getSubEntityPropNames(entityClass);
+                    final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+                    // An explicitly selected sub-entity root is expanded by appendColumnName even when the parent's
+                    // column mapping excludes it from default projections, so its table must still be listed here.
+                    final Collection<String> subEntityPropNames = N.notEmpty(selection.includedPropNames()) ? entityInfo.subEntityPropNameList
+                            : getSubEntityPropNames(entityClass);
 
                     if (N.isEmpty(subEntityPropNames)) {
                         continue;
                     }
 
-                    final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
                     PropInfo propInfo = null;
                     Class<?> subEntityClass = null;
 

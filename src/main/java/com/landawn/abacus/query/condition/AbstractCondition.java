@@ -384,7 +384,7 @@ public abstract class AbstractCondition implements Condition {
      * Tests whether a condition tree contains a component that cannot stand as a SQL predicate.
      * In addition to checking the root, this method descends into junctions and unary wrappers so
      * custom {@link Cell} and {@link ComposableCell} subclasses cannot hide a clause, join connector,
-     * quantified-subquery operand, standalone {@link SubQuery}, blank {@link SqlExpression}, {@link Criteria},
+     * quantified-subquery operand, standalone {@link SubQuery}, blank or comment-only {@link SqlExpression}, {@link Criteria},
      * or null operator. {@link Exists} and {@link NotExists} are complete predicates, so their
      * necessarily wrapped subqueries are not treated as standalone operands. Empty junctions are
      * complete predicates through their Boolean identities ({@code 1 = 1} / {@code 1 = 0}) and are accepted.
@@ -432,8 +432,8 @@ public abstract class AbstractCondition implements Condition {
      * {@link SqlExpression}, a scalar {@link SubQuery}, and a direct quantified
      * {@link All}/{@link Any}/{@link Some} operand. Quantified operands require additional
      * context-specific validation by the caller. A raw {@code SqlExpression} is accepted verbatim;
-     * callers choosing that escape hatch remain responsible for its SQL. A blank {@code SqlExpression}
-     * (an empty or whitespace-only literal) is rejected because it would render a truncated comparison
+     * callers choosing that escape hatch remain responsible for its SQL. A blank or comment-only
+     * {@code SqlExpression} is rejected because it would render a truncated comparison
      * such as {@code a = }.</p>
      *
      * <p>Each scalar position requires a single-column subquery, including comparison operands,
@@ -449,7 +449,7 @@ public abstract class AbstractCondition implements Condition {
      * @param operand the value-position operand to validate; may be {@code null} or a non-condition value
      * @param argumentName the argument name used in an exception message
      * @return {@code operand}, unchanged
-     * @throws IllegalArgumentException if a condition operand is not a supported scalar SQL expression, or is a blank
+     * @throws IllegalArgumentException if a condition operand is not a supported scalar SQL expression, or is a blank or comment-only
      *                                  {@link SqlExpression}, or a structured subquery has a known projection arity other than one
      */
     protected static <T> T validateValueOperand(final T operand, final String argumentName) {
@@ -460,8 +460,16 @@ public abstract class AbstractCondition implements Condition {
                     + "ALL/ANY/SOME operand, not a predicate or query clause: " + condition.getClass().getName());
         }
 
-        if (operand instanceof SqlExpression && Strings.isBlank(((SqlExpression) operand).literal())) {
-            throw new IllegalArgumentException(argumentName + " must not be a blank SqlExpression");
+        if (operand instanceof SqlExpression) {
+            final String literal = ((SqlExpression) operand).literal();
+
+            if (Strings.isBlank(literal)) {
+                throw new IllegalArgumentException(argumentName + " must not be a blank SqlExpression");
+            }
+
+            if (isEmptyLiteral(literal)) {
+                throw new IllegalArgumentException(argumentName + " must not be a comment-only SqlExpression");
+            }
         }
 
         if (operand instanceof SubQuery) {
@@ -534,7 +542,7 @@ public abstract class AbstractCondition implements Condition {
      * @return {@code operand}, unchanged
      * @throws IllegalArgumentException if {@code operand} is a condition other than a {@link SqlExpression} or
      *                                  {@link SubQuery} (including an {@code ALL}/{@code ANY}/{@code SOME} quantified
-     *                                  operand), is a blank {@link SqlExpression}, or is a structured subquery whose
+     *                                  operand), is a blank or comment-only {@link SqlExpression}, or is a structured subquery whose
      *                                  known projection arity is not one
      */
     protected static <T> T validateNonQuantifiedValueOperand(final T operand, final String argumentName) {
@@ -560,7 +568,7 @@ public abstract class AbstractCondition implements Condition {
      * @param argumentName the argument name used as the prefix in an exception message
      * @throws IllegalArgumentException if {@code values} is {@code null}, or if any element is a condition other than a {@link SqlExpression} or
      *                                  {@link SubQuery} (including an {@code ALL}/{@code ANY}/{@code SOME} quantified
-     *                                  operand), is a blank {@link SqlExpression}, or is a structured subquery whose
+     *                                  operand), is a blank or comment-only {@link SqlExpression}, or is a structured subquery whose
      *                                  known projection arity is not one
      */
     protected static void validateNonQuantifiedValueOperands(final Collection<?> values, final String argumentName) {
@@ -1106,23 +1114,56 @@ public abstract class AbstractCondition implements Condition {
     /**
      * Tests whether the given condition is an "empty predicate" — a condition that carries no actual
      * filtering logic and therefore cannot meaningfully participate in composition, clauses, or joins.
-     * Specifically, this is a blank {@link SqlExpression} (an empty or whitespace-only literal).
+     * Specifically, this is a {@link SqlExpression} whose literal is blank or contains only SQL
+     * comments and whitespace, so tokenization produces no operand.
+     * A leading {@code #name} or {@code ##name} is ambiguous without a dialect and is retained
+     * because it can reference a SQL Server temporary table; the SQL Server query builders render it
+     * verbatim, while other dialects reject it when rendering. A {@code #name} that follows a comment
+     * is not retained, because SQL Server builders reject a temporary-table expression containing a
+     * comment token.
      * An empty {@link Junction} is <em>not</em> an empty predicate: it renders as its Boolean identity
      * ({@code 1 = 1} for AND, {@code 1 = 0} for OR) and is therefore a complete predicate.
      *
      * @param cond the condition to test (may be {@code null})
-     * @return {@code true} if {@code cond} is a blank {@link SqlExpression};
+     * @return {@code true} if {@code cond} is a blank or comment-only {@link SqlExpression};
      *         {@code false} otherwise (including for a {@code null} {@code cond})
      */
     protected static boolean isEmptyPredicate(final Condition cond) {
-        return cond instanceof SqlExpression && Strings.isBlank(((SqlExpression) cond).literal());
+        return cond instanceof SqlExpression && isEmptyLiteral(((SqlExpression) cond).literal());
+    }
+
+    /** Implements {@link #isEmptyPredicate(Condition)} for an expression literal. */
+    private static boolean isEmptyLiteral(final String literal) {
+        if (Strings.isBlank(literal)) {
+            return true;
+        }
+
+        if (!SqlParser.nextToken(literal, 0).isEmpty()) {
+            return false;
+        }
+
+        final String leading = literal.stripLeading();
+        if (leading.startsWith("#")) {
+            final int nameStart = leading.startsWith("##") ? 2 : 1;
+            // Same name-character rule as the SQL Server builders' temporary-identifier detection.
+            if (nameStart < leading.length() && isTemporaryTableNameChar(leading.charAt(nameStart))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** Mirrors the query builders' SQL Server temporary-identifier name characters (including non-ASCII text). */
+    private static boolean isTemporaryTableNameChar(final char ch) {
+        return (ch >= 0x80 && !Character.isWhitespace(ch)) || ch == '_' || ch == '$' || ch == '#' || ch == '@' || Character.isLetterOrDigit(ch);
     }
 
     /**
      * Validates that the given condition is a valid operand for composable operations (AND, OR, NOT, XOR).
      * Conditions that are or recursively contain a {@link Criteria}, a standalone {@link SubQuery}, a SQL clause (WHERE, ORDER BY, etc.), an
      * {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     * a blank {@link SqlExpression}, or a {@code null} operator
+     * a blank or comment-only {@link SqlExpression}, or a {@code null} operator
      * (including a {@code null} {@code cond}) cannot participate in logical composition. An empty
      * {@link Junction} is accepted: it composes through its Boolean identity ({@code 1 = 1} / {@code 1 = 0}).
      *
@@ -1143,7 +1184,7 @@ public abstract class AbstractCondition implements Condition {
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or is or recursively contains a condition
      *                                  with a {@code null} operator, a {@link Criteria}, a standalone {@link SubQuery}, a SQL clause, an
      *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  or a blank {@link SqlExpression}
+     *                                  or a blank or comment-only {@link SqlExpression}
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
         N.checkArgNotNull(cond, cs.condition);

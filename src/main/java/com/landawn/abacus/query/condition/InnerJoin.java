@@ -169,7 +169,7 @@ public class InnerJoin extends Join {
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public InnerJoin(final String joinEntity, final Condition joinCondition) {
         super(Operator.INNER_JOIN, joinEntity, joinCondition);
@@ -211,7 +211,7 @@ public class InnerJoin extends Join {
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     *                                  a standalone {@link SubQuery}, or a blank {@link SqlExpression}
+     *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
         super(Operator.INNER_JOIN, joinEntities, joinCondition);

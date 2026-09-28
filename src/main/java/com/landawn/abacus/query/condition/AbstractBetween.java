@@ -104,7 +104,7 @@ public abstract class AbstractBetween extends ComposableCondition {
      * @throws IllegalArgumentException if {@code operator} is {@code null} or is neither {@link Operator#BETWEEN} nor {@link Operator#NOT_BETWEEN},
      *                                  if {@code propName} is {@code null}, empty, or blank,
      *                                  if either bound is {@code null}, an ordinary predicate or query clause,
-     *                                  a blank {@link SqlExpression}, an {@link All}, {@link Any}, or {@link Some}
+     *                                  a blank or comment-only {@link SqlExpression}, an {@link All}, {@link Any}, or {@link Some}
      *                                  quantified operand, or a scalar {@link SubQuery} with a known, non-wildcard
      *                                  projection containing multiple columns, or if either bound is a cyclic object array
      */

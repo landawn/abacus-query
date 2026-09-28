@@ -44,7 +44,7 @@ import com.landawn.abacus.util.u.Optional;
  * parameter, identifier-quoting, database-product, named-parameter-rendering, and tokenizer settings.
  *
  * <p>
- * DSL = a specialized language/API for expressing one kind of task clearly
+ * DSL stands for domain-specific language; this class provides the statement factories for the SQL DSL.
  * </p>
  *
  * <p>Each predefined constant on this class (e.g. {@link #PSC}, {@link #NSC}, {@link #SCSB}) is a
@@ -1402,6 +1402,10 @@ public final class Dsl {
      * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
      * no relationship or join predicate is inferred.</p>
      *
+     * <p>A sub-entity property is included only when the parent entity maps it: a {@code @NonColumn} or
+     * transient sub-entity, one listed in {@code @Table(nonColumnFields)}, or one missing from a non-empty
+     * {@code @Table(columnFields)} list contributes neither nested columns nor a table reference.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.selectFrom(Order.class, true)
@@ -1542,6 +1546,10 @@ public final class Dsl {
      *
      * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
      * no relationship or join predicate is inferred.</p>
+     *
+     * <p>A sub-entity property is included only when the parent entity maps it: a {@code @NonColumn} or
+     * transient sub-entity, one listed in {@code @Table(nonColumnFields)}, or one missing from a non-empty
+     * {@code @Table(columnFields)} list contributes neither nested columns nor a table reference.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1881,6 +1889,13 @@ public final class Dsl {
      * Each Selection object can have different configurations for its entity. The input list is
      * snapshotted once, and each descriptor is immutable, so the generated SELECT and FROM clauses
      * cannot observe different caller mutations.</p>
+     *
+     * <p>The generated FROM clause contains comma-separated table references, including any selected
+     * sub-entity tables. No relationship predicates are inferred; supply them explicitly to avoid
+     * returning the Cartesian product of the tables. Use {@link #select(List)} with explicit join
+     * methods when an outer join or another specific join type is needed. A sub-entity named explicitly in a
+     * selection's included property names is expanded and its table listed even when the parent's column
+     * mapping excludes it from default projections.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.annotation.Column;
+import com.landawn.abacus.annotation.Table;
 import static com.landawn.abacus.query.Dsl.*;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
@@ -3395,5 +3397,177 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         // A plain (non-compound) query keeps alias-qualified ORDER BY columns.
         assertEquals("SELECT acc.firstName FROM account acc ORDER BY acc.firstName", PSB.select("firstName").from(Account.class, "acc").orderBy("firstName").build().query());
+    }
+
+    @Test
+    public void testParentTableExclusionsApplyToExpandedChildrenAndFromTables() {
+        for (final Class<?> type : List.of(ExcludedChildParent.class, WhitelistedParent.class)) {
+            assertEquals(List.of("id"), QueryUtil.selectPropNames(type, true, null));
+            assertFalse(QueryUtil.propToColumnNameMap(type, NamingPolicy.SNAKE_CASE).containsKey("child.value"));
+            final String query = PSC.selectFrom(type, true).build().query();
+            assertFalse(query.contains("review_child"), query);
+            assertTrue(query.startsWith("SELECT id AS \"id\" FROM "), query);
+        }
+    }
+
+    @Test
+    public void testExplicitlySelectedExcludedSubEntityKeepsItsFromTable() {
+        // The explicitly selected root is still expanded, so its table must be listed in FROM.
+        assertEquals("SELECT review_child.stored_value AS \"child.value\" FROM review_parent, review_child",
+                PSC.selectFrom(Selection.builder(ExcludedChildParent.class).includedPropNames(List.of("child")).build()).build().query());
+        assertEquals("SELECT review_child.stored_value AS \"child.value\" FROM review_whitelisted_parent, review_child",
+                PSC.selectFrom(Selection.builder(WhitelistedParent.class).includedPropNames(List.of("child")).build()).build().query());
+
+        // Default projections still exclude the child and its table.
+        assertEquals("SELECT id AS \"id\" FROM review_parent",
+                PSC.selectFrom(Selection.builder(ExcludedChildParent.class).includeSubEntityProperties(true).build()).build().query());
+    }
+
+    @Test
+    public void testNonAsciiAliasCharactersRemainPartOfTheTableAlias() {
+        for (final String alias : List.of("á", "a𐐀")) {
+            final String query = PSC.select("id").from(ExcludedChildParent.class, alias).where(Filters.eq("id", 7)).build().query();
+            assertEquals("SELECT " + alias + ".id AS \"id\" FROM review_parent " + alias + " WHERE " + alias + ".id = ?", query);
+        }
+    }
+
+    @Test
+    public void testUnicodeWhitespaceIsNotPartOfTheTableAlias() {
+        for (final String space : List.of("　", " ")) {
+            final String query = PSC.select("id").from("review_parent u" + space, ExcludedChildParent.class).where(Filters.eq("u.id", 1)).build().query();
+            assertTrue(query.startsWith("SELECT u.id AS \"id\" FROM review_parent u"), query);
+            assertTrue(query.endsWith(" WHERE u.id = ?"), query);
+        }
+    }
+
+    @Test
+    public void testSelectingSubEntityRootPreservesResultClassAlias() {
+        final String root = PSC.selectFrom(Selection.builder(IncludedChildParent.class).classAlias("parent").includedPropNames(List.of("child")).build())
+                .build()
+                .query();
+        final String expanded = PSC
+                .selectFrom(Selection.builder(IncludedChildParent.class).classAlias("parent").includedPropNames(List.of("child.value")).build())
+                .build()
+                .query();
+        assertEquals(expanded, root);
+        assertTrue(root.contains("AS \"parent.child.value\""), root);
+    }
+
+    @Test
+    public void testJoinedEntityMappingsUseTheRenderedAliasToken() {
+        for (final String alias : List.of(" c ", "AS c", "AS\tc")) {
+            final String query = PSC.select("*").from("review_parent p").join(ReviewChild.class, alias).on(Filters.eq("c.value", 7)).build().query();
+            assertTrue(query.endsWith(" ON c.stored_value = ?"), query);
+        }
+    }
+
+    @Test
+    public void testMybatisBindingMetadataIsPreservedDuringExpressionConversion() {
+        final String expression = "firstName = #{ firstName, jdbcType=VARCHAR } AND lastName = ${ lastName }";
+        final String expected = "first_name = #{ firstName, jdbcType=VARCHAR } AND last_name = ${ lastName }";
+        assertEquals(expected, PSC.renderCondition(Filters.expr(expression)).build().query());
+        assertEquals("SELECT * FROM people WHERE " + expected, PSC.select("*").from("people").where(expression).build().query());
+
+        // A quoted '}' inside marker attributes does not end the marker.
+        assertEquals("SELECT * FROM people WHERE foo_bar = #{a, typeHandler='}'} AND bar_baz = 1",
+                PSC.select("*").from("people").where("fooBar = #{a, typeHandler='}'} AND barBaz = 1").build().query());
+    }
+
+    @Test
+    public void testUnterminatedMybatisMarkerDoesNotSuppressConversion() {
+        assertEquals("SELECT * FROM people WHERE foo_bar = #{ foo_bar AND bar_baz = 1",
+                PSC.select("*").from("people").where("fooBar = #{ fooBar AND barBaz = 1").build().query());
+    }
+
+    @Test
+    public void testCommentOnlyRawPredicatesAreRejectedWithoutClaimingTheClause() {
+        for (final String expression : List.of("-- comment", "/* comment */", "# comment", "-- Keep comments\n/* comment */")) {
+            final SqlBuilder builder = PSC.select("*").from("people");
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> builder.where(expression));
+            assertTrue(e.getMessage().contains(expression), e.getMessage());
+            assertEquals("SELECT * FROM people WHERE id = ?", builder.where(Filters.eq("id", 7)).build().query());
+
+            final SqlBuilder grouped = PSC.select("a").from("people").groupBy("a");
+            assertThrows(IllegalArgumentException.class, () -> grouped.having(expression));
+            assertEquals("SELECT a FROM people GROUP BY a HAVING COUNT(*) > 1", grouped.having("COUNT(*) > 1").build().query());
+
+            final SqlBuilder joined = PSC.select("*").from("people p").join("orders o");
+            assertThrows(IllegalArgumentException.class, () -> joined.on("p.id = o.person_id", expression));
+            assertEquals("SELECT * FROM people p JOIN orders o ON p.id = o.person_id", joined.on("p.id = o.person_id").build().query());
+        }
+    }
+
+    @Test
+    public void testHashPrefixedExpressionIsRejectedOutsideSqlServer() {
+        // Outside SQL Server, '#' opens a MySQL hash comment, so the expression would render no predicate.
+        final SqlBuilder builder = PSC.select("*").from("people");
+        assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.expr("#tmp.id = 1")));
+        assertThrows(IllegalArgumentException.class, () -> builder.where("#tmp.id = 1"));
+        assertEquals("SELECT * FROM people WHERE id = ?", builder.where(Filters.eq("id", 1)).build().query());
+
+        final Dsl sqlServer = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        assertEquals("SELECT * FROM #tmp WHERE #tmp.id = 1", sqlServer.select("*").from("#tmp").where(Filters.expr("#tmp.id = 1")).build().query());
+    }
+
+    @Table(name = "review_parent", nonColumnFields = { "child" })
+    public static class ExcludedChildParent {
+        private int id;
+        private ReviewChild child;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+
+        public ReviewChild getChild() {
+            return child;
+        }
+
+        public void setChild(final ReviewChild child) {
+            this.child = child;
+        }
+    }
+
+    @Table(name = "review_whitelisted_parent", columnFields = { "id" })
+    public static class WhitelistedParent {
+        private int id;
+        private ReviewChild child;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+
+        public ReviewChild getChild() {
+            return child;
+        }
+
+        public void setChild(final ReviewChild child) {
+            this.child = child;
+        }
+    }
+
+    @Table(name = "review_child")
+    public static class ReviewChild {
+        @Column("stored_value")
+        private String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
+        }
+    }
+
+    @Table(name = "review_included_parent")
+    public static class IncludedChildParent extends ExcludedChildParent {
     }
 }
