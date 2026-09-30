@@ -393,7 +393,7 @@ public final class DynamicQuery {
          * builder.select().append("*");
          * builder.from().append("users");
          * builder.limit(10);
-         * // Generates: LIMIT 10
+         * // Generates: SELECT * FROM users LIMIT 10
          * }</pre>
          *
          * @param count the maximum number of rows to return (must not be negative)

@@ -110,6 +110,9 @@ public class InSubQuery extends AbstractInSubQuery {
      * // SQL: (dept_id, loc_id) IN (SELECT department_id, location_id FROM dept_locations WHERE active = 'Y')
      * }</pre>
      *
+     * <p><b>&#9888;&#65039;</b> The multi-column {@code (p1, p2) IN (SELECT ...)} form is supported by MySQL, PostgreSQL,
+     * Oracle and DB2, but <i>not</i> by SQL Server (rewrite it with {@code EXISTS} and a correlated predicate there).</p>
+     *
      * @param propNames the property/column names to check (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements).
      *            Their order must match the column order in the subquery.
      * @param subQuery the subquery that returns the values to check against (must not be {@code null}).

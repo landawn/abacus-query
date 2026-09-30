@@ -73,8 +73,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      *
      * @return a new {@link Not} condition wrapping this condition
      * @throws IllegalArgumentException if {@code this} is or contains a non-composable component — a blank or comment-only
-     *                                  {@link SqlExpression}, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *                                  operand, a condition with a {@code null} operator, or (inside a custom wrapper)
+     *                                  {@link SqlExpression}, a {@code SqlExpression} whose text begins with a SQL clause
+     *                                  keyword (such as {@code WHERE}) or with {@code ON}/{@code USING}, an
+     *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping
+     *                                  one, such as {@code a = ANY (subquery)}, is accepted), a condition with a {@code null}
+     *                                  operator, or (inside a custom wrapper)
      *                                  a {@link Criteria}, a SQL clause, an {@code ON}/{@code USING} connector or a
      *                                  standalone {@link SubQuery}
      */
@@ -100,10 +103,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      * @return a new {@link And} condition containing both conditions
      * @throws IllegalArgumentException if {@code this} is non-composable, if {@code condition} is {@code null}, or if {@code condition}
      *                                  is or contains a non-composable component — a condition with a {@code null} operator,
-     *                                  a {@link Criteria}, a SQL clause, an
-     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only
-     *                                  {@link SqlExpression}
+     *                                  a {@link Criteria}, a SQL clause, an {@code ON}/{@code USING} connector, a
+     *                                  {@code SqlExpression} whose text begins with a SQL clause keyword or with
+     *                                  {@code ON}/{@code USING}, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+     *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public And and(final Condition condition) {
         validateComposableOperand(this, "and");
@@ -129,10 +133,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      * @return a new {@link Or} condition containing both conditions
      * @throws IllegalArgumentException if {@code this} is non-composable, if {@code condition} is {@code null}, or if {@code condition}
      *                                  is or contains a non-composable component — a condition with a {@code null} operator,
-     *                                  a {@link Criteria}, a SQL clause, an
-     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only
-     *                                  {@link SqlExpression}
+     *                                  a {@link Criteria}, a SQL clause, an {@code ON}/{@code USING} connector, a
+     *                                  {@code SqlExpression} whose text begins with a SQL clause keyword or with
+     *                                  {@code ON}/{@code USING}, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+     *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public Or or(final Condition condition) {
         validateComposableOperand(this, "or");
@@ -166,10 +171,11 @@ public abstract class ComposableCondition extends AbstractCondition {
      * @return a composable condition representing the exclusive-or {@code (this AND NOT condition) OR (NOT this AND condition)}
      * @throws IllegalArgumentException if {@code this} is non-composable, if {@code condition} is {@code null}, or if {@code condition}
      *                                  is or contains a non-composable component — a condition with a {@code null} operator,
-     *                                  a {@link Criteria}, a SQL clause, an
-     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME}
-     *                                  quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only
-     *                                  {@link SqlExpression}
+     *                                  a {@link Criteria}, a SQL clause, an {@code ON}/{@code USING} connector, a
+     *                                  {@code SqlExpression} whose text begins with a SQL clause keyword or with
+     *                                  {@code ON}/{@code USING}, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
+     *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+     *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public Or xor(final Condition condition) {
         validateComposableOperand(this, "xor");

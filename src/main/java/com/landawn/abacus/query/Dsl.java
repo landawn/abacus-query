@@ -299,6 +299,55 @@ public final class Dsl {
     }
 
     /**
+     * Gives each alias-less selection whose generated FROM clause lists a sub-entity table the entity's
+     * {@code @Table} alias, matching {@link #selectFrom(Class, String, boolean, Set)}: the parent columns stay
+     * qualified next to the (qualified) sub-entity columns, so an
+     * {@code id} shared by parent and sub-entity is not ambiguous. The SELECT list and the generated FROM clause
+     * both read the returned selections, so they stay consistent.
+     *
+     * @param selectionSnapshots validated selection snapshots (as returned by {@link #snapshotSelections(List)})
+     * @return {@code selectionSnapshots} itself when no fallback applies, otherwise a new list
+     * @throws IllegalArgumentException if a fallback {@code @Table} alias is not a valid table alias
+     */
+    private static List<Selection> withSubEntityTableAliasFallback(final List<Selection> selectionSnapshots) {
+        List<Selection> result = selectionSnapshots;
+
+        for (int i = 0, size = selectionSnapshots.size(); i < size; i++) {
+            final Selection selection = selectionSnapshots.get(i);
+
+            if (Strings.isNotEmpty(selection.tableAlias()) || !SqlBuilder.listsSubEntityTable(selection)) {
+                continue;
+            }
+
+            final String defaultTableAlias = SqlBuilder.tableAlias(selection.entityClass());
+
+            if (Strings.isEmpty(defaultTableAlias)) {
+                continue;
+            }
+
+            if (result == selectionSnapshots) {
+                result = new ArrayList<>(selectionSnapshots);
+            }
+
+            result.set(i,
+                    Selection.builder(selection.entityClass())
+                            .tableAlias(defaultTableAlias)
+                            .classAlias(selection.classAlias())
+                            .includedPropNames(selection.includedPropNames())
+                            .includeSubEntityProperties(selection.includesSubEntityProperties())
+                            .excludedPropNames(selection.excludedPropNames())
+                            .build());
+        }
+
+        if (result != selectionSnapshots) {
+            // Validate the substituted @Table aliases like caller-supplied ones.
+            SqlBuilder.checkMultiSelects(result);
+        }
+
+        return result;
+    }
+
+    /**
      * Returns a {@link SqlBuilder} configured for a SELECT operation over the given selection
      * snapshots, with the entity class of the first selection associated for property mapping.
      *
@@ -446,7 +495,8 @@ public final class Dsl {
      * Creates an INSERT statement from an entity object.
      *
      * <p>This method inspects the entity object and includes all insertable properties of the entity
-     * (those not marked with {@code @Transient}, {@code @ReadOnly}, or {@code @ReadOnlyId}).
+     * (those not marked with {@code @Transient}, {@code @NonColumn}, {@code @ReadOnly}, or {@code @ReadOnlyId}, and not
+     * filtered out by the {@code @Table} {@code columnFields}/{@code nonColumnFields} configuration).
      * Properties whose value is {@code null} are also skipped, as are ID properties still holding
      * their default value (for a composite ID, only when every ID property holds its default value).
      * Property names are rendered according to this DSL's naming policy.</p>
@@ -622,8 +672,9 @@ public final class Dsl {
      * Creates an INSERT statement for an entity class.
      *
      * <p>This method generates an INSERT statement template based on the entity class structure.
-     * All properties suitable for insertion (excluding those marked with @Transient, @ReadOnly,
-     * or @ReadOnlyId) are included. Property names are rendered according to this DSL's naming policy.</p>
+     * All properties suitable for insertion (excluding those marked with @Transient, @NonColumn, @ReadOnly,
+     * or @ReadOnlyId, and those filtered out by the {@code @Table} {@code columnFields}/{@code nonColumnFields}
+     * configuration) are included. Property names are rendered according to this DSL's naming policy.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -886,7 +937,8 @@ public final class Dsl {
      *
      * <p>This method derives the table name from the entity class name or {@code @Table} annotation
      * and pre-populates the SET clause with all updatable properties (those not marked
-     * {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @NonUpdatable}). A WHERE clause should be added before
+     * {@code @Transient}, {@code @NonColumn}, {@code @ReadOnly}, {@code @ReadOnlyId}, or {@code @NonUpdatable}, and not filtered out
+     * by the {@code @Table} {@code columnFields}/{@code nonColumnFields} configuration). A WHERE clause should be added before
      * calling {@code build()}.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -911,8 +963,8 @@ public final class Dsl {
      * Creates an UPDATE statement for an entity class with excluded properties.
      *
      * <p>This method creates an UPDATE statement excluding specified properties in addition to
-     * those automatically excluded by annotations ({@code @ReadOnly}, {@code @ReadOnlyId},
-     * {@code @NonUpdatable}).
+     * those automatically excluded by annotations ({@code @Transient}, {@code @NonColumn}, {@code @ReadOnly}, {@code @ReadOnlyId},
+     * {@code @NonUpdatable}) or by the {@code @Table} {@code columnFields}/{@code nonColumnFields} configuration.
      * The remaining properties are already staged as the generated {@code SET} template; calling
      * {@code set(entity)} afterward would start a new SET list and would not apply this method's
      * exclusions. To capture values from an entity, use {@code update(tableName).set(entity,
@@ -1220,7 +1272,8 @@ public final class Dsl {
      * Creates a SELECT statement for all properties of an entity class.
      *
      * <p>This method generates a SELECT statement including all properties from the entity class
-     * that are not marked with @Transient. Property names are rendered according to this DSL's
+     * that are not marked with @Transient or @NonColumn and not filtered out by the
+     * {@code @Table} {@code columnFields}/{@code nonColumnFields} configuration. Property names are rendered according to this DSL's
      * naming policy with appropriate aliases.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -1404,7 +1457,9 @@ public final class Dsl {
      *
      * <p>A sub-entity property is included only when the parent entity maps it: a {@code @NonColumn} or
      * transient sub-entity, one listed in {@code @Table(nonColumnFields)}, or one missing from a non-empty
-     * {@code @Table(columnFields)} list contributes neither nested columns nor a table reference.</p>
+     * {@code @Table(columnFields)} list contributes neither nested columns nor a table reference. Likewise, a sub-entity
+     * table is listed only while at least one of its {@code root.prop} columns remains selected (a sub-entity whose own
+     * properties are all nested beans or non-column properties is never listed).</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1441,7 +1496,8 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param tableAlias the table alias to use
+     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, a {@code null} or empty alias falls back to the entity's
+     *        {@code @Table} alias, keeping the parent columns qualified next to the sub-entity tables)
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
@@ -1549,7 +1605,9 @@ public final class Dsl {
      *
      * <p>A sub-entity property is included only when the parent entity maps it: a {@code @NonColumn} or
      * transient sub-entity, one listed in {@code @Table(nonColumnFields)}, or one missing from a non-empty
-     * {@code @Table(columnFields)} list contributes neither nested columns nor a table reference.</p>
+     * {@code @Table(columnFields)} list contributes neither nested columns nor a table reference. Likewise, a sub-entity
+     * table is listed only while at least one of its {@code root.prop} columns remains selected (a sub-entity whose own
+     * properties are all nested beans or non-column properties is never listed).</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1562,7 +1620,8 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param tableAlias the table alias to use
+     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, a {@code null} or empty alias falls back to the entity's
+     *        {@code @Table} alias, keeping the parent columns qualified next to the sub-entity tables)
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
@@ -1620,8 +1679,9 @@ public final class Dsl {
      * @param classAliasB property prefix for second entity results
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if either entity class is {@code null}; if a non-empty table or class alias is
-     *                                  blank, quoted, or contains a line break or SQL comment token; or if the two
-     *                                  selections together resolve to no selectable property
+     *                                  blank, quoted, or contains a line break or SQL comment token; if either entity
+     *                                  class is not a valid entity bean class; or if the two selections together resolve
+     *                                  to no selectable property
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
@@ -1664,8 +1724,9 @@ public final class Dsl {
      * @param excludedPropNamesB excluded properties for second entity
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if either entity class is {@code null}; if a non-empty table or class alias is
-     *                                  blank, quoted, or contains a line break or SQL comment token; or if the two
-     *                                  selections together resolve to no selectable property after exclusions are applied
+     *                                  blank, quoted, or contains a line break or SQL comment token; if either entity
+     *                                  class is not a valid entity bean class; or if the two selections together resolve
+     *                                  to no selectable property after exclusions are applied
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
@@ -1708,7 +1769,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code selection} is {@code null}, has a {@code null}, empty, or blank
      *                                  included property name, carries a blank, quoted, or comment-bearing table or
-     *                                  class alias, or resolves to no selectable property
+     *                                  class alias, resolves to no selectable property, or has an entity class that is
+     *                                  not a valid entity bean class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #select(List)
@@ -1728,6 +1790,11 @@ public final class Dsl {
      * Selection object defines how to select from one entity. The input list is snapshotted before
      * validation and building; each immutable descriptor already owns immutable property collections,
      * so later caller mutations cannot change the deferred SQL.</p>
+     *
+     * <p>Since the caller writes the FROM clause, a selection's columns are qualified only by its own
+     * {@link Selection#tableAlias() table alias}; unlike {@link #selectFrom(List)}, there is no fallback to the
+     * entity's {@code @Table} alias. Give a selection that includes sub-entity properties an explicit table alias
+     * matching the FROM clause, so its parent columns are not ambiguous next to the qualified sub-entity columns.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1751,7 +1818,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a {@code null} element,
      *                                  a {@code null}, empty, or blank included property name, or a blank, quoted, or
-     *                                  comment-bearing table or class alias, or resolves to no properties in total
+     *                                  comment-bearing table or class alias, resolves to no properties in total, or
+     *                                  contains an entity class that is not a valid entity bean class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1854,7 +1922,9 @@ public final class Dsl {
      * <p>This is the singular companion to {@link #selectFrom(List)}: it wraps the given {@code selection}
      * in a one-element list and auto-generates the FROM clause. Prefer it over the positional
      * {@code selectFrom(Class, ...)} overloads when configuring a single entity, since each attribute is
-     * set through a named {@link Selection.SelectionBuilder} method rather than by argument position.</p>
+     * set through a named {@link Selection.SelectionBuilder} method rather than by argument position.
+     * An alias-less selection that lists sub-entity tables falls back to the entity's {@code @Table} alias,
+     * as described in {@link #selectFrom(List)}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1897,6 +1967,11 @@ public final class Dsl {
      * selection's included property names is expanded and its table listed even when the parent's column
      * mapping excludes it from default projections.</p>
      *
+     * <p>A selection without a table alias whose FROM entry lists a sub-entity table falls back to the entity's
+     * {@code @Table} alias (if it declares one) for both its columns and its FROM entry, exactly like
+     * {@link #selectFrom(Class, String, boolean, Set)}; this keeps the parent columns qualified next to the
+     * sub-entity tables, so a column name shared by parent and sub-entity (e.g. {@code id}) is not ambiguous.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * List<Selection> selections = Arrays.asList(
@@ -1923,7 +1998,7 @@ public final class Dsl {
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder selectFrom(final List<Selection> selections) {
-        final List<Selection> selectionSnapshots = snapshotSelections(selections);
+        final List<Selection> selectionSnapshots = withSubEntityTableAliasFallback(snapshotSelections(selections));
 
         final String fromClause = SqlBuilder.getFromClause(selectionSnapshots, namingPolicy);
         final SqlBuilder builder = createSelectBuilder(selectionSnapshots);

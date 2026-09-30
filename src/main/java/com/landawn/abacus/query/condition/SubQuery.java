@@ -127,8 +127,9 @@ public class SubQuery extends AbstractCondition {
     /** The complete query text of a raw SQL or builder-backed subquery; {@code null} for structured subqueries. */
     final String sql;
 
-    /** Bindings captured for raw SQL or trusted builder snapshots (array/{@code Date}/{@code Calendar} bindings
-     *  are snapshotted at construction); empty for structured subqueries. */
+    /** Bindings captured for raw SQL (array/{@code Date}/{@code Calendar} bindings are snapshotted at
+     *  construction); empty for structured subqueries and for builder-backed snapshots, whose subclass
+     *  retains the source builder's parameters itself. */
     private final ImmutableList<Object> rawParameters;
 
     /** {@code true} when {@link #rawParameters} holds an array/{@code Date}/{@code Calendar} binding, so
@@ -218,14 +219,30 @@ public class SubQuery extends AbstractCondition {
      * a raw fragment has no generated-name metadata for collision-safe composition. Use a builder-backed
      * subquery when named-placeholder policies are required.</p>
      *
+     * <p>A binding that is itself SQL is written into the text at construction instead of being bound, so the
+     * subquery renders the same SQL under every builder policy (exactly as a {@link SqlExpression} value of a
+     * structured condition is rendered): a {@link SqlExpression} replaces its {@code ?} verbatim, and a raw
+     * {@code SubQuery} replaces it as {@code (sql)} with its own bindings taking its place in the binding list.
+     * {@link #rawSql()} and {@link #parameters()} report the result.</p>
+     * <pre>{@code
+     * SubQuery sq = new SubQuery("SELECT id FROM orders WHERE created < ? AND total > ?",
+     *     Arrays.asList(SqlExpression.of("CURRENT_DATE"), 100));
+     * // rawSql():     SELECT id FROM orders WHERE created < CURRENT_DATE AND total > ?
+     * // parameters(): [100]
+     * }</pre>
+     *
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
      * @param parameters positional binding values in placeholder encounter order (must not be {@code null});
      *                   individual binding values may be {@code null}; array/{@code Date}/{@code Calendar}
-     *                   bindings are snapshotted, all others kept by reference
+     *                   bindings are snapshotted, all others kept by reference; {@link SqlExpression} and raw
+     *                   {@code SubQuery} bindings are inlined as described above
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters}
      *         is {@code null}; the SQL contains malformed placeholder text such as an unclosed {@code #{...}} marker;
      *         the SQL contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder; the number of positional
-     *         placeholders differs from the number of bindings; or an object-array binding contains a cycle
+     *         placeholders differs from the number of bindings; an object-array binding contains a cycle; a binding is a
+     *         {@link SqlExpression} that is blank, comment-only, or contains parameter markers of its own (such as
+     *         {@link Filters#QME}); or a binding is any other {@link Condition} (a predicate, or a structured or
+     *         builder-backed subquery), whose SQL would depend on the enclosing builder's policy
      */
     public SubQuery(final String sql, final Collection<?> parameters) {
         this(Strings.EMPTY, sql, parameters, true);
@@ -296,10 +313,27 @@ public class SubQuery extends AbstractCondition {
             throw new IllegalArgumentException("SQL statement must not be null, empty, or blank");
         }
 
-        final List<Object> bindings = copyRawParameters(parameters);
+        List<Object> bindings = copyRawParameters(parameters);
+        String rawText = sql;
 
         if (validateBindings) {
             validateRawBindings(sql, bindings);
+
+            if (containsConditionBinding(bindings)) {
+                final List<Object> valueBindings = new ArrayList<>(bindings.size());
+                rawText = inlineConditionBindings(sql, bindings, valueBindings);
+                bindings = valueBindings;
+
+                // Defensive: the inlined text is re-scanned so the remaining bindings provably line up with the
+                // placeholders that are left (a spliced expression cannot add or hide a '?' unnoticed).
+                try {
+                    validateRawBindings(rawText, bindings);
+                } catch (final IllegalArgumentException e) {
+                    throw new IllegalArgumentException(
+                            "Inlining the SqlExpression/SubQuery bindings of a raw subquery left mismatched placeholders (" + e.getMessage() + "): " + rawText,
+                            e);
+                }
+            }
         }
 
         final ImmutableList<Object> parameterSnapshot = snapshotRawParameters(bindings);
@@ -308,7 +342,7 @@ public class SubQuery extends AbstractCondition {
         entityClass = null;
         propNames = null;
         condition = null;
-        this.sql = sql;
+        this.sql = rawText;
         rawParameters = parameterSnapshot;
         rebuildParametersPerCall = containsSnapshotMutableValue(rawParameters);
     }
@@ -487,7 +521,9 @@ public class SubQuery extends AbstractCondition {
      * // Returns: "SELECT id FROM users"
      * }</pre>
      *
-     * @return the stored complete query text, or {@code null} if this is a structured subquery
+     * @return the stored complete query text (for {@link #SubQuery(String, Collection)}, with any
+     *         {@link SqlExpression}/raw {@code SubQuery} bindings already written in), or {@code null} if this is a
+     *         structured subquery
      */
     public String rawSql() {
         return sql;
@@ -634,6 +670,119 @@ public class SubQuery extends AbstractCondition {
         final List<Object> copy = new ArrayList<>(parameters.size());
         copy.addAll(parameters);
         return copy;
+    }
+
+    /**
+     * Returns {@code true} if any raw binding is a {@link Condition} (which is inlined rather than bound).
+     *
+     * @param bindings the copied raw bindings
+     * @return whether {@link #inlineConditionBindings(String, List, List)} must run
+     */
+    private static boolean containsConditionBinding(final List<Object> bindings) {
+        for (final Object binding : bindings) {
+            if (binding instanceof Condition) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Writes the SQL-valued bindings of a raw subquery into its text, so the subquery renders the same SQL under
+     * every SQL policy. A JDBC driver cannot bind a {@link SqlExpression} or {@link SubQuery} object, and every
+     * structured condition already renders such a value as SQL text rather than a parameter; before this, only
+     * {@code RAW_SQL} builders inlined them while parameterized/named builders passed the object to JDBC.
+     * <ul>
+     *   <li>a {@link SqlExpression} is written verbatim (the raw text around it is verbatim too, so no naming policy
+     *       applies); it must not be blank or comment-only, and must not contain parameter markers of its own
+     *       (such as {@link Filters#QME}), since those would have no binding;</li>
+     *   <li>a raw {@link SubQuery} ({@code SubQuery(String[, Collection])}) is written as {@code (sql)}, and its own
+     *       bindings take its place in the binding list;</li>
+     *   <li>any other condition (a predicate, a structured or builder-backed subquery) is rejected: its rendering
+     *       depends on the enclosing builder's naming or parameter policy, which a raw fragment cannot follow.</li>
+     * </ul>
+     * Inlined text ending in a line comment is terminated, and it is separated by a space from an adjacent
+     * identifier/number character or from a {@code -} it would otherwise fuse with into a {@code --} comment,
+     * mirroring how {@code RAW_SQL} builders inline values.
+     *
+     * @param sql the validated raw SQL text
+     * @param bindings the validated bindings, one per positional placeholder, in order
+     * @param valueBindings receives the bindings that remain after inlining, in placeholder order
+     * @return the SQL text with the SQL-valued bindings written in place of their placeholders
+     * @throws IllegalArgumentException if a binding is a condition that cannot be inlined, as described above
+     */
+    private static String inlineConditionBindings(final String sql, final List<Object> bindings, final List<Object> valueBindings) {
+        final int[] offsets = QueryUtil.positionalParameterOffsets(sql);
+        final StringBuilder sb = new StringBuilder(sql.length() + 32);
+        int last = 0;
+
+        for (int k = 0; k < offsets.length; k++) {
+            final Object binding = bindings.get(k);
+
+            if (!(binding instanceof Condition)) {
+                valueBindings.add(binding);
+                continue;
+            }
+
+            final String text = QueryUtil.terminateLineComment(inlineText((Condition) binding, k, valueBindings));
+            final int i = offsets[k];
+
+            sb.append(sql, last, i);
+
+            if (i > 0 && (isGlueChar(sql.charAt(i - 1)) || (sql.charAt(i - 1) == '-' && text.startsWith("-")))) {
+                sb.append(_SPACE);
+            }
+
+            sb.append(text);
+            last = i + 1;
+
+            if (last < sql.length() && isGlueChar(sql.charAt(last))) {
+                sb.append(_SPACE);
+            }
+        }
+
+        return sb.append(sql, last, sql.length()).toString();
+    }
+
+    /**
+     * Returns the SQL text that replaces the placeholder of a condition-valued raw binding, appending a nested raw
+     * subquery's own bindings to {@code valueBindings}.
+     *
+     * @param binding the condition-valued binding
+     * @param index the binding's position, for error messages
+     * @param valueBindings the remaining value bindings collected so far
+     * @return the text to write in place of the placeholder
+     * @throws IllegalArgumentException if {@code binding} cannot be inlined
+     */
+    private static String inlineText(final Condition binding, final int index, final List<Object> valueBindings) {
+        if (binding instanceof final SqlExpression expr) {
+            if (isEmptyPredicate(expr)) {
+                throw new IllegalArgumentException("Raw subquery binding parameters[" + index + "] is a blank or comment-only SqlExpression");
+            }
+
+            if (ParsedSql.parse(expr.literal()).parameterCount() > 0) {
+                throw new IllegalArgumentException("Raw subquery binding parameters[" + index + "] is a SqlExpression containing parameter markers ("
+                        + expr.literal() + "), which would have no binding; write the placeholder into the SQL text instead");
+            }
+
+            return expr.literal();
+        }
+
+        if (binding.getClass() == SubQuery.class && ((SubQuery) binding).sql != null) {
+            final SubQuery subQuery = (SubQuery) binding;
+            valueBindings.addAll(subQuery.parameters());
+
+            return SK.PARENTHESIS_L + QueryUtil.terminateLineComment(subQuery.sql) + SK.PARENTHESIS_R;
+        }
+
+        throw new IllegalArgumentException("Raw subquery binding parameters[" + index + "] must be a bind value, a SqlExpression or a raw SubQuery, not "
+                + describeForMessage(binding) + ": its SQL depends on the enclosing builder's naming or parameter policy");
+    }
+
+    /** Returns {@code true} for a character that would fuse with adjacent inlined text into one identifier or number. */
+    private static boolean isGlueChar(final char ch) {
+        return Character.isLetterOrDigit(ch) || ch == '_' || ch == '$' || ch == '.';
     }
 
     /**
@@ -784,7 +933,7 @@ public class SubQuery extends AbstractCondition {
      * List<Object> rawParams = raw.parameters();
      * // returns ["active"] (immutable)
      *
-     * // Structured subquery without a condition: also empty
+     * // Structured subquery without a condition: empty
      * SubQuery noCond = Filters.subQuery("users", Arrays.asList("id"), (Condition) null);
      * List<Object> noCondParams = noCond.parameters();
      * // returns [] (empty immutable list)
@@ -1007,7 +1156,7 @@ public class SubQuery extends AbstractCondition {
      * element-wise via {@link N#deepEquals(Object, Object)}, other bindings through their own {@code equals});
      * since array/{@code Date}/{@code Calendar} bindings are snapshotted at construction, the result does not
      * change when the caller later mutates the originals.
-     * Builder-backed snapshots additionally compare SQL policy and placeholder metadata. The entity name
+     * Builder-backed snapshots additionally compare their retained parameters, SQL policy, and placeholder metadata. The entity name
      * participates even for raw-SQL subqueries, so two raw subqueries are equal only when both their
      * SQL and their entity name match.
      *

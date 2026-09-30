@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents the SQL SOME operator for use with subqueries.
  * The SOME operator returns {@code true} if the comparison is true for at least one
@@ -113,7 +116,7 @@ public class Some extends ComposableCell {
      *                                  subquery with a known, non-wildcard projection arity other than one
      */
     public Some(final SubQuery subQuery) {
-        super(Operator.SOME, subQuery);
+        super(Operator.SOME, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

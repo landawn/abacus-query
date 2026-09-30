@@ -136,7 +136,7 @@ public class In extends AbstractIn {
      *         Arrays.asList(N.asMap("first_name", "John", "last_name", "Doe")));
      * }</pre>
      *
-     * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
+     * <p><b>&#9888;&#65039;</b> The multi-column row value-list form is supported by MySQL, PostgreSQL,
      * Oracle and DB2, but <i>not</i> by SQL Server (rewrite the composite comparison with
      * {@code EXISTS} or a join there).</p>
      *

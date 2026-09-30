@@ -991,7 +991,8 @@ public class ParsedSqlTest extends TestBase {
                 "SELECT ARRAY[:payload -- ? :ignored\n ? 'key']", "SELECT ARRAY[:payload ? -- ? :ignored\n 'key']",
                 "SELECT ARRAY[:payload?'key']", "SELECT ARRAY[(:payload)::jsonb ? 'key']", "SELECT ARRAY[:payload ? ('key')]")) {
             final ParsedSql parsed = ParsedSql.parse(sql);
-            assertEquals(sql.replace(":payload", "?"), parsed.parameterizedSql());
+            // A converted marker is kept apart from an adjacent operator '?' so the pair is not a pgJDBC "??" escape.
+            assertEquals(sql.replace(":payload?", "? ?").replace(":payload", "?"), parsed.parameterizedSql());
             assertEquals(List.of("payload"), parsed.namedParameters(), sql);
             assertEquals(1, parsed.parameterCount(), sql);
             assertArrayEquals(new int[0], parsed.positionalParameterOffsets(), sql);
@@ -2332,7 +2333,7 @@ public class ParsedSqlTest extends TestBase {
     @Test
     public void testParse_AdjacentIbatisTokens_extractsAllParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT #{a}#{b} FROM dual");
-        Assertions.assertEquals("SELECT ?? FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals("SELECT ? ? FROM dual", parsed.parameterizedSql());
         Assertions.assertEquals(2, parsed.parameterCount());
         Assertions.assertEquals("a", parsed.namedParameters().get(0));
         Assertions.assertEquals("b", parsed.namedParameters().get(1));
@@ -2341,7 +2342,7 @@ public class ParsedSqlTest extends TestBase {
     @Test
     public void testParse_ThreeAdjacentIbatisTokens_extractsAllParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT #{a}#{b}#{c} FROM dual");
-        Assertions.assertEquals("SELECT ??? FROM dual", parsed.parameterizedSql());
+        Assertions.assertEquals("SELECT ? ? ? FROM dual", parsed.parameterizedSql());
         Assertions.assertEquals(3, parsed.parameterCount());
         Assertions.assertEquals("a", parsed.namedParameters().get(0));
         Assertions.assertEquals("b", parsed.namedParameters().get(1));
@@ -2413,7 +2414,7 @@ public class ParsedSqlTest extends TestBase {
     @Test
     public void testParse_AdjacentNamedParameters_extractsAllParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a=:a:b");
-        Assertions.assertEquals("SELECT * FROM t WHERE a=??", parsed.parameterizedSql());
+        Assertions.assertEquals("SELECT * FROM t WHERE a=? ?", parsed.parameterizedSql());
         Assertions.assertEquals(2, parsed.parameterCount());
         Assertions.assertEquals(2, parsed.namedParameters().size());
         Assertions.assertEquals("a", parsed.namedParameters().get(0));
@@ -2423,7 +2424,7 @@ public class ParsedSqlTest extends TestBase {
     @Test
     public void testParse_ThreeAdjacentNamedParameters_extractsAllParameters() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a=:a:b:c");
-        Assertions.assertEquals("SELECT * FROM t WHERE a=???", parsed.parameterizedSql());
+        Assertions.assertEquals("SELECT * FROM t WHERE a=? ? ?", parsed.parameterizedSql());
         Assertions.assertEquals(3, parsed.parameterCount());
         Assertions.assertEquals(3, parsed.namedParameters().size());
         Assertions.assertEquals("a", parsed.namedParameters().get(0));
@@ -2445,7 +2446,7 @@ public class ParsedSqlTest extends TestBase {
     @Test
     public void testParse_AdjacentNamedParametersWithCast_extractsBothAndPreservesCast() {
         ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a=:a:b::int");
-        Assertions.assertEquals("SELECT * FROM t WHERE a=??::int", parsed.parameterizedSql());
+        Assertions.assertEquals("SELECT * FROM t WHERE a=? ?::int", parsed.parameterizedSql());
         Assertions.assertEquals(2, parsed.parameterCount());
         Assertions.assertEquals("a", parsed.namedParameters().get(0));
         Assertions.assertEquals("b", parsed.namedParameters().get(1));
@@ -3093,5 +3094,124 @@ public class ParsedSqlTest extends TestBase {
         }
 
         assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT sum(x) OVER (ORDER BY d RANGE ? PRECEDING) FROM t WHERE id = :id"));
+    }
+
+    @Test
+    public void testParse_ConvertedMarkerNeverFormsPgJdbcEscape() {
+        // A converted marker adjacent to an unpaired '?' used to yield "??", which pgJDBC and ParsedSql
+        // itself read as an escaped operator, silently dropping the counted binding.
+        final String[][] cases = { { "SELECT * FROM t WHERE payload?:key", "SELECT * FROM t WHERE payload? ?" },
+                { "SELECT * FROM t WHERE payload?#{key}", "SELECT * FROM t WHERE payload? ?" },
+                { "SELECT * FROM t WHERE payload @?:path", "SELECT * FROM t WHERE payload @? ?" },
+                { "SELECT * FROM t WHERE x = :a:b", "SELECT * FROM t WHERE x = ? ?" },
+                { "SELECT * FROM t WHERE x = #{a}#{b}", "SELECT * FROM t WHERE x = ? ?" }, { "SELECT a[:lo:hi] FROM t", "SELECT a[? ?] FROM t" },
+                { "SELECT * FROM t WHERE #{a}?|array['x']", "SELECT * FROM t WHERE ? ?|array['x']" },
+                { "SELECT * FROM t WHERE :a?|array['x']", "SELECT * FROM t WHERE ? ?|array['x']" },
+                { "SELECT a[#{a}?|x] FROM t", "SELECT a[? ?|x] FROM t" },
+                // Complete escapes cannot pair with the converted marker, so the output stays compact.
+                { "SELECT * FROM t WHERE payload??:key", "SELECT * FROM t WHERE payload???" },
+                { "SELECT * FROM t WHERE payload ?? :key", "SELECT * FROM t WHERE payload ?? ?" } };
+
+        for (final String[] c : cases) {
+            final ParsedSql parsed = ParsedSql.parse(c[0]);
+            assertEquals(c[1], parsed.parameterizedSql(), c[0]);
+            assertEquals(parsed.parameterCount(), ParsedSql.parse(parsed.parameterizedSql()).parameterCount(), c[0]);
+        }
+    }
+
+    @Test
+    public void testParse_PlaceholderAfterSkipAndAsOfKeywordsIsCounted() {
+        final String[] sqls = { "SELECT FIRST ? SKIP ? id, name FROM t", "SELECT SKIP ? id FROM t", "SELECT FIRST 10 SKIP ? id FROM t",
+                "SELECT e.name FROM employees AS OF TIMESTAMP ? e WHERE e.id = ?", "SELECT e.name FROM employees AS OF SCN ? e WHERE e.id = ?",
+                "SELECT * FROM emp FOR SYSTEM_TIME AS OF ? e WHERE e.id = ?" };
+
+        for (final String sql : sqls) {
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            final int expected = (int) sql.chars().filter(ch -> ch == '?').count();
+            assertEquals(expected, parsed.parameterCount(), sql);
+        }
+
+        // Outside their keyword position, columns named timestamp/scn/skip keep the JSON existence operator.
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE timestamp ? 'key'").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE scn ? key").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE skip ? 'key'").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT * FROM t WHERE doc ? 'key' AND x = ?").parameterCount());
+    }
+
+    @Test
+    public void testParse_JsonOperatorOnColumnsNamedOfOrSkipIsNotAPlaceholder() {
+        // OF leads a placeholder only in AS OF; SKIP right after SELECT reads a following string literal as a JSON key.
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE of ? 'key'").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT skip ? 'key' FROM t").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT of ? 'key' FROM t").parameterCount());
+
+        // So a named parameter elsewhere no longer trips the mixed-parameter-style check.
+        final ParsedSql named = ParsedSql.parse("SELECT skip ? 'key' FROM t WHERE of ? 'k' AND id = :id");
+        assertEquals(List.of("id"), named.namedParameters());
+        assertEquals(1, named.parameterCount());
+
+        // A prefixed string literal is a JSON key too, and so is any operand in a statement with named/MyBatis markers,
+        // which cannot also carry positional bindings.
+        assertEquals(0, ParsedSql.parse("SELECT skip ? E'key' FROM t").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT skip ? N'key' FROM t").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT skip ? U&'key' FROM t").parameterCount());
+        for (final String sql : new String[] { "SELECT skip ? :key FROM t", "SELECT skip ? lower(:key) FROM t", "SELECT skip ? #{key} FROM t" }) {
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(List.of("key"), parsed.namedParameters(), sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+        }
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT skip ? name FROM t WHERE id = :id").namedParameters());
+
+        // Markers inside a subscript count too, whether in the JSON operand or elsewhere in the statement.
+        for (final String sql : new String[] { "SELECT skip ? keys[:idx] FROM t", "SELECT skip ? keys[#{idx}] FROM t",
+                "SELECT skip ? name FROM t WHERE a = arr[:idx]", "SELECT skip ? name FROM t WHERE a = arr[1][#{idx}]" }) {
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(List.of("idx"), parsed.namedParameters(), sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+        }
+
+        // A cast or quoted text is not a marker, so the Firebird reading stays.
+        assertEquals(1, ParsedSql.parse("SELECT SKIP ? id::int FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT SKIP ? id FROM t WHERE a = ':x'").parameterCount());
+
+        // The keyword readings are kept.
+        assertEquals(1, ParsedSql.parse("SELECT SKIP ? id FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT SKIP ? lower(name) FROM t").parameterCount());
+        assertEquals(2, ParsedSql.parse("SELECT FIRST ? SKIP ? 'a' FROM t").parameterCount());
+        assertEquals(2, ParsedSql.parse("SELECT * FROM emp FOR SYSTEM_TIME AS OF ? e WHERE e.id = ?").parameterCount());
+    }
+
+    @Test
+    public void testParse_unclosedIbatisMarker_notClosedByBraceInsideLaterQuotedLiteral() {
+        // A '}' inside a later quoted literal/identifier must not close an unterminated "#{".
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE c = #{ x AND d = '}'"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE c = #{x AND d = 'a}b' AND e = #{y}"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE c = #{ x AND d = \"}\""));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE c = #{ x AND d = `}`"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE c = (#{ x) AND d = '}'"));
+
+        // Legit forms are unaffected.
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE c = #{ name } AND d = '}'");
+        assertEquals("SELECT * FROM t WHERE c = ? AND d = '}'", parsed.parameterizedSql());
+        assertEquals(List.of("name"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("SELECT * FROM t WHERE c = #{ name , jdbcType=VARCHAR } AND d = 'x'");
+        assertEquals("SELECT * FROM t WHERE c = ? AND d = 'x'", parsed.parameterizedSql());
+        assertEquals(List.of("name"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("SELECT * FROM t WHERE c = #{name,jdbcType=VARCHAR} AND e = #{ other }");
+        assertEquals("SELECT * FROM t WHERE c = ? AND e = ?", parsed.parameterizedSql());
+        assertEquals(List.of("name", "other"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("SELECT * FROM t WHERE c = #{ x /* it's */ }");
+        assertEquals("SELECT * FROM t WHERE c = ?", parsed.parameterizedSql());
+        assertEquals(List.of("x"), parsed.namedParameters());
+    }
+
+    @Test
+    public void testParse_controlCharactersOnly_throws() {
+        // String.trim() strips control characters that Strings.isBlank does not treat as blank.
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("\u0001"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("\u0000 \u0001"));
     }
 }

@@ -39,7 +39,7 @@ class ConditionValidationOrderTest {
 
     @Test
     void criteriaChecksSortPairsInSignatureOrder() {
-        final String firstDirectionError = "SortDirection for 'firstName' in the sort map must not be null";
+        final String firstDirectionError = "SortDirection for 'firstName' must not be null";
 
         assertEquals(firstDirectionError, assertThrows(IllegalArgumentException.class,
                 () -> Criteria.builder().orderBy("firstName", null, "", SortDirection.ASC)).getMessage());

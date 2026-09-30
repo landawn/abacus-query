@@ -104,7 +104,7 @@ public interface Condition {
 
     /**
      * Returns the list of parameter values associated with this condition.
-     * Parameters are the actual values used in comparisons (e.g., the "John" in name = "John").
+     * Parameters are the actual values used in comparisons (e.g., the "John" in {@code name = 'John'}).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

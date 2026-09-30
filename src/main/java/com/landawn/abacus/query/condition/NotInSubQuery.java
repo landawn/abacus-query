@@ -114,6 +114,9 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * // SQL: (firstName, lastName, email) NOT IN (SELECT fname, lname, email FROM existing_users)
      * }</pre>
      *
+     * <p><b>&#9888;&#65039;</b> The multi-column {@code (p1, p2) NOT IN (SELECT ...)} form is supported by MySQL, PostgreSQL,
+     * Oracle and DB2, but <i>not</i> by SQL Server (rewrite it with {@code NOT EXISTS} and a correlated predicate there).</p>
+     *
      * @param propNames the property/column names to check (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements).
      *            Their order must match the column order in the subquery.
      * @param subQuery the subquery that returns the values to check against (must not be {@code null}).

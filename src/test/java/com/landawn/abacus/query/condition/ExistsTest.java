@@ -285,4 +285,10 @@ public class ExistsTest extends TestBase {
         Assertions.assertTrue(exists1.toString().contains("SELECT 1"));
         Assertions.assertTrue(exists2.toString().contains("SELECT *"));
     }
+
+    @Test
+    public void testNullSubQueryMessageNamesSubQuery() {
+        final IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> new Exists(null));
+        Assertions.assertTrue(e.getMessage().contains("subQuery"), e.getMessage());
+    }
 }

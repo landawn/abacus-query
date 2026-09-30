@@ -861,4 +861,83 @@ public class AbstractConditionTest extends TestBase {
         assertEquals("42", AbstractCondition.formatNumberLiteral(42));
         AbstractCondition.validateNonQuantifiedValueOperands(Arrays.asList(1, null, "a"), "values");
     }
+
+    @Test
+    public void testClauseKeywordColumnFollowedByPredicateOperatorIsNotAClause() {
+        // OFFSET/MINUS are non-reserved in several databases, so they can be unquoted column names.
+        assertEquals("WHERE offset > 5", Filters.where(Filters.expr("offset > 5")).toString());
+        assertEquals("((minus = 1) AND (a = 1))", Filters.and(Filters.expr("minus = 1"), Filters.eq("a", 1)).toString());
+        assertEquals("NOT (offset IS NULL)", Filters.not(Filters.expr("offset IS NULL")).toString());
+        assertEquals("WHERE offset NOT IN (1, 2)", Filters.where(Filters.expr("offset NOT IN (1, 2)")).toString());
+        assertEquals("SELECT a FROM t WHERE offset > 5", Dsl.PSC.select("a").from("t").where(Filters.expr("offset > 5")).build().query());
+
+        // Real clause fragments are still rejected.
+        assertThrows(IllegalArgumentException.class, () -> Filters.where(Filters.expr("OFFSET 5")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where(Filters.expr("WHERE NOT a = 1")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.expr("LIMIT 10"), Filters.eq("a", 1)));
+    }
+
+    @Test
+    public void testComposableOperandRejectionNamesTheConditionType() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new Not(Filters.subQuery("SELECT 1")));
+        assertTrue(e.getMessage().contains("SubQuery"), e.getMessage());
+    }
+
+    @Test
+    public void testClauseKeywordColumnFollowedByExtendedPredicateOperatorIsNotAClause() {
+        for (final String predicate : new String[] { "offset <=> 5", "offset == 5", "offset ^= 5", "offset !< 5", "offset !> 5", "offset ~ 'x'",
+                "minus ~'x'", "offset !~ 'x'", "offset ~* 'x'", "offset !~* 'x'", "offset REGEXP 'x'", "offset rlike 'x'", "minus GLOB 'x*'",
+                "offset REGEXP col2", "offset SIMILAR TO 'x'", "offset similar to'x'", "offset NOT REGEXP 'x'", "offset NOT RLIKE 'x'",
+                "offset NOT GLOB 'x'", "offset NOT SIMILAR TO 'x'", "offset LIKE'x%'", "offset ILIKE'x%'", "offset REGEXP'x'",
+                "offset BETWEEN'1' AND '2'", "offset NOT LIKE'x%'", "offset IN(1, 2)", "offset /* c */ <=> 5" }) {
+            Assertions.assertFalse(AbstractCondition.isClause(Filters.expr(predicate)), predicate);
+        }
+
+        assertEquals("SELECT a FROM t WHERE offset <=> 5", Dsl.PSC.select("a").from("t").where(Filters.expr("offset <=> 5")).build().query());
+        assertEquals("((a = 1) AND (offset REGEXP 'x'))", Filters.eq("a", 1).and(Filters.expr("offset REGEXP 'x'")).toString());
+        assertEquals("WHERE offset LIKE'x%'", Filters.where(Filters.expr("offset LIKE'x%'")).toString());
+    }
+
+    @Test
+    public void testRealClausesStillClassifiedAsClausesAfterOperatorWidening() {
+        for (final String clause : new String[] { "OFFSET 5 ROWS", "OFFSET 5", "WHERE a = 1", "LIMIT 10", "UNION SELECT 1", "ORDER BY x", "GROUP BY x",
+                "WHERE ~flags & 4 = 0", "WHERE glob = 1", "WHERE regexp IS NULL", "WHERE rlike NOT IN (1)", "WHERE NOT regexp = 1",
+                "WHERE similar = 1", "WHERE glob", "HAVING COUNT(*) > 1", "EXCEPT SELECT 1", "MINUS SELECT 1" }) {
+            Assertions.assertTrue(AbstractCondition.isClause(Filters.expr(clause)), clause);
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.where(Filters.expr("OFFSET 5 ROWS")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where(Filters.expr("WHERE glob = 1")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.expr("WHERE ~flags = 0"), Filters.eq("a", 1)));
+    }
+
+    @Test
+    public void testReservedClauseKeywordFollowedBySpacedUnaryTildeIsAClause() {
+        // WHERE/HAVING/UNION/JOIN are reserved everywhere, so "~ " after them is unary bitwise NOT, not a regex match
+        // on a column named "where" (previously Filters.where rendered "WHERE WHERE ~ flags & 4 = 0").
+        for (final String clause : new String[] { "WHERE ~ flags & 4 = 0", "HAVING ~ flags = 0", "where = 1", "UNION ~ x", "JOIN ~ x" }) {
+            Assertions.assertTrue(AbstractCondition.isClause(Filters.expr(clause)), clause);
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("WHERE ~ flags & 4 = 0"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.where("HAVING ~ flags = 0"));
+
+        // Keywords that are non-reserved somewhere keep the identifier carve-out.
+        Assertions.assertFalse(AbstractCondition.isClause(Filters.expr("offset ~ 'x'")));
+        Assertions.assertFalse(AbstractCondition.isClause(Filters.expr("minus IS NULL")));
+    }
+
+    @Test
+    public void testJunctionConstructorRejectionOmitsEmptyOperator() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> Filters.and(Filters.eq("a", 1), Filters.subQuery("select 1")));
+        assertTrue(e.getMessage().contains("SubQuery"), e.getMessage());
+        Assertions.assertFalse(e.getMessage().contains("operator ''"), e.getMessage());
+
+        final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> Filters.or(Filters.eq("a", 1), Filters.expr("WHERE b = 1")));
+        assertTrue(e2.getMessage().contains("SqlExpression \"WHERE b = 1\""), e2.getMessage());
+
+        final IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class, () -> Filters.eq("a", 1).and(Filters.subQuery("select 1")));
+        Assertions.assertFalse(e3.getMessage().contains("operator ''"), e3.getMessage());
+    }
 }

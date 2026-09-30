@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents the SQL ALL operator for use with subqueries.
  * The ALL operator returns {@code true} if the comparison is true for ALL values returned by the subquery.
@@ -121,7 +124,7 @@ public class All extends ComposableCell {
      *                                  subquery with a known, non-wildcard projection arity other than one
      */
     public All(final SubQuery subQuery) {
-        super(Operator.ALL, subQuery);
+        super(Operator.ALL, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

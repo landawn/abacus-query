@@ -643,4 +643,21 @@ public class JoinTest extends TestBase {
         assertEquals("JOIN orders ON customerId = id", join.toSql(null));
         assertEquals("JOIN orders ON customer_id = id", join.toSql(NamingPolicy.SNAKE_CASE));
     }
+
+    @Test
+    public void testSingleEntityBlankMessageNamesJoinEntity() {
+        final IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> new Join(" ", Filters.expr("a = b")));
+        assertEquals("joinEntity must not be null, empty, or blank", e.getMessage());
+
+        final IllegalArgumentException e2 = Assertions.assertThrows(IllegalArgumentException.class, () -> new InnerJoin((String) null, Filters.expr("a = b")));
+        assertEquals("joinEntity must not be null, empty, or blank", e2.getMessage());
+
+        final IllegalArgumentException e3 = Assertions.assertThrows(IllegalArgumentException.class, () -> new CrossJoin(""));
+        assertEquals("joinEntity must not be null, empty, or blank", e3.getMessage());
+
+        // The collection form still names the element of joinEntities.
+        final IllegalArgumentException e4 = Assertions.assertThrows(IllegalArgumentException.class,
+                () -> new Join(Arrays.asList("orders o", " "), Filters.expr("a = b")));
+        assertTrue(e4.getMessage().contains("joinEntities"), e4.getMessage());
+    }
 }

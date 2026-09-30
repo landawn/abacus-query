@@ -3285,4 +3285,26 @@ public class FiltersTest extends TestBase {
         assertEquals("HAVING having_flag = 1", Filters.having("having_flag = 1").toString());
         assertEquals("ON on_flag = 1", Filters.on("on_flag = 1").toString());
     }
+
+    @Test
+    public void testEntityWithoutSelectablePropertyIsRejectedWithPointedMessage() {
+        for (final java.util.function.Supplier<Object> call : java.util.List.<java.util.function.Supplier<Object>> of(
+                () -> Filters.allEqual(new NoSelectableProperty()), () -> Filters.anyEqual(new NoSelectableProperty()),
+                () -> Filters.anyOfAllEqual(java.util.List.of(new NoSelectableProperty())))) {
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, call::get);
+            assertTrue(e.getMessage().contains("declares no selectable property"), e.getMessage());
+        }
+    }
+
+    public static class NoSelectableProperty {
+        private transient String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
+        }
+    }
 }

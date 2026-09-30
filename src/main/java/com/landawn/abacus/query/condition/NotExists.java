@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents the SQL NOT EXISTS operator for use with subqueries.
  * The NOT EXISTS operator returns {@code true} if the subquery returns no rows, {@code false} otherwise.
@@ -89,7 +92,7 @@ public class NotExists extends ComposableCell {
      * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public NotExists(final SubQuery subQuery) {
-        super(Operator.NOT_EXISTS, subQuery);
+        super(Operator.NOT_EXISTS, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

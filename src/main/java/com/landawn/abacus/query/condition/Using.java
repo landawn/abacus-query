@@ -208,7 +208,8 @@ public class Using extends Cell {
      * Returns the validated column names this USING clause joins on, in the order they were supplied.
      * The returned list contains the unqualified column names (no table prefixes) that were passed to
      * the constructor, after validation. This is a convenient structured alternative to inspecting the
-     * rendered {@code USING (...)} expression returned by {@link #condition()}.
+     * parenthesized column-list expression returned by {@link #condition()} (for example
+     * {@code (company_id, branch_id)}; only {@link #toString()} adds the {@code USING} keyword).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -307,11 +308,11 @@ public class Using extends Cell {
      * // Internal helper — not part of the public API
      * // Single column - always parenthesized
      * Condition singleCol = Using.createUsingCondition("customer_id");
-     * // Creates condition for: USING (customer_id)
+     * // singleCol.toString() returns "(customer_id)"; a Using wrapper renders it as USING (customer_id)
      *
      * // Multiple columns
      * Condition multiCol = Using.createUsingCondition("customer_id", "order_date");
-     * // Creates condition for: USING (customer_id, order_date)
+     * // multiCol.toString() returns "(customer_id, order_date)"; rendered as USING (customer_id, order_date)
      * }</pre>
      *
      * @param columnNames array of column names. Must not be {@code null} or empty, and names must not be blank,
@@ -340,12 +341,12 @@ public class Using extends Cell {
      * // Single column collection - always parenthesized
      * List<String> singleCol = Collections.singletonList("tenant_id");
      * Condition singleCondition = Using.createUsingCondition(singleCol);
-     * // Creates condition for: USING (tenant_id)
+     * // singleCondition.toString() returns "(tenant_id)"; a Using wrapper renders it as USING (tenant_id)
      *
      * // Multiple columns collection
      * List<String> multiCols = Arrays.asList("tenant_id", "user_id");
      * Condition multiCondition = Using.createUsingCondition(multiCols);
-     * // Creates condition for: USING (tenant_id, user_id)
+     * // multiCondition.toString() returns "(tenant_id, user_id)"; rendered as USING (tenant_id, user_id)
      * }</pre>
      *
      * @param columnNames collection of column names. Must not be {@code null} or empty, and names must not be blank,

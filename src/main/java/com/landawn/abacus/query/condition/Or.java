@@ -27,8 +27,8 @@ import com.landawn.abacus.util.N;
  * 
  * <p>This class extends {@link Junction} and provides a fluent API for building complex OR conditions.
  * The OR operator follows standard SQL evaluation rules where the entire expression is true if
- * any single condition is true.</p>
- * An empty, initialized OR therefore renders as the portable false predicate {@code 1 = 0}.
+ * any single condition is true.
+ * An empty, initialized OR therefore renders as the portable false predicate {@code 1 = 0}.</p>
  * 
  * <p>Key characteristics:</p>
  * <ul>
@@ -111,7 +111,8 @@ public class Or extends Junction {
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as
+     *             {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
      *             or a blank or comment-only {@link SqlExpression}
      */
     public Or(final Condition... conditions) {
@@ -149,7 +150,8 @@ public class Or extends Junction {
      * @throws IllegalArgumentException if any element in {@code conditions} is {@code null}, or if any
      *             element is or contains a {@link Criteria}, a null or clause operator (WHERE, JOIN variants, ORDER_BY, etc.),
      *             an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as
+     *             {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
      *             or a blank or comment-only {@link SqlExpression}
      */
     public Or(final Collection<? extends Condition> conditions) {
@@ -205,12 +207,13 @@ public class Or extends Junction {
      *
      * @param condition the condition to add to this OR. Must not be {@code null} and must be
      *             composable (i.e. must not be or contain a {@link Criteria}, a {@link Clause}, an {@code ON}/{@code USING} connector,
-     *             an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only expression).
+     *             a bare {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only expression).
      * @return a new {@link Or} condition containing all existing conditions plus the new one
      * @throws IllegalArgumentException if {@code condition} is {@code null}, or if {@code condition} is or contains a
      *             non-composable component — a condition with a {@code null} operator, a {@link Criteria}, a {@link Clause}
      *             condition (such as {@link Where} or {@link OrderBy}), an {@code ON}/{@code USING} connector, an
-     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery}, or a blank or comment-only
+     *             {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as
+     *             {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank or comment-only
      *             {@link SqlExpression}
      */
     @Override

@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents a UNION ALL clause in SQL queries.
  * 
@@ -140,7 +143,7 @@ public class UnionAll extends Clause {
      * @see Minus
      */
     public UnionAll(final SubQuery subQuery) {
-        super(Operator.UNION_ALL, subQuery);
+        super(Operator.UNION_ALL, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

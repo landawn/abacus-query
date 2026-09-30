@@ -331,4 +331,10 @@ public class SomeTest extends TestBase {
         // Raw SQL projection arity is intentionally unknown and remains accepted.
         Assertions.assertNotNull(new Some(Filters.subQuery("SELECT salary, bonus FROM employees")));
     }
+
+    @Test
+    public void testNullSubQueryMessageNamesSubQuery() {
+        final IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> new Some(null));
+        Assertions.assertTrue(e.getMessage().contains("subQuery"), e.getMessage());
+    }
 }

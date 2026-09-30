@@ -1620,4 +1620,23 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("t.first_name = 1", SqlExpression.of("t.firstName = 1").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("user_ids[1] = x", SqlExpression.of("userIds[1] = x").toSql(NamingPolicy.SNAKE_CASE));
     }
+
+    @Test
+    public void testCompoundIntervalUnitsAndOracleFloatTypesAreKeywords() {
+        assertEquals("DATE_ADD(createdAt, interval '1-2' YEAR_MONTH) > NOW()",
+                SqlExpression.of("DATE_ADD(created_at, INTERVAL '1-2' YEAR_MONTH) > NOW()").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("YEAR_MONTH", SqlExpression.of("YEAR_MONTH").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CAST(amount AS BINARY_DOUBLE)", SqlExpression.of("CAST(amount AS BINARY_DOUBLE)").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CAST(amount AS BINARY_FLOAT)", SqlExpression.of("CAST(amount AS BINARY_FLOAT)").toSql(NamingPolicy.CAMEL_CASE));
+
+        for (final String unit : new String[] { "DAY_HOUR", "DAY_MINUTE", "DAY_SECOND", "DAY_MICROSECOND", "HOUR_MINUTE", "HOUR_SECOND",
+                "HOUR_MICROSECOND", "MINUTE_SECOND", "MINUTE_MICROSECOND", "SECOND_MICROSECOND", "YEAR_MONTH" }) {
+            assertEquals(unit, SqlExpression.of(unit).toSql(NamingPolicy.CAMEL_CASE), unit);
+            assertEquals(unit, SqlExpression.of(unit).toSql(NamingPolicy.KEBAB_CASE), unit);
+            assertTrue(SqlExpression.of("EXTRACT(" + unit + " FROM ts)").toSql(NamingPolicy.CAMEL_CASE).contains(unit), unit);
+        }
+
+        // Lower-case forms are still identifiers converted by the naming policy (keywords are registered upper-case only).
+        assertEquals("yearMonth", SqlExpression.of("year_month").toSql(NamingPolicy.CAMEL_CASE));
+    }
 }

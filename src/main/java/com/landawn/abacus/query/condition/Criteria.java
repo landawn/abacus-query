@@ -1012,8 +1012,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
-         *                                  otherwise because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #join(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
          */
@@ -1044,7 +1044,8 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
+         *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+         *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder join(final String joinEntity, final Condition joinCondition) {
             addConditions(new Join(joinEntity, joinCondition));
@@ -1077,7 +1078,8 @@ public class Criteria extends AbstractCondition {
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
-         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one,
+         *                                  such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
          *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder join(final Collection<String> joinEntities, final Condition joinCondition) {
@@ -1105,8 +1107,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
-         *                                  otherwise because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #innerJoin(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
          */
@@ -1140,7 +1142,8 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
+         *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+         *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder innerJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new InnerJoin(joinEntity, joinCondition));
@@ -1172,7 +1175,8 @@ public class Criteria extends AbstractCondition {
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
-         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one,
+         *                                  such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
          *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder innerJoin(final Collection<String> joinEntities, final Condition joinCondition) {
@@ -1200,8 +1204,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
-         *                                  otherwise because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #leftJoin(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
          */
@@ -1234,7 +1238,8 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
+         *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+         *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder leftJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new LeftJoin(joinEntity, joinCondition));
@@ -1266,7 +1271,8 @@ public class Criteria extends AbstractCondition {
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
-         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one,
+         *                                  such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
          *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder leftJoin(final Collection<String> joinEntities, final Condition joinCondition) {
@@ -1294,8 +1300,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
-         *                                  otherwise because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #rightJoin(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
          */
@@ -1328,7 +1334,8 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
+         *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+         *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder rightJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new RightJoin(joinEntity, joinCondition));
@@ -1360,7 +1367,8 @@ public class Criteria extends AbstractCondition {
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
-         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one,
+         *                                  such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
          *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder rightJoin(final Collection<String> joinEntities, final Condition joinCondition) {
@@ -1388,8 +1396,8 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
-         *                                  otherwise because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #fullJoin(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
          */
@@ -1422,7 +1430,8 @@ public class Criteria extends AbstractCondition {
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
          *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-         *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
+         *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+         *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
          */
         public Builder fullJoin(final String joinEntity, final Condition joinCondition) {
             addConditions(new FullJoin(joinEntity, joinCondition));
@@ -1454,7 +1463,8 @@ public class Criteria extends AbstractCondition {
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
-         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand, a standalone {@link SubQuery},
+         *                                  {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one,
+         *                                  such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery},
          *                                  or a blank or comment-only {@link SqlExpression}
          */
         public Builder fullJoin(final Collection<String> joinEntities, final Condition joinCondition) {
@@ -1614,7 +1624,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param expr the WHERE condition as a string (must not be {@code null}, empty, or blank)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if it starts with a
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if it starts with a
          *                                  clause keyword (e.g. {@code WHERE}, {@code ORDER BY}, {@code GROUP BY},
          *                                  {@code HAVING}, {@code LIMIT}, a JOIN or set-operation keyword) or with an
          *                                  {@code ON}/{@code USING} connector — pass only the predicate text, without
@@ -1641,7 +1651,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propOrColumnName the property or column name to group by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code propOrColumnName}
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, or if {@code propOrColumnName}
          *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
          *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
          *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
@@ -1666,7 +1676,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to group by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -1694,7 +1704,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -1717,7 +1727,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propOrColumnName the property or column name to group by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code propOrColumnName}
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, or if {@code propOrColumnName}
          *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
          *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
          *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
@@ -1742,7 +1752,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to group by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -1770,7 +1780,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -1833,7 +1843,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to group by
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, blank, or comment-only element,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -1859,7 +1869,7 @@ public class Criteria extends AbstractCondition {
          * @param propName the property name to group by
          * @param direction the sort direction
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code direction} is {@code null},
+         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, if {@code direction} is {@code null},
          *                                  or if {@code propName} begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -1887,7 +1897,7 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to group by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its sort direction is {@code null}
+         * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only, or its sort direction is {@code null}
          *                                  (pairs are checked in signature order), if the two property names are equal, or if
          *                                  {@code propName} begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN},
          *                                  {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively
@@ -1921,7 +1931,7 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to group by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its sort direction is {@code null}
+         * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only, or its sort direction is {@code null}
          *                                  (pairs are checked in signature order), if any two property names are equal, or if
          *                                  {@code propName} begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN},
          *                                  {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively
@@ -1957,7 +1967,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order; must not be {@code null} or empty)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, blank, or comment-only element,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -1988,7 +1998,7 @@ public class Criteria extends AbstractCondition {
          *                  to preserve the column order)
          * @param direction the sort direction for all properties
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  if {@code direction} is {@code null}, or if the first property name begins with a SQL clause
          *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
          *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
@@ -2019,7 +2029,7 @@ public class Criteria extends AbstractCondition {
          * @param groupings a map of property names to sort directions
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code groupings} is {@code null}, empty, contains a {@code null} entry,
-         *                                  or contains {@code null}, empty, or blank keys
+         *                                  or contains {@code null}, empty, blank, or comment-only keys
          *                                  or {@code null} values, or if the first key begins with a SQL clause keyword (for example
          *                                  {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING},
          *                                  matched case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be
@@ -2093,7 +2103,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param expr the HAVING condition as a string (must not be {@code null}, empty, or blank)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if it starts with a
+         * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if it starts with a
          *                                  clause keyword (e.g. {@code WHERE}, {@code ORDER BY}, {@code GROUP BY},
          *                                  {@code HAVING}, {@code LIMIT}, a JOIN or set-operation keyword) or with an
          *                                  {@code ON}/{@code USING} connector — pass only the predicate text, without
@@ -2120,7 +2130,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propOrColumnName the property or column name to order by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code propOrColumnName}
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, or if {@code propOrColumnName}
          *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
          *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
          *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
@@ -2145,7 +2155,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to order by ascending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2173,7 +2183,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2198,7 +2208,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propOrColumnName the property or column name to order by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, or if {@code propOrColumnName}
+         * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, or if {@code propOrColumnName}
          *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
          *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
          *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
@@ -2223,7 +2233,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to order by descending
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2251,7 +2261,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2317,7 +2327,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param propNames the property names to order by
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, blank, or comment-only element,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2343,7 +2353,7 @@ public class Criteria extends AbstractCondition {
          * @param propName the property name to order by
          * @param direction the sort direction
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code direction} is {@code null},
+         * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, if {@code direction} is {@code null},
          *                                  or if {@code propName} begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2371,7 +2381,7 @@ public class Criteria extends AbstractCondition {
          * @param propName2 the second property name to order by
          * @param direction2 the sort direction for the second property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its sort direction is {@code null}
+         * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only, or its sort direction is {@code null}
          *                                  (pairs are checked in signature order), if the two property names are equal, or if
          *                                  {@code propName} begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN},
          *                                  {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively
@@ -2405,7 +2415,7 @@ public class Criteria extends AbstractCondition {
          * @param propName3 the third property name to order by
          * @param direction3 the sort direction for the third property
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if a property name is {@code null}, empty, or blank or its sort direction is {@code null}
+         * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only, or its sort direction is {@code null}
          *                                  (pairs are checked in signature order), if any two property names are equal, or if
          *                                  {@code propName} begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN},
          *                                  {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively
@@ -2442,7 +2452,7 @@ public class Criteria extends AbstractCondition {
          *                  (use an ordered collection such as {@link List} or {@link java.util.LinkedHashSet}
          *                  to preserve the column order; must not be {@code null} or empty)
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, or blank element,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or contains a {@code null}, empty, blank, or comment-only element,
          *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
          *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
          *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2473,7 +2483,7 @@ public class Criteria extends AbstractCondition {
          *                  to preserve the column order)
          * @param direction the sort direction for all properties
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+         * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
          *                                  if {@code direction} is {@code null}, or if the first property name begins with a SQL clause
          *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
          *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
@@ -2504,7 +2514,7 @@ public class Criteria extends AbstractCondition {
          * @param orders a map of property names to sort directions
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, contains a {@code null} entry,
-         *                                  or contains {@code null}, empty, or blank keys
+         *                                  or contains {@code null}, empty, blank, or comment-only keys
          *                                  or {@code null} values, or if the first key begins with a SQL clause keyword (for example
          *                                  {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING},
          *                                  matched case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be

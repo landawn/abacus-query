@@ -227,4 +227,10 @@ public class NotExistsTest extends TestBase {
         // Should contain NOT EXISTS in the output
         // Note: specific format may vary based on implementation
     }
+
+    @Test
+    public void testNullSubQueryMessageNamesSubQuery() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new NotExists(null));
+        assertTrue(e.getMessage().contains("subQuery"), e.getMessage());
+    }
 }

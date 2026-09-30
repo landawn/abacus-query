@@ -119,7 +119,8 @@ public class Binary extends ComposableCondition {
 
     /**
      * The value on the right-hand side of this binary condition; may be {@code null} only for
-     * equality and {@code IS}/{@code IS NOT} operators, a literal, an explicit scalar expression,
+     * the {@code =}, {@code !=}, {@code <>}, {@code IS} and {@code IS NOT} operators (rendering as
+     * {@code IS NULL} / {@code IS NOT NULL}), a literal, an explicit scalar expression,
      * or an unmodifiable membership list for {@code IN}/{@code NOT IN}.
      */
     private final Object propValue;
@@ -173,7 +174,7 @@ public class Binary extends ComposableCondition {
      *                 {@link Operator#LESS_THAN_OR_EQUAL}, {@link Operator#LIKE}, {@link Operator#NOT_LIKE},
      *                 {@link Operator#IS}, {@link Operator#IS_NOT}, {@link Operator#IN}, or {@link Operator#NOT_IN}
      * @param propValue the value to compare against; may be a literal value, {@code null} only for
-     *                  equality and {@code IS}/{@code IS NOT} operators (rendering as
+     *                  the {@code =}, {@code !=}, {@code <>}, {@code IS} and {@code IS NOT} operators (rendering as
      *                  {@code IS NULL} / {@code IS NOT NULL}), an explicit {@link SqlExpression}, or
      *                  a scalar {@link SubQuery}. An {@link All}, {@link Any}, or {@link Some} operand is accepted
      *                  only as the direct right-hand side of {@code =}, {@code !=}, {@code <>}, {@code <},

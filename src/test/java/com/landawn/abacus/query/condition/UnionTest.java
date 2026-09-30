@@ -186,4 +186,13 @@ public class UnionTest extends TestBase {
         Union union = new Union();
         assertNull(union.subQuery());
     }
+
+    @Test
+    public void testNullSubQueryMessageNamesSubQuery() {
+        for (final java.util.function.Supplier<Object> ctor : java.util.List.<java.util.function.Supplier<Object>> of(() -> new Union(null),
+                () -> new UnionAll(null), () -> new Intersect(null), () -> new Except(null), () -> new Minus(null), () -> Criteria.builder().union(null))) {
+            final IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, ctor::get);
+            assertTrue(e.getMessage().contains("subQuery"), e.getMessage());
+        }
+    }
 }

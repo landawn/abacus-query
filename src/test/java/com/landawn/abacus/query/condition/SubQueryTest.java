@@ -1007,4 +1007,55 @@ public class SubQueryTest extends TestBase {
         // unquoted names are still converted
         assertEquals("SELECT first_name FROM user_account", new SubQuery("userAccount", "firstName", (Condition) null).toSql(NamingPolicy.SNAKE_CASE));
     }
+
+    @Test
+    public void testRawSqlExpressionBindingIsInlinedAtConstruction() {
+        final SubQuery sq = new SubQuery("SELECT id FROM orders WHERE created < ? AND total > ?", Arrays.asList(SqlExpression.of("CURRENT_DATE"), 100));
+
+        assertEquals("SELECT id FROM orders WHERE created < CURRENT_DATE AND total > ?", sq.rawSql());
+        assertEquals(Arrays.asList(100), sq.parameters());
+        assertEquals(sq.rawSql(), sq.toSql(NamingPolicy.SNAKE_CASE));
+
+        // Only SQL-valued bindings are inlined; the text is written verbatim (no naming policy), and a glued
+        // placeholder, a negative expression after '-' and a trailing line comment are kept apart from their neighbours.
+        assertEquals("SELECT a FROM t WHERE b=NOW() AND c = ?", new SubQuery("SELECT a FROM t WHERE b=? AND c = ?", Arrays.asList(SqlExpression.of("NOW()"), "x")).rawSql());
+        assertEquals("SELECT a FROM t WHERE b=firstName AND c = 1",
+                new SubQuery("SELECT a FROM t WHERE b=?AND c = 1", Arrays.asList(SqlExpression.of("firstName"))).rawSql());
+        assertEquals("SELECT a FROM t WHERE b = 10- -1", new SubQuery("SELECT a FROM t WHERE b = 10-?", Arrays.asList(SqlExpression.of("-1"))).rawSql());
+        assertEquals("SELECT a FROM t WHERE b = x -- c\n AND c = 2", new SubQuery("SELECT a FROM t WHERE b = ? AND c = 2", Arrays.asList(SqlExpression.of("x -- c"))).rawSql());
+
+        // A '?' inside a quoted literal is not a placeholder and is left alone.
+        assertEquals("SELECT a FROM t WHERE q = '?' AND b = NOW()", new SubQuery("SELECT a FROM t WHERE q = '?' AND b = ?", Arrays.asList(SqlExpression.of("NOW()"))).rawSql());
+
+        assertEquals(sq, Filters.subQuery("SELECT id FROM orders WHERE created < ? AND total > ?", Arrays.asList(SqlExpression.of("CURRENT_DATE"), 100)));
+    }
+
+    @Test
+    public void testRawSubQueryBindingIsInlinedWithItsOwnBindings() {
+        final SubQuery inner = new SubQuery("SELECT MAX(total) FROM orders WHERE status = ?", Arrays.asList("OPEN"));
+        final SubQuery outer = new SubQuery("SELECT id FROM orders WHERE region = ? AND total = ? AND created > ?", Arrays.asList("EU", inner, 5));
+
+        assertEquals("SELECT id FROM orders WHERE region = ? AND total = (SELECT MAX(total) FROM orders WHERE status = ?) AND created > ?", outer.rawSql());
+        assertEquals(Arrays.asList("EU", "OPEN", 5), outer.parameters());
+
+        // A nested SqlExpression binding was already inlined by the inner subquery.
+        final SubQuery innerExpr = new SubQuery("SELECT MAX(d) FROM t WHERE d < ?", Arrays.asList(SqlExpression.of("CURRENT_DATE")));
+        assertEquals("SELECT id FROM t WHERE d = (SELECT MAX(d) FROM t WHERE d < CURRENT_DATE)",
+                new SubQuery("SELECT id FROM t WHERE d = ?", Arrays.asList(innerExpr)).rawSql());
+    }
+
+    @Test
+    public void testRawBindingConditionsThatCannotBeInlinedAreRejected() {
+        final String sql = "SELECT id FROM t WHERE a = ?";
+
+        assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql, Arrays.asList(Filters.eq("b", 1))));
+        assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql, Arrays.asList(new SubQuery("users", Arrays.asList("id"), (Condition) null))));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(sql, Arrays.asList(Filters.QME)));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(sql, Arrays.asList(SqlExpression.of("COALESCE(?, 0)"))));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(sql, Arrays.asList(SqlExpression.of(" "))));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(sql, Arrays.asList(SqlExpression.of("/* x */"))));
+
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql, Arrays.asList(Filters.eq("b", 1))));
+        assertTrue(e.getMessage().contains("parameters[0]"), e.getMessage());
+    }
 }

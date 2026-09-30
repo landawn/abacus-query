@@ -178,6 +178,22 @@ public class SqlExpression extends ComposableCondition {
         registerSqlKeyword("UTC_TIME");
         registerSqlKeyword("UTC_TIMESTAMP");
 
+        // Compound temporal-interval units (MySQL INTERVAL / EXTRACT, e.g. INTERVAL '1-2' YEAR_MONTH) and Oracle
+        // floating-point type names (CAST(x AS BINARY_DOUBLE)): underscore keywords, so registered for the same reason.
+        registerSqlKeyword("YEAR_MONTH");
+        registerSqlKeyword("DAY_HOUR");
+        registerSqlKeyword("DAY_MINUTE");
+        registerSqlKeyword("DAY_SECOND");
+        registerSqlKeyword("DAY_MICROSECOND");
+        registerSqlKeyword("HOUR_MINUTE");
+        registerSqlKeyword("HOUR_SECOND");
+        registerSqlKeyword("HOUR_MICROSECOND");
+        registerSqlKeyword("MINUTE_SECOND");
+        registerSqlKeyword("MINUTE_MICROSECOND");
+        registerSqlKeyword("SECOND_MICROSECOND");
+        registerSqlKeyword("BINARY_DOUBLE");
+        registerSqlKeyword("BINARY_FLOAT");
+
         // Predicate operands used by the Is/IsNot condition family and its documented escape hatch.
         // Unlike NULL (which SK contributes), these are not in SK, so without registration the
         // builder path would emit "IS nan" / "IS NOT infinite" / "IS unknown" / "IS true".
@@ -1380,6 +1396,9 @@ public class SqlExpression extends ComposableCondition {
      *       {@link NamingPolicy#NO_CHANGE}; {@link SubQuery} SQL is wrapped in parentheses, with a newline
      *       inserted before the closing parenthesis if the SQL ends inside a line comment. Diagnostic
      *       {@code toString()} overrides do not affect the generated SQL</li>
+     *   <li>An {@link SqlExpression} literal or non-subquery {@link Condition} rendering is returned as-is, so it can
+     *       end inside a {@code --} or {@code #} line comment; a caller appending further SQL after the result must
+     *       terminate that comment first (the helpers in this class do)</li>
      *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
      * </ul>
      *
@@ -2162,6 +2181,9 @@ public class SqlExpression extends ComposableCondition {
      * name such as {@code t."firstName"}, whose unquoted qualifier is still converted), SQL
      * variables (such as {@code @name}), parameter placeholders ({@code ?}, {@code :name},
      * {@code #{name}}, {@code ${name}}), and numeric literals are left unchanged by the naming policy.
+     * PostgreSQL dollar-quoted strings ({@code $$...$$}) are not recognized by the tokenizer, so a word inside
+     * one that contains whitespace can be converted (for example {@code $$aB cD$$} renders as {@code $$aB c_d$$}
+     * under {@code SNAKE_CASE}).
      * Bind names and MyBatis attributes inside a {@code #{...}} or {@code ${...}} marker are also
      * protected when the marker contains whitespace; tokenization can still normalize whitespace
      * runs. A marker without a closing {@code '}'} is not a binding and is converted like ordinary SQL. Recognized SQL

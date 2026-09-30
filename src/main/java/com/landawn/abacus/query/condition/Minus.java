@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents a MINUS clause in SQL queries (also known as EXCEPT in some databases).
  * This class implements the set difference operation, returning rows from the first query
@@ -172,7 +175,7 @@ public class Minus extends Clause {
      * @see Intersect
      */
     public Minus(final SubQuery subQuery) {
-        super(Operator.MINUS, subQuery);
+        super(Operator.MINUS, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

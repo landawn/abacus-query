@@ -671,8 +671,9 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
         assertSp("SELECT * FROM account WHERE id IN (SELECT id FROM x WHERE data ? 'k' AND z = 5)", List.of(),
                 SCSB.select("*").from("account").where(Filters.in("id", jsonOperator)).build());
 
-        // PSC control: positional placeholders and bindings are unchanged.
-        assertSp("SELECT * FROM account WHERE id IN (SELECT id FROM orders WHERE x = ? AND y = ? AND z = ? AND t < ?)", bindings,
+        // PSC control: positional placeholders and value bindings are unchanged; the SqlExpression binding was
+        // written into the text by the SubQuery constructor, so it renders as SQL here too instead of being bound.
+        assertSp("SELECT * FROM account WHERE id IN (SELECT id FROM orders WHERE x = ? AND y = ? AND z = ? AND t < NOW())", bindings.subList(0, 3),
                 PSC.select("*").from("account").where(Filters.in("id", raw)).build());
     }
 

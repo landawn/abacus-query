@@ -309,8 +309,7 @@ public class Junction extends ComposableCondition {
         N.checkArgNotNull(condition, cs.condition);
 
         if (containsNonPredicateComponent(condition)) {
-            throw new IllegalArgumentException("Condition " + condition.getClass().getSimpleName() + " (operator '" + condition.operator()
-                    + "') cannot be used in a junction constructor");
+            throw new IllegalArgumentException("Condition " + describeForMessage(condition) + " cannot be used in a junction constructor");
         }
 
         return condition;

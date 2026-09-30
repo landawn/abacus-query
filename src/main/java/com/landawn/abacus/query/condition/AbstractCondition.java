@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -202,6 +203,12 @@ public abstract class AbstractCondition implements Condition {
      * (non-empty) literal are inspected instead — one-word clauses ({@code WHERE}, {@code UNION}, …),
      * two-word clauses ({@code ORDER BY}, {@code LEFT JOIN}, …), and the optional {@code OUTER} form
      * ({@code LEFT OUTER JOIN}) are all recognized, case-insensitively and skipping leading SQL comments.
+     * An unquoted identifier spelled like a one-word clause keyword (for example a column named {@code offset})
+     * is not a clause when a comparison or predicate operator follows it ({@code offset > 5}, {@code offset <=> 5},
+     * {@code offset !~ 'x'}, {@code minus IS NULL}, {@code offset NOT IN (1, 2)}, {@code offset REGEXP 'x'},
+     * {@code offset SIMILAR TO 'x'}, {@code offset LIKE'x%'}); in any other position it is classified as a clause,
+     * so quote such an identifier ({@code "offset"}) when in doubt. {@code WHERE}, {@code HAVING}, {@code UNION} and
+     * {@code JOIN}, which are reserved in every database, always start a clause ({@code WHERE ~ flags & 4 = 0}).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -236,14 +243,20 @@ public abstract class AbstractCondition implements Condition {
 
             final String firstToken = SqlParser.nextToken(literal, 0);
 
-            if (isClause(firstToken)) {
-                return true;
-            }
-
             // nextTokenEndIndex mirrors nextToken's comment-skipping scan; a raw indexOf(firstToken) could bind to
             // an earlier occurrence of the token inside a leading SQL comment and misread the second token.
             final int secondTokenStart = SqlParser.nextTokenEndIndex(literal, 0);
             final String secondToken = SqlParser.nextToken(literal, secondTokenStart);
+
+            if (isClause(firstToken)) {
+                // A one-word clause keyword that is non-reserved in some databases (OFFSET in MySQL/SQL Server, MINUS
+                // outside Oracle) can be an unquoted column name. Directly followed by a comparison or predicate
+                // operator ("offset > 5", "minus IS NULL", "offset REGEXP 'x'") it is an identifier: no clause keyword
+                // is ever followed by one (see isPredicateOperatorToken for the ambiguous cases). WHERE, HAVING, UNION
+                // and JOIN are reserved everywhere, so they always start a clause; this also keeps a unary operand
+                // such as "WHERE ~ flags & 4 = 0" from being misread as a column named "where" matched with "~".
+                return isReservedEverywhere(firstToken) || !isPredicateOperatorToken(literal, secondToken, secondTokenStart);
+            }
 
             if (Strings.isEmpty(secondToken)) {
                 return false;
@@ -266,6 +279,99 @@ public abstract class AbstractCondition implements Condition {
         }
 
         return isClause(cond.operator());
+    }
+
+    /**
+     * Reports whether {@code token} (the token after a leading clause-like keyword, scanned from
+     * {@code tokenStart} in {@code literal}) is a comparison or predicate operator: a symbolic comparison
+     * ({@code =}, {@code ==}, {@code !=}, {@code <>}, {@code <}, {@code <=}, {@code >}, {@code >=}, {@code <=>},
+     * {@code ^=}, {@code !<}, {@code !>}, {@code ~}, {@code !~}, {@code ~*}, {@code !~*}), {@code IS}, {@code IN},
+     * {@code LIKE}, {@code ILIKE}, {@code BETWEEN}, {@code REGEXP}, {@code RLIKE}, {@code GLOB}, {@code SIMILAR TO},
+     * or the {@code NOT} form of one of the word predicates ({@code NOT IN}, {@code NOT REGEXP}, …). A word operator
+     * glued to a quoted operand ({@code LIKE'x%'}, which the tokenizer returns as one token) is recognized as well.
+     */
+    private static boolean isPredicateOperatorToken(final String literal, final String token, final int tokenStart) {
+        return isPredicateOperatorToken(literal, token, tokenStart, false);
+    }
+
+    private static boolean isPredicateOperatorToken(final String literal, final String token, final int tokenStart, final boolean afterNot) {
+        if (Strings.isEmpty(token)) {
+            return false;
+        }
+
+        // SqlParser.nextToken keeps a quoted region glued to the preceding word ("LIKE'x%'" is one token), so only the
+        // word part is compared; the glued quoted region is then the operator's right operand.
+        final int quoteIndex = indexOfQuoteChar(token);
+        final boolean gluedOperand = quoteIndex > 0;
+        final String word = gluedOperand ? token.substring(0, quoteIndex) : token;
+        final int tokenEnd = SqlParser.nextTokenEndIndex(literal, tokenStart);
+
+        switch (word.toUpperCase(Locale.ROOT)) {
+            case "=", "==", "!=", "<>", "<", "<=", ">", ">=", "<=>", "^=", "!<", "!>", "!~", "~*", "!~*", "IS":
+                return !afterNot;
+
+            case "~": {
+                // "~" is also the unary bitwise NOT ("WHERE ~flags & 4 = 0"), so it is read as the binary regex-match
+                // operator only when whitespace or a quoted literal (not an operand glued to it) follows.
+                if (afterNot || tokenEnd >= literal.length()) {
+                    return false;
+                }
+
+                final char nextChar = literal.charAt(tokenEnd);
+                return Character.isWhitespace(nextChar) || nextChar == '\'';
+            }
+
+            case "IN", "LIKE", "ILIKE", "BETWEEN":
+                return true;
+
+            case "REGEXP", "RLIKE", "GLOB": {
+                // Unlike IN/LIKE/BETWEEN these words are not reserved everywhere ("WHERE glob = 1" may compare a column
+                // named glob), so a right operand that is not itself an operator must follow.
+                if (gluedOperand) {
+                    return true;
+                }
+
+                final String next = SqlParser.nextToken(literal, tokenEnd);
+                return Strings.isNotEmpty(next) && !isPredicateOperatorToken(literal, next, tokenEnd, false);
+            }
+
+            case "SIMILAR": {
+                if (gluedOperand) {
+                    return false;
+                }
+
+                final String next = SqlParser.nextToken(literal, tokenEnd);
+                final int nextQuoteIndex = indexOfQuoteChar(next);
+                return "TO".equalsIgnoreCase(nextQuoteIndex > 0 ? next.substring(0, nextQuoteIndex) : next);
+            }
+
+            case "NOT":
+                return !afterNot && !gluedOperand && isPredicateOperatorToken(literal, SqlParser.nextToken(literal, tokenEnd), tokenEnd, true);
+
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Returns {@code true} for a one-word clause keyword that is reserved in standard SQL and in every supported
+     * database ({@code WHERE}, {@code HAVING}, {@code UNION}, {@code JOIN}), so it can never be an unquoted identifier.
+     */
+    private static boolean isReservedEverywhere(final String keyword) {
+        return "WHERE".equalsIgnoreCase(keyword) || "HAVING".equalsIgnoreCase(keyword) || "UNION".equalsIgnoreCase(keyword) || "JOIN".equalsIgnoreCase(keyword);
+    }
+
+    /** Returns the index of the first quote character ({@code '}, {@code "}, {@code `}, or {@code [}) in {@code token}, or {@code -1}. */
+    private static int indexOfQuoteChar(final String token) {
+        for (int i = 0, len = token.length(); i < len; i++) {
+            final char ch = token.charAt(i);
+
+            if (ch == '\'' || ch == '"' || ch == '`' || ch == '[') {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     /**
@@ -957,15 +1063,15 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames the array of property names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
+     * @param propNames the array of property names (must not be {@code null} or empty and must not contain {@code null}, empty, blank, or comment-only elements)
      * @return a comma-separated string of property names suitable for use in a sort/grouping clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements
      */
     protected static String createSortSpec(final String... propNames) {
         N.checkArgNotEmpty(propNames, cs.propNames);
 
         for (final String propName : propNames) {
-            checkPropName(propName);
+            checkSortPropName(propName);
         }
 
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -994,13 +1100,13 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propName the property name (must not be {@code null}, empty, or blank)
+     * @param propName the property name (must not be {@code null}, empty, blank, or comment-only)
      * @param direction the sort direction (must not be {@code null})
      * @return a string of the form {@code "propName direction"} suitable for a sort/grouping clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, or {@code direction} is {@code null}
      */
     protected static String createSortSpec(final String propName, final SortDirection direction) {
-        checkPropName(propName);
+        checkSortPropName(propName);
 
         if (direction == null) {
             throw new IllegalArgumentException("direction must not be null");
@@ -1018,18 +1124,18 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames collection of property names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
+     * @param propNames collection of property names (must not be {@code null} or empty and must not contain {@code null}, empty, blank, or comment-only elements)
      * @param direction the sort direction to apply to all properties (must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, yields no elements when copied,
-     *                                  or contains {@code null}, empty, or blank elements, or if {@code direction} is {@code null}
+     *                                  or contains {@code null}, empty, blank, or comment-only elements, or if {@code direction} is {@code null}
      */
     protected static String createSortSpec(final Collection<String> propNames, final SortDirection direction) {
         N.checkArgNotEmpty(propNames, cs.propNames);
 
         final List<String> validatedPropNames = new ArrayList<>(propNames.size());
         for (final String propName : propNames) {
-            checkPropName(propName);
+            checkSortPropName(propName);
             validatedPropNames.add(propName);
         }
         N.checkArgNotEmpty(validatedPropNames, cs.propNames);
@@ -1067,11 +1173,11 @@ public abstract class AbstractCondition implements Condition {
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.
      * Use a {@link java.util.LinkedHashMap} to preserve the desired column order.</p>
      *
-     * @param orders map of property names to their sort directions (must not be {@code null} or empty; keys must not be {@code null}, empty, or blank
+     * @param orders map of property names to their sort directions (must not be {@code null} or empty; keys must not be {@code null}, empty, blank, or comment-only
      *               and entries and values must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries in map iteration order
      * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, contains a {@code null} entry,
-     *                                  {@code null}, empty, or blank keys, or {@code null} values
+     *                                  {@code null}, empty, blank, or comment-only keys, or {@code null} values
      */
     protected static String createSortSpec(final Map<String, SortDirection> orders) {
         N.checkArgNotEmpty(orders, cs.orders);
@@ -1162,8 +1268,8 @@ public abstract class AbstractCondition implements Condition {
     /**
      * Validates that the given condition is a valid operand for composable operations (AND, OR, NOT, XOR).
      * Conditions that are or recursively contain a {@link Criteria}, a standalone {@link SubQuery}, a SQL clause (WHERE, ORDER BY, etc.), an
-     * {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
-     * a blank or comment-only {@link SqlExpression}, or a {@code null} operator
+     * {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison
+     * wrapping one, such as {@code a = ANY (subquery)}, is accepted), a blank or comment-only {@link SqlExpression}, or a {@code null} operator
      * (including a {@code null} {@code cond}) cannot participate in logical composition. An empty
      * {@link Junction} is accepted: it composes through its Boolean identity ({@code 1 = 1} / {@code 1 = 0}).
      *
@@ -1183,19 +1289,42 @@ public abstract class AbstractCondition implements Condition {
      * @return {@code cond} unchanged, after validation succeeds
      * @throws IllegalArgumentException if {@code cond} is {@code null}, or is or recursively contains a condition
      *                                  with a {@code null} operator, a {@link Criteria}, a standalone {@link SubQuery}, a SQL clause, an
-     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
+     *                                  {@code ON}/{@code USING} connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand
+     *                                  (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
      *                                  or a blank or comment-only {@link SqlExpression}
      */
     protected static Condition validateComposableOperand(final Condition cond, final String methodName) {
         N.checkArgNotNull(cond, cs.condition);
 
-        final Operator operator = cond.operator();
-
         if (containsNonPredicateComponent(cond)) {
-            throw new IllegalArgumentException("Condition with operator '" + operator + "' cannot be used in composable method '" + methodName + "'");
+            throw new IllegalArgumentException("Condition " + describeForMessage(cond) + " cannot be used in composable method '" + methodName + "'");
         }
 
         return cond;
+    }
+
+    /**
+     * Describes a rejected condition for an exception message: its type name plus, for a {@link SqlExpression}, its
+     * text, or otherwise its operator. SubQuery, Criteria and SqlExpression carry the {@link Operator#EMPTY} operator,
+     * which alone would render as an unhelpful {@code "operator ''"}, so an empty operator is omitted.
+     *
+     * @param cond the condition to describe (must not be {@code null})
+     * @return a short description such as {@code Equal with operator '='}, {@code SubQuery}, or {@code SqlExpression "..."}
+     */
+    static String describeForMessage(final Condition cond) {
+        final String type = cond.getClass().getSimpleName();
+
+        if (cond instanceof final SqlExpression expr) {
+            return type + " \"" + expr.literal() + "\"";
+        }
+
+        final Operator operator = cond.operator();
+
+        if (operator == null) {
+            return type + " with a null operator";
+        }
+
+        return operator == Operator.EMPTY ? type : type + " with operator '" + operator + "'";
     }
 
     /**
@@ -1216,11 +1345,27 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param propName the property name
      * @param direction the direction associated with the property
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, or if {@code direction} is {@code null}
      */
     static void checkSortEntry(final String propName, final SortDirection direction) {
+        checkSortPropName(propName);
+        N.checkArgument(direction != null, "SortDirection for '" + propName + "' must not be null");
+    }
+
+    /**
+     * Validates a sort/grouping property name: {@link #checkPropName(String)}, plus rejection of a name made up only of
+     * SQL comments, which the rendered expression would strip, leaving a dangling direction or comma
+     * ({@code ORDER BY ASC}, {@code ORDER BY , name}). A {@code #name} SQL Server temporary-table reference is kept.
+     *
+     * @param propName the property name to validate
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only
+     */
+    private static void checkSortPropName(final String propName) {
         checkPropName(propName);
-        N.checkArgument(direction != null, "SortDirection for '" + propName + "' in the sort map must not be null");
+
+        if (isEmptyLiteral(propName)) {
+            throw new IllegalArgumentException("Property name must not consist only of SQL comments: \"" + propName + "\"");
+        }
     }
 
     /**

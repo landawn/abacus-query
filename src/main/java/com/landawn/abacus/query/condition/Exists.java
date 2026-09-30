@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents the SQL EXISTS operator for use with subqueries.
  * The EXISTS operator returns {@code true} if the subquery returns at least one row, {@code false} otherwise.
@@ -92,7 +95,7 @@ public class Exists extends ComposableCell {
      * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      */
     public Exists(final SubQuery subQuery) {
-        super(Operator.EXISTS, subQuery);
+        super(Operator.EXISTS, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

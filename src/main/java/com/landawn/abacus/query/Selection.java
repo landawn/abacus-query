@@ -110,6 +110,10 @@ public final class Selection {
     /**
      * Returns the table alias.
      *
+     * <p>When no alias is specified and {@code Dsl.selectFrom(List)} / {@code Dsl.selectFrom(Selection)} list a
+     * sub-entity table for this selection, the entity's {@code @Table} alias (if any) is used instead, so the
+     * parent columns stay qualified next to the sub-entity columns.</p>
+     *
      * @return the table alias, or {@code null} if none was specified
      */
     public String tableAlias() {

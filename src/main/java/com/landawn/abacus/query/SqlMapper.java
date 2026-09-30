@@ -244,6 +244,9 @@ public final class SqlMapper {
 
     /**
      * Creates a SqlMapper by loading separately supplied file paths.
+     * Unlike {@link #loadFrom(String)}, each path is used as given and is not split on ',' or ';'. Each path is
+     * resolved against the literal location first; when no file exists there, the common configuration
+     * directories are searched as a fallback. Duplicate ids across files are rejected.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

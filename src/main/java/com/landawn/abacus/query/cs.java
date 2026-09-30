@@ -350,7 +350,7 @@ public final class cs { // NOSONAR
     public static final String sqlBuilder = "sqlBuilder";
 
     /**
-     * Parameter name for the SQL dialect that controls identifier quoting and pagination syntax.
+     * Parameter name for the SQL dialect that controls naming, parameter rendering, identifier quoting, and pagination syntax.
      */
     public static final String sqlDialect = "sqlDialect";
 

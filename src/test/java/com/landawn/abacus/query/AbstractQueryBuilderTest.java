@@ -117,15 +117,15 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         final Dsl mysql = Dsl.forDialect(NSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
         for (final Dsl dsl : new Dsl[] { NSB, mysql }) {
-            assertEquals("SELECT id FROM users UNION SELECT id FROM archive WHERE id = 1 # note;\n ORDER BY id",
-                    dsl.select("id").from("users").union("SELECT id FROM archive WHERE id = 1 # note;").orderBy("id").build().query());
             assertEquals("SELECT id FROM users UNION SELECT id FROM archive WHERE id = 1 #note\n ORDER BY id",
                     dsl.select("id").from("users").union("SELECT id FROM archive WHERE id = 1 #note").orderBy("id").build().query());
 
-            // The existing SELECT classifier conservatively rejects an unanchored #name whose
-            // line contains ';', even when the comment-boundary scanner recognizes a hash comment.
+            // The SELECT classifier conservatively rejects any mid-statement '#' comment whose line contains ';'
+            // (SQL Server and H2's MSSQLServer/Oracle modes read '#' as a name, so the ';' would split statements),
+            // even when the comment-boundary scanner recognizes a hash comment.
             final SqlBuilder parent = dsl.select("id").from("users");
             assertThrows(IllegalArgumentException.class, () -> parent.union("SELECT id FROM archive WHERE id = 1 #note;"));
+            assertThrows(IllegalArgumentException.class, () -> parent.union("SELECT id FROM archive WHERE id = 1 # note;"));
             assertEquals("SELECT id FROM users", parent.build().query());
         }
     }
@@ -3509,6 +3509,106 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("SELECT * FROM #tmp WHERE #tmp.id = 1", sqlServer.select("*").from("#tmp").where(Filters.expr("#tmp.id = 1")).build().query());
     }
 
+    @Test
+    public void testExplicitAliasEqualToExpressionSuffixIsKept() {
+        // Only a whole-expression match ("name AS name") makes the alias redundant; a suffix match must keep it.
+        assertEquals("SELECT unit_price * quantity AS quantity FROM t", PSC.select("unitPrice * quantity AS quantity").from("t").build().query());
+        assertEquals("SELECT first_name || ' ' || last_name AS last_name FROM t",
+                PSB.select("first_name || ' ' || last_name AS last_name").from("t").build().query());
+        assertEquals("SELECT a + b AS \"b\" FROM t", PSC.select(Map.of("a + b", "b")).from("t").build().query());
+
+        assertEquals("SELECT name FROM t", PSB.select("name AS name").from("t").build().query());
+        assertEquals("SELECT t.name AS name FROM t", PSB.select("t.name AS name").from("t").build().query());
+    }
+
+    @Test
+    public void testDerivedTableAliasLineCommentIsTerminated() {
+        final String sql = PSC.select("*").from(PSC.select("id").from("users"), "u -- note").where(Filters.eq("x", 1)).build().query();
+        assertEquals("SELECT * FROM (SELECT id FROM users) u -- note\n WHERE x = ?", sql);
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testRawSqlInlinedExpressionBindingLineCommentIsTerminated() {
+        final SubQuery subQuery = Filters.subQuery("SELECT id FROM u WHERE a = ? AND b = 2", List.of(SqlExpression.of("x -- c")));
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE a = x -- c\n AND b = 2)",
+                SCSB.select("id").from("t").where(Filters.in("id", subQuery)).build().query());
+    }
+
+    @Test
+    public void testUnterminatedBracketDoesNotHideCommentToken() {
+        assertThrows(IllegalArgumentException.class, () -> PSB.update("t").set("a[1 -- x", 1));
+        assertThrows(IllegalArgumentException.class, () -> PSB.update("t").set("a[/* x", 1));
+
+        // A terminated bracket-quoted identifier still hides its content outside the MySQL/PostgreSQL families.
+        assertEquals("UPDATE t SET [a--b] = ? WHERE id = ?", PSB.update("t").set("[a--b]", 1).where(Filters.eq("id", 1)).build().query());
+
+        // PostgreSQL brackets are array subscripts, so a comment token inside them is a real comment.
+        final Dsl postgres = Dsl.forDialect(PSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        assertThrows(IllegalArgumentException.class, () -> postgres.update("t").set("a[--]", 1));
+    }
+
+    @Test
+    public void testSqliteBracketQuotedIdentifiersHideCommentTokens() {
+        // SQLite accepts [..] identifier quoting (and has no array subscripts), so [a--b] is one identifier there.
+        final Dsl sqlite = Dsl.forDialect(PSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("SQLite")).build());
+        assertEquals("UPDATE t SET [a--b] = ? WHERE id = ?", sqlite.update("t").set("[a--b]", 1).where(Filters.eq("id", 1)).build().query());
+        assertThrows(IllegalArgumentException.class, () -> sqlite.update("t").set("a[1 -- x", 1));
+
+        // SQLite ends a bracket identifier at the first ']' ("]]" is no escape), so the "--" after it is a real comment.
+        assertThrows(IllegalArgumentException.class, () -> sqlite.update("t").set("[a]]--x]", 1));
+        assertEquals("UPDATE t SET [a]]--x] = ?", PSB.update("t").set("[a]]--x]", 1).build().query());
+
+        // A trailing line comment after a bracket identifier is still terminated before the next clause.
+        assertEquals("SELECT [a--b] FROM t -- c\n WHERE id = ?", sqlite.select("[a--b]").from("t -- c").where(Filters.eq("id", 1)).build().query());
+    }
+
+    @Test
+    public void testUnresolvedCommaLimitIsRenderedPortably() {
+        final Dsl postgres = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        assertEquals("SELECT * FROM users LIMIT 99999999999 OFFSET 5",
+                postgres.select("*").from("users").append(new Limit("LIMIT 5, 99999999999")).build().query());
+        assertEquals("SELECT * FROM users LIMIT 99999999999 OFFSET 5", PSC.select("*").from("users").append(new Limit("LIMIT 5, 99999999999")).build().query());
+        assertEquals("SELECT * FROM users LIMIT 99999999999", postgres.select("*").from("users").append(new Limit("LIMIT 99999999999")).build().query());
+    }
+
+    @Test
+    public void testSubEntityTableIsOmittedWhenAllItsPropertiesAreExcluded() {
+        final Set<String> excluded = new java.util.HashSet<>();
+
+        for (final String propName : QueryUtil.selectPropNames(Account.class, true, null)) {
+            if (propName.startsWith("devices.")) {
+                excluded.add(propName);
+            }
+        }
+
+        final String sql = PSC.selectFrom(Account.class, "a", true, excluded).build().query();
+        assertTrue(sql.endsWith(" FROM account a"), sql);
+        assertFalse(sql.contains("device"), sql);
+
+        // Keeping one nested property keeps its table.
+        excluded.remove("devices.name");
+        assertTrue(PSC.selectFrom(Account.class, "a", true, excluded).build().query().endsWith(" FROM account a, device"));
+    }
+
+    @Test
+    public void testConditionOnlyBuilderRejectsSecondPredicate() {
+        final SqlBuilder builder = PSC.renderCondition(Filters.equal("a", 1));
+        assertThrows(IllegalStateException.class, () -> builder.append(Filters.equal("b", 2)));
+        assertEquals("a = ?", builder.build().query());
+    }
+
+    @Test
+    public void testCriteriaJoinEntityWithInlineConnectorIsRejected() {
+        final SqlBuilder builder = PSC.select("*").from("users u");
+        assertThrows(IllegalArgumentException.class,
+                () -> builder.append(Criteria.builder().join(new com.landawn.abacus.query.condition.CrossJoin("orders o ON 1=1")).build()));
+        assertThrows(IllegalArgumentException.class, () -> builder.append(Criteria.builder().join("orders o ON a = b", Filters.expr("u.id = o.uid")).build()));
+
+        assertEquals("SELECT * FROM users u JOIN orders o ON u.id = o.uid",
+                builder.append(Criteria.builder().join("orders o", Filters.expr("u.id = o.uid")).build()).build().query());
+    }
+
     @Table(name = "review_parent", nonColumnFields = { "child" })
     public static class ExcludedChildParent {
         private int id;
@@ -3569,5 +3669,364 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Table(name = "review_included_parent")
     public static class IncludedChildParent extends ExcludedChildParent {
+    }
+
+    // Child-placeholder renaming must use the target dialect's string-literal convention: 'C:\' is a
+    // complete literal in standard SQL, so the later child :id must still be renamed.
+    @Test
+    public void testUnionChildPlaceholderRenameUsesStandardStringsOnPostgreSql() {
+        final Dsl pg = Dsl.forDialect(NSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        final AbstractQueryBuilder.SP sp = pg.select("id")
+                .from("a")
+                .where(Filters.eq("id", 1))
+                .union(pg.select("id").from("t").where(Filters.and(Filters.expr("path = 'C:\\'"), Filters.eq("id", 2))))
+                .build();
+
+        assertEquals("SELECT id FROM a WHERE id = :id UNION SELECT id FROM t WHERE (path = 'C:\\') AND (id = :id_2)", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+        final Dsl pgIbatis = Dsl.forDialect(MSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        final String ibatis = pgIbatis.select("id")
+                .from("a")
+                .where(Filters.eq("id", 1))
+                .union(pgIbatis.select("id").from("t").where(Filters.and(Filters.expr("path = 'C:\\'"), Filters.eq("id", 2))))
+                .build()
+                .query();
+
+        assertTrue(ibatis.endsWith("(path = 'C:\\') AND (id = #{id_2})"), ibatis);
+    }
+
+    @Test
+    public void testUnionChildPlaceholderRenameUsesBackslashEscapesOnMySql() {
+        final Dsl mysql = Dsl.forDialect(NSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        final String sql = mysql.select("id")
+                .from("a")
+                .where(Filters.eq("id", 1))
+                .union(mysql.select("id").from("t").where(Filters.and(Filters.expr("path = 'x\\' AND :id = 1'"), Filters.eq("id", 2))))
+                .build()
+                .query();
+
+        // Under MySQL, \' does not end the literal: the ":id" text inside it is data and stays untouched.
+        assertEquals("SELECT id FROM a WHERE id = :id UNION SELECT id FROM t WHERE (path = 'x\\' AND :id = 1') AND (id = :id_2)", sql);
+    }
+
+    @Test
+    public void testUnionChildPlaceholderRenameFailsClosedOnAmbiguousDefaultDialectBackslash() {
+        // Without productInfo, 'C:\' is complete (standard SQL) or unterminated (MySQL): the two readings
+        // rename different placeholders, so the rewrite is rejected instead of guessing.
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> NSC.select("id")
+                .from("a")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("t").where(Filters.and(Filters.expr("path = 'C:\\'"), Filters.eq("id", 2)))));
+        assertTrue(ex.getMessage().contains("productInfo"), ex.getMessage());
+
+        assertThrows(IllegalArgumentException.class, () -> MSC.select("id")
+                .from("a")
+                .where(Filters.eq("id", 1))
+                .union(MSC.select("id").from("t").where(Filters.and(Filters.expr("path = 'C:\\'"), Filters.eq("id", 2)))));
+
+        // A backslash both readings agree on (an escaped backslash) is still rewritten normally.
+        final String sql = NSC.select("id")
+                .from("a")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("t").where(Filters.and(Filters.expr("path = 'a\\\\b'"), Filters.eq("id", 2))))
+                .build()
+                .query();
+        assertTrue(sql.endsWith("(path = 'a\\\\b') AND (id = :id_2)"), sql);
+    }
+
+    // On PostgreSQL '[' opens an array subscript, not a bracket-quoted identifier: a "]" inside a subscript
+    // string must not hide a trailing line comment or expose a quoted semicolon.
+    @Test
+    public void testPostgreSqlSubscriptIsNotBracketQuotedIdentifier() {
+        final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+
+        assertEquals("SELECT * FROM t, LATERAL (SELECT t.j['a]'] AS v) x -- c\n WHERE id = ?",
+                pg.select("*").from("t, LATERAL (SELECT t.j['a]'] AS v) x -- c").where(Filters.eq("id", 1)).build().query());
+
+        assertEquals("SELECT id FROM t UNION SELECT id FROM u WHERE j['a]'] = '1' -- c\n ORDER BY id",
+                pg.select("id").from("t").union("SELECT id FROM u WHERE j['a]'] = '1' -- c").orderBy("id").build().query());
+
+        assertEquals("SELECT id FROM t UNION SELECT id FROM u WHERE j['a]'] = ';'",
+                pg.select("id").from("t").union("SELECT id FROM u WHERE j['a]'] = ';'").build().query());
+    }
+
+    @Test
+    public void testSqlServerBracketQuotedIdentifierStillOpaque() {
+        final Dsl sqlServer = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+
+        // [a'b] is one identifier: the quote inside it opens no string, so the trailing comment is terminated.
+        assertEquals("SELECT id FROM t UNION SELECT [a'b] FROM u -- c\n ORDER BY id",
+                sqlServer.select("id").from("t").union("SELECT [a'b] FROM u -- c").orderBy("id").build().query());
+
+        // A semicolon inside a bracket-quoted identifier is not a statement terminator.
+        assertEquals("SELECT id FROM t UNION SELECT [a;b] FROM u", sqlServer.select("id").from("t").union("SELECT [a;b] FROM u").build().query());
+
+        assertEquals("SELECT * FROM t [x -- y] -- c\n WHERE id = ?",
+                sqlServer.select("*").from("t [x -- y] -- c").where(Filters.eq("id", 1)).build().query());
+    }
+
+    // A select modifier ending in a line comment must not swallow the select list and later clauses,
+    // whether it is emitted by from(...), spliced in after from(...), or carried by an appended Criteria.
+    @Test
+    public void testSelectModifierEndingInLineCommentIsTerminated() {
+        final String expected = "SELECT DISTINCT -- x\n id, name FROM t WHERE a = ?";
+
+        assertEquals(expected, PSC.select("id", "name").selectModifier("DISTINCT -- x").from("t").where(Filters.eq("a", 1)).build().query());
+        assertEquals(expected, PSC.select("id", "name").from("t").selectModifier("DISTINCT -- x").where(Filters.eq("a", 1)).build().query());
+        assertEquals(expected, PSC.select("id", "name")
+                .from("t")
+                .append(Criteria.builder().selectModifier("DISTINCT -- x").where(Filters.eq("a", 1)).build())
+                .build()
+                .query());
+
+        // A modifier without a trailing comment is unchanged.
+        assertEquals("SELECT DISTINCT id FROM t", PSC.select("id").from("t").selectModifier("DISTINCT").build().query());
+    }
+
+    // A sub-entity table contributing no column must not be listed in FROM (Cartesian product), with or
+    // without exclusions and through the Selection path alike.
+    @Test
+    public void testSelectFromOmitsColumnlessSubEntityTable() {
+        final String expected = "SELECT o.id AS \"id\", o.name AS \"name\" FROM columnless_owner o";
+
+        assertEquals(expected, PSC.selectFrom(ColumnlessSubEntityOwner.class, "o", true, null).build().query());
+        assertEquals("SELECT o.id AS \"id\" FROM columnless_owner o", PSC.selectFrom(ColumnlessSubEntityOwner.class, "o", true, Set.of("name")).build().query());
+        assertEquals(expected,
+                PSC.selectFrom(Selection.builder(ColumnlessSubEntityOwner.class).tableAlias("o").includeSubEntityProperties(true).build()).build().query());
+
+        // A sub-entity that contributes columns is still listed.
+        assertTrue(PSC.selectFrom(Account.class, "a", true, null).build().query().endsWith(" FROM account a, device"));
+        assertTrue(PSC.selectFrom(Account.class, "a", true, Set.of("firstName")).build().query().endsWith(" FROM account a, device"));
+    }
+
+    // An alias-less Selection that lists a sub-entity table falls back to the entity's @Table alias, exactly
+    // like selectFrom(Class, null, true), so the parent's "id" is not ambiguous next to the sub-entity's.
+    @Test
+    public void testSelectFromSelectionFallsBackToTableAliasWithSubEntityTables() {
+        final String expected = "SELECT o.id AS \"id\", o.status AS \"status\", c.id AS \"customer.id\", c.name AS \"customer.name\" FROM aliased_orders o, aliased_customer c";
+
+        assertEquals(expected, PSC.selectFrom(AliasedOrder.class, (String) null, true).build().query());
+        assertEquals(expected, PSC.selectFrom(Selection.builder(AliasedOrder.class).includeSubEntityProperties(true).build()).build().query());
+        assertEquals(expected, PSC.selectFrom(List.of(Selection.builder(AliasedOrder.class).includeSubEntityProperties(true).build())).build().query());
+
+        // An included sub-entity root also lists the sub-entity table, so the fallback applies too.
+        assertEquals("SELECT o.id AS \"id\", c.id AS \"customer.id\", c.name AS \"customer.name\" FROM aliased_orders o, aliased_customer c",
+                PSC.selectFrom(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "customer")).build()).build().query());
+
+        // No sub-entity table: no fallback. An explicit alias is kept.
+        assertEquals("SELECT id AS \"id\", status AS \"status\" FROM aliased_orders", PSC.selectFrom(Selection.builder(AliasedOrder.class).build()).build().query());
+        assertEquals("SELECT x.id AS \"id\", x.status AS \"status\", c.id AS \"customer.id\", c.name AS \"customer.name\" FROM aliased_orders x, aliased_customer c",
+                PSC.selectFrom(Selection.builder(AliasedOrder.class).tableAlias("x").includeSubEntityProperties(true).build()).build().query());
+
+        // select(List) leaves FROM to the caller, so it does not fall back.
+        assertEquals("SELECT id AS \"id\", status AS \"status\", c.id AS \"customer.id\", c.name AS \"customer.name\" FROM aliased_orders",
+                PSC.select(Selection.builder(AliasedOrder.class).includeSubEntityProperties(true).build()).from("aliased_orders").build().query());
+    }
+
+    // The predicate rules are shared with ON, but a rejection must name the clause actually being built.
+    @Test
+    public void testRejectedPredicateMessageNamesClause() {
+        final IllegalArgumentException where = assertThrows(IllegalArgumentException.class,
+                () -> PSC.select("*").from("t").where(SqlExpression.of("-- x")).build().query());
+        assertTrue(where.getMessage().startsWith("WHERE condition type "), where.getMessage());
+
+        final IllegalArgumentException implicitWhere = assertThrows(IllegalArgumentException.class,
+                () -> PSC.select("*").from("t").append(Filters.expr(" ")).build().query());
+        assertTrue(implicitWhere.getMessage().startsWith("WHERE condition type "), implicitWhere.getMessage());
+
+        final IllegalArgumentException having = assertThrows(IllegalArgumentException.class,
+                () -> PSC.select("*").from("t").groupBy("a").having(Filters.expr(" ")).build().query());
+        assertTrue(having.getMessage().startsWith("HAVING condition type "), having.getMessage());
+
+        final IllegalArgumentException on = assertThrows(IllegalArgumentException.class,
+                () -> PSC.select("*").from("t").innerJoin("u").on(Filters.expr(" ")).build().query());
+        assertTrue(on.getMessage().startsWith("ON condition type "), on.getMessage());
+    }
+
+    @Test
+    public void testAppendLimitAfterFetchReportsLimitAlreadySet() {
+        final IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> PSC.select("*").from("t").fetchFirstRows(3).append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
+        assertEquals("'LIMIT' has already been set and cannot be set again", e.getMessage());
+
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("t").limit(3).append(new Limit("LIMIT 99999999999")));
+    }
+
+    // The bare predicate of a condition-only builder is meant to follow a WHERE keyword, so a later WHERE
+    // ("a = ? WHERE b = 1") is malformed and rejected on every route.
+    @Test
+    public void testConditionOnlyBuilderRejectsWhereAfterBarePredicate() {
+        assertThrows(IllegalStateException.class, () -> PSC.renderCondition(Filters.eq("a", 1)).where("b = 1"));
+        assertThrows(IllegalStateException.class, () -> PSC.renderCondition(Filters.eq("a", 1)).where(Filters.eq("b", 1)));
+        assertThrows(IllegalStateException.class, () -> PSC.renderCondition(Filters.eq("a", 1)).append(Filters.where(Filters.eq("b", 1))));
+        assertThrows(IllegalStateException.class, () -> PSC.renderCondition(Filters.eq("a", 1)).append(Criteria.builder().where(Filters.eq("b", 1)).build()));
+
+        // Clauses that may legally follow a WHERE predicate are still accepted.
+        assertEquals("a = ? ORDER BY b", PSC.renderCondition(Filters.eq("a", 1)).orderBy("b").build().query());
+        assertEquals("WHERE a = ? ORDER BY b", PSC.renderCondition(Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build()).build().query());
+    }
+
+    @Test
+    public void testNullMapDirectionMessageNamesKey() {
+        final Map<String, SortDirection> map = new LinkedHashMap<>();
+        map.put("x", null);
+
+        assertEquals("Direction for key 'x' in groupings must not be null",
+                assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("t").groupBy(map)).getMessage());
+        assertEquals("Direction for key 'x' in orders must not be null",
+                assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("t").orderBy(map)).getMessage());
+    }
+
+    // MySQL compound INTERVAL units and Oracle binary floating-point types contain underscores but are keywords,
+    // not snake_case column names: a naming policy must not camelCase them.
+    @Test
+    public void testUnderscoreKeywordsNotConvertedByNamingPolicy() {
+        assertTrue(PLC.select("*").from("t").where(Filters.expr("x > INTERVAL '1-2' YEAR_MONTH")).build().query().contains("YEAR_MONTH"));
+
+        final String sql = PLC.select("CAST(x AS BINARY_DOUBLE)").from("t").orderBy("x + INTERVAL '1' DAY_HOUR").build().query();
+        assertTrue(sql.contains("BINARY_DOUBLE"), sql);
+        assertTrue(sql.contains("DAY_HOUR"), sql);
+    }
+
+    @Table(name = "columnless_owner")
+    public static class ColumnlessSubEntityOwner {
+        private int id;
+        private String name;
+        private ColumnlessSubEntity wrapper;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public ColumnlessSubEntity getWrapper() {
+            return wrapper;
+        }
+
+        public void setWrapper(final ColumnlessSubEntity wrapper) {
+            this.wrapper = wrapper;
+        }
+    }
+
+    /** A sub-entity whose only property is itself a nested bean, so it maps no column of its own. */
+    @Table(name = "columnless_wrapper")
+    public static class ColumnlessSubEntity {
+        private NestedAddress addr;
+
+        public NestedAddress getAddr() {
+            return addr;
+        }
+
+        public void setAddr(final NestedAddress addr) {
+            this.addr = addr;
+        }
+    }
+
+    public static class NestedAddress {
+        private String city;
+
+        public String getCity() {
+            return city;
+        }
+
+        public void setCity(final String city) {
+            this.city = city;
+        }
+    }
+
+    @Table(name = "aliased_orders", alias = "o")
+    public static class AliasedOrder {
+        private int id;
+        private String status;
+        private AliasedCustomer customer;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(final String status) {
+            this.status = status;
+        }
+
+        public AliasedCustomer getCustomer() {
+            return customer;
+        }
+
+        public void setCustomer(final AliasedCustomer customer) {
+            this.customer = customer;
+        }
+    }
+
+    @Table(name = "aliased_customer", alias = "c")
+    public static class AliasedCustomer {
+        private int id;
+        private String name;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testRawSubQuerySqlExpressionBindingRendersIdenticallyUnderEveryPolicy() {
+        // Before: PARAMETERIZED/NAMED/IBATIS builders passed the SqlExpression object to JDBC as a value.
+        final SubQuery sq = Filters.subQuery("SELECT id FROM x WHERE created < ? AND k = ?", Arrays.asList(SqlExpression.of("NOW()"), 5));
+
+        AbstractQueryBuilder.SP sp = PSC.select("id").from("t").where(Filters.in("id", sq)).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM x WHERE created < NOW() AND k = ?)", sp.query());
+        assertEquals(Arrays.asList(5), sp.parameters());
+
+        sp = NSC.select("id").from("t").where(Filters.in("id", sq)).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM x WHERE created < NOW() AND k = :param)", sp.query());
+        assertEquals(Arrays.asList(5), sp.parameters());
+
+        sp = MSC.select("id").from("t").where(Filters.in("id", sq)).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM x WHERE created < NOW() AND k = #{param})", sp.query());
+        assertEquals(Arrays.asList(5), sp.parameters());
+
+        sp = SCSB.select("id").from("t").where(Filters.in("id", sq)).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM x WHERE created < NOW() AND k = 5)", sp.query());
+        assertTrue(sp.parameters().isEmpty());
+
+        // A raw sub-query binding becomes a scalar sub-query, its bindings merged in placeholder order.
+        final SubQuery scalar = Filters.subQuery("SELECT id FROM o WHERE a = ? AND total = ? AND b = ?",
+                Arrays.asList(1, Filters.subQuery("SELECT MAX(total) FROM o WHERE s = ?", Arrays.asList("OPEN")), 2));
+        sp = NSC.select("id").from("t").where(Filters.in("id", scalar)).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM o WHERE a = :param AND total = (SELECT MAX(total) FROM o WHERE s = :param_2) AND b = :param_3)",
+                sp.query());
+        assertEquals(Arrays.asList(1, "OPEN", 2), sp.parameters());
     }
 }

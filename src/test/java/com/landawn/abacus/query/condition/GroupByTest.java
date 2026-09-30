@@ -352,4 +352,30 @@ public class GroupByTest extends TestBase {
         groupings.put("salary", SortDirection.DESC);
         assertEquals("GROUP BY department ASC, salary DESC", new GroupBy(groupings).toString());
     }
+
+    @Test
+    public void testCommentOnlyPropertyNameRejected() {
+        // A comment-only name would be stripped at render time, leaving "GROUP BY ASC" / "GROUP BY , name".
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("/* x */", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("/* x */", "name"));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("name", "-- x"));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("/* x */", "name")));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("name", "/* x */"), SortDirection.DESC));
+
+        final Map<String, SortDirection> groupings = new LinkedHashMap<>();
+        groupings.put("name", SortDirection.ASC);
+        groupings.put("-- x", SortDirection.DESC);
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(groupings));
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("/* x */", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("name", SortDirection.ASC, "/* x */", SortDirection.DESC));
+    }
+
+    @Test
+    public void testPropertyNameWithCommentAndRealTokenAccepted() {
+        // Comments are stripped at render time, but the real token keeps the entry well-formed.
+        assertEquals("GROUP BY dept ASC", new GroupBy("dept /* d */", SortDirection.ASC).toString());
+        // A #name (possible SQL Server temporary identifier) is not treated as comment-only by the constructor.
+        assertNotNull(new GroupBy("#tmp", "dept"));
+    }
 }

@@ -160,8 +160,10 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * generated names ({@code :param}, {@code :param_2}, ... / {@code #{param}}, ...) so the statement never
      * mixes parameter styles, and the bindings are appended in that order; under {@code RAW_SQL} each one is
      * replaced by the literal rendering of its binding (exactly as a structured condition's value is inlined:
-     * strings quoted and escaped, {@code null} as the {@code null} literal, a {@link SqlExpression} verbatim) and nothing
-     * is added to the parameter list (see {@link #renameRawSubQueryPlaceholders(String, List)}). Subquery text
+     * strings quoted and escaped, {@code null} as the {@code null} literal) and nothing
+     * is added to the parameter list (see {@link #renameRawSubQueryPlaceholders(String, List)}). A {@link SqlExpression}
+     * or raw {@code SubQuery} binding never reaches this step: {@code SubQuery(String, Collection)} writes it into the
+     * text at construction, so it renders identically under every policy. Subquery text
      * ending in a line comment receives a terminating line feed before a closing parenthesis or subsequent
      * clause is appended. An empty
      * {@link Junction} renders as its Boolean identity ({@code 1 = 1} for AND, {@code 1 = 0} for OR),

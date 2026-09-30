@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents an EXCEPT set operation in SQL queries.
  * The EXCEPT operator returns all distinct rows from the first query that are not
@@ -163,7 +166,7 @@ public class Except extends Clause {
      * @see Intersect
      */
     public Except(final SubQuery subQuery) {
-        super(Operator.EXCEPT, subQuery);
+        super(Operator.EXCEPT, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

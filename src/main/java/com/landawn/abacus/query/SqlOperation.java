@@ -141,7 +141,8 @@ public enum SqlOperation {
      *
      * <p>Note: {@link #of(String)} returns {@code null} (not this constant) for unrecognized names;
      * use {@link #fromOrUnknown(String)} when an unrecognized token should resolve to {@code UNKNOWN}
-     * instead.</p>
+     * instead. The literal name {@code "UNKNOWN"} itself (case-insensitively) does resolve to this
+     * constant through {@code of(String)}.</p>
      */
     UNKNOWN("UNKNOWN");
 

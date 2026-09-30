@@ -133,8 +133,8 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
-     *                                  otherwise because a qualified {@code JOIN} requires a non-{@code null} {@code ON}/{@code USING} predicate
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+     *                                  otherwise it is thrown because a qualified {@code JOIN} requires a non-{@code null} {@code ON}/{@code USING} predicate
      * @deprecated always throws {@link IllegalArgumentException} because a qualified join requires an {@code ON}/{@code USING}
      *             predicate; use {@link #Join(String, Condition)} instead, or {@link CrossJoin} for an unconditional join
      */
@@ -231,7 +231,23 @@ public class Join extends AbstractCondition {
      *                                  quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted), a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     protected Join(final Operator operator, final String joinEntity, final Condition joinCondition) {
-        this(operator, Collections.singletonList(joinEntity), joinCondition);
+        this(operator, Collections.singletonList(checkSingleJoinEntity(joinEntity)), joinCondition);
+    }
+
+    /**
+     * Validates the entity of a single-entity constructor up front, so that the rejection names {@code joinEntity}
+     * rather than an element of the internal single-element {@code joinEntities} list.
+     *
+     * @param joinEntity the table or entity to join with
+     * @return {@code joinEntity}, unchanged
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     */
+    private static String checkSingleJoinEntity(final String joinEntity) {
+        if (Strings.isBlank(joinEntity)) {
+            throw new IllegalArgumentException("joinEntity must not be null, empty, or blank");
+        }
+
+        return joinEntity;
     }
 
     /**
@@ -298,7 +314,8 @@ public class Join extends AbstractCondition {
      *                                  if {@code joinCondition} is or contains a {@link Criteria}, a null operator,
      *                                  a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
      *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *                                  operand, a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
+     *                                  operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+     *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     protected Join(final Operator operator, final Collection<String> joinEntities, final Condition joinCondition) {
         super(operator);

@@ -217,6 +217,7 @@ public final class QueryUtil {
      * @return an immutable map containing property-name keys and, when a mapped column name is not
      *         already a property-name key, an additional column-name key. Each value contains the
      *         mapped column name and whether that column name is a single unqualified identifier.
+     *         The map is empty if {@code entityClass} is a {@link Map} type.
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, or is neither a {@link Map} type nor a valid entity bean class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
@@ -506,6 +507,40 @@ public final class QueryUtil {
     }
 
     /**
+     * Returns the character offsets, in {@code sql} itself, of exactly the positional {@code ?} placeholders that
+     * {@link ParsedSql#parameterCount()} counts, in ascending order: a {@code ?} inside a quoted literal, a quoted
+     * identifier or a comment, and a PostgreSQL JSON {@code ?} operator, is never listed. This is the classification
+     * raw sub-queries validate their bindings with, so the offsets line up with those bindings.
+     *
+     * @param sql the non-blank SQL text to scan
+     * @return a fresh array of offsets into {@code sql} (empty if it carries no positional placeholder)
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, or contains malformed placeholder text
+     * @throws IllegalStateException if the placeholders cannot be aligned back onto {@code sql} (defensive; not expected)
+     */
+    @Internal
+    public static int[] positionalParameterOffsets(final String sql) {
+        final ParsedSql parsedSql = ParsedSql.parse(sql);
+        final int[] offsets = parsedSql.positionalParameterOffsets();
+
+        // ParsedSql offsets refer to the trimmed text: add back the leading whitespace String.trim() dropped.
+        int leadingWhitespace = 0;
+
+        while (leadingWhitespace < sql.length() && sql.charAt(leadingWhitespace) <= ' ') {
+            leadingWhitespace++;
+        }
+
+        if (!sql.startsWith(parsedSql.originalSql(), leadingWhitespace)) {
+            throw new IllegalStateException("The parsed text does not match the raw text: " + sql);
+        }
+
+        for (int i = 0; i < offsets.length; i++) {
+            offsets[i] += leadingWhitespace;
+        }
+
+        return offsets;
+    }
+
+    /**
      * Returns the index of the delimiter closing the quoted identifier that starts at {@code fromIndex},
      * or {@code text.length()} when the identifier is unterminated. A doubled delimiter is an escaped
      * delimiter and does not close the region.
@@ -605,10 +640,13 @@ public final class QueryUtil {
      * This method handles nested properties and respects {@code @Table} annotations for column field configurations.
      *
      * <p>The naming policy determines how property names are converted to column names when no explicit
-     * {@code @Column} annotation is present. For nested bean properties, the method recursively builds mappings
-     * with dot notation up to {@code abacus.query.maxNestedPropDepth} bean hops (default: 2): a nested property
-     * like {@code "address.street"} resolves to a value of the form {@code "<sub-table-alias-or-name>.<column>"}
-     * (e.g. {@code "addr.street"} when the {@code Address} entity declares an alias {@code "addr"}).
+     * {@code @Column} annotation is present. For sub-entity properties (bean or bean-collection properties not
+     * marked with {@code @Column}), the method recursively builds mappings with dot notation up to
+     * {@code abacus.query.maxNestedPropDepth} bean hops (default: 2): a nested property like
+     * {@code "address.street"} resolves to a value of the form {@code "<sub-table-alias-or-name>.<column>"}
+     * (e.g. {@code "addr.street"} when the {@code Address} entity declares an alias {@code "addr"}). A bean-typed
+     * property annotated with {@code @Column} (for example, a JSON column) is treated as a plain column: it maps to
+     * its own column name and is not expanded into nested paths.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -737,7 +775,9 @@ public final class QueryUtil {
             } else {
                 final Type<?> propType = propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type;
 
-                if (propType.isBean()) {
+                // Use isSubEntity (not propType.isBean()): a bean-typed property marked @Column is a plain
+                // (e.g. JSON/serialized) column and must map to itself, not be expanded into nested paths.
+                if (propInfo.isSubEntity) {
                     if (remainingNestedPropDepth <= 0 || (registeringClasses != null && registeringClasses.contains(propType.javaType()))) {
                         continue;
                     }
@@ -788,7 +828,8 @@ public final class QueryUtil {
 
     /**
      * Returns the property names to be used for INSERT operations on the given entity instance.
-     * This method considers ID fields and excludes properties marked as non-insertable.
+     * This method considers ID fields and excludes non-insertable properties ({@code @ReadOnly}, read-only ID
+     * ({@code @ReadOnlyId}) and non-column properties).
      *
      * <p>The method intelligently handles ID fields:</p>
      * <ul>
@@ -883,7 +924,9 @@ public final class QueryUtil {
 
     /**
      * Returns the property names to be used for INSERT operations on the given entity class.
-     * This method returns all insertable properties (including ID fields) excluding those specified in {@code excludedPropNames}.
+     * This method returns all insertable properties (including writable ID fields) excluding those specified in {@code excludedPropNames}.
+     * {@code @ReadOnly} and read-only ID ({@code @ReadOnlyId}) properties, as well as properties excluded from column
+     * mapping, are never insertable.
      *
      * <p>Unlike the instance-based version, this method does not check for default ID values since no
      * entity instance is provided. It returns all insertable properties including IDs.</p>
@@ -1102,12 +1145,13 @@ public final class QueryUtil {
 
     /**
      * Returns the ID property names for the specified entity class.
-     * ID properties are those annotated with {@code @Id} or {@code @ReadOnlyId}; when the class declares
-     * neither annotation, a property named exactly {@code "id"} whose type is {@code int}/{@code Integer},
-     * {@code long}/{@code Long}, {@code String}, {@code java.sql.Timestamp} or {@code java.util.UUID}
-     * is treated as the ID by convention.
+     * ID properties are those annotated with {@code @Id} or {@code @ReadOnlyId} (on the property, or listed in a
+     * class-level {@code @Id}/{@code @ReadOnlyId} value), or with a JPA {@code javax.persistence}/{@code jakarta.persistence}
+     * {@code @Id}; when no property is marked this way, a property named exactly {@code "id"} whose type is
+     * {@code int}/{@code Integer}, {@code long}/{@code Long}, {@code String}, {@code java.sql.Timestamp} or
+     * {@code java.util.UUID} is treated as the ID by convention.
      *
-     * <p>For entities that declare no ID annotation and have no conventionally-typed property named
+     * <p>For entities that mark no ID property and have no conventionally-typed property named
      * {@code "id"}, an empty list is returned.</p>
      *
      * <p><b>Usage Examples:</b></p>

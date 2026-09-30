@@ -1745,4 +1745,89 @@ public class QueryUtilTest extends TestBase {
         assertEquals("\"firstName\" = 1", Filters.eq("\"firstName\"", 1).toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("SELECT a FROM t WHERE t.\"First.Name\" = ?", PSC.select("a").from("t").where(Filters.eq("t.\"First.Name\"", 1)).build().query());
     }
+
+    @Test
+    public void testColumnAnnotatedBeanPropertyIsAPlainColumn() {
+        // A bean-typed property marked @Column (e.g. a JSON column) is not a sub-entity: it maps to itself and is
+        // qualified like any other column instead of being expanded into bogus "geo.lat" paths.
+        final ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(ColumnBeanAddress.class, NamingPolicy.SNAKE_CASE);
+        assertEquals("geo", map.get("geo"));
+        assertFalse(map.containsKey("geo.lat"));
+        assertEquals("SELECT ad.id AS \"id\", ad.street AS \"street\", ad.geo AS \"geo\" FROM address ad",
+                PSC.selectFrom(ColumnBeanAddress.class).build().query());
+        assertEquals("SELECT ad.geo AS \"geo\" FROM address ad WHERE ad.geo = ?",
+                PSC.select("geo").from(ColumnBeanAddress.class).where(Filters.eq("geo", 1)).build().query());
+
+        // Nested under a real sub-entity, the column is qualified by the sub-entity's table alias.
+        final ImmutableMap<String, String> personMap = QueryUtil.propToColumnNameMap(ColumnBeanPerson.class, NamingPolicy.SNAKE_CASE);
+        assertEquals("ad.geo", personMap.get("addr.geo"));
+        assertFalse(personMap.containsKey("addr.geo.lat"));
+        assertTrue(PSC.selectFrom(ColumnBeanPerson.class, true).build().query().contains("ad.geo AS \"addr.geo\""));
+    }
+
+    public static class ColumnBeanGeo {
+        private double lat;
+
+        public double getLat() {
+            return lat;
+        }
+
+        public void setLat(final double lat) {
+            this.lat = lat;
+        }
+    }
+
+    @Table(name = "address", alias = "ad")
+    public static class ColumnBeanAddress {
+        private long id;
+        private String street;
+        @Column
+        private ColumnBeanGeo geo;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getStreet() {
+            return street;
+        }
+
+        public void setStreet(final String street) {
+            this.street = street;
+        }
+
+        public ColumnBeanGeo getGeo() {
+            return geo;
+        }
+
+        public void setGeo(final ColumnBeanGeo geo) {
+            this.geo = geo;
+        }
+    }
+
+    @Table(name = "person", alias = "p")
+    public static class ColumnBeanPerson {
+        private long id;
+        private ColumnBeanAddress addr;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public ColumnBeanAddress getAddr() {
+            return addr;
+        }
+
+        public void setAddr(final ColumnBeanAddress addr) {
+            this.addr = addr;
+        }
+    }
 }

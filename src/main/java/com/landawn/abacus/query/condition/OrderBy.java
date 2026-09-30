@@ -129,7 +129,7 @@ public class OrderBy extends Clause {
      * }</pre>
      *
      * @param propNames variable number of property names to sort by. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -163,7 +163,7 @@ public class OrderBy extends Clause {
      *
      * @param propNames the collection of property names to sort by, in iteration order. Must not be {@code null} or empty and must not contain {@code null},
      *                  empty, or blank elements.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, or blank elements,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -190,7 +190,7 @@ public class OrderBy extends Clause {
      *
      * @param propOrColumnName the property or column name to sort by. Must not be {@code null}, empty, or blank.
      * @param direction the sort direction (ASC or DESC). Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, or blank, if {@code direction} is {@code null},
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, if {@code direction} is {@code null},
      *                                  or if {@code propOrColumnName} begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -223,7 +223,7 @@ public class OrderBy extends Clause {
      * @param propNames collection of property names to sort by. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
      * @param direction the sort direction to apply to all properties. Must not be {@code null}.
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, yields no elements when copied, or contains
-     *                                  {@code null}, empty, or blank elements,
+     *                                  {@code null}, empty, blank, or comment-only elements,
      *                                  if {@code direction} is {@code null}, or if the first property name begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
@@ -256,7 +256,7 @@ public class OrderBy extends Clause {
      *               matches insertion order. Must not be {@code null} or empty; keys must not be {@code null}, empty, or blank and values must not be
      *               {@code null}.
      * @throws IllegalArgumentException if {@code orders} is {@code null}, empty, contains a {@code null} entry,
-     *                                  or contains {@code null}, empty, or blank keys
+     *                                  or contains {@code null}, empty, blank, or comment-only keys
      *                                  or {@code null} values, or if the first key begins with a SQL clause keyword (for example
      *                                  {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING},
      *                                  matched case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be

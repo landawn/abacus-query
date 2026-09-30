@@ -599,4 +599,19 @@ public class JunctionTest extends TestBase {
         assertEquals("((firstName = 'Ada'))", new Or(child).toSql(null));
         assertEquals("((first_name = 'Ada'))", new And(child).toSql(NamingPolicy.SNAKE_CASE));
     }
+
+    @Test
+    public void testConstructorRejectionMessageOmitsEmptyOperator() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> new Junction(Operator.AND, Filters.eq("a", 1), Filters.subQuery("select 1")));
+        assertEquals("Condition SubQuery cannot be used in a junction constructor", e.getMessage());
+
+        final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
+                () -> new Junction(Operator.OR, Filters.eq("a", 1), Filters.expr("ORDER BY x")));
+        assertEquals("Condition SqlExpression \"ORDER BY x\" cannot be used in a junction constructor", e2.getMessage());
+
+        final IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class,
+                () -> new Junction(Operator.AND, Filters.eq("a", 1), new Where(Filters.eq("b", 2))));
+        assertEquals("Condition Where with operator 'WHERE' cannot be used in a junction constructor", e3.getMessage());
+    }
 }

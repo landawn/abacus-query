@@ -324,14 +324,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** Char array for " ROWS". */
     protected static final char[] _SPACE_ROWS = (SK.SPACE + SK.ROWS).toCharArray();
 
-    /**
-     * Matches the generic {@code LIMIT count [OFFSET offset]} expressions that reach the builder as an
-     * unresolved {@link Limit#expression()}, where each token is an integer literal. In practice int-range forms are
-     * parsed into concrete count/offset by {@link Limit#Limit(String)} and rendered via {@link #limit(int)} /
-     * {@link #limit(int, int)}, so this pattern normally handles integer literals outside the {@code int} range.
-     */
+    /** One integer-literal slot (count or offset) of a LIMIT/FETCH expression. */
     private static final String LIMIT_SLOT_PATTERN = "(\\d+)";
-    /** Matches a generic {@code LIMIT count [OFFSET offset]} or {@code LIMIT offset, count} expression. */
+    /**
+     * Matches the generic {@code LIMIT count [OFFSET offset]} or MySQL {@code LIMIT offset, count} expressions that
+     * reach the builder as an unresolved {@link Limit#expression()}, where each token is an integer literal. In practice
+     * int-range forms are parsed into concrete count/offset by {@link Limit#Limit(String)} and rendered via
+     * {@link #limit(int)} / {@link #limit(int, int)}, so this pattern normally handles integer literals outside the
+     * {@code int} range. The MySQL {@code LIMIT offset, count} form is re-rendered as {@code LIMIT count OFFSET offset}
+     * (or in the FETCH syntax of a FETCH-pagination dialect).
+     */
     private static final Pattern GENERIC_LIMIT_EXPRESSION_PATTERN = Pattern.compile(
             "LIMIT\\s+" + LIMIT_SLOT_PATTERN + "(?:\\s+OFFSET\\s+" + LIMIT_SLOT_PATTERN + "|\\s*,\\s*" + LIMIT_SLOT_PATTERN + ")?", Pattern.CASE_INSENSITIVE);
     /** Matches the SQL:2008 {@code [OFFSET offset ROWS] FETCH FIRST|NEXT count ROWS ONLY} expression. */
@@ -341,6 +343,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Internal clause-state marker distinguishing {@code OFFSET n ROWS} from limit-style {@code OFFSET n}. */
     private static final String OFFSET_ROWS_SLOT = "OFFSET ROWS syntax";
+
+    /**
+     * Internal clause-state marker recording that a condition-only builder has emitted its bare predicate: that output
+     * is meant to be spliced after a {@code WHERE} keyword, so a later {@code WHERE} clause would be malformed.
+     */
+    private static final String CONDITION_ONLY_PREDICATE_SLOT = "condition-only predicate";
 
     /** Char array for the "AND" keyword. */
     protected static final char[] _AND = SK.AND.toCharArray();
@@ -454,7 +462,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // rendering paths for the same expression text.
         for (final String keyword : new String[] { "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME",
                 "CURRENT_TIMESTAMP", "CURRENT_USER", "LOCALTIME", "LOCALTIMESTAMP", "SESSION_USER", "SYSTEM_USER", "UTC_DATE", "UTC_TIME", "UTC_TIMESTAMP",
-                "NAN", "INFINITE", "UNKNOWN", "TRUE", "FALSE" }) {
+                "NAN", "INFINITE", "UNKNOWN", "TRUE", "FALSE",
+                // MySQL compound INTERVAL units and Oracle binary floating-point types
+                "DAY_HOUR", "DAY_MINUTE", "DAY_SECOND", "DAY_MICROSECOND", "HOUR_MINUTE", "HOUR_SECOND", "HOUR_MICROSECOND", "MINUTE_SECOND",
+                "MINUTE_MICROSECOND", "SECOND_MICROSECOND", "YEAR_MONTH", "BINARY_DOUBLE", "BINARY_FLOAT" }) {
             sqlKeyWords.add(keyword);
         }
     }
@@ -500,11 +511,27 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** The SQL policy governing how parameter placeholders are rendered. */
     protected final SqlPolicy _sqlPolicy; //NOSONAR
 
-    /** The quote character wrapped around generated aliases ({@code `} for MySQL-family dialects, {@code "} otherwise). */
+    /**
+     * The quote character wrapped around generated aliases: the dialect's explicit {@link IdentifierQuote}, or by default
+     * {@code `} for MySQL-family dialects and {@code "} otherwise.
+     */
     protected final char _identifierQuote; //NOSONAR
 
-    /** The dialect family resolved from the dialect's product info; selects the pagination syntax. */
+    /**
+     * The dialect family resolved from the dialect's product info; drives pagination syntax, the default identifier
+     * quote, and dialect-specific lexical rules (MySQL comments/escapes, SQL Server {@code #temp} identifiers, and
+     * {@code [bracket]} identifiers on SQL Server, SQLite and the default dialect).
+     */
     final DialectFamily _dialectFamily; //NOSONAR
+
+    /**
+     * Whether {@code [...]} is a bracket-quoted identifier for this builder's target: SQL Server, SQLite (which accepts
+     * the MS Access/SQL Server quoting and has no array subscripts), and the dialect-agnostic default.
+     */
+    private final boolean _bracketQuotedIdentifiers;
+
+    /** Whether the target is SQLite, where a bracket-quoted identifier ends at the first {@code ]} ({@code ]]} is no escape). */
+    private final boolean _sqlite;
 
     /** The parameter values collected for the built statement, in placeholder order. */
     protected final List<Object> _parameters = new ArrayList<>(); //NOSONAR
@@ -642,6 +669,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _namingPolicy = this.sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : this.sqlDialect.namingPolicy();
         _sqlPolicy = this.sqlDialect.sqlPolicy() == null ? SqlPolicy.RAW_SQL : this.sqlDialect.sqlPolicy();
         _dialectFamily = resolveDialectFamily(this.sqlDialect.productInfo());
+        _sqlite = this.sqlDialect.productInfo() != null && this.sqlDialect.productInfo().isSQLite();
+        _bracketQuotedIdentifiers = _dialectFamily == DialectFamily.SQL_SERVER || _dialectFamily == DialectFamily.DEFAULT || _sqlite;
         _identifierQuote = this.sqlDialect.identifierQuote() == null //
                 ? (_dialectFamily == DialectFamily.MYSQL ? SK._BACKTICK : SK._DOUBLE_QUOTE)
                 : (this.sqlDialect.identifierQuote() == IdentifierQuote.BACKTICK ? SK._BACKTICK : SK._DOUBLE_QUOTE);
@@ -1047,7 +1076,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param entityClass the entity class
      * @param alias the table alias for the main entity (can be null or empty)
-     * @param excludedPropNames sub-entity property names to exclude (can be null)
+     * @param excludedPropNames property names excluded from the projection (can be null); a sub-entity table is omitted
+     *        when neither its root property nor any of its {@code root.prop} properties remains selected
      * @param namingPolicy the naming policy for table name conversion
      * @return a list of table name expressions, or an empty list if there are no sub-entity properties
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
@@ -1072,11 +1102,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+        // Same rule as getFromClause: list a sub-entity table only if the resolved projection still selects the root
+        // or one of its "root.prop" columns. Excluding every nested property individually must drop the table too;
+        // otherwise it contributes no column but still multiplies the rows (Cartesian product).
+        // The rule applies even without exclusions: a sub-entity whose own properties are all nested beans or
+        // non-column properties contributes no "root.prop" column and must not be listed either (the
+        // no-exclusion projection is memoized by QueryUtil.selectPropNames).
+        final Collection<String> selectPropNames = QueryUtil.selectPropNames(entityClass, true, excludedPropNames);
         PropInfo propInfo = null;
         Class<?> subEntityClass = null;
 
         for (final String subEntityPropName : subEntityPropNames) {
-            if (excludedPropNames != null && excludedPropNames.contains(subEntityPropName)) {
+            if (!containsSelectedPropOrSubProp(selectPropNames, subEntityPropName)) {
                 continue;
             }
 
@@ -1331,7 +1368,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 hashIdentifier = hashIdentifierMatcher.test(i);
             }
 
-            final int next = skipSqlQuotedOrComment(query, i, hashIdentifier, backslashEscapes, _dialectFamily == DialectFamily.MYSQL);
+            final int next = skipSqlQuotedOrComment(query, i, hashIdentifier, backslashEscapes, _dialectFamily == DialectFamily.MYSQL,
+                    hasBracketQuotedIdentifiers());
 
             if (next != i) {
                 i = next - 1;
@@ -1341,6 +1379,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return false;
+    }
+
+    /**
+     * Whether {@code [...]} is a bracket-quoted identifier on this builder's target server: SQL Server, SQLite, and the
+     * dialect-agnostic default, which keeps its historical reading. Elsewhere (e.g. PostgreSQL, H2) {@code [} opens an
+     * array subscript such as {@code j['a]']}, whose quoted text and comments must be scanned normally.
+     */
+    private boolean hasBracketQuotedIdentifiers() {
+        return _bracketQuotedIdentifiers;
     }
 
     /**
@@ -1765,7 +1812,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // The modifier is a raw SQL fragment (e.g. "DISTINCT", "TOP 10", "SQL_CALC_FOUND_ROWS") and must
             // be emitted verbatim: appendStringExpr would apply column-name normalization, corrupting any
             // modifier keyword the naming policy does not recognize (e.g. camelCasing "SQL_CALC_FOUND_ROWS").
-            _sb.append(_selectModifier);
+            // appendSqlFragment terminates a trailing line comment ("DISTINCT -- x") so it cannot swallow
+            // the select list and every clause after it.
+            appendSqlFragment(_selectModifier);
 
             final int newLength = _sb.length();
 
@@ -1844,7 +1893,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final int separatorIdx = findFirstTopLevelFromSeparator(firstTableName, _dialectFamily == DialectFamily.SQL_SERVER);
         final String localTableName = (separatorIdx > 0 ? firstTableName.substring(0, separatorIdx) : firstTableName).trim();
 
-        final boolean sqlServerTempIdentifiers = _dialectFamily == DialectFamily.SQL_SERVER;
         final StringBuilder fromBody = new StringBuilder();
 
         for (final String normalizedTableName : normalizedTableNames) {
@@ -1856,7 +1904,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             // trim() may have removed the newline that ended a trailing line comment; restore it so the
             // comment cannot swallow the separator and the following table reference.
-            if (endsInsideLineComment(normalizedTableName, sqlServerTempIdentifiers, _dialectFamily == DialectFamily.MYSQL, _tokenizer.tokenizerConfig())) {
+            if (endsInsideLineComment(normalizedTableName)) {
                 fromBody.append('\n');
             }
         }
@@ -1919,7 +1967,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param sqlBuilder the child builder supplying a complete, lexically SELECT-only query (a syntactic {@code SELECT} candidate); consumed once child finalization begins
-     * @param alias the derived-table alias, emitted as trusted SQL
+     * @param alias the derived-table alias, emitted as trusted SQL (a trailing line comment is terminated with a line feed)
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, is not building a SELECT, has no projection,
      *                               or already has a FROM clause, or if the child is incomplete or was already consumed;
@@ -1951,7 +1999,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final String query = prepareSubQuerySnapshot(sqlBuilder.buildSubQuery());
             _sb.append(SK._PARENTHESIS_L);
             appendSqlFragment(query);
-            _sb.append(SK._PARENTHESIS_R).append(_SPACE).append(normalizedAlias);
+            _sb.append(SK._PARENTHESIS_R).append(_SPACE);
+            // Like from(String), terminate a trailing line comment in the alias ("u -- note") so it cannot swallow later clauses.
+            appendSqlFragment(normalizedAlias);
             _tableName = "(" + query + ")";
         });
     }
@@ -2090,16 +2140,30 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Validates that {@code condition} is a non-{@code null} predicate usable in a WHERE/HAVING/ON position.
      *
      * @param condition the condition to validate
+     * @param clauseName the clause keyword the predicate is validated for ({@code WHERE}, {@code HAVING} or {@code ON}),
+     *        named in the rejection message
      * @return the validated predicate condition
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a {@code null} operator, or
      *         is/contains a {@link Criteria}, standalone {@link SubQuery}, SQL clause, JOIN, {@code ON}/{@code USING}
      *         connector, quantified-subquery operand, or blank or comment-only {@link SqlExpression}. An empty {@link com.landawn.abacus.query.condition.Junction} is
      *         accepted and renders its Boolean identity (for example {@code 1 = 1})
      */
-    private static Condition validatePredicateCondition(final Condition condition) {
+    private static Condition validatePredicateCondition(final Condition condition, final String clauseName) {
         N.checkArgNotNull(condition, cs.condition);
 
-        return new On(condition).condition();
+        try {
+            return new On(condition).condition();
+        } catch (final IllegalArgumentException e) {
+            // The rules are On's, but its message names the ON clause; report the clause actually being built.
+            final String onPrefix = "ON condition ";
+            final String message = e.getMessage();
+
+            if (!SK.ON.equals(clauseName) && message != null && message.startsWith(onPrefix)) {
+                throw new IllegalArgumentException(clauseName + message.substring(2), e);
+            }
+
+            throw e;
+        }
     }
 
     /**
@@ -2418,8 +2482,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         // A FROM body ending in a line comment ("t -- hint", possibly with its newline trimmed away by
         // from(String)) would otherwise swallow every clause appended after it (WHERE, ORDER BY, ...).
-        if (endsInsideLineComment(fromClause, _dialectFamily == DialectFamily.SQL_SERVER, _dialectFamily == DialectFamily.MYSQL,
-                _tokenizer.tokenizerConfig())) {
+        if (endsInsideLineComment(fromClause)) {
             _sb.append('\n');
         }
 
@@ -2441,7 +2504,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         _sb.append(expr);
 
-        if (endsInsideLineComment(expr, _dialectFamily == DialectFamily.SQL_SERVER, _dialectFamily == DialectFamily.MYSQL, _tokenizer.tokenizerConfig())) {
+        if (endsInsideLineComment(expr)) {
             _sb.append('\n');
         }
     }
@@ -2452,6 +2515,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Both standard strings and backslash-escaped strings are considered, with {@code E'...'} always
      * honoring escapes. Adding a line feed after a complete fragment is harmless if only one reading
      * sees a trailing comment, and protects either reading from swallowing subsequently appended SQL.
+     * This dialect-agnostic variant always reads {@code [...]} as a bracket-quoted identifier.
      *
      * @param sql the non-{@code null} SQL fragment to inspect
      * @param sqlServerTempIdentifiers whether all SQL Server temporary-table names are identifiers; when {@code false},
@@ -2459,19 +2523,28 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return {@code true} if appending SQL directly after the fragment would continue its line comment
      */
     static boolean endsInsideLineComment(final String sql, final boolean sqlServerTempIdentifiers) {
-        return endsInsideLineComment(sql, sqlServerTempIdentifiers, false, SqlParser.tokenizer().tokenizerConfig());
+        return endsInsideLineComment(sql, sqlServerTempIdentifiers, false, true, SqlParser.tokenizer().tokenizerConfig());
+    }
+
+    /**
+     * Dialect-aware {@link #endsInsideLineComment(String, boolean)} for this builder's target server: SQL Server
+     * temporary-table names, MySQL comment rules, and whether {@code [} quotes an identifier or opens a subscript.
+     */
+    private boolean endsInsideLineComment(final String sql) {
+        return endsInsideLineComment(sql, _dialectFamily == DialectFamily.SQL_SERVER, _dialectFamily == DialectFamily.MYSQL, hasBracketQuotedIdentifiers(),
+                _tokenizer.tokenizerConfig());
     }
 
     /** Inspects trailing comments using explicit dialect rules or the tokenizer's context-aware default hash classification. */
     private static boolean endsInsideLineComment(final String sql, final boolean sqlServerTempIdentifiers, final boolean mysqlHashComments,
-            final SqlParser.TokenizerConfig tokenizerConfig) {
-        return endsInsideLineComment(sql, sqlServerTempIdentifiers, mysqlHashComments, tokenizerConfig, true)
-                || !mysqlHashComments && sql.indexOf('\\') >= 0 && endsInsideLineComment(sql, sqlServerTempIdentifiers, false, tokenizerConfig, false);
+            final boolean bracketIdentifiers, final SqlParser.TokenizerConfig tokenizerConfig) {
+        return endsInsideLineComment(sql, sqlServerTempIdentifiers, mysqlHashComments, bracketIdentifiers, tokenizerConfig, true) || !mysqlHashComments
+                && sql.indexOf('\\') >= 0 && endsInsideLineComment(sql, sqlServerTempIdentifiers, false, bracketIdentifiers, tokenizerConfig, false);
     }
 
     /** Scans a complete fragment under one string-escape convention, retaining explicit E-string escapes. */
     private static boolean endsInsideLineComment(final String sql, final boolean sqlServerTempIdentifiers, final boolean mysqlHashComments,
-            final SqlParser.TokenizerConfig tokenizerConfig, final boolean backslashEscapes) {
+            final boolean bracketIdentifiers, final SqlParser.TokenizerConfig tokenizerConfig, final boolean backslashEscapes) {
         IntPredicate hashIdentifierMatcher = null;
 
         for (int i = 0, len = sql.length(); i < len; i++) {
@@ -2485,7 +2558,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 hashIdentifier = hashIdentifierMatcher.test(i);
             }
 
-            final int next = skipSqlQuotedOrComment(sql, i, hashIdentifier, backslashEscapes, mysqlHashComments);
+            final int next = skipSqlQuotedOrComment(sql, i, hashIdentifier, backslashEscapes, mysqlHashComments, bracketIdentifiers);
 
             if (next != i) {
                 if (next == len && (sql.charAt(i) == '-' || sql.charAt(i) == '#')) {
@@ -2538,8 +2611,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _sb.append(_SPACE);
 
         if (Strings.isNotEmpty(_selectModifier)) {
-            // Emitted verbatim -- see selectModifier(String) for why appendStringExpr must not be used here.
-            _sb.append(_selectModifier);
+            // Emitted verbatim -- see selectModifier(String) for why appendStringExpr must not be used here;
+            // appendSqlFragment terminates a trailing line comment before the select list is appended.
+            appendSqlFragment(_selectModifier);
 
             _sb.append(_SPACE);
         }
@@ -3653,7 +3727,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final boolean explicitJoinCondition = condition instanceof On || condition instanceof Using;
 
         if (!explicitJoinCondition) {
-            validatePredicateCondition(condition);
+            validatePredicateCondition(condition, SK.ON);
         }
 
         return mutateAtomically(() -> {
@@ -3861,7 +3935,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param expr the WHERE condition expression (must not be {@code null}, empty, blank, or comment-only)
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if this builder is closed, if {@code WHERE} has already been set on this builder,
+     * @throws IllegalStateException if this builder is closed, if {@code WHERE} has already been set on this builder
+     *         (or it is a condition-only builder that has already rendered its bare predicate),
      *         if a preceding qualified JOIN has not been completed with {@code on(...)}/{@code using(...)}, if this is an
      *         INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no
      *         {@code FROM} clause yet or a completed set-operation operand has already been emitted, or if a later clause
@@ -3899,7 +3974,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param condition the WHERE condition (must not be {@code null})
      * @return this SqlBuilder instance for method chaining
-     * @throws IllegalStateException if this builder is closed, if {@code WHERE} has already been set on this builder,
+     * @throws IllegalStateException if this builder is closed, if {@code WHERE} has already been set on this builder
+     *         (or it is a condition-only builder that has already rendered its bare predicate),
      *         if a preceding qualified JOIN has not been completed with {@code on(...)}/{@code using(...)}, if this is an
      *         INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no
      *         {@code FROM} clause yet or a completed set-operation operand has already been emitted, or if a later clause
@@ -3919,7 +3995,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This where(final Condition condition) {
         assertNotClosed();
-        final Condition predicate = validatePredicateCondition(condition);
+        final Condition predicate = validatePredicateCondition(condition, SK.WHERE);
 
         return mutateAtomically(() -> {
             checkIfAlreadyCalled(SK.WHERE);
@@ -4335,7 +4411,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final Map<String, SortDirection> groupingsSnapshot = copyAndValidateSqlFragmentMap(groupings, "groupings");
 
         for (final Map.Entry<String, SortDirection> entry : groupingsSnapshot.entrySet()) {
-            N.checkArgNotNull(entry.getValue(), "Value in groupings");
+            if (entry.getValue() == null) {
+                throw new IllegalArgumentException("Direction for key '" + entry.getKey() + "' in groupings must not be null");
+            }
         }
 
         return mutateAtomically(() -> {
@@ -4427,7 +4505,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This having(final Condition condition) {
         assertNotClosed();
-        final Condition predicate = validatePredicateCondition(condition);
+        final Condition predicate = validatePredicateCondition(condition, SK.HAVING);
 
         return mutateAtomically(() -> {
             checkIfAlreadyCalled(SK.HAVING);
@@ -4868,7 +4946,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final Map<String, SortDirection> ordersSnapshot = copyAndValidateSqlFragmentMap(orders, "orders");
 
         for (final Map.Entry<String, SortDirection> entry : ordersSnapshot.entrySet()) {
-            N.checkArgNotNull(entry.getValue(), "Value in orders");
+            if (entry.getValue() == null) {
+                throw new IllegalArgumentException("Direction for key '" + entry.getKey() + "' in orders must not be null");
+            }
         }
 
         return mutateAtomically(() -> {
@@ -5089,9 +5169,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@link #limit(int)} / {@link #limit(int, int)} based on the offset, so it is rendered in the dialect's
      * pagination syntax. An unresolved out-of-range numeric expression is re-rendered
      * in the dialect's FETCH pagination syntax when this builder uses one (Oracle, DB2, SQL Server) and the
-     * expression is a generic {@code LIMIT count [OFFSET offset]} form. A FETCH-form expression that follows
-     * {@code OFFSET n ROWS} on a LIMIT-style dialect is emitted verbatim; a FETCH-form expression is rejected on
-     * UPDATE/DELETE.
+     * expression is a generic {@code LIMIT count [OFFSET offset]} or MySQL {@code LIMIT offset, count} form;
+     * SQL Server also normalizes a FETCH-form expression ({@code [OFFSET n ROWS] FETCH FIRST|NEXT ...}) to
+     * {@code OFFSET ... ROWS FETCH NEXT ... ROWS ONLY} (adding {@code OFFSET 0 ROWS} when absent). On a LIMIT-style dialect the comma form renders as
+     * {@code LIMIT count OFFSET offset}. Other forms are emitted verbatim; a FETCH-form expression may follow
+     * {@code OFFSET n ROWS} on a LIMIT-style dialect, and is rejected on UPDATE/DELETE.
      * Shared by the {@link Criteria} and standalone-{@link Limit} branches of {@link #append(Condition)}.
      *
      * @param limit the limit condition to render (must not be {@code null})
@@ -5113,7 +5195,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 return;
             }
 
-            if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET)
+            // Like limit(int): an already-claimed LIMIT slot is reported as "already set" below, not as an
+            // ordering error (a FETCH/limit call also claims the OFFSET slot).
+            if (!usesFetchPagination() && !calledOpSet.contains(SK.LIMIT) && calledOpSet.contains(SK.OFFSET)
                     && (!isFetchLimitExpression(limit.expression()) || !calledOpSet.contains(OFFSET_ROWS_SLOT))) {
                 throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
             }
@@ -5139,7 +5223,22 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 }
             }
 
-            _sb.append(_SPACE).append(limit.expression());
+            final Matcher commaFormMatcher = GENERIC_LIMIT_EXPRESSION_PATTERN.matcher(limit.expression());
+
+            if (commaFormMatcher.matches() && commaFormMatcher.group(3) != null) {
+                // MySQL-only "LIMIT offset, count" (e.g. PostgreSQL rejects it): render the portable
+                // "LIMIT count OFFSET offset", exactly as limit(count, offset) renders a resolved Limit.
+                _sb.append(_SPACE)
+                        .append(SK.LIMIT)
+                        .append(_SPACE)
+                        .append(commaFormMatcher.group(3))
+                        .append(_SPACE)
+                        .append(SK.OFFSET)
+                        .append(_SPACE)
+                        .append(commaFormMatcher.group(1));
+            } else {
+                _sb.append(_SPACE).append(limit.expression());
+            }
         } else if (limit.offset() > 0) {
             limit(limit.count(), limit.offset());
         } else {
@@ -5755,6 +5854,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             throw new IllegalStateException("'" + SK.FOR_UPDATE + "' is only valid for SELECT queries");
         }
 
+        if (SK.WHERE.equals(op) && calledOpSet.contains(CONDITION_ONLY_PREDICATE_SLOT)) {
+            throw new IllegalStateException(
+                    "'" + SK.WHERE + "' cannot follow the predicate rendered by a condition-only builder; combine predicates with Filters.and(...)/or(...)");
+        }
+
         if (_hasCompletedSetOperation && (SK.WHERE.equals(op) || SK.GROUP_BY.equals(op) || SK.HAVING.equals(op))) {
             throw new IllegalStateException("'" + op + "' cannot be added after a completed set-operation operand");
         }
@@ -5873,10 +5977,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *                               appended to a builder that is not building a SELECT query (or is in condition-only
      *                               mode), while a preceding qualified JOIN is incomplete, before the current SELECT segment
      *                               has been completed by {@code from(...)}, or after {@code ORDER BY}, pagination, or
-     *                               {@code FOR UPDATE};
+     *                               {@code FOR UPDATE}; if a plain predicate is appended to a condition-only builder
+     *                               ({@code Dsl.renderCondition}) that already rendered its condition, or a {@code WHERE}
+     *                               clause (directly or in a Criteria) after that rendered bare predicate;
      *         or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
      * @throws IllegalArgumentException if {@code condition} is {@code null}, if a predicate position contains a
-     *                                  non-predicate condition, if a generic clause uses an operator that requires a
+     *                                  non-predicate condition, if a Criteria join entity contains a top-level
+     *                                  {@code ON}/{@code USING} connector, if a generic clause uses an operator that requires a
      *                                  dedicated builder method or condition type, or if a set-operation operand
      *                                  (standalone or carried by a Criteria) is not a complete, lexically SELECT-only {@code SELECT} query,
      *                                  contains a semicolon outside quoted text or comments, or requires explicit branch isolation, or if a Criteria JOIN's {@link Using} connector
@@ -5910,6 +6017,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (N.notEmpty(criteria.joins())) {
                 checkCanAppendJoin();
+
+                // Same guard as appendJoinExpr: a Criteria join either carries its own condition or is a CROSS/NATURAL
+                // join, so an inline top-level ON/USING in an entity would render a second (or a forbidden) connector.
+                for (final Join join : criteria.joins()) {
+                    for (final String joinEntity : join.joinEntities()) {
+                        if (containsTopLevelJoinCondition(joinEntity)) {
+                            throw new IllegalArgumentException("A Criteria join entity must not contain a top-level ON or USING connector: " + joinEntity);
+                        }
+                    }
+                }
             }
 
             if (N.notEmpty(criteria.setOperations())) {
@@ -5942,7 +6059,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             } else if (clause.operator() == Operator.WHERE || clause.operator() == Operator.HAVING) {
                 // Directly appended clause objects must not bypass the predicate checks performed by
                 // where(Condition) and having(Condition).
-                validatePredicateCondition(clause.condition());
+                validatePredicateCondition(clause.condition(), clause.operator() == Operator.WHERE ? SK.WHERE : SK.HAVING);
             } else if (!(clause instanceof Limit) && clause.operator() != Operator.GROUP_BY && clause.operator() != Operator.ORDER_BY) {
                 // OFFSET and FOR UPDATE require dedicated builder state, while LIMIT must carry the
                 // structured Limit representation used by appendLimit. Rendering an arbitrary Clause
@@ -5954,7 +6071,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // Conditions in this branch acquire an implicit WHERE below. Reject structural fragments
             // (for example a standalone sub-query, ON/USING, JOIN, or ANY/ALL/SOME operand) before
             // emitting the query prefix, just as where(Condition) does.
-            validatePredicateCondition(condition);
+            validatePredicateCondition(condition, SK.WHERE);
+        } else if (_sb.length() > 0) {
+            // A condition-only builder emits a plain predicate with no separator or WHERE keyword, so a second one
+            // would be glued to the previous output ("a = ?b = ?").
+            throw new IllegalStateException("A condition-only builder renders a single predicate; combine predicates with Filters.and(...)/or(...)");
         }
 
         init(true);
@@ -6092,6 +6213,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (!_isForConditionOnly) {
                 checkIfAlreadyCalled(SK.WHERE);
                 _sb.append(_SPACE_WHERE_SPACE);
+            } else {
+                calledOpSet.add(CONDITION_ONLY_PREDICATE_SLOT);
             }
 
             appendCondition(condition);
@@ -7289,7 +7412,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param childParameterTokens the rendered tokens per generated name; updated to the final tokens
      * @param childSqlPolicy the SQL policy of the child builder
      * @return the operand query with collision-free parameter names (may be the unchanged {@code sql})
-     * @throws IllegalArgumentException if the child generated named parameters under a different SQL policy
+     * @throws IllegalArgumentException if the child generated named parameters under a different SQL policy, or if a
+     *         placeholder must be rewritten under the dialect-agnostic default while a backslash in a string literal
+     *         makes the literal boundaries ambiguous (see {@link #rewriteChildPlaceholders(String, PlaceholderRewrite)})
      * @throws IllegalStateException under {@link SqlPolicy#NAMED_SQL} if this builder's named-parameter handler emits an empty token
      * @throws RuntimeException if the configured named-parameter handler throws while rendering a placeholder token
      */
@@ -7312,6 +7437,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // #name/##name temporary-table identifier is a data token, never a MySQL hash comment, so the
         // token-replacement scanners must not skip the rest of the line after one.
         final boolean sqlServerTempIdentifiers = _dialectFamily != DialectFamily.MYSQL;
+        // Likewise '[' quotes an identifier only on SQL Server (and the dialect-agnostic default); on
+        // e.g. PostgreSQL it opens an array subscript whose placeholders must still be rewritten.
+        final boolean bracketIdentifiers = hasBracketQuotedIdentifiers();
 
         String result = sql;
 
@@ -7350,17 +7478,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     // An identical token (no rename and the parent renders the same ":name" default) needs no
                     // rewrite: skip the full-SQL scan and only keep the token bookkeeping current.
                     if (!oldToken.equals(newToken)) {
-                        if (oldToken.equals(":" + oldName)) {
-                            result = replaceDefaultNamedParameterToken(result, oldName, newToken, sqlServerTempIdentifiers, _tokenizer);
-                        } else {
-                            result = replaceRenderedNamedParameterToken(result, oldToken, newToken, sqlServerTempIdentifiers, _tokenizer);
-                        }
+                        final boolean defaultToken = oldToken.equals(":" + oldName);
+
+                        result = rewriteChildPlaceholders(result,
+                                (text, backslashEscapes) -> defaultToken
+                                        ? replaceDefaultNamedParameterToken(text, oldName, newToken, sqlServerTempIdentifiers, backslashEscapes,
+                                                bracketIdentifiers, _tokenizer)
+                                        : replaceRenderedNamedParameterToken(text, oldToken, newToken, sqlServerTempIdentifiers, backslashEscapes,
+                                                bracketIdentifiers, _tokenizer));
                     }
 
                     childParameterTokens.remove(oldName);
                     childParameterTokens.put(newName, newToken);
                 } else if (rename) {
-                    result = replaceIbatisParameterName(result, oldName, newName, sqlServerTempIdentifiers, _tokenizer);
+                    final String finalNewName = newName;
+
+                    result = rewriteChildPlaceholders(result, (text, backslashEscapes) -> replaceIbatisParameterName(text, oldName, finalNewName,
+                            sqlServerTempIdentifiers, backslashEscapes, bracketIdentifiers, _tokenizer));
                 }
 
                 if (rename) {
@@ -7371,6 +7505,44 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return result;
+    }
+
+    /** One placeholder rewrite of a child query's text under a given single-quoted-string escape convention. */
+    @FunctionalInterface
+    private interface PlaceholderRewrite {
+        String apply(String sql, boolean backslashEscapes);
+    }
+
+    /**
+     * Applies a child-placeholder rewrite under this builder's string-literal convention. The rewrite must skip
+     * placeholder-like text inside string literals, and where a literal ends depends on whether a backslash
+     * escapes the next quote: {@code 'C:\'} is a complete literal in standard SQL (PostgreSQL, SQL Server,
+     * Oracle, DB2, SQLite, H2) but an unterminated one under MySQL's backslash escapes. Scanning the wrong way
+     * either leaves a colliding child placeholder un-renamed (two placeholders with the same name bound to
+     * different values) or rewrites text inside a literal. So the MySQL family uses backslash escapes, the other
+     * explicit families standard doubled-quote escapes only ({@code E'...'} strings always honor backslashes),
+     * and the dialect-agnostic default, whose convention is unknown, rewrites under both readings and fails
+     * closed when they disagree -- mirroring the other default-dialect scanners, which consider both readings.
+     *
+     * @param sql the current child query text
+     * @param rewrite the rewrite to apply
+     * @return the rewritten text
+     * @throws IllegalArgumentException under the dialect-agnostic default, if the two readings produce different rewrites
+     */
+    private String rewriteChildPlaceholders(final String sql, final PlaceholderRewrite rewrite) {
+        if (_dialectFamily == DialectFamily.MYSQL) {
+            return rewrite.apply(sql, true);
+        }
+
+        final String standard = rewrite.apply(sql, false);
+
+        if (_dialectFamily != DialectFamily.DEFAULT || sql.indexOf('\\') < 0 || standard.equals(rewrite.apply(sql, true))) {
+            return standard;
+        }
+
+        throw new IllegalArgumentException("Cannot rename the child query's named parameters: a backslash in a string literal makes the literal boundaries"
+                + " ambiguous (standard SQL versus MySQL backslash escapes). Configure SqlDialect.productInfo for the target database"
+                + " (or avoid the backslash in the literal). Query: \"" + sql + "\"");
     }
 
     /**
@@ -7423,13 +7595,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Replaces a default {@code :name} placeholder with an arbitrary rendered token. */
     private static String replaceDefaultNamedParameterToken(final String sql, final String oldName, final String newToken,
-            final boolean sqlServerTempIdentifiers, final SqlParser.Tokenizer tokenizer) {
+            final boolean sqlServerTempIdentifiers, final boolean backslashEscapes, final boolean bracketIdentifiers, final SqlParser.Tokenizer tokenizer) {
         StringBuilder sb = null;
         int last = 0;
-        final int[] subscriptOpenings = ParsedSql.subscriptOpeningOffsets(sql, tokenizer);
+        final int[] subscriptOpenings = parameterSubscriptOpenings(sql, bracketIdentifiers, tokenizer);
 
         for (int i = 0, len = sql.length(); i < len; i++) {
-            final int next = skipParameterQuotedOrComment(sql, i, sqlServerTempIdentifiers, subscriptOpenings);
+            final int next = skipParameterQuotedOrComment(sql, i, sqlServerTempIdentifiers, backslashEscapes, bracketIdentifiers, subscriptOpenings);
 
             if (next != i) {
                 i = next - 1;
@@ -7470,17 +7642,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param newName the replacement parameter name
      * @param sqlServerTempIdentifiers whether {@code #name}/{@code ##name} are SQL Server temporary-table
      *        identifiers (data tokens) rather than MySQL hash comments
+     * @param backslashEscapes whether a backslash escapes the next character inside an ordinary single-quoted string
+     * @param bracketIdentifiers whether {@code [...]} (other than a recognized subscript) is a quoted identifier
      * @param tokenizer the tokenizer used to distinguish array subscripts from bracket-quoted identifiers
      * @return the rewritten query, or {@code sql} unchanged when no placeholder matches
      */
     private static String replaceIbatisParameterName(final String sql, final String oldName, final String newName, final boolean sqlServerTempIdentifiers,
-            final SqlParser.Tokenizer tokenizer) {
+            final boolean backslashEscapes, final boolean bracketIdentifiers, final SqlParser.Tokenizer tokenizer) {
         StringBuilder sb = null;
         int last = 0;
-        final int[] subscriptOpenings = ParsedSql.subscriptOpeningOffsets(sql, tokenizer);
+        final int[] subscriptOpenings = parameterSubscriptOpenings(sql, bracketIdentifiers, tokenizer);
 
         for (int start = 0, len = sql.length(); start < len; start++) {
-            final int next = skipParameterQuotedOrComment(sql, start, sqlServerTempIdentifiers, subscriptOpenings);
+            final int next = skipParameterQuotedOrComment(sql, start, sqlServerTempIdentifiers, backslashEscapes, bracketIdentifiers, subscriptOpenings);
 
             if (next != start) {
                 start = next - 1;
@@ -7514,14 +7688,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Replaces an exact custom placeholder token outside SQL quoted regions and comments. */
     private static String replaceRenderedNamedParameterToken(final String sql, final String oldToken, final String newToken,
-            final boolean sqlServerTempIdentifiers, final SqlParser.Tokenizer tokenizer) {
+            final boolean sqlServerTempIdentifiers, final boolean backslashEscapes, final boolean bracketIdentifiers, final SqlParser.Tokenizer tokenizer) {
         StringBuilder sb = null;
         int last = 0;
         final int tokenLength = oldToken.length();
-        final int[] subscriptOpenings = ParsedSql.subscriptOpeningOffsets(sql, tokenizer);
+        final int[] subscriptOpenings = parameterSubscriptOpenings(sql, bracketIdentifiers, tokenizer);
 
         for (int i = 0, len = sql.length(); i <= len - tokenLength; i++) {
-            final int next = skipParameterQuotedOrComment(sql, i, sqlServerTempIdentifiers, subscriptOpenings);
+            final int next = skipParameterQuotedOrComment(sql, i, sqlServerTempIdentifiers, backslashEscapes, bracketIdentifiers, subscriptOpenings);
 
             if (next != i) {
                 i = next - 1;
@@ -7554,14 +7728,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Skips quoted text during parameter rewriting while leaving recognized array subscripts open
-     * for scanning. Bracket-quoted identifiers remain opaque, as do strings and comments inside a subscript.
+     * for scanning. Bracket-quoted identifiers (only when {@code bracketIdentifiers}) remain opaque, as do
+     * strings and comments inside a subscript. Single-quoted strings follow {@code backslashEscapes}
+     * ({@code E'...'} strings always honor backslash escapes).
      */
-    private static int skipParameterQuotedOrComment(final String sql, final int start, final boolean sqlServerTempIdentifiers, final int[] subscriptOpenings) {
+    private static int skipParameterQuotedOrComment(final String sql, final int start, final boolean sqlServerTempIdentifiers, final boolean backslashEscapes,
+            final boolean bracketIdentifiers, final int[] subscriptOpenings) {
         if (sql.charAt(start) == '[' && Arrays.binarySearch(subscriptOpenings, start) >= 0) {
             return start;
         }
 
-        return skipSqlQuotedOrComment(sql, start, sqlServerTempIdentifiers);
+        return skipSqlQuotedOrComment(sql, start, sqlServerTempIdentifiers, backslashEscapes, false, bracketIdentifiers);
+    }
+
+    /**
+     * Returns the subscript openers the parameter scanners must leave open. Without bracket-quoted
+     * identifiers every {@code [} is scanned through anyway, so the tokenizer pass is unnecessary.
+     */
+    private static int[] parameterSubscriptOpenings(final String sql, final boolean bracketIdentifiers, final SqlParser.Tokenizer tokenizer) {
+        return bracketIdentifiers ? ParsedSql.subscriptOpeningOffsets(sql, tokenizer) : N.EMPTY_INT_ARRAY;
     }
 
     /**
@@ -7578,11 +7763,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /**
      * Variant used by dialect-aware scanners: when {@code sqlServerTempIdentifiers} is {@code true}
-     * (the builder's dialect family is SQL Server), a {@code #name}/{@code ##name} temporary-table
+     * (for example, the builder's dialect family is SQL Server; the named-parameter rewriting pass also
+     * passes {@code true} for every non-MySQL dialect), a {@code #name}/{@code ##name} temporary-table
      * identifier is a data token rather than the start of a MySQL hash comment, so the scanner must
      * not skip the rest of the line. Without this, a set-operation operand such as
      * {@code "SELECT id FROM #tmp WHERE id = :id"} had everything after {@code #tmp} skipped and the
-     * named-parameter uniquify pass silently left a colliding {@code :id} in place.
+     * named-parameter uniquify pass silently left a colliding {@code :id} in place. Single-quoted
+     * strings always honor backslash escapes in this variant, {@code [...]} is always a bracket-quoted
+     * identifier, and generic (non-MySQL) comment rules apply. The named-parameter rewriting pass uses the
+     * dialect-aware variant instead, with the target dialect's string-escape and bracket conventions.
      *
      * @param sql the SQL text to scan
      * @param start the index to inspect
@@ -7592,16 +7781,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         itself when none starts there
      */
     private static int skipSqlQuotedOrComment(final String sql, final int start, final boolean sqlServerTempIdentifiers) {
-        return skipSqlQuotedOrComment(sql, start, sqlServerTempIdentifiers, true, false);
+        return skipSqlQuotedOrComment(sql, start, sqlServerTempIdentifiers, true, false, true);
     }
 
     /**
-     * Boundary-scan variant with an explicit ordinary-string escape convention and optional MySQL
-     * comment rules. The legacy alias and placeholder scanners retain their existing conventions.
+     * Boundary-scan variant with an explicit ordinary-string escape convention, optional MySQL
+     * comment rules, and an explicit bracket convention: {@code [...]} is a quoted identifier only when
+     * {@code bracketIdentifiers} is {@code true} (SQL Server, SQLite, and the dialect-agnostic default; a doubled {@code ]]} is read as an escaped {@code ]}, as SQL Server does); elsewhere,
+     * e.g. PostgreSQL, {@code [} opens an array subscript whose content (strings, comments) is scanned
+     * normally. The legacy alias scanners retain their existing conventions.
      * All callers supply non-null SQL and a valid character index.
      */
     private static int skipSqlQuotedOrComment(final String sql, final int start, final boolean sqlServerTempIdentifiers, final boolean backslashEscapes,
-            final boolean mysqlCommentRules) {
+            final boolean mysqlCommentRules, final boolean bracketIdentifiers) {
         final int len = sql.length();
         final char ch = sql.charAt(start);
 
@@ -7630,7 +7822,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return len;
         }
 
-        if (ch == '[') {
+        if (ch == '[' && bracketIdentifiers) {
             for (int i = start + 1; i < len; i++) {
                 if (sql.charAt(i) == ']') {
                     if (i + 1 < len && sql.charAt(i + 1) == ']') {
@@ -8202,7 +8394,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * }</pre>
      *
      * @param entity the entity object, {@code Map<String, Object>}, or column-name {@code String} containing properties to set
-     * @param excludedPropNames property names to exclude from the update (may be {@code null})
+     * @param excludedPropNames property names to exclude from the update (may be {@code null}); ignored when
+     *        {@code entity} is a column-name {@code String}
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, does not represent an {@code UPDATE},
      *                               or a post-SET clause such as {@code WHERE} has already been emitted;
@@ -8665,7 +8858,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Lazily emits the leading SQL keyword for the current operation (UPDATE/DELETE) into the buffer
      * the first time it is required, and validates that {@code from()} has been called for QUERY operations.
-     * Returns immediately if the buffer is already non-empty.
+     * If the buffer is already non-empty, nothing is emitted; only the completeness checks below run.
      *
      * @param setForUpdate when {@code true} and the current operation is UPDATE, the staged
      *                     {@code _propOrColumnNames} are emitted as a {@code SET col = ?} list.
@@ -8886,8 +9079,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code rawParameters} in that same order. Under {@code RAW_SQL} each positional {@code ?} is instead
      * replaced, in order, by the literal rendering of its binding ({@code SqlExpression.renderValue}: the
      * same rendering a structured condition's value receives, so strings are quoted and escaped, numbers and
-     * booleans are emitted verbatim, {@code null} becomes the {@code null} literal and a {@link SqlExpression}
-     * is embedded verbatim) and the caller must NOT bind {@code rawParameters}; the result carries no
+     * booleans are emitted verbatim and {@code null} becomes the {@code null} literal; {@link SqlExpression} and
+     * raw {@code SubQuery} bindings were already written into the text by {@code SubQuery(String, Collection)}) and the caller must NOT bind {@code rawParameters}; the result carries no
      * placeholders.
      *
      * <p>The placeholders are located by {@code ParsedSql}, the same classifier {@code SubQuery(String, Collection)}
@@ -8963,8 +9156,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (inlineAsLiterals) {
                 // Same literal rendering as setParameterForRawSql applies to a structured condition's value:
-                // strings quoted/escaped, numbers/booleans verbatim, null as NULL, SqlExpression embedded verbatim.
-                final String literal = SqlExpression.renderValue(rawParameters.get(bindingIndex++));
+                // strings quoted/escaped, numbers/booleans verbatim, null as null, SqlExpression embedded verbatim.
+                // A SqlExpression ending in a line comment ("x -- c") is terminated so it cannot swallow the rest
+                // of the sub-query (String.valueOf guards a custom Condition renderer returning null).
+                String literal = String.valueOf(SqlExpression.renderValue(rawParameters.get(bindingIndex++)));
+
+                if (endsInsideLineComment(literal)) {
+                    literal += '\n';
+                }
 
                 // A negative literal after a '-' ("a = -?" / "10-?") would fuse into a "--" line comment
                 // that swallows the rest of the statement: separate the two with a space.
@@ -9570,15 +9769,25 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 continue;
             }
 
-            if (ch == '[') {
-                for (i++; i < len; i++) {
-                    if (expr.charAt(i) == ']') {
-                        if (i < len - 1 && expr.charAt(i + 1) == ']') {
-                            i++;
+            // [...] quotes an identifier only in SQL Server, SQLite (and the dialect-agnostic DEFAULT family);
+            // elsewhere brackets are array subscripts whose "--" / "/*" / "#" are real comments. An unterminated "["
+            // hides nothing either: skipping to the end would let "a[1 -- x" through and comment out later clauses.
+            // SQLite ends the identifier at the first "]" ("]]" is no escape there), so "[a]]--x]" exposes "--x]".
+            if (ch == '[' && _bracketQuotedIdentifiers) {
+                int j = i + 1;
+
+                for (; j < len; j++) {
+                    if (expr.charAt(j) == ']') {
+                        if (!_sqlite && j < len - 1 && expr.charAt(j + 1) == ']') {
+                            j++;
                         } else {
                             break;
                         }
                     }
+                }
+
+                if (j < len) {
+                    i = j;
                 }
 
                 continue;
@@ -9780,12 +9989,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         if (Strings.isNotEmpty(propAlias)) {
+            final int exprStart = _sb.length();
             appendStringExpr(propName, true);
 
             int idx = -1;
-            if (isForSelect && (withClassAlias || propAlias.length() > _sb.length()
-                    || (_sb.length() - propAlias.length() - 1 >= 0 && _sb.charAt(_sb.length() - propAlias.length() - 1) != _SPACE)
-                    || _sb.indexOf(propAlias, _sb.length() - propAlias.length()) < 0 || ((idx = propAlias.indexOf(SK._PERIOD)) > 0
+            // The redundant "AS alias" is dropped only when the WHOLE rendered expression equals the alias
+            // ("name AS name"); a mere suffix match ("price * quantity AS quantity") must keep the alias.
+            if (isForSelect && (withClassAlias || _sb.length() - exprStart != propAlias.length() || _sb.indexOf(propAlias, exprStart) != exprStart
+                    || ((idx = propAlias.indexOf(SK._PERIOD)) > 0
                             && (Strings.isEmpty(tableAlias) || tableAlias.length() != idx || !propAlias.startsWith(tableAlias))))) {
                 _sb.append(_SPACE_AS_SPACE);
 
@@ -10422,42 +10633,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     sb.append(' ').append(selection.tableAlias());
                 }
 
-                if (N.notEmpty(selection.includedPropNames()) || selection.includesSubEntityProperties()) {
-                    final Class<?> entityClass = selection.entityClass();
-                    final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                            : QueryUtil.selectPropNames(entityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
-                    final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
-                    // An explicitly selected sub-entity root is expanded by appendColumnName even when the parent's
-                    // column mapping excludes it from default projections, so its table must still be listed here.
-                    final Collection<String> subEntityPropNames = N.notEmpty(selection.includedPropNames()) ? entityInfo.subEntityPropNameList
-                            : getSubEntityPropNames(entityClass);
+                for (final Class<?> subEntityClass : listedSubEntityClasses(selection)) {
+                    sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));
 
-                    if (N.isEmpty(subEntityPropNames)) {
-                        continue;
-                    }
-
-                    PropInfo propInfo = null;
-                    Class<?> subEntityClass = null;
-
-                    for (final String subEntityPropName : subEntityPropNames) {
-                        if (!containsSelectedPropOrSubProp(selectPropNames, subEntityPropName)) {
-                            continue;
-                        }
-
-                        propInfo = entityInfo.getPropInfo(subEntityPropName);
-
-                        if (propInfo == null) {
-                            continue;
-                        }
-
-                        subEntityClass = (propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType();
-
-                        sb.append(_COMMA_SPACE).append(getTableName(subEntityClass, namingPolicy));
-
-                        final String subEntityTableAlias = tableAlias(subEntityClass);
-                        if (Strings.isNotEmpty(subEntityTableAlias)) {
-                            sb.append(' ').append(subEntityTableAlias);
-                        }
+                    final String subEntityTableAlias = tableAlias(subEntityClass);
+                    if (Strings.isNotEmpty(subEntityTableAlias)) {
+                        sb.append(' ').append(subEntityTableAlias);
                     }
                 }
             }
@@ -10466,6 +10647,62 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         } finally {
             Objectory.recycle(sb);
         }
+    }
+
+    /**
+     * Reports whether {@link #getFromClause(List, NamingPolicy)} lists at least one sub-entity table for
+     * {@code selection}, i.e. whether its resolved projection selects a sub-entity root or one of its
+     * {@code root.prop} properties.
+     *
+     * @param selection a selection that has passed {@link #checkMultiSelects(List)}
+     * @return {@code true} if the generated FROM clause includes a sub-entity table for this selection
+     * @throws IllegalArgumentException if the selected entity is not a valid bean class
+     * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
+     */
+    static boolean listsSubEntityTable(final Selection selection) {
+        return !listedSubEntityClasses(selection).isEmpty();
+    }
+
+    /**
+     * Returns the sub-entity classes whose tables {@link #getFromClause(List, NamingPolicy)} lists for
+     * {@code selection}, in property order.
+     */
+    private static List<Class<?>> listedSubEntityClasses(final Selection selection) {
+        if (N.isEmpty(selection.includedPropNames()) && !selection.includesSubEntityProperties()) {
+            return N.emptyList();
+        }
+
+        final Class<?> entityClass = selection.entityClass();
+        final Collection<String> selectPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
+                : QueryUtil.selectPropNames(entityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
+        final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+        // An explicitly selected sub-entity root is expanded by appendColumnName even when the parent's
+        // column mapping excludes it from default projections, so its table must still be listed here.
+        final Collection<String> subEntityPropNames = N.notEmpty(selection.includedPropNames()) ? entityInfo.subEntityPropNameList
+                : getSubEntityPropNames(entityClass);
+
+        if (N.isEmpty(subEntityPropNames)) {
+            return N.emptyList();
+        }
+
+        final List<Class<?>> res = new ArrayList<>(subEntityPropNames.size());
+        PropInfo propInfo = null;
+
+        for (final String subEntityPropName : subEntityPropNames) {
+            if (!containsSelectedPropOrSubProp(selectPropNames, subEntityPropName)) {
+                continue;
+            }
+
+            propInfo = entityInfo.getPropInfo(subEntityPropName);
+
+            if (propInfo == null) {
+                continue;
+            }
+
+            res.add((propInfo.type.isCollection() ? propInfo.type.elementType() : propInfo.type).javaType());
+        }
+
+        return res;
     }
 
     /**
@@ -10495,8 +10732,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Database product family resolved once from {@link SqlDialect.ProductInfo}. Drives the
      * product-specific parts of SQL generation: the pagination syntax emitted by {@link #limit(int)},
-     * {@link #limit(int, int)} and {@link #offset(int)}, and the identifier quote used when the
-     * dialect leaves {@code SqlDialect.identifierQuote()} unset.
+     * {@link #limit(int, int)} and {@link #offset(int)}, the identifier quote used when the
+     * dialect leaves {@code SqlDialect.identifierQuote()} unset, and (for {@code SQL_SERVER}) whether
+     * {@code #name}/{@code ##name} is scanned as a temporary-table identifier rather than a hash comment.
      */
     enum DialectFamily {
         /** Oracle Database: pagination via {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY}. */

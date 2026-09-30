@@ -49,7 +49,7 @@ import com.landawn.abacus.util.Strings;
  *       by property name); see {@link #AbstractIn(Collection, Operator, Collection)} for details.</li>
  * </ul>
  *
- * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
+ * <p><b>&#9888;&#65039;</b> The multi-column row value-list form is supported by MySQL, PostgreSQL,
  * Oracle and DB2, but <i>not</i> by SQL Server (rewrite the composite comparison with
  * {@code EXISTS}/{@code NOT EXISTS} or a join there).</p>
  *
@@ -616,7 +616,8 @@ public abstract class AbstractIn extends ComposableCondition {
     /**
      * Converts this condition to its SQL representation.
      * The format is {@code propName IN (v1, v2, ...)} for {@link In}, or
-     * {@code propName NOT IN (v1, v2, ...)} for {@link NotIn}. If the operator is {@code null}
+     * {@code propName NOT IN (v1, v2, ...)} for {@link NotIn}; a row value constructor condition renders
+     * as {@code (p1, p2) IN ((v1a, v1b), (v2a, v2b), ...)}. If the operator is {@code null}
      * (only possible for an uninitialized instance), the literal {@code "null"} is rendered
      * in place of the operator.
      *

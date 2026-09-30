@@ -470,4 +470,39 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy3 = Filters.orderBy(Arrays.asList("created", "modified"), SortDirection.DESC);
         Assertions.assertTrue(orderBy3.toString().contains("created DESC, modified DESC"));
     }
+
+    @Test
+    public void testCommentOnlyPropertyNameRejected() {
+        // A comment-only name would be stripped at render time, leaving "ORDER BY ASC" / "ORDER BY , name".
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("/* x */", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("/* x */", "name"));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("name", "-- x"));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy(Arrays.asList("name", "/* x */")));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy(Arrays.asList("name", "# x"), SortDirection.DESC));
+
+        final Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("name", SortDirection.ASC);
+        orders.put("/* x */", SortDirection.DESC);
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy(orders));
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("/* x */", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("/* x */", SortDirection.ASC, "name", SortDirection.DESC));
+    }
+
+    @Test
+    public void testPropertyNameWithCommentAndRealTokenAccepted() {
+        // Comments are stripped at render time, but the real token keeps the entry well-formed.
+        assertEquals("ORDER BY name ASC", new OrderBy("name /* primary */", SortDirection.ASC).toString());
+        assertEquals("ORDER BY name, age", new OrderBy("/* primary */ name", "age").toString());
+        // A #name (possible SQL Server temporary identifier) is not treated as comment-only by the constructor.
+        assertNotNull(new OrderBy("#tmp", SortDirection.ASC));
+    }
+
+    @Test
+    public void testNullDirectionMessageDoesNotMentionSortMap() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> Criteria.builder().orderBy("a", SortDirection.ASC, "b", null));
+        assertTrue(e.getMessage().contains("'b'"), e.getMessage());
+        Assertions.assertFalse(e.getMessage().contains("sort map"), e.getMessage());
+    }
 }

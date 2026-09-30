@@ -307,4 +307,10 @@ public class AnyTest extends TestBase {
         // This would be used like: salary > ANY (subquery)
         Assertions.assertNotNull(anyJuniorSalary);
     }
+
+    @Test
+    public void testNullSubQueryMessageNamesSubQuery() {
+        final IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> new Any(null));
+        Assertions.assertTrue(e.getMessage().contains("subQuery"), e.getMessage());
+    }
 }

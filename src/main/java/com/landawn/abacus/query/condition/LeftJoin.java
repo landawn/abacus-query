@@ -109,8 +109,8 @@ public class LeftJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported first;
-     *                                  otherwise because a LEFT JOIN requires a non-{@code null} {@code ON}/{@code USING} predicate
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+     *                                  otherwise it is thrown because a LEFT JOIN requires a non-{@code null} {@code ON}/{@code USING} predicate
      * @deprecated always throws {@link IllegalArgumentException} because a qualified join requires an {@code ON}/{@code USING}
      *             predicate; use {@link #LeftJoin(String, Condition)} instead, or {@link CrossJoin} for an unconditional join
      */
@@ -158,7 +158,7 @@ public class LeftJoin extends Join {
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
-     *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
+     *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
      *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public LeftJoin(final String joinEntity, final Condition joinCondition) {
@@ -193,7 +193,7 @@ public class LeftJoin extends Join {
      *                                  if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},
-     *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand,
+     *                                  a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
      *                                  a standalone {@link SubQuery}, or a blank or comment-only {@link SqlExpression}
      */
     public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition) {

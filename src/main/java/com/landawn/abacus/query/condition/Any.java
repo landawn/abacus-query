@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents the SQL ANY operator for use with subqueries.
  * The ANY operator returns {@code true} if the comparison is true for ANY of the values returned by the subquery.
@@ -123,7 +126,7 @@ public class Any extends ComposableCell {
      *                                  subquery with a known, non-wildcard projection arity other than one
      */
     public Any(final SubQuery subQuery) {
-        super(Operator.ANY, subQuery);
+        super(Operator.ANY, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

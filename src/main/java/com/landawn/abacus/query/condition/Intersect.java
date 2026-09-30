@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents an INTERSECT clause in SQL queries.
  * This class is used to combine the results of two SELECT statements, returning only the
@@ -154,7 +157,7 @@ public class Intersect extends Clause {
      * @see Minus
      */
     public Intersect(final SubQuery subQuery) {
-        super(Operator.INTERSECT, subQuery);
+        super(Operator.INTERSECT, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

@@ -125,7 +125,7 @@ public class NotIn extends AbstractIn {
      * // SQL: (id) NOT IN ((1), (2))
      * }</pre>
      *
-     * <p><b>&#9888;&#65039;</b> The row value-list form is supported by MySQL, PostgreSQL,
+     * <p><b>&#9888;&#65039;</b> The multi-column row value-list form is supported by MySQL, PostgreSQL,
      * Oracle and DB2, but <i>not</i> by SQL Server (rewrite the composite comparison with
      * {@code NOT EXISTS} or a join there).</p>
      *

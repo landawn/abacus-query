@@ -334,4 +334,10 @@ public class AllTest extends TestBase {
 
         Assertions.assertNotNull(allManagerSalaries);
     }
+
+    @Test
+    public void testNullSubQueryMessageNamesSubQuery() {
+        final IllegalArgumentException e = Assertions.assertThrows(IllegalArgumentException.class, () -> new All(null));
+        Assertions.assertTrue(e.getMessage().contains("subQuery"), e.getMessage());
+    }
 }

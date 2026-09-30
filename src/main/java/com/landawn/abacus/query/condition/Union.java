@@ -14,6 +14,9 @@
 
 package com.landawn.abacus.query.condition;
 
+import com.landawn.abacus.query.cs;
+import com.landawn.abacus.util.N;
+
 /**
  * Represents a UNION clause in SQL queries.
  * This class is used to combine the results of two or more SELECT statements,
@@ -155,7 +158,7 @@ public class Union extends Clause {
      * @see Minus
      */
     public Union(final SubQuery subQuery) {
-        super(Operator.UNION, subQuery);
+        super(Operator.UNION, N.checkArgNotNull(subQuery, cs.subQuery));
     }
 
     /**

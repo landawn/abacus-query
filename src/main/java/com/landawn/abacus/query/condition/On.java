@@ -195,7 +195,8 @@ public class On extends Cell {
      * @param leftPropName the column name from the first table (can include table name/alias)
      * @param rightPropName the column name from the second table (can include table name/alias). Treated as a
      *            column expression rather than a string literal.
-     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank,
+     *                                  or if {@code rightPropName} consists only of SQL comments
      */
     public On(final String leftPropName, final String rightPropName) {
         this(createOnCondition(leftPropName, rightPropName));
@@ -238,8 +239,8 @@ public class On extends Cell {
      * @param propNamePairs map of column pairs where the key is from the first table and the value is from the second
      *            table. The entries are validated and snapshotted in one iteration. Order is preserved if a
      *            {@code LinkedHashMap} is used.
-     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a null entry or
-     *                                  {@code null}, empty, or blank keys or values
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a null entry,
+     *                                  {@code null}, empty, or blank keys or values, or a value consisting only of SQL comments
      */
     public On(final Map<String, String> propNamePairs) {
         this(createOnCondition(propNamePairs));
@@ -261,7 +262,8 @@ public class On extends Cell {
      * @param rightPropName the second column name (wrapped as an {@link SqlExpression}, so it is rendered as a
      *            column reference rather than a quoted literal)
      * @return an {@link Equal} condition comparing the two columns
-     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank,
+     *                                  or if {@code rightPropName} consists only of SQL comments
      */
     static Condition createOnCondition(final String leftPropName, final String rightPropName) {
         if (Strings.isBlank(leftPropName)) {
@@ -295,8 +297,8 @@ public class On extends Cell {
      * @param propNamePairs map of column name pairs. Its entries are validated and snapshotted in one
      *            iteration, so the returned condition is internally consistent even for a live map
      * @return a single Equal condition or an And condition combining multiple equalities
-     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a null entry or
-     *                                  {@code null}, empty, or blank keys or values
+     * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a null entry,
+     *                                  {@code null}, empty, or blank keys or values, or a value consisting only of SQL comments
      */
     static Condition createOnCondition(final Map<String, String> propNamePairs) {
         if (propNamePairs == null) {
