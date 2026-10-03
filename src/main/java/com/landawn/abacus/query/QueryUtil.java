@@ -14,6 +14,7 @@
 package com.landawn.abacus.query;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 import com.landawn.abacus.annotation.Beta;
@@ -483,6 +485,158 @@ public final class QueryUtil {
 
             if (ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
                 i = skipQuotedIdentifier(text, i + 1, ch == '[' ? ']' : ch);
+            }
+        }
+
+        return -1;
+    }
+
+    private static final int BLOCK_SCAN_BACKSLASH_ESCAPES = 1;
+    private static final int BLOCK_SCAN_CR_ENDS_LINE_COMMENT = 2;
+    private static final int BLOCK_SCAN_HASH_COMMENTS = 4;
+    private static final int BLOCK_SCAN_BRACKET_IDENTIFIERS = 8;
+    private static final int BLOCK_SCAN_NESTED_COMMENTS = 16;
+
+    /**
+     * Reports whether {@code sql} opens a {@code /*} block comment that is never closed under any of its plausible lexical
+     * readings: string literals with or without backslash escapes, a {@code --} comment ended by any line break or, as in
+     * MySQL and SQLite, only by {@code '\n'}, a {@code #} that starts a line comment (MySQL) or not, {@code [...]} as a
+     * quoted identifier (SQL Server) or not, and block comments that nest (PostgreSQL, SQL Server, H2) or not. Each extra
+     * reading can only add a {@code true} answer, so the check fails closed.
+     * The scan is linear in the length of {@code sql} for each reading.
+     *
+     * @param sql the text to scan (must not be {@code null})
+     * @return {@code true} if text appended after {@code sql} could continue an open block comment
+     * @throws IllegalArgumentException if {@code sql} is {@code null}
+     */
+    @Internal
+    public static boolean hasUnterminatedBlockComment(final String sql) {
+        N.checkArgNotNull(sql, cs.sql);
+
+        if (sql.indexOf("/*") < 0) {
+            return false;
+        }
+
+        // Only readings that can differ for this text are run: a reading flag is irrelevant without its trigger character.
+        final int relevant = (sql.indexOf('\\') >= 0 ? BLOCK_SCAN_BACKSLASH_ESCAPES : 0) | (sql.indexOf('\r') >= 0 ? BLOCK_SCAN_CR_ENDS_LINE_COMMENT : 0)
+                | (sql.indexOf('#') >= 0 ? BLOCK_SCAN_HASH_COMMENTS : 0) | (sql.indexOf('[') >= 0 ? BLOCK_SCAN_BRACKET_IDENTIFIERS : 0)
+                | (sql.indexOf("/*", sql.indexOf("/*") + 2) >= 0 ? BLOCK_SCAN_NESTED_COMMENTS : 0);
+
+        for (int reading = 0; reading <= relevant; reading++) {
+            if ((reading & ~relevant) == 0 && hasUnterminatedBlockComment(sql, reading)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Scans {@code sql} under one lexical reading (a combination of the {@code BLOCK_SCAN_*} flags). Quoted text
+     * ({@code '...'}, {@code "..."}, {@code `...`}, doubled-quote escapes, and {@code [...]} with {@code ]]} when bracket
+     * identifiers are read) and line comments are skipped. An unterminated quote is NOT taken to quote the rest of the
+     * text: another lexer may skip it (inside a {@code #} comment or an {@code [it's]} identifier), so the scan continues
+     * right after it and treats later copies of that quote character as plain text.
+     *
+     * @param sql the text to scan
+     * @param reading the {@code BLOCK_SCAN_*} flags of this reading
+     * @return {@code true} if text appended after {@code sql} would continue an open block comment
+     */
+    private static boolean hasUnterminatedBlockComment(final String sql, final int reading) {
+        final boolean backslashEscapes = (reading & BLOCK_SCAN_BACKSLASH_ESCAPES) != 0;
+        final boolean carriageReturnEndsLineComment = (reading & BLOCK_SCAN_CR_ENDS_LINE_COMMENT) != 0;
+        final boolean hashComments = (reading & BLOCK_SCAN_HASH_COMMENTS) != 0;
+        final boolean bracketIdentifiers = (reading & BLOCK_SCAN_BRACKET_IDENTIFIERS) != 0;
+        final boolean nestedComments = (reading & BLOCK_SCAN_NESTED_COMMENTS) != 0;
+
+        // Once a quote character has no closing partner from some position on, it has none from any later position
+        // either, so later copies of it are plain text: rescanning to the end for each of them would be quadratic.
+        boolean singleQuoteUnclosed = false;
+        boolean doubleQuoteUnclosed = false;
+        boolean backtickUnclosed = false;
+        boolean bracketUnclosed = false;
+
+        for (int i = 0, len = sql.length(); i < len; i++) {
+            final char ch = sql.charAt(i);
+
+            if ((ch == '\'' && !singleQuoteUnclosed) || (ch == '"' && !doubleQuoteUnclosed) || (ch == '`' && !backtickUnclosed)
+                    || (ch == '[' && bracketIdentifiers && !bracketUnclosed)) {
+                final char close = ch == '[' ? ']' : ch;
+                final boolean escapes = backslashEscapes && ch != '[';
+                int j = i + 1;
+
+                for (; j < len; j++) {
+                    final char c = sql.charAt(j);
+
+                    if (escapes && c == '\\') {
+                        j++;
+                    } else if (c == close) {
+                        if (j + 1 < len && sql.charAt(j + 1) == close) {
+                            j++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+
+                if (j < len) {
+                    i = j;
+                } else if (ch == '\'') { // unterminated: resume right after the quote character, as plain text from now on
+                    singleQuoteUnclosed = true;
+                } else if (ch == '"') {
+                    doubleQuoteUnclosed = true;
+                } else if (ch == '`') {
+                    backtickUnclosed = true;
+                } else {
+                    bracketUnclosed = true;
+                }
+            } else if ((ch == '-' && i + 1 < len && sql.charAt(i + 1) == '-') || (ch == '#' && hashComments)) {
+                int lineEnd = i + 1;
+
+                // A bounded walk (not indexOf over the rest of the text) keeps many comment lines linear.
+                while (lineEnd < len && sql.charAt(lineEnd) != '\n' && !(carriageReturnEndsLineComment && sql.charAt(lineEnd) == '\r')) {
+                    lineEnd++;
+                }
+
+                if (lineEnd >= len) {
+                    return false;
+                }
+
+                i = lineEnd;
+            } else if (ch == '/' && i + 1 < len && sql.charAt(i + 1) == '*') {
+                final int commentEnd = nestedComments ? nestedBlockCommentEnd(sql, i + 2) : sql.indexOf("*/", i + 2);
+
+                if (commentEnd < 0) {
+                    return true;
+                }
+
+                i = commentEnd + 1;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns the index of the closing star-slash of a block comment whose body starts at {@code fromIndex}, counting each
+     * nested {@code /*} as another level (PostgreSQL, SQL Server and H2 nest block comments), or {@code -1} if the comment
+     * never closes.
+     */
+    private static int nestedBlockCommentEnd(final String sql, final int fromIndex) {
+        int depth = 1;
+
+        for (int i = fromIndex, len = sql.length(); i + 1 < len; i++) {
+            final char ch = sql.charAt(i);
+
+            if (ch == '/' && sql.charAt(i + 1) == '*') {
+                depth++;
+                i++;
+            } else if (ch == '*' && sql.charAt(i + 1) == '/') {
+                if (--depth == 0) {
+                    return i;
+                }
+
+                i++;
             }
         }
 
@@ -1493,6 +1647,1042 @@ public final class QueryUtil {
         }
 
         return segment.substring(0, start) + namingPolicy.convert(segment.substring(start, end)) + segment.substring(end);
+    }
+
+    /**
+     * Renders the tokens of a raw SQL expression, converting the identifiers in it. This is the one token loop
+     * behind {@code SqlExpression.toSql(NamingPolicy)} and the query builders' raw-expression rendering, so a raw
+     * expression renders identically through a condition and through a builder.
+     *
+     * <p>Only identifier text is converted. Parameter markers ({@code ?}, {@code :name}, {@code #{name}},
+     * {@code ${name}}), SQL variables ({@code @name}), literals (including prefixed ones such as {@code N'text'}),
+     * delimited identifiers, function names (including a name with a glued marker, such as
+     * <code>fn_${shard}(x)</code>) and type and collation names are copied unchanged. A type or collation name is
+     * the type of a {@code CAST}, {@code TRY_CAST} or {@code SAFE_CAST} call, everything from its {@code AS} to the
+     * call's {@code )} ({@code numeric(10, 2)}, {@code double precision}, {@code STRUCT<a INT64, b STRING>}) or to a
+     * clause after the type, which is rendered as usual: BigQuery's {@code FORMAT} and {@code AT TIME ZONE}, Oracle's
+     * {@code DEFAULT ... ON CONVERSION ERROR} and a {@code ,} before a format argument. Also copied is the possibly
+     * qualified name after a PostgreSQL {@code ::} cast, glued, spaced or chained ({@code id :: int:: my_type}), or
+     * after {@code COLLATE}, including whitespace around its dots ({@code unitPrice::numeric},
+     * {@code id :: "types". order_status}, {@code COLLATE public.my_collation}). Only the first word of a multi-word type
+     * after {@code ::} is part of the name.
+     * When a token glues more than a name together, for example {@code scores[idx + 1]}, {@code ARRAY[1, 2]},
+     * {@code unitPrice::numeric} or {@code log_${month}}, only its leading name is converted, together with a
+     * column after a glued marker and a dot (the {@code createdAt} in <code>log_${month}.createdAt</code>) and,
+     * inside a subscript, the upper bound of a slice (the {@code hi} in {@code arr[lo:hi]}). The interior of an
+     * array subscript or constructor, including each subscript of a chain ({@code matrix[i][j]}), is rendered
+     * like a nested expression, unless it contains {@code #}, {@code --} or <code>/*</code> outside a quoted
+     * region, in which case it is copied as written. A column after a delimited qualifier (the
+     * {@code firstName} in {@code "T".firstName}) is also converted. Whitespace and stripped comments collapse to
+     * one space, except that a line break between two string literals ({@code 'a'} newline {@code 'b'}) is kept
+     * as {@code "\n"}: standard SQL and PostgreSQL concatenate adjacent literals only across a line break.
+     * A non-ASCII space glued inside a word (an IME's ideographic space U+3000, NBSP, ...), which the tokenizer
+     * does not split at, is treated as a separator and emitted as one plain space, so the words around it are
+     * rendered like separately written words; quoted text, markers, subscripts, tokens starting with {@code $}
+     * and the verbatim text described below keep such characters as written.</p>
+     *
+     * <p>{@code tokenizer} always reads a backslash before a quote inside a quoted region as an escape (the
+     * MySQL reading). Standard SQL treats the backslash as an ordinary character, so a literal such as
+     * {@code 'C:\'} is complete there but unterminated under the MySQL reading. Unless
+     * {@code backslashEscapesOnly} is {@code true}, conversion stops at the first token whose extent depends on
+     * that difference, that is a token in which a backslash precedes the closing quote of its own quoted region
+     * ({@code 'C:\'}, {@code 'a\'b'}, {@code "col\"x"}): from that point on the two readings disagree about what
+     * is a string, a comment or an identifier. That token and the rest of {@code expr} are appended exactly as
+     * written, with nothing converted and no comment stripped. The caller must terminate a trailing line comment
+     * in that text before it appends more SQL. A backslash before any other character, including a different
+     * quote character ({@code '{"k":"a\"b"}'}, {@code "it\'s"}), leaves the extent the same under both readings
+     * and does not stop conversion, and neither does a PostgreSQL {@code E'...'} string, which honors backslash
+     * escapes under both readings.</p>
+     *
+     * @param sb the builder to append to
+     * @param expr the raw expression {@code tokens} was produced from
+     * @param tokens the tokens of {@code expr}, as {@code tokenizer} returns them
+     * @param tokenizer the tokenizer that produced {@code tokens}; it also tokenizes the interior of array subscripts
+     * @param backslashEscapesOnly {@code true} if the target server reads a backslash before a quote in a string
+     *        literal as an escape (MySQL), so the tokenizer's reading is taken as authoritative and conversion never
+     *        stops early. It matches MySQL only for string literals: MySQL applies no backslash escapes inside
+     *        backtick identifiers, inside {@code "..."} identifiers under {@code ANSI_QUOTES}, or anywhere under
+     *        {@code NO_BACKSLASH_ESCAPES}
+     * @param wordConverter converts an identifier; it applies any SQL keyword exemption itself
+     * @param qualifiedPartConverter converts a name that follows a delimited qualifier (the {@code firstName} in
+     *        {@code "T".firstName}) or a glued marker (the {@code createdAt} in <code>log_${month}.createdAt</code>)
+     * @return the index in {@code expr} from which it was appended verbatim, or {@code -1} if every token was rendered
+     * @throws IllegalArgumentException if any argument is {@code null}
+     */
+    @Internal
+    public static int appendRawExpression(final StringBuilder sb, final String expr, final List<String> tokens, final SqlParser.Tokenizer tokenizer,
+            final boolean backslashEscapesOnly, final UnaryOperator<String> wordConverter, final UnaryOperator<String> qualifiedPartConverter) {
+        N.checkArgNotNull(sb, cs.sb);
+        N.checkArgNotNull(expr, cs.expr);
+        N.checkArgNotNull(tokens, cs.tokens);
+        N.checkArgNotNull(tokenizer, cs.tokenizer);
+        N.checkArgNotNull(wordConverter, cs.wordConverter);
+        N.checkArgNotNull(qualifiedPartConverter, cs.qualifiedPartConverter);
+
+        final List<String> words = splitAtNonSeparatorWhitespace(tokens);
+        int renderedTokenCount = words.size();
+        int verbatimFrom = -1;
+
+        if (!backslashEscapesOnly && expr.indexOf('\\') >= 0) {
+            final int escapeDependentToken = firstEscapeDependentToken(words);
+
+            if (escapeDependentToken >= 0) {
+                final int tokenStart = tokenSourceStart(expr, words, escapeDependentToken);
+                // If the token cannot be located in expr, append all of expr as written. Never guess where the verbatim text begins.
+                renderedTokenCount = tokenStart < 0 ? 0 : escapeDependentToken;
+                verbatimFrom = Math.max(0, tokenStart);
+            }
+        }
+
+        appendRawExpressionTokens(sb, expr, words, renderedTokenCount, tokenizer, wordConverter, qualifiedPartConverter, 0);
+
+        if (verbatimFrom >= 0) {
+            sb.append(expr, verbatimFrom, expr.length());
+        }
+
+        return verbatimFrom;
+    }
+
+    /**
+     * Renders {@code tokens[0, end)} as {@link #appendRawExpression} describes. {@code expr} is the text the tokens
+     * were produced from; it is read only to find a line break between two adjacent string literals.
+     */
+    private static void appendRawExpressionTokens(final StringBuilder sb, final String expr, final List<String> tokens, final int end,
+            final SqlParser.Tokenizer tokenizer, final UnaryOperator<String> wordConverter, final UnaryOperator<String> qualifiedPartConverter,
+            final int depth) {
+        boolean inBracedPlaceholder = false;
+        boolean afterGluedSubscript = false;
+        int[] sourceOffsets = null; // aligned lazily, at most once per call
+        // A type or collation names a database object, not a column: converting order_status to orderStatus under
+        // CAMEL_CASE, or utf8mb4_bin to utf8mb4Bin, names one that does not exist. Such names are copied as written.
+        int parenLevel = 0;
+        BitSet castCallLevels = null; // the paren levels opened by a CAST(...) call, allocated at the first one
+        int castTypeLevel = 0; // the paren level of the CAST(x AS type) call whose type is being copied, or 0
+        int castTypeAngleDepth = 0; // open '<' of the type being copied: STRUCT<a INT64, b STRING>
+        int typeNameState = TYPE_NAME_NONE; // the name after a "::" cast or COLLATE
+
+        for (int i = 0; i < end; i++) {
+            final String token = tokens.get(i);
+            boolean chainable = false; // a directly following "[...]" continues a subscript chain
+
+            if (!inBracedPlaceholder && token.length() == 1) {
+                if (token.charAt(0) == '(') {
+                    parenLevel++;
+
+                    if (isCastCall(tokens, i)) {
+                        castCallLevels = castCallLevels == null ? new BitSet() : castCallLevels;
+                        castCallLevels.set(parenLevel);
+                    } else if (castCallLevels != null) {
+                        castCallLevels.clear(parenLevel);
+                    }
+                } else if (token.charAt(0) == ')' && parenLevel > 0) {
+                    if (parenLevel == castTypeLevel) {
+                        castTypeLevel = 0; // the call's ')' ends the type, and is rendered like any other ')'
+                    }
+
+                    parenLevel--;
+                }
+            }
+
+            if (castTypeLevel > 0 && parenLevel == castTypeLevel && !inBracedPlaceholder) {
+                if (isAngleBracketToken(token)) {
+                    castTypeAngleDepth += angleBracketBalance(token);
+                } else if (castTypeAngleDepth <= 0 && isCastClauseAfterType(tokens, i)) {
+                    // CAST(eventTime AS STRING FORMAT 'YYYY' AT TIME ZONE timeZone): the clause holds expressions, so
+                    // the type ends and the clause, timeZone included, is rendered as usual.
+                    castTypeLevel = 0;
+                }
+            }
+
+            // The SQL tokenizer can split MyBatis bind names and attributes at spaces or operators.
+            // Keep the entire marker out of identifier conversion, then resume with the next SQL token.
+            // An unterminated marker is not a binding, so the rest of the expression is converted normally.
+            final boolean placeholder = inBracedPlaceholder || ((token.startsWith("#{") || token.startsWith("${")) && closesBracedPlaceholder(tokens, i));
+            final boolean typeNamePart = !placeholder && typeNameState != TYPE_NAME_NONE && isTypeNamePart(tokens, i, typeNameState);
+
+            if (placeholder) {
+                sb.append(token);
+                inBracedPlaceholder = !isBracedPlaceholderEnd(token);
+            } else if (castTypeLevel > 0 || typeNamePart) {
+                // The type of CAST(x AS numeric(10, 2)), or a part of the name after "::" or COLLATE ("types", '.', ' ',
+                // order_status in id :: "types". order_status).
+                sb.append(token);
+            } else if (!token.isEmpty() && isRawIdentifierStart(token.charAt(0))) {
+                if (isSqlVariable(tokens, i)) {
+                    sb.append(token);
+                } else {
+                    appendIdentifierToken(sb, token, SqlParser.isFunctionName(tokens, i), wordConverter, tokenizer, wordConverter, qualifiedPartConverter,
+                            depth);
+                    chainable = endsWithGluedSubscript(token, 0);
+                }
+            } else if (token.length() > 1 && token.charAt(0) == SK._PERIOD && isRawIdentifierStart(token.charAt(1)) && i > 0
+                    && endsWithDelimiter(tokens.get(i - 1))) {
+                // The tokenizer ends a token at a closing delimiter, so "T".firstName arrives as "T" and .firstName.
+                // The unquoted part is still a column name, as it is in t."firstName" (one token, converted above).
+                sb.append(SK._PERIOD);
+                appendIdentifierToken(sb, token.substring(1), SqlParser.isFunctionName(tokens, i), qualifiedPartConverter, tokenizer, wordConverter,
+                        qualifiedPartConverter, depth);
+                chainable = endsWithGluedSubscript(token, 1);
+            } else if (afterGluedSubscript && token.length() > 1 && token.charAt(0) == '[' && subscriptEnd(token, 1) == token.length() - 1) {
+                // The tokenizer emits matrix[rowIdx][colIdx] as matrix[rowIdx] and [colIdx]. A subscript that directly
+                // continues a chain holds column references like the first one; on its own it would be copied like a
+                // bracket-quoted identifier. The interior must close exactly at the end of the token, as a subscript does.
+                sb.append('[');
+                appendSubscriptInterior(sb, token.substring(1, token.length() - 1), tokenizer, wordConverter, qualifiedPartConverter, depth);
+                sb.append(']');
+                chainable = true;
+            } else if (depth > 0 && numericSliceBoundEnd(token) > 0) {
+                // Inside a subscript, "2:tagCount" (a slice from a number to a column) arrives as one token that starts
+                // with a digit; the bound after the ':' is a column reference, as the upper bound of tags[lo:hi] is.
+                final int colon = numericSliceBoundEnd(token);
+                sb.append(token, 0, colon + 1);
+                appendIdentifierToken(sb, token.substring(colon + 1), SqlParser.isFunctionName(tokens, i), wordConverter, tokenizer, wordConverter,
+                        qualifiedPartConverter, depth);
+            } else if (SK.SPACE.equals(token) && i > 0 && i + 1 < tokens.size() && tokens.get(i - 1).endsWith("'") && tokens.get(i + 1).startsWith("'")
+                    && sb.length() > 0 && sb.charAt(sb.length() - 1) == SK._SINGLE_QUOTE) {
+                // The tokenizer collapses a whitespace run, line breaks and line comments included, into " ". Between two
+                // string literals that changes the SQL: the standard (and PostgreSQL) concatenate adjacent literals only
+                // across a line break ('a'\n'b' is 'ab', 'a' 'b' is a syntax error), so keep a line break that the gap
+                // contained, as ParsedSql does. The next token may be the first verbatim one; its offset is still known.
+                if (sourceOffsets == null) {
+                    // Empty when the text has no line break at all, so most expressions are never aligned.
+                    sourceOffsets = containsLineBreak(expr, 0, expr.length()) ? tokenSourceOffsets(expr, tokens, Math.min(end, tokens.size() - 1))
+                            : N.EMPTY_INT_ARRAY;
+                }
+
+                final boolean lineBreak = sourceOffsets.length > 0 && sourceOffsets[i - 1] >= 0 && sourceOffsets[i + 1] >= 0
+                        && containsLineBreak(expr, sourceOffsets[i - 1] + tokens.get(i - 1).length(), sourceOffsets[i + 1]);
+
+                sb.append(lineBreak ? "\n" : token);
+            } else {
+                sb.append(token);
+            }
+
+            if (placeholder) {
+                typeNameState = TYPE_NAME_NONE;
+            } else if (typeNamePart) {
+                if (!token.isBlank()) {
+                    // A part may glue another cast to the name: int:: in id :: int:: my_type.
+                    final int afterGluedCast = typeNameStateAfter(token);
+                    typeNameState = afterGluedCast != TYPE_NAME_NONE ? afterGluedCast : token.endsWith(".") ? TYPE_NAME_PART_EXPECTED : TYPE_NAME_PART_ENDED;
+                }
+            } else if (castTypeLevel == 0) {
+                typeNameState = typeNameStateAfter(token);
+
+                if (castCallLevels != null && castCallLevels.get(parenLevel) && "AS".equalsIgnoreCase(token)) {
+                    castTypeLevel = parenLevel;
+                    castTypeAngleDepth = 0;
+                }
+            }
+
+            afterGluedSubscript = chainable;
+        }
+    }
+
+    // The states of the name after a "::" cast or COLLATE, which appendRawExpressionTokens copies as written.
+    private static final int TYPE_NAME_NONE = 0;
+    private static final int TYPE_NAME_PART_EXPECTED = 1; // after "::", COLLATE or a '.': a name part may follow
+    private static final int TYPE_NAME_PART_ENDED = 2; // after a name part: a '.' may continue the name
+
+    /** Whether the '(' at {@code tokens[index]} opens a {@code CAST}, {@code TRY_CAST} or {@code SAFE_CAST} call. */
+    private static boolean isCastCall(final List<String> tokens, final int index) {
+        final String previous = previousNonBlankToken(tokens, index);
+
+        return "CAST".equalsIgnoreCase(previous) || "TRY_CAST".equalsIgnoreCase(previous) || "SAFE_CAST".equalsIgnoreCase(previous);
+    }
+
+    /**
+     * Whether {@code tokens[index]} starts a clause after the type of a {@code CAST} call: the {@code ,} before Oracle's
+     * format, or BigQuery's {@code FORMAT} and {@code AT TIME ZONE} or Oracle's {@code DEFAULT ... ON CONVERSION ERROR}
+     * once the type has a complete name. A word right after {@code AS} or a {@code '.'}, or right before a {@code '.'},
+     * is part of the type's name instead: the schema in {@code CAST(id AS format . order_status)}.
+     */
+    private static boolean isCastClauseAfterType(final List<String> tokens, final int index) {
+        final String token = tokens.get(index);
+
+        if (SK.COMMA.equals(token)) {
+            return true;
+        }
+
+        if (!("FORMAT".equalsIgnoreCase(token) || "AT".equalsIgnoreCase(token) || "DEFAULT".equalsIgnoreCase(token))) {
+            return false;
+        }
+
+        final String previous = previousNonBlankToken(tokens, index);
+        final String next = nextNonBlankToken(tokens, index);
+
+        return !"AS".equalsIgnoreCase(previous) && !previous.endsWith(".") && !next.startsWith(".");
+    }
+
+    /** The nearest non-blank token before {@code tokens[index]}, or {@code ""}. */
+    private static String previousNonBlankToken(final List<String> tokens, final int index) {
+        for (int i = index - 1; i >= 0; i--) {
+            final String token = tokens.get(i);
+
+            if (!token.isBlank()) {
+                return token;
+            }
+        }
+
+        return "";
+    }
+
+    /** The nearest non-blank token after {@code tokens[index]}, or {@code ""}. */
+    private static String nextNonBlankToken(final List<String> tokens, final int index) {
+        for (int i = index + 1, size = tokens.size(); i < size; i++) {
+            final String token = tokens.get(i);
+
+            if (!token.isBlank()) {
+                return token;
+            }
+        }
+
+        return "";
+    }
+
+    /** Whether {@code token} consists of {@code '<'} and {@code '>'} only, as the tokenizer emits them in {@code STRUCT<a INT64>}. */
+    private static boolean isAngleBracketToken(final String token) {
+        for (int i = 0, len = token.length(); i < len; i++) {
+            final char ch = token.charAt(i);
+
+            if (ch != '<' && ch != '>') {
+                return false;
+            }
+        }
+
+        return !token.isEmpty();
+    }
+
+    /** The number of {@code '<'} in {@code token} minus the number of {@code '>'}. */
+    private static int angleBracketBalance(final String token) {
+        int balance = 0;
+
+        for (int i = 0, len = token.length(); i < len; i++) {
+            balance += token.charAt(i) == '<' ? 1 : -1;
+        }
+
+        return balance;
+    }
+
+    /**
+     * Whether {@code tokens[index]} continues the name after a {@code ::} cast or {@code COLLATE}: a name part
+     * (a word or a delimited identifier) where one is expected, a {@code '.'} that continues the name after a part,
+     * or whitespace before either ({@code "types" . order_status}).
+     */
+    private static boolean isTypeNamePart(final List<String> tokens, final int index, final int state) {
+        final String token = tokens.get(index);
+
+        if (token.isBlank()) {
+            return state == TYPE_NAME_PART_EXPECTED || nextNonBlankToken(tokens, index).startsWith(".");
+        }
+
+        final char first = token.charAt(0);
+
+        return state == TYPE_NAME_PART_EXPECTED ? isRawIdentifierStart(first) || first == SK._DOUBLE_QUOTE || first == SK._BACKTICK || first == '['
+                : first == SK._PERIOD;
+    }
+
+    /**
+     * The state after a token that was rendered as usual: a {@code ::} or {@code COLLATE} starts a name, and a token
+     * that glues a type to a cast ({@code id::"types"}, {@code id::types.}) leaves its name open to more parts.
+     */
+    private static int typeNameStateAfter(final String token) {
+        if ("COLLATE".equalsIgnoreCase(token)) {
+            return TYPE_NAME_PART_EXPECTED;
+        }
+
+        final int typeStart = gluedCastTypeStart(token);
+
+        if (typeStart < 0) {
+            return TYPE_NAME_NONE;
+        }
+
+        return typeStart == token.length() || token.endsWith(".") ? TYPE_NAME_PART_EXPECTED : TYPE_NAME_PART_ENDED;
+    }
+
+    /** The index just past the last {@code ::} in {@code token} outside quoted regions and subscripts, or {@code -1}. */
+    private static int gluedCastTypeStart(final String token) {
+        int typeStart = -1;
+
+        for (int i = 0, len = token.length(); i < len; i++) {
+            final char ch = token.charAt(i);
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                i = backslashEscapedQuoteEnd(token, i + 1, ch);
+            } else if (ch == '[') {
+                i = subscriptEnd(token, i + 1);
+            } else if (ch == ':' && i + 1 < len && token.charAt(i + 1) == ':') {
+                typeStart = i + 2;
+                i++;
+            }
+        }
+
+        return typeStart;
+    }
+
+    /**
+     * Whether the identifier token that starts at {@code from} of {@code token} ends with a subscript or array
+     * constructor glued to its name ({@code arr[1]}, {@code ARRAY[1, 2]}), rather than with a bracket-quoted part
+     * of a qualified name ({@code t.[col]}).
+     */
+    private static boolean endsWithGluedSubscript(final String token, final int from) {
+        return token.endsWith("]") && identifierNameEnd(token, from) < token.length() - 1;
+    }
+
+    private static boolean containsLineBreak(final String text, final int fromIndex, final int toIndex) {
+        for (int i = fromIndex; i < toIndex; i++) {
+            final char ch = text.charAt(i);
+
+            if (ch == '\n' || ch == '\r') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Appends a token that starts with an identifier character. A plain name goes through {@code nameConverter}
+     * unless it names a function. When more text is glued to the name, only the name is converted and the rest
+     * goes through {@link #appendGluedSuffix}.
+     */
+    private static void appendIdentifierToken(final StringBuilder sb, final String token, final boolean functionName, final UnaryOperator<String> nameConverter,
+            final SqlParser.Tokenizer tokenizer, final UnaryOperator<String> wordConverter, final UnaryOperator<String> qualifiedPartConverter,
+            final int depth) {
+        final int nameEnd = identifierNameEnd(token, 0);
+
+        if (nameEnd == token.length()) {
+            sb.append(functionName ? token : nameConverter.apply(token));
+            return;
+        }
+
+        final char next = token.charAt(nameEnd);
+
+        if (next == SK._SINGLE_QUOTE || next == SK._DOUBLE_QUOTE || next == SK._BACKTICK) {
+            // A literal with an introducer, such as N'text', _utf8mb4'text', X'0F' or MySQL's _latin1"text".
+            // Converting the prefix could change the literal's meaning.
+            sb.append(token);
+            return;
+        }
+
+        if (functionName && !containsGluedColon(token, nameEnd)) {
+            // A function name with glued text, such as my_func_${ver}(x): the marker is part of the name, so converting
+            // the leading part would call a different function. Only a ':' splits a function token into a column and
+            // a trailing function or type: unitPrice::numeric(10, 2), or the slice arr[lo:fn(x)] inside a subscript.
+            sb.append(token);
+            return;
+        }
+
+        // Converting the whole token used to rename bind markers (myTags[:tagIndex] -> my_tags[:tag_index]), rewrite
+        // quoted cast targets (::"OrderStatus"), rename functions inside a subscript, and turn spaces into '_'. A
+        // function check on the whole token also skipped the column in unitPrice::numeric(10, 2). Convert only the
+        // leading name. ARRAY[...] is the array constructor keyword, not a column.
+        final String name = token.substring(0, nameEnd);
+        sb.append(next == '[' && "ARRAY".equalsIgnoreCase(name) ? name : nameConverter.apply(name));
+
+        appendGluedSuffix(sb, token, nameEnd, functionName, tokenizer, wordConverter, qualifiedPartConverter, depth);
+    }
+
+    /**
+     * Splits each token at the runs of non-ASCII spaces glued inside it (an IME's ideographic U+3000, NBSP, ...). The
+     * tokenizer splits only at ASCII whitespace, so text such as {@code firstName}+U+3000+{@code =} or
+     * {@code createTime::date}+U+3000 arrives as one token, and a database would read the space as part of an identifier,
+     * naming a column that does not exist. Each run outside quoted regions, subscripts and braced markers becomes a plain
+     * {@code " "} token, so the parts render exactly like separately written words (names converted, functions, keywords
+     * and collations kept). Returns {@code tokens} itself when no token needs splitting.
+     */
+    private static List<String> splitAtNonSeparatorWhitespace(final List<String> tokens) {
+        List<String> result = null;
+        int lastSplitSpace = -1; // index in result of the most recent " " produced by a split
+
+        for (int i = 0, size = tokens.size(); i < size; i++) {
+            final String token = tokens.get(i);
+            final int first = indexOfSplittableWhitespace(token, 0);
+
+            if (first < 0) {
+                // An original whitespace token right after a split-off space would double the space (and would keep two
+                // adjacent string literals from being recognized as such).
+                if (result != null && !(SK.SPACE.equals(token) && endsWithSpaceToken(result))) {
+                    result.add(token);
+                }
+
+                continue;
+            }
+
+            if (result == null) {
+                result = new ArrayList<>(size + 8);
+                result.addAll(tokens.subList(0, i));
+            }
+
+            int start = 0;
+
+            for (int ws = first; ws >= 0; ws = start < token.length() ? indexOfSplittableWhitespace(token, start) : -1) {
+                if (ws > start) {
+                    result.add(token.substring(start, ws));
+                }
+
+                // A leading space carries no meaning, and consecutive spaces collapse into one, as the tokenizer does.
+                if (!result.isEmpty() && !endsWithSpaceToken(result)) {
+                    result.add(SK.SPACE);
+                    lastSplitSpace = result.size() - 1;
+                }
+
+                start = ws + 1;
+
+                while (start < token.length() && isNonSeparatorWhitespace(token.charAt(start))) {
+                    start++;
+                }
+            }
+
+            if (start < token.length()) {
+                result.add(token.substring(start));
+            }
+        }
+
+        if (result != null && lastSplitSpace >= 0 && lastSplitSpace == result.size() - 1) {
+            result.remove(lastSplitSpace); // a trailing space produced by a split
+        }
+
+        return result == null ? tokens : result;
+    }
+
+    private static boolean endsWithSpaceToken(final List<String> tokens) {
+        return !tokens.isEmpty() && SK.SPACE.equals(tokens.get(tokens.size() - 1));
+    }
+
+    /**
+     * Returns the index of the first non-ASCII space in {@code token}, at or after {@code from}, that lies outside quoted
+     * regions, {@code [...]} subscripts and braced markers, or {@code -1}. A token that starts with a quote, a bracket or a
+     * {@code $} (dollar quote or positional marker), or that is a comment, is never split. Scanning restarts at
+     * {@code from} with no open region, which holds for every position right after a split point.
+     */
+    private static int indexOfSplittableWhitespace(final String token, final int from) {
+        final int len = token.length();
+
+        if (from == 0 && (len == 0 || "'\"`[$".indexOf(token.charAt(0)) >= 0 || token.startsWith("--") || token.startsWith("/*"))) {
+            return -1;
+        }
+
+        int depth = 0;
+
+        for (int i = from; i < len; i++) {
+            final char ch = token.charAt(i);
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                i = backslashEscapedQuoteEnd(token, i + 1, ch);
+            } else if (ch == '[') {
+                depth++;
+            } else if (ch == ']') {
+                depth = Math.max(0, depth - 1);
+            } else if ((ch == '#' || ch == '$') && i + 1 < len && token.charAt(i + 1) == '{') {
+                final int close = token.indexOf('}', i + 2);
+
+                if (close < 0) {
+                    return -1;
+                }
+
+                i = close;
+            } else if (depth == 0 && isNonSeparatorWhitespace(ch)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Returns the index of the {@code ':'} in a slice-bound token of the form {@code <digits>:<name>} (not a
+     * {@code ::} cast), or {@code -1}.
+     */
+    private static int numericSliceBoundEnd(final String token) {
+        final int len = token.length();
+        int i = 0;
+
+        while (i < len && token.charAt(i) >= '0' && token.charAt(i) <= '9') {
+            i++;
+        }
+
+        return i > 0 && i + 1 < len && token.charAt(i) == ':' && isRawIdentifierStart(token.charAt(i + 1)) ? i : -1;
+    }
+
+    /** A Unicode space or whitespace character that the tokenizer keeps inside a word (it splits only at ASCII whitespace). */
+    private static boolean isNonSeparatorWhitespace(final char ch) {
+        return ch > 0x7F && (Character.isWhitespace(ch) || Character.isSpaceChar(ch));
+    }
+
+    /**
+     * Whether {@code token} has a {@code ':'} at or after {@code from} outside glued markers, subscripts and quoted
+     * regions, that is a cast ({@code ::}) or a slice separator.
+     */
+    private static boolean containsGluedColon(final String token, final int from) {
+        final int len = token.length();
+
+        for (int i = from; i < len; i++) {
+            final char ch = token.charAt(i);
+
+            if (ch == ':') {
+                return true;
+            } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                return false; // a quoted region always ends the token
+            } else if ((ch == '#' || ch == '$') && i + 1 < len && token.charAt(i + 1) == '{') {
+                final int close = token.indexOf('}', i + 2);
+
+                if (close < 0) {
+                    return false;
+                }
+
+                i = close;
+            } else if (ch == '[') {
+                i = subscriptEnd(token, i + 1);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns where the name that starts at {@code from} of a raw-expression token ends. The name can contain letters,
+     * digits, {@code '_'}, {@code '$'} (but not the start of a <code>${</code> marker), non-ASCII identifier
+     * characters and qualifying dots. A delimited part that follows a dot ({@code t."firstName"}, {@code t.[col]})
+     * also belongs to the name.
+     */
+    private static int identifierNameEnd(final String token, final int from) {
+        final int len = token.length();
+        int i = from;
+
+        while (i < len) {
+            final char ch = token.charAt(i);
+
+            if (ch == SK._PERIOD) {
+                final char following = i + 1 < len ? token.charAt(i + 1) : 0;
+
+                if (following == SK._DOUBLE_QUOTE || following == SK._BACKTICK || following == '[') {
+                    i = skipQuotedIdentifier(token, i + 2, following == '[' ? ']' : following) + 1;
+                } else {
+                    i++;
+                }
+            } else if (ch == '$' ? i + 1 == len || token.charAt(i + 1) != '{' : isIdentifierNameChar(ch)) {
+                i++;
+            } else {
+                break;
+            }
+        }
+
+        return Math.min(i, len);
+    }
+
+    private static boolean isIdentifierNameChar(final char ch) {
+        return ch < 128 ? ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')
+                : Character.isUnicodeIdentifierPart(ch) || Character.isSurrogate(ch);
+    }
+
+    /**
+     * Appends the text of {@code token} that follows its leading name (from {@code from} on). The text is copied
+     * as written, for example a {@code ::type} cast, a glued <code>${...}</code> or <code>#{...}</code> marker, or a
+     * quoted region, which always ends the token. The exceptions hold column references and are converted: the
+     * interior of an array subscript or constructor glued to a name, rendered like a nested expression; a name
+     * after a closed marker and a dot (<code>log_${month}.createdAt</code>); and, inside a subscript
+     * ({@code depth > 0}), the upper bound of a slice ({@code lo:hi}).
+     */
+    private static void appendGluedSuffix(final StringBuilder sb, final String token, final int from, final boolean functionName,
+            final SqlParser.Tokenizer tokenizer, final UnaryOperator<String> wordConverter, final UnaryOperator<String> qualifiedPartConverter,
+            final int depth) {
+        final int len = token.length();
+        int copiedTo = from;
+        int i = from;
+
+        while (i < len) {
+            final char ch = token.charAt(i);
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                break;
+            } else if ((ch == '#' || ch == '$') && i + 1 < len && token.charAt(i + 1) == '{') {
+                final int close = token.indexOf('}', i + 2);
+
+                if (close < 0) {
+                    break;
+                }
+
+                i = close + 1;
+
+                if (i + 1 < len && token.charAt(i) == SK._PERIOD && isRawIdentifierStart(token.charAt(i + 1))) {
+                    // A marker that completes a table name (log_${yearMonth}.createdAt, a sharded table): the name after the
+                    // dot is a column of that table, converted like the column after a delimited qualifier ("T".firstName).
+                    sb.append(token, copiedTo, i + 1);
+                    i = appendGluedName(sb, token, i + 1, functionName, qualifiedPartConverter);
+                    copiedTo = i;
+                }
+            } else if (ch == ':' && depth > 0 && i + 1 < len && isRawIdentifierStart(token.charAt(i + 1))
+                    && (isSubscriptGlueChar(token.charAt(i - 1)) || token.charAt(i - 1) == ']')) {
+                // The upper bound of a PostgreSQL slice, myTags[firstName:lastName]. A ':' glued after a name or ']' is not a
+                // bind marker (ParsedSql reads it the same way), so the bound is a column like the lower one. A "::" cast
+                // never matches: its first ':' is followed by a ':', and its second one follows a ':'.
+                sb.append(token, copiedTo, i + 1);
+                i = appendGluedName(sb, token, i + 1, functionName, wordConverter);
+                copiedTo = i;
+            } else if (ch == '[' && isSubscriptGlueChar(token.charAt(i - 1))) {
+                final int close = subscriptEnd(token, i + 1);
+
+                if (close >= len) {
+                    break; // unterminated: copy the rest as written
+                }
+
+                sb.append(token, copiedTo, i).append('[');
+                appendSubscriptInterior(sb, token.substring(i + 1, close), tokenizer, wordConverter, qualifiedPartConverter, depth);
+                sb.append(']');
+                i = close + 1;
+                copiedTo = i;
+            } else {
+                i++;
+            }
+        }
+
+        sb.append(token, copiedTo, len);
+    }
+
+    /**
+     * Appends the name that starts at {@code nameStart} of {@code token} through {@code converter} and returns where
+     * it ends. The name is copied as written when it is the function name that ends a function token, or when it
+     * introduces a quoted literal.
+     */
+    private static int appendGluedName(final StringBuilder sb, final String token, final int nameStart, final boolean functionName,
+            final UnaryOperator<String> converter) {
+        final int nameEnd = identifierNameEnd(token, nameStart);
+        final boolean keep;
+
+        if (nameEnd == token.length()) {
+            keep = functionName;
+        } else {
+            final char next = token.charAt(nameEnd);
+            keep = next == SK._SINGLE_QUOTE || next == SK._DOUBLE_QUOTE || next == SK._BACKTICK;
+        }
+
+        if (keep) {
+            sb.append(token, nameStart, nameEnd);
+        } else {
+            sb.append(converter.apply(token.substring(nameStart, nameEnd)));
+        }
+
+        return nameEnd;
+    }
+
+    /** The characters after which the tokenizer reads {@code '['} as a glued subscript rather than a bracket-quoted identifier. */
+    private static boolean isSubscriptGlueChar(final char ch) {
+        return ch == '_' || ch == '$' || Character.isLetterOrDigit(ch);
+    }
+
+    /**
+     * Mirrors the tokenizer's subscript scan: it returns the index of the {@code ']'} that closes the subscript
+     * whose interior starts at {@code fromIndex}, or {@code text.length()} if there is none. Brackets nest, and
+     * quoted regions and comments are skipped.
+     */
+    private static int subscriptEnd(final String text, final int fromIndex) {
+        final int len = text.length();
+        int depth = 1;
+
+        for (int i = fromIndex; i < len; i++) {
+            final char ch = text.charAt(i);
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                i = backslashEscapedQuoteEnd(text, i + 1, ch);
+            } else if (ch == '/' && i + 1 < len && text.charAt(i + 1) == '*') {
+                final int close = text.indexOf("*/", i + 2);
+                i = close < 0 ? len : close + 1;
+            } else if (ch == '-' && i + 1 < len && text.charAt(i + 1) == '-') {
+                while (i + 1 < len && text.charAt(i + 1) != '\n' && text.charAt(i + 1) != '\r') {
+                    i++;
+                }
+            } else if (ch == '[') {
+                depth++;
+            } else if (ch == ']' && --depth == 0) {
+                return i;
+            }
+        }
+
+        return len;
+    }
+
+    /**
+     * Returns the index of the quote that closes the region whose content starts at {@code fromIndex}, reading
+     * it as the tokenizer does. A quote after an odd run of backslashes is escaped, and a doubled quote is an
+     * escaped quote. Returns {@code text.length()} if the region is unterminated.
+     */
+    static int backslashEscapedQuoteEnd(final String text, final int fromIndex, final char quote) {
+        for (int close = text.indexOf(quote, fromIndex); close >= 0; close = text.indexOf(quote, close + 1)) {
+            int backslashStart = close;
+
+            while (backslashStart > fromIndex && text.charAt(backslashStart - 1) == '\\') {
+                backslashStart--;
+            }
+
+            if (((close - backslashStart) & 1) != 0) {
+                continue;
+            }
+
+            if (close + 1 < text.length() && text.charAt(close + 1) == quote) {
+                close++;
+            } else {
+                return close;
+            }
+        }
+
+        return text.length();
+    }
+
+    /**
+     * How many glued subscripts deep interiors are rendered as nested expressions. Each level re-tokenizes its
+     * interior, so the bound keeps pathological nesting ({@code a[a[a[...]]]}) linear in time and stack depth.
+     */
+    private static final int MAX_RENDERED_SUBSCRIPT_DEPTH = 8;
+
+    /**
+     * Renders the interior of a glued array subscript or constructor. The outer tokenizer kept any comment or
+     * {@code '#'} inside the brackets as part of the subscript. Tokenized on its own, that text would be
+     * stripped as a comment, so an interior with a {@code '#'}, {@code --} or <code>/*</code> outside its quoted
+     * regions is copied as written instead. So is an interior nested deeper than
+     * {@link #MAX_RENDERED_SUBSCRIPT_DEPTH}.
+     */
+    private static void appendSubscriptInterior(final StringBuilder sb, final String interior, final SqlParser.Tokenizer tokenizer,
+            final UnaryOperator<String> wordConverter, final UnaryOperator<String> qualifiedPartConverter, final int depth) {
+        if (depth >= MAX_RENDERED_SUBSCRIPT_DEPTH || interior.isBlank() || containsUnquotedCommentOrHash(interior)) {
+            sb.append(interior);
+            return;
+        }
+
+        final List<String> interiorTokens = splitAtNonSeparatorWhitespace(tokenizer.tokenize(interior));
+        appendRawExpressionTokens(sb, interior, interiorTokens, interiorTokens.size(), tokenizer, wordConverter, qualifiedPartConverter, depth + 1);
+    }
+
+    /**
+     * Whether {@code interior} has a {@code '#'}, {@code --} or <code>/*</code> that its own tokenization would read
+     * as a comment, that is one outside the quoted regions (read with backslash escapes, as the tokenizer reads
+     * them). Quotes inside a bracket-quoted identifier are plain characters, so from a {@code '['} that is not glued
+     * to a name, and could open one, the answer is conservatively {@code true}.
+     */
+    private static boolean containsUnquotedCommentOrHash(final String interior) {
+        if (interior.indexOf('#') < 0 && !interior.contains("--") && !interior.contains("/*")) {
+            return false;
+        }
+
+        final int len = interior.length();
+
+        for (int i = 0; i < len; i++) {
+            final char ch = interior.charAt(i);
+            final char next = i + 1 < len ? interior.charAt(i + 1) : 0;
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                i = backslashEscapedQuoteEnd(interior, i + 1, ch);
+            } else if (ch == '#' || (ch == '-' && next == '-') || (ch == '/' && next == '*')
+                    || (ch == '[' && (i == 0 || !isSubscriptGlueChar(interior.charAt(i - 1))))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Whether {@code token} ends with the closing delimiter of a quoted identifier or subscript: {@code "}, {@code `} or {@code ]}. */
+    private static boolean endsWithDelimiter(final String token) {
+        final int len = token.length();
+
+        if (len < 2) {
+            return false;
+        }
+
+        final char last = token.charAt(len - 1);
+
+        return last == SK._DOUBLE_QUOTE || last == SK._BACKTICK || last == ']';
+    }
+
+    /** Leading character of a convertible identifier: an ASCII letter or an underscore. */
+    private static boolean isRawIdentifierStart(final char ch) {
+        return Strings.isAsciiAlpha(ch) || ch == '_';
+    }
+
+    /** Whether {@code token} closes a braced MyBatis marker: it contains a {@code '}'} and is not a quoted literal. */
+    private static boolean isBracedPlaceholderEnd(final String token) {
+        return token.indexOf('}') >= 0 && !token.startsWith("'") && !token.startsWith("\"");
+    }
+
+    /** Whether the braced marker opened by the token at {@code start} is closed by that token or a later one. */
+    private static boolean closesBracedPlaceholder(final List<String> tokens, final int start) {
+        for (int i = start, len = tokens.size(); i < len; i++) {
+            if (isBracedPlaceholderEnd(tokens.get(i))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether the token at {@code index} is a SQL Server or MySQL variable name, that is, the token right after a
+     * bare {@code "@"} or {@code "@@"}. Whitespace is kept as its own token, so the operand of a PostgreSQL
+     * {@code @} operator written with spaces ({@code a @ b}) is still converted. Only the space-less form
+     * ({@code a @b}) is ambiguous, and it is also left unchanged.
+     */
+    private static boolean isSqlVariable(final List<String> tokens, final int index) {
+        if (index == 0) {
+            return false;
+        }
+
+        final String previous = tokens.get(index - 1);
+
+        return "@".equals(previous) || "@@".equals(previous);
+    }
+
+    /**
+     * Returns the index of the first token whose extent depends on whether a backslash escapes a quote, or
+     * {@code -1} if there is none (see {@link #containsBackslashEscapedQuote(String)}). A retained block comment
+     * never depends on it.
+     */
+    private static int firstEscapeDependentToken(final List<String> tokens) {
+        for (int i = 0, size = tokens.size(); i < size; i++) {
+            final String token = tokens.get(i);
+
+            if (token.length() > 2 && !token.startsWith("/*") && containsBackslashEscapedQuote(token)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Whether a backslash in {@code token} escapes the closing quote of the quoted region it is in, walking the
+     * token's regions as the tokenizer reads them (a backslash escapes the next character). Only there do the
+     * readings disagree: standard SQL ends the region at that quote, the tokenizer does not. A backslash before
+     * any other character, including another kind of quote ({@code '{"k":"a\"b"}'}, {@code "it\'s"}), leaves the
+     * region the same under both readings, and so does any backslash in a PostgreSQL {@code E'...'} string, which
+     * honors backslash escapes under both. Comments inside a subscript are skipped as the tokenizer skips them.
+     * Quotes inside a bracket-quoted identifier are plain characters, but they are walked like quoted regions,
+     * which can only report a dependency that is not there.
+     */
+    private static boolean containsBackslashEscapedQuote(final String token) {
+        final int len = token.length();
+
+        for (int i = 0; i < len; i++) {
+            final char ch = token.charAt(i);
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                // An E'...' string: E or e directly before the quote, not as the end of a longer name.
+                final boolean escapeString = ch == SK._SINGLE_QUOTE && i > 0 && (token.charAt(i - 1) == 'E' || token.charAt(i - 1) == 'e')
+                        && (i == 1 || !isIdentifierNameChar(token.charAt(i - 2)));
+
+                for (i++; i < len; i++) {
+                    final char c = token.charAt(i);
+
+                    if (c == '\\') {
+                        if (!escapeString && i + 1 < len && token.charAt(i + 1) == ch) {
+                            return true;
+                        }
+
+                        i++; // the escaped character, a backslash included, is region content under both readings
+                    } else if (c == ch) {
+                        if (i + 1 < len && token.charAt(i + 1) == ch) {
+                            i++; // a doubled quote
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            } else if (ch == '/' && i + 1 < len && token.charAt(i + 1) == '*') {
+                final int close = token.indexOf("*/", i + 2);
+
+                if (close < 0) {
+                    return false;
+                }
+
+                i = close + 1;
+            } else if (ch == '-' && i + 1 < len && token.charAt(i + 1) == '-') {
+                i = lineEnd(token, i + 2);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns the index in {@code expr} where {@code tokens[index]} starts, or {@code -1} if it cannot be located.
+     *
+     * @see #tokenSourceOffsets(String, List, int)
+     */
+    private static int tokenSourceStart(final String expr, final List<String> tokens, final int index) {
+        return tokenSourceOffsets(expr, tokens, index)[index];
+    }
+
+    /**
+     * Returns the index in {@code expr} where each of {@code tokens[0, last]} starts. The entry is {@code -1} for a
+     * blank token, for a retained block comment, and for every token from the first one that cannot be located.
+     * Tokens are copies of the source text, in source order. Only whitespace and comments separate them,
+     * including comments retained as tokens, which are skipped here like any other comment. So one linear walk
+     * matches each token at the next position that is not whitespace or a comment. The walk gives up as soon as
+     * the text does not fit that shape. A {@code --} or a block comment always starts a comment for the tokenizer,
+     * so it is skipped before the match is tried. A {@code '#'} where the expected token does not start must have
+     * been read as a hash comment, because the tokenizer emitted no token there.
+     */
+    private static int[] tokenSourceOffsets(final String expr, final List<String> tokens, final int last) {
+        final int[] offsets = new int[last + 1];
+        final int len = expr.length();
+        int position = 0;
+
+        for (int i = 0; i <= last; i++) {
+            final String token = tokens.get(i);
+
+            if (token.isBlank() || token.startsWith("/*")) {
+                offsets[i] = -1;
+                continue; // collapsed whitespace or a retained block comment, both skipped as gap text below
+            }
+
+            while (true) {
+                if (position >= len) {
+                    return markUnlocated(offsets, i);
+                }
+
+                final char ch = expr.charAt(position);
+                final char next = position + 1 < len ? expr.charAt(position + 1) : 0;
+
+                if (ch == '-' && next == '-') {
+                    position = lineEnd(expr, position + 2);
+                } else if (ch == '/' && next == '*') {
+                    final int close = expr.indexOf("*/", position + 2);
+                    position = close < 0 ? len : close + 2;
+                } else if (expr.regionMatches(true, position, token, 0, token.length())) {
+                    break; // configured letter separators can match case-insensitively, the rest is copied text
+                } else if (ch == '#') {
+                    position = lineEnd(expr, position + 1);
+                } else if (Character.isWhitespace(ch) || Character.isSpaceChar(ch)) {
+                    position++;
+                } else {
+                    return markUnlocated(offsets, i);
+                }
+            }
+
+            offsets[i] = position;
+            position += token.length();
+        }
+
+        return offsets;
+    }
+
+    /** Sets every offset from {@code from} on to {@code -1} (not located) and returns {@code offsets}. */
+    private static int[] markUnlocated(final int[] offsets, final int from) {
+        for (int i = from; i < offsets.length; i++) {
+            offsets[i] = -1;
+        }
+
+        return offsets;
+    }
+
+    /** Returns the index of the first line terminator at or after {@code fromIndex}, or {@code text.length()} if there is none. */
+    private static int lineEnd(final String text, final int fromIndex) {
+        int i = fromIndex;
+
+        while (i < text.length() && text.charAt(i) != '\n' && text.charAt(i) != '\r') {
+            i++;
+        }
+
+        return i;
     }
 
     /**

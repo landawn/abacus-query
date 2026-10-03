@@ -186,12 +186,17 @@ public final class Dsl {
      * predefined dialect combinations.
      *
      * @param sqlDialect the rendering and tokenizer configuration to bind to (must not be {@code null})
-     * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}
+     * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}, or its naming policy is {@link NamingPolicy#KEBAB_CASE}
      */
     Dsl(final SqlDialect sqlDialect) {
         N.checkArgNotNull(sqlDialect, cs.sqlDialect);
         this.sqlDialect = sqlDialect;
         namingPolicy = sqlDialect.namingPolicy() == null ? NamingPolicy.SNAKE_CASE : sqlDialect.namingPolicy();
+
+        // KEBAB_CASE renders firstName as the unquoted identifier first-name, which SQL parses as "first - name": every
+        // statement such a DSL produced would be broken, so it is rejected up front.
+        N.checkArgument(namingPolicy != NamingPolicy.KEBAB_CASE,
+                "NamingPolicy.KEBAB_CASE is not supported for SQL rendering: hyphenated names such as 'first-name' are not valid unquoted SQL identifiers");
     }
 
     /**
@@ -218,7 +223,7 @@ public final class Dsl {
      * @param sqlDialect the complete immutable rendering and tokenizer configuration the DSL is bound to
      * @return a {@code Dsl} that produces {@link SqlBuilder} instances using the given dialect; a shared
      *         cached instance is returned for the predefined dialect combinations, otherwise a new instance
-     * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}
+     * @throws IllegalArgumentException if {@code sqlDialect} is {@code null}, or its naming policy is {@link NamingPolicy#KEBAB_CASE}
      */
     public static Dsl forDialect(final SqlDialect sqlDialect) {
         N.checkArgNotNull(sqlDialect, cs.sqlDialect);
@@ -1453,7 +1458,10 @@ public final class Dsl {
      * sub-entity inclusion.</p>
      *
      * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
-     * no relationship or join predicate is inferred.</p>
+     * no relationship or join predicate is inferred. A {@code JOIN} binds tighter than the comma, so the {@code ON}
+     * condition of a join appended to such a builder can reference only the last listed table:
+     * {@code FROM account a, device INNER JOIN orders o ON a.id = o.account_id} is rejected by PostgreSQL and MySQL.
+     * Use {@code includeSubEntityProperties = false} with explicit joins when further joins are needed.</p>
      *
      * <p>A sub-entity property is included only when the parent entity maps it: a {@code @NonColumn} or
      * transient sub-entity, one listed in {@code @Table(nonColumnFields)}, or one missing from a non-empty
@@ -1473,7 +1481,9 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
-     *                                  or resolves to a blank mapped table name
+     *                                  or resolves to a blank mapped table name,
+     *         or if two included sub-entity properties would read the same table reference (same table and alias; a
+     *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1487,6 +1497,12 @@ public final class Dsl {
      * <p>This method combines table aliasing with sub-entity property inclusion for
      * complex queries involving related entities.</p>
      *
+     * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
+     * no relationship or join predicate is inferred. A {@code JOIN} binds tighter than the comma, so the {@code ON}
+     * condition of a join appended to such a builder can reference only the last listed table:
+     * {@code FROM account a, device INNER JOIN orders o ON a.id = o.account_id} is rejected by PostgreSQL and MySQL.
+     * Use {@code includeSubEntityProperties = false} with explicit joins when further joins are needed.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = PSC.selectFrom(Order.class, "o", true)
@@ -1496,13 +1512,15 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, a {@code null} or empty alias falls back to the entity's
+     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, a {@code null}, empty, or blank alias falls back to the entity's
      *        {@code @Table} alias, keeping the parent columns qualified next to the sub-entity tables)
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name, or if {@code tableAlias}
-     *                                  contains a line break or a SQL comment token
+     *                                  contains a line break or a SQL comment token,
+     *         or if two included sub-entity properties would read the same table reference (same table and alias; a
+     *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1572,6 +1590,12 @@ public final class Dsl {
      * <p>This method provides control over both sub-entity inclusion and property exclusion
      * while automatically determining the appropriate table alias.</p>
      *
+     * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
+     * no relationship or join predicate is inferred. A {@code JOIN} binds tighter than the comma, so the {@code ON}
+     * condition of a join appended to such a builder can reference only the last listed table:
+     * {@code FROM account a, device INNER JOIN orders o ON a.id = o.account_id} is rejected by PostgreSQL and MySQL.
+     * Use {@code includeSubEntityProperties = false} with explicit joins when further joins are needed.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> excluded = N.asSet("internalData");
@@ -1586,7 +1610,9 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name
+     *                                  or the class resolves to a blank mapped table name,
+     *         or if two included sub-entity properties would read the same table reference (same table and alias; a
+     *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1601,7 +1627,10 @@ public final class Dsl {
      * sub-entity inclusion, and property exclusion.</p>
      *
      * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
-     * no relationship or join predicate is inferred.</p>
+     * no relationship or join predicate is inferred. A {@code JOIN} binds tighter than the comma, so the {@code ON}
+     * condition of a join appended to such a builder can reference only the last listed table:
+     * {@code FROM account a, device INNER JOIN orders o ON a.id = o.account_id} is rejected by PostgreSQL and MySQL.
+     * Use {@code includeSubEntityProperties = false} with explicit joins when further joins are needed.</p>
      *
      * <p>A sub-entity property is included only when the parent entity maps it: a {@code @NonColumn} or
      * transient sub-entity, one listed in {@code @Table(nonColumnFields)}, or one missing from a non-empty
@@ -1613,21 +1642,22 @@ public final class Dsl {
      * <pre>{@code
      * Set<String> excluded = N.asSet("password", "internalNotes");
      * String sql = PSC.selectFrom(Account.class, "a", true, excluded)
-     *                 .innerJoin("orders o").on("a.id = o.account_id")
-     *                 .where(Filters.greaterThan("o.total", 1000))
+     *                 .where(Filters.greaterThan("a.status", 1))
      *                 .build().query();
-     * // Complex query with full control over selection
+     * // Selects account (alias 'a') plus its sub-entity columns, excluding password and internalNotes
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, a {@code null} or empty alias falls back to the entity's
+     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, a {@code null}, empty, or blank alias falls back to the entity's
      *        {@code @Table} alias, keeping the parent columns qualified next to the sub-entity tables)
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name, or if
-     *                                  {@code tableAlias} contains a line break or a SQL comment token
+     *                                  {@code tableAlias} contains a line break or a SQL comment token,
+     *         or if two included sub-entity properties would read the same table reference (same table and alias; a
+     *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1770,7 +1800,9 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code selection} is {@code null}, has a {@code null}, empty, or blank
      *                                  included property name, carries a blank, quoted, or comment-bearing table or
      *                                  class alias, resolves to no selectable property, or has an entity class that is
-     *                                  not a valid entity bean class
+     *                                  not a valid entity bean class,
+     *         or if two included sub-entity properties would read the same table reference (same table and alias),
+     *         or a selected sub-entity property references the entity's own class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #select(List)
@@ -1819,7 +1851,9 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a {@code null} element,
      *                                  a {@code null}, empty, or blank included property name, or a blank, quoted, or
      *                                  comment-bearing table or class alias, resolves to no properties in total, or
-     *                                  contains an entity class that is not a valid entity bean class
+     *                                  contains an entity class that is not a valid entity bean class,
+     *         or if two included sub-entity properties would read the same table reference (same table and alias),
+     *         or a selected sub-entity property references the entity's own class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1940,7 +1974,9 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code selection} is {@code null}, has a {@code null}, empty, or blank
      *                                  included property name, carries a blank, quoted, or comment-bearing table or
      *                                  class alias, resolves to no selectable property, has an entity class that is
-     *                                  not a valid entity bean class, or produces a blank generated FROM clause
+     *                                  not a valid entity bean class, or produces a blank generated FROM clause,
+     *         or if two included sub-entity properties would read the same table reference (same table and alias),
+     *         or a selected sub-entity property references the entity's own class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #selectFrom(List)
@@ -1993,7 +2029,9 @@ public final class Dsl {
      *                                  a {@code null}, empty, or blank included property name, or a blank, quoted, or
      *                                  comment-bearing table or class alias, resolves to no properties in total,
      *                                  contains an entity class that is not a valid entity bean class, or produces a
-     *                                  blank generated FROM clause
+     *                                  blank generated FROM clause,
+     *         or if two included sub-entity properties would read the same table reference (same table and alias),
+     *         or a selected sub-entity property references the entity's own class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */

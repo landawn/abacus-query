@@ -17,6 +17,9 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
+import com.landawn.abacus.pool.KeyedObjectPool;
+import com.landawn.abacus.pool.PoolFactory;
+import com.landawn.abacus.pool.PoolableAdapter;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.Strings;
 
@@ -3213,5 +3216,706 @@ public class ParsedSqlTest extends TestBase {
         // String.trim() strips control characters that Strings.isBlank does not treat as blank.
         assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("\u0001"));
         assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("\u0000 \u0001"));
+    }
+
+    // Regression: the parse cache pool closes itself in a JVM shutdown hook, after which every parse threw IllegalStateException.
+    @Test
+    public void testParse_closedCacheIsTreatedAsMiss() {
+        final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(16, 60_000);
+        final String sql = "SELECT * FROM t WHERE id = :id";
+
+        try {
+            final ParsedSql cached = ParsedSql.parse(sql, cache);
+            assertSame(cached, ParsedSql.parse(sql, cache));
+        } finally {
+            cache.close();
+        }
+
+        // Both previously cached and new SQL still parse, uncached.
+        final ParsedSql afterClose = ParsedSql.parse(sql, cache);
+        assertEquals("SELECT * FROM t WHERE id = ?", afterClose.parameterizedSql());
+        assertEquals(List.of("id"), afterClose.namedParameters());
+        assertEquals("SELECT * FROM u WHERE a = ?", ParsedSql.parse("SELECT * FROM u WHERE a = #{a}", cache).parameterizedSql());
+
+        // Parse errors still propagate.
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ? AND b = :b", cache));
+    }
+
+    // Regression: MyBatis ends the property name at ':' (the oldJdbcType shorthand) as well as ',', so #{id:BIGINT} binds "id".
+    @Test
+    public void testParse_ibatisJdbcTypeShorthandEndsParameterName() {
+        final ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE id = #{id:BIGINT} AND name = #{name:VARCHAR,javaType=String}");
+        assertEquals("SELECT * FROM t WHERE id = ? AND name = ?", parsed.parameterizedSql());
+        assertEquals(List.of("id", "name"), parsed.namedParameters());
+        assertEquals(2, parsed.parameterCount());
+
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT * FROM t WHERE id = #{ id : BIGINT }").namedParameters());
+        assertEquals(List.of("user.id"), ParsedSql.parse("SELECT * FROM t WHERE id = #{user.id:NUMERIC, mode=IN}").namedParameters());
+    }
+
+    // Regression: a JDBC call escape whose return slot was a named or MyBatis marker was not recognized as CALL, so nothing was converted.
+    @Test
+    public void testParse_jdbcCallEscapeWithNamedOrMyBatisReturnSlot() {
+        ParsedSql parsed = ParsedSql.parse("{#{result, mode=OUT, jdbcType=INTEGER} = call my_func(#{param})}");
+        assertEquals("{? = call my_func(?)}", parsed.parameterizedSql());
+        assertEquals(List.of("result", "param"), parsed.namedParameters());
+        assertEquals(2, parsed.parameterCount());
+        assertTrue(parsed.isDataOperation());
+
+        parsed = ParsedSql.parse("{ #{result, mode=OUT, jdbcType=INTEGER} = call my_func(#{param})}");
+        assertEquals("{ ? = call my_func(?)}", parsed.parameterizedSql());
+        assertEquals(List.of("result", "param"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("{#{result} = CALL my_func(#{param})}");
+        assertEquals("{? = CALL my_func(?)}", parsed.parameterizedSql());
+        assertEquals(List.of("result", "param"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("{:result = call my_func(:param)}");
+        assertEquals("{? = call my_func(?)}", parsed.parameterizedSql());
+        assertEquals(List.of("result", "param"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("{ :result = call my_func(:param)}");
+        assertEquals("{ ? = call my_func(?)}", parsed.parameterizedSql());
+        assertEquals(List.of("result", "param"), parsed.namedParameters());
+
+        // The positional forms are unchanged; a non-marker slot is not a JDBC call escape.
+        assertEquals(2, ParsedSql.parse("{? = call my_func(?)}").parameterCount());
+        assertEquals(2, ParsedSql.parse("{?=call my_func(?)}").parameterCount());
+        assertEquals(1, ParsedSql.parse("{call my_func(?)}").parameterCount());
+        assertFalse(ParsedSql.parse("{ x = call my_func(:p)}").isDataOperation());
+        assertTrue(ParsedSql.parse("{ x = call my_func(:p)}").namedParameters().isEmpty());
+    }
+
+    // Regression: a custom separator starting with whitespace (" AND") could not be realigned, so subscriptOpeningOffsets threw IllegalStateException.
+    @Test
+    public void testSubscriptOpeningOffsets_customSeparatorStartingWithWhitespace() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator(" AND").build());
+        final String sql = "SELECT a[1] FROM t WHERE b = 1 AND c[2] = 1";
+
+        assertArrayEquals(new int[] { 8, 36 }, ParsedSql.subscriptOpeningOffsets(sql, tokenizer));
+        assertArrayEquals(ParsedSql.subscriptOpeningOffsets(sql), ParsedSql.subscriptOpeningOffsets(sql, tokenizer));
+        // A longer whitespace run before the separator token.
+        assertArrayEquals(new int[] { 8, 37 }, ParsedSql.subscriptOpeningOffsets("SELECT a[1] FROM t WHERE b = 1  AND c[2] = 1", tokenizer));
+    }
+
+    // Regression: rebuilding from tokens collapsed the line break between adjacent string literals, which PostgreSQL then rejects.
+    @Test
+    public void testParse_lineBreakBetweenAdjacentStringLiteralsIsKept() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE msg = 'hello '\n  'world' AND id = ?");
+        assertEquals("SELECT * FROM t WHERE msg = 'hello '\n'world' AND id = ?", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+
+        assertEquals("SELECT * FROM t WHERE msg = 'a'\n'b' AND id = ?", ParsedSql.parse("SELECT * FROM t WHERE msg = 'a' -- c\n'b' AND id = ?").parameterizedSql());
+        parsed = ParsedSql.parse("SELECT * FROM t WHERE msg = 'a'\r\n'b' AND id = :id");
+        assertEquals("SELECT * FROM t WHERE msg = 'a'\n'b' AND id = ?", parsed.parameterizedSql());
+        assertEquals(List.of("id"), parsed.namedParameters());
+
+        // Without a line break between the literals, or between other tokens, whitespace still collapses to one space.
+        assertEquals("SELECT * FROM t WHERE msg = 'a' 'b' AND id = ?", ParsedSql.parse("SELECT * FROM t WHERE msg = 'a'   'b' AND id = ?").parameterizedSql());
+        assertEquals("SELECT a, 'x' FROM t WHERE id = ?", ParsedSql.parse("SELECT a,\n  'x'\nFROM t\nWHERE id = ?").parameterizedSql());
+    }
+
+    // Regression: TABLE statements and a leading byte-order mark were not recognized, so their placeholders were never counted.
+    @Test
+    public void testParse_tableStatementAndLeadingByteOrderMarkAreDataOperations() {
+        ParsedSql parsed = ParsedSql.parse("TABLE t ORDER BY c LIMIT ?");
+        assertTrue(parsed.isDataOperation());
+        assertEquals(1, parsed.parameterCount());
+        assertArrayEquals(new int[] { 25 }, parsed.positionalParameterOffsets());
+
+        parsed = ParsedSql.parse("table t /* c */ LIMIT :n;");
+        assertEquals("table t LIMIT ?", parsed.parameterizedSql());
+        assertEquals(List.of("n"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("\uFEFFSELECT * FROM t WHERE a = ?");
+        assertTrue(parsed.isDataOperation());
+        assertEquals("\uFEFFSELECT * FROM t WHERE a = ?", parsed.parameterizedSql());
+        assertEquals(1, parsed.parameterCount());
+        assertArrayEquals(new int[] { 27 }, parsed.positionalParameterOffsets());
+
+        parsed = ParsedSql.parse("\uFEFF (SELECT * FROM t WHERE a = :a)");
+        assertEquals("\uFEFF (SELECT * FROM t WHERE a = ?)", parsed.parameterizedSql());
+        assertEquals(List.of("a"), parsed.namedParameters());
+
+        assertFalse(ParsedSql.parse("SET search_path TO app").isDataOperation());
+        assertFalse(ParsedSql.parse("\uFEFF").isDataOperation());
+    }
+
+    // Regression: a ':' glued to a closing quote, ')' or ']' (compact JSON_OBJECT('k':v), slice bounds) was bound as a named parameter.
+    @Test
+    public void testParse_colonGluedToClosingQuoteParenthesisOrBracketIsNotNamedMarker() {
+        final String sqlServer = "SELECT s.session_id, JSON_OBJECT('security_id':s.security_id, 'login':s.login_name, 'status':s.status) AS info"
+                + " FROM sys.dm_exec_sessions AS s";
+        ParsedSql parsed = ParsedSql.parse(sqlServer);
+        assertEquals(sqlServer, parsed.parameterizedSql());
+        assertTrue(parsed.namedParameters().isEmpty());
+        assertEquals(0, parsed.parameterCount());
+
+        for (final String sql : List.of("SELECT JSON_OBJECT('a':true, 'b':null) FROM t", "SELECT JSON_OBJECT(\"a\":col) FROM t",
+                "SELECT JSON_OBJECT(CONCAT('a','b'):col) FROM t", "SELECT ARRAY[(1):v] FROM t", "SELECT arr[f(x):n] FROM t", "SELECT ARRAY['a':v] FROM t")) {
+            parsed = ParsedSql.parse(sql);
+            assertEquals(sql, parsed.parameterizedSql(), sql);
+            assertTrue(parsed.namedParameters().isEmpty(), sql);
+            assertEquals(0, parsed.parameterCount(), sql);
+        }
+
+        // Positional bindings next to such a separator are not a second parameter style.
+        parsed = ParsedSql.parse("SELECT JSON_OBJECT('a':col) FROM t WHERE id = ?");
+        assertEquals(1, parsed.parameterCount());
+        assertArrayEquals(new int[] { 46 }, parsed.positionalParameterOffsets());
+
+        // Markers after any other character are unaffected.
+        assertEquals(List.of("key"), ParsedSql.parse("SELECT * FROM t WHERE payload?:key").namedParameters());
+        assertEquals(List.of("a", "b"), ParsedSql.parse("SELECT * FROM t WHERE x = :a:b").namedParameters());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT * FROM t WHERE x IN (:id)").namedParameters());
+        assertEquals(List.of("col"), ParsedSql.parse("SELECT JSON_OBJECT('a' :col) FROM t").namedParameters());
+        assertEquals(List.of("i"), ParsedSql.parse("SELECT ARRAY['a', :i] FROM t").namedParameters());
+    }
+
+    // Regression: a bracket-group token (chained or standalone subscript) before ?/?|/?& was not an operand, so the JSON operator counted as a placeholder.
+    @Test
+    public void testParse_bracketGroupTokenIsJsonOperatorOperand() {
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE payload['a']['b'] ? 'k'").parameterCount());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT * FROM t WHERE payload['a']['b'] ? 'k' AND id = :id").namedParameters());
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE (payload)['a'] ? 'k'").parameterCount());
+
+        String sql = "SELECT * FROM t WHERE payload[1][2] ?| array['a'] AND id = ?";
+        ParsedSql parsed = ParsedSql.parse(sql);
+        assertEquals(1, parsed.parameterCount());
+        assertArrayEquals(new int[] { sql.lastIndexOf('?') }, parsed.positionalParameterOffsets());
+
+        sql = "SELECT * FROM t WHERE payload[?][?] ? 'k'";
+        parsed = ParsedSql.parse(sql);
+        assertEquals(2, parsed.parameterCount());
+        assertArrayEquals(new int[] { 30, 33 }, parsed.positionalParameterOffsets());
+
+        // A '?' opening a bracket group is still a placeholder.
+        assertEquals(1, ParsedSql.parse("SELECT ARRAY[?] FROM t").parameterCount());
+        assertEquals(2, ParsedSql.parse("SELECT ARRAY [?, ?] FROM t").parameterCount());
+    }
+
+    // Regression: in JSON_OBJECT(KEY ? VALUE ...) the key placeholder was read as a JSON '?' operator.
+    @Test
+    public void testParse_jsonObjectKeyValuePlaceholders() {
+        final ParsedSql parsed = ParsedSql.parse("SELECT JSON_OBJECT(KEY ? VALUE ?) FROM t");
+        assertEquals(2, parsed.parameterCount());
+        assertArrayEquals(new int[] { 23, 31 }, parsed.positionalParameterOffsets());
+        assertEquals(1, ParsedSql.parse("SELECT JSON_OBJECTAGG(KEY ? VALUE col) FROM t").parameterCount());
+
+        // Outside a constructor, a column named value keeps the JSON-operator reading.
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE payload ? value").parameterCount());
+    }
+
+    // Regression: GROUPS/RANGE/ZONE/VALUES columns, and CASE ... END, before a JSON '?' operator made it count as a placeholder.
+    @Test
+    public void testParse_keywordNamedColumnsAndCaseEndAreJsonOperatorOperands() {
+        for (final String sql : List.of("SELECT * FROM users WHERE groups ? 'admin'", "SELECT * FROM users WHERE range ? 'k'",
+                "SELECT * FROM users WHERE zone ? 'k'", "SELECT * FROM users WHERE values ? 'k'", "SELECT CASE WHEN a THEN j1 ELSE j2 END ? 'k' FROM t")) {
+            assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT * FROM users WHERE groups ? 'admin' AND id = :id").namedParameters());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT * FROM users WHERE zone ? 'k' AND id = :id").namedParameters());
+
+        // In their keyword positions they still lead a placeholder.
+        assertEquals(1, ParsedSql.parse("SELECT sum(x) OVER (ORDER BY d RANGE ? PRECEDING) FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT sum(x) OVER (ORDER BY d GROUPS ? FOLLOWING) FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT ts AT TIME ZONE ? local_ts FROM t").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT CASE WHEN a THEN ? END FROM t").parameterCount());
+        assertEquals(2, ParsedSql.parse("SELECT * FROM t WHERE a IN (VALUES ?, ?)").parameterCount());
+    }
+
+    // Regression: inside brackets a unary ?-/?| on a prefixed literal with a cast (E'...'::line) was counted, unlike outside brackets.
+    @Test
+    public void testParse_prefixedLiteralCastIsGeometricOperandInsideBrackets() {
+        for (final String prefix : List.of("E", "N", "U&")) {
+            final String literal = prefix + "'(0,0),(1,0)'::line";
+            assertEquals(0, ParsedSql.parse("SELECT ARRAY[?- " + literal + "]").parameterCount(), literal);
+            assertEquals(0, ParsedSql.parse("SELECT ?- " + literal).parameterCount(), literal);
+        }
+
+        // Without the cast the operand is untyped, and the '?' stays a placeholder.
+        assertEquals(1, ParsedSql.parse("SELECT ARRAY[?- E'(0,0),(1,0)']").parameterCount());
+    }
+
+    // Regression: inside one bracket token the closing '}' of #{...} was searched without regard to quotes.
+    @Test
+    public void testParse_ibatisBindingInBracketTokenCannotCloseInsideLiteral() {
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[#{a, '}'] FROM t"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[#{a, 'x'] FROM t WHERE b = #{c}"));
+
+        // A quote after the closing brace is an ordinary literal element.
+        final ParsedSql parsed = ParsedSql.parse("SELECT ARRAY[#{a}, '}'] FROM t");
+        assertEquals("SELECT ARRAY[?, '}'] FROM t", parsed.parameterizedSql());
+        assertEquals(List.of("a"), parsed.namedParameters());
+    }
+
+    // Regression: when the first use of ParsedSql happened inside a JVM shutdown hook, creating the cache threw and class init failed for good.
+    @Test
+    public void testParse_cacheThatCouldNotBeCreatedIsPermanentMiss() {
+        // What creating a pool throws once JVM shutdown has begun: the hook registration refused while the pool classes
+        // initialize (wrapped by the JVM), their failed initialization later on, or the terminated shared evictor executor.
+        for (final Throwable failure : List.of(new IllegalStateException("Shutdown in progress"),
+                new ExceptionInInitializerError(new IllegalStateException("Shutdown in progress")), new NoClassDefFoundError("Could not initialize class"),
+                new java.util.concurrent.RejectedExecutionException("rejected from Terminated executor"), new OutOfMemoryError("test"))) {
+            Assertions.assertNull(ParsedSql.createCache(() -> {
+                if (failure instanceof RuntimeException) {
+                    throw (RuntimeException) failure;
+                }
+
+                throw (Error) failure;
+            }), failure.toString());
+        }
+
+        final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> created = PoolFactory.createKeyedObjectPool(16, 60_000);
+        try {
+            assertSame(created, ParsedSql.createCache(() -> created));
+        } finally {
+            created.close();
+        }
+
+        // Without a cache every parse is fresh and still correct.
+        final String sql = "SELECT * FROM t WHERE id = :id";
+        final ParsedSql first = ParsedSql.parse(sql, null);
+        assertEquals("SELECT * FROM t WHERE id = ?", first.parameterizedSql());
+        assertEquals(List.of("id"), first.namedParameters());
+        Assertions.assertNotSame(first, ParsedSql.parse(sql, null));
+        assertEquals(first, ParsedSql.parse(sql, null));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ? AND b = :b", null));
+    }
+
+    // Regression: a cache closed concurrently (isClosed() still false while get/put throw IllegalStateException) must be a miss, not an error.
+    @Test
+    public void testParse_cacheClosedConcurrentlyIsTreatedAsMiss() {
+        @SuppressWarnings("unchecked")
+        final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> closing = (KeyedObjectPool<String, PoolableAdapter<ParsedSql>>) java.lang.reflect.Proxy
+                .newProxyInstance(KeyedObjectPool.class.getClassLoader(), new Class<?>[] { KeyedObjectPool.class }, (proxy, method, args) -> {
+                    switch (method.getName()) {
+                        case "isClosed":
+                            return false;
+                        case "get":
+                        case "put":
+                            throw new IllegalStateException("closed");
+                        case "hashCode":
+                            return System.identityHashCode(proxy);
+                        case "equals":
+                            return proxy == args[0];
+                        default:
+                            throw new UnsupportedOperationException(method.getName());
+                    }
+                });
+
+        final ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE id = :id", closing);
+        assertEquals("SELECT * FROM t WHERE id = ?", parsed.parameterizedSql());
+        assertEquals(List.of("id"), parsed.namedParameters());
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ? AND b = :b", closing));
+    }
+
+    // Regression: an unclosed #{ inside a bracket group was joined with the tokens after the group, swallowing the rest of the SQL into its name.
+    @Test
+    public void testParse_unclosedIbatisMarkerInsideBracketGroupIsRejected() {
+        for (final String sql : List.of("SELECT ARRAY[#{a] FROM t WHERE b = #{c}", "SELECT ARRAY[#{a ] , #{b}", "SELECT x[#{a] FROM t WHERE b = #{c}",
+                "SELECT ARRAY[#{a] FROM t WHERE b = #{c} AND d = #{d}", "SELECT ARRAY[1, #{a] FROM t WHERE b = #{c}", "SELECT ARRAY[#{a]")) {
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
+            assertTrue(e.getMessage().contains("missing closing '}'"), sql);
+        }
+
+        // A property path whose '}' follows its own bracket group is still one binding.
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a = #{list[0]} AND b = #{map[k]} AND c = #{ list[1] }");
+        assertEquals("SELECT * FROM t WHERE a = ? AND b = ? AND c = ?", parsed.parameterizedSql());
+        assertEquals(List.of("list[0]", "map[k]", "list[1]"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("SELECT x[1] FROM t WHERE a = #{ b }");
+        assertEquals("SELECT x[1] FROM t WHERE a = ?", parsed.parameterizedSql());
+        assertEquals(List.of("b"), parsed.namedParameters());
+    }
+
+    // Regression: a balanced quote inside a MyBatis marker (map-key access, a literal attribute) was rejected as an unclosed marker.
+    @Test
+    public void testParse_ibatisMarkerWithBalancedQuotesBinds() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE x = #{map['k']}");
+        assertEquals("SELECT * FROM t WHERE x = ?", parsed.parameterizedSql());
+        assertEquals(List.of("map['k']"), parsed.namedParameters());
+
+        assertEquals(List.of("map[\"k\"]"), ParsedSql.parse("SELECT * FROM t WHERE x = #{map[\"k\"]}").namedParameters());
+        assertEquals(List.of("map['k']"), ParsedSql.parse("SELECT * FROM t WHERE x = #{map['k'], jdbcType=VARCHAR}").namedParameters());
+        assertEquals(List.of("p['a']", "p['id']"), ParsedSql.parse("UPDATE t SET a = #{p['a']} WHERE id = #{p['id']}").namedParameters());
+        assertEquals(List.of("row['col']"), ParsedSql.parse("INSERT INTO t (a) VALUES (#{row['col']})").namedParameters());
+        assertEquals(List.of("ids[0]", "ids['1']"), ParsedSql.parse("SELECT * FROM t WHERE x IN (#{ids[0]}, #{ids['1']})").namedParameters());
+        assertEquals(List.of("\"a\""), ParsedSql.parse("SELECT ARRAY[#{\"a\"}] FROM t").namedParameters());
+
+        parsed = ParsedSql.parse("SELECT * FROM t WHERE x = ARRAY[#{a, 'x'}]");
+        assertEquals("SELECT * FROM t WHERE x = ARRAY[?]", parsed.parameterizedSql());
+        assertEquals(List.of("a"), parsed.namedParameters());
+
+        // A '}' inside a literal still cannot close the marker, and a quote left open is rejected.
+        for (final String sql : List.of("SELECT ARRAY[#{a, '}'] FROM t", "SELECT ARRAY[#{a, 'x'] FROM t WHERE b = #{c}", "SELECT ARRAY[#{a, '}' FROM t",
+                "SELECT * FROM t WHERE c = #{ x AND d = '}'")) {
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
+        }
+
+        // Comments inside a marker in a bracket group are skipped, quotes and braces in them included.
+        parsed = ParsedSql.parse("SELECT ARRAY[#{a, jdbcType=VARCHAR /* it's } */}] FROM t");
+        assertEquals("SELECT ARRAY[?] FROM t", parsed.parameterizedSql());
+        assertEquals(List.of("a"), parsed.namedParameters());
+        parsed = ParsedSql.parse("SELECT ARRAY[#{a, jdbcType=VARCHAR -- it's\n}] FROM t");
+        assertEquals("SELECT ARRAY[?] FROM t", parsed.parameterizedSql());
+        assertEquals(List.of("a"), parsed.namedParameters());
+    }
+
+    // Regression: #{:id} (a MyBatis marker with an empty property name) was kept verbatim and the ':id' inside it converted, giving "#{?}".
+    @Test
+    public void testParse_ibatisMarkerWithEmptyPropertyNameIsRejected() {
+        for (final String marker : List.of("#{:id}", "#{:id:INT}", "#{ :id, mode=IN }", "#{:INTEGER, mode=IN}", "#{,x}", "#{,:x}", "#{ , mode=IN}")) {
+            final String sql = "SELECT * FROM t WHERE a = " + marker;
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
+            assertTrue(e.getMessage().contains("empty property name"), sql);
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = #{a} AND b = #{:b}"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = #{:x} AND b = :b"));
+
+        // Blank markers are still kept verbatim without a binding.
+        final ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a = #{} AND b = #{ } AND c = #{c}");
+        assertEquals("SELECT * FROM t WHERE a = #{} AND b = #{ } AND c = ?", parsed.parameterizedSql());
+        assertEquals(List.of("c"), parsed.namedParameters());
+
+        // The ':jdbcType' shorthand after a name.
+        assertEquals(List.of("list[0]"), ParsedSql.parse("SELECT * FROM t WHERE a = #{list[0]:INTEGER}").namedParameters());
+        assertEquals(List.of("a"), ParsedSql.parse("SELECT * FROM t WHERE a = #{a::int}").namedParameters());
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT * FROM t WHERE a = #{ id :BIGINT, mode=IN }").namedParameters());
+        assertEquals("SELECT * FROM t WHERE a = ?::int", ParsedSql.parse("SELECT * FROM t WHERE a = #{id:BIGINT}::int").parameterizedSql());
+        assertEquals(List.of("a", "b"), ParsedSql.parse("SELECT * FROM t WHERE id = ARRAY[#{a:INT}, #{b:VARCHAR}]").namedParameters());
+    }
+
+    // Regression: a statement verb glued to a quoted name or bracket group (SELECT"a") was not recognized, so no marker was converted.
+    @Test
+    public void testParse_statementVerbGluedToQuotedNameIsDataOperation() {
+        ParsedSql parsed = ParsedSql.parse("SELECT\"a\" FROM t WHERE b = :b");
+        assertTrue(parsed.isDataOperation());
+        assertEquals("SELECT\"a\" FROM t WHERE b = ?", parsed.parameterizedSql());
+        assertEquals(List.of("b"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("UPDATE\"t\" SET a = :a");
+        assertEquals("UPDATE\"t\" SET a = ?", parsed.parameterizedSql());
+        assertEquals(List.of("a"), parsed.namedParameters());
+
+        for (final String sql : List.of("SELECT[a] FROM t WHERE b = ?", "SELECT`a` FROM t WHERE b = ?", "SELECT'x' FROM t WHERE b = ?",
+                "WITH\"x\" AS (SELECT 1) SELECT * FROM x WHERE b = ?", "EXPLAIN SELECT\"a\" FROM t WHERE b = ?", "(SELECT\"a\" FROM t WHERE b = ?)",
+                "﻿SELECT\"a\" FROM t WHERE b = ?", "{call\"f\"(?)}")) {
+            parsed = ParsedSql.parse(sql);
+            assertTrue(parsed.isDataOperation(), sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+            assertArrayEquals(new int[] { sql.lastIndexOf('?') }, parsed.positionalParameterOffsets(), sql);
+        }
+
+        // A token that starts quoted is a name, never a statement verb.
+        assertFalse(ParsedSql.parse("\"SELECT\" a FROM t WHERE b = ?").isDataOperation());
+        assertFalse(ParsedSql.parse("[SELECT] a FROM t WHERE b = ?").isDataOperation());
+    }
+
+    // Regression: a compact '?-'/'?||' token after a RANGE/GROUPS frame unit or a bare VALUES lost its placeholder.
+    @Test
+    public void testParse_compactPlaceholderAfterFrameUnitOrValuesIsCounted() {
+        String sql = "SELECT sum(x) OVER (ORDER BY d RANGE ?-1 PRECEDING) FROM t";
+        ParsedSql parsed = ParsedSql.parse(sql);
+        assertEquals(1, parsed.parameterCount());
+        assertArrayEquals(new int[] { 37 }, parsed.positionalParameterOffsets());
+
+        for (final String frame : List.of("ORDER BY d DESC RANGE ?-1 PRECEDING", "PARTITION BY g ORDER BY d RANGE ?-1 PRECEDING", "ORDER BY d GROUPS ?- 1 FOLLOWING",
+                "ORDER BY d GROUPS ?-1 PRECEDING", "ORDER BY d ROWS ?-1 PRECEDING", "ORDER BY d RANGE ?||'1 day' PRECEDING",
+                "ORDER BY d RANGE BETWEEN ?-1 PRECEDING AND CURRENT ROW", "ORDER BY d RANGE ? * 2 PRECEDING", "ORDER BY d RANGE ?::interval PRECEDING",
+                "ORDER BY d RANGE (?-1) PRECEDING")) {
+            sql = "SELECT sum(x) OVER (" + frame + ") FROM t";
+            assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+
+        assertEquals(2, ParsedSql.parse("SELECT sum(x) OVER (ORDER BY d RANGE BETWEEN ? PRECEDING AND ? FOLLOWING) FROM t").parameterCount());
+
+        for (final String values : List.of("VALUES ?-1", "VALUES ?||'x'", "VALUES ?")) {
+            sql = "INSERT INTO t (a) " + values;
+            parsed = ParsedSql.parse(sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+            assertArrayEquals(new int[] { sql.indexOf('?') }, parsed.positionalParameterOffsets(), sql);
+        }
+
+        assertEquals(2, ParsedSql.parse("INSERT INTO t (a) VALUES ?, ?").parameterCount());
+
+        // Columns named groups, range and values keep the JSON-operator reading, also inside a window definition.
+        for (final String json : List.of("SELECT * FROM t WHERE values ?| array['a']", "SELECT * FROM t WHERE values ?& array['a']",
+                "SELECT * FROM t WHERE groups ? 'admin' ORDER BY d", "SELECT sum(x) OVER (PARTITION BY groups ? 'k' ORDER BY d ROWS 1 PRECEDING) FROM t",
+                "SELECT sum(x) OVER (ORDER BY range ? 'k' RANGE 1 PRECEDING) FROM t")) {
+            assertEquals(0, ParsedSql.parse(json).parameterCount(), json);
+        }
+
+        sql = "SELECT * FROM t WHERE groups ?& array['a','b'] AND id = ?";
+        parsed = ParsedSql.parse(sql);
+        assertEquals(1, parsed.parameterCount());
+        assertArrayEquals(new int[] { sql.lastIndexOf('?') }, parsed.positionalParameterOffsets());
+        assertEquals(1, ParsedSql.parse("SELECT * FROM t WHERE range ?| array['a'] AND id = ?").parameterCount());
+    }
+
+    // Regression: a compact operator after a JSON_OBJECT KEY placeholder hid the key binding, and a column named value after '?' became a placeholder.
+    @Test
+    public void testParse_jsonObjectKeyLeadsPlaceholderAndValueColumnStaysOperand() {
+        for (final String sql : List.of("SELECT JSON_OBJECT(KEY ?||'_x' VALUE ?) FROM t", "SELECT JSON_OBJECT(KEY ?-1 VALUE ?) FROM t",
+                "SELECT JSON_OBJECT('a' VALUE 1, KEY ? VALUE ?) FROM t", "SELECT JSON_OBJECT(KEY ? VALUE ? ABSENT ON NULL) FROM t",
+                "SELECT ARRAY[JSON_OBJECT(KEY ?||'_x' VALUE ?)] FROM t")) {
+            assertEquals(2, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+
+        final ParsedSql parsed = ParsedSql.parse("SELECT ARRAY[JSON_OBJECT(KEY ? VALUE ?)] FROM t");
+        assertEquals(2, parsed.parameterCount());
+        assertArrayEquals(new int[] { 29, 37 }, parsed.positionalParameterOffsets());
+        assertEquals(1, ParsedSql.parse("SELECT JSON_OBJECTAGG(KEY ? VALUE col) FROM t").parameterCount());
+
+        // A column named value or key keeps the JSON-operator reading.
+        for (final String sql : List.of("SELECT JSON_OBJECT('k' VALUE doc ? value) FROM t", "SELECT JSON_ARRAY(doc ? value) FROM t",
+                "SELECT JSON_ARRAYAGG(doc ? value) FROM t", "SELECT JSON_ARRAY(key ? 'x') FROM t", "SELECT JSON_OBJECT(KEY 'k' VALUE key ? 'x') FROM t",
+                "SELECT * FROM t WHERE key ? 'x'")) {
+            assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+    }
+
+    // Regression: the CASE ... END operand and AT TIME ZONE forms around a JSON '?' operator.
+    @Test
+    public void testParse_caseEndAndTimeZoneQuestionMarkForms() {
+        assertEquals(1, ParsedSql.parse("SELECT CASE WHEN a THEN j1 ELSE j2 END ?").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT CASE WHEN a THEN j1 ELSE j2 END ? FROM t").parameterCount());
+
+        final String sql = "SELECT CASE WHEN a THEN ? END ?| array['a'] FROM t";
+        final ParsedSql parsed = ParsedSql.parse(sql);
+        assertEquals(1, parsed.parameterCount());
+        assertArrayEquals(new int[] { 24 }, parsed.positionalParameterOffsets());
+
+        assertEquals(1, ParsedSql.parse("SELECT ts AT TIME /* c */ ZONE ? local_ts FROM t").parameterCount());
+    }
+
+    // Regression: JDBC call escapes with named or MyBatis return slots in their compact, split, commented and BOM-prefixed forms.
+    @Test
+    public void testParse_jdbcCallEscapeReturnSlotVariants() {
+        assertCall("{#{ r } = call f(#{p})}", "{? = call f(?)}", List.of("r", "p"));
+        assertCall("{:r=call f(:p)}", "{?=call f(?)}", List.of("r", "p"));
+        assertCall("{ #{r}=call f(#{p})}", "{ ?=call f(?)}", List.of("r", "p"));
+        assertCall("{ :r =\n call f(:p)}", "{ ? = call f(?)}", List.of("r", "p"));
+        assertCall("{:r.x = call f(:p)}", "{? = call f(?)}", List.of("r.x", "p"));
+        assertCall("{ #{r} /* c */ = call f(#{p})}", "{ ? = call f(?)}", List.of("r", "p"));
+        assertCall("﻿{:r = call f(:p)}", "﻿{? = call f(?)}", List.of("r", "p"));
+        assertCall("﻿{call f(:p)}", "﻿{call f(?)}", List.of("p"));
+        assertCall("(  {:r = call f(:p)})", "( {? = call f(?)})", List.of("r", "p"));
+
+        ParsedSql parsed = ParsedSql.parse("{/*c*/ ? = call f(?)}");
+        assertEquals(2, parsed.parameterCount());
+        assertArrayEquals(new int[] { 7, 18 }, parsed.positionalParameterOffsets());
+
+        parsed = ParsedSql.parse("﻿{call f(?)}");
+        assertEquals(1, parsed.parameterCount());
+        assertArrayEquals(new int[] { 9 }, parsed.positionalParameterOffsets());
+
+        // A slot that is not a single marker is not a JDBC call escape.
+        for (final String sql : List.of("{#{r} x = call f(#{p})}", "{::r = call f(:p)}", "{:1 = call f(:p)}", "{#{r = call f(#{p})}", "{:r = call}")) {
+            parsed = ParsedSql.parse(sql);
+            assertFalse(parsed.isDataOperation(), sql);
+            assertEquals(sql, parsed.parameterizedSql(), sql);
+            assertEquals(0, parsed.parameterCount(), sql);
+        }
+
+        // Mixed styles are rejected.
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("{:r = call f(?)}"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("{#{result} = call f(:p)}"));
+    }
+
+    private static void assertCall(final String sql, final String expectedSql, final List<String> expectedNames) {
+        final ParsedSql parsed = ParsedSql.parse(sql);
+        assertTrue(parsed.isDataOperation(), sql);
+        assertEquals(expectedSql, parsed.parameterizedSql(), sql);
+        assertEquals(expectedNames, parsed.namedParameters(), sql);
+    }
+
+    // Regression: a line break or tab before a whitespace-led custom separator (" AND") broke the token realignment.
+    @Test
+    public void testSubscriptOpeningOffsets_lineBreakOrTabBeforeWhitespaceLedSeparator() {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator(" AND").build());
+
+        assertArrayEquals(new int[] { 8, 37 }, ParsedSql.subscriptOpeningOffsets("SELECT a[1] FROM t WHERE b = 1\n AND c[2] = 1", tokenizer));
+        assertArrayEquals(new int[] { 8, 37 }, ParsedSql.subscriptOpeningOffsets("SELECT a[1] FROM t WHERE b = 1\t AND c[2] = 1", tokenizer));
+        assertArrayEquals(new int[] { 8, 44 }, ParsedSql.subscriptOpeningOffsets("SELECT a[1] FROM t WHERE b = 1 /* c */ AND c[2] = 1", tokenizer));
+    }
+
+    // Regression: the line break between adjacent string literals (CR, chains, prefixed literals, comments in the gap).
+    @Test
+    public void testParse_lineBreakBetweenAdjacentStringLiteralsVariants() {
+        assertEquals("SELECT 'a'\n'b' FROM t WHERE id = ?", ParsedSql.parse("SELECT 'a'\r'b' FROM t WHERE id = ?").parameterizedSql());
+        assertEquals("SELECT 'a'\n'b'\n'c' FROM t WHERE id = ?", ParsedSql.parse("SELECT 'a'\n'b'\n'c' FROM t WHERE id = ?").parameterizedSql());
+        assertEquals("SELECT E'a\\n'\n'b' FROM t WHERE id = ?", ParsedSql.parse("SELECT E'a\\n'\n'b' FROM t WHERE id = ?").parameterizedSql());
+        assertEquals("SELECT N'a'\n'b' FROM t WHERE id = ?", ParsedSql.parse("SELECT N'a'\n'b' FROM t WHERE id = ?").parameterizedSql());
+        assertEquals("SELECT X'0F'\n'FF' FROM t WHERE id = ?", ParsedSql.parse("SELECT X'0F'\n'FF' FROM t WHERE id = ?").parameterizedSql());
+
+        // A prefixed second literal is not a continuation, so the gap collapses.
+        assertEquals("SELECT 'a' N'b' FROM t WHERE id = ?", ParsedSql.parse("SELECT 'a'\nN'b' FROM t WHERE id = ?").parameterizedSql());
+
+        // Line breaks elsewhere do not affect a gap without one.
+        assertEquals("SELECT 'a' 'b' FROM t WHERE id = ?", ParsedSql.parse("SELECT 'a' 'b'\nFROM t WHERE id = ?").parameterizedSql());
+        assertEquals("SELECT 'a' 'b'\n'c' FROM t WHERE id = ?", ParsedSql.parse("SELECT 'a' 'b'\n'c' FROM t WHERE id = ?").parameterizedSql());
+
+        // Comments in the gap.
+        assertEquals("SELECT 'a'\n'b' FROM t WHERE id = ?", ParsedSql.parse("SELECT 'a' /* c */\n'b' FROM t WHERE id = ?").parameterizedSql());
+        assertEquals("SELECT 'a'\n'b' FROM t WHERE id = ?", ParsedSql.parse("SELECT 'a' # c\n'b' FROM t WHERE id = ?").parameterizedSql());
+        assertEquals("SELECT 'a' 'b' FROM t WHERE id = ?", ParsedSql.parse("SELECT 'a'/*c*/'b' FROM t WHERE id = ?").parameterizedSql());
+
+        // A kept comment is a token of its own, so the literals are not adjacent.
+        assertEquals("SELECT 'a' /* c */ 'b' FROM t WHERE id = ?",
+                ParsedSql.parse("-- Keep comments\nSELECT 'a' /* c */\n'b' FROM t WHERE id = ?").parameterizedSql());
+
+        // Alignment across a split MyBatis binding and the "??#{" repair.
+        assertEquals("SELECT x FROM t WHERE a = ? AND b = 'x' 'y' AND c = 'p'\n'q'",
+                ParsedSql.parse("SELECT x FROM t WHERE a = #{ a } AND b = 'x' 'y'\nAND c = 'p'\n'q'").parameterizedSql());
+        final ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE y = 'c'\n'd' AND z = ??#{w}");
+        assertEquals("SELECT * FROM t WHERE y = 'c'\n'd' AND z = ???", parsed.parameterizedSql());
+        assertEquals(List.of("w"), parsed.namedParameters());
+    }
+
+    // Regression: TABLE statements and byte-order marks in EXPLAIN, doubled, after a comment and before a line comment.
+    @Test
+    public void testParse_byteOrderMarkAndTableStatementVariants() {
+        assertOffsets("﻿EXPLAIN SELECT ? FROM t", 16);
+        assertOffsets("﻿﻿SELECT 1 WHERE a = ?", 21);
+        assertOffsets("/* c */﻿SELECT ? FROM t", 15);
+        assertOffsets("TABLE t -- c\nLIMIT ?", 19);
+        assertOffsets("(TABLE t) UNION (TABLE u LIMIT ?)", 31);
+
+        assertEquals("﻿ SELECT ? FROM t", ParsedSql.parse("﻿-- c\nSELECT ? FROM t").parameterizedSql());
+
+        for (final String sql : List.of("﻿SET a = ?", "TABLESPACE x ?")) {
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertFalse(parsed.isDataOperation(), sql);
+            assertEquals(0, parsed.parameterCount(), sql);
+        }
+    }
+
+    private static void assertOffsets(final String sql, final int... offsets) {
+        final ParsedSql parsed = ParsedSql.parse(sql);
+        assertTrue(parsed.isDataOperation(), sql);
+        assertEquals(offsets.length, parsed.parameterCount(), sql);
+        assertArrayEquals(offsets, parsed.positionalParameterOffsets(), sql);
+    }
+
+    // Regression: a ':' glued to a closed value (backtick, bracket, MyBatis-joined token) and the classifier's named-marker lookups.
+    @Test
+    public void testParse_colonGluedToClosedValueVariants() {
+        ParsedSql parsed = ParsedSql.parse("SELECT JSON_OBJECT('k':x#{ v }) FROM t");
+        assertEquals("SELECT JSON_OBJECT('k':x?) FROM t", parsed.parameterizedSql());
+        assertEquals(List.of("v"), parsed.namedParameters());
+
+        for (final String sql : List.of("SELECT `col`:x FROM t", "SELECT arr[1]:x FROM t", "SELECT [col]:x FROM t")) {
+            parsed = ParsedSql.parse(sql);
+            assertEquals(sql, parsed.parameterizedSql(), sql);
+            assertTrue(parsed.namedParameters().isEmpty(), sql);
+        }
+
+        // A comment breaks the adjacency.
+        parsed = ParsedSql.parse("SELECT * FROM t WHERE a = 'x'/**/:y");
+        assertEquals("SELECT * FROM t WHERE a = 'x' ?", parsed.parameterizedSql());
+        assertEquals(List.of("y"), parsed.namedParameters());
+
+        // The ambiguous "SELECT skip ?" asks whether the statement holds a named marker; a glued 'a':col is none.
+        assertOffsets("SELECT skip ? x FROM t WHERE JSON_OBJECT('a':col) IS NOT NULL", 12);
+        assertOffsets("SELECT x[(SELECT skip ? y FROM u WHERE JSON_OBJECT('a':c) IS NULL)] FROM t", 22);
+        assertEquals(List.of("col"), ParsedSql.parse("SELECT skip ? x FROM t WHERE JSON_OBJECT('a' :col) IS NOT NULL").namedParameters());
+    }
+
+    // Regression: bracket-group operands of JSON '?' operators (bracket-quoted identifier, spaced chain, subscript placeholder).
+    @Test
+    public void testParse_bracketGroupOperandVariants() {
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE [payload] ? 'k'").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE payload['a'] ['b'] ? 'k'").parameterCount());
+        assertOffsets("SELECT * FROM t WHERE x [?] ? 'k'", 25);
+        assertEquals(3, ParsedSql.parse("UPDATE t SET [a] = ? WHERE [b] IN (?, ?)").parameterCount());
+    }
+
+    // Regression: unary geometric operators on prefixed, cast and parenthesized literals inside brackets.
+    @Test
+    public void testParse_geometricOperandVariantsInsideBrackets() {
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY[?| E'(0,0),(1,0)'::lseg]").parameterCount());
+        assertEquals(1, ParsedSql.parse("SELECT ARRAY[?- E'(0,0),(1,0)'::line::text]").parameterCount());
+        assertEquals(0, ParsedSql.parse("SELECT ARRAY[?- (E'(0,0),(1,0)'::line)]").parameterCount());
+    }
+
+    // Regression: a split MyBatis marker after one whose property path holds a closed bracket group was rejected as unclosed.
+    @Test
+    public void testParse_splitIbatisMarkerAfterClosedBracketGroupBinds() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a IN (#{a[0]}#{b })");
+        assertEquals("SELECT * FROM t WHERE a IN (? ?)", parsed.parameterizedSql());
+        assertEquals(List.of("a[0]", "b"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("SELECT * FROM t WHERE a IN (#{ a[0] }#{ b })");
+        assertEquals("SELECT * FROM t WHERE a IN (? ?)", parsed.parameterizedSql());
+        assertEquals(List.of("a[0]", "b"), parsed.namedParameters());
+
+        assertEquals(List.of("list[0]", "list[0]"), ParsedSql.parse("SELECT #{list[0]}#{list[0]} 1 FROM t").namedParameters());
+
+        // An opener inside a group that is still open cannot continue past it.
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[x[1], #{a] FROM t WHERE b = #{c}"));
+        assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[']', #{a] FROM t WHERE b = #{c}"));
+    }
+
+    // Regression: a balanced quote in a split MyBatis marker (#{ map['k'] }) was rejected although the glued #{map['k']} binds.
+    @Test
+    public void testParse_splitIbatisMarkerWithBalancedQuotesBinds() {
+        ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a = #{ map['k'] }");
+        assertEquals("SELECT * FROM t WHERE a = ?", parsed.parameterizedSql());
+        assertEquals(List.of("map['k']"), parsed.namedParameters());
+
+        parsed = ParsedSql.parse("SELECT * FROM t WHERE a = #{ map['k'], jdbcType=VARCHAR } AND b = #{ b }");
+        assertEquals("SELECT * FROM t WHERE a = ? AND b = ?", parsed.parameterizedSql());
+        assertEquals(List.of("map['k']", "b"), parsed.namedParameters());
+
+        // A '}' inside a literal still cannot close the marker, and a new "#{" before the '}' means it was never closed.
+        for (final String sql : List.of("SELECT * FROM t WHERE c = #{ x AND d = '}'", "SELECT * FROM t WHERE c = #{ x AND d = 'a}b' AND e = #{y}",
+                "SELECT * FROM t WHERE c = #{x AND d = 'a}b' AND e = #{ y }", "SELECT * FROM t WHERE c = #{ x AND d = 1 AND e = #{y}",
+                "SELECT * FROM t WHERE c = #{a#{b}", "SELECT * FROM t WHERE c = #{ 'x' }", "SELECT * FROM t WHERE c = #{ \"x\" }",
+                "UPDATE t SET a = #{ '\n' x #{ map['k'] }#{a, '}'}")) {
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
+            assertTrue(e.getMessage().contains("missing closing '}'"), sql);
+        }
+    }
+
+    // Regression: VALUES stopped leading a bare '?' (so "values ? 'k'" tests a jsonb column), which also read the binding in
+    // H2's "VALUES ? FORMAT JSON" as a JSON operator: parameterCount() returned 0 and SubQuery rejected the binding.
+    @Test
+    public void testValuesMarkerBeforePostfixClauseIsAPlaceholder() {
+        for (final String sql : new String[] { "VALUES ? FORMAT JSON", "SELECT * FROM (VALUES ? FORMAT JSON) AS t(j)", "INSERT INTO t VALUES ? FORMAT JSON",
+                "SELECT 1 UNION VALUES ? FORMAT JSON", "VALUES ? FORMAT /* c */ JSON", "VALUES ? COLLATE \"C\"", "VALUES ? AT TIME ZONE 'UTC'" }) {
+            assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+
+        assertEquals(2, ParsedSql.parse("VALUES ? FORMAT JSON, ? FORMAT JSON").parameterCount());
+
+        // VALUES after a ')', INSERT or the table of INSERT INTO is the row constructor too.
+        for (final String sql : new String[] { "INSERT INTO t (a) VALUES ? FORMAT JSON", "INSERT INTO s.t VALUES ? FORMAT JSON",
+                "INSERT INTO \"s\".\"t\" VALUES ? FORMAT JSON", "INSERT INTO s . t VALUES ? FORMAT JSON",
+                "WITH x AS (VALUES ? FORMAT JSON) SELECT * FROM x", "MERGE INTO t USING s ON t.id = s.id WHEN NOT MATCHED THEN INSERT VALUES ? FORMAT JSON" }) {
+            assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+
+        // Every other word before VALUES makes it the row constructor too, which H2 runs: a set operation with ALL or
+        // DISTINCT, EXPLAIN (ANALYZE) and an identity override.
+        for (final String sql : new String[] { "SELECT CAST('[1]' AS JSON) UNION ALL VALUES ? FORMAT JSON", "SELECT CAST('[1]' AS JSON) UNION DISTINCT VALUES ? FORMAT JSON",
+                "SELECT 1 EXCEPT ALL VALUES ? FORMAT JSON", "EXPLAIN VALUES ? FORMAT JSON", "EXPLAIN ANALYZE VALUES ? FORMAT JSON",
+                "INSERT INTO t OVERRIDING SYSTEM VALUE VALUES ? FORMAT JSON", "INSERT INTO t (j) OVERRIDING USER VALUE VALUES ? FORMAT JSON",
+                "SELECT * FROM t WHERE x = ALL (VALUES ? FORMAT JSON)" }) {
+            assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+
+        // A column named values still takes the JSON existence operator, also before words that read like a postfix clause
+        // (PostgreSQL: values ? format tests the key in column format, and JSON is a bare alias).
+        for (final String sql : new String[] { "SELECT * FROM t WHERE values ? 'k'", "SELECT * FROM t WHERE (values ? 'k')", "SELECT DISTINCT values ? 'k' FROM t",
+                "SELECT * FROM t WHERE values ? format", "SELECT values ? format JSON FROM t", "SELECT a, values ? format JSON FROM t",
+                "SELECT ALL values ? 'k' FROM t", "SELECT count(DISTINCT values ? 'k') FROM t", "SELECT * FROM t WHERE a = 1 AND values ? 'k'",
+                "SELECT CASE WHEN values ? 'k' THEN 1 END FROM t", "SELECT * FROM t ORDER BY values ? 'k'" }) {
+            assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
+        }
+
+        assertEquals(List.of("id"), ParsedSql.parse("SELECT values ? format JSON FROM t WHERE id = :id").namedParameters());
     }
 }

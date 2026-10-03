@@ -1172,4 +1172,30 @@ public class NamedPropertyTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> p.equalsAny(Arrays.asList("a", Filters.expr(" "))));
         assertEquals("status IN ('a', 'b')", p.in("a", "b").toString());
     }
+
+    @Test
+    public void testEqualsAnyAndNotInWithObjectTypedLoneCollectionUnpackValues() {
+        // Regression: a collection statically typed Object selected equalsAny(Object...) and became ONE comparison against
+        // the whole list ("((id = '[1, 2]'))"), unlike Filters.in(String, Object...).
+        final NamedProperty id = NamedProperty.of("id");
+
+        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) Arrays.asList(1, 2)).toString());
+        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) new int[] { 1, 2 }).toString());
+        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) new Integer[] { 1, 2 }).toString());
+        assertEquals(id.equalsAny(Arrays.asList(1, 2)), id.equalsAny((Object) Arrays.asList(1, 2)));
+        assertEquals("id NOT IN (1, 2)", id.notIn((Object) Arrays.asList(1, 2)).toString());
+        assertEquals("id IN (1, 2)", id.in((Object) new long[] { 1L, 2L }).toString());
+
+        // A lone null element behaves as in equalsAny(Collection): eq(p, null) renders IS NULL.
+        assertEquals("((id = 1) OR (id IS NULL))", id.equalsAny((Object) Arrays.asList(1, null)).toString());
+
+        // An empty lone collection or array is an empty value list.
+        assertThrows(IllegalArgumentException.class, () -> id.equalsAny((Object) Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> id.equalsAny((Object) new int[0]));
+        assertThrows(IllegalArgumentException.class, () -> id.notIn((Object) Collections.emptyList()));
+
+        // Unchanged: a lone byte[] is one (binary) value, and several collection arguments are several values.
+        assertEquals(1, id.equalsAny((Object) new byte[] { 1, 2 }).conditions().size());
+        assertEquals("((id = '[1]') OR (id = '[2]'))", id.equalsAny(Arrays.asList(1), Arrays.asList(2)).toString());
+    }
 }

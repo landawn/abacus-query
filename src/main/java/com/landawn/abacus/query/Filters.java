@@ -4092,7 +4092,11 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param values array of non-{@code null} values
+     * @param values array of non-{@code null} values; a single {@link Collection} or array argument (other than
+     *            {@code byte[]}, which stays one binary value) is treated as the value list itself, so
+     *            {@code in(p, (Object) List.of(1, 2))} renders {@code p IN (1, 2)}; to compare against a single collection-valued
+     *            value, wrap it: {@code in(p, List.of(list))}. An {@code Object[]} holding exactly one array or collection is
+     *            unpacked the same way
      * @return an {@link In} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
@@ -4102,7 +4106,38 @@ public final class Filters {
      *                                  is a cyclic object array
      */
     public static In in(final String propName, final Object... values) {
-        return in(propName, values == null ? (Collection<?>) null : Arrays.asList(values));
+        return in(propName, values == null ? (Collection<?>) null : toInValues(values));
+    }
+
+    /**
+     * Converts the varargs of {@link #in(String, Object...)} / {@link #notIn(String, Object...)} to the IN value list.
+     * A lone {@link Collection} or array argument is the value list itself, not one IN value: a value statically typed
+     * {@code Object} (e.g. read from a {@code Map<String, Object>} of filters) selects the varargs overload even when it
+     * holds a collection, which would otherwise render {@code id IN (?)} bound to the whole collection.
+     * Unlike {@link #binary(String, Operator, Object)} with {@code IN}, which unpacks any array, a lone {@code byte[]} stays a
+     * single (binary) value here: {@code in(String, byte[])} is the overload for byte membership.
+     */
+    private static Collection<?> toInValues(final Object[] values) {
+        if (values.length == 1) {
+            final Object single = values[0];
+
+            if (single instanceof final Collection<?> c) {
+                return c;
+            }
+
+            if (single != null && single.getClass().isArray() && !(single instanceof byte[])) {
+                final int len = java.lang.reflect.Array.getLength(single);
+                final List<Object> list = new ArrayList<>(len);
+
+                for (int i = 0; i < len; i++) {
+                    list.add(java.lang.reflect.Array.get(single, i));
+                }
+
+                return list;
+            }
+        }
+
+        return Arrays.asList(values);
     }
 
     /**
@@ -4368,7 +4403,11 @@ public final class Filters {
      * }</pre>
      *
      * @param propName the property/column name
-     * @param values array of non-{@code null} values to exclude
+     * @param values array of non-{@code null} values to exclude; a single {@link Collection} or array argument (other than
+     *            {@code byte[]}, which stays one binary value) is treated as the value list itself, so
+     *            {@code in(p, (Object) List.of(1, 2))} renders {@code p IN (1, 2)}; to compare against a single collection-valued
+     *            value, wrap it: {@code in(p, List.of(list))}. An {@code Object[]} holding exactly one array or collection is
+     *            unpacked the same way
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
@@ -4378,7 +4417,7 @@ public final class Filters {
      *                                  is a cyclic object array
      */
     public static NotIn notIn(final String propName, final Object... values) {
-        return notIn(propName, values == null ? (Collection<?>) null : Arrays.asList(values));
+        return notIn(propName, values == null ? (Collection<?>) null : toInValues(values));
     }
 
     /**
@@ -4781,7 +4820,11 @@ public final class Filters {
      * @see #subQuery(String, Collection, String)
      */
     public static SubQuery subQuery(final Class<?> entityClass, final Collection<String> propNames, final String expr) {
-        return new SubQuery(entityClass, propNames, expr(expr));
+        // Validate the earlier arguments first: expr(null) would otherwise fail before them, naming its internal 'literal' parameter.
+        final SubQuery subQuery = new SubQuery(entityClass, propNames, expr == null ? null : expr(expr));
+        N.checkArgNotNull(expr, cs.expr);
+
+        return subQuery;
     }
 
     /**
@@ -4877,7 +4920,11 @@ public final class Filters {
      *         (not a valid subquery filter), or if a nonblank {@code expr} contains only SQL comments
      */
     public static SubQuery subQuery(final String entityName, final Collection<String> propNames, final String expr) {
-        return new SubQuery(entityName, propNames, expr(expr));
+        // Validate the earlier arguments first: expr(null) would otherwise fail before them, naming its internal 'literal' parameter.
+        final SubQuery subQuery = new SubQuery(entityName, propNames, expr == null ? null : expr(expr));
+        N.checkArgNotNull(expr, cs.expr);
+
+        return subQuery;
     }
 
     /**

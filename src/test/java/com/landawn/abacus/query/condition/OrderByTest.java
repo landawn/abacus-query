@@ -505,4 +505,53 @@ public class OrderByTest extends TestBase {
         assertTrue(e.getMessage().contains("'b'"), e.getMessage());
         Assertions.assertFalse(e.getMessage().contains("sort map"), e.getMessage());
     }
+
+    @Test
+    public void testSortKeyBlockCommentLeftOpenUnderAnyLexicalReadingIsRejected() {
+        // Regression: the unclosed-"/*" check stopped at a stray quote and ended "--" comments only at '\n', so keys whose
+        // "/*" the renderer still sees (after a lone '\r', or past a quote inside a "#" comment or a [..] identifier)
+        // silently lost their direction and every later key ("ORDER BY a " instead of an error).
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("a -- c\r/* x", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("a -- it's\r/* x", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("[it's] /* x", "b"));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("a # it's\n/* x", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("\"x\" # it's\n /* y", SortDirection.DESC));
+
+        // The Map constructor validates every key the same way.
+        final Map<String, SortDirection> single = new LinkedHashMap<>();
+        single.put("a /* x", SortDirection.DESC);
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy(single));
+
+        final Map<String, SortDirection> loneCarriageReturn = new LinkedHashMap<>();
+        loneCarriageReturn.put("a -- c\r/* x", SortDirection.DESC);
+        loneCarriageReturn.put("b", SortDirection.DESC);
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new OrderBy(loneCarriageReturn));
+        assertTrue(e.getMessage().contains("unterminated block comment"), e.getMessage());
+
+        // Both string-literal readings count: with backslash escapes the "/*" below is outside the literal.
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("'a\\'/*'", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("E'\\'' /*", SortDirection.DESC));
+
+        // A "/*" inside quoted text under every reading, or a closed comment, is accepted and keeps the direction.
+        assertEquals("ORDER BY \"a/*b\" DESC", new OrderBy("\"a/*b\"", SortDirection.DESC).toString());
+        assertEquals("ORDER BY `a/*b` DESC", new OrderBy("`a/*b`", SortDirection.DESC).toString());
+        assertEquals("ORDER BY 'it''s /*' DESC", new OrderBy("'it''s /*'", SortDirection.DESC).toString());
+        assertEquals("ORDER BY a DESC", new OrderBy("a -- c\r/* x */", SortDirection.DESC).toString());
+        assertEquals("ORDER BY a DESC", new OrderBy("a -- c\n/* x */", SortDirection.DESC).toString());
+
+        // Deliberate fail-closed trade-off: the check knows neither [..] identifiers nor "#" comments, so these keys, whose
+        // "/*" one dialect would treat as inert, are rejected too (the builder's own orderBy still accepts "[a/*b]").
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("[a/*b]", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("a # note /*", SortDirection.DESC));
+        assertEquals("SELECT a FROM t ORDER BY [a/*b] DESC", com.landawn.abacus.query.Dsl.PSC.select("a").from("t").orderBy("[a/*b]", SortDirection.DESC).build().query());
+    }
+
+    // Regression: PostgreSQL, SQL Server and H2 nest block comments, so "a /* x /* y */" is still open there.
+    @Test
+    public void testSortKeyNestedBlockCommentLeftOpenIsRejected() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new OrderBy("a /* x /* y */", SortDirection.DESC));
+        assertTrue(e.getMessage().contains("unterminated block comment"), e.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("a /* x /* y */", "b"));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a /* x /* y */", SortDirection.DESC));
+    }
 }

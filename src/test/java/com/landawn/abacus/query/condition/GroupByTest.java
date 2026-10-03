@@ -378,4 +378,33 @@ public class GroupByTest extends TestBase {
         // A #name (possible SQL Server temporary identifier) is not treated as comment-only by the constructor.
         assertNotNull(new GroupBy("#tmp", "dept"));
     }
+
+    @Test
+    public void testGroupingKeyBlockCommentLeftOpenUnderAnyLexicalReadingIsRejected() {
+        // Regression: a "/*" after a "--" comment ended by a lone '\r', or past a quote inside a "#" comment or a [..]
+        // identifier, was not seen as an unclosed comment, so the renderer silently dropped the later grouping keys.
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("a -- c\r/* x", "b"), SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> Filters.groupBy(Arrays.asList("a -- c\r/* x", "b"), SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("dept # it's\n/* x", "team"));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("[it's] /* x", SortDirection.ASC));
+
+        final Map<String, SortDirection> groupings = new LinkedHashMap<>();
+        groupings.put("a -- c\r/* x", SortDirection.DESC);
+        groupings.put("b", SortDirection.ASC);
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new GroupBy(groupings));
+        assertTrue(e.getMessage().contains("unterminated block comment"), e.getMessage());
+
+        // A closed comment or a quoted "/*" keeps every key and direction.
+        assertEquals("GROUP BY a DESC, b DESC", new GroupBy(Arrays.asList("a -- c\r/* x */", "b"), SortDirection.DESC).toString());
+        assertEquals("GROUP BY \"a/*b\", c", new GroupBy("\"a/*b\"", "c").toString());
+    }
+
+    // Regression: PostgreSQL, SQL Server and H2 nest block comments, so "a /* x /* y */" is still open there.
+    @Test
+    public void testGroupingKeyNestedBlockCommentLeftOpenIsRejected() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new GroupBy("a /* x /* y */", "b"));
+        assertTrue(e.getMessage().contains("unterminated block comment"), e.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("a", "b /* x /* y */"), SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> Filters.groupBy(Arrays.asList("a /* x /* y */"), SortDirection.ASC));
+    }
 }

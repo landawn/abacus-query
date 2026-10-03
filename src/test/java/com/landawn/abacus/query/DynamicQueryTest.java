@@ -2030,4 +2030,331 @@ public class DynamicQueryTest extends TestBase {
 
         assertThrows(IllegalStateException.class, () -> clause.append("name ASC"));
     }
+
+    @Test
+    public void testTrailingLineCommentInFragmentDoesNotHideFollowingClauses() {
+        // Regression: a fragment ending in a "--" line comment swallowed every clause rendered after it
+        // (the WHERE filter, AND predicates, ORDER BY, LIMIT), silently changing the query.
+        Builder b1 = DynamicQuery.builder();
+        b1.select().append("*");
+        b1.from().append("users u -- main table");
+        b1.where().append("u.deleted = 0");
+        assertEquals("SELECT * FROM users u -- main table\n WHERE u.deleted = 0", b1.build());
+
+        Builder b2 = DynamicQuery.builder();
+        b2.select().append("*");
+        b2.from().append("users u").leftJoin("orders o", "u.id = o.user_id -- fk");
+        b2.where().append("tenant_id = ? -- tenant filter").and("owner_id = ?");
+        b2.orderBy().append("name -- primary sort");
+        b2.limit(10);
+        assertEquals("SELECT * FROM users u LEFT JOIN orders o ON u.id = o.user_id -- fk\n WHERE tenant_id = ? -- tenant filter\n AND owner_id = ?"
+                + " ORDER BY name -- primary sort\n LIMIT 10", b2.build());
+
+        Builder b3 = DynamicQuery.builder();
+        b3.select().append(Arrays.asList("id -- pk", "name")).append("email # mysql comment", "mail");
+        b3.from().append("users");
+        b3.union("SELECT id, name, email FROM archived -- archived");
+        b3.orderBy().append("id");
+        assertEquals("SELECT id -- pk\n, name, email # mysql comment\n AS mail FROM users UNION SELECT id, name, email FROM archived -- archived\n ORDER BY id",
+                b3.build());
+
+        // Fragments without a trailing line comment (including "--" inside a literal or block comment) are unchanged.
+        Builder b4 = DynamicQuery.builder();
+        b4.select().append("*");
+        b4.from().append("t");
+        b4.where().append("a = '--x'").and("b = 1 /* -- */");
+        b4.append("FOR UPDATE");
+        assertEquals("SELECT * FROM t WHERE a = '--x' AND b = 1 /* -- */ FOR UPDATE", b4.build());
+    }
+
+    @Test
+    public void testTrailingLineCommentInPlaceholderPrefixAndPostfixIsTerminated() {
+        // Covers the appendPlaceholders prefix/postfix path of the trailing line-comment fix (WHERE and HAVING).
+        Builder b1 = DynamicQuery.builder();
+        b1.select().append("*");
+        b1.from().append("t");
+        b1.where().append("id IN").appendPlaceholders(2, "( -- ids", ") -- end");
+        b1.orderBy().append("id");
+        assertEquals("SELECT * FROM t WHERE id IN( -- ids\n?, ?) -- end\n ORDER BY id", b1.build());
+
+        Builder b2 = DynamicQuery.builder();
+        b2.select().append("g");
+        b2.from().append("t");
+        b2.groupBy().append("g");
+        b2.having().append("COUNT(*) IN").appendPlaceholders(2, "( -- n", ") -- end");
+        b2.orderBy().append("g");
+        assertEquals("SELECT g FROM t GROUP BY g HAVING COUNT(*) IN( -- n\n?, ?) -- end\n ORDER BY g", b2.build());
+    }
+
+    @Test
+    public void testTrailingLineCommentInFromAndSelectAliasFragmentsIsTerminated() {
+        // Covers the table/alias, table-list, column-alias map and alias-side paths of the trailing line-comment fix.
+        Builder b1 = DynamicQuery.builder();
+        b1.select().append("*");
+        b1.from().append("users -- t", "u -- alias");
+        b1.where().append("x = 1");
+        assertEquals("SELECT * FROM users -- t\n u -- alias\n WHERE x = 1", b1.build());
+
+        Builder b2 = DynamicQuery.builder();
+        b2.select().append("*");
+        b2.from().append(Arrays.asList("a -- x", "b"));
+        b2.where().append("x = 1");
+        assertEquals("SELECT * FROM a -- x\n, b WHERE x = 1", b2.build());
+
+        Builder b3 = DynamicQuery.builder();
+        b3.select().append(Collections.singletonMap("a -- k", "x -- v"));
+        b3.from().append("t");
+        assertEquals("SELECT a -- k\n AS x -- v\n FROM t", b3.build());
+
+        Builder b4 = DynamicQuery.builder();
+        b4.select().append("a", "b -- alias");
+        b4.from().append("t");
+        assertEquals("SELECT a AS b -- alias\n FROM t", b4.build());
+    }
+
+    @Test
+    public void testTrailingLineCommentInJoinFragmentsIsTerminated() {
+        // Covers the single-argument join methods (including CROSS and NATURAL JOIN) and both sides of the two-argument joins.
+        final String[] expectedJoins = { "JOIN", "INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "CROSS JOIN", "NATURAL JOIN" };
+
+        for (int i = 0; i < expectedJoins.length; i++) {
+            Builder b = DynamicQuery.builder();
+            b.select().append("*");
+            DynamicQuery.FromClause from = b.from().append("t");
+
+            switch (i) {
+                case 0 -> from.join("u -- j");
+                case 1 -> from.innerJoin("u -- j");
+                case 2 -> from.leftJoin("u -- j");
+                case 3 -> from.rightJoin("u -- j");
+                case 4 -> from.fullJoin("u -- j");
+                case 5 -> from.crossJoin("u -- j");
+                default -> from.naturalJoin("u -- j");
+            }
+
+            b.where().append("x = 1");
+            assertEquals("SELECT * FROM t " + expectedJoins[i] + " u -- j\n WHERE x = 1", b.build());
+        }
+
+        Builder b1 = DynamicQuery.builder();
+        b1.select().append("*");
+        b1.from().append("t").join("u -- j", "t.id = u.id");
+        b1.where().append("x = 1");
+        assertEquals("SELECT * FROM t JOIN u -- j\n ON t.id = u.id WHERE x = 1", b1.build());
+
+        Builder b2 = DynamicQuery.builder();
+        b2.select().append("*");
+        b2.from().append("t").innerJoin("u", "t.id = u.id -- on").rightJoin("v", "u.id = v.id -- on").fullJoin("w", "v.id = w.id -- on");
+        b2.where().append("x = 1");
+        assertEquals("SELECT * FROM t INNER JOIN u ON t.id = u.id -- on\n RIGHT JOIN v ON u.id = v.id -- on\n FULL JOIN w ON v.id = w.id -- on\n WHERE x = 1",
+                b2.build());
+    }
+
+    @Test
+    public void testTrailingLineCommentInGroupByHavingAndSetOperationFragmentsIsTerminated() {
+        // Covers GROUP BY items, HAVING/WHERE and()/or() fragments and every set operation of the trailing line-comment fix.
+        Builder b1 = DynamicQuery.builder();
+        b1.select().append("g");
+        b1.from().append("t");
+        b1.groupBy().append("g -- grp").append("h");
+        b1.having().append("COUNT(*) > 1");
+        assertEquals("SELECT g FROM t GROUP BY g -- grp\n, h HAVING COUNT(*) > 1", b1.build());
+
+        Builder b2 = DynamicQuery.builder();
+        b2.select().append("g");
+        b2.from().append("t");
+        b2.groupBy().append(Arrays.asList("g -- grp", "h"));
+        b2.orderBy().append("g");
+        assertEquals("SELECT g FROM t GROUP BY g -- grp\n, h ORDER BY g", b2.build());
+
+        Builder b3 = DynamicQuery.builder();
+        b3.select().append("g");
+        b3.from().append("t");
+        b3.groupBy().append("g");
+        b3.having().append("COUNT(*) > 1 -- c1").and("SUM(x) > 2 -- c2").or("MAX(x) > 3");
+        b3.orderBy().append("g");
+        assertEquals("SELECT g FROM t GROUP BY g HAVING COUNT(*) > 1 -- c1\n AND SUM(x) > 2 -- c2\n OR MAX(x) > 3 ORDER BY g", b3.build());
+
+        Builder b4 = DynamicQuery.builder();
+        b4.select().append("*");
+        b4.from().append("t");
+        b4.where().append("a = 1").and("b = 2 -- c2").or("c = 3 -- c3");
+        b4.orderBy().append("a");
+        assertEquals("SELECT * FROM t WHERE a = 1 AND b = 2 -- c2\n OR c = 3 -- c3\n ORDER BY a", b4.build());
+
+        final String[] setOps = { "INTERSECT", "EXCEPT", "MINUS" };
+
+        for (int i = 0; i < setOps.length; i++) {
+            Builder b = DynamicQuery.builder();
+            b.select().append("id");
+            b.from().append("t1");
+
+            switch (i) {
+                case 0 -> b.intersect("SELECT id FROM t2 -- s");
+                case 1 -> b.except("SELECT id FROM t2 -- s");
+                default -> b.minus("SELECT id FROM t2 -- s");
+            }
+
+            b.orderBy().append("id");
+            assertEquals("SELECT id FROM t1 " + setOps[i] + " SELECT id FROM t2 -- s\n ORDER BY id", b.build());
+        }
+
+        Builder b5 = DynamicQuery.builder();
+        b5.select().append("id");
+        b5.from().append("t1");
+        b5.unionAll("SELECT id FROM t2 -- s");
+        b5.limit(3);
+        assertEquals("SELECT id FROM t1 UNION ALL SELECT id FROM t2 -- s\n LIMIT 3", b5.build());
+    }
+
+    @Test
+    public void testTrailingLineCommentInAppendIfVariantsIsTerminated() {
+        // Covers every appendIf/appendIfOrElse variant (both branches) of the trailing line-comment fix.
+        Builder b1 = DynamicQuery.builder();
+        b1.select().appendIf(true, "a -- c").appendIfOrElse(true, "b -- c", "z").appendIfOrElse(false, "z", "c -- c").append("d");
+        b1.from().append("t");
+        assertEquals("SELECT a -- c\n, b -- c\n, c -- c\n, d FROM t", b1.build());
+
+        Builder b2 = DynamicQuery.builder();
+        b2.select().append("*");
+        b2.from().appendIf(true, "t -- c").appendIfOrElse(false, "z", "u -- c");
+        b2.where().append("x = 1");
+        assertEquals("SELECT * FROM t -- c\n, u -- c\n WHERE x = 1", b2.build());
+
+        Builder b3 = DynamicQuery.builder();
+        b3.select().append("*");
+        b3.from().append("t");
+        b3.where().appendIfOrElse(true, "a = 1 -- c", "z").appendIf(true, "AND b = 2 -- c").and("c = 3");
+        assertEquals("SELECT * FROM t WHERE a = 1 -- c\n AND b = 2 -- c\n AND c = 3", b3.build());
+
+        Builder b4 = DynamicQuery.builder();
+        b4.select().append("g");
+        b4.from().append("t");
+        b4.groupBy().appendIf(true, "g -- c").appendIfOrElse(false, "z", "h -- c");
+        b4.having().appendIfOrElse(false, "z", "COUNT(*) > 1 -- c").appendIf(true, "AND SUM(x) > 2 -- c");
+        b4.orderBy().appendIf(true, "g -- c").appendIfOrElse(false, "z", "h -- c");
+        b4.limit(2);
+        assertEquals("SELECT g FROM t GROUP BY g -- c\n, h -- c\n HAVING COUNT(*) > 1 -- c\n AND SUM(x) > 2 -- c\n ORDER BY g -- c\n, h -- c\n LIMIT 2",
+                b4.build());
+
+        Builder b5 = DynamicQuery.builder();
+        b5.select().append("*");
+        b5.from().append("t");
+        b5.appendIf(true, "FOR UPDATE -- lock").appendIfOrElse(false, "z", "NOWAIT -- now").append("SKIP LOCKED");
+        assertEquals("SELECT * FROM t FOR UPDATE -- lock\n NOWAIT -- now\n SKIP LOCKED", b5.build());
+    }
+
+    @Test
+    public void testTrailingLineCommentInRawTailsAndLineEndings() {
+        // Covers raw tails, raw tail plus typed pagination, lone CR / LF / CRLF endings, and a query whose last fragment is a comment.
+        Builder b1 = DynamicQuery.builder();
+        b1.select().append("*");
+        b1.from().append("t");
+        b1.append("FOR UPDATE -- lock").append("NOWAIT");
+        assertEquals("SELECT * FROM t FOR UPDATE -- lock\n NOWAIT", b1.build());
+
+        // Typed pagination renders before the raw tail regardless of call order; the trailing comment still ends with a newline.
+        Builder b2 = DynamicQuery.builder();
+        b2.select().append("*");
+        b2.from().append("t");
+        b2.append("-- only");
+        b2.limit(5);
+        assertEquals("SELECT * FROM t LIMIT 5 -- only\n", b2.build());
+
+        Builder b3 = DynamicQuery.builder();
+        b3.select().append("*");
+        b3.from().append("t");
+        b3.orderBy().append("a -- c");
+        b3.offsetRows(5).fetchNextRows(3);
+        assertEquals("SELECT * FROM t ORDER BY a -- c\n OFFSET 5 ROWS FETCH NEXT 3 ROWS ONLY", b3.build());
+
+        // A lone '\r' gets a '\n' (some lexers end a line comment only at '\n'); already-terminated comments are unchanged.
+        Builder b4 = DynamicQuery.builder();
+        b4.select().append("a -- c\r").append("b");
+        b4.from().append("t -- c\r");
+        b4.where().append("x = 1");
+        assertEquals("SELECT a -- c\r\n, b FROM t -- c\r\n WHERE x = 1", b4.build());
+
+        Builder b5 = DynamicQuery.builder();
+        b5.select().append("*");
+        b5.from().append("t -- c\n");
+        b5.where().append("x = 1");
+        assertEquals("SELECT * FROM t -- c\n WHERE x = 1", b5.build());
+
+        Builder b6 = DynamicQuery.builder();
+        b6.select().append("*");
+        b6.from().append("t -- c\r\n");
+        b6.where().append("x = 1");
+        assertEquals("SELECT * FROM t -- c\r\n WHERE x = 1", b6.build());
+
+        // A query whose last fragment ends in a line comment ends with the terminating newline; a block comment does not.
+        Builder b7 = DynamicQuery.builder();
+        b7.select().append("*");
+        b7.from().append("t");
+        b7.where().append("x = 1 -- c");
+        assertEquals("SELECT * FROM t WHERE x = 1 -- c\n", b7.build());
+
+        Builder b8 = DynamicQuery.builder();
+        b8.select().append("*");
+        b8.from().append("t");
+        b8.where().append("x = 1 /* c */");
+        assertEquals("SELECT * FROM t WHERE x = 1 /* c */", b8.build());
+    }
+
+    @Test
+    public void testFragmentTrailingCommentCheckFailsClosedAcrossDialectReadings() {
+        // Regression: a fragment carries no dialect, but its trailing-comment check used one fixed reading: a PostgreSQL
+        // array literal "['a]b']" read as a bracket identifier hid the trailing "--" comment, and a fragment starting with
+        // "#word" was read as a SQL Server temp table although MySQL reads it as a comment, so the next clause was swallowed.
+        Builder b1 = DynamicQuery.builder();
+        b1.select().append("*");
+        b1.from().append("t");
+        b1.where().append("tags = ARRAY['a]b'] -- c").and("tenant_id = ?");
+        assertEquals("SELECT * FROM t WHERE tags = ARRAY['a]b'] -- c\n AND tenant_id = ?", b1.build());
+
+        Builder b2 = DynamicQuery.builder();
+        b2.select().append("*");
+        b2.from().append("t");
+        b2.where().append("x = 1").append("#tenant filter").and("y = 2");
+        assertEquals("SELECT * FROM t WHERE x = 1 #tenant filter\n AND y = 2", b2.build());
+
+        Builder b3 = DynamicQuery.builder();
+        b3.select().append("*");
+        b3.from().append("t");
+        b3.orderBy().append("#sort");
+        b3.limit(3);
+        assertEquals("SELECT * FROM t ORDER BY #sort\n LIMIT 3", b3.build());
+
+        assertTrue(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("doc['a]'] = 1 -- c"));
+        assertTrue(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("#tenant filter"));
+        assertTrue(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("x = 1 -- c"));
+
+        // No comment under any reading: MyBatis markers, bracket identifiers, and hash operators inside quotes stay unchanged.
+        assertFalse(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("x = #{x}"));
+        assertFalse(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("[a] = 1"));
+        assertFalse(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("a = '#b'"));
+        assertFalse(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("x = 1 -- c\n"));
+
+        Builder b4 = DynamicQuery.builder();
+        b4.select().append("[a]");
+        b4.from().append("[t]");
+        b4.where().append("x = #{x}").and("y = 2");
+        assertEquals("SELECT [a] FROM [t] WHERE x = #{x} AND y = 2", b4.build());
+    }
+
+    @Test
+    public void testFragmentTrailingCommentCheckIncludesSqlServerTempTableReading() {
+        // Regression: the fail-closed check had no SQL Server reading. There "#tmp.note" is a temporary-table reference and
+        // the "--" after the multi-line literal is a real comment, while the other readings take "#tmp.note ..." for a hash
+        // comment, mis-pair the quotes, and missed it: SQL Server then commented out the ORDER BY.
+        final String fragment = "x = #tmp.note AND y = 'a\nb' -- c";
+        assertTrue(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment));
+
+        Builder b = DynamicQuery.builder();
+        b.select().append("x");
+        b.from().append("t");
+        b.where().append(fragment);
+        b.orderBy().append("x");
+        assertEquals("SELECT x FROM t WHERE x = #tmp.note AND y = 'a\nb' -- c\n ORDER BY x", b.build());
+    }
 }

@@ -1058,4 +1058,77 @@ public class SubQueryTest extends TestBase {
         final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql, Arrays.asList(Filters.eq("b", 1))));
         assertTrue(e.getMessage().contains("parameters[0]"), e.getMessage());
     }
+
+    // Regression: placeholders were only counted after SELECT/WITH/...; TABLE (and BOM-prefixed) text counted 0, rejecting its bindings and accepting an unbound '?'.
+    @Test
+    public void testRawSubQueryPlaceholdersOutsideSelectPrefixAreValidated() {
+        final SubQuery table = new SubQuery("TABLE t ORDER BY c LIMIT ?", Arrays.asList(5));
+        assertEquals("TABLE t ORDER BY c LIMIT ?", table.rawSql());
+        assertEquals(Arrays.asList(5), table.parameters());
+        assertEquals(Arrays.asList(5), new SubQuery("TABLE t UNION SELECT a FROM u WHERE b = ?", Arrays.asList(5)).parameters());
+        assertThrows(IllegalArgumentException.class, () -> new SubQuery("TABLE t ORDER BY c LIMIT ?"));
+
+        assertThrows(IllegalArgumentException.class, () -> new SubQuery("\uFEFFSELECT id FROM t WHERE a = ?"));
+        assertEquals(Arrays.asList(1), new SubQuery("\uFEFFSELECT id FROM t WHERE a = ?", Arrays.asList(1)).parameters());
+
+        // Text that is not a recognized query cannot carry a '?' whose binding could be verified.
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new SubQuery("FROM t SELECT a WHERE b = ?"));
+        assertTrue(e.getMessage().contains("not a recognized query"), e.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new SubQuery("FROM t SELECT a WHERE b = ?", Arrays.asList(1)));
+
+        // A '?' inside quoted text or a comment is not a placeholder.
+        assertEquals("FROM t SELECT a WHERE b = '?' /* ? */", new SubQuery("FROM t SELECT a WHERE b = '?' /* ? */").rawSql());
+        assertEquals("FROM t SELECT \"a?\" WHERE b = N'?'", new SubQuery("FROM t SELECT \"a?\" WHERE b = N'?'").rawSql());
+    }
+
+    // Regression: a raw subquery whose verb is glued to a quoted name or bracket group (SELECT"a") was rejected as "not a recognized query".
+    @Test
+    public void testRawSubQueryVerbGluedToQuotedNameIsRecognized() {
+        for (final String sql : Arrays.asList("SELECT\"a\" FROM t WHERE b = ?", "SELECT[a] FROM t WHERE b = ?", "SELECT`a` FROM t WHERE b = ?",
+                "SELECT'x' FROM t WHERE b = ?", "WITH\"x\" AS (SELECT 1) SELECT * FROM x WHERE b = ?")) {
+            final SubQuery subQuery = new SubQuery(sql, Arrays.asList(1));
+            assertEquals(sql, subQuery.rawSql(), sql);
+            assertEquals(Arrays.asList(1), subQuery.parameters(), sql);
+
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql), sql);
+            assertTrue(e.getMessage().contains("placeholder count"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testRawSubQueryTableVariantsCommentOnlyPlaceholdersAndFailClosedTradeOffs() {
+        // Covers TABLE statements (parenthesized, lowercase, BOM-prefixed) with bindings, a '?' only inside a comment of
+        // unrecognized text, and the deliberate fail-closed rejections of unrecognized text with an unverifiable '?'.
+        assertEquals(Arrays.asList(1), new SubQuery("(TABLE t LIMIT ?)", Arrays.asList(1)).parameters());
+        assertEquals(Arrays.asList(1), new SubQuery("table t limit ?", Arrays.asList(1)).parameters());
+        assertEquals(Arrays.asList(1), new SubQuery("﻿TABLE t LIMIT ?", Arrays.asList(1)).parameters());
+        assertEquals(Arrays.asList(1), Filters.subQuery("TABLE t LIMIT ?", Arrays.asList(1)).parameters());
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new SubQuery("(TABLE t LIMIT ?)"));
+        assertTrue(e.getMessage().contains("placeholder count (1)"), e.getMessage());
+
+        // A '?' that is only inside a comment needs no binding, and accepts none.
+        assertEquals("FROM t SELECT a -- ?\n", new SubQuery("FROM t SELECT a -- ?\n").rawSql());
+        assertEquals("FROM t SELECT a # ?\n", new SubQuery("FROM t SELECT a # ?\n").rawSql());
+        assertThrows(IllegalArgumentException.class, () -> new SubQuery("FROM t SELECT a -- ?\n", Arrays.asList(1)));
+
+        // Trade-off: in unrecognized text a '?' in a bracket identifier or a JSON operator cannot be told from a placeholder,
+        // so it is rejected; in a recognized query the JSON operator is not a placeholder.
+        e = assertThrows(IllegalArgumentException.class, () -> new SubQuery("FROM [t?] SELECT a"));
+        assertTrue(e.getMessage().contains("not a recognized query"), e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> new SubQuery("FROM t SELECT j ?| array['a']"));
+        assertTrue(e.getMessage().contains("not a recognized query"), e.getMessage());
+        assertTrue(new SubQuery("SELECT j ?| array['a'] FROM t").parameters().isEmpty());
+    }
+
+    // Regression: the binding in H2's "VALUES ? FORMAT JSON" was read as a JSON operator, so the subquery rejected it.
+    @Test
+    public void testValuesMarkerBeforeFormatJsonAcceptsItsBinding() {
+        final SubQuery subQuery = new SubQuery("VALUES ? FORMAT JSON", List.of("[1,2]"));
+        assertEquals(List.of("[1,2]"), subQuery.parameters());
+
+        assertEquals(List.of("[2]"), new SubQuery("SELECT CAST('[1]' AS JSON) UNION ALL VALUES ? FORMAT JSON", List.of("[2]")).parameters());
+
+        // A JSON existence test on a column named values takes no binding.
+        assertTrue(new SubQuery("SELECT values ? format JSON FROM t", List.of()).parameters().isEmpty());
+    }
 }

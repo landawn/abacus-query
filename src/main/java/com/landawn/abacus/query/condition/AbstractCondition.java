@@ -206,7 +206,8 @@ public abstract class AbstractCondition implements Condition {
      * An unquoted identifier spelled like a one-word clause keyword (for example a column named {@code offset})
      * is not a clause when a comparison or predicate operator follows it ({@code offset > 5}, {@code offset <=> 5},
      * {@code offset !~ 'x'}, {@code minus IS NULL}, {@code offset NOT IN (1, 2)}, {@code offset REGEXP 'x'},
-     * {@code offset SIMILAR TO 'x'}, {@code offset LIKE'x%'}); in any other position it is classified as a clause,
+     * {@code offset SIMILAR TO 'x'}, {@code offset LIKE'x%'}) or when an array subscript is glued to it
+     * ({@code minus[1] + 2 > 0}); in any other position it is classified as a clause,
      * so quote such an identifier ({@code "offset"}) when in doubt. {@code WHERE}, {@code HAVING}, {@code UNION} and
      * {@code JOIN}, which are reserved in every database, always start a clause ({@code WHERE ~ flags & 4 = 0}).
      *
@@ -241,21 +242,31 @@ public abstract class AbstractCondition implements Condition {
                 return false;
             }
 
-            final String firstToken = SqlParser.nextToken(literal, 0);
+            // SqlParser.nextToken keeps a quoted region glued to the preceding word ("BY\"id\"", "WHERE\"x\"", "JOIN[t]"
+            // are single tokens), so only the keyword part of each token is compared.
+            final String rawFirstToken = SqlParser.nextToken(literal, 0);
+            final String firstToken = keywordPart(rawFirstToken);
 
             // nextTokenEndIndex mirrors nextToken's comment-skipping scan; a raw indexOf(firstToken) could bind to
             // an earlier occurrence of the token inside a leading SQL comment and misread the second token.
             final int secondTokenStart = SqlParser.nextTokenEndIndex(literal, 0);
-            final String secondToken = SqlParser.nextToken(literal, secondTokenStart);
+            final String rawSecondToken = SqlParser.nextToken(literal, secondTokenStart);
+            final String secondToken = keywordPart(rawSecondToken);
 
             if (isClause(firstToken)) {
+                // A non-reserved one-word keyword directly followed by a subscript ("minus[1] + 2 > 0", "offset[1]::int > 5")
+                // is an array column, not a clause: no clause keyword is ever immediately followed by '['.
+                if (!isReservedEverywhere(firstToken) && rawFirstToken.length() > firstToken.length() && rawFirstToken.charAt(firstToken.length()) == '[') {
+                    return false;
+                }
+
                 // A one-word clause keyword that is non-reserved in some databases (OFFSET in MySQL/SQL Server, MINUS
                 // outside Oracle) can be an unquoted column name. Directly followed by a comparison or predicate
                 // operator ("offset > 5", "minus IS NULL", "offset REGEXP 'x'") it is an identifier: no clause keyword
                 // is ever followed by one (see isPredicateOperatorToken for the ambiguous cases). WHERE, HAVING, UNION
                 // and JOIN are reserved everywhere, so they always start a clause; this also keeps a unary operand
                 // such as "WHERE ~ flags & 4 = 0" from being misread as a column named "where" matched with "~".
-                return isReservedEverywhere(firstToken) || !isPredicateOperatorToken(literal, secondToken, secondTokenStart);
+                return isReservedEverywhere(firstToken) || !isPredicateOperatorToken(literal, rawSecondToken, secondTokenStart);
             }
 
             if (Strings.isEmpty(secondToken)) {
@@ -270,7 +281,7 @@ public abstract class AbstractCondition implements Condition {
             // the canonical Operator token (LEFT JOIN, RIGHT JOIN, FULL JOIN).
             if ("OUTER".equalsIgnoreCase(secondToken)) {
                 final int thirdTokenStart = SqlParser.nextTokenEndIndex(literal, secondTokenStart);
-                final String thirdToken = SqlParser.nextToken(literal, thirdTokenStart);
+                final String thirdToken = keywordPart(SqlParser.nextToken(literal, thirdTokenStart));
 
                 return Strings.isNotEmpty(thirdToken) && isClause(firstToken + SPACE + thirdToken);
             }
@@ -361,6 +372,12 @@ public abstract class AbstractCondition implements Condition {
         return "WHERE".equalsIgnoreCase(keyword) || "HAVING".equalsIgnoreCase(keyword) || "UNION".equalsIgnoreCase(keyword) || "JOIN".equalsIgnoreCase(keyword);
     }
 
+    /** Returns the word part of {@code token} before a glued quoted region ({@code BY"id"} → {@code BY}), or {@code token} itself. */
+    private static String keywordPart(final String token) {
+        final int quoteIndex = indexOfQuoteChar(token);
+        return quoteIndex > 0 ? token.substring(0, quoteIndex) : token;
+    }
+
     /** Returns the index of the first quote character ({@code '}, {@code "}, {@code `}, or {@code [}) in {@code token}, or {@code -1}. */
     private static int indexOfQuoteChar(final String token) {
         for (int i = 0, len = token.length(); i < len; i++) {
@@ -395,7 +412,7 @@ public abstract class AbstractCondition implements Condition {
                 return false;
             }
 
-            return isOnOrUsing(SqlParser.nextToken(literal, 0));
+            return isOnOrUsing(keywordPart(SqlParser.nextToken(literal, 0)));
         }
 
         return isOnOrUsing(cond.operator());
@@ -783,7 +800,11 @@ public abstract class AbstractCondition implements Condition {
      *       {@code toString()}, and {@link Boolean} values are emitted without quoting.
      *       {@link Float#NaN}/{@link Double#NaN}/infinity values cause an {@link IllegalArgumentException} because
      *       they have no portable SQL literal form; use {@link IsNaN}/{@link IsInfinite} instead.</li>
-     *   <li>Any other object (dates, characters, byte arrays, custom types, etc.) is converted via
+     *   <li>A {@code java.sql.Date}, {@code java.sql.Time}, {@code java.sql.Timestamp}, other {@code java.util.Date}, or
+     *       {@link Calendar} is rendered as a quoted local date/time literal ({@code 'yyyy-MM-dd'}, {@code 'HH:mm:ss'},
+     *       {@code 'yyyy-MM-dd HH:mm:ss.f...'}), i.e. the wall-clock fields a JDBC driver binds; see
+     *       {@link #localDateTimeText(Object)}.</li>
+     *   <li>Any other object (characters, byte arrays, {@code java.time} values, custom types, etc.) is converted via
      *       {@link N#stringOf(Object)} and wrapped as a SQL-standard string literal. This guarantees
      *       syntactically balanced quoting, but not that the target database can convert the resulting
      *       text to a particular column type.</li>
@@ -795,7 +816,7 @@ public abstract class AbstractCondition implements Condition {
      * formatParameter(123, NamingPolicy.NO_CHANGE);                   // Returns: 123
      * formatParameter(null, NamingPolicy.NO_CHANGE);                  // Returns: null (Java null)
      * formatParameter(subCondition, NamingPolicy.NO_CHANGE);          // Returns: subCondition.toSql(policy)
-     * formatParameter(new java.util.Date(0), NamingPolicy.NO_CHANGE); // Returns the date as a quoted, escaped string literal
+     * formatParameter(java.sql.Date.valueOf("2020-01-02"), NamingPolicy.NO_CHANGE); // Returns: '2020-01-02'
      * }</pre>
      *
      * @param parameter the parameter value to convert; may be {@code null}
@@ -843,7 +864,43 @@ public abstract class AbstractCondition implements Condition {
         }
 
         // Date, LocalDateTime, Character, byte[], custom types, etc.: emit a quoted, escaped string literal.
-        return SK._SINGLE_QUOTE + escapeStringLiteral(N.stringOf(parameter)) + SK._SINGLE_QUOTE;
+        final String localDateTime = localDateTimeText(parameter);
+
+        return SK._SINGLE_QUOTE + escapeStringLiteral(localDateTime != null ? localDateTime : N.stringOf(parameter)) + SK._SINGLE_QUOTE;
+    }
+
+    /**
+     * Returns the local wall-clock text of a {@code java.util.Date}-family or {@link Calendar} value, as a JDBC driver binds
+     * it: {@code java.sql.Date} as {@code yyyy-MM-dd}, {@code java.sql.Time} as {@code HH:mm:ss}, and {@code java.sql.Timestamp},
+     * and any other {@code java.util.Date} or a {@code Calendar} as {@code yyyy-MM-dd HH:mm:ss.f...}. A {@code Calendar} is rendered
+     * at its instant in the JVM time zone, exactly as it is bound as a parameter ({@code new Timestamp(calendar.getTimeInMillis())}),
+     * not in the calendar's own zone.
+     *
+     * <p>{@link N#stringOf(Object)} renders these values as a UTC instant ({@code 2020-01-02T08:00:00.000Z} for the local
+     * date {@code 2020-01-02} in a UTC-8 JVM). A database reading such a literal into a {@code DATE}, {@code TIME} or
+     * {@code TIMESTAMP} column drops or ignores the zone, so the inlined value silently shifts by the JVM's UTC offset
+     * (another day, another hour), unlike the same value bound as a parameter.</p>
+     *
+     * @param value the value to render
+     * @return the local date/time text, or {@code null} if {@code value} is not a {@code java.util.Date} or {@code Calendar}
+     */
+    static String localDateTimeText(final Object value) {
+        if (value instanceof java.sql.Date || value instanceof java.sql.Time || value instanceof java.sql.Timestamp) {
+            // These toString() implementations print the local wall-clock fields in JDBC escape format.
+            return value.toString();
+        }
+
+        if (value instanceof final Date date) {
+            return new java.sql.Timestamp(date.getTime()).toString();
+        }
+
+        if (value instanceof final Calendar calendar) {
+            // Same instant and zone as the bound parameter; rendering the calendar's own zone fields would differ from it and
+            // could land in a JVM-zone daylight-saving gap.
+            return new java.sql.Timestamp(calendar.getTimeInMillis()).toString();
+        }
+
+        return null;
     }
 
     /**
@@ -1063,9 +1120,9 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames the array of property names (must not be {@code null} or empty and must not contain {@code null}, empty, blank, or comment-only elements)
+     * @param propNames the array of property names (must not be {@code null} or empty and must not contain {@code null}, empty, blank, or comment-only elements, nor elements that end inside an unterminated block comment)
      * @return a comma-separated string of property names suitable for use in a sort/grouping clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements or an element that ends inside an unterminated block comment
      */
     protected static String createSortSpec(final String... propNames) {
         N.checkArgNotEmpty(propNames, cs.propNames);
@@ -1100,10 +1157,10 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propName the property name (must not be {@code null}, empty, blank, or comment-only)
+     * @param propName the property name (must not be {@code null}, empty, blank, comment-only, or end inside an unterminated block comment)
      * @param direction the sort direction (must not be {@code null})
      * @return a string of the form {@code "propName direction"} suitable for a sort/grouping clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, or {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, ends inside an unterminated block comment, or {@code direction} is {@code null}
      */
     protected static String createSortSpec(final String propName, final SortDirection direction) {
         checkSortPropName(propName);
@@ -1124,11 +1181,11 @@ public abstract class AbstractCondition implements Condition {
      * <p>This method is protected and not intended for direct use by application code.
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.</p>
      *
-     * @param propNames collection of property names (must not be {@code null} or empty and must not contain {@code null}, empty, blank, or comment-only elements)
+     * @param propNames collection of property names (must not be {@code null} or empty and must not contain {@code null}, empty, blank, or comment-only elements, nor elements that end inside an unterminated block comment)
      * @param direction the sort direction to apply to all properties (must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries
      * @throws IllegalArgumentException if {@code propNames} is {@code null}/empty, yields no elements when copied,
-     *                                  or contains {@code null}, empty, blank, or comment-only elements, or if {@code direction} is {@code null}
+     *                                  or contains {@code null}, empty, blank, or comment-only elements or an element that ends inside an unterminated block comment, or if {@code direction} is {@code null}
      */
     protected static String createSortSpec(final Collection<String> propNames, final SortDirection direction) {
         N.checkArgNotEmpty(propNames, cs.propNames);
@@ -1177,7 +1234,7 @@ public abstract class AbstractCondition implements Condition {
      *               and entries and values must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries in map iteration order
      * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, contains a {@code null} entry,
-     *                                  {@code null}, empty, blank, or comment-only keys, or {@code null} values
+     *                                  {@code null}, empty, blank, or comment-only keys, keys that end inside an unterminated block comment, or {@code null} values
      */
     protected static String createSortSpec(final Map<String, SortDirection> orders) {
         N.checkArgNotEmpty(orders, cs.orders);
@@ -1345,7 +1402,7 @@ public abstract class AbstractCondition implements Condition {
      *
      * @param propName the property name
      * @param direction the direction associated with the property
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, or if {@code direction} is {@code null}
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, ends inside an unterminated block comment, or if {@code direction} is {@code null}
      */
     static void checkSortEntry(final String propName, final SortDirection direction) {
         checkSortPropName(propName);
@@ -1357,14 +1414,24 @@ public abstract class AbstractCondition implements Condition {
      * SQL comments, which the rendered expression would strip, leaving a dangling direction or comma
      * ({@code ORDER BY ASC}, {@code ORDER BY , name}). A {@code #name} SQL Server temporary-table reference is kept.
      *
+     * <p>A name that opens a {@code /*} block comment without closing it, under any lexical reading of the name, is rejected
+     * as well: the comment would swallow the name's own direction and every later sort key, and the renderer would silently
+     * drop it all. Being a fail-closed check, it also rejects a few contrived names that one dialect would accept, such as
+     * {@code [a/*b]} or {@code a # note /*}.</p>
+     *
      * @param propName the property name to validate
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, or ends inside an
+     *         unterminated block comment
      */
     private static void checkSortPropName(final String propName) {
         checkPropName(propName);
 
         if (isEmptyLiteral(propName)) {
             throw new IllegalArgumentException("Property name must not consist only of SQL comments: \"" + propName + "\"");
+        }
+
+        if (QueryUtil.hasUnterminatedBlockComment(propName)) {
+            throw new IllegalArgumentException("Property name must not contain an unterminated block comment: \"" + propName + "\"");
         }
     }
 

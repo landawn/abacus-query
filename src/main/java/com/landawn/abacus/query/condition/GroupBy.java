@@ -136,7 +136,8 @@ public class GroupBy extends Clause {
      * }</pre>
      *
      * @param propNames the property names to group by, in order. Must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements or an element that ends inside an
+     *                                  unterminated block comment,
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -169,7 +170,8 @@ public class GroupBy extends Clause {
      *
      * @param propNames the collection of property names to group by, in iteration order. Must not be {@code null} or empty and must not contain {@code null},
      *                  empty, or blank elements.
-     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or contains {@code null}, empty, blank, or comment-only elements or an element that ends inside an
+     *                                  unterminated block comment,
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -198,7 +200,8 @@ public class GroupBy extends Clause {
      *
      * @param propOrColumnName the property or column name to group by. Must not be {@code null}, empty, or blank.
      * @param direction the sort direction (ASC or DESC). Must not be {@code null}.
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, if {@code direction} is {@code null},
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only or ends inside an unterminated
+     *                                  block comment, if {@code direction} is {@code null},
      *                                  or if {@code propOrColumnName} begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested

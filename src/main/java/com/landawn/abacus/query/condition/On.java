@@ -274,7 +274,13 @@ public class On extends Cell {
             throw new IllegalArgumentException("rightPropName must not be null, empty, or blank");
         }
 
-        return new Equal(leftPropName, Filters.expr(rightPropName));
+        final SqlExpression rightColumn = Filters.expr(rightPropName);
+
+        if (isEmptyPredicate(rightColumn)) {
+            throw new IllegalArgumentException("rightPropName must not consist only of SQL comments: " + rightPropName);
+        }
+
+        return new Equal(leftPropName, rightColumn);
     }
 
     /**

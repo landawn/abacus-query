@@ -24,6 +24,7 @@ import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.query.SqlParser;
 import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -848,8 +849,8 @@ public class Criteria extends AbstractCondition {
         /**
          * Sets the PostgreSQL-style {@code DISTINCT ON} modifier with specific expressions.
          * The database dialect used to execute the generated SQL must support this syntax.
-         * If {@code columnNames} is {@code null}, empty, or blank, a plain {@code DISTINCT}
-         * modifier is used.
+         * If {@code columnNames} is {@code null}, empty, blank, or consists only of SQL comments, a plain
+         * {@code DISTINCT} modifier is used.
          * A trailing line comment in {@code columnNames} is terminated with a newline before the closing parenthesis.
          *
          * <p><b>Usage Examples:</b></p>
@@ -864,12 +865,21 @@ public class Criteria extends AbstractCondition {
          * Criteria.builder().distinctOn("").build().selectModifier();       // returns "DISTINCT"
          * }</pre>
          *
-         * @param columnNames the expressions for {@code DISTINCT ON}; if {@code null}, empty, or blank,
+         * @param columnNames the expressions for {@code DISTINCT ON}; if {@code null}, empty, blank, or comment-only,
          *                    plain {@code DISTINCT} is used
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code columnNames} contains an unterminated block comment
          */
         public Builder distinctOn(final String columnNames) {
-            selectModifier = Strings.isBlank(columnNames) ? SK.DISTINCT : SK.DISTINCT + " ON (" + QueryUtil.terminateLineComment(columnNames) + ")";
+            // An unclosed "/*" would silently turn DISTINCT ON (...) into a plain DISTINCT (or swallow the select list), so reject it.
+            if (columnNames != null && QueryUtil.hasUnterminatedBlockComment(columnNames)) {
+                throw new IllegalArgumentException("columnNames must not contain an unterminated block comment: " + columnNames);
+            }
+
+            // Comment-only text ("-- x", "/* x */", "# x") is treated like blank text, as AbstractQueryBuilder.distinctOn does;
+            // otherwise it would render the invalid "DISTINCT ON ()".
+            selectModifier = Strings.isBlank(columnNames) || SqlParser.nextToken(columnNames, 0).isEmpty() ? SK.DISTINCT
+                    : SK.DISTINCT + " ON (" + QueryUtil.terminateLineComment(columnNames) + ")";
 
             return this;
         }
@@ -2687,6 +2697,11 @@ public class Criteria extends AbstractCondition {
         /**
          * Adds an INTERSECT operation with a subquery.
          * INTERSECT returns only rows that appear in both result sets.
+         *
+         * <p><b>Operator precedence:</b> set operators are emitted flat, in call order. PostgreSQL, SQL Server, DB2,
+         * MySQL 8.0.31+ and MariaDB bind {@code INTERSECT} tighter than {@code UNION}/{@code EXCEPT}/{@code MINUS}, so a
+         * {@code union(...)} followed by {@code intersect(...)} evaluates as {@code A UNION (B INTERSECT C)} there, while
+         * Oracle and SQLite evaluate left to right.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

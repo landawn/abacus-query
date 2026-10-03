@@ -63,6 +63,7 @@ import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.UnaryOperator;
 
 import com.landawn.abacus.annotation.Beta;
 import com.landawn.abacus.query.Filters;
@@ -1399,6 +1400,9 @@ public class SqlExpression extends ComposableCondition {
      *   <li>An {@link SqlExpression} literal or non-subquery {@link Condition} rendering is returned as-is, so it can
      *       end inside a {@code --} or {@code #} line comment; a caller appending further SQL after the result must
      *       terminate that comment first (the helpers in this class do)</li>
+     *   <li>A {@code java.sql.Date}, {@code java.sql.Time}, {@code java.sql.Timestamp}, other {@code java.util.Date}, or
+     *       {@code Calendar} is rendered as its quoted local date/time text ({@code '2020-01-02'}, {@code '03:04:05'},
+     *       {@code '2020-01-02 03:04:05.0'}), matching the wall-clock fields a JDBC driver binds</li>
      *   <li>Other objects are converted via {@link N#stringOf(Object)}, then quoted and escaped</li>
      * </ul>
      *
@@ -1451,7 +1455,11 @@ public class SqlExpression extends ComposableCondition {
 
             return conditionStr;
         } else {
-            return (_SINGLE_QUOTE + AbstractCondition.escapeStringLiteral(N.stringOf(value)) + _SINGLE_QUOTE);
+            // A java.util.Date/Calendar would otherwise render as a UTC instant ("...T08:00:00.000Z"), which shifts the
+            // inlined value by the JVM's UTC offset once the database reads it as a local date/time.
+            final String localDateTime = AbstractCondition.localDateTimeText(value);
+
+            return (_SINGLE_QUOTE + AbstractCondition.escapeStringLiteral(localDateTime != null ? localDateTime : N.stringOf(value)) + _SINGLE_QUOTE);
         }
     }
 
@@ -2181,6 +2189,15 @@ public class SqlExpression extends ComposableCondition {
      * name such as {@code t."firstName"}, whose unquoted qualifier is still converted), SQL
      * variables (such as {@code @name}), parameter placeholders ({@code ?}, {@code :name},
      * {@code #{name}}, {@code ${name}}), and numeric literals are left unchanged by the naming policy.
+     * When a token glues more than a name together, only its leading name is converted:
+     * {@code unitPrice::numeric(10, 2)} renders as {@code unit_price::numeric(10, 2)} under {@code SNAKE_CASE}
+     * (the cast type is kept, including a quoted one such as {@code ::"OrderStatus"}),
+     * {@code myTags[:tagIndex]} as {@code my_tags[:tagIndex]}, and {@code log_${month}} keeps its marker. The
+     * interior of an array subscript or constructor is rendered like a nested expression:
+     * {@code ARRAY[firstName, 2]} renders as {@code ARRAY[first_name, 2]}. If that interior contains a comment or
+     * {@code #} outside a string literal, it is copied unchanged. A column that follows a delimited qualifier is
+     * converted ({@code "T".firstName} renders as {@code "T".first_name}), and so is one that follows a glued marker
+     * and a dot (<code>log_${month}.createdAt</code> renders as <code>log_${month}.created_at</code>).
      * PostgreSQL dollar-quoted strings ({@code $$...$$}) are not recognized by the tokenizer, so a word inside
      * one that contains whitespace can be converted (for example {@code $$aB cD$$} renders as {@code $$aB c_d$$}
      * under {@code SNAKE_CASE}).
@@ -2194,7 +2211,8 @@ public class SqlExpression extends ComposableCondition {
      * so {@code _firstName} renders as {@code _first_name} and {@code _1} stays {@code _1}.
      * A literal that is not a single simple identifier is tokenized by
      * {@link SqlParser#tokenize(String)} and reassembled from its tokens, which normalizes the text:
-     * runs of whitespace collapse to a single space and SQL comments are stripped. This includes
+     * runs of whitespace collapse to a single space and SQL comments are stripped (a line break between two
+     * string literals is kept, because adjacent literals are concatenated only across one). This includes
      * MySQL-style {@code #} line comments: outside a {@code FROM}/{@code JOIN} temp-table position and
      * the {@code #{...}}, {@code #>}, {@code #>>} and {@code #-} forms, a {@code #} and the rest of the
      * line are dropped, so PostgreSQL's {@code #} bitwise-XOR operator cannot be used inside an
@@ -2204,6 +2222,16 @@ public class SqlExpression extends ComposableCondition {
      * {@code #name} or {@code ##name} is retained during construction because it can reference a
      * SQL Server temporary table; use a SQL Server query builder to render that form, since this
      * dialect-neutral rendering still treats it as a hash comment.
+     * The tokenizer reads a backslash before a quote as an escape, as MySQL does. In standard SQL the backslash
+     * is an ordinary character, and {@link #renderValue(Object)} renders the value {@code C:\} as {@code 'C:\'}.
+     * Where the two readings place a quote boundary differently, this rendering cannot tell which one applies. The
+     * first token whose extent depends on the reading, and all the text after it, is therefore copied exactly as
+     * written: no conversion, no comment stripping, no whitespace collapsing. Without this, a quoted value would
+     * be converted as an identifier, or a {@code --} inside a later string would be dropped as a comment.
+     * PostgreSQL {@code E'...'} strings honor backslash escapes under both readings and are not affected.
+     * A non-ASCII space glued inside a word (such as the ideographic space U+3000 or NBSP), which the tokenizer
+     * does not split at, is emitted as one plain space and the words around it are rendered separately; quoted
+     * text, markers, subscripts, tokens starting with {@code $} and verbatim text keep such characters as written.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -2256,99 +2284,17 @@ public class SqlExpression extends ComposableCondition {
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
-            String word = null;
-            boolean inBracedPlaceholder = false;
-            for (int i = 0, len = words.size(); i < len; i++) {
-                word = words.get(i);
+            // The token loop is shared with the query builders (QueryUtil.appendRawExpression), so both rendering
+            // paths treat markers, literals, glued subscripts/casts and escape-dependent quotes identically. This
+            // dialect-neutral rendering cannot know whether a backslash escapes a quote, so it checks both readings.
+            final UnaryOperator<String> converter = word -> isSqlKeyword(word) ? word : QueryUtil.convertIdentifier(word, effectiveNamingPolicy);
 
-                // The SQL tokenizer can split MyBatis bind names and attributes at spaces or operators.
-                // Keep the entire marker out of identifier conversion, then resume with the next SQL token.
-                // An unterminated marker is not a binding, so the rest of the expression is converted normally.
-                if (inBracedPlaceholder || ((word.startsWith("#{") || word.startsWith("${")) && closesBracedPlaceholder(words, i))) {
-                    sb.append(word);
-                    inBracedPlaceholder = !isBracedPlaceholderEnd(word);
-                    continue;
-                }
+            QueryUtil.appendRawExpression(sb, literal, words, SqlParser.tokenizer(), false, converter, converter);
 
-                if (word.isEmpty() || !isIdentifierStart(word.charAt(0)) || SqlParser.isFunctionName(words, i) || isSqlKeyword(word)
-                        || containsQuotedLiteral(word) || isSqlVariable(words, i)) {
-                    sb.append(word);
-                } else {
-                    sb.append(QueryUtil.convertIdentifier(word, effectiveNamingPolicy));
-                }
-            }
             return sb.toString();
         } finally {
             Objectory.recycle(sb);
         }
-    }
-
-    /**
-     * Returns whether {@code word} closes a braced MyBatis marker: it contains a {@code '}'} and is not a
-     * quoted literal. Mirrors the builder's raw-expression rendering path.
-     *
-     * @param word the token to check
-     * @return {@code true} if {@code word} ends a {@code #{...}} or {@code ${...}} marker
-     */
-    private static boolean isBracedPlaceholderEnd(final String word) {
-        return word.indexOf('}') >= 0 && !word.startsWith("'") && !word.startsWith("\"");
-    }
-
-    /**
-     * Returns whether the braced marker opened by the token at {@code start} is closed by that token or a
-     * later one.
-     *
-     * @param words the parsed tokens of the expression literal
-     * @param start the index of the token opening the marker
-     * @return {@code true} if a closing token exists
-     */
-    private static boolean closesBracedPlaceholder(final List<String> words, final int start) {
-        for (int i = start, len = words.size(); i < len; i++) {
-            if (isBracedPlaceholderEnd(words.get(i))) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns whether the given token embeds a quoted string literal after a prefix
-     * (e.g. {@code N'text'} or {@code _utf8mb4'text'}), in which case naming-policy
-     * conversion must be skipped so the literal's content is not modified.
-     *
-     * @param word the token to check
-     * @return {@code true} if a single quote appears after the first character of {@code word}
-     */
-    private static boolean containsQuotedLiteral(final String word) {
-        // SqlParser keeps a SQL literal prefix and its quoted body in one token (for example,
-        // N'camelCase' or _utf8mb4'camelCase'). Applying a naming policy to that whole token
-        // would modify data inside the literal.
-        return word.indexOf(SK._SINGLE_QUOTE) > 0;
-    }
-
-    /**
-     * Returns whether the token at {@code index} is a SQL variable name — that is, immediately
-     * preceded by a bare {@code "@"} or {@code "@@"} token (e.g. SQL Server/MySQL variables).
-     * Variable names are left unconverted by the naming policy.
-     *
-     * @param words the parsed tokens of the expression literal
-     * @param index the index of the token to check within {@code words}
-     * @return {@code true} if the token at {@code index} is a SQL variable name
-     */
-    private static boolean isSqlVariable(final List<String> words, final int index) {
-        if (index == 0) {
-            return false;
-        }
-
-        // SQL Server/MySQL variable markers (@name, @@name) sit immediately before the variable
-        // name, so any token following a bare "@"/"@@" token is treated as a variable name and left
-        // unconverted. Whitespace is retained as its own token, so a PostgreSQL "@" operator written
-        // with surrounding spaces ("a @ b") is distinguishable and its operand is still converted;
-        // only the space-less form ("a @b") is ambiguous and is likewise left unchanged. This affects
-        // naming-policy rewriting of that identifier only, not SQL correctness.
-        final String previous = words.get(index - 1);
-        return "@".equals(previous) || "@@".equals(previous);
     }
 
     /**

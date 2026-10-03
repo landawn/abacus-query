@@ -13666,7 +13666,8 @@ public class SqlBuilderTest extends TestBase {
 
     @Test
     public void testSelectExpressionFindsOnlyTopLevelAsAlias() {
-        assertEquals("SELECT CAST(created_at AS date) AS createdDay FROM events",
+        // The CAST type is copied as written.
+        assertEquals("SELECT CAST(created_at AS DATE) AS createdDay FROM events",
                 NSC.select("CAST(created_at AS DATE) AS createdDay").from("events").build().query());
         assertEquals("SELECT CONCAT(' AS ', name) AS label FROM events", NSC.select("CONCAT(' AS ', name) AS label").from("events").build().query());
         assertEquals("SELECT \"created AS date\" AS label FROM events", NSC.select("\"created AS date\" AS label").from("events").build().query());
@@ -14949,5 +14950,247 @@ public class SqlBuilderTest extends TestBase {
                 .build();
         assertEquals("SELECT id FROM t WHERE (id = :id) AND (id IN (SELECT id FROM #tmp WHERE id = :id_2))", sp.query());
         assertEquals(Arrays.asList(1, 2), sp.parameters());
+    }
+
+    @Test
+    public void testKebabCaseNamingPolicyIsRejected() {
+        // Regression: KEBAB_CASE rendered unquoted hyphenated identifiers ("first-name" = first - name), so every
+        // statement such a Dsl produced was invalid SQL.
+        assertThrows(IllegalArgumentException.class,
+                () -> Dsl.forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.KEBAB_CASE).sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL).build()));
+
+        assertEquals("SELECT FirstName AS \"firstName\" FROM account",
+                Dsl.forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.UPPER_CAMEL_CASE).sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL).build())
+                        .select("firstName")
+                        .from("account")
+                        .build()
+                        .query());
+    }
+
+    /** A user-defined AbstractBetween subclass (the constructor is protected for exactly this). */
+    static final class CustomBetween extends com.landawn.abacus.query.condition.AbstractBetween {
+        CustomBetween(final String propName, final Object minValue, final Object maxValue) {
+            super(propName, com.landawn.abacus.query.condition.Operator.BETWEEN, minValue, maxValue);
+        }
+    }
+
+    @Test
+    public void testCustomAbstractBetweenSubclassIsRendered() {
+        // Regression: appendCondition dispatched on the concrete Between/NotBetween classes, so a custom AbstractBetween
+        // subclass rendered fine via toString() but builders rejected it with "Unsupported condition type".
+        final AbstractQueryBuilder.SP sp = PSC.select("id").from("account").where(new CustomBetween("age", 18, 65)).build();
+        assertEquals("SELECT id FROM account WHERE age BETWEEN ? AND ?", sp.query());
+        assertEquals(Arrays.asList(18, 65), sp.parameters());
+    }
+
+    @Test
+    public void testRawSqlRendersDateFamilyValuesAsLocalWallClockText() {
+        // Regression: RAW_SQL inlined java.sql.Date/Time/Timestamp as UTC instants ("...T08:00:00.000Z"), so the
+        // database saw a different date/time than the one the parameterized builders bind.
+        final String sql = SCSB.select("id")
+                .from("orders")
+                .where(Filters.and(Filters.eq("orderDate", java.sql.Date.valueOf("2020-01-02")),
+                        Filters.eq("createdAt", java.sql.Timestamp.valueOf("2020-01-02 03:04:05")), Filters.eq("shipTime", java.sql.Time.valueOf("03:04:05"))))
+                .build()
+                .query();
+
+        assertEquals("SELECT id FROM orders WHERE (order_date = '2020-01-02') AND (created_at = '2020-01-02 03:04:05.0') AND (ship_time = '03:04:05')", sql);
+    }
+
+    @Test
+    public void testSqlServerRawSqlRendersBooleanAsBit() {
+        // Regression: RAW_SQL rendered Boolean as true/false, which T-SQL reads as column names.
+        final Dsl sqlServer = Dsl.forDialect(SqlDialect.builder()
+                .productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server"))
+                .namingPolicy(NamingPolicy.SNAKE_CASE)
+                .sqlPolicy(SqlDialect.SqlPolicy.RAW_SQL)
+                .build());
+
+        assertEquals("SELECT id FROM account WHERE (active = 1) AND (deleted = 0)",
+                sqlServer.select("id").from("account").where(Filters.and(Filters.eq("active", true), Filters.eq("deleted", false))).build().query());
+
+        // Other dialects keep the TRUE/FALSE literals.
+        assertEquals("SELECT id FROM account WHERE active = true", SCSB.select("id").from("account").where(Filters.eq("active", true)).build().query());
+    }
+
+    @Test
+    public void testCamelCaseKeepsCollationNameAfterCollate() {
+        // Regression: CAMEL_CASE converted collation names like columns (utf8mb4_unicode_ci -> utf8mb4UnicodeCi).
+        final String sql = PLC.select("id").from("t").where("first_name COLLATE utf8mb4_bin = 'x'").orderBy("last_name COLLATE utf8mb4_unicode_ci").build().query();
+
+        assertTrue(sql.contains(" utf8mb4_bin = 'x'"), sql);
+        assertTrue(sql.endsWith(" utf8mb4_unicode_ci"), sql);
+    }
+
+    @Test
+    public void testKebabCaseRejectionMessageAndNullNamingPolicyDefault() {
+        // Covers the KEBAB_CASE rejection message and the null naming policy default (snake case).
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> Dsl.forDialect(SqlDialect.builder().namingPolicy(NamingPolicy.KEBAB_CASE).sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL).build()));
+        assertTrue(ex.getMessage().contains("KEBAB_CASE"), ex.getMessage());
+
+        assertEquals("SELECT first_name AS \"firstName\" FROM account", Dsl.forDialect(SqlDialect.builder().build()).select("firstName").from("account").build().query());
+    }
+
+    /** A user-defined NOT BETWEEN subclass of AbstractBetween. */
+    static final class CustomNotBetween extends com.landawn.abacus.query.condition.AbstractBetween {
+        CustomNotBetween(final String propName, final Object minValue, final Object maxValue) {
+            super(propName, com.landawn.abacus.query.condition.Operator.NOT_BETWEEN, minValue, maxValue);
+        }
+    }
+
+    @Test
+    public void testCustomAbstractBetweenSubclassesRenderUnderEveryPolicyAndWhenNested() {
+        // Covers custom AbstractBetween subclasses (BETWEEN and NOT BETWEEN) under the named/raw/MyBatis policies and nested
+        // in a junction, a Criteria and a structured SubQuery (all of which used to throw "Unsupported condition type").
+        SP sp = NSC.select("id").from("t o").where(new CustomNotBetween("o.age", 18, 65)).build();
+        assertEquals("SELECT id FROM t o WHERE o.age NOT BETWEEN :minAge AND :maxAge", sp.query());
+        assertEquals(Arrays.asList(18, 65), sp.parameters());
+
+        assertEquals("SELECT id FROM t WHERE age BETWEEN 1 AND 2", SCSB.select("id").from("t").where(new CustomBetween("age", 1, 2)).build().query());
+        assertEquals("SELECT id FROM t WHERE age NOT BETWEEN 1 AND 2", SCSB.select("id").from("t").where(new CustomNotBetween("age", 1, 2)).build().query());
+
+        sp = MSC.select("id").from("t").where(new CustomNotBetween("age", 1, 2)).build();
+        assertEquals("SELECT id FROM t WHERE age NOT BETWEEN #{minAge} AND #{maxAge}", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+        sp = PSC.select("id").from("t").where(Filters.and(Filters.eq("a", 1), new CustomNotBetween("age", 18, 65))).build();
+        assertEquals("SELECT id FROM t WHERE (a = ?) AND (age NOT BETWEEN ? AND ?)", sp.query());
+        assertEquals(Arrays.asList(1, 18, 65), sp.parameters());
+
+        sp = PSC.select("id").from("t").append(Criteria.builder().where(new CustomNotBetween("age", 18, 65)).build()).build();
+        assertEquals("SELECT id FROM t WHERE age NOT BETWEEN ? AND ?", sp.query());
+        assertEquals(Arrays.asList(18, 65), sp.parameters());
+
+        sp = PSC.select("id").from("t").where(Filters.in("id", Filters.subQuery("u", Arrays.asList("id"), new CustomNotBetween("age", 18, 65)))).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE age NOT BETWEEN ? AND ?)", sp.query());
+        assertEquals(Arrays.asList(18, 65), sp.parameters());
+
+        sp = NSC.select("id").from("t").where(Filters.in("id", Filters.subQuery("u", Arrays.asList("id"), new CustomBetween("age", 18, 65)))).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE age BETWEEN :minAge AND :maxAge)", sp.query());
+        assertEquals(Arrays.asList(18, 65), sp.parameters());
+    }
+
+    @Test
+    public void testRawSqlInlinesDateFamilyBindingsOfRawSubQueryAndCalendarAtJvmZone() {
+        // Covers the RAW_SQL raw-subquery inlining path for date-family bindings and a Calendar rendered at its instant in the
+        // JVM zone (as abacus binds it: new Timestamp(calendar.getTimeInMillis())), not in the calendar's own zone.
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM y WHERE z = '2020-01-02')",
+                SCSB.select("id")
+                        .from("t")
+                        .where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE z = ?", Arrays.asList(java.sql.Date.valueOf("2020-01-02")))))
+                        .build()
+                        .query());
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM y WHERE z = '2020-01-02 03:04:05.5')",
+                SCSB.select("id")
+                        .from("t")
+                        .where(Filters.in("id",
+                                Filters.subQuery("SELECT x FROM y WHERE z = ?", Arrays.asList(java.sql.Timestamp.valueOf("2020-01-02 03:04:05.5")))))
+                        .build()
+                        .query());
+
+        final java.util.TimeZone defaultZone = java.util.TimeZone.getDefault();
+
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
+
+            final java.util.Calendar tokyo = new java.util.GregorianCalendar(java.util.TimeZone.getTimeZone("Asia/Tokyo"));
+            tokyo.clear();
+            tokyo.set(2020, java.util.Calendar.JANUARY, 2, 3, 4, 5);
+
+            // 2020-01-02 03:04:05 in Tokyo is 2020-01-01 18:04:05 in UTC.
+            assertEquals("SELECT id FROM t WHERE c = '2020-01-01 18:04:05.0'", SCSB.select("id").from("t").where(Filters.eq("c", tokyo)).build().query());
+            assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM y WHERE z = '2020-01-01 18:04:05.0')",
+                    SCSB.select("id").from("t").where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE z = ?", Arrays.asList(tokyo)))).build().query());
+        } finally {
+            java.util.TimeZone.setDefault(defaultZone);
+        }
+    }
+
+    // Regression: the sort-direction rewrite sent every WHERE / GROUP BY / ORDER BY column straight to a private
+    // overload, so a subclass override of the protected appendColumnName hooks was silently skipped.
+    @Test
+    public void testColumnRenderingDispatchesThroughProtectedAppendColumnNameHooks() {
+        class RecordingBuilder extends SqlBuilder {
+            int singleArgCalls;
+            int fullCalls;
+
+            RecordingBuilder() {
+                super(PSC.sqlDialect());
+                _isForConditionOnly = true;
+                setEntityClass(com.landawn.abacus.query.entity.Account.class);
+            }
+
+            @Override
+            protected void appendColumnName(final String propName) {
+                singleArgCalls++;
+                super.appendColumnName(propName);
+            }
+
+            @Override
+            protected void appendColumnName(final Class<?> entityClass, final com.landawn.abacus.parser.ParserUtil.BeanInfo entityInfo,
+                    final ImmutableMap<String, QueryUtil.ColumnInfo> propColumnNameMap, final String tableAlias, final String propName, final String propAlias,
+                    final boolean withClassAlias, final String classAlias, final boolean isForSelect, final boolean quotePropAlias) {
+                fullCalls++;
+                super.appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName, propAlias, withClassAlias, classAlias, isForSelect,
+                        quotePropAlias);
+            }
+        }
+
+        final Map<String, SortDirection> directions = new LinkedHashMap<>();
+        directions.put("firstName", SortDirection.ASC);
+        directions.put("lastName", SortDirection.DESC);
+
+        final List<Function<RecordingBuilder, SqlBuilder>> calls = Arrays.asList(b -> b.append(Filters.eq("firstName", 1)), b -> b.orderBy("firstName"),
+                b -> b.orderByDesc("firstName"), b -> b.orderBy("firstName", SortDirection.ASC), b -> b.groupByDesc("firstName"),
+                b -> b.orderByAsc("firstName", "lastName"), b -> b.groupBy(Arrays.asList("firstName", "lastName"), SortDirection.DESC),
+                b -> b.orderBy(directions), b -> b.groupBy(directions));
+        final int[] expectedColumns = { 1, 1, 1, 1, 1, 2, 2, 2, 2 };
+        final String[] expectedSql = { "first_name = ?", "ORDER BY first_name", "ORDER BY first_name DESC", "ORDER BY first_name ASC",
+                "GROUP BY first_name DESC", "ORDER BY first_name ASC, last_name ASC", "GROUP BY first_name DESC, last_name DESC",
+                "ORDER BY first_name ASC, last_name DESC", "GROUP BY first_name ASC, last_name DESC" };
+
+        for (int i = 0; i < calls.size(); i++) {
+            final RecordingBuilder builder = new RecordingBuilder();
+            final String sql = calls.get(i).apply(builder).build().query();
+            assertEquals(expectedSql[i], sql);
+            assertEquals(expectedColumns[i], builder.singleArgCalls, sql);
+            assertEquals(expectedColumns[i], builder.fullCalls, sql);
+        }
+    }
+
+    // Regression: KEBAB_CASE was rejected only by the Dsl constructor, so a SqlBuilder subclass calling
+    // super(kebabDialect) still rendered hyphenated (invalid) identifiers.
+    @Test
+    public void testKebabCaseNamingPolicyIsRejectedByBuilderConstructor() {
+        final SqlDialect kebab = SqlDialect.builder().namingPolicy(NamingPolicy.KEBAB_CASE).sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL).build();
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new SqlBuilder(kebab) {
+        });
+        assertTrue(e.getMessage().contains("KEBAB_CASE"), e.getMessage());
+
+        final IllegalArgumentException viaDsl = assertThrows(IllegalArgumentException.class, () -> Dsl.forDialect(kebab));
+        assertEquals(viaDsl.getMessage(), e.getMessage());
+    }
+
+    // Covers the SQL Server Boolean -> 1/0 RAW_SQL rendering at the value call sites beyond WHERE '=': INSERT, batch
+    // INSERT, UPDATE SET (its own call site), IN, a raw sub-query binding, and a nested structured sub-query.
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSqlServerRawSqlRendersBooleanAsBitInEveryValuePath() {
+        final Dsl sqlServer = Dsl.forDialect(SCSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+
+        assertEquals("INSERT INTO t (a) VALUES (1)", sqlServer.insert(Map.of("a", true)).into("t").build().query());
+        assertEquals("INSERT INTO t (a) VALUES (1), (0)", sqlServer.batchInsert(List.of(Map.of("a", true), Map.of("a", false))).into("t").build().query());
+        assertEquals("UPDATE t SET a = 0 WHERE id = 1", sqlServer.update("t").set(Map.of("a", false)).where(Filters.eq("id", 1)).build().query());
+        assertEquals("SELECT id FROM t WHERE a IN (1, 0)", sqlServer.select("id").from("t").where(Filters.in("a", List.of(true, false))).build().query());
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE a = 1)",
+                sqlServer.select("id").from("t").where(Filters.in("id", Filters.subQuery("SELECT id FROM u WHERE a = ?", Arrays.asList(true)))).build().query());
+
+        final String nested = sqlServer.select("id")
+                .from("t")
+                .where(Filters.in("id", Filters.subQuery(com.landawn.abacus.query.entity.Account.class, List.of("id"), Filters.eq("status", true))))
+                .build()
+                .query();
+        assertTrue(nested.contains("status = 1"), nested);
     }
 }

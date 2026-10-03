@@ -420,4 +420,36 @@ public class OnTest extends TestBase {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new On((Condition) null));
         assertTrue(ex.getMessage().contains("condition"), ex.getMessage());
     }
+
+    @Test
+    public void testCommentOnlyRightPropNameMessageNamesRightPropName() {
+        // Regression: the comment-only check was left to Equal, whose message named its internal 'propValue' parameter.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new On("a.id", "/* x */"));
+        assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new On(Map.of("a.id", "-- x")));
+        assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
+
+        assertEquals("ON a.id = b.id", new On("a.id", "b.id").toString());
+    }
+
+    @Test
+    public void testHashTempTableRightPropNameIsAcceptedAndCommentOnlyFiltersOnIsRejected() {
+        // Covers the SQL Server #temp carve-out of the comment-only rightPropName check and the Filters.on entry points.
+        assertNotNull(new On("a.id", "#tmp.id"));
+        assertNotNull(new On(Map.of("a.id", "#tmp.id")));
+
+        final com.landawn.abacus.query.Dsl sqlServer = com.landawn.abacus.query.Dsl.forDialect(com.landawn.abacus.query.SqlDialect.builder()
+                .productInfo(com.landawn.abacus.query.SqlDialect.ProductInfo.of("Microsoft SQL Server"))
+                .namingPolicy(NamingPolicy.SNAKE_CASE)
+                .sqlPolicy(com.landawn.abacus.query.SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
+                .build());
+        assertEquals("SELECT * FROM a JOIN #tmp ON (a.id = #tmp.id)", sqlServer.select("*").from("a").join("#tmp").on(new On("a.id", "#tmp.id")).build().query());
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.on("a.id", "/* x */"));
+        assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Filters.on("a.id", "# x"));
+        assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
+    }
 }

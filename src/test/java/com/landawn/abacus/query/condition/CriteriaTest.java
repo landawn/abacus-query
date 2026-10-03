@@ -1969,4 +1969,54 @@ public class CriteriaTest extends TestBase {
         assertEquals(Operator.WHERE, c3.conditions().get(0).operator());
         assertEquals(2, c3.conditions().size());
     }
+
+    @Test
+    public void testDistinctOnCommentOnlyColumnsFallsBackToPlainDistinct() {
+        // Regression: a comment-only column list was not treated as blank and rendered "DISTINCT ON (-- x\n)",
+        // i.e. the invalid "DISTINCT ON ()".
+        assertEquals("DISTINCT", Criteria.builder().distinctOn("-- x").build().selectModifier());
+        assertEquals("DISTINCT", Criteria.builder().distinctOn("/* x */").build().selectModifier());
+        assertEquals("DISTINCT ON (a -- x\n)", Criteria.builder().distinctOn("a -- x").build().selectModifier());
+    }
+
+    @Test
+    public void testDistinctOnHashCommentsAndUnterminatedBlockCommentsMatchTheBuilder() {
+        // Regression: "#x" kept the SQL Server temp-name carve-out and rendered "DISTINCT ON (#x\n)" (the builder's
+        // distinctOn renders plain DISTINCT), and an unclosed "/*" silently became a plain DISTINCT.
+        assertEquals("DISTINCT", Criteria.builder().distinctOn("# x").build().selectModifier());
+        assertEquals("DISTINCT", Criteria.builder().distinctOn("#x").build().selectModifier());
+        assertEquals("DISTINCT", Criteria.builder().distinctOn("-- x\n/* y */").build().selectModifier());
+        assertEquals("DISTINCT ON (a # x\n)", Criteria.builder().distinctOn("a # x").build().selectModifier());
+
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().distinctOn("/* x"));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().distinctOn("a /* x"));
+
+        // End to end through a builder.
+        assertEquals("SELECT DISTINCT a FROM t",
+                com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("-- x").build()).build().query());
+        assertEquals("SELECT DISTINCT a FROM t WHERE b = ?",
+                com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("# x").where(Filters.eq("b", 1)).build()).build().query());
+        assertEquals("SELECT DISTINCT ON (a -- x\n) a FROM t",
+                com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("a -- x").build()).build().query());
+    }
+
+    @Test
+    public void testSortKeysWithBlockCommentLeftOpenUnderAnyLexicalReadingAreRejected() {
+        // Regression: a "/*" past a quote inside a "#" comment, or after a "--" comment ended by a lone '\r', was not seen
+        // as unclosed, so the grouping/sort keys after it were silently dropped ("GROUP BY dept " without team).
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("dept # it's\n/* x", "team"));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("dept -- c\r/* x", SortDirection.DESC));
+
+        // The multi-pair overloads validate every key (checkSortEntry path).
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a /* x", SortDirection.DESC, "b", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("b", SortDirection.ASC, "a -- c\r/* x", SortDirection.DESC));
+
+        final Map<String, SortDirection> orders = new java.util.LinkedHashMap<>();
+        orders.put("a -- c\r/* x", SortDirection.DESC);
+        orders.put("b", SortDirection.ASC);
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(orders));
+
+        assertEquals(" ORDER BY a DESC, b ASC",
+                Criteria.builder().orderBy("a /* x */", SortDirection.DESC, "b", SortDirection.ASC).build().toSql(NamingPolicy.NO_CHANGE));
+    }
 }

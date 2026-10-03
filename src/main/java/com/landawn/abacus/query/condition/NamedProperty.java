@@ -251,7 +251,9 @@ public class NamedProperty {
      * {@code anyEqual} tests one value for each of several properties.</p>
      *
      * @param values array of values to check equality against. Each value will be tested with OR logic.
-     *               Must not be {@code null} or empty.
+     *               Must not be {@code null} or empty. A single {@link Collection} or array argument (other than
+     *               {@code byte[]}, which stays one binary value) is treated as the value list itself, as by
+     *               {@link #equalsAny(Collection)}.
      * @return an Or condition containing multiple Equal conditions
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or if an element is a blank or comment-only {@link SqlExpression},
      *                                  a {@link Condition} other than an {@link SqlExpression}, a scalar {@link SubQuery} or a direct
@@ -263,6 +265,23 @@ public class NamedProperty {
      */
     public Or equalsAny(final Object... values) {
         N.checkArgNotEmpty(values, cs.values);
+
+        // A collection or array statically typed Object (e.g. read from a Map<String, Object> of filters) selects this
+        // varargs overload; it is the value list, not one value to compare against ("id = '[1, 2]'").
+        if (values.length == 1 && values[0] instanceof final Collection<?> c) {
+            return equalsAny(c);
+        }
+
+        if (values.length == 1 && values[0] != null && values[0].getClass().isArray() && !(values[0] instanceof byte[])) {
+            final int len = java.lang.reflect.Array.getLength(values[0]);
+            final List<Object> list = new ArrayList<>(len);
+
+            for (int i = 0; i < len; i++) {
+                list.add(java.lang.reflect.Array.get(values[0], i));
+            }
+
+            return equalsAny(list);
+        }
 
         final List<Condition> conditions = new ArrayList<>(values.length);
 
@@ -1149,7 +1168,9 @@ public class NamedProperty {
      * // SQL: priority IN (1, 2, 3)
      * }</pre>
      *
-     * @param values array of values to check membership against (must not be {@code null} or empty)
+     * @param values array of values to check membership against (must not be {@code null} or empty); a single
+     *            {@link Collection} or array argument (other than {@code byte[]}) is the value list itself, as by
+     *            {@link com.landawn.abacus.query.Filters#in(String, Object...)}
      * @return an In condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or contains a {@code null} element, a
      *                                  {@link Condition} other than a {@link SqlExpression} containing a SQL token or a scalar {@link SubQuery},
@@ -1380,7 +1401,9 @@ public class NamedProperty {
      * // SQL: priority NOT IN (4, 5)
      * }</pre>
      *
-     * @param values array of values to check non-membership against (must not be {@code null} or empty)
+     * @param values array of values to check non-membership against (must not be {@code null} or empty); a single
+     *            {@link Collection} or array argument (other than {@code byte[]}) is the value list itself, as by
+     *            {@link com.landawn.abacus.query.Filters#notIn(String, Object...)}
      * @return a NotIn condition for this property
      * @throws IllegalArgumentException if {@code values} is {@code null} or empty, or contains a {@code null} element, a
      *                                  {@link Condition} other than a {@link SqlExpression} containing a SQL token or a scalar {@link SubQuery},

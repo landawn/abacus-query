@@ -320,9 +320,19 @@ public final class cs { // NOSONAR
     public static final String props = "props";
 
     /**
+     * Parameter name for the converter applied to a name that follows a delimited qualifier in a raw SQL expression.
+     */
+    public static final String qualifiedPartConverter = "qualifiedPartConverter";
+
+    /**
      * Parameter name for a SQL query string.
      */
     public static final String query = "query";
+
+    /**
+     * Parameter name for the string builder that rendered SQL is appended to.
+     */
+    public static final String sb = "sb";
 
     /**
      * Parameter name for a single Selection descriptor.
@@ -375,6 +385,11 @@ public final class cs { // NOSONAR
     public static final String token = "token";
 
     /**
+     * Parameter name for the SQL tokenizer.
+     */
+    public static final String tokenizer = "tokenizer";
+
+    /**
      * Parameter name for the tokenizer configuration used while splitting SQL.
      */
     public static final String tokenizerConfig = "tokenizerConfig";
@@ -403,4 +418,9 @@ public final class cs { // NOSONAR
      * Parameter name for the target type values are converted to.
      */
     public static final String valueType = "valueType";
+
+    /**
+     * Parameter name for the converter applied to an identifier in a raw SQL expression.
+     */
+    public static final String wordConverter = "wordConverter";
 }

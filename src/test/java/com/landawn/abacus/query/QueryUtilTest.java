@@ -1830,4 +1830,123 @@ public class QueryUtilTest extends TestBase {
             this.addr = addr;
         }
     }
+
+    private static String renderRaw(final String expr, final boolean backslashEscapesOnly, final int[] verbatimFrom) {
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+        final StringBuilder sb = new StringBuilder();
+        // Upper-case words stand in for the keyword exemption a real converter applies.
+        final java.util.function.UnaryOperator<String> snake = word -> word.equals(word.toUpperCase()) ? word
+                : QueryUtil.convertIdentifier(word, NamingPolicy.SNAKE_CASE);
+
+        verbatimFrom[0] = QueryUtil.appendRawExpression(sb, expr, tokenizer.tokenize(expr), tokenizer, backslashEscapesOnly, snake, snake);
+
+        return sb.toString();
+    }
+
+    // Regression: appendRawExpression had no direct tests; its argument checks used literal names instead of cs constants,
+    // and a backslash before a quote that does not close its own region (\" inside '...') switched the rest to verbatim.
+    @Test
+    public void testAppendRawExpressionReturnsTheVerbatimStartAndRejectsNullArguments() {
+        final int[] verbatimFrom = new int[1];
+
+        assertEquals("first_name = 'x'", renderRaw("firstName = 'x'", false, verbatimFrom));
+        assertEquals(-1, verbatimFrom[0]);
+
+        // Verbatim from the first token whose extent depends on the backslash reading, at its exact index in expr.
+        assertEquals("a_b = 'C:\\' AND firstName = 1", renderRaw("aB = 'C:\\' AND firstName = 1", false, verbatimFrom));
+        assertEquals(5, verbatimFrom[0]);
+
+        // A backslash before a quote that does not close the region leaves both readings in agreement.
+        assertEquals("payload = '{\"a\":\"b\\\"c\"}' AND created_at > 1", renderRaw("payload = '{\"a\":\"b\\\"c\"}' AND createdAt > 1", false, verbatimFrom));
+        assertEquals(-1, verbatimFrom[0]);
+
+        // backslashEscapesOnly (MySQL) takes the tokenizer's reading as authoritative and never goes verbatim.
+        assertEquals("a = 'It\\'s' AND first_name = 1", renderRaw("a = 'It\\'s' AND firstName = 1", true, verbatimFrom));
+        assertEquals(-1, verbatimFrom[0]);
+
+        // Appends to what the builder already holds, and keeps the line break between two adjacent string literals.
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+        final StringBuilder sb = new StringBuilder("WHERE ");
+        final String lines = "msg = 'hello '\n'world'";
+        assertEquals(-1, QueryUtil.appendRawExpression(sb, lines, tokenizer.tokenize(lines), tokenizer, false, w -> w, w -> w));
+        assertEquals("WHERE msg = 'hello '\n'world'", sb.toString());
+
+        // Tokens that cannot be located in expr: nothing is guessed, the whole of expr is appended as written.
+        final StringBuilder fallback = new StringBuilder();
+        assertEquals(0, QueryUtil.appendRawExpression(fallback, "zz = 'C:\\' AND firstName = 1", tokenizer.tokenize("aB = 'C:\\' AND firstName = 1"),
+                tokenizer, false, w -> w.toUpperCase(), w -> w.toUpperCase()));
+        assertEquals("zz = 'C:\\' AND firstName = 1", fallback.toString());
+
+        final List<String> tokens = tokenizer.tokenize("a");
+        final java.util.function.UnaryOperator<String> same = w -> w;
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(null, "a", tokens, tokenizer, false, same, same));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), null, tokens, tokenizer, false, same, same));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", null, tokenizer, false, same, same));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, null, false, same, same));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, tokenizer, false, null, same));
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, tokenizer, false, same, null));
+        assertTrue(e.getMessage().contains(cs.qualifiedPartConverter), e.getMessage());
+    }
+
+    @Test
+    public void testHasUnterminatedBlockCommentReadings() {
+        // Covers every lexical reading of the fail-closed sort-key / DISTINCT ON check.
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.hasUnterminatedBlockComment(null));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("a DESC"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("a /* c */"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* c"));
+
+        // Quoted text, doubled quotes and line comments hide an opener.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("COALESCE(a, '/*')"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("\"a/*b\""));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("'it''s /*'"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("a -- /*\n"));
+
+        // Backslash escapes: '\'' is closed under one reading and open under the other.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("'a\\'/*'"));
+        // A "--" comment ended by a lone '\r' (default tokenizer) exposes the opener; MySQL/SQLite end it only at '\n'.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a -- c\r/* x"));
+        // A stray quote in a '#' comment or an [it's] identifier must not hide the opener, even if a later quote pairs with it.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a # it's\n/* x 'y'"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("[it's] /* it's"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("[a'] /* x '"));
+        // Fail-closed trade-offs: one reading sees an open comment.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("[a/*b]"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a # note /*"));
+    }
+
+    // Regression: PostgreSQL, SQL Server and H2 nest block comments, so "id /* outer /* inner */" is still open there; the scan
+    // stopped at the first "*/" and accepted it.
+    @Test
+    public void testHasUnterminatedBlockCommentNestedReading() {
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("id /* outer /* inner */"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("/*/**/"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* x */ b /* y /* z */"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* x /* y */ */ /* z"));
+        // Quotes are not special inside a comment, so a quote there does not hide a nested opener.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* it's /* x */"));
+
+        // Balanced nesting, or comments one after another, are closed under both readings.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("id /* a /* b */ */"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("id /* a */ /* b */"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("/* a /* b /* c */ */ */ x"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("/**/ /**/"));
+        // A quoted "/*" is data, not a nested opener.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("'/*' /* a */"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("/* a */ \"/*\""));
+    }
+
+    @Test
+    public void testHasUnterminatedBlockCommentIsLinear() {
+        // Regression: resuming after each unterminated quote, and searching for '\r' from every "--", was quadratic
+        // (80 KB of "\"\\" took seconds). Each input below takes milliseconds when the scan is linear.
+        final String quotes = "/*x*/ a" + "\"\\".repeat(100_000) + "'\\".repeat(50_000) + "`\\".repeat(50_000);
+        final String comments = "a /* x */ " + "-- c\n".repeat(60_000) + "--\r".repeat(60_000);
+
+        final long start = System.nanoTime();
+        assertFalse(QueryUtil.hasUnterminatedBlockComment(quotes));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment(comments));
+        assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) < 5_000, "hasUnterminatedBlockComment is not linear");
+    }
 }

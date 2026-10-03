@@ -4333,7 +4333,10 @@ public class SqlParserTest extends TestBase {
         assertFalse(batch.isSyntacticallyReadQuery("SELECT $$'$$; DELETE FROM t; -- '"));
         assertFalse(batch.isReadOrInsertQuery("SELECT ARRAY[']'] ; DELETE FROM t; -- '"));
 
-        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$it's$$, $q$a;b$q$ FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$it's$$, $q$a$q$ FROM t"));
+        // With a "$$" the H2 reading runs too, and H2 has no "$tag$" quotes: there the ';' starts a second statement (as in the
+        // reading with dollar quoting off, which this text's "$$it's$$" makes invalid).
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT $$it's$$, $q$a;b$q$ FROM t"));
         assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 /* one comment */ FROM t"));
         assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a[1], ARRAY['x'] FROM t WHERE b = $1"));
     }
@@ -4611,5 +4614,677 @@ public class SqlParserTest extends TestBase {
         assertTrue(SqlParser.isInsertOrReplaceQuery("INSERT OR REPLACE INTO t VALUES ('it''s')"));
         assertFalse(SqlParser.isInsertOrReplaceQuery("INSERT INTO t VALUES (1)"));
         assertFalse(SqlParser.isInsertOrReplaceQuery("REPLACE INTO t VALUES (1)"));
+    }
+
+    // Regression: PostgreSQL/pgJDBC dollar-quote tags accept ANY non-ASCII character, not only letters ($€$ is a tag).
+    @Test
+    public void testDollarQuoteTagAcceptsAnyNonAsciiCharacter() {
+        for (final int tagChar : new int[] { 0x20AC, 0x00A7 }) {
+            final String c = Character.toString(tagChar);
+            assertAllReadGatesReject("SELECT $~$ ' $~$; DELETE FROM t; SELECT $~$ ' $~$".replace("~", c));
+            assertAllReadGatesReject("SELECT $a~$ ' $a~$; DELETE FROM t; SELECT $a~$ ' $a~$".replace("~", c));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $~$it's$~$ FROM t".replace("~", c)));
+        }
+
+        // A '$' glued to a non-ASCII character continues a PostgreSQL identifier ("x€$$it" is one name), so the quote
+        // after it is not hidden inside a dollar quote: the literal is unterminated.
+        assertReadGatesReject("SELECT x~$$it's$$ FROM t".replace("~", Character.toString(0x20AC)));
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$a$$"));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT $tag$it's$tag$ FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM v$session WHERE x = $1"));
+    }
+
+    // Regression: H2 reads "$$" glued to a Java identifier part (a currency sign, a control character inside a name) as part
+    // of that name, not as a dollar quote, so the "//" comment after it hides the quote and the DELETE runs (H2-verified).
+    @Test
+    public void testH2DollarQuoteGluedToNameIsNotAQuote() {
+        for (final int nameChar : new int[] { 0x20AC, 0x00A2 }) {
+            assertAllReadGatesReject("SELECT 1 AS ~$$ // '\n; DELETE FROM t; SELECT $$ x $$ --'".replace("~", Character.toString(nameChar)));
+        }
+
+        assertAllReadGatesReject("SELECT 1 AS x~$$ // '\n; DELETE FROM t; SELECT $$ x $$ --'".replace("~", Character.toString(1)));
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$http://x$$ FROM t"));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT 'a' AS b, $$ // $$ FROM t"));
+    }
+
+    // Regression: DB2/H2 data-change delta tables and SQL Server composable DML run a data-change statement nested in
+    // parentheses inside a query (H2-verified to delete, update, insert and merge rows).
+    @Test
+    public void testDataChangeStatementNestedInParenthesesIsRejected() {
+        for (final String sql : new String[] { "SELECT * FROM OLD TABLE (DELETE FROM t)", "SELECT * FROM NEW TABLE (UPDATE t SET a = 0)",
+                "SELECT * FROM FINAL TABLE (MERGE INTO t KEY(id) VALUES (1, 99))",
+                "SELECT * FROM t WHERE id IN (SELECT id FROM OLD TABLE (DELETE FROM t WHERE id = 2))",
+                "WITH d AS (SELECT * FROM OLD TABLE (DELETE FROM t)) SELECT * FROM d", "(SELECT * FROM OLD TABLE (DELETE FROM t))",
+                "select * from old table /* x */ (delete from t)", "SELECT 1 FROM t UNION ALL SELECT * FROM OLD TABLE(DELETE FROM t)",
+                "SELECT * FROM OLD TABLE (DELETE FROM t WHERE id = 1)", "SELECT * FROM FINAL TABLE (UPDATE t SET a = 1)",
+                "SELECT * FROM FINAL TABLE (MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN DELETE)",
+                "SELECT * FROM (WITH x AS (SELECT 1) DELETE FROM t RETURNING *) s", "WITH x AS (UPSERT INTO t VALUES (1) RETURNING *) SELECT * FROM x" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        // A nested INSERT is an insert: the read gate rejects it, the read-or-insert gate accepts it like a top-level one.
+        for (final String sql : new String[] { "SELECT * FROM FINAL TABLE (INSERT INTO t VALUES (4, 40))", "SELECT * FROM NEW TABLE (INSERT INTO t VALUES (1))" }) {
+            assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertFalse(BATCHES.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertTrue(BATCHES.isReadOrInsertQuery(sql), sql);
+        }
+
+        for (final String sql : new String[] { "INSERT INTO t SELECT id + 10, a FROM OLD TABLE (UPDATE t SET a = 0)", "INSERT INTO log SELECT * FROM OLD TABLE (DELETE FROM t)",
+                "INSERT INTO x SELECT a FROM (DELETE FROM t OUTPUT deleted.a) AS d", "INSERT INTO x SELECT * FROM (UPDATE t SET a=1 OUTPUT inserted.*) u",
+                "INSERT INTO x (a) SELECT a FROM (MERGE t USING s ON 1=1 WHEN MATCHED THEN DELETE OUTPUT deleted.a) AS c(a)" }) {
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertFalse(BATCHES.isReadOrInsertQuery(sql), sql);
+        }
+
+        // Functions and columns that merely share a verb's name stay accepted.
+        for (final String sql : new String[] { "SELECT INSERT('abc', 1, 1, 'x')", "SELECT (INSERT('abc', 1, 1, 'x')) FROM t",
+                "SELECT (update + 1), f(delete), (merge) FROM t WHERE (insert = 1)", "SELECT * FROM t WHERE (update.x = 1)",
+                "SELECT REPLACE(a, 'x', 'y'), (TRUNCATE(a, 2)) FROM t", "SELECT * FROM TABLE(x INT = (1, 2))", "SELECT * FROM t FOR UPDATE" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t (update, delete) VALUES (1, 2)"));
+    }
+
+    // Regression: CockroachDB runs a statement used as a data source in square brackets, which the other readings take as
+    // a quoted name or an array subscript.
+    @Test
+    public void testBracketedDataChangeStatementSourceIsRejected() {
+        for (final String sql : new String[] { "SELECT * FROM [DELETE FROM t RETURNING *]", "SELECT * FROM [UPDATE t SET a = 1 RETURNING a]",
+                "SELECT * FROM [ /* c */ upsert INTO t VALUES (1) RETURNING id ]", "SELECT * FROM [DELETE FROM t WHERE a = ']' RETURNING *]",
+                "SELECT * FROM [DELETE FROM t WHERE a = ARRAY[1] RETURNING *]" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM [INSERT INTO t VALUES (1) RETURNING *]"));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT * FROM [INSERT INTO t VALUES (1) RETURNING *]"));
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT [Update Date], [Delete Flag] FROM [dbo].[t]"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t ([Update Date]) VALUES (1) RETURNING id"));
+    }
+
+    // Regression: SQLite (sqlite3_exec, e.g. sqlite-jdbc executeUpdate) runs the statements before a lexing error, reads an
+    // unterminated "/*" as a comment to the end, and lets a ":a(...)"-style parameter swallow quotes up to its ')'. Each of
+    // these emptied the table on sqlite-jdbc 3.46.
+    @Test
+    public void testSqliteReadingRunsStatementsBeforeLexError() {
+        for (final String sql : new String[] { "SELECT 1 AS [a'] ; DELETE FROM t ; '", "SELECT 1 AS [x'] ; DELETE FROM t /* '", "SELECT 'a\\' ; DELETE FROM t /* '",
+                "SELECT 1 AS [a'] ; DELETE FROM t ; ']'", "SELECT :a(') ; DELETE FROM t ; --'", "SELECT @a(') ; DELETE FROM t ; --'",
+                "SELECT $a(') ; DELETE FROM t ; --'", "SELECT #a(') ; DELETE FROM t ; --'", "SELECT $a::b(') ; DELETE FROM t ; --'" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1) ; DELETE FROM t ; ' ["));
+
+        for (final String sql : new String[] { "SELECT * FROM t1, #t2; SELECT 2", "SELECT * FROM t WHERE a = :a AND b = @b AND c = $1",
+                "SELECT * FROM #t1 JOIN #t2 ON #t1.id = #t2.id", "SELECT 1 # it's a note\nFROM t", "SELECT x::int FROM t WHERE y = :y",
+                "SELECT * FROM t WHERE a IN (:ids) AND b = 'it''s' AND c = f(:p)", "SELECT 'it\\'s' FROM t /* note */", "SELECT [a]] FROM t" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    // Regression: Oracle reads q'[...]' / nq'{...}' as one literal that may contain quotes; with Oracle 12c "WITH FUNCTION"
+    // the PL/SQL ';'s after such a literal were taken as string content.
+    @Test
+    public void testOracleAlternativeQuotingReading() {
+        assertAllReadGatesReject("WITH FUNCTION f RETURN NUMBER IS x VARCHAR2(9) := q'[']'; PRAGMA AUTONOMOUS_TRANSACTION; BEGIN DELETE FROM t; "
+                + "COMMIT; RETURN 1; END; --'\nSELECT f FROM dual");
+        assertAllReadGatesReject("SELECT q'[ ' ]' ; DELETE FROM t --'");
+        assertAllReadGatesReject("SELECT Nq'{ ' }' ; DELETE FROM t --'");
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT q'[it''s]', nq'<a>' FROM dual"));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT 'q' AS q, x FROM t WHERE q = 'b'"));
+    }
+
+    // Regression: removing a block comment before a Java-whitespace character that is not a configured separator (EM SPACE,
+    // VT) merged the tokens around the comment, so a rebuilt "a/**/<EM SPACE>b" became the single name "a<EM SPACE>b".
+    @Test
+    public void testBlockCommentBoundaryBeforeNonSeparatorWhitespace() {
+        for (final int whitespace : new int[] { 0x2003, 0x000B, 0x3000 }) {
+            final String word = Character.toString(whitespace) + "b";
+            assertEquals(List.of("SELECT", " ", "a", " ", word, " ", "FROM", " ", "t"), SqlParser.tokenize("SELECT a/**/" + word + " FROM t"));
+        }
+
+        assertEquals(List.of("SELECT", " ", "a", " ", "b"), SqlParser.tokenize("SELECT a/**/ b"));
+        assertEquals(List.of("SELECT", " ", "a", " ", "b"), SqlParser.tokenize("SELECT a/**/\tb"));
+        // A whitespace character removed from the separators is a word character, which needs the boundary as well.
+        final SqlParser.Tokenizer noTab = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withoutSeparator('\t').build());
+        assertEquals(List.of("a", " ", "\tb"), noTab.tokenize("a/**/\tb"));
+    }
+
+    // Regression: a T-SQL/MySQL variable named like a keyword ("@from") ended the select list early and hid its INTO.
+    @Test
+    public void testSelectIntoAfterVariableNamedFrom() {
+        assertReadGatesReject("SELECT @from INTO x FROM t");
+        assertReadGatesReject("SELECT @@from, @distinct INTO x FROM t");
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT @x FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM t WHERE b = @into"));
+    }
+
+    // Regression: INTO OUTFILE separated by a character that Character.isWhitespace does not cover (NEL, NBSP).
+    @Test
+    public void testIntoOutfileAcrossNonJavaWhitespaceIsRejected() {
+        for (final int separator : new int[] { 0x0085, 0x00A0 }) {
+            assertReadGatesReject("SELECT 1 FROM t INTO~OUTFILE '/x'".replace("~", Character.toString(separator)));
+        }
+
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO~outfile VALUES (1)".replace("~", Character.toString(0x00A0))));
+    }
+
+    // Documents the class-level note: a syntactically read statement need not be read-or-insert (PostgreSQL's non-reserved
+    // INSERT used as a column name trips the read-or-insert gate's INSERT OVERWRITE / INSERT OR REPLACE scans).
+    @Test
+    public void testSyntacticallyReadDoesNotImplyReadOrInsert() {
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT insert overwrite FROM t"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT insert overwrite FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT insert or replace FROM t"));
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT insert or replace FROM t"));
+    }
+
+    // Regression: H2 reads every character up to ' ' and every Unicode space as whitespace, so "(<NBSP>DELETE FROM t)" still runs
+    // the nested DELETE (H2-verified for exactly these 26 characters); they no longer end the "directly after '('" position.
+    @Test
+    public void testNestedDataChangeVerbAfterH2OnlyWhitespaceIsRejected() {
+        final StringBuilder separators = new StringBuilder();
+
+        for (char c = 0; c <= 0x1B; c++) {
+            if (c <= 8 || c >= 0x0E) {
+                separators.append(c);
+            }
+        }
+
+        separators.append('\u00A0').append('\u2007').append('\u202F');
+        assertEquals(26, separators.length());
+
+        for (int i = 0; i < separators.length(); i++) {
+            final String c = String.valueOf(separators.charAt(i));
+            assertAllReadGatesReject("SELECT * FROM OLD TABLE (" + c + "DELETE FROM t)");
+            assertAllReadGatesReject("SELECT * FROM NEW TABLE (" + c + "UPDATE t SET a = 0)");
+        }
+
+        assertAllReadGatesReject("SELECT * FROM FINAL TABLE (\u00A0MERGE INTO t KEY(id) VALUES (1, 99))");
+        assertAllReadGatesReject("SELECT * FROM t WHERE id IN (SELECT id FROM OLD TABLE (\u00A0DELETE FROM t WHERE id = 2))");
+        assertAllReadGatesReject("SELECT * FROM OLD TABLE (/*x*/\u00A0DELETE FROM t)");
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t SELECT * FROM OLD TABLE (\u00A0DELETE FROM t)"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM FINAL TABLE (\u0001INSERT INTO t VALUES (4, 40))"));
+    }
+
+    // Regression: a column that shares a data-change verb's name (non-reserved in PostgreSQL, MySQL and H2) was read as a nested
+    // statement when followed by a keyword operator, rejecting the builders' own junction output "(merge IS NULL) AND (a = ?)".
+    @Test
+    public void testVerbNamedColumnInParenthesesIsNotANestedStatement() {
+        final String junction = Dsl.PSC.select("id").from("t").where(Filters.and(Filters.isNull("merge"), Filters.eq("a", 1))).build().query();
+        assertEquals("SELECT id FROM t WHERE (merge IS NULL) AND (a = ?)", junction);
+
+        for (final String sql : new String[] { junction, "SELECT id FROM t WHERE (upsert IS NOT NULL) OR (insert IN (?, ?))",
+                "SELECT id FROM t WHERE (upsert LIKE ?) AND (replace NOT LIKE ?)", "SELECT CAST(merge AS INT), (upsert LIKE 'a') FROM t",
+                "SELECT (merge::int), (merge AND x), (update::int) FROM t", "SELECT * FROM t WHERE (update IS NULL) OR (delete BETWEEN 1 AND 2)",
+                "SELECT * FROM t WHERE (merge IS NULL OR merge = 0) AND (insert IN (1, 2))", "SELECT (merge IS NULL), CAST(delete AS int) FROM t",
+                "SELECT id FROM t UNION SELECT id FROM u WHERE (merge IS NULL)" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertTrue(BATCHES.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        // The builders' subquery and set-operation gates accept these again.
+        assertNotNull(Dsl.PSC.select("id").from("t").where(Filters.and(Filters.isNull("merge"), Filters.eq("a", 1))).toSubQuery());
+        assertNotNull(Dsl.PSC.select("id").from("t").where(Filters.or(Filters.isNotNull("upsert"), Filters.in("insert", List.of(1, 2)))).toSubQuery());
+        assertNotNull(Dsl.PSC.select("id").from("t").where(Filters.and(Filters.like("upsert", "a%"), Filters.eq("a", 1))).toSubQuery());
+        assertEquals("SELECT id FROM t UNION SELECT id FROM u WHERE (merge IS NULL)",
+                Dsl.PSC.select("id").from("t").union("SELECT id FROM u WHERE (merge IS NULL)").build().query());
+
+        // A real nested statement after a column-like start is still rejected.
+        assertAllReadGatesReject("SELECT * FROM t WHERE (merge IS NULL) AND x IN (SELECT a FROM OLD TABLE (DELETE FROM t))");
+    }
+
+    // Regression: a verb-named column before ILIKE, REGEXP, RLIKE, GLOB or SIMILAR TO was read as a nested DELETE, so
+    // "(delete ILIKE 'x%')", which H2 runs, was rejected and union(...) threw. These words are not reserved everywhere (H2 runs
+    // "(DELETE glob)" on a table named glob), so only a literal or parameter operand counts: no DELETE target is followed by one.
+    @Test
+    public void testVerbNamedColumnBeforePatternOperatorIsNotANestedStatement() {
+        for (final String sql : new String[] { "SELECT id FROM t WHERE (delete ILIKE 'x%')", "SELECT id FROM t WHERE (delete REGEXP 'x')",
+                "SELECT id FROM t WHERE (delete RLIKE 'x')", "SELECT id FROM t WHERE (delete GLOB 'x*')", "SELECT id FROM t WHERE (delete SIMILAR TO 'x%')",
+                "SELECT id FROM t WHERE (delete ILIKE ?) AND (update REGEXP :p)", "SELECT id FROM t WHERE (delete ilike E'x') OR (delete GLOB $1)",
+                "SELECT id FROM t WHERE (delete RLIKE 5) OR (delete ILIKE #{p})", "SELECT id FROM t WHERE (delete /* c */ ILIKE /* d */ N'x')",
+                "SELECT id FROM t WHERE (delete ILIKE :p) AND (a = 1)" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertTrue(BATCHES.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        // The builders' set-operation and subquery gates accept them too.
+        assertEquals("SELECT id FROM t UNION SELECT id FROM t WHERE (delete ILIKE 'x%')",
+                Dsl.PSC.select("id").from("t").union("SELECT id FROM t WHERE (delete ILIKE 'x%')").build().query());
+        assertNotNull(Dsl.PSC.select("id").from("t").where(Filters.and(Filters.expr("delete REGEXP 'x'"), Filters.eq("a", 1))).toSubQuery());
+
+        // Any other operand keeps the statement reading: a DELETE whose target is named like the operator still counts.
+        for (final String sql : new String[] { "SELECT * FROM OLD TABLE (DELETE glob)", "SELECT * FROM OLD TABLE (DELETE ilike x)",
+                "SELECT * FROM FINAL TABLE (DELETE ilike WHERE a ILIKE 'x')", "SELECT * FROM OLD TABLE (DELETE similar)",
+                "SELECT * FROM OLD TABLE (DELETE similar WHERE a = 'x')" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT a FROM (DELETE ilike OUTPUT deleted.a) AS d"));
+        // Pinned trade-offs: an expression operand, or SIMILAR without TO, is not a literal.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT id FROM t WHERE (delete ILIKE lower(x))"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT id FROM t WHERE (delete SIMILAR 'x')"));
+    }
+
+    // Regression: a column named delete that opens a JSON object entry (JSON_OBJECT(delete:1), JSON_OBJECT(delete VALUE NULL), which
+    // H2 runs) was read as a nested DELETE. No statement verb is followed by ':'. H2 reserves VALUE, and SQL Server, the only other
+    // engine that runs a DELETE nested in a query, continues "DELETE value" only with WITH, OUTPUT, FROM, WHERE or OPTION.
+    @Test
+    public void testVerbNamedJsonObjectKeyIsNotANestedStatement() {
+        for (final String sql : new String[] { "SELECT JSON_OBJECT(delete:1) FROM (VALUES 'key') AS t(delete)", "SELECT JSON_OBJECT(delete: 1, update : col) FROM t",
+                "SELECT JSON_OBJECTAGG(delete:1) FROM t", "SELECT JSON_OBJECT(delete:delete) FROM t", "SELECT JSON_OBJECT(delete VALUE 1) FROM t",
+                "SELECT JSON_OBJECT(delete VALUE ?, merge VALUE 'x') FROM t", "SELECT JSON_OBJECT(KEY delete VALUE 1) FROM t",
+                "SELECT JSON_OBJECT(delete VALUE NULL) FROM (VALUES 'key') AS t(delete)", "SELECT JSON_OBJECT(delete VALUE -1) FROM t",
+                "SELECT JSON_OBJECT(delete VALUE .5) FROM (VALUES 'key') AS t(delete)", "SELECT JSON_OBJECT(delete VALUE -.5, update VALUE +1) FROM t",
+                "SELECT id FROM t WHERE (delete ILIKE .5)",
+                "SELECT JSON_OBJECT(delete VALUE TRUE) FROM t", "SELECT JSON_OBJECT(delete VALUE col) FROM t", "SELECT JSON_OBJECT(delete VALUE t.col) FROM t",
+                "SELECT JSON_OBJECT(delete VALUE lower(col)) FROM t", "SELECT JSON_OBJECT(delete VALUE \"col\") FROM t",
+                "SELECT id FROM t WHERE (delete ILIKE NULL) OR (delete REGEXP -1) OR (delete GLOB FALSE)" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertTrue(BATCHES.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        for (final String sql : new String[] { "SELECT * FROM OLD TABLE (DELETE value)", "SELECT * FROM OLD TABLE (DELETE value WHERE a = 1)",
+                "SELECT * FROM OLD TABLE (DELETE glob NULLx)", "SELECT * FROM OLD TABLE (DELETE glob x)" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        // SQL Server's continuations of DELETE value, its qualified name or a hint keep the statement reading.
+        for (final String sql : new String[] { "INSERT INTO x SELECT a FROM (DELETE value OUTPUT deleted.a) AS d",
+                "INSERT INTO x SELECT a FROM (DELETE value WITH (TABLOCK) OUTPUT deleted.a) AS d", "INSERT INTO x SELECT a FROM (DELETE value.dbo.t OUTPUT deleted.a) AS d",
+                "INSERT INTO x SELECT a FROM (DELETE value /* c */ OUTPUT deleted.a) AS d", "INSERT INTO x SELECT a FROM (DELETE value FROM value OUTPUT deleted.a) AS d" }) {
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        // Pinned trade-off: a parenthesized value could be a hint list, so the DELETE reading stays.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT JSON_OBJECT(delete VALUE (SELECT 1)) FROM t"));
+    }
+
+    // Regression: a keyword that marks a verb-named word as a column ("(delete IS NULL)", "(delete GLOB NULL)") was matched without
+    // checking where it ends, but H2 reads a name through characters Java treats as identifier parts. H2 ran "(DELETE is" + U+200B + ")"
+    // and "(DELETE glob NULL" + U+0001 + ")" (the alias is NULL + U+0001), which the read gates accepted.
+    @Test
+    public void testColumnMarkingKeywordMustEndAtAWordBoundary() {
+        for (final String sql : new String[] { "SELECT * FROM OLD TABLE (DELETE is\u200B)", "SELECT * FROM OLD TABLE (DELETE and\u0085)",
+                "SELECT * FROM OLD TABLE (DELETE glob NULL\u0001)", "SELECT * FROM OLD TABLE (DELETE glob TRUE\u200B)",
+                "SELECT * FROM OLD TABLE (DELETE value\u200B x)", "SELECT * FROM OLD TABLE (DELETE glob SIMILAR TO\u200B 'x')",
+                "INSERT INTO x SELECT a FROM (DELETE is#x OUTPUT deleted.a) AS d", "INSERT INTO x SELECT a FROM (DELETE value OUTPUT\u200B deleted.a) AS d" }) {
+            assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        // Ordinary separators after the keyword still end it.
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT id FROM t WHERE (delete IS NULL) AND (delete" + (char) 9 + "IN (1)) AND (delete GLOB NULL)"));
+    }
+
+    // Regression: SQL Server's OPTION (MERGE JOIN) / (MERGE UNION) query hints and ClickHouse's merge(...) table function were
+    // rejected as a nested MERGE statement, which needs INTO or USING.
+    @Test
+    public void testMergeHintAndMergeFunctionAreNotNestedStatements() {
+        for (final String sql : new String[] { "SELECT o.id FROM orders o JOIN customers c ON o.cid = c.id OPTION (MERGE JOIN)",
+                "SELECT id FROM a UNION SELECT id FROM b OPTION (MERGE UNION)", "SELECT id FROM a JOIN b ON a.x = b.x OPTION (MERGE JOIN, HASH JOIN)",
+                "SELECT id FROM a JOIN b ON a.x = b.x OPTION (HASH JOIN, MERGE JOIN)", "SELECT * FROM (merge(currentDatabase(), '^t'))" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertTrue(BATCHES.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(BATCHES.isReadOrInsertQuery(sql), sql);
+        }
+
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT a FROM y JOIN z ON y.i = z.i OPTION (MERGE JOIN)"));
+    }
+
+    // Regression: text shaped like "(update required)" that one lexical reading exposes from a dollar quote, a MySQL '#' comment or a
+    // backslash-escaped literal was rejected; a nested verb now also needs the word it cannot run without. DELETE needs none: H2
+    // runs "(DELETE t)", so "(delete later)" in such text stays rejected (pinned trade-off).
+    @Test
+    public void testNestedVerbNeedsItsCompanionWordBeforeTheParenthesisCloses() {
+        for (final String sql : new String[] { "SELECT $$Note (update required)$$ AS msg FROM t", "SELECT a FROM t # todo (update index)\nWHERE b = 1",
+                "SELECT * FROM t WHERE a IN ('can\\'t', '(update failed)', 'won\\'t')", "SELECT $$ (merge pending) (upsert later) (insert x) $$ FROM t" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t (a) SELECT a FROM s # (delete later)\n"));
+        assertAllReadGatesReject("SELECT * FROM OLD TABLE (DELETE t)");
+
+        // Every verb with its companion word is still a nested statement, wherever the word sits before the ')'.
+        for (final String sql : new String[] { "SELECT * FROM FINAL TABLE (UPDATE (SELECT * FROM t) SET a = 1)",
+                "SELECT * FROM NEW TABLE (UPDATE TOP (1) t SET a = 0)", "SELECT * FROM FINAL TABLE (MERGE INTO t KEY(id) VALUES (1, 99))",
+                "SELECT * FROM t WHERE x = (UPSERT INTO t VALUES (1) RETURNING *)", "SELECT * FROM NEW TABLE (UPDATE t /* SET */ SET a = 0)",
+                "SELECT * FROM NEW TABLE (UPDATE t SET a = 0" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x (a) SELECT a FROM (MERGE t USING s ON 1=1 WHEN MATCHED THEN DELETE OUTPUT deleted.a) AS c(a)"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT a FROM (DELETE TOP (1) FROM t OUTPUT deleted.a) AS d"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT a FROM (DELETE #t OUTPUT deleted.a\n) AS d"));
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM FINAL TABLE (INSERT t (a) OUTPUT inserted.a VALUES (1))"));
+    }
+
+    // Regression: H2's MySQL mode runs REPLACE INTO in a delta table ("SELECT * FROM FINAL TABLE (REPLACE INTO t VALUES (1, 99))"
+    // replaced the row, H2-verified), but REPLACE was not checked as a nested verb.
+    @Test
+    public void testNestedReplaceIsRejected() {
+        assertAllReadGatesReject("SELECT * FROM FINAL TABLE (REPLACE INTO t VALUES (1, 99))");
+        assertAllReadGatesReject("SELECT * FROM NEW TABLE (\u000CREPLACE INTO t VALUES (1, 99) )");
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT REPLACE(a, 'x', 'y'), (REPLACE(a, 'b', 'c')), (replace IS NULL) FROM t"));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT REPLACE(a, 'x', 'y'), (REPLACE(a, 'b', 'c')), (replace IS NULL) FROM t"));
+    }
+
+    // Regression: each "(WITH" resolved its CTE list by scanning to the end of the text, so nested or unbalanced "(WITH" lists took
+    // quadratic time ("(WITH " x 16000: 22.8 s); the lists are now resolved in the single scan, one parenthesis group at a time.
+    @Test
+    public void testNestedWithListsResolveInLinearTime() {
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            for (final String sql : new String[] { "SELECT 1 FROM t WHERE a IN " + "(WITH ".repeat(16000),
+                    "SELECT 1 FROM t WHERE a IN " + "(WITH c AS (SELECT a FROM t WHERE b IN ".repeat(2000), "SELECT 1 FROM t WHERE a IN " + "x AS (WITH ".repeat(16000),
+                    "SELECT 1 FROM t WHERE a IN " + "x AS (WITH a AS (SELECT 1) ".repeat(8000) }) {
+                SqlParser.isSyntacticallyReadQuery(sql);
+                SqlParser.isReadOrInsertQuery(sql);
+            }
+        });
+
+        for (final String sql : new String[] { "SELECT * FROM OLD TABLE (WITH x AS (SELECT 1) DELETE FROM t)",
+                "SELECT * FROM NEW TABLE (WITH x AS (SELECT 1) (UPDATE t SET a = 1))", "WITH a AS (WITH b AS (SELECT 1) DELETE FROM t RETURNING *) SELECT * FROM a",
+                "WITH a AS (WITH b AS (SELECT 1) (DELETE FROM t RETURNING *)) SELECT * FROM a",
+                "WITH a AS (WITH b AS (SELECT 1) UPSERT INTO t VALUES (1) RETURNING *) SELECT * FROM a",
+                "SELECT * FROM t WHERE x IN (WITH RECURSIVE r (n) AS (SELECT 1) DELETE FROM t RETURNING *)" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM (WITH x AS (SELECT 1) INSERT INTO t SELECT * FROM x RETURNING *) s"));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT * FROM (WITH x AS (SELECT 1) INSERT INTO t SELECT * FROM x RETURNING *) s"));
+
+        for (final String sql : new String[] { "WITH a AS (WITH b AS (SELECT 1) SELECT * FROM b) SELECT * FROM a",
+                "SELECT * FROM t WHERE a IN (WITH x AS (SELECT 1) SELECT * FROM x)", "SELECT * FROM t WHERE a IN (WITH delete AS (SELECT 1) SELECT * FROM delete)" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    // Regression: CockroachDB statement sources in brackets that start with WITH, and bracketed upserts, were not checked:
+    // "[WITH x AS (SELECT 1) DELETE FROM t RETURNING *]" and "[INSERT ... ON CONFLICT (id) DO UPDATE ...]" were accepted.
+    @Test
+    public void testBracketedStatementSourceWithCteOrUpsertIsRejected() {
+        for (final String sql : new String[] { "SELECT * FROM [WITH x AS (SELECT 1) DELETE FROM t RETURNING *]",
+                "SELECT * FROM [ WITH x AS (SELECT 1) UPDATE t SET a = 1 RETURNING a ]", "SELECT * FROM [WITH d AS (DELETE FROM t RETURNING *) SELECT * FROM d]",
+                "SELECT * FROM [WITH d AS (UPDATE t SET a = 1 RETURNING *) SELECT * FROM d]", "SELECT * FROM [WITH d AS (DELETE FROM t) SELECT 1]",
+                "SELECT * FROM [/**/WITH x AS (SELECT ']') DELETE FROM t RETURNING *]" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        assertFalse(SqlParser.isReadOrInsertQuery("SELECT * FROM [INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET a = 2 RETURNING *]"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t2 SELECT * FROM [INSERT INTO t VALUES (1) ON CONFLICT (id) DO UPDATE SET a = 2 RETURNING *]"));
+        assertTrue(SqlParser.isReadOrInsertQuery("SELECT * FROM [INSERT INTO t VALUES (1) ON CONFLICT (id) DO NOTHING RETURNING *]"));
+
+        // A hidden statement end needs a real quote, bracket, dollar-quote or comment opener; "-" and "/" alone are not one.
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t ([update-date]) VALUES (?) RETURNING id"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO audit_log (msg) VALUES ('[DELETE /users/1]') RETURNING id"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT [Update-Date], [Returning Customer], [With] FROM [t]"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT [Update Date] FROM t WHERE x = 'RETURNING'"));
+
+        // The check runs on the raw text (no reading models CockroachDB's lexer exactly), so a literal with that shape is rejected.
+        assertReadGatesReject("SELECT * FROM t WHERE note = '[delete this returning soon]'");
+        // CockroachDB reads '#' as XOR, not as a comment, so a bracketed statement after it still runs there.
+        assertAllReadGatesReject("SELECT 1 # 2, $$ ' $$ FROM [DELETE FROM t RETURNING *] --'");
+    }
+
+    // Regression: the bracketed statement-source check rescanned to the end of the text for every '[' ("[DELETE x" x 32000 in a
+    // literal: 21.8 s; "[/*" x 32000: 5 s; 8000 "[update-N]" names: 1 s).
+    @Test
+    public void testBracketedStatementSourceScanIsLinear() {
+        final StringBuilder names = new StringBuilder("SELECT ");
+
+        for (int i = 0; i < 8000; i++) {
+            names.append(i == 0 ? "" : ", ").append("[update-").append(i).append(']');
+        }
+
+        final String manyNames = names.append(" FROM [dbo].[T]").toString();
+
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 FROM t WHERE a = '" + "[DELETE x".repeat(32000) + "'"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 FROM t WHERE a = '" + "[/*".repeat(32000) + "*/'"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 FROM t WHERE a = '" + "[--".repeat(32000) + "'"));
+            SqlParser.isReadOrInsertQuery("SELECT 1 FROM t WHERE a = " + "[DELETE ' ".repeat(16000));
+            assertTrue(SqlParser.isSyntacticallyReadQuery(manyNames));
+            assertTrue(SqlParser.isReadOrInsertQuery(manyNames));
+            assertTrue(BATCHES.isReadOrInsertQuery(manyNames.replace("SELECT", "INSERT INTO t (").replace(" FROM [dbo].[T]", ") VALUES (1) RETURNING id")));
+        });
+    }
+
+    // Regression: the bracket-as-punctuation reading blanked '[', so "([Update Date])" read as an UPDATE nested in parentheses and
+    // everyday T-SQL with a temp table or a LIKE pattern (which enable that reading) was rejected.
+    @Test
+    public void testBracketNameAfterOpeningParenthesisIsNotANestedStatement() {
+        for (final String sql : new String[] { "SELECT MAX([Update Date]) FROM #tmp", "SELECT COUNT([Update Date]) FROM t WHERE name LIKE '[a-c]%'",
+                "SELECT ISNULL([Delete Flag], 0) FROM [dbo].[Sales-Data]", "SELECT * FROM #t WHERE ([Merge Key] = 1)", "SELECT ([Update Date]) FROM t -- it's\r\n",
+                "SELECT [Name] FROM t WHERE [Name] IN (SELECT [Name] FROM #names) AND ([Update Date] IS NULL)",
+                "SELECT * FROM t WHERE ( [Delete Flag] IS NULL) AND name LIKE '[a-c]%'", "SELECT a FROM t WHERE ([delete] IS NULL) AND b LIKE '[0-9]'" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO #log ([Update Date], [Name]) VALUES ('2020-01-01', 'x')"));
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO [dbo].[Audit-Log] ([Delete Flag]) VALUES (1)"));
+        // CockroachDB still runs a parenthesized bracket statement source.
+        assertAllReadGatesReject("SELECT * FROM ([DELETE FROM t RETURNING *])");
+    }
+
+    // Regression: the SQLite reading took a MySQL "#word" comment that starts a statement as a parameter and exposed the rest of its
+    // line, but SQLite reports a syntax error for a statement-leading parameter and runs nothing from there (sqlite-jdbc-verified).
+    @Test
+    public void testSqliteStatementLeadingParameterIsALexError() {
+        for (final String sql : new String[] { "#fetch users\nSELECT * FROM t", "#TODO fix\nSELECT * FROM t", "SELECT 1;\n#note delete later\nSELECT 2",
+                "SELECT 1;\n#n DELETE FROM t", "SELECT 1;\n/* c */ #n DELETE FROM t" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        // A parameter after the statement's first token still swallows its Tcl-style suffix (SQLite runs the DELETE).
+        assertAllReadGatesReject("SELECT :a(') ; DELETE FROM t ; --'");
+    }
+
+    // Regression: the upsert scanners reset on NBSP/NEL separators, unlike the INTO OUTFILE scan (fail closed on a separator that
+    // some engine or connection character set reads as whitespace).
+    @Test
+    public void testUpsertClauseAcrossNonJavaWhitespaceIsRejected() {
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON\u00A0DUPLICATE KEY UPDATE a = 1"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON DUPLICATE\u0085KEY UPDATE a = 1"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT\u00A0OR REPLACE INTO t VALUES (1)"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON\u00A0CONFLICT (id) DO\u00A0UPDATE SET a = 1"));
+
+        assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) DO NOTHING"));
+    }
+
+    // Regression: "SELECT @1INTO x FROM t" is "SELECT @ 1 INTO x" (a SELECT INTO) to PostgreSQL <= 14, whose '@' is the
+    // absolute-value operator; a digit after '@' now starts a literal, not a variable name.
+    @Test
+    public void testAtSignFollowedByDigitStartsALiteral() {
+        assertReadGatesReject("SELECT @1INTO x FROM t");
+        assertReadGatesReject("SELECT @@1INTO x FROM t");
+
+        // A variable named like a keyword is a T-SQL/MySQL name (decided in R23); in PostgreSQL "@ into x" is a syntax error.
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT @into x FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT @x, @@rowcount, @1 FROM t"));
+        assertReadGatesReject("SELECT @`from` INTO x FROM t");
+        assertReadGatesReject("SELECT @@session.from INTO x FROM t");
+    }
+
+    // Coverage: near misses and shapes of the nested-statement, dollar-quote, SQLite-parameter and Oracle q-quote readings that the
+    // earlier fixes handle but no test pinned.
+    @Test
+    public void testClassificationReadingScenarioCoverage() {
+        // Nested statements: near misses stay accepted, comments or line breaks between '(' and the verb do not hide it.
+        for (final String sql : new String[] { "SELECT '(DELETE FROM t)' FROM t", "SELECT 1 /* (DELETE FROM t) */ FROM t", "SELECT [(DELETE FROM t)] FROM t",
+                "SELECT \"(DELETE FROM t)\" FROM t" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        for (final String sql : new String[] { "SELECT * FROM OLD TABLE (-- x\rDELETE FROM t)", "SELECT * FROM OLD TABLE (// x\nDELETE FROM t)",
+                "SELECT * FROM OLD TABLE (-- c\nDELETE FROM t)", "SELECT * FROM OLD TABLE (# c\nDELETE FROM t)" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        // Dollar quotes: a supplementary-character tag and a digit continuing a non-ASCII tag start.
+        assertAllReadGatesReject("SELECT $\uD83D\uDE00$ ' $\uD83D\uDE00$; DELETE FROM t; SELECT $\uD83D\uDE00$ ' $\uD83D\uDE00$");
+        assertAllReadGatesReject("SELECT $_\u20AC1$ ' $_\u20AC1$; DELETE FROM t; SELECT $_\u20AC1$ ' $_\u20AC1$");
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $\u20AC1$it's$\u20AC1$ FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $_\u20AC1$it's$_\u20AC1$ FROM t"));
+        assertReadGatesReject("SELECT a,\u00A0$$it's$$ FROM t");
+
+        // H2: "$$" glued to a name ('#' in MSSQLServer/Oracle mode, DEL, a supplementary identifier part) is not a quote opener; a
+        // control character at a token start is whitespace, so "$$" after it is one.
+        for (final String name : new String[] { "x#", "x\u007F", "\uD835\uDC65" }) {
+            assertAllReadGatesReject("SELECT 1 AS " + name + "$$ // '\n; DELETE FROM t; SELECT $$ x $$ --'");
+        }
+
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 AS x \u0001$$ // $$ FROM t"));
+
+        // SQLite: a Tcl-style suffix swallows comment openers, brackets and "::"; it stops at SQLite whitespace (VT) but not NBSP.
+        for (final String sql : new String[] { "SELECT :a(/*) ; DELETE FROM t ; --*/", "SELECT :a([) ; DELETE FROM t ; --]",
+                "SELECT :a::(') ; DELETE FROM t ; --'", "SELECT $$(') ; DELETE FROM t ; --'", "SELECT :::a(') ; DELETE FROM t ; --'",
+                "SELECT :a(\u00A0') ; DELETE FROM t ; --'", "SELECT @ ; DELETE FROM t", "SELECT x::int ; DELETE FROM t" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        for (final String sql : new String[] { "SELECT :a(\u000B') ; DELETE FROM t ; --'", "SELECT :a( ') ; DELETE FROM t ; --'", "SELECT 'x@a(1)' FROM t",
+                "SELECT x::numeric(10,2), y::varchar(255) FROM t" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        // Oracle q-quotes: paired, same-character, letter and upper-case NQ delimiters, and a closer not followed by "'".
+        for (final String sql : new String[] { "SELECT q'( ' )' ; DELETE FROM t --'", "SELECT q'< ' >' ; DELETE FROM t --'", "SELECT q'! ' !' ; DELETE FROM t --'",
+                "SELECT q'a ' a' ; DELETE FROM t --'", "SELECT NQ'[ ' ]' ; DELETE FROM t --'", "SELECT q'[ ] ' ]' ; DELETE FROM t --'" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        for (final String sql : new String[] { "SELECT x FROM t WHERE q = 'Iraq' AND seq='[x]'", "SELECT 'a', q'[b]', 'c' FROM dual",
+                "SELECT xq'[ ' ]' ; DELETE FROM t --'", "SELECT 'q' AS q, x FROM t WHERE q = 'b' OR q = 'q'" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+        }
+
+        // Tokenizer: a configured separator after a removed block comment needs no extra space, nor does one after a quote.
+        final SqlParser.Tokenizer emSpace = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator('\u2003').build());
+        assertEquals(List.of("a", "\u2003", "b"), emSpace.tokenize("a/**/\u2003b"));
+        assertEquals(List.of("SELECT", " ", "'x'", " ", "\u2003b"), SqlParser.tokenize("SELECT 'x'/**/\u2003b"));
+    }
+
+    // Regression: H2 reads "$$" after a Unicode space as a dollar quote, but the PostgreSQL readings glue a non-ASCII
+    // character to the "$" as a name and the H2 reading only ran with "//", so "x,<NBSP>$$ ' $$ ; DELETE ..." deleted every row
+    // in H2 (REGULAR, MSSQLServer and PostgreSQL modes) while every gate accepted it.
+    @Test
+    public void testH2DollarQuoteAfterUnicodeSpaceIsRead() {
+        final int[] spaces = { 0x00A0, 0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A, 0x2028, 0x2029,
+                0x202F, 0x205F, 0x3000 };
+        assertEquals(18, spaces.length);
+
+        for (final int space : spaces) {
+            assertAllReadGatesReject("SELECT 1 AS x," + Character.toString(space) + "$$ ' $$ ; DELETE FROM t ; SELECT $$ ' $$");
+        }
+
+        assertAllReadGatesReject("SELECT 1 AS y,\u00A0$$ ' $$ AS c, x.* FROM OLD TABLE (DELETE t) x -- '");
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 AS x, $$ it's $$ FROM t"));
+    }
+
+    // Regression: H2, SQL Server and PostgreSQL nest block comments. A quote mode that hides the nested comment in a literal
+    // stayed valid, and the non-nesting MySQL/SQLite readings ended it at its first "*/", so the ')' inside it closed the
+    // delta-table group early and hid the DELETE or the companion word (H2-verified to update, delete, merge and insert rows).
+    @Test
+    public void testNestedBlockCommentCannotHideNestedStatement() {
+        for (final String sql : new String[] { "SELECT '\\' AS c, x.* FROM NEW TABLE (UPDATE t /* /* */ ) */ SET a = 0) x -- '",
+                "SELECT '\\' AS c, x.* FROM OLD TABLE (DELETE /* /* */ ) */ FROM t) x -- '",
+                "SELECT '\\' AS c, x.* FROM FINAL TABLE (MERGE /* /* */ ) */ INTO t KEY(id) VALUES (1, 99)) x -- '",
+                "SELECT $$ ' $$ AS c, x.* FROM NEW TABLE (UPDATE t /* /* */ ) */ SET a = 0) x -- '",
+                "SELECT $a$ ' $a$ /* /* */ */ ; DELETE FROM t ; --'" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT '\\' AS c, x.* FROM FINAL TABLE (INSERT /* /* */ ) */ INTO t VALUES (4, 40)) x -- '"));
+        // SQL Server composable DML has the same shape.
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT '\\' AS c, d.a FROM (DELETE /* /* */ ) */ FROM t OUTPUT deleted.a) AS d -- '"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 /* one */ FROM t /* two */"));
+    }
+
+    // Regression: CockroachDB nests block comments and accepts a parenthesized query or EXPLAIN ANALYZE (which runs the
+    // statement) as a bracketed statement source; "[/* /* */ x */ DELETE ...]", "[(WITH d AS (DELETE ...) ...)]" and
+    // "[EXPLAIN ANALYZE DELETE ...]" were accepted.
+    @Test
+    public void testBracketedStatementSourceAfterNestedCommentParenthesisOrExplainIsRejected() {
+        for (final String sql : new String[] { "SELECT * FROM [/* /* */ x */ DELETE FROM t RETURNING *]",
+                "SELECT * FROM [/* /* */ x */ WITH c AS (SELECT 1) DELETE FROM t RETURNING *]",
+                "SELECT * FROM [(WITH d AS (DELETE FROM t RETURNING *) SELECT * FROM d)]", "SELECT * FROM [ ( (WITH d AS (UPDATE t SET a = 1) SELECT 1))]",
+                "SELECT * FROM [EXPLAIN ANALYZE DELETE FROM t]" }) {
+            assertAllReadGatesReject(sql);
+        }
+
+        for (final String sql : new String[] { "SELECT * FROM [((WITH x AS (SELECT 1) SELECT * FROM x))]", "SELECT * FROM [WITH d AS (SELECT 1) SELECT * FROM d]",
+                "SELECT * FROM [EXPLAIN SELECT 1]", "SELECT a[(1)], [(Update Date)] FROM t" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    // Regression: a SQL Server bracket name that starts with a data-change verb and contains '(' turned on the
+    // bracket-as-punctuation reading, where the semicolon-less batch splitter took the verb for a new statement.
+    @Test
+    public void testBatchGatesAcceptBracketNameWithVerbAndParenthesis() {
+        for (final String sql : new String[] { "SELECT [Update Date (UTC)] FROM t", "SELECT [Delete Date (UTC)] FROM t",
+                "SELECT [Insert Date (UTC)], [Update Date (UTC)] FROM [dbo].[Orders]", "SELECT [Insert Date (UTC)] FROM t",
+                "SELECT [Values (old)], [Table Name (full)], [With Tax (pct)], [Upsert Count (n)] FROM t" }) {
+            assertTrue(BATCHES.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(BATCHES.isReadOrInsertQuery(sql), sql);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+        }
+    }
+
+    // Regression: "([Delete Flag]" after a block comment, and a PostgreSQL column named like a verb followed by a JSON operator,
+    // read as a nested statement. A line comment between '(' and the bracket name is still read that way (pinned trade-off).
+    @Test
+    public void testBracketNameAfterCommentAndVerbColumnBeforeJsonOperatorAreAccepted() {
+        for (final String sql : new String[] { "SELECT ISNULL(/*x*/[Delete Flag], 0) FROM #t", "SELECT ISNULL( /* a */ /* b */ [Delete Flag], 0) FROM #t",
+                "SELECT (delete ? 'k') FROM t", "SELECT (delete @> '{}') FROM t", "SELECT (update ? 'k'), (merge @> x), (insert ?| array['a']) FROM t" }) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        assertReadGatesReject("SELECT ISNULL( -- c\n[Delete Flag], 0) FROM #t");
+        // MySQL reads "#>" as a comment that leaves "(delete" open, so this stays rejected.
+        assertReadGatesReject("SELECT (delete #> '{a}') FROM t");
+
+        // The look-back over comments stays linear for many brackets that each follow '(' and a comment.
+        assertTimeoutPreemptively(Duration.ofSeconds(5),
+                () -> assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT " + "(/* c */[a-b]), ".repeat(20000) + "1 FROM t")));
+    }
+
+    // Regression: skipping a block comment backward searched for its "/*" down to the start of the text, so many comment
+    // closers without an opener made every gate quadratic ("*/[a-b] " x 10000, 80 KB: about 1.3 s); the nearest opener now
+    // comes from a table built once per text.
+    @Test
+    public void testBackwardBlockCommentSkipIsLinear() {
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            for (final String sql : new String[] { "SELECT 1 FROM t WHERE a = 1 " + "*/[a-b] ".repeat(40000), "SELECT a " + "*/ x ".repeat(40000) + "FROM t",
+                    "SELECT 1 FROM t WHERE " + "*/ a.b ".repeat(40000) }) {
+                SqlParser.isSyntacticallyReadQuery(sql);
+                SqlParser.isReadOrInsertQuery(sql);
+            }
+        });
+
+        // A comment that does open before its closer is still skipped as before.
+        assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT a /* c */ INTO x FROM t"));
+        assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM /* a */ #t /* b */ WHERE x = 1"));
     }
 }

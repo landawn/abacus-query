@@ -4029,4 +4029,1550 @@ public class AbstractQueryBuilderTest extends TestBase {
                 sp.query());
         assertEquals(Arrays.asList(1, "OPEN", 2), sp.parameters());
     }
+
+    // Regression: a sort direction after a sub-entity property (which expands to the list of its columns) was applied to the LAST expanded column only.
+    @Test
+    public void testSortDirectionAppliesToEveryExpandedSubEntityColumn() {
+        final String undirected = PSC.select("id").from(Account.class).orderBy("devices").build().query();
+        final String prefix = "SELECT acc.id AS \"id\" FROM account acc ORDER BY ";
+        assertTrue(undirected.startsWith(prefix + "device.id, device.account_id, "), undirected);
+
+        final String columns = undirected.substring(prefix.length());
+        final String desc = columns.replace(", ", " DESC, ") + " DESC";
+        final String asc = columns.replace(", ", " ASC, ") + " ASC";
+
+        assertEquals(prefix + desc, PSC.select("id").from(Account.class).orderByDesc("devices").build().query());
+        assertEquals(prefix + desc, PSC.select("id").from(Account.class).orderBy("devices", SortDirection.DESC).build().query());
+        assertEquals(prefix + "acc.first_name DESC, " + desc,
+                PSC.select("id").from(Account.class).orderBy(List.of("firstName", "devices"), SortDirection.DESC).build().query());
+
+        final Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("devices", SortDirection.ASC);
+        orders.put("id", SortDirection.DESC);
+        assertEquals(prefix + asc + ", acc.id DESC", PSC.select("id").from(Account.class).orderBy(orders).build().query());
+
+        final String groupPrefix = "SELECT acc.id AS \"id\" FROM account acc GROUP BY ";
+        assertEquals(groupPrefix + desc, PSC.select("id").from(Account.class).groupByDesc("devices").build().query());
+        assertEquals(groupPrefix + asc, PSC.select("id").from(Account.class).groupByAsc(List.of("devices")).build().query());
+        assertEquals(groupPrefix + asc + ", acc.id DESC", PSC.select("id").from(Account.class).groupBy(orders).build().query());
+
+        // Plain columns are unaffected.
+        assertEquals("SELECT acc.id AS \"id\" FROM account acc ORDER BY acc.first_name DESC",
+                PSC.select("id").from(Account.class).orderBy("firstName", SortDirection.DESC).build().query());
+    }
+
+    // Regression: a raw sub-query '?' right after ':' (PostgreSQL array slice) was renamed to "::param" under NAMED_SQL -- a type cast, not a parameter.
+    @Test
+    public void testRawSubQueryPlaceholderAfterColonIsNotRenamedIntoTypeCast() {
+        final SubQuery slice = Filters.subQuery("SELECT id FROM u WHERE x = ANY(arr[?:?])", Arrays.asList(1, 3));
+
+        AbstractQueryBuilder.SP sp = NSC.select("id").from("t").where(Filters.in("id", slice)).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE x = ANY(arr[:param: :param_2]))", sp.query());
+        assertEquals(Arrays.asList(1, 3), sp.parameters());
+        assertEquals(2, ParsedSql.parse(sp.query()).parameterCount());
+
+        sp = NSC.select("id").from("t").where(Filters.in("id", Filters.subQuery("SELECT id FROM u WHERE arr[1:?] = x", Arrays.asList(3)))).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE arr[1: :param] = x)", sp.query());
+        assertEquals(1, ParsedSql.parse(sp.query()).parameterCount());
+
+        // A trailing "::" cast after the placeholder stays a cast; MyBatis and raw renderings are unchanged.
+        sp = NSC.select("id").from("t").where(Filters.in("id", Filters.subQuery("SELECT id FROM u WHERE x = ?::int", Arrays.asList(1)))).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE x = :param::int)", sp.query());
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE x = ANY(arr[#{param}:#{param_2}]))",
+                MSC.select("id").from("t").where(Filters.in("id", slice)).build().query());
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE x = ANY(arr[1:3]))",
+                SCSB.select("id").from("t").where(Filters.in("id", slice)).build().query());
+    }
+
+    // Regression: RAW_SQL under the MySQL dialect only doubled quotes, so a value ending in '\' escaped the closing quote (injection) and "a\b" was stored as a backspace.
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testMySqlRawSqlLiteralsEscapeBackslashes() {
+        final Dsl mysqlRaw = Dsl.forDialect(SCSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+
+        assertEquals("DELETE FROM account WHERE (name = 'x\\\\') AND (gui = ' OR 1=1 -- ')",
+                mysqlRaw.deleteFrom("account").where(Filters.and(Filters.eq("name", "x\\"), Filters.eq("gui", " OR 1=1 -- "))).build().query());
+
+        final Map<String, Object> props = new LinkedHashMap<>();
+        props.put("path", "a\\b");
+        props.put("note", "it's");
+        assertEquals("INSERT INTO account (path, note) VALUES ('a\\\\b', 'it''s')", mysqlRaw.insert(props).into("account").build().query());
+
+        assertEquals("SELECT id FROM t WHERE c = '\\\\'", mysqlRaw.select("id").from("t").where(Filters.eq("c", '\\')).build().query());
+        assertEquals("SELECT id FROM t WHERE name IN ('a\\\\', 'b')", mysqlRaw.select("id").from("t").where(Filters.in("name", List.of("a\\", "b"))).build().query());
+
+        // Raw sub-query bindings inlined under RAW_SQL get the same escaping.
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE a = 'x\\\\' AND b = ' OR 1=1 -- ')",
+                mysqlRaw.select("id")
+                        .from("t")
+                        .where(Filters.in("id", Filters.subQuery("SELECT id FROM u WHERE a = ? AND b = ?", Arrays.asList("x\\", " OR 1=1 -- "))))
+                        .build()
+                        .query());
+
+        // A SqlExpression is SQL, not a value: emitted verbatim.
+        assertEquals("SELECT id FROM t WHERE name = 'x\\'", mysqlRaw.select("id").from("t").where(Filters.eq("name", SqlExpression.of("'x\\'"))).build().query());
+
+        // Other dialects keep the SQL-standard rendering (a backslash is an ordinary character).
+        assertEquals("DELETE FROM account WHERE name = 'x\\'", SCSB.deleteFrom("account").where(Filters.eq("name", "x\\")).build().query());
+        final Dsl pgRaw = Dsl.forDialect(SCSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        assertEquals("DELETE FROM account WHERE name = 'x\\'", pgRaw.deleteFrom("account").where(Filters.eq("name", "x\\")).build().query());
+    }
+
+    // Regression: an inline "expr AS alias" in a class-aliased Selection rendered the dotted alias unquoted ("AS acc.fn", invalid SQL).
+    @Test
+    public void testMultiSelectInlineAliasWithClassAliasIsQuoted() {
+        assertEquals("SELECT a.first_name AS \"acc.fn\", UPPER(a.last_name) AS \"acc.ln\", d.name AS \"dev.dn\" FROM account a, device d",
+                PSC.selectFrom(List.of(
+                        Selection.builder(Account.class)
+                                .tableAlias("a")
+                                .classAlias("acc")
+                                .includedPropNames(List.of("firstName AS fn", "UPPER(lastName) AS ln"))
+                                .build(),
+                        Selection.builder(com.landawn.abacus.query.entity.AccountDevice.class)
+                                .tableAlias("d")
+                                .classAlias("dev")
+                                .includedPropNames(List.of("name AS dn"))
+                                .build()))
+                        .build()
+                        .query());
+
+        // Without a class alias the user's inline alias stays verbatim.
+        assertEquals("SELECT a.first_name AS fn, d.name AS dn FROM account a, device d",
+                PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").includedPropNames(List.of("firstName AS fn")).build(),
+                        Selection.builder(com.landawn.abacus.query.entity.AccountDevice.class).tableAlias("d").includedPropNames(List.of("name AS dn")).build()))
+                        .build()
+                        .query());
+    }
+
+    // Regression: expression items of a non-first Selection were resolved against the FIRST selection's entity and table alias ("a.status + 1" for selection "d").
+    @Test
+    public void testMultiSelectExpressionItemsResolveAgainstTheirOwnSelection() {
+        assertEquals(
+                "SELECT a.id AS \"id\", d.status + 1 AS \"status + 1\", COALESCE(d.status, 0) AS \"COALESCE(status, 0)\", d.status AS st, (d.status) AS \"(status)\""
+                        + " FROM account a, device d WHERE a.status = ?",
+                PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").includedPropNames(List.of("id")).build(),
+                        Selection.builder(com.landawn.abacus.query.entity.AccountDevice.class)
+                                .tableAlias("d")
+                                .includedPropNames(List.of("status + 1", "COALESCE(status, 0)", "status AS st", "(status)"))
+                                .build()))
+                        // the builder-level entity/alias (first selection) is restored for the clauses that follow
+                        .where(Filters.eq("status", 1))
+                        .build()
+                        .query());
+    }
+
+    // Regression: the implicit select alias wrapped raw expression text in identifier quotes without escaping a quote inside it (invalid SQL).
+    @Test
+    public void testImplicitSelectAliasEscapesEmbeddedIdentifierQuote() {
+        assertEquals("SELECT COALESCE(\"nickName\", first_name) AS \"COALESCE(\"\"nickName\"\", firstName)\" FROM account",
+                PSC.select("COALESCE(\"nickName\", firstName)").from("account").build().query());
+        assertEquals("SELECT CONCAT(first_name, '\"') AS \"CONCAT(firstName, '\"\"')\" FROM account",
+                PSC.select("CONCAT(firstName, '\"')").from("account").build().query());
+
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        assertEquals("SELECT COALESCE(`nickName`, first_name) AS `COALESCE(``nickName``, firstName)` FROM account",
+                mysql.select("COALESCE(`nickName`, firstName)").from("account").build().query());
+
+        // No embedded quote: unchanged.
+        assertEquals("SELECT COALESCE(nick_name, first_name) AS \"COALESCE(nickName, firstName)\" FROM account",
+                PSC.select("COALESCE(nickName, firstName)").from("account").build().query());
+    }
+
+    // Regression: distinctOn() wrapped a trailing line comment inside the parentheses (commenting out ')'), and a
+    // comment-only expression list rendered the invalid "DISTINCT ON ()".
+    @Test
+    public void testDistinctOnTerminatesTrailingLineCommentAndTreatsCommentOnlyAsBlank() {
+        assertEquals("SELECT DISTINCT ON (a -- x\n) a FROM t", PSC.select("a").distinctOn("a -- x").from("t").build().query());
+        assertEquals("SELECT DISTINCT ON (a -- x\n) a FROM t WHERE a = ?",
+                PSC.select("a").from("t").distinctOn("a -- x").where(Filters.eq("a", 1)).build().query());
+
+        assertEquals("SELECT DISTINCT a FROM t", PSC.select("a").distinctOn("-- x").from("t").build().query());
+        assertEquals("SELECT DISTINCT a FROM t", PSC.select("a").distinctOn("/* x */").from("t").build().query());
+        assertEquals("SELECT DISTINCT a FROM t", PSC.select("a").distinctOn(" ").from("t").build().query());
+
+        // A comment that is followed by an expression is kept verbatim.
+        assertEquals("SELECT DISTINCT ON (/* k */ a) a FROM t", PSC.select("a").distinctOn("/* k */ a").from("t").build().query());
+        assertEquals("SELECT DISTINCT ON (a, b) a FROM t", PSC.select("a").distinctOn("a, b").from("t").build().query());
+    }
+
+    // Regression: append(String) emitted a trailing line comment raw, so the next structured clause (a DELETE's WHERE,
+    // a placeholder-bearing WHERE) was silently commented out.
+    @Test
+    public void testAppendTerminatesTrailingLineComment() {
+        assertEquals("DELETE FROM account /* job */ -- audit\n WHERE id = 1",
+                SCSB.deleteFrom("account").append("/* job */ -- audit").where(Filters.eq("id", 1)).build().query());
+        assertEquals("SELECT * FROM t -- note\n WHERE a = ?", PSC.select("*").from("t").append("-- note").where(Filters.eq("a", 1)).build().query());
+
+        // No trailing line comment: unchanged.
+        assertEquals("SELECT * FROM t FOR UPDATE", PSC.select("*").from("t").append("FOR UPDATE").build().query());
+        assertEquals("SELECT * FROM t /* hint */ WHERE a = ?", PSC.select("*").from("t").append("/* hint */").where(Filters.eq("a", 1)).build().query());
+    }
+
+    // Regression: select("*").into(t).from(s) rendered the invalid target column list "INSERT INTO t (*) SELECT * FROM s".
+    @Test
+    public void testInsertSelectWildcardOmitsTargetColumnList() {
+        assertEquals("INSERT INTO account_backup SELECT * FROM account", PSC.select("*").into("account_backup").from("account").build().query());
+        assertEquals("INSERT INTO account_backup SELECT a.* FROM account a", PSC.select("a.*").into("account_backup").from("account a").build().query());
+        assertEquals("INSERT INTO account_backup SELECT * FROM account", PSC.select("*").into("account_backup", Account.class).from("account").build().query());
+
+        // A wildcard mixed with other select items cannot be mapped to target columns.
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("a.*", "b").into("account_backup"));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("b, a.*").into("account_backup"));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("*", "*").into("account_backup"));
+
+        // Non-wildcard projections keep their target column list; count(*) and quoted/parenthesized commas are not wildcards.
+        assertEquals("INSERT INTO account_backup (id, name) SELECT id, name FROM account",
+                PSC.select("id", "name").into("account_backup").from("account").build().query());
+        assertEquals("INSERT INTO stats (count(*)) SELECT count(*) FROM account", PSC.select("count(*)").into("stats").from("account").build().query());
+    }
+
+    // Regression: a whitespace-only alias in selectFrom(cls, " ", true) skipped the @Table alias fallback that "" gets,
+    // leaving the parent's columns unqualified (ambiguous) next to the sub-entity tables.
+    @Test
+    public void testSelectFromBlankAliasFallsBackToTableAliasWithSubEntities() {
+        final String blankAlias = PSC.selectFrom(Account.class, " ", true).build().query();
+
+        assertEquals(PSC.selectFrom(Account.class, "", true).build().query(), blankAlias);
+        assertTrue(blankAlias.startsWith("SELECT acc.id AS \"id\""), blankAlias);
+        assertTrue(blankAlias.endsWith(" FROM account acc, device"), blankAlias);
+        assertEquals("acc", SqlBuilder.tableAlias(" ", Account.class));
+        assertEquals("a", SqlBuilder.tableAlias("a", Account.class));
+    }
+
+    // Regression: ClickHouse/DuckDB leading join modifiers (ANY, ALL, GLOBAL, ARRAY, POSITIONAL, PASTE) were not
+    // recognized as a JOIN start, so the modifier word became the primary table's alias ("ANY.first_name").
+    @Test
+    public void testLeadingJoinModifiersDoNotBecomePrimaryTableAlias() {
+        for (final String join : new String[] { "ANY LEFT JOIN quotes q USING (id)", "GLOBAL ANY JOIN quotes q USING (id)", "ALL INNER JOIN quotes q USING (id)",
+                "ARRAY JOIN arr AS x", "LEFT ARRAY JOIN arr AS x", "POSITIONAL JOIN quotes q", "PASTE JOIN quotes q", "ASOF JOIN quotes q USING (id)",
+                "SEMI JOIN quotes q USING (id)" }) {
+            assertEquals("SELECT a.first_name AS \"firstName\" FROM account a " + join,
+                    PSC.select("firstName").from("account a " + join, Account.class).build().query(), join);
+        }
+
+        // Not followed by a JOIN keyword: the word is still a plain table alias.
+        assertEquals("SELECT any.first_name AS \"firstName\" FROM account any", PSC.select("firstName").from("account any", Account.class).build().query());
+        assertEquals("SELECT paste.first_name AS \"firstName\" FROM account paste, quotes q",
+                PSC.select("firstName").from("account paste, quotes q", Account.class).build().query());
+    }
+
+    // Regression: two sub-entity properties of one class listed the same table reference twice in FROM ("FROM person p,
+    // address ad, address ad"); merely listing it once made both properties silently read the SAME row, so it is now
+    // rejected. A self-referencing sub-entity rendered raw cyclic paths ("parent.id" with no "parent" table) and an
+    // extra Cartesian "node n" reference; it is no longer expanded, consistent with propToColumnInfoMap.
+    @Test
+    public void testSubEntityTableSharedByTwoPropertiesIsRejectedAndSelfReferenceIsNotExpanded() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(SubEntityPerson.class, true));
+        assertTrue(e.getMessage().contains("'homeAddress' and 'workAddress'") && e.getMessage().contains("'address ad'"), e.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.buildFromTableRefs(SubEntityPerson.class, null, null, NamingPolicy.SNAKE_CASE));
+
+        // Multi-selection path.
+        assertThrows(IllegalArgumentException.class,
+                () -> PSC.selectFrom(List.of(Selection.builder(SubEntityPerson.class).tableAlias("p").includeSubEntityProperties(true).build())));
+        assertThrows(IllegalArgumentException.class,
+                () -> SqlBuilder.getFromClause(List.of(Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("id", "homeAddress.city",
+                        "workAddress.city")).build()), NamingPolicy.SNAKE_CASE));
+
+        // One of the two properties alone is fine, and a sub-entity table that is also selected directly is listed once.
+        assertEquals("SELECT p.id AS \"id\", ad.city AS \"homeAddress.city\" FROM person p, address ad",
+                PSC.selectFrom(List.of(Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("id", "homeAddress.city")).build()))
+                        .build()
+                        .query());
+        assertEquals("person p, address ad",
+                SqlBuilder.getFromClause(List.of(Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("homeAddress")).build(),
+                        Selection.builder(SubEntityAddress.class).tableAlias("ad").build()), NamingPolicy.SNAKE_CASE));
+
+        // Self-referencing sub-entity: its cyclic paths are not selected and add no table.
+        assertEquals("SELECT n.id AS \"id\", n.name AS \"name\" FROM node n", PSC.selectFrom(SubEntityNode.class, true).build().query());
+        assertEquals("SELECT x.id AS \"id\", x.name AS \"name\" FROM node x", PSC.selectFrom(SubEntityNode.class, "x", true).build().query());
+        assertEquals(Arrays.asList("node n"), SqlBuilder.buildFromTableRefs(SubEntityNode.class, null, null, NamingPolicy.SNAKE_CASE));
+        assertEquals("node x", SqlBuilder.getFromClause(List.of(Selection.builder(SubEntityNode.class).tableAlias("x").includeSubEntityProperties(true).build()),
+                NamingPolicy.SNAKE_CASE));
+        assertEquals(Arrays.asList("id", "name"), QueryUtil.selectPropNames(SubEntityNode.class, true, null));
+    }
+
+    // Regression: set(...) validation messages named internal parameters ("propOrColumnNames[0]", "props") instead of the caller's.
+    @Test
+    public void testSetValidationMessagesNameCallerParameter() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((String) null));
+        assertTrue(e.getMessage().startsWith("expr "), e.getMessage());
+
+        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((String) null, 1));
+        assertTrue(e.getMessage().startsWith("propOrColumnName "), e.getMessage());
+
+        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) new LinkedHashMap<String, Object>()));
+        assertTrue(e.getMessage().contains("entity"), e.getMessage());
+
+        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) " "));
+        assertTrue(e.getMessage().startsWith("entity "), e.getMessage());
+
+        // A non-UPDATE builder still fails with the operation check first.
+        assertThrows(IllegalStateException.class, () -> PSC.select("a").set((String) null));
+    }
+
+    @Table(name = "address", alias = "ad")
+    public static class SubEntityAddress {
+        private long id;
+        private String city;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getCity() {
+            return city;
+        }
+
+        public void setCity(final String city) {
+            this.city = city;
+        }
+    }
+
+    @Table(name = "person", alias = "p")
+    public static class SubEntityPerson {
+        private long id;
+        private String name;
+        private SubEntityAddress homeAddress;
+        private SubEntityAddress workAddress;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public SubEntityAddress getHomeAddress() {
+            return homeAddress;
+        }
+
+        public void setHomeAddress(final SubEntityAddress homeAddress) {
+            this.homeAddress = homeAddress;
+        }
+
+        public SubEntityAddress getWorkAddress() {
+            return workAddress;
+        }
+
+        public void setWorkAddress(final SubEntityAddress workAddress) {
+            this.workAddress = workAddress;
+        }
+    }
+
+    @Table(name = "node", alias = "n")
+    public static class SubEntityNode {
+        private long id;
+        private String name;
+        private SubEntityNode parent;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public SubEntityNode getParent() {
+            return parent;
+        }
+
+        public void setParent(final SubEntityNode parent) {
+            this.parent = parent;
+        }
+    }
+
+    // Regression: MySQL/MariaDB/SQLite end a line comment only at '\n', so a trailing comment closed by a lone '\r' swallowed the next clause.
+    @Test
+    public void testTrailingLineCommentEndedByLoneCarriageReturnIsTerminatedWithLineFeed() {
+        final Dsl mysql = Dsl.forDialect(SCSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        final Dsl sqlite = Dsl.forDialect(SCSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("SQLite")).build());
+
+        assertEquals("SELECT * FROM users u JOIN orders o ON o.uid = u.id -- note\r\n WHERE u.id = 1",
+                mysql.select("*").from("users u").join("orders o ON o.uid = u.id -- note\r").where("u.id = 1").build().query());
+        assertEquals("SELECT * FROM users u JOIN orders o ON o.uid = u.id # note\r\n WHERE u.id = 1",
+                mysql.select("*").from("users u").join("orders o ON o.uid = u.id # note\r").where("u.id = 1").build().query());
+        assertEquals("SELECT * FROM users u CROSS JOIN orders o -- note\r\n WHERE u.id = 1",
+                sqlite.select("*").from("users u").crossJoin("orders o -- note\r").where("u.id = 1").build().query());
+        assertEquals("SELECT * FROM users u CROSS JOIN orders o --\r\n WHERE u.id = 1",
+                SCSB.select("*").from("users u").crossJoin("orders o --\r").where("u.id = 1").build().query());
+        assertEquals("SELECT id FROM users UNION SELECT id FROM admins -- note\r\n ORDER BY id",
+                SCSB.select("id").from("users").union("SELECT id FROM admins -- note\r").orderBy("id").build().query());
+        assertEquals("SELECT DISTINCT -- x\r\n id FROM users u", mysql.select("id").selectModifier("DISTINCT -- x\r").from("users u").build().query());
+        assertTrue(AbstractQueryBuilder.endsInsideLineComment("a -- x\r", false));
+        assertTrue(AbstractQueryBuilder.endsInsideLineComment("a -- x\r b", false));
+
+        // A line feed already ends the comment in every dialect: nothing is added.
+        assertEquals("SELECT * FROM users u JOIN orders o ON o.uid = u.id -- note\r\n WHERE u.id = 1",
+                mysql.select("*").from("users u").join("orders o ON o.uid = u.id -- note\r\n").where("u.id = 1").build().query());
+        assertFalse(AbstractQueryBuilder.endsInsideLineComment("a -- x\r\n b", false));
+    }
+
+    // Regression: the second '#' of PostgreSQL's "##" operator was read as a hash comment by the alias and JOIN-connector scanners.
+    @Test
+    public void testHashPairOperatorIsNotReadAsHashCommentByAliasAndJoinScanners() {
+        final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+
+        assertEquals("SELECT point_a ## line_b AS closest FROM t", pg.select("pointA ## lineB AS closest").from("t").build().query());
+        assertEquals("SELECT point_a ## line_b AS closest FROM t", PSC.select("pointA ## lineB AS closest").from("t").build().query());
+        assertEquals("SELECT a.first_name ## a.last_name AS x, a.id AS \"id\" FROM account a",
+                pg.select("firstName ## lastName AS x", "id").from(Account.class, "a").build().query());
+        // The ON after the operator is visible, so WHERE may follow. (The conservative trailing-comment check still adds a harmless line feed.)
+        assertEquals("SELECT * FROM t JOIN LATERAL (SELECT t.p ## t.l AS c) x ON true\n WHERE t.id = 1",
+                pg.select("*").from("t").join("LATERAL (SELECT t.p ## t.l AS c) x ON true").where("t.id = 1").build().query());
+
+        // The dialect-agnostic default still terminates a trailing MySQL-style "## note" comment, and an ambiguous FROM tail infers no alias.
+        assertEquals("SELECT * FROM t JOIN u ON u.id = t.id ## note\n WHERE t.id = 1",
+                SCSB.select("*").from("t").join("u ON u.id = t.id ## note").where("t.id = 1").build().query());
+        assertEquals("SELECT first_name AS \"firstName\" FROM account a ## main table\n",
+                PSC.select("firstName").from("account a ## main table", Account.class).build().query());
+        // Under MySQL the "##" opens a comment, so the alias before it is found.
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        assertEquals("SELECT a.first_name AS `firstName` FROM account a ## main table\n",
+                mysql.select("firstName").from("account a ## main table", Account.class).build().query());
+    }
+
+    // Regression: the alias scanner always applied MySQL backslash escapes, so a standard 'C:\' literal hid the real AS alias.
+    @Test
+    public void testSelectAliasScannerHonorsStandardLiteralEndingInBackslash() {
+        final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+
+        assertEquals("SELECT 'C:\\' || ' AS x' AS y FROM t", pg.select("'C:\\' || ' AS x' AS y").from("t").build().query());
+        // The default dialect's backslash reading leaves a literal unterminated, so the standard reading decides ...
+        assertEquals("SELECT 'C:\\' || ' AS x' AS y FROM t", PSC.select("'C:\\' || ' AS x' AS y").from("t").build().query());
+        // ... and, conversely, a MySQL-style escaped quote keeps its alias.
+        assertEquals("SELECT CONCAT(first_name, 'it\\'s') AS fn FROM t", PSC.select("CONCAT(firstName, 'it\\'s') AS fn").from("t").build().query());
+        assertEquals("SELECT CONCAT(first_name, 'it\\'s') AS fn FROM t", mysql.select("CONCAT(firstName, 'it\\'s') AS fn").from("t").build().query());
+        // An E'...' string honors backslash escapes in every dialect.
+        assertEquals("SELECT E'C:\\' AS x' AS y FROM t", pg.select("E'C:\\' AS x' AS y").from("t").build().query());
+    }
+
+    // Regression: Unicode whitespace before an explicit AS stayed in the expression (String.trim() keeps U+3000), so the property mapping was missed.
+    @Test
+    public void testUnicodeWhitespaceBeforeExplicitSelectAliasKeepsPropertyMapping() {
+        assertEquals("SELECT acc.first_name AS fn FROM account acc", PSC.select("firstName\u3000AS\u3000fn").from(Account.class).build().query());
+        assertEquals("SELECT acc.first_name AS fn FROM account acc", PSC.select("firstName\u2003AS fn").from(Account.class).build().query());
+        assertEquals("SELECT acc.first_name AS fn FROM account acc", PSC.select("firstName AS fn").from(Account.class).build().query());
+    }
+
+    // Regression: the JOIN-connector, FROM-separator and FROM-alias scanners ignored the dialect's string, comment and bracket rules.
+    @Test
+    public void testJoinAndFromScannersFollowDialectLexicalRules() {
+        final Dsl pg = Dsl.forDialect(SqlDialect.builder()
+                .namingPolicy(NamingPolicy.SNAKE_CASE)
+                .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
+                .productInfo(SqlDialect.ProductInfo.of("PostgreSQL"))
+                .build());
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        final Dsl sqlServer = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+
+        assertEquals("SELECT u.id FROM users u LEFT JOIN (SELECT id FROM t WHERE name LIKE 'a\\_%' ESCAPE '\\') s ON s.id = u.id WHERE u.id = ?",
+                pg.select("u.id")
+                        .from("users u")
+                        .leftJoin("(SELECT id FROM t WHERE name LIKE 'a\\_%' ESCAPE '\\') s ON s.id = u.id")
+                        .where(Filters.eq("u.id", 1))
+                        .build()
+                        .query());
+        assertEquals("SELECT u.id FROM users u LEFT JOIN (SELECT id FROM t WHERE name LIKE 'a\\_%' ESCAPE '\\') s ON s.id = u.id WHERE u.id = ?",
+                PSC.select("u.id")
+                        .from("users u")
+                        .leftJoin("(SELECT id FROM t WHERE name LIKE 'a\\_%' ESCAPE '\\') s ON s.id = u.id")
+                        .where(Filters.eq("u.id", 1))
+                        .build()
+                        .query());
+        assertEquals("SELECT u.id FROM users u JOIN (SELECT * FROM files WHERE dir = 'C:\\') f ON f.uid = u.id WHERE u.id = ?",
+                sqlServer.select("u.id").from("users u").join("(SELECT * FROM files WHERE dir = 'C:\\') f ON f.uid = u.id").where(Filters.eq("u.id", 1)).build().query());
+        // MySQL "a--1" is arithmetic, not a comment.
+        assertEquals("SELECT u.id FROM users u JOIN (SELECT id, a--1 AS x FROM t) s ON s.id = u.id WHERE u.id = ?",
+                mysql.select("u.id").from("users u").join("(SELECT id, a--1 AS x FROM t) s ON s.id = u.id").where(Filters.eq("u.id", 1)).build().query());
+        // PostgreSQL '[' opens an array subscript, not a bracket-quoted identifier.
+        assertEquals("SELECT u.id FROM users u JOIN LATERAL unnest(ARRAY['a]', 'b']) AS x(v) ON true WHERE u.id = ?",
+                pg.select("u.id").from("users u").join("LATERAL unnest(ARRAY['a]', 'b']) AS x(v) ON true").where(Filters.eq("u.id", 1)).build().query());
+        // A CROSS JOIN must not carry an ON that is visible under the standard reading.
+        assertThrows(IllegalArgumentException.class, () -> pg.select("u.id").from("users u").crossJoin("(SELECT 'C:\\') s ON true"));
+
+        // The primary FROM alias (and the separator before the next table) is found past a standard backslash-terminated literal.
+        assertEquals("SELECT x.first_name AS \"firstName\" FROM (SELECT * FROM account WHERE p = 'C:\\') x",
+                pg.select("firstName").from("(SELECT * FROM account WHERE p = 'C:\\') x", Account.class).build().query());
+        assertEquals("SELECT x.first_name AS \"firstName\" FROM (SELECT * FROM account WHERE p = 'C:\\') x, other o",
+                pg.select("firstName").from("(SELECT * FROM account WHERE p = 'C:\\') x, other o", Account.class).build().query());
+        assertEquals("SELECT x.first_name AS \"firstName\" FROM (SELECT * FROM account WHERE p = 'C:\\') x",
+                PSC.select("firstName").from("(SELECT * FROM account WHERE p = 'C:\\') x", Account.class).build().query());
+    }
+
+    // Regression: the placeholder-rename scanner read every non-MySQL '#word' as a SQL Server temp table, so a quote in a hash comment hid a colliding child placeholder.
+    @Test
+    public void testChildPlaceholderRenameSkipsHashCommentsOutsideSqlServer() {
+        AbstractQueryBuilder.SP sp = NSC.select("id")
+                .from("t")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("t2 #TODO: don't scan\n").where(Filters.eq("id", 2)))
+                .build();
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM t2 #TODO: don't scan\n WHERE id = :id_2", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+        assertEquals(Arrays.asList("id", "id_2"), new ArrayList<>(ParsedSql.parse(sp.query()).namedParameters()));
+
+        sp = MSC.select("id").from("t").where(Filters.eq("id", 1)).union(MSC.select("id").from("t2 #TODO: don't scan\n").where(Filters.eq("id", 2))).build();
+        assertEquals("SELECT id FROM t WHERE id = #{id} UNION SELECT id FROM t2 #TODO: don't scan\n WHERE id = #{id_2}", sp.query());
+
+        final Dsl pg = Dsl.forDialect(NSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        sp = pg.select("id").from("t").where(Filters.eq("id", 1)).union(pg.select("id").from("t2 #it's\n").where(Filters.eq("id", 2))).build();
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM t2 #it's\n WHERE id = :id_2", sp.query());
+
+        // A temporary-table identifier in FROM context is still data.
+        sp = NSC.select("id").from("t").where(Filters.eq("id", 1)).union(NSC.select("id").from("#tmp").where(Filters.eq("id", 2))).build();
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM #tmp WHERE id = :id_2", sp.query());
+    }
+
+    // Regression: MySQL "..." string literals honor backslash escapes, but the rename scanner read them with quote doubling only.
+    @Test
+    public void testChildPlaceholderRenameHonorsMySqlDoubleQuotedStringEscapes() {
+        final Dsl mysql = Dsl.forDialect(NSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+
+        AbstractQueryBuilder.SP sp = mysql.select("id")
+                .from("t")
+                .where(Filters.eq("id", 1))
+                .union(mysql.select("id").from("t2").where(Filters.and(Filters.expr("n <> \"it\\\"s :id\""), Filters.eq("id", 2))))
+                .build();
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM t2 WHERE (n <> \"it\\\"s :id\") AND (id = :id_2)", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+        sp = mysql.select("id")
+                .from("t")
+                .where(Filters.eq("id", 1))
+                .union(mysql.select("id").from("t2").where(Filters.and(Filters.expr("n <> \"a\\\"\""), Filters.eq("id", 2))))
+                .build();
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM t2 WHERE (n <> \"a\\\"\") AND (id = :id_2)", sp.query());
+
+        // The dialect-agnostic default cannot tell which reading applies, so it fails closed.
+        assertThrows(IllegalArgumentException.class, () -> NSC.select("id")
+                .from("t")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("t2").where(Filters.and(Filters.expr("n <> \"a\\\"\""), Filters.eq("id", 2)))));
+    }
+
+    // Regression: the comment guard always read \' as an escaped quote, so "'C:\' -- note" passed it on standard-string dialects and swallowed the WHERE.
+    @Test
+    public void testCommentGuardChecksStandardStringReadingOutsideMySql() {
+        final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        final Dsl oracle = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Oracle")).build());
+        final Dsl sqlServer = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+
+        assertThrows(IllegalArgumentException.class, () -> pg.update("account").set("dir = 'C:\\' -- normalize dir").where("status = 0"));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set("dir = 'C:\\' -- normalize dir").where("status = 0"));
+        assertThrows(IllegalArgumentException.class, () -> oracle.select("'a\\' -- x'").from("account"));
+        assertThrows(IllegalArgumentException.class, () -> pg.select("id").from("account").orderBy("'a\\' -- x'"));
+        assertThrows(IllegalArgumentException.class, () -> sqlServer.select("'C:\\' + #t.firstName -- c").from("#t"));
+        // The SQL Server temporary-table scan no longer hides "#t" behind the backslash reading, so the guard applies to raw WHERE text.
+        assertThrows(IllegalArgumentException.class, () -> sqlServer.select("id").from("#t").where("'C:\\' + #t.name = 'x' -- c"));
+
+        // E'...' strings and MySQL strings keep their backslash escapes.
+        assertEquals("UPDATE account SET dir = E'C:\\' -- quoted' WHERE status = 0",
+                pg.update("account").set("dir = E'C:\\' -- quoted'").where("status = 0").build().query());
+        assertEquals("UPDATE account SET dir = 'it\\'s -- fine' WHERE status = 0",
+                mysql.update("account").set("dir = 'it\\'s -- fine'").where("status = 0").build().query());
+    }
+
+    // Regression: with an explicit MySQL dialect the comment guard still exempted ##, #>, #- and ?#, which MySQL reads as comments.
+    @Test
+    public void testCommentGuardTreatsEveryHashAsCommentUnderMySql() {
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+
+        assertThrows(IllegalArgumentException.class, () -> mysql.update("account").set("status = 1 ## reset").where("status = 0"));
+        assertThrows(IllegalArgumentException.class, () -> mysql.select("a #> b").from("t"));
+        assertThrows(IllegalArgumentException.class, () -> mysql.select("a #-b").from("t"));
+        assertThrows(IllegalArgumentException.class, () -> mysql.select("a ?# b").from("t"));
+        assertThrows(IllegalArgumentException.class, () -> mysql.select("a#>>b").from("t"));
+
+        // A MyBatis marker is still a data token, and PostgreSQL keeps its hash operators.
+        assertEquals("UPDATE account SET status = #{status} WHERE status = 0", mysql.update("account").set("status = #{status}").where("status = 0").build().query());
+        final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        assertEquals("SELECT a ## b FROM t", pg.select("a ## b").from("t").build().query());
+    }
+
+    // Regression: the builder converted a glued subscript / array constructor / cast token as one identifier
+    // (ARRAY[1, 2, 3] -> array[1,_2,_3], myTags[:tagIndex] -> my_tags[:tag_index]), skipped the column in
+    // unitPrice::numeric(10,2), rewrote ::"OrderStatus", and left the column in "T".firstName unconverted.
+    @Test
+    public void testRawExpressionGluedTokensRenderIdenticallyThroughBothPaths() {
+        for (final String expr : new String[] { "id = ANY(ARRAY[1, 2, 3])", "tags && ARRAY[:tagA, :tagB]", "myTags[:tagIndex] = 'x'",
+                "myTags[#{tagIndex}] = 'x'", "log_${yearMonth}.createdAt > 0", "scores[idx + 1] > 5", "scores[CURRENT_DATE - startDay] > 5",
+                "payloadData['camelKey'] = 1", "ARRAY[firstName, lastName] && tags", "unitPrice::numeric(10,2) > 5", "orderStatus::\"OrderStatus\" = 'NEW'",
+                "\"T\".firstName = 1", "`t`.firstName = 1", "[t].firstName = 1", "\"s\".myFunc(firstName) > 0", "arr[idx # 2] = 1", "fn_${v}(aB) > 0",
+                "myTags[firstName:lastName] = 1", "matrix[rowIdx][colIdx] > 0", "arr[firstName || '#'] = 1", "arr[1].fieldName = 1",
+                "firstName COLLATE utf8mb4_bin = 'x'", "payload @> '{\"a\":\"b\\\"c\"}' AND createdAt > 1", "msg = 'hello '\n'world'" }) {
+            final String viaCondition = Filters.expr(expr).toSql(NamingPolicy.SNAKE_CASE);
+            final String builtSql = PSC.select("id").from("t").where(Filters.expr(expr)).build().query();
+
+            assertEquals(viaCondition, builtSql.substring(builtSql.indexOf("WHERE ") + 6), "rendering paths diverged for: " + expr);
+        }
+
+        assertEquals("SELECT id FROM t WHERE id = ANY(ARRAY[1, 2, 3])", PSC.select("id").from("t").where(Filters.expr("id = ANY(ARRAY[1, 2, 3])")).build().query());
+        assertEquals("SELECT id FROM t WHERE my_tags[:tagIndex] = 'x'", PSC.select("id").from("t").where(Filters.expr("myTags[:tagIndex] = 'x'")).build().query());
+        assertEquals("SELECT id FROM t WHERE tags && ARRAY[:tagA, :tagB]", NSC.select("id").from("t").where(Filters.expr("tags && ARRAY[:tagA, :tagB]")).build().query());
+        assertEquals("SELECT id FROM t WHERE unit_price::numeric(10,2) > 5",
+                PSC.select("id").from("t").where(Filters.expr("unitPrice::numeric(10,2) > 5")).build().query());
+        assertEquals("SELECT id FROM t WHERE order_status::\"OrderStatus\" = 'NEW'",
+                PSC.select("id").from("t").where(Filters.expr("orderStatus::\"OrderStatus\" = 'NEW'")).build().query());
+        assertEquals("SELECT id FROM t WHERE \"T\".first_name = 1", PSC.select("id").from("t").where(Filters.expr("\"T\".firstName = 1")).build().query());
+
+        // The leading name still resolves through the entity mapping and table alias; the part after a delimited
+        // qualifier takes the naming policy only, since the builder's own alias would not apply to it.
+        assertEquals("SELECT acc.id AS \"id\" FROM account acc WHERE \"T\".first_name = 1 AND acc.first_name[1] = 2",
+                PSC.select("id").from(Account.class).where(Filters.expr("\"T\".firstName = 1 AND firstName[1] = 2")).build().query());
+    }
+
+    // Regression: the builders converted the unquoted part of a schema-qualified type or collation after a delimited
+    // schema like a column (CAMEL_CASE: status::"types".order_status -> status::"types".orderStatus).
+    @Test
+    public void testQualifiedTypeOrCollationAfterDelimitedSchemaIsKeptByBuilders() {
+        assertEquals("SELECT id FROM t WHERE status::\"types\".order_status = 'NEW'",
+                PLC.select("id").from("t").where("status::\"types\".order_status = 'NEW'").build().query());
+        assertEquals("SELECT id FROM t WHERE CAST(status AS \"types\".order_status) = 'NEW'",
+                PLC.select("id").from("t").where(Filters.expr("CAST(status AS \"types\".order_status) = 'NEW'")).build().query());
+        assertEquals("SELECT id FROM t WHERE name collate \"public\".my_collation = 'x'",
+                PLC.select("id").from("t").where("name collate \"public\".my_collation = 'x'").build().query());
+        assertEquals("SELECT acc.id AS \"id\" FROM account acc WHERE acc.status::\"types\".orderStatus = 'NEW'",
+                PSC.select("id").from(Account.class).where(Filters.expr("status::\"types\".orderStatus = 'NEW'")).build().query());
+    }
+
+    // Regression: the builders converted a type that is not glued to its cast (CAST(x AS type), a spaced "::", whitespace
+    // after a qualifying dot) like a column.
+    @Test
+    public void testTypeInCastOrAfterSpacedCastIsKeptByBuilders() {
+        assertEquals("SELECT id FROM t WHERE CAST(status AS order_status) = 'NEW' AND status :: order_status = 'NEW'",
+                PLC.select("id").from("t").where("CAST(status AS order_status) = 'NEW' AND status :: order_status = 'NEW'").build().query());
+        assertEquals("SELECT id FROM t WHERE status::\"types\". order_status = 'NEW'",
+                PLC.select("id").from("t").where("status::\"types\". order_status = 'NEW'").build().query());
+        assertEquals("SELECT id FROM t WHERE name collate \"public\" . my_collation = 'x'",
+                PLC.select("id").from("t").where("name collate \"public\" . my_collation = 'x'").build().query());
+        assertEquals("SELECT acc.id AS \"id\" FROM account acc WHERE CAST(acc.first_name AS myType) = acc.last_name",
+                PSC.select("id").from(Account.class).where(Filters.expr("CAST(firstName AS myType) = lastName")).build().query());
+        assertEquals("SELECT CAST(first_name AS myType) AS fn FROM t", PSC.select("CAST(firstName AS myType) AS fn").from("t").build().query());
+
+        // A chained cast keeps both types; a clause after a CAST type is rendered as usual.
+        assertEquals("SELECT id FROM t WHERE status :: int:: order_status = 1",
+                PLC.select("id").from("t").where("status :: int:: order_status = 1").build().query());
+        assertEquals("SELECT id FROM t WHERE CAST(event_time AS STRING format 'YYYY' at time zone time_zone) = 'x'",
+                PSC.select("id").from("t").where("CAST(eventTime AS STRING format 'YYYY' at time zone timeZone) = 'x'").build().query());
+        // A schema named like a clause keyword is part of the type.
+        assertEquals("SELECT id FROM t WHERE CAST(id AS format . order_status) = '1' AND CAST(id AS at . order_status) = '1'",
+                PLC.select("id").from("t").where("CAST(id AS format . order_status) = '1' AND CAST(id AS at /* c */ . order_status) = '1'").build().query());
+    }
+
+    // Regression: the tokenizer reads \' as an escaped quote, so after a standard literal such as 'C:\' every quote boundary
+    // was off by one: a later string was converted as an identifier, and "-- n/a" inside a later string was stripped
+    // as a comment, truncating the WHERE clause.
+    @Test
+    public void testEscapeDependentQuoteInRawExpressionIsEmittedVerbatim() {
+        final String noteExpr = SqlExpression.and(SqlExpression.eq("path", "C:\\"), SqlExpression.eq("note", "-- n/a"));
+
+        // The verbatim text ends inside a line comment under the backslash reading, so it is terminated before ORDER BY.
+        assertEquals("SELECT id FROM t WHERE (path = 'C:\\') AND (note = '-- n/a')\n ORDER BY id",
+                PSC.select("id").from("t").where(Filters.expr(noteExpr)).orderBy("id").build().query());
+
+        final Dsl postgres = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        assertEquals("SELECT id FROM t WHERE (path = 'C:\\') AND (note = '-- n/a')\n ORDER BY id",
+                postgres.select("id").from("t").where(Filters.expr(noteExpr)).orderBy("id").build().query());
+
+        final String likeExpr = SqlExpression.and(SqlExpression.like("fileName", "%\\"), SqlExpression.eq("ownerName", "John Smith"));
+        final String built = PSC.select("id").from("t").where(Filters.expr(likeExpr)).build().query();
+        assertEquals("SELECT id FROM t WHERE (file_name LIKE '%\\') AND (ownerName = 'John Smith')", built);
+        assertEquals(Filters.expr(likeExpr).toSql(NamingPolicy.SNAKE_CASE), built.substring(built.indexOf("WHERE ") + 6));
+
+        // MySQL always reads \' as an escape, which is how the tokenizer reads it, so conversion continues there.
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        assertEquals("SELECT id FROM t WHERE a = 'It\\'s' AND first_name = 'x'",
+                mysql.select("id").from("t").where(Filters.expr("a = 'It\\'s' AND firstName = 'x'")).build().query());
+        assertEquals("SELECT id FROM t WHERE a = 'It\\'s' AND firstName = 'x'",
+                PSC.select("id").from("t").where(Filters.expr("a = 'It\\'s' AND firstName = 'x'")).build().query());
+    }
+
+    // Regression: MySQL starts a "--" comment only when whitespace or a control character follows, so "a--1" is
+    // a - (-1) there; the shared tokenizer dropped "--1 > 0" as a comment and rendered "WHERE a" under a MySQL builder.
+    @Test
+    public void testMySqlRawExpressionKeepsDashPairWithoutWhitespaceAsMinusOperators() {
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+
+        assertEquals("SELECT id FROM t WHERE a- -1 > 0 ORDER BY id", mysql.select("id").from("t").where(Filters.expr("a--1 > 0")).orderBy("id").build().query());
+        assertEquals("SELECT id FROM t WHERE a- - -1 > 0", mysql.select("id").from("t").where(Filters.expr("a---1 > 0")).build().query());
+        // Quoted text is untouched, including after a backslash-escaped quote, and real MySQL comments are still dropped.
+        assertEquals("SELECT id FROM t WHERE note = 'x--y' AND b = 'it\\'s--x' AND a- -1 > 0",
+                mysql.select("id").from("t").where(Filters.expr("note = 'x--y' AND b = 'it\\'s--x' AND a--1 > 0")).build().query());
+        assertEquals("SELECT id FROM t WHERE a = 1  ORDER BY id", mysql.select("id").from("t").where(Filters.expr("a = 1 -- a--1")).orderBy("id").build().query());
+        assertEquals("SELECT id FROM t WHERE a = 1  ORDER BY id", mysql.select("id").from("t").where(Filters.expr("a = 1 # a--1")).orderBy("id").build().query());
+
+        // In standard SQL (and without product info) "--" always starts a comment.
+        assertEquals("SELECT id FROM t WHERE a", PSC.select("id").from("t").where(Filters.expr("a--1 > 0")).build().query());
+    }
+
+    // Regression: the builder's raw-expression rendering went verbatim at any backslash before any quote, so a JSON literal
+    // with \" left every later column unconverted; it also renamed a function with a glued marker, copied the column after
+    // log_${month}. and the bounds of slices and chained subscripts unconverted.
+    @Test
+    public void testRawExpressionGluedTokensAndBackslashesRenderThroughBuilders() {
+        final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+
+        for (final Dsl dsl : new Dsl[] { PSC, pg }) {
+            assertEquals("SELECT id FROM t WHERE payload @> '{\"a\":\"b\\\"c\"}' AND created_at > 1",
+                    dsl.select("id").from("t").where("payload @> '{\"a\":\"b\\\"c\"}' AND createdAt > 1").build().query());
+            assertEquals("SELECT id FROM t WHERE \"it\\'s\" = 1 AND created_at > 1",
+                    dsl.select("id").from("t").where(Filters.expr("\"it\\'s\" = 1 AND createdAt > 1")).build().query());
+            // A backslash before the region's own closing quote still emits the rest as written.
+            assertEquals("SELECT id FROM t WHERE \"col\\\"x\" = 1 AND aB = 1", dsl.select("id").from("t").where("\"col\\\"x\" = 1 AND aB = 1").build().query());
+        }
+
+        final java.util.function.BiFunction<Dsl, String, String> where = (dsl, expr) -> {
+            final String sql = dsl.select("id").from("t").where(expr).build().query();
+            return sql.substring(sql.indexOf(" WHERE ") + 7);
+        };
+
+        assertEquals("x = E'It\\'s' AND first_name = 'x'", where.apply(pg, "x = E'It\\'s' AND firstName = 'x'"));
+        // SCREAMING_SNAKE_CASE and CAMEL_CASE builders also emit the text from 'C:\' on as written.
+        assertEquals("A_B = 'C:\\' AND firstName = 1", where.apply(PAC, "aB = 'C:\\' AND firstName = 1"));
+        assertEquals("aB = 'C:\\' AND first_name = 1", where.apply(PLC, "a_b = 'C:\\' AND first_name = 1"));
+
+        assertEquals("my_func_${ver}(x) > 0", where.apply(PLC, "my_func_${ver}(x) > 0"));
+        assertEquals("getValue_${v}(A_B) > 0", where.apply(PAC, "getValue_${v}(aB) > 0"));
+        assertEquals("LOG_${yearMonth}.CREATED_AT = 1", where.apply(PAC, "log_${yearMonth}.createdAt = 1"));
+        assertEquals("log_${yearMonth}.created_at = 1", where.apply(PSC, "log_${yearMonth}.createdAt = 1"));
+        assertEquals("logTable_${month}.createTime > 0", where.apply(PLC, "log_table_${month}.create_time > 0"));
+        assertEquals("my_tags[first_name:last_name] = 1", where.apply(PSC, "myTags[firstName:lastName] = 1"));
+        assertEquals("MATRIX[ROW_IDX][COL_IDX] > 0", where.apply(PAC, "matrix[rowIdx][colIdx] > 0"));
+        assertEquals("arr[1].field_name = 1", where.apply(PSC, "arr[1].fieldName = 1"));
+        // The collation name is kept exactly under every case-changing policy; the COLLATE keyword follows the policy.
+        assertEquals("firstName collate utf8mb4_bin = 'x'", where.apply(PLC, "first_name COLLATE utf8mb4_bin = 'x'"));
+        assertEquals("LAST_NAME COLLATE Latin1_General_CS_AS = 'x'", where.apply(PAC, "lastName COLLATE Latin1_General_CS_AS = 'x'"));
+
+        // The leading name of a glued subscript inside a function still resolves through the entity mapping and alias.
+        assertEquals("SELECT acc.id AS \"id\" FROM account acc WHERE coalesce(acc.first_name[1], 0) = 1",
+                PSC.select("id").from(Account.class).where("coalesce(firstName[1], 0) = 1").build().query());
+    }
+
+    // Regression: the builder collapsed the line break between two adjacent string literals ('hello '\n'world') into a
+    // space, which PostgreSQL rejects; ParsedSql already kept it.
+    @Test
+    public void testRawExpressionKeepsLineBreakBetweenAdjacentStringLiterals() {
+        assertEquals("SELECT id FROM t WHERE msg = 'hello '\n'world'", PSC.select("id").from("t").where(Filters.expr("msg = 'hello '\n'world'")).build().query());
+        assertEquals("SELECT 'hello '\n'world' AS m FROM t", PSC.select("'hello '\n'world' AS m").from("t").build().query());
+        assertEquals("SELECT id FROM t WHERE msg = 'a'\n'b'", PSC.select("id").from("t").where(Filters.eq("msg", SqlExpression.of("'a' -- c\n'b'"))).build().query());
+        assertEquals("SELECT id FROM t WHERE msg = 'a' 'b' AND first_name = 'x'",
+                PSC.select("id").from("t").where("msg = 'a' 'b'\nAND firstName = 'x'").build().query());
+    }
+
+    // Regression: under a class alias the whole suffix after the inline AS was quoted as ONE label, so
+    // "firstName AS fn, lastName AS ln" silently became one column labeled "acc.fn, lastName AS ln" (lastName vanished).
+    @Test
+    public void testClassAliasedSelectItemWithMultiTokenAliasIsRejected() {
+        for (final String item : new String[] { "firstName AS fn, lastName AS ln", "firstName AS f n" }) {
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").classAlias("acc").includedPropNames(List.of(item)).build())));
+            assertTrue(e.getMessage().contains(item), e.getMessage());
+        }
+
+        // A one-word alias under a class alias, and a comma-separated suffix without one, render as before.
+        assertEquals("SELECT a.first_name AS \"acc.fn\" FROM account a",
+                PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").classAlias("acc").includedPropNames(List.of("firstName AS fn")).build()))
+                        .build()
+                        .query());
+        assertEquals("SELECT a.first_name AS fn, lastName AS ln FROM account a",
+                PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").includedPropNames(List.of("firstName AS fn, lastName AS ln")).build()))
+                        .build()
+                        .query());
+    }
+
+    // Regression: the inline select alias was trim()med, which keeps U+3000/U+2003, so the emitted (unquoted) alias -- and the
+    // result-column label -- became "fn\u3000" instead of "fn".
+    @Test
+    public void testInlineSelectAliasDropsTrailingUnicodeWhitespace() {
+        assertEquals("SELECT acc.first_name AS fn FROM account acc", PSC.select("firstName AS fn\u3000").from(Account.class).build().query());
+        assertEquals("SELECT acc.first_name AS fn FROM account acc", PSC.select("firstName\u2003AS\u2003fn\u2003").from(Account.class).build().query());
+
+        // The multi-column / table-alias path and INSERT ... SELECT (whose target column takes the expression only).
+        assertEquals("SELECT a.first_name AS fn, a.last_name AS \"lastName\" FROM account a",
+                PSC.select("firstName\u3000AS\u3000fn", "lastName").from(Account.class, "a").build().query());
+        assertEquals("INSERT INTO account_backup (first_name) SELECT acc.first_name AS fn FROM account acc",
+                PSC.select("firstName\u3000AS\u3000fn\u3000").into("account_backup").from(Account.class).build().query());
+
+        // No-break spaces (U+00A0, U+202F), which String.strip() keeps, are padding too.
+        assertEquals("SELECT acc.first_name AS fn FROM account acc", PSC.select("firstName AS fn\u00a0").from(Account.class).build().query());
+        assertEquals("SELECT acc.first_name AS fn FROM account acc", PSC.select("firstName AS fn\u202f").from(Account.class).build().query());
+        assertEquals("SELECT a.first_name AS \"acc.fn\" FROM account a",
+                PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").classAlias("acc").includedPropNames(List.of("firstName AS fn\u00a0")).build()))
+                        .build()
+                        .query());
+    }
+
+    // Covers the sort-direction rewrite beyond the plain entity context: a table alias, mixed varargs lists, the direct
+    // groupBy(String, SortDirection), and that a rejected single item leaves the ORDER BY / GROUP BY slot unconsumed.
+    @Test
+    public void testSortDirectionSubEntityExpansionWithTableAliasMixedListsAndRetry() {
+        final String aliased = PSC.select("id").from(Account.class, "a").orderBy("devices", SortDirection.DESC).build().query();
+        assertTrue(aliased.startsWith("SELECT a.id AS \"id\" FROM account a ORDER BY device.id DESC, device.account_id DESC, "), aliased);
+        assertTrue(aliased.endsWith(", device.create_time DESC"), aliased);
+
+        final String mixedOrder = PSC.select("id").from(Account.class).orderByDesc("devices", "id").build().query();
+        assertTrue(mixedOrder.startsWith("SELECT acc.id AS \"id\" FROM account acc ORDER BY device.id DESC, "), mixedOrder);
+        assertTrue(mixedOrder.endsWith(", device.create_time DESC, acc.id DESC"), mixedOrder);
+
+        final String mixedGroup = PSC.select("id").from(Account.class).groupByDesc("devices", "firstName").build().query();
+        assertTrue(mixedGroup.endsWith(", device.create_time DESC, acc.first_name DESC"), mixedGroup);
+
+        final String groupAsc = PSC.select("id").from(Account.class).groupBy("devices", SortDirection.ASC).build().query();
+        assertTrue(groupAsc.startsWith("SELECT acc.id AS \"id\" FROM account acc GROUP BY device.id ASC, device.account_id ASC, "), groupAsc);
+        assertTrue(groupAsc.endsWith(", device.create_time ASC"), groupAsc);
+
+        final SqlBuilder order = PSC.select("id").from(Account.class);
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> order.orderBy("id -- x", SortDirection.DESC));
+        assertEquals("SQL comment token is not allowed in column expression: id -- x", e.getMessage());
+        assertTrue(order.orderBy("devices", SortDirection.DESC).build().query().startsWith("SELECT acc.id AS \"id\" FROM account acc ORDER BY device.id DESC, "));
+
+        final SqlBuilder group = PSC.select("id").from(Account.class);
+        e = assertThrows(IllegalArgumentException.class, () -> group.groupBy("id -- x", SortDirection.DESC));
+        assertEquals("SQL comment token is not allowed in column expression: id -- x", e.getMessage());
+        assertEquals("SELECT acc.id AS \"id\" FROM account acc GROUP BY acc.first_name DESC", group.groupBy("firstName", SortDirection.DESC).build().query());
+    }
+
+    // Regression: distinctOn("/* x") -- an unclosed block comment, most likely a typo -- silently became a plain DISTINCT.
+    @Test
+    public void testDistinctOnRejectsUnterminatedBlockComment() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.select("a").distinctOn("/* x"));
+        assertTrue(e.getMessage().contains("unterminated block comment"), e.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("a").distinctOn("a /* x"));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().distinctOn("/* x"));
+
+        // Several terminated comments with nothing else are still a plain DISTINCT; a quoted "/*" is data.
+        assertEquals("SELECT DISTINCT a FROM t", PSC.select("a").distinctOn("-- a\n-- b").from("t").build().query());
+        assertEquals("SELECT DISTINCT a FROM t", PSC.select("a").distinctOn("/* a */ /* b */").from("t").build().query());
+        assertEquals("SELECT DISTINCT ON ('/*') a FROM t", PSC.select("a").distinctOn("'/*'").from("t").build().query());
+
+        // A trailing comment is terminated before ')' under each dialect's reading; quoted dashes are not a comment.
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        assertEquals("SELECT DISTINCT ON (a # x\n) a FROM t", PSC.select("a").distinctOn("a # x").from("t").build().query());
+        assertEquals("SELECT DISTINCT ON (a -- x\r\n) a FROM t", mysql.select("a").distinctOn("a -- x\r").from("t").build().query());
+        assertEquals("SELECT DISTINCT ON ('--') a FROM t", PSC.select("a").distinctOn("'--'").from("t").build().query());
+    }
+
+    // Regression: PostgreSQL, SQL Server and H2 nest block comments, so the comment in "id /* outer /* inner */" stayed open
+    // there and swallowed the closing ')' and every clause appended after it.
+    @Test
+    public void testDistinctOnRejectsUnterminatedNestedBlockComment() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.select("a").distinctOn("id /* outer /* inner */"));
+        assertTrue(e.getMessage().contains("unterminated block comment"), e.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().distinctOn("id /* outer /* inner */"));
+
+        // Balanced nesting is closed under every reading.
+        assertEquals("SELECT DISTINCT ON (id /* a /* b */ */) a FROM t WHERE b = 1",
+                PSC.select("a").distinctOn("id /* a /* b */ */").from("t").where("b = 1").build().query());
+    }
+
+    // Regression: a sole-wildcard INSERT ... SELECT omits the target column list, so into() no longer validated the
+    // wildcard item and its comment token was only rejected later, by from().
+    @Test
+    public void testInsertSelectSoleWildcardRejectsCommentTokenAtInto() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.select("/* c */ *").into("bk"));
+        assertEquals("SQL comment token is not allowed in column expression: /* c */ *", e.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("t.* -- all").into("bk"));
+
+        // Other sole-wildcard shapes, and a quoted "*" (a column named *, not a wildcard).
+        assertEquals("INSERT INTO bk SELECT DISTINCT * FROM t", PSC.select("DISTINCT *").into("bk").from("t").build().query());
+        assertEquals("INSERT INTO bk (\"*\") SELECT \"*\" FROM t", PSC.select("\"*\"").into("bk").from("t").build().query());
+        assertEquals("INSERT INTO bk SELECT `t`.* FROM t", PSC.select("`t`.*").into("bk").from("t").build().query());
+        assertEquals("INSERT INTO bk SELECT [t].* FROM t", PSC.select("[t].*").into("bk").from("t").build().query());
+    }
+
+    // Pins a deliberate trade-off of the leading join modifiers: an alias literally named like one (GLOBAL, PASTE,
+    // POSITIONAL) directly before a JOIN is read as a join modifier, so the entity columns stay unqualified.
+    @Test
+    public void testJoinModifierWordUsedAsAliasBeforeJoinIsNotTheTableAlias() {
+        assertEquals("SELECT first_name AS \"firstName\" FROM account global JOIN b ON b.id = global.id",
+                PSC.select("firstName").from("account global JOIN b ON b.id = global.id", Account.class).build().query());
+        assertEquals("SELECT first_name AS \"firstName\" FROM account paste JOIN b ON b.id = paste.id",
+                PSC.select("firstName").from("account paste JOIN b ON b.id = paste.id", Account.class).build().query());
+        assertEquals("SELECT first_name AS \"firstName\" FROM account positional LEFT JOIN b ON true",
+                PSC.select("firstName").from("account positional LEFT JOIN b ON true", Account.class).build().query());
+
+        // Without a following JOIN keyword the word is an ordinary alias.
+        assertEquals("SELECT global.first_name AS \"firstName\" FROM account global, b",
+                PSC.select("firstName").from("account global, b", Account.class).build().query());
+    }
+
+    // Regression: set((Object) map, excluded) whose exclusions removed every key reported "'entity' cannot be null or empty".
+    @Test
+    public void testSetMapEntityValidationMessages() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set((Object) Map.of("a", 1), Set.of("a")));
+        assertEquals("No properties remain after exclusions are applied", e.getMessage());
+
+        // An entity map that is empty to begin with still names the parameter.
+        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set((Object) new LinkedHashMap<String, Object>(), Set.of("a")));
+        assertTrue(e.getMessage().contains("entity"), e.getMessage());
+
+        final Map<Object, Object> nonStringKey = new LinkedHashMap<>();
+        nonStringKey.put(1, "x");
+        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set((Object) nonStringKey));
+        assertTrue(e.getMessage().startsWith("entity keys must be non-blank strings"), e.getMessage());
+
+        final Map<String, Object> blankKey = new LinkedHashMap<>();
+        blankKey.put(" ", "x");
+        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set((Object) blankKey));
+        assertTrue(e.getMessage().startsWith("Key in entity must not"), e.getMessage());
+
+        // set(String, Object) checks the statement before its arguments.
+        assertThrows(IllegalStateException.class, () -> PSC.select("a").set((String) null, 1));
+        final SqlBuilder closed = PSC.update("t").set("a");
+        closed.build();
+        assertThrows(IllegalStateException.class, () -> closed.set((String) null, 1));
+    }
+
+    // Pins the fail-closed choice of the comment guard without product info: DEFAULT may be any server, and under the
+    // standard string reading (no backslash escapes) "'it\'s -- fine'" ends at "\'", leaving a real "--" comment.
+    @Test
+    public void testCommentGuardRejectsMySqlStyleEscapedLiteralWithoutProductInfo() {
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set("note = 'it\\'s -- fine'"));
+
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        assertEquals("UPDATE t SET note = 'it\\'s -- fine' WHERE a = ?",
+                mysql.update("t").set("note = 'it\\'s -- fine'").where(Filters.eq("a", 1)).build().query());
+    }
+
+    // Covers the MySQL RAW_SQL backslash doubling at the call sites beyond WHERE '=': UPDATE SET, LIKE, BETWEEN,
+    // MariaDB, a nested structured sub-query (rendered by a same-dialect sub-builder), and a nested raw SubQuery binding.
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testMySqlRawSqlBackslashDoublingAtEveryValueCallSite() {
+        final Dsl mysqlRaw = Dsl.forDialect(SCSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        final Dsl mariaRaw = Dsl.forDialect(SCSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MariaDB")).build());
+
+        assertEquals("UPDATE t SET name = 'x\\\\' WHERE id = 1", mysqlRaw.update("t").set(Map.of("name", "x\\")).where(Filters.eq("id", 1)).build().query());
+        assertEquals("SELECT id FROM t WHERE name LIKE 'a\\\\%'", mysqlRaw.select("id").from("t").where(Filters.like("name", "a\\%")).build().query());
+        assertEquals("SELECT id FROM t WHERE name BETWEEN 'a\\\\' AND 'b\\\\'",
+                mysqlRaw.select("id").from("t").where(Filters.between("name", "a\\", "b\\")).build().query());
+        assertEquals("SELECT id FROM t WHERE name = 'x\\\\'", mariaRaw.select("id").from("t").where(Filters.eq("name", "x\\")).build().query());
+
+        final String nested = mysqlRaw.select("id")
+                .from("t")
+                .where(Filters.in("id", Filters.subQuery(Account.class, List.of("id"), Filters.eq("firstName", "x\\"))))
+                .build()
+                .query();
+        assertTrue(nested.contains("first_name = 'x\\\\'"), nested);
+
+        final String nestedRaw = mysqlRaw.select("id")
+                .from("t")
+                .where(Filters.in("id",
+                        Filters.subQuery("SELECT id FROM u WHERE a IN ?", Arrays.asList(Filters.subQuery("SELECT b FROM v WHERE c = ?", Arrays.asList("z\\"))))))
+                .build()
+                .query();
+        assertTrue(nestedRaw.contains("c = 'z\\\\'"), nestedRaw);
+    }
+
+    // Covers the class-aliased path of the implicit-alias quote doubling: the "classAlias." prefix sits inside the
+    // quoted label, and every embedded identifier quote is still doubled.
+    @Test
+    public void testClassAliasedImplicitSelectAliasEscapesEmbeddedIdentifierQuote() {
+        assertEquals("SELECT COALESCE(\"nickName\", a.first_name) AS \"acc.COALESCE(\"\"nickName\"\", firstName)\" FROM account a",
+                PSC.selectFrom(List.of(
+                        Selection.builder(Account.class).tableAlias("a").classAlias("acc").includedPropNames(List.of("COALESCE(\"nickName\", firstName)")).build()))
+                        .build()
+                        .query());
+    }
+
+    // Covers the multi-selection FROM dedupe: identical selections are listed once, the same class under different
+    // aliases is kept twice (a self join), and a sub-entity table that a later selection also lists is not repeated.
+    @Test
+    public void testMultiSelectFromClauseListsEachTableReferenceOnce() {
+        assertEquals("account a", SqlBuilder.getFromClause(
+                List.of(Selection.builder(Account.class).tableAlias("a").build(), Selection.builder(Account.class).tableAlias("a").build()), NamingPolicy.SNAKE_CASE));
+        assertEquals("account a, account b", SqlBuilder.getFromClause(
+                List.of(Selection.builder(Account.class).tableAlias("a").build(), Selection.builder(Account.class).tableAlias("b").build()), NamingPolicy.SNAKE_CASE));
+        assertEquals("account acc, device",
+                SqlBuilder.getFromClause(List.of(Selection.builder(Account.class).tableAlias("acc").includeSubEntityProperties(true).build(),
+                        Selection.builder(com.landawn.abacus.query.entity.AccountDevice.class).build()), NamingPolicy.SNAKE_CASE));
+    }
+
+    // Covers the NAMED_SQL raw sub-query rename next to ':' beyond "arr[1:?]": whitespace before the colon and an
+    // identifier slice bound; a custom handler whose token does not start with ':' needs no separating space.
+    @Test
+    public void testRawSubQueryPlaceholderAfterColonVariants() {
+        AbstractQueryBuilder.SP sp = NSC.select("id")
+                .from("t")
+                .where(Filters.in("id", Filters.subQuery("SELECT id FROM u WHERE arr[1 :?] = x", Arrays.asList(3))))
+                .build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE arr[1 : :param] = x)", sp.query());
+        assertEquals(1, ParsedSql.parse(sp.query()).parameterCount());
+
+        sp = NSC.select("id").from("t").where(Filters.in("id", Filters.subQuery("SELECT id FROM u WHERE arr[n:?] = x", Arrays.asList(3)))).build();
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE arr[n: :param] = x)", sp.query());
+        assertEquals(1, ParsedSql.parse(sp.query()).parameterCount());
+
+        final Dsl atNamed = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append('@').append(name)).build());
+        assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE arr[1:@param] = x)",
+                atNamed.select("id").from("t").where(Filters.in("id", Filters.subQuery("SELECT id FROM u WHERE arr[1:?] = x", Arrays.asList(3)))).build().query());
+    }
+
+    // Covers per-selection expression resolution: a later selection without a table alias renders its expression
+    // unqualified (no implicit alias, since the rendering equals the source text), and a qualifier naming the first
+    // selection's alias still resolves to that selection.
+    @Test
+    public void testMultiSelectExpressionItemsWithoutAliasOrNamingAnotherSelection() {
+        assertEquals("SELECT a.id AS \"id\", status + 1 FROM account a, device",
+                PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").includedPropNames(List.of("id")).build(),
+                        Selection.builder(com.landawn.abacus.query.entity.AccountDevice.class).includedPropNames(List.of("status + 1")).build()))
+                        .build()
+                        .query());
+
+        final String sql = PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").includedPropNames(List.of("id")).build(),
+                Selection.builder(com.landawn.abacus.query.entity.AccountDevice.class).tableAlias("d").includedPropNames(List.of("a.status + 1")).build()))
+                .build()
+                .query();
+        assertTrue(sql.startsWith("SELECT a.id AS \"id\", a.status + 1"), sql);
+    }
+
+    // Covers the dialect-aware line-comment termination of append(String): MySQL '#' and "--x", standard vs MySQL
+    // string escapes, SQL Server temporary tables, already-terminated fragments, a lone '\r', appendIf/appendIfOrElse,
+    // and an UPDATE.
+    @Test
+    public void testAppendTerminatesTrailingLineCommentPerDialect() {
+        final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+        final Dsl sqlServer = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+
+        assertEquals("SELECT * FROM t # note\n WHERE a = ?", mysql.select("*").from("t").append("# note").where(Filters.eq("a", 1)).build().query());
+
+        // "--x" is not a comment in MySQL, but is one in standard SQL.
+        assertEquals("SELECT * FROM t WHERE a = 1 --x LIMIT 3", mysql.select("*").from("t").append("WHERE a = 1 --x").limit(3).build().query());
+        assertEquals("SELECT * FROM t WHERE a = 1 --x\n LIMIT 3", PSC.select("*").from("t").append("WHERE a = 1 --x").limit(3).build().query());
+        assertEquals("SELECT * FROM t WHERE a = 1 --x\n LIMIT 3", pg.select("*").from("t").append("WHERE a = 1 --x").limit(3).build().query());
+
+        // Under MySQL 'C:\' does not end, so "-- c" is inside the literal; in standard SQL it is a comment.
+        assertEquals("SELECT * FROM t WHERE a = 'C:\\' -- c LIMIT 3", mysql.select("*").from("t").append("WHERE a = 'C:\\' -- c").limit(3).build().query());
+        assertEquals("SELECT * FROM t WHERE a = 'C:\\' -- c\n LIMIT 3", PSC.select("*").from("t").append("WHERE a = 'C:\\' -- c").limit(3).build().query());
+
+        // A temporary table is data in SQL Server (and the dialect-agnostic default), a comment in MySQL.
+        assertEquals("SELECT * FROM t JOIN #tmp x ON x.id = t.id WHERE a = ?",
+                sqlServer.select("*").from("t").append("JOIN #tmp x ON x.id = t.id").where(Filters.eq("a", 1)).build().query());
+        assertEquals("SELECT * FROM t JOIN #tmp x ON x.id = t.id WHERE a = ?",
+                PSC.select("*").from("t").append("JOIN #tmp x ON x.id = t.id").where(Filters.eq("a", 1)).build().query());
+        assertEquals("SELECT * FROM t JOIN #tmp x ON x.id = t.id\n WHERE a = ?",
+                mysql.select("*").from("t").append("JOIN #tmp x ON x.id = t.id").where(Filters.eq("a", 1)).build().query());
+
+        // Already terminated: no second line feed; a lone '\r' gets its '\n'.
+        assertEquals("SELECT * FROM t -- note\n WHERE a = ?", PSC.select("*").from("t").append("-- note\n").where(Filters.eq("a", 1)).build().query());
+        assertEquals("SELECT * FROM t -- note\r\n WHERE a = ?", PSC.select("*").from("t").append("-- note\r").where(Filters.eq("a", 1)).build().query());
+
+        assertEquals("SELECT * FROM t -- c\n WHERE a = ?", PSC.select("*").from("t").appendIf(true, "-- c").where(Filters.eq("a", 1)).build().query());
+        assertEquals("SELECT * FROM t -- c\n WHERE a = ?",
+                PSC.select("*").from("t").appendIfOrElse(false, "FOR UPDATE", "-- c").where(Filters.eq("a", 1)).build().query());
+        assertEquals("UPDATE account SET name = ? -- audit\n WHERE id = ?",
+                PSC.update("account").set("name").append("-- audit").where(Filters.eq("id", 1)).build().query());
+    }
+
+    // Regression: a select item padded with Unicode whitespace and no alias ("lastName　") rendered the padding glued
+    // to the column ("acc.last_name　", another identifier in PostgreSQL/MySQL/SQLite) and kept it in the implicit alias.
+    @Test
+    public void testSelectItemWithoutAliasIsStrippedOfWhitespacePadding() {
+        assertEquals("SELECT acc.last_name AS \"lastName\" FROM account acc", PSC.select("lastName　").from(Account.class).build().query());
+        assertEquals("SELECT acc.last_name AS \"lastName\" FROM account acc", PSC.select(" lastName ").from(Account.class).build().query());
+        assertEquals("SELECT acc.last_name AS \"lastName\" FROM account acc", PSC.select("lastName ").from(Account.class).build().query());
+        assertEquals("SELECT acc.lastName AS \"lastName\" FROM account acc", PLC.select("lastName　").from(Account.class).build().query());
+        assertEquals("SELECT UPPER(acc.last_name) AS \"UPPER(lastName)\" FROM account acc", PSC.select("UPPER(lastName)　").from(Account.class).build().query());
+        assertEquals("SELECT a.last_name AS \"lastName\", a.first_name AS \"firstName\" FROM account a",
+                PSC.select("lastName　", "firstName").from(Account.class, "a").build().query());
+        // No-break spaces (U+00A0, U+2007, U+202F), which String.strip() keeps, are padding too.
+        assertEquals("SELECT acc.last_name AS \"lastName\" FROM account acc", PSC.select("lastName ").from(Account.class).build().query());
+        assertEquals("SELECT acc.last_name AS \"lastName\" FROM account acc", PSC.select(" lastName ").from(Account.class).build().query());
+        assertEquals("INSERT INTO bk (last_name) SELECT acc.last_name AS \"lastName\" FROM account acc",
+                PSC.select("lastName ").into("bk").from(Account.class).build().query());
+
+        // The INSERT ... SELECT target column, a class-aliased selection, and an explicit select(Map) alias.
+        assertEquals("INSERT INTO bk (last_name) SELECT acc.last_name AS \"lastName\" FROM account acc",
+                PSC.select("lastName　").into("bk").from(Account.class).build().query());
+        assertEquals("SELECT a.last_name AS \"acc.lastName\" FROM account a",
+                PSC.selectFrom(List.of(Selection.builder(Account.class).tableAlias("a").classAlias("acc").includedPropNames(List.of("lastName　")).build()))
+                        .build()
+                        .query());
+        assertEquals("SELECT acc.last_name AS \"ln\" FROM account acc", PSC.select(Map.of("lastName　", "ln")).from(Account.class).build().query());
+    }
+
+    private static Dsl lexDialect(final Dsl base, final String product) {
+        return Dsl.forDialect(base.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of(product)).build());
+    }
+
+    // Regression: outside MySQL the statement-terminator gate read the second '#' of PostgreSQL's "##" operator as a hash
+    // comment, so a ';' after it was hidden and a second statement passed the set-operation / subquery gates.
+    @Test
+    public void testStatementTerminatorGateReadsHashPairOperatorAsOneToken() {
+        final Dsl pg = lexDialect(PSC, "PostgreSQL");
+        final Dsl oracle = lexDialect(PSC, "Oracle");
+
+        assertThrows(IllegalArgumentException.class, () -> pg.select("id").from("t").union("SELECT p ## l FROM t; SELECT 2"));
+        assertThrows(IllegalArgumentException.class, () -> oracle.select("id").from("t").union("SELECT p ## l FROM t; SELECT 2 FROM dual"));
+        assertThrows(IllegalArgumentException.class, () -> pg.select("id").from(pg.select("x").from("t").where("p ## l; SELECT 2"), "s"));
+        // The dialect-agnostic default checks both "##" readings.
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").union("SELECT p ## l FROM t; SELECT 2"));
+
+        // The operator alone is accepted (the conservative trailing-comment check still adds a harmless line feed).
+        assertEquals("SELECT id FROM t UNION SELECT p ## l FROM t\n", pg.select("id").from("t").union("SELECT p ## l FROM t").build().query());
+    }
+
+    // Regression: the trailing-comment check had no "##"-as-operator reading, so on PostgreSQL the second '#' hid a quote
+    // ("u.p ## '\n' -- c") and the real trailing "--" comment swallowed the WHERE appended after it.
+    @Test
+    public void testTrailingCommentAfterHashPairOperatorIsTerminated() {
+        final Dsl pg = lexDialect(PSC, "PostgreSQL");
+
+        assertEquals("SELECT * FROM t JOIN u ON u.p ## '\n' -- c\n WHERE t.id = 1",
+                pg.select("*").from("t").join("u ON u.p ## '\n' -- c").where("t.id = 1").build().query());
+        assertTrue(AbstractQueryBuilder.endsInsideLineComment("u.p ## '\n' -- c", false));
+        assertFalse(AbstractQueryBuilder.endsInsideLineComment("u.p ## '\n' = c", false));
+    }
+
+    // Regression: ClickHouse's "GLOBAL CROSS JOIN" / "LOCAL ... JOIN" were not recognized as a join start, so the
+    // modifier word became the primary table's alias ("GLOBAL.first_name").
+    @Test
+    public void testGlobalAndLocalJoinModifiersBeforeCrossJoinAreNotPrimaryTableAlias() {
+        for (final String join : new String[] { "GLOBAL CROSS JOIN q", "LOCAL CROSS JOIN q", "LOCAL ANY LEFT JOIN q USING (id)", "LOCAL JOIN q USING (id)" }) {
+            assertEquals("SELECT a.first_name AS \"firstName\" FROM account a " + join,
+                    PSC.select("firstName").from("account a " + join, Account.class).build().query(), join);
+        }
+
+        // Not followed by a JOIN keyword: still a plain table alias.
+        assertEquals("SELECT local.first_name AS \"firstName\" FROM account local", PSC.select("firstName").from("account local", Account.class).build().query());
+    }
+
+    // Regression: MySQL/MariaDB and SQLite end a line comment only at '\n', but the JOIN-connector scan ended it at a lone
+    // '\r', so "u -- x\r ON ..." counted as a complete join and a WHERE could follow: those servers silently ran a cross join.
+    @Test
+    public void testQualifiedJoinWithOnHiddenByLoneCarriageReturnCommentMustBeCompleted() {
+        final Dsl mysql = lexDialect(PSC, "MySQL");
+        final Dsl sqlite = lexDialect(PSC, "SQLite");
+        final Dsl pg = lexDialect(PSC, "PostgreSQL");
+
+        assertThrows(IllegalStateException.class, () -> mysql.select("*").from("t").join("u -- x\r ON u.id = t.id").where("t.id = 1"));
+        assertThrows(IllegalStateException.class, () -> sqlite.select("*").from("t").join("u -- x\r ON u.id = t.id").where("t.id = 1"));
+        // The dialect-agnostic default may target either kind of server.
+        assertThrows(IllegalStateException.class, () -> PSC.select("*").from("t").join("u -- x\r ON u.id = t.id").where("t.id = 1"));
+        assertEquals("SELECT * FROM t JOIN u -- x\r ON u.id = t.id\n ON u.id = t.id",
+                mysql.select("*").from("t").join("u -- x\r ON u.id = t.id").on("u.id = t.id").build().query());
+
+        // PostgreSQL ends the comment at '\r': the ON is real there, so the join is complete.
+        assertEquals("SELECT * FROM t JOIN u -- x\r ON u.id = t.id\n WHERE t.id = 1",
+                pg.select("*").from("t").join("u -- x\r ON u.id = t.id").where("t.id = 1").build().query());
+        assertThrows(IllegalStateException.class, () -> pg.select("*").from("t").join("u -- x\r ON u.id = t.id").on("u.id = t.id"));
+        // A CRLF line break ends the comment everywhere.
+        assertEquals("SELECT * FROM t JOIN u -- x\r\n ON u.id = t.id WHERE t.id = 1",
+                mysql.select("*").from("t").join("u -- x\r\n ON u.id = t.id").where("t.id = 1").build().query());
+
+        // Rejecting a CROSS JOIN connector counts one visible under either line-end convention.
+        assertThrows(IllegalArgumentException.class, () -> mysql.select("*").from("t").crossJoin("u -- x\r ON u.id = t.id"));
+        assertThrows(IllegalArgumentException.class, () -> pg.select("*").from("t").crossJoin("u -- it's\r 'a\n ON true"));
+    }
+
+    // Regression: MySQL "..." string literals honor backslash escapes, but the alias, FROM-separator and JOIN-connector
+    // scanners (and the comment guard) read them with quote doubling only, so "\"" looked like an open quote.
+    @Test
+    public void testLexicalScannersHonorMySqlDoubleQuotedStringEscapes() {
+        final Dsl mysql = lexDialect(PSC, "MySQL");
+
+        assertEquals("SELECT CONCAT(first_name, \"\\\"\") AS q FROM t", mysql.select("CONCAT(firstName, \"\\\"\") AS q").from("t").build().query());
+        assertEquals("SELECT CONCAT(first_name, \"\\\"\") AS q FROM t", PSC.select("CONCAT(firstName, \"\\\"\") AS q").from("t").build().query());
+        assertEquals("SELECT d.first_name AS `firstName` FROM (SELECT \"\\\"\" AS q) d",
+                mysql.select("firstName").from("(SELECT \"\\\"\" AS q) d", Account.class).build().query());
+        assertEquals("SELECT d.first_name AS `firstName` FROM (SELECT \"\\\"\" AS q) d, other o",
+                mysql.select("firstName").from("(SELECT \"\\\"\" AS q) d, other o", Account.class).build().query());
+        assertEquals("SELECT * FROM t JOIN (SELECT \"\\\"\" AS q) u ON u.q = t.q WHERE t.id = 1",
+                mysql.select("*").from("t").join("(SELECT \"\\\"\" AS q) u ON u.q = t.q").where("t.id = 1").build().query());
+
+        // "a\"" is one MySQL string, so the "--" after it is a real comment.
+        assertThrows(IllegalArgumentException.class, () -> mysql.update("t").set("note = \"a\\\"\" -- x"));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set("note = \"a\\\"\" -- x"));
+    }
+
+    // Regression: a custom named-parameter handler rendering "#name" tokens was read as a hash comment by the rename
+    // scanner outside SQL Server, so a colliding child placeholder kept its name (two "#id" bound to different values).
+    @Test
+    public void testCustomHashNamedParameterTokensAreRenamedAcrossSetOperation() {
+        for (final String product : new String[] { null, "PostgreSQL", "Oracle", "MySQL" }) {
+            SqlDialect.SqlDialectBuilder dialect = NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append('#').append(name));
+
+            if (product != null) {
+                dialect = dialect.productInfo(SqlDialect.ProductInfo.of(product));
+            }
+
+            final Dsl hash = Dsl.forDialect(dialect.build());
+            final AbstractQueryBuilder.SP sp = hash.select("id")
+                    .from("t")
+                    .where(Filters.eq("id", 1))
+                    .union(hash.select("id").from("t2").where(Filters.eq("id", 2)))
+                    .build();
+
+            assertEquals("SELECT id FROM t WHERE id = #id UNION SELECT id FROM t2 WHERE id = #id_2\n", sp.query(), product);
+            assertEquals(Arrays.asList(1, 2), sp.parameters(), product);
+        }
+    }
+
+    // Covers the single-pass child-placeholder rename (planned renames applied at once): many colliding names next to
+    // many '#' temporary tables, a later operand, a custom handler, and a property named like a generated suffix.
+    @Test
+    public void testChildPlaceholderRenameAppliesAllPlannedRenamesInOnePass() {
+        final StringBuilder from = new StringBuilder();
+        final List<Condition> conditions = new ArrayList<>();
+
+        for (int i = 0; i < 30; i++) {
+            from.append(i == 0 ? "" : ", ").append("#t").append(i);
+            conditions.add(Filters.eq("id", i));
+        }
+
+        for (final Dsl dsl : new Dsl[] { NSC, MSC }) {
+            final AbstractQueryBuilder.SP sp = dsl.select("id")
+                    .from("t")
+                    .where(Filters.and(Filters.eq("id", -1), Filters.eq("id", -2)))
+                    .union(dsl.select("id").from(from.toString()).where(Filters.and(conditions)))
+                    .build();
+            final List<String> names = new ArrayList<>(ParsedSql.parse(sp.query()).namedParameters());
+
+            assertEquals(32, names.size());
+            assertEquals(32, new java.util.HashSet<>(names).size(), sp.query());
+            assertEquals("id_32", names.get(31));
+        }
+
+        AbstractQueryBuilder.SP sp = NSC.select("id")
+                .from("t")
+                .where(Filters.and(Filters.eq("id", 1), Filters.eq("id_3", 13)))
+                .union(NSC.select("id")
+                        .from("t2")
+                        .where(Filters.and(Filters.eq("id", 2), Filters.eq("id", 3), Filters.eq("id", 4), Filters.eq("id_3", 5), Filters.eq("id_2", 6))))
+                .build();
+        assertEquals("SELECT id FROM t WHERE (id = :id) AND (id_3 = :id_3) UNION SELECT id FROM t2 WHERE (id = :id_2) AND (id = :id_5) AND (id = :id_4)"
+                + " AND (id_3 = :id_3_3) AND (id_2 = :id_2_2)", sp.query());
+        assertEquals(Arrays.asList(1, 13, 2, 3, 4, 5, 6), sp.parameters());
+
+        sp = NSC.select("id")
+                .from("t")
+                .where(Filters.and(Filters.eq("id", 1), Filters.eq("id", 11)))
+                .union(NSC.select("id").from("t2").where(Filters.and(Filters.eq("id", 2), Filters.eq("id", 3))))
+                .union(NSC.select("id").from("t3").where(Filters.and(Filters.eq("id", 4), Filters.eq("id_2", 5))))
+                .build();
+        assertEquals("SELECT id FROM t WHERE (id = :id) AND (id = :id_2) UNION SELECT id FROM t2 WHERE (id = :id_3) AND (id = :id_4)"
+                + " UNION SELECT id FROM t3 WHERE (id = :id_5) AND (id_2 = :id_2_2)", sp.query());
+
+        final Dsl at = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append('@').append(name)).build());
+        sp = at.select("id")
+                .from("t")
+                .where(Filters.and(Filters.eq("id", 1), Filters.eq("id", 3)))
+                .union(at.select("id").from("t2").where(Filters.and(Filters.eq("id", 2), Filters.eq("id", 4), Filters.eq("idx", 5))))
+                .build();
+        assertEquals("SELECT id FROM t WHERE (id = @id) AND (id = @id_2) UNION SELECT id FROM t2 WHERE (id = @id_3) AND (id = @id_4) AND (idx = @idx)",
+                sp.query());
+
+        // A child rendered with the default handler under a parent with a custom one is re-rendered with the parent's tokens.
+        sp = at.select("id").from("t").where(Filters.eq("id", 1)).union(NSC.select("id").from("t2").where(Filters.eq("id", 2))).build();
+        assertEquals("SELECT id FROM t WHERE id = @id UNION SELECT id FROM t2 WHERE id = @id_2", sp.query());
+
+        // The dialect-agnostic default still fails closed when a backslash makes quoted-text boundaries ambiguous.
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> NSC.select("id")
+                .from("t")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("id").from("t2").where(Filters.and(Filters.expr("\"a\\\" = 1"), Filters.eq("id", 2)))));
+        assertTrue(e.getMessage().contains("a backslash in quoted text"), e.getMessage());
+    }
+
+    // Covers lone-'\r' handling of the trailing-comment check: a comment ended by '\r' is terminated with '\n' only once,
+    // and a later '\n' still ends it.
+    @Test
+    public void testTrailingCommentLoneCarriageReturnReadingEndsAtLaterLineFeed() {
+        assertFalse(AbstractQueryBuilder.endsInsideLineComment("a -- x\r b\n c", false));
+        assertTrue(AbstractQueryBuilder.endsInsideLineComment("a -- x\r b", false));
+        assertFalse(AbstractQueryBuilder.endsInsideLineComment("a -- x\r\n b -- y\r\n", false));
+        assertEquals("a -- x\r\n", QueryUtil.terminateLineComment("a -- x\r"));
+        assertEquals("a -- x\r\n", QueryUtil.terminateLineComment("a -- x\r\n"));
+    }
+
+    // Covers the dialect-aware JOIN-connector and FROM-separator scans on further dialects: a standard 'C:\' literal cannot
+    // hide a CROSS JOIN connector or the separator after the primary table, while dialect comment/bracket rules still apply.
+    @Test
+    public void testJoinConnectorAndFromSeparatorScansOnMoreDialects() {
+        final Dsl oracle = lexDialect(PSC, "Oracle");
+        final Dsl db2 = lexDialect(PSC, "DB2");
+        final Dsl sqlServer = lexDialect(PSC, "Microsoft SQL Server");
+        final Dsl mysql = lexDialect(PSC, "MySQL");
+        final Dsl sqlite = lexDialect(PSC, "SQLite");
+        final Dsl pg = lexDialect(PSC, "PostgreSQL");
+
+        assertThrows(IllegalArgumentException.class, () -> oracle.select("u.id").from("users u").crossJoin("(SELECT 'C:\\' FROM dual) s ON 1=1"));
+        assertThrows(IllegalArgumentException.class, () -> db2.select("u.id").from("users u").crossJoin("(SELECT 'C:\\' FROM sysibm.sysdummy1) s ON 1=1"));
+
+        for (final Dsl dsl : new Dsl[] { oracle, db2, sqlServer }) {
+            assertEquals("SELECT x.first_name AS \"firstName\" FROM (SELECT * FROM account WHERE p = 'C:\\') x, other o",
+                    dsl.select("firstName").from("(SELECT * FROM account WHERE p = 'C:\\') x, other o", Account.class).build().query());
+        }
+
+        // from(Collection): only the first element's primary reference supplies the table alias.
+        final String collectionFrom = pg.select(Account.class).from(Arrays.asList("(SELECT * FROM account WHERE p = 'C:\\') x, other o", "z")).build().query();
+        assertTrue(collectionFrom.startsWith("SELECT x.id AS \"id\", "), collectionFrom);
+        assertTrue(collectionFrom.endsWith(" FROM (SELECT * FROM account WHERE p = 'C:\\') x, other o, z"), collectionFrom);
+
+        // Dialect comment and bracket rules keep connector-looking text hidden ...
+        assertEquals("SELECT u.id FROM users u CROSS JOIN s # ON x\n", mysql.select("u.id").from("users u").crossJoin("s # ON x\n").build().query());
+        assertEquals("SELECT u.id FROM users u CROSS JOIN [x ON] s", sqlServer.select("u.id").from("users u").crossJoin("[x ON] s").build().query());
+        assertEquals("SELECT u.id FROM users u JOIN [s ON x] s2 ON s2.id = u.id WHERE u.id = 1",
+                sqlite.select("u.id").from("users u").join("[s ON x] s2 ON s2.id = u.id").where("u.id = 1").build().query());
+        // ... and the dialect-agnostic default also reads "##" as a possible MySQL comment start (fail closed).
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("u.id").from("users u").crossJoin("u ## don't\nON true"));
+    }
+
+    // Covers the "##" token and the backslash readings of the alias scanner: an explicit dialect finds the derived-table
+    // alias past "##", the default infers none where its readings disagree, and standard dialects keep 'it\'s' unterminated.
+    @Test
+    public void testAliasScannerHashPairAndBackslashReadingsPerDialect() {
+        final Dsl pg = lexDialect(PSC, "PostgreSQL");
+        final Dsl sqlServer = lexDialect(PSC, "Microsoft SQL Server");
+
+        assertEquals("SELECT a.first_name AS \"firstName\" FROM (SELECT x ## y AS c FROM t) a\n",
+                pg.select("firstName").from("(SELECT x ## y AS c FROM t) a", Account.class).build().query());
+        assertEquals("SELECT first_name AS \"firstName\" FROM (SELECT x ## y AS c FROM t) a\n",
+                PSC.select("firstName").from("(SELECT x ## y AS c FROM t) a", Account.class).build().query());
+
+        // Both default readings complete but disagree, or none completes: no alias is inferred and the item is verbatim.
+        assertEquals("SELECT 'a\\' AS x, \\'c' AS y FROM t", PSC.select("'a\\' AS x, \\'c' AS y").from("t").build().query());
+        assertEquals("SELECT 'a\\' AS x, 'b AS y FROM t", PSC.select("'a\\' AS x, 'b AS y").from("t").build().query());
+        // A standard dialect does not honor \' (the literal is unterminated there), so no derived-table alias is inferred.
+        assertEquals("SELECT first_name AS \"firstName\" FROM (SELECT 'it\\'s' AS p) a",
+                pg.select("firstName").from("(SELECT 'it\\'s' AS p) a", Account.class).build().query());
+        assertEquals("SELECT 'C:\\' || ' AS x' AS y FROM t", sqlServer.select("'C:\\' || ' AS x' AS y").from("t").build().query());
+    }
+
+    // Covers the dialect-aware '#' and string readings of the child-placeholder rename on the remaining paths: a custom
+    // handler, an IN snapshot, a derived table, "##g", MySQL "..." escapes, and the default's non-ambiguous backslashes.
+    @Test
+    public void testChildPlaceholderRenameHashAndQuoteReadingsOnAllPaths() {
+        final Dsl at = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append('@').append(name)).build());
+
+        assertEquals("SELECT id FROM t WHERE id = @id UNION SELECT id FROM t2 x #it's\n WHERE id = @id_2",
+                at.select("id").from("t").where(Filters.eq("id", 1)).union(at.select("id").from("t2 x #it's\n").where(Filters.eq("id", 2))).build().query());
+        assertEquals("SELECT id FROM t WHERE (id = :id) AND (id IN (SELECT id FROM t2 x #it's\n WHERE id = :id_2))",
+                NSC.select("id")
+                        .from("t")
+                        .where(Filters.and(Filters.eq("id", 1), Filters.in("id", NSC.select("id").from("t2 x #it's\n").where(Filters.eq("id", 2)).toSubQuery())))
+                        .build()
+                        .query());
+        assertEquals("SELECT id FROM (SELECT id FROM t2 x #it's\n WHERE id = :id) d WHERE id = :id_2",
+                NSC.select("id").from(NSC.select("id").from("t2 x #it's\n").where(Filters.eq("id", 2)), "d").where(Filters.eq("id", 1)).build().query());
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM ##g x WHERE id = :id_2",
+                NSC.select("id").from("t").where(Filters.eq("id", 1)).union(NSC.select("id").from("##g x").where(Filters.eq("id", 2))).build().query());
+
+        // MySQL "a\"" is one string literal, for iBATIS markers and custom tokens too.
+        final Dsl mysqlIbatis = lexDialect(MSC, "MySQL");
+        assertEquals("SELECT id FROM t WHERE id = #{id} UNION SELECT id FROM t2 WHERE (n <> \"a\\\"\") AND (id = #{id_2})",
+                mysqlIbatis.select("id")
+                        .from("t")
+                        .where(Filters.eq("id", 1))
+                        .union(mysqlIbatis.select("id").from("t2").where(Filters.and(Filters.expr("n <> \"a\\\"\""), Filters.eq("id", 2))))
+                        .build()
+                        .query());
+        final Dsl atMysql = Dsl.forDialect(at.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+        assertEquals("SELECT id FROM t WHERE id = @id UNION SELECT id FROM t2 WHERE (n <> \"a\\\"\") AND (id = @id_2)",
+                atMysql.select("id")
+                        .from("t")
+                        .where(Filters.eq("id", 1))
+                        .union(atMysql.select("id").from("t2").where(Filters.and(Filters.expr("n <> \"a\\\"\""), Filters.eq("id", 2))))
+                        .build()
+                        .query());
+
+        // The default's two readings agree on even backslashes and on a backslash inside a single-quoted string.
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM t2 WHERE (\"a\\\\b\" = 1) AND (id = :id_2)",
+                NSC.select("id")
+                        .from("t")
+                        .where(Filters.eq("id", 1))
+                        .union(NSC.select("id").from("t2").where(Filters.and(Filters.expr("\"a\\\\b\" = 1"), Filters.eq("id", 2))))
+                        .build()
+                        .query());
+        assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM t2 WHERE (j = '{\"a\":\"b\\\"c\"}') AND (id = :id_2)",
+                NSC.select("id")
+                        .from("t")
+                        .where(Filters.eq("id", 1))
+                        .union(NSC.select("id").from("t2").where(Filters.and(Filters.expr("j = '{\"a\":\"b\\\"c\"}'"), Filters.eq("id", 2))))
+                        .build()
+                        .query());
+
+        // Explicit standard dialects read "a\" as a complete quoted identifier: no ambiguity, no exception.
+        for (final String product : new String[] { "PostgreSQL", "Oracle", "Microsoft SQL Server" }) {
+            final Dsl named = lexDialect(NSC, product);
+            assertEquals("SELECT id FROM t WHERE id = :id UNION SELECT id FROM t2 WHERE (\"a\\\" = 1) AND (id = :id_2)",
+                    named.select("id")
+                            .from("t")
+                            .where(Filters.eq("id", 1))
+                            .union(named.select("id").from("t2").where(Filters.and(Filters.expr("\"a\\\" = 1"), Filters.eq("id", 2))))
+                            .build()
+                            .query(),
+                    product);
+        }
+    }
+
+    // Covers the comment guard's string readings (near misses stay accepted; H2/SQLite and non-E prefixes are standard)
+    // and MySQL hash handling inside quotes and backticks.
+    @Test
+    public void testCommentGuardStringReadingNearMissesAndQuotedHashes() {
+        final Dsl pg = lexDialect(PSC, "PostgreSQL");
+        final Dsl h2 = lexDialect(PSC, "H2");
+        final Dsl sqlite = lexDialect(PSC, "SQLite");
+        final Dsl mysql = lexDialect(PSC, "MySQL");
+
+        assertEquals("UPDATE t SET dir = 'C:\\', note = 'x' WHERE a = 1", pg.update("t").set("dir = 'C:\\', note = 'x'").where("a = 1").build().query());
+        assertEquals("SELECT 'a\\\\b' AS x FROM t", pg.select("'a\\\\b' AS x").from("t").build().query());
+        assertThrows(IllegalArgumentException.class, () -> h2.select("'x\\' -- c").from("t"));
+        assertThrows(IllegalArgumentException.class, () -> sqlite.select("'x\\' -- c").from("t"));
+        // "fee'...'" is an identifier followed by a standard string, not an E'...' escape string.
+        assertThrows(IllegalArgumentException.class, () -> pg.select("fee'a\\' -- x'").from("t"));
+
+        assertEquals("SELECT 'a##b' AS x FROM t", mysql.select("'a##b' AS x").from("t").build().query());
+        assertEquals("SELECT `a#b` FROM t", mysql.select("`a#b`").from("t").build().query());
+        assertEquals("SELECT a ## b FROM t", PSC.select("a ## b").from("t").build().query());
+    }
+
+    @Test
+    public void testUnionRenameWithCustomWhitespaceLedSeparatorAndSubscripts() {
+        // Regression: with a configured separator starting with whitespace (" AND"), ParsedSql could not align the
+        // tokens back onto the SQL, so renaming the colliding child placeholder of a union whose child contains a
+        // subscript after an AND threw IllegalStateException ("Cannot locate subscript brackets").
+        for (final String separator : new String[] { "::", " AND" }) {
+            final Dsl dsl = Dsl.forDialect(SqlDialect.builder()
+                    .sqlPolicy(SqlDialect.SqlPolicy.NAMED_SQL)
+                    .tokenizerConfig(SqlParser.tokenizerConfigBuilder().withSeparator(separator).build())
+                    .build());
+
+            final String sql = dsl.select("a")
+                    .from("t")
+                    .where(Filters.eq("id", 1))
+                    .union(dsl.select("a[1]").from("t").where(Filters.eq("id", 2).and(Filters.eq("b", 3)).and(Filters.expr("x[1] = 0"))))
+                    .build()
+                    .query();
+
+            assertEquals("SELECT a FROM t WHERE id = :id UNION SELECT a[1] FROM t WHERE (id = :id_2) AND (b = :b) AND (x[1] = 0)", sql, separator);
+        }
+    }
+
+    // Regression: with a shared "#name" handler, a child token that keeps its name ("#id") was read as a hash comment by the
+    // rename scan, hiding the colliding token after it on the same line, so two "#x" placeholders were bound to different values.
+    @Test
+    public void testNonRenamedCustomHashTokenDoesNotHideLaterRenamedToken() {
+        for (final String product : new String[] { null, "PostgreSQL", "MySQL" }) {
+            SqlDialect.SqlDialectBuilder dialect = NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append('#').append(name));
+
+            if (product != null) {
+                dialect = dialect.productInfo(SqlDialect.ProductInfo.of(product));
+            }
+
+            final Dsl hash = Dsl.forDialect(dialect.build());
+
+            AbstractQueryBuilder.SP sp = hash.select("id")
+                    .from("t")
+                    .where(Filters.eq("x", 1))
+                    .union(hash.select("id").from("t2").where(Filters.and(Filters.eq("id", 2), Filters.eq("x", 3))))
+                    .build();
+            assertEquals("SELECT id FROM t WHERE x = #x UNION SELECT id FROM t2 WHERE (id = #id) AND (x = #x_2)\n", sp.query(), product);
+            assertEquals(Arrays.asList(1, 2, 3), sp.parameters(), product);
+
+            // The IN-subquery snapshot path.
+            sp = hash.select("id")
+                    .from("t")
+                    .where(Filters.and(Filters.eq("x", 1),
+                            Filters.in("id", hash.select("id").from("t2").where(Filters.and(Filters.eq("id", 2), Filters.eq("x", 3))).toSubQuery())))
+                    .build();
+            assertEquals("SELECT id FROM t WHERE (x = #x) AND (id IN (SELECT id FROM t2 WHERE (id = #id) AND (x = #x_2)\n))", sp.query(), product);
+        }
+    }
+
+    // Regression: a qualified JOIN whose ON follows a comment ended only by a lone '\r' is rejected as incomplete (MySQL and
+    // SQLite read the ON as part of the comment), but the error claimed no ON/USING had been written at all.
+    @Test
+    public void testIncompleteJoinErrorExplainsConnectorHiddenByLoneCarriageReturnComment() {
+        final Dsl mysql = lexDialect(PSC, "MySQL");
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> PSC.select("id").from("account a").join("device d -- x\r ON a.id = d.account_id").where(Filters.eq("id", 1)));
+        assertTrue(e.getMessage().startsWith("The preceding qualified JOIN must be completed with on(...) or using(...) before 'WHERE'. Its ON/USING connector"),
+                e.getMessage());
+        assertTrue(e.getMessage().contains("lone carriage return") && e.getMessage().contains("SqlDialect.productInfo"), e.getMessage());
+
+        e = assertThrows(IllegalStateException.class, () -> mysql.select("id").from("account a").join("device d -- x\r ON a.id = d.account_id").build());
+        assertTrue(e.getMessage().contains("lone carriage return") && !e.getMessage().contains("SqlDialect.productInfo"), e.getMessage());
+        e = assertThrows(IllegalStateException.class,
+                () -> mysql.select("id").from("account a").join("device d -- x\r ON a.id = d.account_id").union("SELECT 1"));
+        assertTrue(e.getMessage().contains("lone carriage return"), e.getMessage());
+
+        // A join without any ON keeps the plain message.
+        e = assertThrows(IllegalStateException.class, () -> PSC.select("id").from("account a").join("device d").where(Filters.eq("id", 1)));
+        assertEquals("The preceding qualified JOIN must be completed with on(...) or using(...) before 'WHERE'", e.getMessage());
+    }
+
+    // Regression: an explicitly selected self-referencing sub-entity ("parent" of a Node) was expanded with the entity's own
+    // @Table alias: under another alias it referenced an undeclared table ("n.id ... FROM node x"), and under the default
+    // alias every node silently became its own parent.
+    @Test
+    public void testExplicitlySelectedSelfReferencingSubEntityIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> PSC
+                .selectFrom(List.of(Selection.builder(SubEntityNode.class).tableAlias("x").includedPropNames(List.of("id", "parent")).build()))
+                .build());
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id", "parent").from(SubEntityNode.class, "x"));
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from(SubEntityNode.class, "x").orderByDesc("parent"));
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.select("id", "parent").from(SubEntityNode.class));
+        assertTrue(e.getMessage().contains("Self-referencing sub-entity property 'parent'"), e.getMessage());
+
+        // The generated projection leaves the cyclic property out, and an ordinary sub-entity is still expanded.
+        assertEquals("SELECT x.id AS \"id\", x.name AS \"name\" FROM node x", PSC.selectFrom(SubEntityNode.class, "x", true).build().query());
+        assertTrue(PSC.select("id", "devices").from(Account.class).build().query().startsWith("SELECT acc.id AS \"id\", device.id AS \"devices.id\", "));
+    }
+
+    // Regression: distinctOn checked its argument (an unterminated block comment) before the statement, so a non-SELECT
+    // builder reported an IllegalArgumentException instead of the IllegalStateException every other path gives.
+    @Test
+    public void testDistinctOnChecksStatementBeforeArgument() {
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> PSC.update("t").distinctOn("/* x"));
+        assertEquals("selectModifier() is only valid for SELECT queries", e.getMessage());
+
+        e = assertThrows(IllegalStateException.class, () -> PSC.select("a").distinct().distinctOn("/* x"));
+        assertEquals("selectModifier has already been set and cannot be set again", e.getMessage());
+
+        assertThrows(IllegalArgumentException.class, () -> PSC.select("a").distinctOn("/* x"));
+        assertEquals("SELECT DISTINCT ON (a) a FROM t", PSC.select("a").distinctOn("a").from("t").build().query());
+    }
+
+    // Covers the MySQL dash-pair rewrite ("a--1" is a - (-1) there) at its documented boundaries: MyBatis markers, block
+    // comments and backslash-escaped "..." strings are not rewritten, "--" followed by a tab is still a comment, and the scan
+    // stops at the first '[' (a known partial fix: the later "d--1 > 0" is still read as a comment).
+    @Test
+    public void testMySqlDashPairRewriteSkipsMarkersCommentsAndStrings() {
+        final Dsl mysql = lexDialect(PSC, "MySQL");
+
+        // The marker is not rewritten; its nonsensical "--" name then still reads as a comment (pre-existing).
+        assertEquals("SELECT id FROM t WHERE a = #{x", mysql.select("id").from("t").where(Filters.expr("a = #{x--y} AND b--1 > 0")).build().query());
+        assertEquals("SELECT id FROM t WHERE a = 1 AND b- -1 > 0", mysql.select("id").from("t").where(Filters.expr("a /* a--1 */ = 1 AND b--1 > 0")).build().query());
+        assertEquals("SELECT id FROM t WHERE n = \"a\\\"--1\" AND b- -1 > 0",
+                mysql.select("id").from("t").where(Filters.expr("n = \"a\\\"--1\" AND b--1 > 0")).build().query());
+        assertEquals("SELECT id FROM t WHERE a = 1  ORDER BY id", mysql.select("id").from("t").where(Filters.expr("a = 1 --\tc")).orderBy("id").build().query());
+        assertEquals("SELECT id FROM t WHERE c- -1 > arr[1] AND d", mysql.select("id").from("t").where(Filters.expr("c--1 > arr[1] AND d--1 > 0")).build().query());
+    }
 }

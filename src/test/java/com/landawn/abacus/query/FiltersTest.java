@@ -3307,4 +3307,110 @@ public class FiltersTest extends TestBase {
             this.value = value;
         }
     }
+
+    @Test
+    public void testInWithObjectTypedCollectionOrArrayUnpacksValues() {
+        // Regression: a collection/array statically typed Object selected in(String, Object...) and became ONE IN value
+        // ("id IN (?)" bound to the whole list), unlike binary(prop, IN, value).
+        final Object ids = Arrays.asList(1, 2);
+        assertEquals("id IN (1, 2)", Filters.in("id", ids).toString());
+        assertEquals("id IN (1, 2)", Filters.in("id", (Object) new int[] { 1, 2 }).toString());
+        assertEquals("id IN (1, 2)", Filters.in("id", (Object) new Integer[] { 1, 2 }).toString());
+        assertEquals("id NOT IN (1, 2)", Filters.notIn("id", ids).toString());
+        assertEquals("id IN (1, 2)", Filters.namedProperty("id").in(ids).toString());
+
+        final AbstractQueryBuilder.SP sp = Dsl.PSC.select("id").from("account").where(Filters.in("id", ids)).build();
+        assertEquals("SELECT id FROM account WHERE id IN (?, ?)", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+        // Several values, and a lone byte[] (a binary value), are unchanged.
+        assertEquals(2, Filters.in("id", ids, ids).values().size());
+        assertEquals(1, Filters.in("hash", (Object) new byte[] { 1, 2 }).values().size());
+    }
+
+    @Test
+    public void testSubQueryWithNullExprNamesExprAndValidatesEarlierArgumentsFirst() {
+        // Regression: expr(null) ran first and failed with "literal must not be null", naming a parameter this API lacks
+        // and hiding an invalid entityClass/entityName.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.asList("id"), (String) null));
+        assertTrue(ex.getMessage().contains("expr"), ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), (String) null));
+        assertTrue(ex.getMessage().contains("expr"), ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery((Class<?>) null, Arrays.asList("id"), (String) null));
+        assertTrue(ex.getMessage().toLowerCase().contains("entity class"), ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(" ", Arrays.asList("id"), (String) null));
+        assertTrue(ex.getMessage().toLowerCase().contains("entity name"), ex.getMessage());
+
+        assertEquals("SELECT id FROM t", Filters.subQuery("t", Arrays.asList("id"), "").toString());
+    }
+
+    @Test
+    public void testInWithObjectTypedLoneCollectionOrArrayEdgeCases() {
+        // Covers the remaining scenarios of the lone Object-typed collection/array unpacking in in/notIn(String, Object...).
+        assertEquals("id NOT IN (1, 2)", Filters.notIn("id", (Object) new long[] { 1L, 2L }).toString());
+        assertEquals("g IN ('a', 'b')", Filters.in("g", (Object) new char[] { 'a', 'b' }).toString());
+        assertEquals("g IN (true, false)", Filters.in("g", (Object) new boolean[] { true, false }).toString());
+        assertEquals("id IN (3, 1)", Filters.in("id", (Object) new LinkedHashSet<>(Arrays.asList(3, 1))).toString());
+
+        // A lone empty collection/array is an empty value list (previously the single value '[]'); a lone list holding null is rejected.
+        assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) new java.util.ArrayList<>()));
+        assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) new int[0]));
+        assertThrows(IllegalArgumentException.class, () -> Filters.notIn("id", (Object) new java.util.ArrayList<>()));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) Arrays.asList(1, null)));
+        assertTrue(ex.getMessage().contains("null"), ex.getMessage());
+
+        // Unchanged: a lone SubQuery, Map or byte[] stays one value, and a multi-row Object[][] keeps one value per row
+        // (only a one-row varargs array is unpacked).
+        assertEquals("id IN ((SELECT id FROM t))", Filters.in("id", (Object) Filters.subQuery("SELECT id FROM t")).toString());
+        final Map<String, Integer> map = new HashMap<>();
+        map.put("k", 1);
+        assertEquals(Arrays.asList(map), Filters.in("id", (Object) map).values());
+        assertEquals(1, Filters.in("hash", (Object) new byte[] { 1, 2 }).values().size());
+        // The casts make each call's meaning compiler-independent: an uncast Object[][] argument is an "inexact" varargs
+        // argument, which javac passes as the varargs array itself but the Eclipse compiler (ECJ) wraps in a new Object[1].
+        assertEquals("id IN ('[1, 2]', '[3, 4]')", Filters.in("id", (Object[]) new Object[][] { { 1, 2 }, { 3, 4 } }).toString());
+        assertEquals("id IN (1, 2)", Filters.in("id", (Object[]) new Object[][] { { 1, 2 } }).toString());
+        // As ONE varargs element, a lone 2-D array is unpacked one level only: its single row stays one value.
+        assertEquals("id IN ('[1, 2]')", Filters.in("id", (Object) new Object[][] { { 1, 2 } }).toString());
+
+        // Every SQL policy sees the unpacked values.
+        final AbstractQueryBuilder.SP sp = Dsl.NSC.select("id").from("t").where(Filters.notIn("id", (Object) new int[] { 1, 2 })).build();
+        assertEquals("SELECT id FROM t WHERE id NOT IN (:id1, :id2)", sp.query());
+        assertEquals(Arrays.asList(1, 2), sp.parameters());
+        assertEquals("SELECT id FROM t WHERE id IN ('a', 'b')", Dsl.SCSB.select("id").from("t").where(Filters.in("id", (Object) Arrays.asList("a", "b"))).build().query());
+
+        // The condition snapshots the lone collection: later mutation does not change it.
+        final List<Integer> ids = new java.util.ArrayList<>(Arrays.asList(1, 2));
+        final In in = Filters.in("id", (Object) ids);
+        ids.add(3);
+        ids.set(0, 9);
+        assertEquals("id IN (1, 2)", in.toString());
+        assertEquals(Arrays.asList(1, 2), in.values());
+    }
+
+    @Test
+    public void testSubQueryArgumentValidationMessagesFollowParameterOrder() {
+        // Covers the validation order and exact messages of subQuery(entity, propNames, expr): entity, then propNames, then expr.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", (Collection<String>) null, (String) null));
+        assertEquals("Property names must not be null", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.<String> asList(), (String) null));
+        assertEquals("Property names must not be empty", ex.getMessage());
+
+        // A non-null (even invalid) expr still reports the entity first.
+        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery((Class<?>) null, Arrays.asList("id"), "ON x = 1"));
+        assertEquals("Entity class must not be null", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.asList("id"), (String) null));
+        assertEquals("'expr' cannot be null", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), (String) null));
+        assertEquals("'expr' cannot be null", ex.getMessage());
+
+        // A blank expr is the documented "no filter".
+        assertEquals("SELECT id FROM t", Filters.subQuery("t", Arrays.asList("id"), "  ").toString());
+    }
 }

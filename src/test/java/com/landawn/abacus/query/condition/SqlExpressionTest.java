@@ -1569,7 +1569,7 @@ public class SqlExpressionTest extends TestBase {
         // expression containing a comment token, and other dialects read the '#' as a comment.
         assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("/* c */ #tmp.id = 1")));
         assertThrows(IllegalArgumentException.class, () -> sqlServer.select("*").from("#tmp").where("/* c */ #tmp.id = 1"));
-        assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("#　tmp.id = 1")));
+        assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr("#\u3000tmp.id = 1")));
     }
 
     @Test
@@ -1638,5 +1638,426 @@ public class SqlExpressionTest extends TestBase {
 
         // Lower-case forms are still identifiers converted by the naming policy (keywords are registered upper-case only).
         assertEquals("yearMonth", SqlExpression.of("year_month").toSql(NamingPolicy.CAMEL_CASE));
+    }
+
+    // Regression: a token with a glued subscript, array constructor or marker (ARRAY[1, 2, 3], myTags[:tagIndex],
+    // log_${yearMonth}) was converted as one identifier: spaces became '_', bind markers and functions were renamed.
+    @Test
+    public void testGluedSubscriptOrArrayConstructorConvertsOnlyTheLeadingName() {
+        assertEquals("id = ANY(ARRAY[1, 2, 3])", SqlExpression.of("id = ANY(ARRAY[1, 2, 3])").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("id = ANY(ARRAY[1, 2, 3])", SqlExpression.of("id = ANY(ARRAY[1, 2, 3])").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("tags && ARRAY[:tagA, :tagB]", SqlExpression.of("tags && ARRAY[:tagA, :tagB]").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("my_tags[:tagIndex] = 'x'", SqlExpression.of("myTags[:tagIndex] = 'x'").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("my_tags[#{tagIndex}] = 'x'", SqlExpression.of("myTags[#{tagIndex}] = 'x'").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("log_${yearMonth}.created_at > 0", SqlExpression.of("log_${yearMonth}.createdAt > 0").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("scores[idx + 1] > 5", SqlExpression.of("scores[idx + 1] > 5").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("scores[CURRENT_DATE - start_day] > 5", SqlExpression.of("scores[CURRENT_DATE - startDay] > 5").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("tags[array_length(tags, 1)] = 'x'", SqlExpression.of("tags[array_length(tags, 1)] = 'x'").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("payload_data['camelKey'] = 1", SqlExpression.of("payloadData['camelKey'] = 1").toSql(NamingPolicy.SNAKE_CASE));
+        // The interior of a subscript or array constructor holds column references and is rendered like an expression.
+        assertEquals("ARRAY[first_name, last_name]", SqlExpression.of("ARRAY[firstName, lastName]").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("user_ids[1] = x", SqlExpression.of("userIds[1] = x").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("col::text[] = y", SqlExpression.of("col::text[] = y").toSql(NamingPolicy.SNAKE_CASE));
+        // An interior holding a '#' or comment is copied as written instead of being stripped as a comment.
+        assertEquals("arr[idx # 2] = 1", SqlExpression.of("arr[idx # 2] = 1").toSql(NamingPolicy.SNAKE_CASE));
+        // Prefixed literals, delimited qualified parts and a column after a subscript keep their existing rendering.
+        assertEquals("N'camelCase' = first_name", SqlExpression.of("N'camelCase' = firstName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("t.[colName] = y", SqlExpression.of("t.[colName] = y").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: a PostgreSQL cast glued to a column was treated as part of one identifier. unitPrice::numeric(10,2)
+    // was skipped as a "function name", and the quoted cast type in orderStatus::"OrderStatus" was rewritten.
+    @Test
+    public void testGluedCastConvertsTheColumnAndKeepsTheType() {
+        assertEquals("unit_price::numeric(10,2) > 5", SqlExpression.of("unitPrice::numeric(10,2) > 5").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("order_status::\"OrderStatus\" = 'NEW'", SqlExpression.of("orderStatus::\"OrderStatus\" = 'NEW'").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("payload_data::jsonb", SqlExpression.of("payloadData::jsonb").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals(":payload::jsonb", SqlExpression.of(":payload::jsonb").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: the tokenizer ends a token at a closing delimiter, so the column in "T".firstName arrived as ".firstName"
+    // and was never converted, although t."firstName" converts its unquoted qualifier.
+    @Test
+    public void testColumnAfterDelimitedQualifierIsConverted() {
+        assertEquals("\"T\".first_name = 1", SqlExpression.of("\"T\".firstName = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("`t`.first_name = 1", SqlExpression.of("`t`.firstName = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("[t].first_name = 1", SqlExpression.of("[t].firstName = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("\"T\".FIRST_NAME = 1", SqlExpression.of("\"T\".firstName = 1").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        // A schema-qualified function keeps its name; its arguments are still converted.
+        assertEquals("\"s\".myFunc(first_name)", SqlExpression.of("\"s\".myFunc(firstName)").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: the rule above also converted the unquoted part of a schema-qualified type or collation, so under
+    // CAMEL_CASE id::"types".order_status became id::"types".orderStatus, a type the database does not have.
+    @Test
+    public void testQualifiedTypeOrCollationAfterDelimitedSchemaIsKept() {
+        for (final String expr : new String[] { "id::\"types\".order_status", "id :: \"types\".order_status", "CAST(x AS \"types\".order_status)",
+                "x::`types`.order_status", "x::[types].order_status", "x::\"db\".\"types\".order_status", "name collate \"public\".my_collation",
+                "name collate [dbo].my_collation" }) {
+            assertEquals(expr, SqlExpression.of(expr).toSql(NamingPolicy.CAMEL_CASE), expr);
+        }
+
+        // The column before the cast is still converted, the type after it is not.
+        assertEquals("\"T\".firstName::\"types\".order_status", SqlExpression.of("\"T\".first_name::\"types\".order_status").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("\"T\".first_name::\"types\".orderStatus", SqlExpression.of("\"T\".firstName::\"types\".orderStatus").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(\"T\".first_name AS int)", SqlExpression.of("CAST(\"T\".firstName AS int)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("x::int = \"T\".first_name", SqlExpression.of("x::int = \"T\".firstName").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: a type or collation name not glued to its cast was converted like a column, so CAMEL_CASE turned
+    // CAST(id AS order_status), id :: order_status and id::"types". order_status into ...orderStatus, a type the
+    // database does not have.
+    @Test
+    public void testTypeAndCollationNamesInTypePositionsAreKept() {
+        for (final String expr : new String[] { "CAST(id AS order_status)", "TRY_CAST(id AS order_status)", "SAFE_CAST(id AS order_status)",
+                "cast (id as order_status)", "CAST(id AS types.order_status)", "CAST(id AS \"types\". order_status)", "CAST(id AS types .order_status)",
+                "CAST(id AS numeric(10, 2))", "CAST(id AS double precision)", "CAST(id AS VARCHAR(10))", "CAST(CAST(id AS a_type) AS b_type)",
+                "CAST((id + 1) AS order_status)", "CAST(id AS my_type ARRAY)", "id :: order_status", "id:: order_status", "id ::order_status",
+                "id :: types.order_status", "id :: types. order_status", "id::types. order_status", "id::\"types\". order_status",
+                "id::\"types\" . order_status", "id :: \"types\" .order_status", "id :: my_type[]", "CAST(id AS a_type)::b_type",
+                "name collate my_collation", "name collate public. my_collation", "name collate \"public\" . my_collation" }) {
+            assertEquals(expr, SqlExpression.of(expr).toSql(NamingPolicy.CAMEL_CASE), expr);
+        }
+
+        // Stripped comments collapse to one space, as elsewhere.
+        assertEquals("CAST(? AS pg_catalog . \"line\")", SqlExpression.of("CAST(? AS /* schema */ pg_catalog /* dot */ . \"line\")").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CAST(created_at AS DATE)", SqlExpression.of("CAST(createdAt AS DATE)").toSql(NamingPolicy.SNAKE_CASE));
+
+        // Columns around a type, an AS outside a CAST call and the words after a type's first word are still converted.
+        assertEquals("CAST(first_name AS myType) = last_name", SqlExpression.of("CAST(firstName AS myType) = lastName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("COALESCE(CAST(first_name AS myType), last_name)",
+                SqlExpression.of("COALESCE(CAST(firstName AS myType), lastName)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(first_name AS INT) AS my_alias", SqlExpression.of("CAST(firstName AS INT) AS myAlias").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("fn(first_name AS last_name)", SqlExpression.of("fn(firstName AS lastName)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name :: myType = last_name", SqlExpression.of("firstName :: myType = lastName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name :: types.myType = last_name", SqlExpression.of("firstName :: types.myType = lastName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name collate \"C\" ASC, last_name", SqlExpression.of("firstName collate \"C\" ASC, lastName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(#{p} AS myType) = last_name", SqlExpression.of("CAST(#{p} AS myType) = lastName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(arr[first_name] AS myType)", SqlExpression.of("CAST(arr[firstName] AS myType)").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: a part that glued a second cast (int:: in id :: int:: order_status) ended the name, so the second type was
+    // converted; and every CAST clause after the type was copied as part of it, so the column in BigQuery's
+    // AT TIME ZONE timeZone or Oracle's DEFAULT fallbackDate ON CONVERSION ERROR was no longer converted.
+    @Test
+    public void testChainedCastAndCastClauseAfterType() {
+        for (final String expr : new String[] { "id :: int:: order_status", "id :: int::\"types\". order_status", "id :: int :: order_status",
+                "id::int:: order_status", "CAST(x AS STRUCT<format STRING, first_name INT64>)", "CAST(x AS ARRAY<STRUCT<a_b INT64>>)" }) {
+            assertEquals(expr, SqlExpression.of(expr).toSql(NamingPolicy.CAMEL_CASE), expr);
+        }
+
+        assertEquals("CAST(event_time AS STRING format 'YYYY' at time zone time_zone)",
+                SqlExpression.of("CAST(eventTime AS STRING format 'YYYY' at time zone timeZone)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(event_time AS TIMESTAMP format fmt_col)", SqlExpression.of("CAST(eventTime AS TIMESTAMP format fmtCol)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(x AS DATE default fallback_date on conversion error, 'DD-MM-YYYY')",
+                SqlExpression.of("CAST(x AS DATE default fallbackDate on conversion error, 'DD-MM-YYYY')").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(x AS DATE, fmt_col)", SqlExpression.of("CAST(x AS DATE, fmtCol)").toSql(NamingPolicy.SNAKE_CASE));
+        // A ',' inside the type's own parentheses or angle brackets does not end it.
+        assertEquals("CAST(x AS numericType(10, 2)) = last_name", SqlExpression.of("CAST(x AS numericType(10, 2)) = lastName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(x AS STRUCT<a INT64, firstName STRING>) = last_name",
+                SqlExpression.of("CAST(x AS STRUCT<a INT64, firstName STRING>) = lastName").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: a schema named format or at was read as the FORMAT / AT TIME ZONE clause that ends a CAST type, so the type
+    // after it was converted (CAST(id AS format . order_status) -> format . orderStatus under CAMEL_CASE).
+    @Test
+    public void testKeywordNamedSchemaInCastTypeIsNotAClause() {
+        for (final String expr : new String[] { "CAST(id AS format . order_status)", "CAST(id AS at . order_status)", "CAST(id AS format. order_status)",
+                "CAST(id AS format.order_status)", "CAST(id AS types. format)", "CAST(id AS types . at)", "CAST(id AS format)",
+                "CAST(id AS \"format\" . order_status)" }) {
+            assertEquals(expr, SqlExpression.of(expr).toSql(NamingPolicy.CAMEL_CASE), expr);
+        }
+
+        // Stripped comments collapse to one space.
+        assertEquals("CAST(id AS at . order_status)", SqlExpression.of("CAST(id AS at /* c */ . order_status)").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CAST(id AS format . order_status)", SqlExpression.of("CAST(id AS format /* c */ . /* d */ order_status)").toSql(NamingPolicy.CAMEL_CASE));
+
+        // After a complete type name, qualified or not, the words still start a clause.
+        assertEquals("CAST(event_time AS types . my_type at time zone time_zone)",
+                SqlExpression.of("CAST(eventTime AS types . my_type at time zone timeZone)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(event_time AS format . my_type format fmt_col)",
+                SqlExpression.of("CAST(eventTime AS format . my_type format fmtCol)").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: the tokenizer reads \' as an escaped quote, but renderValue emits standard literals ('C:\'). The quote
+    // boundaries after such a literal were off by one: a later string value was converted as an identifier, and a "--"
+    // inside a later string was dropped as a comment (truncating the SQL even under NO_CHANGE).
+    @Test
+    public void testEscapeDependentQuoteKeepsTheRestOfTheExpressionVerbatim() {
+        final String truncated = SqlExpression.and(SqlExpression.eq("path", "C:\\"), SqlExpression.eq("note", "-- n/a"));
+        assertEquals("(path = 'C:\\') AND (note = '-- n/a')", truncated);
+        assertEquals("(path = 'C:\\') AND (note = '-- n/a')", SqlExpression.of(truncated).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("(path = 'C:\\') AND (note = '-- n/a')", SqlExpression.of(truncated).toString());
+        assertEquals("(path = 'C:\\') AND (note = '-- n/a')", SqlExpression.of(truncated).toSql(NamingPolicy.SNAKE_CASE));
+
+        // Conversion stops at the escape-dependent literal; the string data after it is never rewritten.
+        final String like = SqlExpression.and(SqlExpression.like("fileName", "%\\"), SqlExpression.eq("ownerName", "John Smith"));
+        assertEquals("(file_name LIKE '%\\') AND (ownerName = 'John Smith')", SqlExpression.of(like).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("(FILE_NAME LIKE '%\\') AND (ownerName = 'John Smith')", SqlExpression.of(like).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("file_name LIKE 'a\\_%' escape '\\' AND ownerName = 'John Smith'",
+                SqlExpression.of("fileName LIKE 'a\\_%' escape '\\' AND ownerName = 'John Smith'").toSql(NamingPolicy.SNAKE_CASE));
+
+        // Backslashes that both readings agree on are rendered normally: an escaped backslash, or a PostgreSQL E'...' string.
+        assertEquals("first_name = 'a\\\\' AND last_name = 'b'", SqlExpression.of("firstName = 'a\\\\' AND lastName = 'b'").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("x = E'It\\'s' AND first_name = 'x'", SqlExpression.of("x = E'It\\'s' AND firstName = 'x'").toSql(NamingPolicy.SNAKE_CASE));
+
+        // The verbatim text starts exactly at the escape-dependent token, also after stripped comments.
+        assertEquals("a_b = 'C:\\' AND firstName = 1", SqlExpression.of("aB /* x 'C:\\' */ = 'C:\\' AND firstName = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("a_b = 1 AND c_d = 'C:\\' AND eF = 1",
+                SqlExpression.of("aB = 1 # note 'x\n AND cD = 'C:\\' AND eF = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = N'C:\\' AND lastName = 'x'", SqlExpression.of("firstName = N'C:\\' AND lastName = 'x'").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression guard for the glued-subscript fix: interiors are rendered recursively only to a fixed depth, so deeply
+    // nested subscripts cannot blow the stack; deeper interiors are copied as written.
+    @Test
+    public void testDeeplyNestedGluedSubscriptsRenderWithBoundedDepth() {
+        final StringBuilder expr = new StringBuilder("x");
+
+        for (int i = 0; i < 12; i++) {
+            expr.append("[aB");
+        }
+
+        expr.append("]".repeat(12));
+
+        final String rendered = SqlExpression.of(expr.toString()).toSql(NamingPolicy.SNAKE_CASE);
+
+        assertEquals("x" + "[a_b".repeat(8) + "[aB".repeat(4) + "]".repeat(12), rendered);
+    }
+
+    @Test
+    public void testRenderValueUsesLocalWallClockTextForDateFamilyValues() {
+        // Regression: java.util.Date-family values were rendered through N.stringOf as UTC instants
+        // ('2020-01-02T08:00:00.000Z' for the local date 2020-01-02 in a UTC-8 JVM), shifting the inlined value.
+        assertEquals("'2020-01-02'", SqlExpression.renderValue(java.sql.Date.valueOf("2020-01-02")));
+        assertEquals("'03:04:05'", SqlExpression.renderValue(java.sql.Time.valueOf("03:04:05")));
+        assertEquals("'2020-01-02 03:04:05.123'", SqlExpression.renderValue(java.sql.Timestamp.valueOf("2020-01-02 03:04:05.123")));
+        assertEquals("'2020-01-02 03:04:05.0'",
+                SqlExpression.renderValue(new java.util.Date(java.sql.Timestamp.valueOf("2020-01-02 03:04:05").getTime())));
+
+        final java.util.Calendar calendar = new java.util.GregorianCalendar(java.util.TimeZone.getTimeZone("Asia/Tokyo"));
+        calendar.clear();
+        calendar.set(2020, java.util.Calendar.JANUARY, 2, 3, 4, 5);
+        // A Calendar is bound as new Timestamp(getTimeInMillis()), i.e. at its instant in the JVM zone, so it renders that way.
+        assertEquals("'" + new java.sql.Timestamp(calendar.getTimeInMillis()) + "'", SqlExpression.renderValue(calendar));
+
+        final java.util.TimeZone defaultZone = java.util.TimeZone.getDefault();
+
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/New_York"));
+            // 2020-01-02 03:04:05 in Tokyo is 2020-01-01 13:04:05 in New York; the calendar's own zone fields are not used.
+            assertEquals("'2020-01-01 13:04:05.0'", SqlExpression.renderValue(calendar));
+        } finally {
+            java.util.TimeZone.setDefault(defaultZone);
+        }
+
+        assertEquals("d = '2020-01-02'", Filters.eq("d", java.sql.Date.valueOf("2020-01-02")).toString());
+        assertEquals("'2020-01-02'", SqlExpression.renderValue(java.time.LocalDate.of(2020, 1, 2)));
+    }
+
+    @Test
+    public void testCollationNameAfterCollateIsNotConverted() {
+        // Regression: under CAMEL_CASE the collation name was converted like a column (utf8mb4_bin -> utf8mb4Bin).
+        final String rendered = SqlExpression.of("first_name COLLATE utf8mb4_bin = 'x'").toSql(NamingPolicy.CAMEL_CASE);
+        assertTrue(rendered.contains("firstName"), rendered);
+        assertTrue(rendered.contains(" utf8mb4_bin "), rendered);
+
+        assertTrue(SqlExpression.of("last_name COLLATE Latin1_General_CS_AS").toSql(NamingPolicy.CAMEL_CASE).endsWith(" Latin1_General_CS_AS"));
+    }
+
+    // Regression: any backslash before any quote character switched the rest of the expression to verbatim, although only a
+    // backslash before the closing quote of its own region (\' in '...', \" in "...") makes the two readings disagree.
+    // A JSON literal with \" left every later column unconverted.
+    @Test
+    public void testBackslashBeforeAnotherKindOfQuoteKeepsConverting() {
+        final NamingPolicy snake = NamingPolicy.SNAKE_CASE;
+
+        assertEquals("payload @> '{\"name\":\"say \\\"hi\\\"\"}' AND created_at > 1",
+                SqlExpression.of("payload @> '{\"name\":\"say \\\"hi\\\"\"}' AND createdAt > 1").toSql(snake));
+        assertEquals("payload @> '{\"a\":\"b\\\"c\"}' AND created_at > 1", SqlExpression.of("payload @> '{\"a\":\"b\\\"c\"}' AND createdAt > 1").toSql(snake));
+        assertEquals("note = 'a \\\" b' AND created_at > 1", SqlExpression.of("note = 'a \\\" b' AND createdAt > 1").toSql(snake));
+        assertEquals("\"it\\'s\" = 1 AND created_at > 1", SqlExpression.of("\"it\\'s\" = 1 AND createdAt > 1").toSql(snake));
+        assertEquals("path = 'C:\\Temp\\\"x\"' AND created_at > 1", SqlExpression.of("path = 'C:\\Temp\\\"x\"' AND createdAt > 1").toSql(snake));
+        // A value rendered by the library itself.
+        assertEquals("(payload = '{\"name\":\"say \\\"hi\\\"\"}') AND (created_at > 1)",
+                SqlExpression.of(SqlExpression.and(SqlExpression.eq("payload", "{\"name\":\"say \\\"hi\\\"\"}"), SqlExpression.gt("createdAt", 1))).toSql(snake));
+        // An E'...' string inside a subscript honors backslash escapes under both readings, like a top-level one.
+        assertEquals("arr[E'a\\'b' || first_name] = 1", SqlExpression.of("arr[E'a\\'b' || firstName] = 1").toSql(snake));
+
+        // A backslash before the region's own closing quote still stops conversion at that token.
+        assertEquals("\"col\\\"x\" = 1 AND aB = 1", SqlExpression.of("\"col\\\"x\" = 1 AND aB = 1").toSql(snake));
+        assertEquals("first_name = '\\\\\\'' AND lastName = 1", SqlExpression.of("firstName = '\\\\\\'' AND lastName = 1").toSql(snake));
+        assertEquals("first_name = 'it\\'s' AND lastName = 1", SqlExpression.of("firstName = 'it\\'s' AND lastName = 1").toSql(snake));
+        assertEquals("a_b = `x\\` AND cD = 1", SqlExpression.of("aB = `x\\` AND cD = 1").toSql(snake));
+    }
+
+    // Regression: a function name with a glued marker (my_func_${ver}(x)) had its leading part converted, calling a different function.
+    @Test
+    public void testFunctionNameWithGluedMarkerIsKeptWhole() {
+        assertEquals("my_func_${ver}(x) > 0", SqlExpression.of("my_func_${ver}(x) > 0").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("getValue_${v}(A_B)", SqlExpression.of("getValue_${v}(aB)").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("fn_${v}(a_b)", SqlExpression.of("fn_${v}(aB)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("calc_#{v}(a_b)", SqlExpression.of("calc_#{v}(aB)").toSql(NamingPolicy.SNAKE_CASE));
+        // A ':' still separates a column from the cast type or slice function that follows it.
+        assertEquals("unit_price::numeric(10,2) > 5", SqlExpression.of("unitPrice::numeric(10,2) > 5").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("arr[lo_idx:myFn(x_y)]", SqlExpression.of("arr[loIdx:myFn(xY)]").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: the column after a glued marker and a dot (a sharded table, log_${yearMonth}.createdAt) was copied unconverted.
+    @Test
+    public void testColumnAfterGluedMarkerAndDotIsConverted() {
+        assertEquals("log_${yearMonth}.created_at = 1", SqlExpression.of("log_${yearMonth}.createdAt = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("order_${month}.create_time > 0", SqlExpression.of("order_${month}.createTime > 0").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("t_#{n}.first_name", SqlExpression.of("t_#{n}.firstName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("LOG_${yearMonth}.CREATED_AT::text", SqlExpression.of("log_${yearMonth}.createdAt::text").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("log_${yearMonth}.myFunc(created_at)", SqlExpression.of("log_${yearMonth}.myFunc(createdAt)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("log_${yearMonth}.\"createdAt\"", SqlExpression.of("log_${yearMonth}.\"createdAt\"").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    // Regression: the upper bound of a slice (myTags[firstName:lastName]) was copied as if ":lastName" were a bind marker,
+    // and only the first subscript of a chain (matrix[rowIdx][colIdx]) had its interior converted.
+    @Test
+    public void testSliceUpperBoundAndChainedSubscriptsAreConverted() {
+        final NamingPolicy snake = NamingPolicy.SNAKE_CASE;
+
+        assertEquals("my_tags[first_name:last_name] = 1", SqlExpression.of("myTags[firstName:lastName] = 1").toSql(snake));
+        assertEquals("my_tags[first_name : last_name]", SqlExpression.of("myTags[firstName : lastName]").toSql(snake));
+        assertEquals("my_tags[:tagIndex]", SqlExpression.of("myTags[:tagIndex]").toSql(snake));
+        assertEquals("my_tags[first_name::int]", SqlExpression.of("myTags[firstName::int]").toSql(snake));
+        // ParsedSql agrees that a ':' glued after a name is not a named parameter.
+        assertTrue(com.landawn.abacus.query.ParsedSql.parse("SELECT * FROM t WHERE myTags[firstName:lastName] = 1").namedParameters().isEmpty());
+
+        assertEquals("matrix[row_idx][col_idx] > 0", SqlExpression.of("matrix[rowIdx][colIdx] > 0").toSql(snake));
+        assertEquals("m[a_b][c_d][e_f].field_name", SqlExpression.of("m[aB][cD][eF].fieldName").toSql(snake));
+        assertEquals("ARRAY[a_b, 2][c_d]", SqlExpression.of("ARRAY[aB, 2][cD]").toSql(snake));
+        assertEquals("arr[1].field_name", SqlExpression.of("arr[1].fieldName").toSql(snake));
+        // Only a directly following bracket group continues the chain.
+        assertEquals("matrix[row_idx] [colIdx]", SqlExpression.of("matrix[rowIdx] [colIdx]").toSql(snake));
+        assertEquals("t.[col][aB]", SqlExpression.of("t.[col][aB]").toSql(snake));
+    }
+
+    // Regression: a subscript interior holding '#', "--" or "/*" only inside a string literal was copied unconverted.
+    @Test
+    public void testSubscriptInteriorWithCommentTokenInsideLiteralIsConverted() {
+        final NamingPolicy snake = NamingPolicy.SNAKE_CASE;
+
+        assertEquals("arr[first_name || '#'] = 1", SqlExpression.of("arr[firstName || '#'] = 1").toSql(snake));
+        assertEquals("arr[first_name || '-- x'] = 1", SqlExpression.of("arr[firstName || '-- x'] = 1").toSql(snake));
+        assertEquals("arr[first_name || '/* x */'] = 1", SqlExpression.of("arr[firstName || '/* x */'] = 1").toSql(snake));
+        // Outside a literal the interior is still copied as written.
+        assertEquals("arr[idx # 2] = 1", SqlExpression.of("arr[idx # 2] = 1").toSql(snake));
+        assertEquals("arr[/* x */ aB] = 1", SqlExpression.of("arr[/* x */ aB] = 1").toSql(snake));
+        assertEquals("arr['#' || aB # x] = 1", SqlExpression.of("arr['#' || aB # x] = 1").toSql(snake));
+    }
+
+    // Regression: the line break between two adjacent string literals was collapsed to a space ('a' 'b'), which PostgreSQL
+    // rejects: the standard concatenates adjacent literals only across a line break.
+    @Test
+    public void testLineBreakBetweenAdjacentStringLiteralsIsKept() {
+        assertEquals("'a'\n'b'", SqlExpression.of("'a'\n'b'").toString());
+        assertEquals("msg = 'hello '\n'world'", SqlExpression.of("msg = 'hello '\n'world'").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("'a'\n'b'", SqlExpression.of("'a' -- c\n'b'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("'a'\n'b'", SqlExpression.of("'a'\r'b'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("'a'\n'b'", SqlExpression.of("'a' \r\n  'b'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("'a'\n'b'\n'c'", SqlExpression.of("'a'\n'b'\n'c'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("N'a'\n'b'", SqlExpression.of("N'a'\n'b'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("arr['a'\n'b']", SqlExpression.of("arr['a'\n'b']").toSql(NamingPolicy.SNAKE_CASE));
+        // Only a gap that held a line break, and only between two literals; a prefixed second literal is not a continuation.
+        assertEquals("'a' 'b'\n'c'", SqlExpression.of("'a' 'b'\n'c'").toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("first_name = 'x' AND last_name = 'y'", SqlExpression.of("firstName = 'x'\nAND lastName = 'y'").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("'a' N'b'", SqlExpression.of("'a'\nN'b'").toSql(NamingPolicy.NO_CHANGE));
+        // The second literal may start the verbatim text: the line break before it is still kept.
+        assertEquals("'a'\n'C:\\' AND bC = 1", SqlExpression.of("'a'\n'C:\\' AND bC = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("msg = 'a'\n'b'", Filters.eq("msg", SqlExpression.of("'a' -- c\n'b'")).toString());
+    }
+
+    // Coverage: exact COLLATE rendering under every case-changing policy, the ARRAY keyword spelling, and multi-segment
+    // names after a delimited qualifier.
+    @Test
+    public void testCollateArrayKeywordAndQualifiedSegmentsRenderExactly() {
+        assertEquals("firstName collate utf8mb4_bin = 'x'", SqlExpression.of("first_name COLLATE utf8mb4_bin = 'x'").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("FirstName Collate utf8mb4_bin", SqlExpression.of("firstName COLLATE utf8mb4_bin").toSql(NamingPolicy.UPPER_CAMEL_CASE));
+        assertEquals("LAST_NAME COLLATE Latin1_General_CS_AS", SqlExpression.of("lastName COLLATE Latin1_General_CS_AS").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("last_name collate \"de_DE\"", SqlExpression.of("lastName collate \"de_DE\"").toSql(NamingPolicy.SNAKE_CASE));
+
+        assertEquals("Array[FIRST_NAME]", SqlExpression.of("Array[firstName]").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("Array[FirstName]", SqlExpression.of("Array[firstName]").toSql(NamingPolicy.UPPER_CAMEL_CASE));
+        assertEquals("\"T\".first_name.sub_field", SqlExpression.of("\"T\".firstName.subField").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testRenderValueKeepsTimestampNanosAndRendersCalendarAtJvmZoneInstant() {
+        // Covers full Timestamp nanosecond precision and a Calendar rendered at its instant in a fixed JVM zone (as it is bound).
+        assertEquals("'2020-01-02 03:04:05.123456789'", SqlExpression.renderValue(java.sql.Timestamp.valueOf("2020-01-02 03:04:05.123456789")));
+
+        final java.util.TimeZone defaultZone = java.util.TimeZone.getDefault();
+
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
+
+            final java.util.Calendar tokyo = new java.util.GregorianCalendar(java.util.TimeZone.getTimeZone("Asia/Tokyo"));
+            tokyo.clear();
+            tokyo.set(2020, java.util.Calendar.JANUARY, 2, 3, 4, 5);
+            assertEquals("'2020-01-01 18:04:05.0'", SqlExpression.renderValue(tokyo));
+        } finally {
+            java.util.TimeZone.setDefault(defaultZone);
+        }
+    }
+
+    @Test
+    public void testNonAsciiSpaceGluedToIdentifierRendersAsPlainSpace() {
+        // Regression: the tokenizer keeps U+3000 / NBSP inside a word, and leading-name-only conversion then emitted
+        // "first_name\u3000", which databases read as one (unknown) identifier.
+        assertEquals("first_name = last_name", SqlExpression.of("firstName\u3000= lastName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = 1 AND last_name = 2", SqlExpression.of("firstName\u00A0= 1 AND lastName\u3000\u3000= 2").toSql(NamingPolicy.SNAKE_CASE));
+        // Several words glued by non-ASCII spaces: each word is still rendered (keywords kept, names converted).
+        assertEquals("first_name AND last_name", SqlExpression.of("firstName\u3000AND\u3000lastName").toSql(NamingPolicy.SNAKE_CASE));
+        // A function name keeps its spelling.
+        assertEquals("myFunc (first_name)", SqlExpression.of("myFunc\u3000(firstName)").toSql(NamingPolicy.SNAKE_CASE));
+
+        // Same rendering through a builder (shared token loop).
+        assertEquals("SELECT id FROM account WHERE first_name = last_name",
+                com.landawn.abacus.query.Dsl.PSC.select("id").from("account").where("firstName\u3000= lastName").build().query());
+    }
+    @Test
+    public void testNonAsciiSpaceAnywhereInAWordIsASeparator() {
+        // Regression: a non-ASCII space at the START of a token (after '=', ',', '(' or a number), after "::type", or between
+        // several glued words kept a name unconverted, renamed a glued function, or converted a collation name; a long
+        // chain of glued words overflowed the stack.
+        assertEquals("first_name = last_name", SqlExpression.of("firstName\u3000=\u3000lastName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = 1 AND last_name = 2", SqlExpression.of("firstName = 1\u3000AND\u3000lastName = 2").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("create_time::date = CURRENT_DATE", SqlExpression.of("createTime::date\u3000= CURRENT_DATE").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("x myFunc(last_name) > 0", SqlExpression.of("x\u3000myFunc(lastName) > 0").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name LIKE upper(:p)", SqlExpression.of("firstName\u3000LIKE\u3000upper(:p)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("firstName collate utf8mb4_bin = 'x'", SqlExpression.of("first_name\u3000COLLATE\u3000utf8mb4_bin = 'x'").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("a_b = 1", SqlExpression.of("aB\u00A0= 1").toSql(NamingPolicy.SNAKE_CASE));
+
+        // Quoted text keeps its spaces.
+        assertEquals("first_name = 'a\u3000b'", SqlExpression.of("firstName = 'a\u3000b'").toSql(NamingPolicy.SNAKE_CASE));
+
+        // A split-off space never doubles an adjacent space, leads or trails the expression, and keeps a line break
+        // between adjacent string literals.
+        assertEquals("x = 1", SqlExpression.of("x\u3000 = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("a b", SqlExpression.of("a\u3000/* c */\u3000b").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("'a'\n'b' = first_name", SqlExpression.of("'a'\u3000\n'b' = firstName").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT id FROM t WHERE first_name = 1 ORDER BY id",
+                com.landawn.abacus.query.Dsl.PSC.select("id").from("t").where("\u3000firstName = 1\u3000").orderBy("id").build().query());
+
+        // A long run of glued words renders without recursion.
+        final String longChain = "aB\u3000".repeat(5000) + "cD";
+        assertEquals("a_b ".repeat(5000) + "c_d", SqlExpression.of(longChain).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT id FROM t WHERE " + "a_b ".repeat(5000) + "c_d",
+                com.landawn.abacus.query.Dsl.PSC.select("id").from("t").where(longChain).build().query());
+    }
+
+    @Test
+    public void testSliceWithNumericLowerBoundConvertsTheUpperBoundColumn() {
+        // Regression: inside a subscript, "2:tagCount" is one token starting with a digit, so the column after ':' was left
+        // unconverted (HEAD converted it). A ':' glued to a number is not a bind marker.
+        assertEquals("tags[2:tag_count] && x", SqlExpression.of("tags[2:tagCount] && x").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("scores[1:end_idx] > 0", SqlExpression.of("scores[1:endIdx] > 0").toSql(NamingPolicy.SNAKE_CASE));
+        assertTrue(com.landawn.abacus.query.ParsedSql.parse("SELECT a FROM t WHERE scores[1:endIdx] > 0").namedParameters().isEmpty());
+        // A leading ':' is still a bind marker.
+        assertEquals("scores[:endIdx] > 0", SqlExpression.of("scores[:endIdx] > 0").toSql(NamingPolicy.SNAKE_CASE));
     }
 }

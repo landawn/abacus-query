@@ -41,8 +41,10 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Important:</b> Always call {@link Builder#build()} to generate the final SQL string and
  * release resources. The builder uses object pooling internally for performance optimization.</p>
  *
- * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation;
- * this class does not quote identifiers, escape literals, or collect parameter values. Placeholder
+ * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation; a
+ * fragment that ends inside a {@code --} or {@code #} line comment is followed by a line feed, so the
+ * comment cannot hide the separator or clause emitted after it. This class does not quote identifiers,
+ * escape literals, or collect parameter values. Placeholder
  * helpers emit {@code ?} markers without binding them. Keep SQL text
  * application-controlled and represent untrusted values with placeholders bound by the execution
  * layer. Builders and their clause builders are mutable and are not thread-safe.</p>
@@ -181,12 +183,66 @@ public final class DynamicQuery {
     }
 
     /**
+     * Appends a caller-supplied SQL fragment verbatim. A fragment that ends inside a {@code --} or
+     * {@code #} line comment is followed by a line feed: otherwise the separator, keyword, or clause
+     * emitted after it (an {@code AND} predicate, {@code ON}, {@code WHERE}, {@code ORDER BY},
+     * {@code LIMIT}, ...) would land inside the comment and be silently dropped by the database.
+     * A fragment carries no dialect or clause context, so the check fails closed: a trailing comment under any plausible
+     * reading counts (see {@link AbstractQueryBuilder#endsInsideLineCommentUnderAnyReading(String)}), e.g. a
+     * PostgreSQL {@code ARRAY['a]b'] -- c} or a MySQL {@code #tenant filter} fragment; a superfluous line feed is harmless.
+     *
+     * @param sb the buffer to append to
+     * @param fragment the non-blank SQL fragment
+     * @return {@code sb}
+     */
+    private static StringBuilder appendFragment(final StringBuilder sb, final String fragment) {
+        sb.append(fragment);
+
+        return AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment) ? sb.append('\n') : sb;
+    }
+
+    /**
+     * Appends the {@code fragments} separated by {@code ", "}, each through {@link #appendFragment(StringBuilder, String)}.
+     */
+    private static void appendFragments(final StringBuilder sb, final Collection<String> fragments) {
+        boolean first = true;
+
+        for (final String fragment : fragments) {
+            if (!first) {
+                sb.append(", ");
+            }
+
+            appendFragment(sb, fragment);
+            first = false;
+        }
+    }
+
+    /**
+     * Appends each entry as {@code key + separator + value}, entries separated by {@code ", "}, each fragment
+     * through {@link #appendFragment(StringBuilder, String)}.
+     */
+    private static void appendFragmentPairs(final StringBuilder sb, final Map<String, String> fragmentPairs, final String separator) {
+        boolean first = true;
+
+        for (final Map.Entry<String, String> entry : fragmentPairs.entrySet()) {
+            if (!first) {
+                sb.append(", ");
+            }
+
+            appendFragment(sb, entry.getKey()).append(separator);
+            appendFragment(sb, entry.getValue());
+            first = false;
+        }
+    }
+
+    /**
      * Builder for constructing dynamic SQL queries clause by clause.
      * Instances and retained clause handles are mutable and are not thread-safe. A builder is
      * one-shot: invoking {@link #build()} permanently closes it and all retained clause handles,
      * including when building terminates exceptionally.
      *
-     * <p>String fragments are appended verbatim. Typed clauses are emitted in a fixed order, and
+     * <p>String fragments are appended verbatim (a trailing {@code --} or {@code #} line comment is
+     * terminated with a line feed). Typed clauses are emitted in a fixed order, and
      * mutually incompatible pagination methods are rejected. The builder does not validate SQL
      * syntax or require a complete SELECT statement; for example, a builder with only a WHERE
      * clause produces a WHERE fragment.</p>
@@ -606,7 +662,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForSetOperations().append(" UNION ").append(query);
+            appendFragment(getStringBuilderForSetOperations().append(" UNION "), query);
 
             return this;
         }
@@ -637,7 +693,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForSetOperations().append(" UNION ALL ").append(query);
+            appendFragment(getStringBuilderForSetOperations().append(" UNION ALL "), query);
 
             return this;
         }
@@ -668,7 +724,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForSetOperations().append(" INTERSECT ").append(query);
+            appendFragment(getStringBuilderForSetOperations().append(" INTERSECT "), query);
 
             return this;
         }
@@ -699,7 +755,7 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForSetOperations().append(" EXCEPT ").append(query);
+            appendFragment(getStringBuilderForSetOperations().append(" EXCEPT "), query);
 
             return this;
         }
@@ -730,14 +786,15 @@ public final class DynamicQuery {
             checkNotBuilt();
             checkSqlFragmentNotBlank(query, "query");
 
-            getStringBuilderForSetOperations().append(" MINUS ").append(query);
+            appendFragment(getStringBuilderForSetOperations().append(" MINUS "), query);
 
             return this;
         }
 
         /**
          * Appends a raw, database-specific SQL clause or fragment verbatim to the end of the query.
-         * The supplied text is emitted unchanged (preceded by a separating space when needed; see below) and is <em>not</em>
+         * The supplied text is emitted unchanged (preceded by a separating space when needed, see below, and
+         * followed by a line feed if it ends inside a {@code --} or {@code #} line comment) and is <em>not</em>
          * parsed, escaped, or interpreted after non-blank validation — whatever you pass becomes the literal tail
          * of the generated SQL. Use it for any trailing clause that has no typed builder method, such
          * as locking hints (for example {@code "FOR UPDATE"}) or other vendor-specific suffixes, or
@@ -908,7 +965,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Appends {@code rawClause} verbatim to the trailing "more parts" buffer, inserting a single
+         * Appends {@code rawClause} verbatim (a trailing line comment terminated) to the trailing "more parts" buffer, inserting a single
          * separating space only when the buffer does not already end with a space and {@code rawClause}
          * does not already begin with one. An empty buffer is treated as needing a leading space, since
          * its content is concatenated directly after the preceding clause, which normally does not end
@@ -925,7 +982,7 @@ public final class DynamicQuery {
                 sb.append(' ');
             }
 
-            sb.append(rawClause);
+            appendFragment(sb, rawClause);
         }
 
         /**
@@ -1252,7 +1309,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "SELECT ", ", ");
 
-            sb.append(column);
+            appendFragment(sb, column);
 
             return this;
         }
@@ -1280,7 +1337,8 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "SELECT ", ", ");
 
-            sb.append(column).append(" AS ").append(alias);
+            appendFragment(sb, column).append(" AS ");
+            appendFragment(sb, alias);
 
             return this;
         }
@@ -1315,7 +1373,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "SELECT ", ", ");
 
-            sb.append(Strings.join(columnsSnapshot, ", "));
+            appendFragments(sb, columnsSnapshot);
 
             return this;
         }
@@ -1354,7 +1412,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "SELECT ", ", ");
 
-            sb.append(Strings.joinEntries(columnAliasesSnapshot, ", ", " AS "));
+            appendFragmentPairs(sb, columnAliasesSnapshot, " AS ");
 
             return this;
         }
@@ -1383,7 +1441,7 @@ public final class DynamicQuery {
 
                 startClauseFragment(sb, "SELECT ", ", ");
 
-                sb.append(textToAppend);
+                appendFragment(sb, textToAppend);
             }
 
             return this;
@@ -1415,9 +1473,9 @@ public final class DynamicQuery {
             startClauseFragment(sb, "SELECT ", ", ");
 
             if (b) {
-                sb.append(textToAppendWhenTrue);
+                appendFragment(sb, textToAppendWhenTrue);
             } else {
-                sb.append(textToAppendWhenFalse);
+                appendFragment(sb, textToAppendWhenFalse);
             }
 
             return this;
@@ -1475,7 +1533,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "FROM ", ", ");
 
-            sb.append(table);
+            appendFragment(sb, table);
 
             return this;
         }
@@ -1503,7 +1561,8 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "FROM ", ", ");
 
-            sb.append(table).append(" ").append(alias);
+            appendFragment(sb, table).append(' ');
+            appendFragment(sb, alias);
 
             return this;
         }
@@ -1537,7 +1596,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "FROM ", ", ");
 
-            sb.append(Strings.join(tablesSnapshot, ", "));
+            appendFragments(sb, tablesSnapshot);
 
             return this;
         }
@@ -1564,7 +1623,9 @@ public final class DynamicQuery {
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            sb.append(" JOIN ").append(joinExpr).append(" ON ").append(expr);
+            sb.append(" JOIN ");
+            appendFragment(sb, joinExpr).append(" ON ");
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -1592,7 +1653,9 @@ public final class DynamicQuery {
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            sb.append(" INNER JOIN ").append(joinExpr).append(" ON ").append(expr);
+            sb.append(" INNER JOIN ");
+            appendFragment(sb, joinExpr).append(" ON ");
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -1620,7 +1683,9 @@ public final class DynamicQuery {
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            sb.append(" LEFT JOIN ").append(joinExpr).append(" ON ").append(expr);
+            sb.append(" LEFT JOIN ");
+            appendFragment(sb, joinExpr).append(" ON ");
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -1648,7 +1713,9 @@ public final class DynamicQuery {
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            sb.append(" RIGHT JOIN ").append(joinExpr).append(" ON ").append(expr);
+            sb.append(" RIGHT JOIN ");
+            appendFragment(sb, joinExpr).append(" ON ");
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -1677,7 +1744,9 @@ public final class DynamicQuery {
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
-            sb.append(" FULL JOIN ").append(joinExpr).append(" ON ").append(expr);
+            sb.append(" FULL JOIN ");
+            appendFragment(sb, joinExpr).append(" ON ");
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -1704,7 +1773,8 @@ public final class DynamicQuery {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            sb.append(" JOIN ").append(joinExpr);
+            sb.append(" JOIN ");
+            appendFragment(sb, joinExpr);
 
             return this;
         }
@@ -1731,7 +1801,8 @@ public final class DynamicQuery {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            sb.append(" INNER JOIN ").append(joinExpr);
+            sb.append(" INNER JOIN ");
+            appendFragment(sb, joinExpr);
 
             return this;
         }
@@ -1758,7 +1829,8 @@ public final class DynamicQuery {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            sb.append(" LEFT JOIN ").append(joinExpr);
+            sb.append(" LEFT JOIN ");
+            appendFragment(sb, joinExpr);
 
             return this;
         }
@@ -1785,7 +1857,8 @@ public final class DynamicQuery {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            sb.append(" RIGHT JOIN ").append(joinExpr);
+            sb.append(" RIGHT JOIN ");
+            appendFragment(sb, joinExpr);
 
             return this;
         }
@@ -1812,7 +1885,8 @@ public final class DynamicQuery {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            sb.append(" FULL JOIN ").append(joinExpr);
+            sb.append(" FULL JOIN ");
+            appendFragment(sb, joinExpr);
 
             return this;
         }
@@ -1838,7 +1912,8 @@ public final class DynamicQuery {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            sb.append(" CROSS JOIN ").append(joinExpr);
+            sb.append(" CROSS JOIN ");
+            appendFragment(sb, joinExpr);
 
             return this;
         }
@@ -1864,7 +1939,8 @@ public final class DynamicQuery {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
-            sb.append(" NATURAL JOIN ").append(joinExpr);
+            sb.append(" NATURAL JOIN ");
+            appendFragment(sb, joinExpr);
 
             return this;
         }
@@ -1905,7 +1981,7 @@ public final class DynamicQuery {
 
                 startClauseFragment(sb, "FROM ", ", ");
 
-                sb.append(textToAppend);
+                appendFragment(sb, textToAppend);
             }
 
             return this;
@@ -1935,9 +2011,9 @@ public final class DynamicQuery {
             startClauseFragment(sb, "FROM ", ", ");
 
             if (b) {
-                sb.append(textToAppendWhenTrue);
+                appendFragment(sb, textToAppendWhenTrue);
             } else {
-                sb.append(textToAppendWhenFalse);
+                appendFragment(sb, textToAppendWhenFalse);
             }
 
             return this;
@@ -2004,7 +2080,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "WHERE ", " ");
 
-            sb.append(expr);
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -2075,9 +2151,9 @@ public final class DynamicQuery {
             N.checkArgNotNull(postfix, cs.postfix);
 
             if (placeholderCount > 0) {
-                sb.append(prefix);
+                appendFragment(sb, prefix);
                 appendPlaceholderSequence(placeholderCount);
-                sb.append(postfix);
+                appendFragment(sb, postfix);
             }
 
             return this;
@@ -2109,7 +2185,7 @@ public final class DynamicQuery {
                 sb.append(" AND ");
             }
 
-            sb.append(expr);
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -2140,7 +2216,7 @@ public final class DynamicQuery {
                 sb.append(" OR ");
             }
 
-            sb.append(expr);
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -2169,7 +2245,7 @@ public final class DynamicQuery {
 
                 startClauseFragment(sb, "WHERE ", " ");
 
-                sb.append(textToAppend);
+                appendFragment(sb, textToAppend);
             }
 
             return this;
@@ -2201,9 +2277,9 @@ public final class DynamicQuery {
             startClauseFragment(sb, "WHERE ", " ");
 
             if (b) {
-                sb.append(textToAppendWhenTrue);
+                appendFragment(sb, textToAppendWhenTrue);
             } else {
-                sb.append(textToAppendWhenFalse);
+                appendFragment(sb, textToAppendWhenFalse);
             }
 
             return this;
@@ -2262,7 +2338,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "GROUP BY ", ", ");
 
-            sb.append(propOrColumnName);
+            appendFragment(sb, propOrColumnName);
 
             return this;
         }
@@ -2296,7 +2372,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "GROUP BY ", ", ");
 
-            sb.append(Strings.join(columnsSnapshot, ", "));
+            appendFragments(sb, columnsSnapshot);
 
             return this;
         }
@@ -2325,7 +2401,7 @@ public final class DynamicQuery {
 
                 startClauseFragment(sb, "GROUP BY ", ", ");
 
-                sb.append(textToAppend);
+                appendFragment(sb, textToAppend);
             }
 
             return this;
@@ -2357,9 +2433,9 @@ public final class DynamicQuery {
             startClauseFragment(sb, "GROUP BY ", ", ");
 
             if (b) {
-                sb.append(textToAppendWhenTrue);
+                appendFragment(sb, textToAppendWhenTrue);
             } else {
-                sb.append(textToAppendWhenFalse);
+                appendFragment(sb, textToAppendWhenFalse);
             }
 
             return this;
@@ -2424,7 +2500,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "HAVING ", " ");
 
-            sb.append(expr);
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -2495,9 +2571,9 @@ public final class DynamicQuery {
             N.checkArgNotNull(postfix, cs.postfix);
 
             if (placeholderCount > 0) {
-                sb.append(prefix);
+                appendFragment(sb, prefix);
                 appendPlaceholderSequence(placeholderCount);
-                sb.append(postfix);
+                appendFragment(sb, postfix);
             }
 
             return this;
@@ -2529,7 +2605,7 @@ public final class DynamicQuery {
                 sb.append(" AND ");
             }
 
-            sb.append(expr);
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -2560,7 +2636,7 @@ public final class DynamicQuery {
                 sb.append(" OR ");
             }
 
-            sb.append(expr);
+            appendFragment(sb, expr);
 
             return this;
         }
@@ -2589,7 +2665,7 @@ public final class DynamicQuery {
 
                 startClauseFragment(sb, "HAVING ", " ");
 
-                sb.append(textToAppend);
+                appendFragment(sb, textToAppend);
             }
 
             return this;
@@ -2621,9 +2697,9 @@ public final class DynamicQuery {
             startClauseFragment(sb, "HAVING ", " ");
 
             if (b) {
-                sb.append(textToAppendWhenTrue);
+                appendFragment(sb, textToAppendWhenTrue);
             } else {
-                sb.append(textToAppendWhenFalse);
+                appendFragment(sb, textToAppendWhenFalse);
             }
 
             return this;
@@ -2682,7 +2758,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "ORDER BY ", ", ");
 
-            sb.append(propOrColumnName);
+            appendFragment(sb, propOrColumnName);
 
             return this;
         }
@@ -2717,7 +2793,7 @@ public final class DynamicQuery {
 
             startClauseFragment(sb, "ORDER BY ", ", ");
 
-            sb.append(Strings.join(columnsSnapshot, ", "));
+            appendFragments(sb, columnsSnapshot);
 
             return this;
         }
@@ -2746,7 +2822,7 @@ public final class DynamicQuery {
 
                 startClauseFragment(sb, "ORDER BY ", ", ");
 
-                sb.append(textToAppend);
+                appendFragment(sb, textToAppend);
             }
 
             return this;
@@ -2778,9 +2854,9 @@ public final class DynamicQuery {
             startClauseFragment(sb, "ORDER BY ", ", ");
 
             if (b) {
-                sb.append(textToAppendWhenTrue);
+                appendFragment(sb, textToAppendWhenTrue);
             } else {
-                sb.append(textToAppendWhenFalse);
+                appendFragment(sb, textToAppendWhenFalse);
             }
 
             return this;

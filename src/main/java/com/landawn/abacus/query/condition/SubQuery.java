@@ -22,11 +22,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.ParsedSql;
 import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.SqlBuilder;
+import com.landawn.abacus.query.SqlParser;
 import com.landawn.abacus.util.ClassUtil;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -197,7 +199,8 @@ public class SubQuery extends AbstractCondition {
      * @param sql complete raw query-expression text (must not be {@code null}, empty, blank, or contain a parameter placeholder)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
      *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
-     *         or contains a positional placeholder without a corresponding binding
+     *         or contains a positional placeholder without a corresponding binding (including a {@code ?} outside quoted text and
+     *         comments in text that does not start with a recognized query keyword)
      */
     public SubQuery(final String sql) {
         this(Strings.EMPTY, sql, Collections.emptyList(), true);
@@ -239,7 +242,8 @@ public class SubQuery extends AbstractCondition {
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters}
      *         is {@code null}; the SQL contains malformed placeholder text such as an unclosed {@code #{...}} marker;
      *         the SQL contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder; the number of positional
-     *         placeholders differs from the number of bindings; an object-array binding contains a cycle; a binding is a
+     *         placeholders differs from the number of bindings; the SQL does not start with a recognized query keyword
+     *         ({@code SELECT}, {@code WITH}, {@code VALUES}, {@code TABLE}, ...) but contains a {@code ?} outside quoted text and comments; an object-array binding contains a cycle; a binding is a
      *         {@link SqlExpression} that is blank, comment-only, or contains parameter markers of its own (such as
      *         {@link Filters#QME}); or a binding is any other {@link Condition} (a predicate, or a structured or
      *         builder-backed subquery), whose SQL would depend on the enclosing builder's policy
@@ -828,8 +832,13 @@ public class SubQuery extends AbstractCondition {
      * @param sql the non-blank raw SQL to inspect
      * @param parameters the non-null binding snapshot
      * @throws IllegalArgumentException if SQL placeholder syntax is malformed, named or MyBatis placeholders
-     *         are present, or the positional placeholder count differs from the binding count
+     *         are present, the text is not a statement {@link ParsedSql} recognizes as a query yet contains a
+     *         {@code ?} outside quoted text and comments, or the positional placeholder count differs from the
+     *         binding count
      */
+    /** A tokenizer token that is a string literal with an introducer or prefix, such as N'..', E'..', _utf8'..' or U&amp;'..'. */
+    private static final Pattern PREFIXED_STRING_LITERAL_TOKEN = Pattern.compile("(?s)[\\p{Alnum}_&]+'.*");
+
     private static void validateRawBindings(final String sql, final Collection<?> parameters) {
         // ParsedSql supplies the project's quote/comment-aware placeholder scan and also distinguishes
         // PostgreSQL JSON question-mark operators from JDBC parameters.
@@ -837,6 +846,20 @@ public class SubQuery extends AbstractCondition {
 
         if (!parsedSql.namedParameters().isEmpty()) {
             throw new IllegalArgumentException("Raw subqueries support positional '?' bindings only; named and MyBatis placeholders are not supported");
+        }
+
+        // ParsedSql inspects placeholders only in a statement it recognizes (SELECT, WITH, VALUES, TABLE, ...); for
+        // other text its count is 0 without inspection, so an unquoted '?' there is unverifiable: it would reach the
+        // driver as an unbound placeholder, or leave a binding without one. Fail closed instead of trusting that 0.
+        if (!parsedSql.isDataOperation() && sql.indexOf('?') >= 0) {
+            // SqlParser.tokenize drops comments. A token starting with a quote is a quoted identifier or string literal, and one
+            // such as N'..', E'..' or U&'..' is a prefixed string literal: a '?' inside either is not a placeholder.
+            for (final String token : SqlParser.tokenize(sql)) {
+                if (token.indexOf('?') >= 0 && "'\"`".indexOf(token.charAt(0)) < 0 && !PREFIXED_STRING_LITERAL_TOKEN.matcher(token).matches()) {
+                    throw new IllegalArgumentException("Raw subquery text is not a recognized query (such as SELECT, WITH, VALUES or TABLE),"
+                            + " so its '?' placeholders cannot be validated against the bindings: " + sql);
+                }
+            }
         }
 
         if (parsedSql.parameterCount() != parameters.size()) {

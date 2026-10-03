@@ -940,4 +940,107 @@ public class AbstractConditionTest extends TestBase {
         final IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class, () -> Filters.eq("a", 1).and(Filters.subQuery("select 1")));
         Assertions.assertFalse(e3.getMessage().contains("operator ''"), e3.getMessage());
     }
+
+    @Test
+    public void testClauseKeywordGluedToQuotedIdentifierIsStillAClause() {
+        // Regression: SqlParser.nextToken keeps a quoted region glued to the preceding word ("BY\"id\"" is one token),
+        // so these clauses were classified as predicates: subQuery wrapped them in WHERE and junctions accepted them.
+        assertEquals("SELECT id FROM t ORDER BY\"id\"", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("ORDER BY\"id\"")).toString());
+        assertEquals("SELECT id FROM t GROUP BY`id`", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("GROUP BY`id`")).toString());
+        assertEquals("SELECT id FROM t WHERE\"x\" = 1", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("WHERE\"x\" = 1")).toString());
+
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("ORDER BY\"id\"")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("LEFT JOIN[t] ON 1 = 1")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("ON\"a\" = \"b\"")));
+
+        // A non-reserved keyword used as a column with a subscript is still a predicate.
+        assertEquals("((a = 1) AND (offset[1] > 5))", Filters.and(Filters.eq("a", 1), Filters.expr("offset[1] > 5")).toString());
+    }
+
+    @Test
+    public void testSortKeyWithUnterminatedBlockCommentIsRejected() {
+        // Regression: an unclosed "/*" swallowed the key's direction and every later key, and the renderer silently
+        // dropped the comment ("ORDER BY name " instead of "ORDER BY name DESC").
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("name /*", SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBy("a /* x", "b"));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("dept /* x", "team"), SortDirection.DESC));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("dept /* x", "team"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("name /*/", SortDirection.DESC));
+
+        // Closed block comments and comment openers inside literals are still accepted.
+        assertTrue(new OrderBy("name /* c */", SortDirection.DESC).toString().endsWith("DESC"));
+        assertTrue(new OrderBy("COALESCE(name, '/*')", SortDirection.DESC).toString().endsWith("DESC"));
+        assertTrue(new OrderBy("name -- /*\n", SortDirection.DESC).toString().endsWith("DESC"));
+    }
+
+    @Test
+    public void testGluedClauseKeywordsConnectorsAndPredicateNearMisses() {
+        // Covers clause detection for a glued third keyword and a glued bracket, ON/USING connectors glued to a quoted or
+        // bracketed name inside a Join, and identifier near misses that must stay predicates.
+        assertTrue(AbstractCondition.isClause(Filters.expr("LEFT OUTER JOIN\"t\" ON 1=1")));
+        assertEquals("SELECT id FROM t LEFT OUTER JOIN\"t\" ON 1=1", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("LEFT OUTER JOIN\"t\" ON 1=1")).toString());
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("LEFT OUTER JOIN\"t\" ON 1=1")));
+        assertEquals("SELECT id FROM t ORDER BY[id]", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("ORDER BY[id]")).toString());
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("ORDER BY[id]")));
+
+        assertThrows(IllegalArgumentException.class, () -> new Join("t", Filters.expr("USING\"a\"")));
+        assertThrows(IllegalArgumentException.class, () -> new Join("t", Filters.expr("ON\"a\" = \"b\"")));
+        assertThrows(IllegalArgumentException.class, () -> new Join("t", Filters.expr("USING[a]")));
+
+        assertEquals("((a = 1) AND (offset[1] LIKE'x%'))", Filters.and(Filters.eq("a", 1), Filters.expr("offset[1] LIKE'x%'")).toString());
+        assertEquals("((a = 1) AND (\"where\" = 1))", Filters.and(Filters.eq("a", 1), Filters.expr("\"where\" = 1")).toString());
+        assertEquals("((a = 1) AND (group\"x\" = 1))", Filters.and(Filters.eq("a", 1), Filters.expr("group\"x\" = 1")).toString());
+    }
+
+    @Test
+    public void testNonReservedClauseKeywordWithGluedSubscriptIsAPredicate() {
+        // Regression: "minus[1] + 2 > 0" (legal PostgreSQL; MINUS is not a PostgreSQL keyword) was classified as a clause, so
+        // junctions rejected it and subQuery dropped the WHERE before "offset[1]::int > 5".
+        Assertions.assertFalse(AbstractCondition.isClause(Filters.expr("minus[1] + 2 > 0")));
+        assertEquals("((a = 1) AND (minus[1] + 2 > 0))", Filters.and(Filters.eq("a", 1), Filters.expr("minus[1] + 2 > 0")).toString());
+        assertEquals("SELECT id FROM t WHERE offset[1]::int > 5", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("offset[1]::int > 5")).toString());
+        assertEquals("SELECT id FROM t WHERE limit[1] > 0", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("limit[1] > 0")).toString());
+        assertEquals("SELECT id FROM t WHERE minus[1] + 2 > 0", Dsl.PSC.select("id").from("t").where(Filters.expr("minus[1] + 2 > 0")).build().query());
+
+        // Keywords reserved everywhere, and the unglued form, are still clauses.
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("where[1] > 0")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("union[1] > 0")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("minus + 2 > 0")));
+        assertEquals("SELECT id FROM t OFFSET 5", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("OFFSET 5")).toString());
+    }
+
+    @Test
+    public void testDateFamilyValuesRenderAsLocalWallClockTextInConditions() {
+        // Covers full Timestamp precision, IN/BETWEEN value lists of date-family values, and a Calendar rendered at its
+        // instant in the JVM time zone (as it is bound), including a wall-clock time inside a JVM-zone DST gap.
+        assertEquals("ts = '2020-01-02 03:04:05.123456789'", Filters.eq("ts", java.sql.Timestamp.valueOf("2020-01-02 03:04:05.123456789")).toString());
+        assertEquals("d IN ('2020-01-02', '2020-01-03')",
+                Filters.in("d", Arrays.asList(java.sql.Date.valueOf("2020-01-02"), java.sql.Date.valueOf("2020-01-03"))).toString());
+        assertEquals("d BETWEEN '2020-01-02' AND '2020-01-03'",
+                Filters.between("d", java.sql.Date.valueOf("2020-01-02"), java.sql.Date.valueOf("2020-01-03")).toString());
+        assertEquals("d NOT BETWEEN '2020-01-02 03:04:05.0' AND '2020-01-03 00:00:00.0'",
+                Filters.notBetween("d", java.sql.Timestamp.valueOf("2020-01-02 03:04:05"), java.sql.Timestamp.valueOf("2020-01-03 00:00:00")).toString());
+
+        final java.util.TimeZone defaultZone = java.util.TimeZone.getDefault();
+
+        try {
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("UTC"));
+
+            final java.util.Calendar tokyo = new java.util.GregorianCalendar(java.util.TimeZone.getTimeZone("Asia/Tokyo"));
+            tokyo.clear();
+            tokyo.set(2020, java.util.Calendar.JANUARY, 2, 3, 4, 5);
+            assertEquals("c = '2020-01-01 18:04:05.0'", Filters.eq("c", tokyo).toString());
+            assertEquals("c IN ('2020-01-01 18:04:05.0')", Filters.in("c", Arrays.asList(tokyo)).toString());
+
+            // 2020-03-08 02:30 is in New York's spring-forward gap; rendering the instant (12:30 the day before in New York)
+            // avoids the one-hour shift the old wall-clock round trip produced ('2020-03-08 03:30:00.0').
+            java.util.TimeZone.setDefault(java.util.TimeZone.getTimeZone("America/New_York"));
+            final java.util.Calendar gap = new java.util.GregorianCalendar(java.util.TimeZone.getTimeZone("Asia/Tokyo"));
+            gap.clear();
+            gap.set(2020, java.util.Calendar.MARCH, 8, 2, 30, 0);
+            assertEquals("c = '2020-03-07 12:30:00.0'", Filters.eq("c", gap).toString());
+        } finally {
+            java.util.TimeZone.setDefault(defaultZone);
+        }
+    }
 }

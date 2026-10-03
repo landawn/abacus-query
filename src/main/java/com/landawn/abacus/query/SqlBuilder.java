@@ -26,6 +26,7 @@ import java.util.List;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.query.SqlDialect.SqlPolicy;
+import com.landawn.abacus.query.condition.AbstractBetween;
 import com.landawn.abacus.query.condition.AbstractIn;
 import com.landawn.abacus.query.condition.AbstractInSubQuery;
 import com.landawn.abacus.query.condition.Between;
@@ -134,6 +135,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * Constructs a new SqlBuilder with the specified SqlDialect.
      *
      * @param sqlDialect the complete rendering and tokenizer configuration for this builder
+     * @throws IllegalArgumentException if the dialect's naming policy is {@link com.landawn.abacus.util.NamingPolicy#KEBAB_CASE}
      */
     protected SqlBuilder(final SqlDialect sqlDialect) {
         super(sqlDialect);
@@ -143,8 +145,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * Renders the given condition into the SQL being built and appends it to the internal buffer.
      *
      * <p>This is the concrete condition-rendering implementation for the SQL family of builders.
-     * It dispatches on the runtime type of {@code cond} and handles {@link Binary}, {@link Between},
-     * {@link NotBetween}, {@link In}, {@link InSubQuery}, {@link NotIn}, {@link NotInSubQuery},
+     * It dispatches on the runtime type of {@code cond} and handles {@link Binary}, any
+     * {@link com.landawn.abacus.query.condition.AbstractBetween} ({@link Between}, {@link NotBetween}, or a custom subclass),
+     * {@link In}, {@link InSubQuery}, {@link NotIn}, {@link NotInSubQuery},
      * {@link Where}, {@link Having}, {@link Using}, {@link Cell}, {@link ComposableCell}, {@link Junction},
      * {@link SubQuery} and {@link SqlExpression}. Binary conditions with a {@code null} value and an
      * {@code EQUAL}/{@code IS} (or {@code NOT_EQUAL}/{@code NOT_EQUAL_ANSI}/{@code IS_NOT}) operator
@@ -222,10 +225,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             _sb.append(binary.operator().toString());
             _sb.append(_SPACE);
             setParameter(propName, propValue);
-        } else if (cond instanceof final Between bt) {
+        } else if (cond instanceof final AbstractBetween bt) {
+            // Handles Between, NotBetween and any other AbstractBetween subclass; the operator is carried by bt.operator().
             appendBetweenClause(bt.propName(), bt.operator(), bt.minValue(), bt.maxValue());
-        } else if (cond instanceof final NotBetween nbt) {
-            appendBetweenClause(nbt.propName(), nbt.operator(), nbt.minValue(), nbt.maxValue());
         } else if (cond instanceof final AbstractIn anyIn) {
             // Handles both In and NotIn; the IN / NOT IN operator is carried by anyIn.operator().
             // Row-value mode must be dispatched explicitly (not on the property-name count): a

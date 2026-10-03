@@ -87,7 +87,8 @@ public class SqlDialect {
     /**
      * Naming policy used to translate Java property names into generated SQL identifiers. For example,
      * {@link NamingPolicy#SNAKE_CASE} renders {@code firstName} as {@code first_name}. When {@code null},
-     * builders use {@link NamingPolicy#SNAKE_CASE}.
+     * builders use {@link NamingPolicy#SNAKE_CASE}. {@link NamingPolicy#KEBAB_CASE} is rejected by {@link Dsl#forDialect(SqlDialect)}
+     * because hyphenated names are not valid unquoted SQL identifiers.
      */
     private NamingPolicy namingPolicy;
 
@@ -163,7 +164,10 @@ public class SqlDialect {
         /**
          * Inline values directly into the SQL string as literals. The positional bindings of a raw
          * sub-query ({@code SubQuery(String, Collection)}) are inlined the same way, replacing its
-         * {@code ?} placeholders, so the built statement carries no parameters.
+         * {@code ?} placeholders, so the built statement carries no parameters. String literals double their
+         * single quotes; for the MySQL/MariaDB product family a backslash is doubled as well, because MySQL's
+         * default {@code sql_mode} treats it as an escape character. For SQL Server a {@code Boolean} renders as
+         * {@code 1}/{@code 0}, since T-SQL has no {@code TRUE}/{@code FALSE} literals.
          *
          * <p><b>&#9888;&#65039;</b> Use only for trusted values; parameterized or named policies are preferred for user input.</p>
          */
