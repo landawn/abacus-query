@@ -2398,9 +2398,10 @@ public final class ParsedSql {
          *   <li>{@code VALUES} leads a marker glued to a non-JSON operator ({@code VALUES ?-1}, {@code VALUES ?||'x'}),
          *       which no column test can explain. The JSON operators {@code ?}, {@code ?|} and {@code ?&} after it test a
          *       column named {@code values} only where an expression operand stands, after a word such as {@code SELECT},
-         *       {@code WHERE}, {@code ,} or {@code =} (see {@code introducesColumnOperand}): {@code SELECT values ? format JSON}
-         *       tests the key in column {@code format} and names the result {@code JSON}. Anywhere else {@code VALUES} is
-         *       the row constructor and leads the marker ({@code VALUES ? FORMAT JSON}, {@code UNION ALL VALUES ?},
+         *       {@code WHERE}, {@code ,} or {@code =}, after a qualification dot, after {@code IS [NOT] DISTINCT FROM},
+         *       or in a JSON object's key/value entry (see {@code introducesColumnOperand}): {@code SELECT values ? format JSON}
+         *       tests the key in column {@code format} and names the result {@code JSON}. Other contexts are read as
+         *       the row constructor leading the marker ({@code VALUES ? FORMAT JSON}, {@code UNION ALL VALUES ?},
          *       {@code EXPLAIN VALUES ?}, {@code OVERRIDING SYSTEM VALUE VALUES ?}). After a {@code (}, which may open
          *       either, it leads a marker only before a postfix clause that no JSON operator takes as its operand
          *       ({@code (VALUES ? FORMAT JSON)}, {@code COLLATE}, {@code AT TIME ZONE}).</li>
@@ -2429,7 +2430,8 @@ public final class ParsedSql {
                 }
 
                 // After '(' both readings occur: (VALUES ? FORMAT JSON) and WHERE (values ? 'k').
-                return wordBeforePrevious.equals("(") ? startsValuePostfixClause(next) : !introducesColumnOperand(wordBeforePrevious, markerIndex);
+                return wordBeforePrevious.equals("(") ? startsValuePostfixClause(next)
+                        : !introducesColumnOperand(wordBeforePrevious, markerIndex, jsonObjectScope);
             }
 
             return jsonObjectScope && "KEY".equalsIgnoreCase(previousWord) && (wordBeforePrevious.equals("(") || wordBeforePrevious.equals(","));
@@ -2438,26 +2440,48 @@ public final class ParsedSql {
         /**
          * Whether {@code wordBeforeValues}, the word before the {@code VALUES} that precedes the marker at
          * {@code markerIndex}, makes {@code values} an expression operand, a column: a {@code ,}, a {@code [}, an
-         * operator, a keyword that takes an expression after it ({@code SELECT}, {@code WHERE}, {@code AND},
-         * {@code WHEN}, {@code BY}, ...), or a {@code DISTINCT} or {@code ALL} after {@code SELECT} or a {@code (}. After
-         * any other word {@code VALUES} is the row constructor: at the start of a statement, after a set operation
-         * ({@code UNION ALL VALUES}), {@code EXPLAIN}, {@code INSERT INTO t}, {@code OVERRIDING SYSTEM VALUE} or a
-         * {@code )}.
+         * operator, a qualification dot, a keyword that takes an expression after it ({@code SELECT}, {@code WHERE},
+         * {@code AND}, {@code WHEN}, {@code BY}, ...), {@code IS [NOT] DISTINCT FROM}, or a {@code DISTINCT} or
+         * {@code ALL} after {@code SELECT} or a {@code (}. Within a JSON object argument list, {@code KEY}, {@code VALUE}
+         * and {@code :} also introduce operands. Restricting that reading to the constructor's scope preserves the row
+         * constructor in {@code INSERT INTO t OVERRIDING SYSTEM VALUE VALUES ? FORMAT JSON}. Other contexts retain
+         * the row-constructor reading, including a statement start, {@code UNION ALL VALUES}, {@code EXPLAIN} and
+         * {@code INSERT INTO t}.
          */
-        private boolean introducesColumnOperand(final String wordBeforeValues, final int markerIndex) {
+        private boolean introducesColumnOperand(final String wordBeforeValues, final int markerIndex, final boolean jsonObjectScope) {
             if (wordBeforeValues.isEmpty()) {
                 return false;
             }
 
-            if (wordBeforeValues.equals(",") || wordBeforeValues.equals("[") || isOperatorWord(wordBeforeValues)) {
+            // A qualification dot may be its own token or glued to the qualifier: t . values and t. values.
+            if (wordBeforeValues.equals(",") || wordBeforeValues.equals("[") || wordBeforeValues.endsWith(".") || isOperatorWord(wordBeforeValues)) {
                 return true;
             }
 
-            if ("DISTINCT".equalsIgnoreCase(wordBeforeValues) || "ALL".equalsIgnoreCase(wordBeforeValues)) {
+            if (jsonObjectScope && (wordBeforeValues.equals(":") || "VALUE".equalsIgnoreCase(wordBeforeValues) || "KEY".equalsIgnoreCase(wordBeforeValues))) {
+                return true;
+            }
+
+            if ("DISTINCT".equalsIgnoreCase(wordBeforeValues) || "ALL".equalsIgnoreCase(wordBeforeValues) || "FROM".equalsIgnoreCase(wordBeforeValues)) {
                 // SELECT DISTINCT values ? 'k' and count(ALL values ? 'k') test a column; UNION ALL VALUES ? does not.
                 final int values = previousNonCommentWord(words, markerIndex - 1);
-                final int quantifier = values > 0 ? previousNonCommentWord(words, values - 1) : -1;
-                final int before = quantifier > 0 ? previousNonCommentWord(words, quantifier - 1) : -1;
+                final int preceding = values > 0 ? previousNonCommentWord(words, values - 1) : -1;
+                int before = preceding > 0 ? previousNonCommentWord(words, preceding - 1) : -1;
+
+                if ("FROM".equalsIgnoreCase(wordBeforeValues)) {
+                    // Only the predicate's FROM introduces an operand; FROM VALUES may introduce a row source.
+                    if (before < 0 || !"DISTINCT".equalsIgnoreCase(words.get(before))) {
+                        return false;
+                    }
+
+                    before = previousNonCommentWord(words, before - 1);
+
+                    if (before >= 0 && "NOT".equalsIgnoreCase(words.get(before))) {
+                        before = previousNonCommentWord(words, before - 1);
+                    }
+
+                    return before >= 0 && "IS".equalsIgnoreCase(words.get(before));
+                }
 
                 return before >= 0 && ("SELECT".equalsIgnoreCase(words.get(before)) || words.get(before).equals("("));
             }

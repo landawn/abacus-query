@@ -3898,8 +3898,7 @@ public class ParsedSqlTest extends TestBase {
             assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
         }
 
-        // Every other word before VALUES makes it the row constructor too, which H2 runs: a set operation with ALL or
-        // DISTINCT, EXPLAIN (ANALYZE) and an identity override.
+        // A set operation's ALL/DISTINCT, EXPLAIN (ANALYZE) and an identity override also introduce a row constructor.
         for (final String sql : new String[] { "SELECT CAST('[1]' AS JSON) UNION ALL VALUES ? FORMAT JSON", "SELECT CAST('[1]' AS JSON) UNION DISTINCT VALUES ? FORMAT JSON",
                 "SELECT 1 EXCEPT ALL VALUES ? FORMAT JSON", "EXPLAIN VALUES ? FORMAT JSON", "EXPLAIN ANALYZE VALUES ? FORMAT JSON",
                 "INSERT INTO t OVERRIDING SYSTEM VALUE VALUES ? FORMAT JSON", "INSERT INTO t (j) OVERRIDING USER VALUE VALUES ? FORMAT JSON",
@@ -3917,5 +3916,29 @@ public class ParsedSqlTest extends TestBase {
         }
 
         assertEquals(List.of("id"), ParsedSql.parse("SELECT values ? format JSON FROM t WHERE id = :id").namedParameters());
+    }
+
+    // Regression: the VALUES row-constructor fallback counted JSON operators as bindings after VALUE, ':', a
+    // qualification dot or IS [NOT] DISTINCT FROM, rejecting valid named bindings in the same query as mixed styles.
+    @Test
+    public void testValuesColumnInJsonAndQualifiedExpressions() {
+        for (final String sql : new String[] { "SELECT JSON_OBJECT('present' VALUE values ? 'k') FROM t",
+                "SELECT JSON_OBJECT('present': values ? 'k') FROM t", "SELECT JSON_OBJECTAGG('present' VALUE values ? 'k') FROM t",
+                "SELECT JSON_OBJECT(KEY values ? 'k' VALUE 1) FROM t", "SELECT JSON_OBJECT('present' VALUE /* operand */ values ? 'k') FROM t",
+                "SELECT JSON_OBJECT('present' VALUE values ?| array['k']) FROM t", "SELECT JSON_OBJECT('present': values ?& array['k']) FROM t",
+                "SELECT JSON_OBJECT('nested' VALUE JSON_OBJECT('present' VALUE values ? 'k')) FROM t",
+                "SELECT t . values ? 'k' FROM t", "SELECT t. values ? 'k' FROM t", "SELECT \"t\". values ? 'k' FROM t",
+                "SELECT t /* qualifier */ . /* column */ values ? 'k' FROM t", "SELECT t . values ?| array['k'] FROM t",
+                "SELECT t. values ?& array['k'] FROM t", "SELECT true IS DISTINCT FROM values ? 'k' FROM t",
+                "SELECT true IS NOT DISTINCT FROM values ? 'k' FROM t", "SELECT true IS /* predicate */ DISTINCT /* operand */ FROM values ? 'k' FROM t" }) {
+            assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
+            assertEquals(1, ParsedSql.parse(sql + " WHERE id = ?").parameterCount(), sql);
+            assertEquals(List.of("id"), ParsedSql.parse(sql + " WHERE id = :id").namedParameters(), sql);
+            assertEquals(List.of("id"), ParsedSql.parse(sql + " WHERE id = #{id}").namedParameters(), sql);
+        }
+
+        assertEquals(List.of("key", "id"),
+                ParsedSql.parse("SELECT JSON_OBJECT('present' VALUE values ? :key) FROM t WHERE id = :id").namedParameters());
+        assertEquals(List.of("keys"), ParsedSql.parse("SELECT t. values ?| #{keys} FROM t").namedParameters());
     }
 }

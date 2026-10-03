@@ -1131,4 +1131,15 @@ public class SubQueryTest extends TestBase {
         // A JSON existence test on a column named values takes no binding.
         assertTrue(new SubQuery("SELECT values ? format JSON FROM t", List.of()).parameters().isEmpty());
     }
+
+    // Regression: a JSON operator on a column named values must not require an extra raw-subquery binding.
+    @Test
+    public void testValuesColumnExpressionsAcceptTheirActualBindings() {
+        for (final String sql : new String[] { "SELECT JSON_OBJECT('present' VALUE values ? 'k') FROM t",
+                "SELECT JSON_OBJECT('present': values ? 'k') FROM t", "SELECT t. values ? 'k' FROM t",
+                "SELECT true IS DISTINCT FROM values ? 'k' FROM t" }) {
+            assertTrue(new SubQuery(sql, List.of()).parameters().isEmpty(), sql);
+            assertEquals(List.of(7), new SubQuery(sql + " WHERE id = ?", List.of(7)).parameters(), sql);
+        }
+    }
 }
