@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.annotation.Column;
 import com.landawn.abacus.annotation.Table;
+import com.landawn.abacus.query.AbstractQueryBuilder.SP;
+import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
 import static com.landawn.abacus.query.Dsl.*;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
@@ -5574,5 +5577,177 @@ public class AbstractQueryBuilderTest extends TestBase {
                 mysql.select("id").from("t").where(Filters.expr("n = \"a\\\"--1\" AND b--1 > 0")).build().query());
         assertEquals("SELECT id FROM t WHERE a = 1  ORDER BY id", mysql.select("id").from("t").where(Filters.expr("a = 1 --\tc")).orderBy("id").build().query());
         assertEquals("SELECT id FROM t WHERE c- -1 > arr[1] AND d", mysql.select("id").from("t").where(Filters.expr("c--1 > arr[1] AND d--1 > 0")).build().query());
+    }
+
+    // Regression: when a literal name ("id_2") pushed a composed parameter to a higher suffix ("id_3"), the parent's
+    // occurrence count stayed below that suffix, so a later composition could reuse the name for a different value or
+    // skip its handler conversion. Covered for a reusable union snapshot here and for the other composition paths below.
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testReusableUnionSnapshotRetainsSkippedParameterSuffixes() {
+        for (final Dsl dsl : new Dsl[] { Dsl.NSC, Dsl.MSC }) {
+            final SubQuery snapshot = compoundWithSkippedSuffix(dsl).toSubQuery();
+            final String originalSql = snapshot.rawSql();
+
+            for (final int outerValue : new int[] { 4, 5 }) {
+                final SP result = dsl.select("id")
+                        .from("outer_table")
+                        .where(Filters.and(Filters.eq("id_3", outerValue), Filters.in("id", snapshot)))
+                        .build();
+
+                assertDistinctBindings(result, List.of(outerValue, 1, 2, 3));
+                assertEquals(originalSql, snapshot.rawSql());
+                assertEquals(List.of(1, 2, 3), snapshot.parameters());
+            }
+        }
+    }
+
+    // Same suffix high-water mark through a snapshot nested in a predicate subquery.
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testNestedPredicateSnapshotRetainsSkippedParameterSuffixes() {
+        for (final Dsl dsl : new Dsl[] { Dsl.NSC, Dsl.MSC }) {
+            final SubQuery inner = dsl.select("id").from("archive").where(Filters.eq("id", 3)).toSubQuery();
+            final SubQuery middle = dsl.select("id")
+                    .from("users")
+                    .where(Filters.and(Filters.eq("id", 1), Filters.eq("id_2", 2), Filters.in("id", inner)))
+                    .toSubQuery();
+            final SP result = dsl.select("id")
+                    .from("outer_table")
+                    .where(Filters.and(Filters.eq("id_3", 4), Filters.in("id", middle)))
+                    .build();
+
+            assertDistinctBindings(result, List.of(4, 1, 2, 3));
+        }
+    }
+
+    // Same suffix high-water mark through a derived table composed as a set-operation sibling.
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testDerivedTableRetainsSkippedParameterSuffixesWhenComposedAsSibling() {
+        for (final Dsl dsl : new Dsl[] { Dsl.NSC, Dsl.MSC }) {
+            final SqlBuilder derived = dsl.select("id").from(compoundWithSkippedSuffix(dsl), "inner_query");
+            final SP result = dsl.select("id").from("outer_table").where(Filters.eq("id_3", 4)).union(derived).build();
+
+            assertDistinctBindings(result, List.of(4, 1, 2, 3));
+        }
+    }
+
+    // Same suffix high-water mark across repeated nesting, each level promoting another suffix.
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testRepeatedCompositionRetainsEachNewlyPromotedSuffix() {
+        for (final Dsl dsl : new Dsl[] { Dsl.NSC, Dsl.MSC }) {
+            SubQuery snapshot = compoundWithSkippedSuffix(dsl).toSubQuery();
+            final ArrayList<Integer> values = new ArrayList<>(List.of(1, 2, 3));
+
+            for (int suffix = 3; suffix <= 6; suffix++) {
+                values.add(0, suffix + 1);
+                snapshot = dsl.select("id")
+                        .from("outer_table")
+                        .where(Filters.and(Filters.eq("id_" + suffix, suffix + 1), Filters.in("id", snapshot)))
+                        .toSubQuery();
+
+                assertDistinctBindings(new SP(snapshot.rawSql(), ImmutableList.copyOf(snapshot.parameters())), values);
+            }
+        }
+    }
+
+    // Same suffix high-water mark under a custom named-parameter handler: every parameter is converted.
+    @Test
+    public void testCustomHandlerRewritesEveryParameterOfComposedSnapshot() {
+        final Dsl at = Dsl.forDialect(Dsl.NSC.sqlDialect().toBuilder().namedParameterHandler((sql, name) -> sql.append('@').append(name)).build());
+        final SP result = at.select("id").from(compoundWithSkippedSuffix(Dsl.NSC), "inner_query").build();
+
+        assertEquals(List.of(1, 2, 3), result.parameters());
+        assertTrue(result.query().contains("id = @id_3"), result.query());
+        assertFalse(result.query().contains(":id"), result.query());
+    }
+
+    private static SqlBuilder compoundWithSkippedSuffix(final Dsl dsl) {
+        return dsl.select("id")
+                .from("users")
+                .where(Filters.and(Filters.eq("id", 1), Filters.eq("id_2", 2)))
+                .union(dsl.select("id").from("archive").where(Filters.eq("id", 3)));
+    }
+
+    private static void assertDistinctBindings(final SP result, final List<Integer> values) {
+        final List<String> names = ParsedSql.parse(result.query()).namedParameters();
+        assertEquals(values, result.parameters());
+        assertEquals(values.size(), names.size(), result.query());
+        assertEquals(values.size(), new HashSet<>(names).size(), result.query());
+    }
+
+    // Regression: selecting a quoted physical @Column name through the entity mapping emitted its quotes undoubled
+    // inside the quoted implicit label (AS ""quoted.name""), which is invalid SQL.
+    @Test
+    public void testMappedPhysicalColumnAliasesEscapeDoubleQuotes() {
+        assertEquals("SELECT t.\"quoted.name\" AS \"\"\"quoted.name\"\"\" FROM quoted_columns t",
+                Dsl.PSC.select("\"quoted.name\"").from(QuotedColumns.class, "t").build().query());
+        assertEquals("SELECT t.\"quoted.name\" AS \"t.\"\"quoted.name\"\"\" FROM quoted_columns t",
+                Dsl.PSC.select("t.\"quoted.name\"").from(QuotedColumns.class, "t").build().query());
+        assertEquals("SELECT t.\"escaped\"\"name\" AS \"\"\"escaped\"\"\"\"name\"\"\" FROM quoted_columns t",
+                Dsl.PSC.select("\"escaped\"\"name\"").from(QuotedColumns.class, "t").build().query());
+    }
+
+    // Same for a backtick-quoted dialect and a class-aliased label.
+    @Test
+    public void testMappedPhysicalColumnAliasesEscapeBackticksWithClassAlias() {
+        final Dsl backtick = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().identifierQuote(IdentifierQuote.BACKTICK).build());
+        assertEquals("SELECT t.`tick.name` AS ```tick.name``` FROM quoted_columns t",
+                backtick.select("`tick.name`").from(QuotedColumns.class, "t").build().query());
+        assertEquals("SELECT t.`tick.name` AS `row.``tick.name``` FROM quoted_columns t",
+                backtick.selectFrom(Selection.builder(QuotedColumns.class)
+                        .tableAlias("t")
+                        .classAlias("row")
+                        .includedPropNames(List.of("`tick.name`"))
+                        .build()).build().query());
+    }
+
+    // Controls: property names, explicit labels, NO_CHANGE and unmapped expressions keep their labels.
+    @Test
+    public void testOrdinaryMappedAndExplicitAliasesRetainTheirLabels() {
+        assertEquals("SELECT t.\"quoted.name\" AS \"value\" FROM quoted_columns t",
+                Dsl.PSC.select("value").from(QuotedColumns.class, "t").build().query());
+        assertEquals("SELECT t.\"quoted.name\" AS \"label\" FROM quoted_columns t",
+                Dsl.PSC.select(Map.of("\"quoted.name\"", "label")).from(QuotedColumns.class, "t").build().query());
+        assertEquals("SELECT t.\"quoted.name\" FROM quoted_columns t",
+                Dsl.PSB.select("\"quoted.name\"").from(QuotedColumns.class, "t").build().query());
+        assertEquals("SELECT \"quoted.name\" AS \"\"\"quoted.name\"\"\" FROM t",
+                Dsl.PSC.select("\"quoted.name\"").from("t").build().query());
+    }
+
+    @Table("quoted_columns")
+    public static final class QuotedColumns {
+        @Column("\"quoted.name\"")
+        private String value;
+        @Column("`tick.name`")
+        private String tick;
+        @Column("\"escaped\"\"name\"")
+        private String escaped;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
+        }
+
+        public String getTick() {
+            return tick;
+        }
+
+        public void setTick(final String tick) {
+            this.tick = tick;
+        }
+
+        public String getEscaped() {
+            return escaped;
+        }
+
+        public void setEscaped(final String escaped) {
+            this.escaped = escaped;
+        }
     }
 }

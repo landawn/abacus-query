@@ -5287,4 +5287,388 @@ public class SqlParserTest extends TestBase {
         assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT a /* c */ INTO x FROM t"));
         assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM /* a */ #t /* b */ WHERE x = 1"));
     }
+
+    // Regression: the procedure scan read only a statement's first word as its verb, so behind a CTE list
+    // ("WITH c AS (...) INSERT INTO c EXEC p") the INSERT and its EXEC source were never seen and the statement passed
+    // the read-or-insert gate.
+    @Test
+    public void testCtePrefixedInsertCannotHideProcedureSource() {
+        final SqlParser.Tokenizer batches = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSemicolonlessBatches(true).build());
+
+        for (final String sql : List.of("WITH c AS (SELECT id FROM t) INSERT INTO c EXEC mutate",
+                "WITH c AS (SELECT id FROM t) INSERT INTO c (id) EXECUTE dbo.mutate",
+                "WITH c AS (SELECT id FROM t), d AS (SELECT id FROM c) INSERT INTO d EXEC('SELECT 1')",
+                "SELECT 1; WITH c AS (SELECT id FROM t) INSERT INTO c /* source */ EXEC mutate",
+                "WITH [c] AS (SELECT id FROM t) INSERT INTO [c] EXEC mutate")) {
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertFalse(batches.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    // Controls for the CTE-prefixed INSERT procedure check: ordinary sources, and columns, tables or CTEs named exec or
+    // execute, stay accepted.
+    @Test
+    public void testCtePrefixedInsertStillAcceptsOrdinarySourcesAndExecuteIdentifiers() {
+        for (final String sql : List.of("WITH c AS (SELECT id FROM t) INSERT INTO c VALUES (1)",
+                "WITH c AS (SELECT id FROM t) INSERT INTO c SELECT execute FROM s",
+                "WITH c AS (SELECT id FROM t) INSERT INTO execute (exec) SELECT id FROM c",
+                "WITH c AS (SELECT execute FROM t) SELECT execute FROM c")) {
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    // Regression: the SELECT of a scalar subquery in SQL Server's INSERT TOP ((SELECT ...)) was taken as the INSERT's row
+    // source, so a following EXEC procedure source was accepted as read-or-insert SQL.
+    @Test
+    public void testInsertTopScalarQueryDoesNotHideProcedureSource() {
+        for (final String sql : List.of("INSERT TOP ((SELECT 1)) INTO t EXEC mutate",
+                "INSERT TOP ((SELECT count(*) FROM limits)) INTO t (id) EXECUTE dbo.mutate",
+                "WITH c AS (SELECT 1 AS n) INSERT TOP ((SELECT n FROM c)) INTO t EXEC mutate")) {
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    // Controls: after the TOP expression an ordinary source still settles the INSERT, a parenthesized query source does
+    // too (a later RETURNING column may be named execute), and a table or alias named top is no TOP clause.
+    @Test
+    public void testInsertTopScalarQueryKeepsOrdinarySourcesAndExecuteIdentifiers() {
+        for (final String sql : List.of("INSERT TOP ((SELECT 1)) INTO t VALUES (1)",
+                "INSERT TOP ((SELECT 1)) INTO t SELECT execute FROM s",
+                "INSERT TOP ((SELECT 1)) INTO execute (exec) SELECT id FROM s",
+                "INSERT INTO t (id) (SELECT execute FROM s)",
+                "INSERT INTO t (SELECT execute FROM s) RETURNING execute",
+                "INSERT INTO top (SELECT execute FROM s) RETURNING execute",
+                "INSERT INTO t AS top (SELECT execute FROM s) RETURNING execute")) {
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    private static final String RECURSIVE_CTE = "WITH RECURSIVE c(id) AS (SELECT 1 UNION ALL SELECT id + 1 FROM c WHERE id < 2) ";
+
+    // Regression: a SEARCH/CYCLE column name such as insert after a recursive CTE body was read as the statement verb,
+    // so the UPDATE or DELETE that followed passed the read-or-insert gate.
+    @Test
+    public void testSuffixIdentifierCannotHideTheMainMutation() {
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY id SET insert ", "CYCLE id SET insert USING path ",
+                "CYCLE id SET seen USING insert ", "SEARCH BREADTH FIRST BY id SET ord CYCLE id SET insert TO 1 DEFAULT 0 USING path ",
+                "CYCLE id SET seen TO 'YY' DEFAULT 'N'\n'N' USING insert ",
+                "CYCLE id SET seen TO 'YY' DEFAULT E'N'\n'N' USING insert ",
+                "CYCLE id SET seen TO 'Y'::text DEFAULT 'N'::text USING insert ")) {
+            final String update = RECURSIVE_CTE + suffix + "UPDATE target SET x = 1";
+            assertTrue(SqlParser.isUpdateQuery(update), update);
+            assertFalse(SqlParser.isReadOrInsertQuery(update), update);
+            assertFalse(SqlParser.isSyntacticallyReadQuery(update), update);
+
+            final String delete = RECURSIVE_CTE + suffix + "DELETE FROM target";
+            assertTrue(SqlParser.isDeleteQuery(delete), delete);
+            assertFalse(SqlParser.isReadOrInsertQuery(delete), delete);
+        }
+    }
+
+    // Controls: verb-like, quoted and non-ASCII SEARCH/CYCLE names stay names in read queries, also in a nested CTE list.
+    @Test
+    public void testSuffixNamesRemainIdentifiersInReadQueriesAndNestedCtes() {
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY id SET update ", "CYCLE id SET delete USING merge ",
+                "SEARCH DEPTH FIRST BY id SET \ud83d\ude00 ", "CYCLE id SET seen USING i\u0301nsert ",
+                "CYCLE id SET seen TO 'YY' DEFAULT 'N'\n'N' USING update ",
+                "CYCLE id SET seen TO 'Y'::text DEFAULT 'N'::text USING update ",
+                "SEARCH DEPTH FIRST BY id SET \"order\" CYCLE id SET insert TO 'yes' DEFAULT 'no' USING path ")) {
+            final String sql = RECURSIVE_CTE + suffix + "SELECT * FROM c";
+            assertTrue(SqlParser.isSelectQuery(sql), sql);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertTrue(SqlParser.isSyntacticallyReadQuery("WITH outer_cte AS (" + sql + ") SELECT * FROM outer_cte"), sql);
+        }
+    }
+
+    // Controls: ordinary SEARCH/CYCLE clauses keep SELECT and INSERT accepted and UPDATE rejected.
+    @Test
+    public void testOrdinarySuffixesPreserveQueryAndMutationControls() {
+        for (final String suffix : List.of("SEARCH BREADTH FIRST BY id SET ord ", "CYCLE id SET seen USING path ")) {
+            assertTrue(SqlParser.isSyntacticallyReadQuery(RECURSIVE_CTE + suffix + "SELECT * FROM c"));
+            assertTrue(SqlParser.isReadOrInsertQuery(RECURSIVE_CTE + suffix + "INSERT INTO target SELECT id FROM c"));
+            assertFalse(SqlParser.isReadOrInsertQuery(RECURSIVE_CTE + suffix + "UPDATE target SET x = 1"));
+        }
+    }
+
+    // Regression: a PostgreSQL U&"..." name in a SEARCH/CYCLE clause was consumed only through its U, so valid SELECTs
+    // lost their verb.
+    @Test
+    public void testUnicodeEscapedSuffixNamesPreserveReadAndMutationClassification() {
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY U&\"id\" SET ord ",
+                "SEARCH BREADTH FIRST BY u&\"i\\0064\" SET U&\"up\\0064ate\" ",
+                "SEARCH DEPTH FIRST BY id SET U&\"or\"\"der\" ",
+                "CYCLE U&\"id\" SET seen USING path ", "CYCLE id SET U&\"insert\" USING path ",
+                "CYCLE id SET seen USING u&\"pa\\0074h\" ")) {
+            assertSuffixReadAndMutationClassification(suffix);
+        }
+    }
+
+    // The optional UESCAPE clause of a U&"..." SEARCH/CYCLE name (plain, E'...' or dollar-quoted, after comments) is
+    // consumed with the name.
+    @Test
+    public void testUnicodeEscapedSuffixNamesConsumeTheirEscapeClause() {
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY U&\"i!0064\" UESCAPE '!' SET ord ",
+                "SEARCH BREADTH FIRST BY id SET u&\"up!0064ate\" /* name */ uescape /* escape */ '!' ",
+                "CYCLE U&\"i!0064\" UESCAPE E'!' SET seen USING path ",
+                "CYCLE id SET U&\"in!0073ert\" UESCAPE '!' USING path ",
+                "CYCLE id SET seen USING U&\"pa!0074h\" UESCAPE $escape$!$escape$ ",
+                "CYCLE id SET seen USING U&\"pa!0074h\" -- name\n UESCAPE e'\\041' ")) {
+            assertSuffixReadAndMutationClassification(suffix);
+        }
+    }
+
+    private static void assertSuffixReadAndMutationClassification(final String suffix) {
+        final String select = RECURSIVE_CTE + suffix + "SELECT * FROM c";
+        assertTrue(SqlParser.isSelectQuery(select), select);
+        assertTrue(SqlParser.isSyntacticallyReadQuery(select), select);
+        assertTrue(SqlParser.isReadOrInsertQuery(select), select);
+        assertTrue(SqlParser.isSyntacticallyReadQuery("WITH outer_cte AS (" + select + ") SELECT * FROM outer_cte"), select);
+
+        final String update = RECURSIVE_CTE + suffix + "UPDATE target SET x = 1";
+        assertTrue(SqlParser.isUpdateQuery(update), update);
+        assertFalse(SqlParser.isReadOrInsertQuery(update), update);
+        assertFalse(SqlParser.isSyntacticallyReadQuery("WITH outer_cte AS (" + update + " RETURNING x) SELECT * FROM outer_cte"), update);
+    }
+
+    // Controls: suffix column lists, following CTEs, quoted and dollar-quoted mark values, MariaDB's CYCLE ... RESTRICT,
+    // Oracle's SEARCH ordering options and its CYCLE form without USING all end the clause in the right place.
+    @Test
+    public void testSuffixBoundariesPreserveColumnListsFollowingCtesAndDialectForms() {
+        final String pairCte = "WITH RECURSIVE c(id, insert) AS (SELECT 1, 1 UNION ALL SELECT id + 1, insert FROM c WHERE id < 2) ";
+
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY id, insert SET update ",
+                "CYCLE id, insert SET delete TO 'yes DEFAULT' DEFAULT 'no USING' USING update ",
+                "CYCLE id SET seen TO $$yes DEFAULT using$$ DEFAULT $$no USING default$$ USING update ",
+                "SEARCH /* order */ BREADTH FIRST BY id, insert SET \"delete\" CYCLE id SET update USING path ")) {
+            final String sql = pairCte + suffix + ", d AS (SELECT id FROM c) SELECT * FROM d";
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertTrue(SqlParser.isSyntacticallyReadQuery("WITH outer_cte AS (" + sql + ") SELECT * FROM outer_cte"), sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(pairCte + suffix + "UPDATE target SET x = 1"), suffix);
+            assertFalse(SqlParser.isReadOrInsertQuery(pairCte + suffix + "REPLACE INTO target SELECT id FROM c"), suffix);
+            assertFalse(SqlParser.isReadOrInsertQuery("WITH outer_cte AS (" + pairCte + suffix
+                    + "UPDATE target SET x = 1 RETURNING x) SELECT * FROM outer_cte"), suffix);
+        }
+
+        for (final String sql : List.of(RECURSIVE_CTE + "CYCLE id RESTRICT SELECT * FROM c",
+                RECURSIVE_CTE + "SEARCH DEPTH FIRST BY id DESC NULLS LAST SET ord SELECT * FROM c",
+                "WITH c(id) AS (SELECT 1 FROM dual UNION ALL SELECT id + 1 FROM c WHERE id < 2) "
+                        + "CYCLE id SET seen TO 'Y' DEFAULT 'N' SELECT * FROM c")) {
+            assertTrue(SqlParser.isSelectQuery(sql), sql);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            assertTrue(SqlParser.isSyntacticallyReadQuery("WITH outer_cte AS (" + sql + ") SELECT * FROM outer_cte"), sql);
+        }
+    }
+
+    // Regression: the SEARCH/CYCLE suffix skipper recognized Oracle's CYCLE form without USING only when the default mark
+    // was quoted, so the common "CYCLE id SET is_cycle TO 1 DEFAULT 0" (numeric marks, which Oracle converts) left the
+    // statement verb unresolved and a plain recursive SELECT was no longer classified as a SELECT or as a read.
+    @Test
+    public void testOracleCycleClauseWithNumericMarksKeepsTheMainVerb() {
+        final String oracleCte = "WITH c(id) AS (SELECT 1 FROM dual UNION ALL SELECT id + 1 FROM c WHERE id < 2) ";
+
+        for (final String cycle : List.of("CYCLE id SET is_cycle TO 1 DEFAULT 0 ", "CYCLE id SET is_cycle TO -1 DEFAULT +0 ",
+                "CYCLE id SET is_cycle TO 1.5e3 DEFAULT .5 ", "CYCLE id SET is_cycle TO 1f DEFAULT 0d ", "CYCLE id SET is_cycle TO 'Y' DEFAULT NULL ",
+                "SEARCH DEPTH FIRST BY id SET ord CYCLE id SET is_cycle TO 1 /* yes */ DEFAULT /* no */ 0 ")) {
+            final String select = oracleCte + cycle + "SELECT * FROM c";
+            assertTrue(SqlParser.isSelectQuery(select), select);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(select), select);
+            assertTrue(SqlParser.isReadOnlyQuery(select), select);
+            assertTrue(SqlParser.isReadOrInsertQuery(select), select);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(oracleCte + cycle + ", d AS (SELECT id FROM c) SELECT * FROM d"), cycle);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(oracleCte + cycle + "(SELECT * FROM c)"), cycle);
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM (" + select + ") x"), cycle);
+
+            final String delete = oracleCte + cycle + "DELETE FROM t";
+            assertTrue(SqlParser.isDeleteQuery(delete), delete);
+            assertFalse(SqlParser.isReadOrInsertQuery(delete), delete);
+        }
+
+        // A number glued to a name is no mark value: the clause stays unresolved, so the text is not classified as a read.
+        assertFalse(SqlParser.isSyntacticallyReadQuery(oracleCte + "CYCLE id SET is_cycle TO 1 DEFAULT 0x SELECT * FROM c"));
+    }
+
+    // Controls for the bounded CYCLE mark scan: PostgreSQL marks are constants, including typed literals with type modifiers
+    // and quoted type names, and the clause still continues with USING path.
+    @Test
+    public void testPostgresCycleMarkConstantsKeepTheMainVerb() {
+        final String pgCte = "WITH RECURSIVE c(id) AS (SELECT 1 UNION ALL SELECT id + 1 FROM c WHERE id < 2) ";
+
+        for (final String marks : List.of("TO 1 DEFAULT 0", "TO true DEFAULT false", "TO 'Y'::char(1) DEFAULT 'N'::char(1)",
+                "TO numeric(3, 0) '1' DEFAULT numeric(3, 0) '0'", "TO timestamp(3) with time zone '2020-01-01' DEFAULT timestamp(3) with time zone '2020-01-02'",
+                "TO \"char\" 'Y' DEFAULT \"char\" 'N'", "TO $$Y$$ DEFAULT $t$N$t$")) {
+            final String clause = pgCte + "CYCLE id SET is_cycle " + marks + " USING path ";
+            assertTrue(SqlParser.isSelectQuery(clause + "SELECT * FROM c"), marks);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(clause + "SELECT * FROM c"), marks);
+            assertTrue(SqlParser.isUpdateQuery(clause + "UPDATE t SET x = 1"), marks);
+            assertFalse(SqlParser.isReadOrInsertQuery(clause + "UPDATE t SET x = 1"), marks);
+        }
+    }
+
+    @Test
+    public void testCycleMarkTypeModifiersAllowParenthesizedConstants() {
+        for (final String marks : List.of("TO numeric((3), 0) '1' DEFAULT numeric((3), 0) '0'",
+                "TO numeric(((3)), ((0))) '1' DEFAULT 0", "TO 1 DEFAULT numeric(/* precision */ (3), (0)) '0'")) {
+            assertSuffixReadAndMutationClassification("CYCLE id SET seen " + marks + " USING path ");
+        }
+    }
+
+    // Regression: a CYCLE mark value was scanned up to its DEFAULT/USING keyword across any parentheses, so every level of
+    // nested "(WITH ... CYCLE ..." groups rescanned all deeper levels: quadratic (an 848 KB text took about 22 s). A constant
+    // may have nested parentheses within a type modifier, but never a nested statement, so the scan stops before one.
+    @Test
+    public void testNestedCycleMarkValueScansAreLinear() {
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            for (final String level : new String[] { "(WITH c AS (SELECT 1) CYCLE id SET x TO 1 DEFAULT 0 ", "(WITH c AS (SELECT 1) CYCLE id SET x TO 1 ",
+                    "(WITH c AS (SELECT 1) CYCLE id SET x TO 'Y' DEFAULT 'N'::t ", "(WITH c AS (SELECT 1) CYCLE id SET x TO 'Y'::t(1 ",
+                    "(WITH c AS (SELECT 1) CYCLE id SET x TO numeric(( ", "(WITH c AS () CYCLE id SET x TO numeric(( " }) {
+                final String sql = "SELECT * FROM " + level.repeat(8000) + "SELECT 1" + ")".repeat(8000);
+                SqlParser.isReadOnlyQuery(sql);
+                SqlParser.isReadOrInsertQuery(sql);
+                SqlParser.isSelectQuery(sql);
+            }
+        });
+    }
+
+    // Regression: the procedure scan continues at the verb after a statement's CTE list, but a list that resolved no verb
+    // let that search run on into the following statements, so the jump passed over the "EXEC p" there. The public gates
+    // reject such text anyway (every statement must start with an allowed verb), so the private scanner is checked directly.
+    @Test
+    public void testProcedureScanJumpStaysWithinTheWithStatement() throws Exception {
+        assertTrue(containsProcedureInvocation("WITH c AS (SELECT 1); EXEC p; SELECT 1"));
+        assertTrue(containsProcedureInvocation("WITH c AS (SELECT 1) SELECT * FROM c; EXEC p"));
+        assertTrue(containsProcedureInvocation("WITH c AS (SELECT 1) INSERT INTO c EXEC p"));
+        assertFalse(containsProcedureInvocation("WITH c AS (SELECT 1) INSERT INTO c SELECT execute FROM s; SELECT 1"));
+        assertFalse(SqlParser.isReadOrInsertQuery("WITH c AS (SELECT 1); EXEC p; SELECT 1"));
+    }
+
+    private static boolean containsProcedureInvocation(final String sql) throws Exception {
+        java.lang.reflect.Method scan = null;
+        java.lang.reflect.Method memo = null;
+
+        for (final java.lang.reflect.Method method : SqlParser.class.getDeclaredMethods()) {
+            if ("containsProcedureInvocation".equals(method.getName())) {
+                scan = method;
+            } else if ("hashScanMemo".equals(method.getName()) && method.getParameterCount() == 1) {
+                memo = method;
+            }
+        }
+
+        assertNotNull(scan);
+        assertNotNull(memo);
+        scan.setAccessible(true);
+        memo.setAccessible(true);
+
+        return (Boolean) scan.invoke(null, sql, SqlParser.defaultTokenizerConfig(), memo.invoke(null, sql));
+    }
+
+    // Regression: MariaDB may omit INTO, so "INSERT top (SELECT ...)" inserts into a table named top, but it reads like SQL
+    // Server's INSERT TOP (...) clause; the scan then took "RETURNING exec" for an EXEC procedure source and rejected the
+    // statement. An EXEC word that cannot be followed by a procedure reference (end, ',', an operator, AS) is a column.
+    @Test
+    public void testInsertIntoTableNamedTopKeepsColumnsNamedExec() {
+        for (final String sql : List.of("INSERT top (SELECT id FROM s) RETURNING exec", "INSERT top (SELECT id FROM s) RETURNING exec, id",
+                "INSERT top (SELECT id FROM s) RETURNING exec AS e", "INSERT top (SELECT id FROM s) RETURNING execute + 1",
+                "INSERT top (SELECT id FROM s) RETURNING exec /* last */", "INSERT top (SELECT id FROM s) RETURNING exec::text",
+                "INSERT top (SELECT id FROM s) RETURNING execute /* cast */ ::text", "INSERT INTO t SET exec = 1",
+                "INSERT INTO t SET exec = :value", "INSERT t SET a = 1, exec = 2")) {
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        // Still procedure sources: a following name, variable, bracketed or quoted name, command string or comment-separated
+        // name. "RETURNING exec alias" stays rejected: it also reads as INSERT TOP (SELECT ...) into a table named returning
+        // fed by EXEC alias.
+        for (final String sql : List.of("INSERT INTO t EXEC mutate", "INSERT INTO t EXEC @proc", "INSERT INTO t EXEC @rc = mutate",
+                "INSERT INTO t EXEC ('SELECT 1')", "INSERT INTO t EXEC [dbo].[mutate]", "INSERT INTO t EXEC \"mutate\"", "INSERT INTO t EXEC #mutate",
+                "INSERT INTO t EXEC -- c\n mutate", "INSERT INTO t EXECUTE/* c */mutate", "INSERT TOP ((SELECT 1)) INTO t EXEC mutate",
+                "INSERT TOP (SELECT 1) returning EXEC mutate", "INSERT top (SELECT id FROM s) RETURNING exec e")) {
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    @Test
+    public void testInsertProcedureSourcesWithPositionalBindingsAreRejected() {
+        for (final String sql : List.of("INSERT INTO t EXEC ?", "INSERT INTO t EXEC ? = dbo.mutate", "INSERT INTO t EXECUTE ?",
+                "INSERT INTO t EXECUTE /* binding */ ? = dbo.mutate", "INSERT TOP (SELECT 1) INTO t EXEC ?",
+                "WITH c AS (SELECT 1) INSERT INTO t EXEC ? = dbo.mutate", "SELECT 1; INSERT INTO t EXEC ?")) {
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    @Test
+    public void testInsertProcedureSourcesWithNamedBindingsAreRejected() {
+        for (final String sql : List.of("INSERT INTO t EXEC :procedure", "INSERT INTO t EXEC :status = dbo.mutate",
+                "INSERT INTO t EXECUTE /* binding */ :status = dbo.mutate", "INSERT TOP (SELECT 1) INTO t EXEC :procedure",
+                "WITH c AS (SELECT 1) INSERT INTO t EXEC :status = dbo.mutate", "INSERT INTO t EXEC #{procedure}",
+                "INSERT INTO t EXEC #{status} = dbo.mutate")) {
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(1, parsed.parameterCount(), sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+            assertFalse(SqlParser.isReadOrInsertQuery(parsed.parameterizedSql()), parsed.parameterizedSql());
+        }
+
+        assertEquals("INSERT INTO t EXEC ? = dbo.mutate", ParsedSql.parse("INSERT INTO t EXEC :status = dbo.mutate").parameterizedSql());
+    }
+
+    @Test
+    public void testInsertIntoTableNamedTopKeepsKeywordOperatorExpressions() {
+        for (final String expression : List.of("exec IS NULL", "exec IS NOT NULL", "exec BETWEEN 1 AND 2", "exec NOT BETWEEN 1 AND 2",
+                "exec IN (1, 2)", "exec NOT IN (1, 2)", "exec LIKE 'a%'", "exec NOT LIKE 'a%'", "exec AND TRUE", "exec OR FALSE",
+                "exec COLLATE utf8mb4_bin", "execute /* column */ is /* predicate */ null", "CASE exec WHEN 0 THEN 1 ELSE 2 END",
+                "CASE WHEN exec THEN 1 ELSE 0 END", "CASE WHEN TRUE THEN exec ELSE 0 END", "CASE WHEN TRUE THEN 0 ELSE exec END")) {
+            final String sql = "INSERT top (SELECT id FROM s) RETURNING " + expression;
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        for (final String procedure : List.of("[IS]", "dbo.[IN]", "\"LIKE\"", "[WHEN]", "@procedure", "is_mutation", "collate_rows", "div", "xor")) {
+            final String sql = "INSERT TOP ((SELECT 1)) INTO t EXEC " + procedure;
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    // Regression: an unquoted Oracle name may contain '#'. The SEARCH/CYCLE name scan stopped before it, so the '#' was then
+    // skipped as a hash comment together with the rest of the line, and the clause (and the statement verb) was lost.
+    @Test
+    public void testOracleHashNamesInCteSuffixKeepTheMainVerb() {
+        final String oracleCte = "WITH c(\"ID#\") AS (SELECT 1 FROM dual UNION ALL SELECT \"ID#\" + 1 FROM c WHERE \"ID#\" < 2) ";
+
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY ID# SET ord\n", "SEARCH DEPTH FIRST BY ID# SET ord ", "SEARCH DEPTH FIRST BY ID# ASC SET ord# ",
+                "CYCLE ID# SET cyc# TO 'Y' DEFAULT 'N'\n", "CYCLE ID#, x$# SET cyc TO 1 DEFAULT 0 ")) {
+            final String select = oracleCte + suffix + "SELECT * FROM c";
+            assertTrue(SqlParser.isSelectQuery(select), select);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(select), select);
+            assertTrue(SqlParser.isReadOrInsertQuery(select), select);
+
+            final String delete = oracleCte + suffix + "DELETE FROM t";
+            assertTrue(SqlParser.isDeleteQuery(delete), delete);
+            assertFalse(SqlParser.isReadOrInsertQuery(delete), delete);
+        }
+
+        // Under MySQL's reading the '#' starts a comment, and MariaDB's CYCLE ... RESTRICT on the next line still vetoes.
+        assertFalse(SqlParser.isReadOrInsertQuery(RECURSIVE_CTE + "CYCLE id#\nRESTRICT DELETE FROM t"));
+        assertFalse(SqlParser.isReadOrInsertQuery(RECURSIVE_CTE + "CYCLE id# RESTRICT SELECT 1\nRESTRICT DELETE FROM t"));
+    }
+
+    // Regression: PostgreSQL joins string literals separated by a line break before it reads a UESCAPE character
+    // (UESCAPE ''<newline>'!' escapes with '!'). The suffix scan consumed only the first literal, so the continuation sat
+    // where SET was expected and valid recursive SELECTs lost their verb.
+    @Test
+    public void testUnicodeEscapeClauseConsumesContinuedStringLiterals() {
+        for (final String escape : List.of("UESCAPE ''\n'!'", "UESCAPE E''\n'!'", "UESCAPE ''\n-- continued\n'!'", "UESCAPE ''\n''\n'!'",
+                "UESCAPE '!'\r\n''")) {
+            final String suffix = "SEARCH DEPTH FIRST BY U&\"i!0064\" " + escape + " SET ord ";
+            final String select = RECURSIVE_CTE + suffix + "SELECT * FROM c";
+            assertTrue(SqlParser.isSelectQuery(select), select);
+            assertTrue(SqlParser.isSyntacticallyReadQuery(select), select);
+            assertTrue(SqlParser.isReadOrInsertQuery(select), select);
+
+            final String update = RECURSIVE_CTE + suffix + "UPDATE t SET x = 1";
+            assertTrue(SqlParser.isUpdateQuery(update), update);
+            assertFalse(SqlParser.isReadOrInsertQuery(update), update);
+        }
+
+        // Without a line break the second literal is no continuation (PostgreSQL rejects the text): the clause is incomplete.
+        assertFalse(SqlParser.isSyntacticallyReadQuery(RECURSIVE_CTE + "SEARCH DEPTH FIRST BY U&\"i!0064\" UESCAPE '' '!' SET ord SELECT * FROM c"));
+    }
 }

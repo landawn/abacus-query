@@ -2906,7 +2906,7 @@ public final class SqlParser {
      * {@code /}{@code * ... *}{@code /}). Any leading parentheses are skipped as well, so a
      * parenthesized query such as {@code (SELECT ...) UNION ALL (SELECT ...)} is still recognized
      * as a SELECT. For statements that start with a {@code WITH} (CTE) clause, the keyword that
-     * follows the CTE definitions is examined instead.
+     * follows the CTE definitions, including their {@code SEARCH}/{@code CYCLE} clauses, is examined instead.
      * </p>
      *
      * <p><b>Comparison with related methods:</b> see the
@@ -5196,7 +5196,8 @@ public final class SqlParser {
      * {@code {? = call ...}}, plus SQL Server's {@code EXEC}/{@code EXECUTE}. Quoted text,
      * quoted identifiers, comments, larger identifier tokens, and function-like tokens appearing
      * after a statement's leading verb are ignored. INSERT additionally recognizes a procedure supplying
-     * its rows, excluding target names, aliases and parenthesized column lists.
+     * its rows, excluding target names, aliases and parenthesized column lists. A statement that opens with
+     * a {@code WITH} list is read from the verb after that list.
      */
     private static boolean containsProcedureInvocation(final String sql, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
         if (Strings.isEmpty(sql)) {
@@ -5207,6 +5208,7 @@ public final class SqlParser {
         boolean canStartStatement = true;
         boolean insertStatement = false; // T-SQL "INSERT ... EXEC proc" invokes a procedure mid-statement
         int insertDepth = 0;
+        boolean insertTopExpression = false;
         int previousInsertWordStart = -1;
         int previousInsertWordEnd = -1;
 
@@ -5250,6 +5252,19 @@ public final class SqlParser {
                 if (Character.isLetter(ch)) {
                     final int end = identifierEnd(sql, index);
 
+                    if (matchesToken(sql, index, end, "WITH", false)) {
+                        // Only a statement's first word is read as its verb, and for a CTE-prefixed statement that word
+                        // is WITH: continue at the verb after the CTE list, so "WITH c AS (...) INSERT INTO c EXEC p"
+                        // is read as the INSERT it is. A list that resolves no verb before the statement ends keeps the
+                        // scan here, so the jump can never pass over a following statement.
+                        final int mainStatement = findKeywordIndexAfterWithClause(sql, end, tokenizerConfig, memo, true);
+
+                        if (mainStatement >= 0) {
+                            index = mainStatement;
+                            continue;
+                        }
+                    }
+
                     if (matchesToken(sql, index, end, "CALL", false) || matchesToken(sql, index, end, "EXEC", false)
                             || matchesToken(sql, index, end, "EXECUTE", false)) {
                         return true;
@@ -5257,6 +5272,7 @@ public final class SqlParser {
 
                     insertStatement = matchesToken(sql, index, end, "INSERT", false);
                     insertDepth = 0;
+                    insertTopExpression = false;
                     previousInsertWordStart = index;
                     previousInsertWordEnd = end;
                     canStartStatement = false;
@@ -5266,11 +5282,17 @@ public final class SqlParser {
             } else if (insertStatement && Character.isLetter(ch) && isWordStart(sql, index)) {
                 final int end = identifierEnd(sql, index);
 
-                if (matchesToken(sql, index, end, "SELECT", false) || matchesToken(sql, index, end, "VALUES", false)
-                        || matchesToken(sql, index, end, "DEFAULT", false)) {
+                if (insertDepth == 0 && matchesToken(sql, index, end, "TOP", false) && previousInsertWordStart >= 0
+                        && matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INSERT", false)) {
+                    final int next = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
+                    insertTopExpression = next < sql.length() && sql.charAt(next) == '(';
+                } else if (!insertTopExpression && (matchesToken(sql, index, end, "SELECT", false) || matchesToken(sql, index, end, "VALUES", false)
+                        || matchesToken(sql, index, end, "DEFAULT", false))) {
                     // The INSERT's source is settled, so a later EXEC/EXECUTE word cannot be the procedure this
                     // INSERT feeds from; it is an ordinary identifier (PostgreSQL allows "execute" as a column
                     // name, so "INSERT INTO t SELECT execute FROM s" must stay accepted).
+                    // A nested SELECT in TOP ((SELECT ...)) does not settle the source, while a parenthesized
+                    // query source does (including a later RETURNING column named execute).
                     insertStatement = false;
                 } else if (insertDepth == 0 && (matchesToken(sql, index, end, "EXEC", false) || matchesToken(sql, index, end, "EXECUTE", false))
                         && !isDotQualifiedToken(sql, index, end, tokenizerConfig, memo)) {
@@ -5281,7 +5303,7 @@ public final class SqlParser {
                                     || matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INTO", false)
                                     || matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "AS", false));
 
-                    if (!identifier) {
+                    if (!identifier && startsProcedureReference(sql, end, tokenizerConfig, memo)) {
                         return true; // INSERT [INTO] target [(columns)] EXEC[UTE] procedure (SQL Server)
                     }
                 }
@@ -5296,6 +5318,7 @@ public final class SqlParser {
                 canStartStatement = true;
                 insertStatement = false;
                 insertDepth = 0;
+                insertTopExpression = false;
                 previousInsertWordStart = -1;
             } else if (!Character.isWhitespace(ch)) {
                 canStartStatement = false;
@@ -5306,6 +5329,9 @@ public final class SqlParser {
                         insertDepth++;
                     } else if (ch == ')' && insertDepth > 0) {
                         insertDepth--;
+                        if (insertDepth == 0) {
+                            insertTopExpression = false;
+                        }
                     }
                 }
             }
@@ -5314,6 +5340,46 @@ public final class SqlParser {
         }
 
         return false;
+    }
+
+    /**
+     * Whether the text after an INSERT's {@code EXEC}/{@code EXECUTE} word at {@code wordEnd} can name what SQL Server runs
+     * there: a module name, variable or parameter binding, a bracketed or quoted name, or a parenthesized command string.
+     * A word that ends the text, or is followed by {@code ;}, {@code ,}, {@code )}, a symbolic or SQL Server-reserved keyword operator,
+     * a {@code CASE} expression boundary, a {@code .}/{@code ::} qualification or {@code AS}, is a column instead.
+     * That keeps MariaDB's {@code INSERT top (SELECT ...) RETURNING exec}, whose target
+     * table named top reads like SQL Server's {@code INSERT TOP (...)} clause, and MySQL's {@code SET exec = 1} accepted.
+     * A word followed by a name stays a call ({@code RETURNING exec alias} could equally be {@code TOP (SELECT ...)}, a
+     * target table named returning and {@code EXEC procedure}).
+     */
+    private static boolean startsProcedureReference(final String sql, final int wordEnd, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        final int next = skipLeadingWhitespaceAndComments(sql, wordEnd, tokenizerConfig, memo);
+
+        if (next >= sql.length()) {
+            return false;
+        }
+
+        final char ch = sql.charAt(next);
+
+        if (Character.isLetter(ch)) {
+            final int end = identifierEnd(sql, next);
+            // These expression continuations are reserved in SQL Server, so none can be an unquoted procedure name.
+            // Keep other words (including DIV/XOR), quoted names and variables as possible procedure references.
+            return !matchesToken(sql, next, end, "AS", false) && !matchesToken(sql, next, end, "IS", false) && !matchesToken(sql, next, end, "NOT", false)
+                    && !matchesToken(sql, next, end, "IN", false) && !matchesToken(sql, next, end, "BETWEEN", false)
+                    && !matchesToken(sql, next, end, "LIKE", false) && !matchesToken(sql, next, end, "AND", false) && !matchesToken(sql, next, end, "OR", false)
+                    && !matchesToken(sql, next, end, "COLLATE", false) && !matchesToken(sql, next, end, "WHEN", false)
+                    && !matchesToken(sql, next, end, "THEN", false) && !matchesToken(sql, next, end, "ELSE", false)
+                    && !matchesToken(sql, next, end, "END", false);
+        }
+
+        // A binding can supply the procedure name or its return-status variable. Named parameters reach this scan with
+        // their names masked, so ':' alone remains a candidate; only '::' establishes a cast of an EXEC column.
+        if (ch == ':') {
+            return next + 1 >= sql.length() || sql.charAt(next + 1) != ':';
+        }
+
+        return ";,)=<>+-*/%|&^.!".indexOf(ch) < 0;
     }
 
     private static boolean isJdbcCallEscape(final String sql, final int openingBraceIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
@@ -5853,6 +5919,18 @@ public final class SqlParser {
 
             if (Character.isLetter(ch)) {
                 final String token = readKeyword(sql, index, tokenizerConfig, memo);
+
+                if (cteListPending && group.cteBodyClosed && isCteBodySuffixKeyword(token)) {
+                    final int suffixEnd = skipCteBodySuffix(sql, index, tokenizerConfig, memo);
+
+                    if (suffixEnd >= 0) {
+                        // Suffix column names (including INSERT/UPDATE) cannot become the nested statement's verb.
+                        // Keep the completed-body state so another suffix, CTE or parenthesized main query can follow.
+                        index = suffixEnd;
+                        continue;
+                    }
+                }
+
                 countCompanionWord(token, companionWords);
 
                 if (canStartQueryKeyword) {
@@ -6233,8 +6311,10 @@ public final class SqlParser {
     /**
      * What a parenthesis group scanned by {@link #collectQueryStartKeywords} still has pending: the verb of a nested
      * statement waiting for its companion word, and a {@code WITH} list opened as the group's first word whose statement
-     * verb is not resolved yet. The list is resolved exactly as {@link #findKeywordIndexAfterWithClause} resolves it, from
+     * verb is not resolved yet. The list is resolved as {@link #findKeywordIndexAfterWithClause} resolves it, from
      * the words and punctuation at the group's own level (a nested group counts as one unit), but it ends with the group.
+     * One difference: a {@code SEARCH}/{@code CYCLE} clause that {@link #skipCteBodySuffix} cannot parse (malformed text)
+     * leaves the top-level list unresolved, whereas a group reads that clause word by word.
      */
     private static final class ParenthesizedGroup {
         private String nestedVerb;
@@ -6427,7 +6507,17 @@ public final class SqlParser {
         return findKeywordIndexAfterWithClause(sql, index, tokenizerConfig, memo);
     }
 
-    private static int findKeywordIndexAfterWithClause(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+    private static int findKeywordIndexAfterWithClause(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        return findKeywordIndexAfterWithClause(sql, fromIndex, tokenizerConfig, memo, false);
+    }
+
+    /**
+     * Returns the index of the statement verb that follows the CTE list starting at {@code fromIndex}, or -1 if the list
+     * resolves no verb. With {@code withinStatement}, a {@code ';'} ends the search unresolved instead of letting a later
+     * statement's verb stand in for the verb this statement lacks.
+     */
+    private static int findKeywordIndexAfterWithClause(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo,
+            final boolean withinStatement) {
         int depth = 0;
         // The identifier right after WITH [RECURSIVE] -- and after each top-level ',' separating
         // CTE definitions -- is a CTE name, never the statement verb. Dialects such as PostgreSQL
@@ -6473,6 +6563,10 @@ public final class SqlParser {
                 }
 
                 continue;
+            }
+
+            if (ch == ';' && withinStatement) {
+                return -1;
             }
 
             if (ch == '(') {
@@ -6525,6 +6619,18 @@ public final class SqlParser {
                 final String token = readKeyword(sql, fromIndex, tokenizerConfig, memo);
 
                 if (depth == 0) {
+                    if (cteBodyClosed && isCteBodySuffixKeyword(token)) {
+                        // SEARCH/CYCLE belong to the preceding CTE. Their column-name slots may legally contain
+                        // verbs such as INSERT, so consume the complete suffix before resolving the main statement.
+                        fromIndex = skipCteBodySuffix(sql, fromIndex, tokenizerConfig, memo);
+
+                        if (fromIndex < 0) {
+                            return -1;
+                        }
+
+                        continue;
+                    }
+
                     if (expectCteName) {
                         // A leading RECURSIVE modifier keeps the name slot open for the token
                         // after it (the caller may or may not have consumed RECURSIVE already).
@@ -6571,6 +6677,363 @@ public final class SqlParser {
     /** PostgreSQL/Oracle/MariaDB {@code SEARCH ...} / {@code CYCLE ...} clauses may follow a recursive CTE body before the main statement. */
     private static boolean isCteBodySuffixKeyword(final String token) {
         return "SEARCH".equalsIgnoreCase(token) || "CYCLE".equalsIgnoreCase(token);
+    }
+
+    /**
+     * Skips one recursive CTE's SEARCH or CYCLE clause, returning the first position after the clause.
+     * Both leading-verb resolution and nested-CTE scanning use this grammar so suffix names and their commas
+     * never act as statement verbs or separators between CTE definitions. Also accepts MariaDB's CYCLE ... RESTRICT
+     * and Oracle's CYCLE ... TO ... DEFAULT form without USING, whose values are strings or numbers. Returns -1 for an
+     * incomplete clause.
+     */
+    private static int skipCteBodySuffix(final String sql, final int start, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        final boolean search = "SEARCH".equalsIgnoreCase(readKeyword(sql, start, tokenizerConfig, memo));
+        int index = skipLeadingWhitespaceAndComments(sql, start + (search ? 6 : 5), tokenizerConfig, memo);
+
+        if (search) {
+            final String direction = readKeyword(sql, index, tokenizerConfig, memo);
+
+            if (!("BREADTH".equalsIgnoreCase(direction) || "DEPTH".equalsIgnoreCase(direction))) {
+                return -1;
+            }
+
+            index = skipCteSuffixKeyword(sql, index + direction.length(), "FIRST", tokenizerConfig, memo);
+            index = skipCteSuffixKeyword(sql, index, "BY", tokenizerConfig, memo);
+        }
+
+        // BY/CYCLE column lists may contain several verb-like names, separated by commas.
+        do {
+            index = skipCteSuffixName(sql, index, tokenizerConfig, memo);
+
+            if (index < 0) {
+                return -1;
+            }
+
+            index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
+
+            if (search) {
+                final String direction = readKeyword(sql, index, tokenizerConfig, memo);
+
+                if ("ASC".equalsIgnoreCase(direction) || "DESC".equalsIgnoreCase(direction)) {
+                    index = skipLeadingWhitespaceAndComments(sql, index + direction.length(), tokenizerConfig, memo);
+                }
+
+                if ("NULLS".equalsIgnoreCase(readKeyword(sql, index, tokenizerConfig, memo))) {
+                    index = skipLeadingWhitespaceAndComments(sql, index + 5, tokenizerConfig, memo);
+                    final String placement = readKeyword(sql, index, tokenizerConfig, memo);
+
+                    if (!("FIRST".equalsIgnoreCase(placement) || "LAST".equalsIgnoreCase(placement))) {
+                        return -1;
+                    }
+
+                    index = skipLeadingWhitespaceAndComments(sql, index + placement.length(), tokenizerConfig, memo);
+                }
+            }
+
+            if (index >= sql.length() || sql.charAt(index) != ',') {
+                break;
+            }
+
+            index++;
+        } while (true);
+
+        if (!search && "RESTRICT".equalsIgnoreCase(readKeyword(sql, index, tokenizerConfig, memo))) {
+            return index + "RESTRICT".length();
+        }
+
+        index = skipCteSuffixKeyword(sql, index, "SET", tokenizerConfig, memo);
+        index = skipCteSuffixName(sql, index, tokenizerConfig, memo);
+
+        if (search || index < 0) {
+            return index;
+        }
+
+        index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
+
+        if ("TO".equalsIgnoreCase(readKeyword(sql, index, tokenizerConfig, memo))) {
+            // Constant values may be quoted or typed; their interior words do not delimit the suffix.
+            index = skipCteCycleValue(sql, index + 2, "DEFAULT", tokenizerConfig, memo);
+
+            if (index >= 0) {
+                // Oracle ends CYCLE at its default value, a character string or a number (the common "TO 1 DEFAULT 0");
+                // PostgreSQL continues with USING path.
+                final int valueEnd = skipCteCycleLiteral(sql, skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo), tokenizerConfig, memo);
+
+                if (valueEnd >= 0) {
+                    final int afterValue = skipLeadingWhitespaceAndComments(sql, valueEnd, tokenizerConfig, memo);
+
+                    // A PostgreSQL constant can continue with a cast or another newline-separated string.
+                    // Only an actual statement/CTE boundary establishes Oracle's shorter clause form.
+                    if (afterValue == sql.length() || ",();".indexOf(sql.charAt(afterValue)) >= 0
+                            || isQueryKeyword(readKeyword(sql, afterValue, tokenizerConfig, memo))) {
+                        return valueEnd;
+                    }
+                }
+            }
+
+            index = skipCteCycleValue(sql, index, "USING", tokenizerConfig, memo);
+        } else {
+            index = skipCteSuffixKeyword(sql, index, "USING", tokenizerConfig, memo);
+        }
+
+        return skipCteSuffixName(sql, index, tokenizerConfig, memo);
+    }
+
+    private static int skipCteSuffixKeyword(final String sql, int index, final String keyword, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        if (index < 0) {
+            return -1;
+        }
+
+        index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
+        return matchesToken(sql, index, identifierEnd(sql, index), keyword, false) ? index + keyword.length() : -1;
+    }
+
+    private static int skipCteSuffixName(final String sql, int index, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        if (index < 0) {
+            return -1;
+        }
+
+        index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
+
+        if (index >= sql.length()) {
+            return -1;
+        }
+
+        final char ch = sql.charAt(index);
+
+        if ((ch == 'U' || ch == 'u') && index + 2 < sql.length() && sql.charAt(index + 1) == '&' && sql.charAt(index + 2) == '"') {
+            // PostgreSQL's U&"..." and optional UESCAPE literal form one identifier. Its Unicode escapes
+            // do not escape the closing quote; only doubled quotes do. Keep the entire name out of verb scanning.
+            final int close = quotedTokenEndIndex(sql, index + 3, '"', false);
+
+            if (close >= sql.length()) {
+                return -1;
+            }
+
+            index = skipLeadingWhitespaceAndComments(sql, close + 1, tokenizerConfig, memo);
+            final int escapeKeywordEnd = index + 7;
+
+            if (!sql.regionMatches(true, index, "UESCAPE", 0, 7)
+                    || escapeKeywordEnd < sql.length() && isByteLexerIdentifierChar(sql.charAt(escapeKeywordEnd))) {
+                return close + 1;
+            }
+
+            index = skipLeadingWhitespaceAndComments(sql, escapeKeywordEnd, tokenizerConfig, memo);
+
+            if (index >= sql.length()) {
+                return -1;
+            }
+
+            if (sql.charAt(index) == '$') {
+                final int end = dollarQuoteEnd(sql, index);
+
+                if (end != 0) {
+                    return end;
+                }
+
+                // Classification masks a dollar literal's contents and tag, retaining only its outer '$' characters.
+                while (++index < sql.length() && sql.charAt(index) == ' ') {
+                    // Skip only the mask, never executable SQL between dollar characters.
+                }
+
+                return index < sql.length() && sql.charAt(index) == '$' ? index + 1 : -1;
+            }
+
+            final boolean escapeString = sql.charAt(index) == 'E' || sql.charAt(index) == 'e';
+
+            if (escapeString) {
+                index++;
+            }
+
+            if (index >= sql.length() || sql.charAt(index) != '\'') {
+                return -1;
+            }
+
+            int escapeEnd = quotedTokenEndIndex(sql, index + 1, '\'', escapeString) + 1;
+
+            // PostgreSQL joins string literals separated by a line break into one before it reads the escape character
+            // (UESCAPE ''<newline>'!' escapes with '!'), so each continuation belongs to the clause as well.
+            while (escapeEnd <= sql.length()) {
+                final int next = skipLeadingWhitespaceAndComments(sql, escapeEnd, tokenizerConfig, memo);
+
+                if (next >= sql.length() || sql.charAt(next) != '\'' || !containsLineBreak(sql, escapeEnd, next)) {
+                    break;
+                }
+
+                escapeEnd = quotedTokenEndIndex(sql, next + 1, '\'', escapeString) + 1;
+            }
+
+            return escapeEnd <= sql.length() ? escapeEnd : -1;
+        }
+
+        if (ch == '"' || ch == '`' || ch == '[') {
+            return ch == '[' ? skipBracketQuotedIdentifier(sql, index) : skipQuotedLiteral(sql, index, ch);
+        }
+
+        if (!isByteLexerIdentifierChar(ch)) {
+            return -1;
+        }
+
+        // PostgreSQL accepts non-ASCII name bytes, including combining marks and supplementary characters. An Oracle name
+        // may also contain '#' ("ID#"), which must not be left behind to be skipped as a hash comment with the clause's rest.
+        do {
+            index++;
+        } while (index < sql.length() && (isByteLexerIdentifierChar(sql.charAt(index)) || sql.charAt(index) == '#'));
+
+        return index;
+    }
+
+    /**
+     * Skips a CYCLE mark value up to and including {@code followingKeyword} ({@code DEFAULT} or {@code USING}), returning
+     * the position after that keyword, or -1 if the value is empty or cannot be a constant.
+     *
+     * <p>A constant opens a parenthesized type modifier or argument list directly after a name
+     * ({@code 'Y'::char(1)}, {@code numeric((3), 0) '1'}); parentheses may nest within that list, but statements cannot.
+     * Stopping at anything else keeps the scan out of a following nested statement: scanning on until the keyword lets every
+     * level of nested {@code (WITH ... CYCLE ...} groups rescan all deeper levels, which is quadratic.</p>
+     */
+    private static int skipCteCycleValue(final String sql, int index, final String followingKeyword, final TokenizerConfig tokenizerConfig,
+            final HashScanMemo memo) {
+        if (index < 0) {
+            return -1;
+        }
+
+        boolean valueSeen = false;
+        boolean afterName = false;
+        int depth = 0;
+
+        while ((index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo)) < sql.length()) {
+            final char ch = sql.charAt(index);
+            boolean name = false;
+
+            if (ch == '\'' || ch == '"' || ch == '`' || ch == '[') {
+                final int alternativeEnd = ch == '\'' && isOracleAlternativeQuoteStart(sql, index) ? oracleAlternativeQuoteEnd(sql, index) : -1;
+                index = alternativeEnd >= 0 ? alternativeEnd : ch == '[' ? skipBracketQuotedIdentifier(sql, index) : skipQuotedLiteral(sql, index, ch);
+                name = ch != '\''; // a quoted identifier can name a type: "char"(1)
+            } else if (ch == '$') {
+                final int end = dollarQuoteEnd(sql, index);
+
+                if (end < 0) {
+                    return -1;
+                }
+
+                index = end > 0 ? end : index + 1;
+            } else if (Character.isLetter(ch)) {
+                final int end = identifierEnd(sql, index);
+
+                if (depth == 0 && matchesToken(sql, index, end, followingKeyword, false)) {
+                    return valueSeen ? end : -1;
+                }
+
+                if (isQueryKeyword(sql.substring(index, end)) || depth > 0 && matchesToken(sql, index, end, "WITH", false)) {
+                    // Nested WITH lists cannot be type modifiers. Stop before traversing their CTE bodies, preserving
+                    // linear scanning even when malformed input contains many groups without an early SELECT.
+                    return -1;
+                }
+
+                index = end;
+                name = true;
+            } else if (ch == ';' || depth == 0 && (ch == ')' || ch == ',')) {
+                return -1;
+            } else if (ch == '(') {
+                if (depth == 0 && !afterName) {
+                    return -1;
+                }
+
+                depth++;
+                index++;
+            } else {
+                if (ch == ')') {
+                    depth--;
+                }
+
+                index++;
+            }
+
+            afterName = name;
+            valueSeen = true;
+        }
+
+        return -1;
+    }
+
+    /**
+     * Returns the end of the literal at {@code index} that can be Oracle's CYCLE default value: a string with an optional
+     * {@code N}/{@code E}/{@code Q} prefix (including an Oracle {@code q'[...]'} literal), an optionally signed number
+     * ({@code 0}, {@code -1}, {@code 1.5e3}, {@code 2f}), or {@code TRUE}/{@code FALSE}/{@code NULL}; -1 if none starts there.
+     */
+    private static int skipCteCycleLiteral(final String sql, int index, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        final int len = sql.length();
+
+        if (index >= len) {
+            return -1;
+        }
+
+        final boolean signed = sql.charAt(index) == '+' || sql.charAt(index) == '-';
+
+        if (signed) {
+            index = skipLeadingWhitespaceAndComments(sql, index + 1, tokenizerConfig, memo);
+        }
+
+        int end = index;
+        boolean digits = false;
+
+        while (end < len && isAsciiDigit(sql.charAt(end))) {
+            end++;
+            digits = true;
+        }
+
+        if (end < len && sql.charAt(end) == '.') {
+            end++;
+
+            while (end < len && isAsciiDigit(sql.charAt(end))) {
+                end++;
+                digits = true;
+            }
+        }
+
+        if (digits) {
+            if (end < len && (sql.charAt(end) == 'e' || sql.charAt(end) == 'E')) {
+                int exponent = end + 1;
+
+                if (exponent < len && (sql.charAt(exponent) == '+' || sql.charAt(exponent) == '-')) {
+                    exponent++;
+                }
+
+                if (exponent < len && isAsciiDigit(sql.charAt(exponent))) {
+                    end = exponent;
+
+                    while (end < len && isAsciiDigit(sql.charAt(end))) {
+                        end++;
+                    }
+                }
+            }
+
+            if (end < len && "fFdD".indexOf(sql.charAt(end)) >= 0) {
+                end++; // Oracle BINARY_FLOAT / BINARY_DOUBLE literal suffix
+            }
+
+            return end < len && isByteLexerIdentifierChar(sql.charAt(end)) ? -1 : end;
+        }
+
+        if (signed) {
+            return -1;
+        }
+
+        int quote = index;
+
+        while (quote < len && quote - index < 2 && "NnEeQq".indexOf(sql.charAt(quote)) >= 0) {
+            quote++;
+        }
+
+        if (quote < len && sql.charAt(quote) == '\'') {
+            final int alternativeEnd = isOracleAlternativeQuoteStart(sql, quote) ? oracleAlternativeQuoteEnd(sql, quote) : -1;
+            return alternativeEnd >= 0 ? alternativeEnd : skipQuotedLiteral(sql, quote, '\'');
+        }
+
+        final String word = readKeyword(sql, index, tokenizerConfig, memo);
+
+        return "TRUE".equalsIgnoreCase(word) || "FALSE".equalsIgnoreCase(word) || "NULL".equalsIgnoreCase(word) ? index + word.length() : -1;
     }
 
     private static int skipLeadingWhitespaceAndComments(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {

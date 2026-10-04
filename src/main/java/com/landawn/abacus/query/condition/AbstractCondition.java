@@ -633,7 +633,7 @@ public abstract class AbstractCondition implements Condition {
      * which case the projection's column count cannot be determined here and arity is left unchecked.
      *
      * @param selectPropNames the selected property names to inspect
-     * @return {@code true} if any element is {@code *} or ends with {@code .*} (ignoring surrounding whitespace)
+     * @return {@code true} if any element is {@code *} or ends with {@code .*} after SQL whitespace and comments are ignored
      */
     private static boolean hasWildcardProjection(final Collection<String> selectPropNames) {
         for (final String selectPropName : selectPropNames) {
@@ -645,8 +645,33 @@ public abstract class AbstractCondition implements Condition {
 
             final String trimmed = selectPropName.trim();
 
-            if ("*".equals(trimmed) || trimmed.endsWith(".*")) {
+            if ("*".equals(trimmed)) {
                 return true;
+            }
+
+            if (trimmed.indexOf('*') >= 0) {
+                // Whitespace and comments can separate a qualifier from its wildcard, or follow '*'.
+                // Tokenize away that trivia while keeping quoted literals/identifiers intact, so COUNT(*)
+                // and a column literally named "users.*" still have a known projection width, and a comment
+                // ending in ".*" ("id -- x.*") cannot hide one. The synthetic FROM context reads a #temp
+                // qualifier as SQL Server does instead of as a MySQL hash comment. This only decides whether
+                // arity can be checked here: SqlBuilder still rejects a comment token in a select item when
+                // the query is built, and renders a #temp qualifier only under a SQL Server dialect.
+                final StringBuilder projection = new StringBuilder(trimmed.length());
+                final List<String> tokens = SqlParser.tokenize("FROM " + trimmed);
+
+                for (int i = 1; i < tokens.size(); i++) {
+                    final String token = tokens.get(i);
+                    if (!Strings.isBlank(token)) {
+                        projection.append(token);
+                    }
+                }
+
+                final String normalized = projection.toString();
+
+                if ("*".equals(normalized) || normalized.endsWith(".*")) {
+                    return true;
+                }
             }
         }
 

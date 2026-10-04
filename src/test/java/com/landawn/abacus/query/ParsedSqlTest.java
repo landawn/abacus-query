@@ -3713,7 +3713,8 @@ public class ParsedSqlTest extends TestBase {
         assertArrayEquals(new int[] { 9 }, parsed.positionalParameterOffsets());
 
         // A slot that is not a single marker is not a JDBC call escape.
-        for (final String sql : List.of("{#{r} x = call f(#{p})}", "{::r = call f(:p)}", "{:1 = call f(:p)}", "{#{r = call f(#{p})}", "{:r = call}")) {
+        for (final String sql : List.of("{#{r} x = call f(#{p})}", "{::r = call f(:p)}", "{:1 = call f(:p)}", "{#{r = call f(#{p})}", "{:r = call}",
+                "{#{map['x\\'y']} = other(#{p})}")) {
             parsed = ParsedSql.parse(sql);
             assertFalse(parsed.isDataOperation(), sql);
             assertEquals(sql, parsed.parameterizedSql(), sql);
@@ -3940,5 +3941,61 @@ public class ParsedSqlTest extends TestBase {
         assertEquals(List.of("key", "id"),
                 ParsedSql.parse("SELECT JSON_OBJECT('present' VALUE values ? :key) FROM t WHERE id = :id").namedParameters());
         assertEquals(List.of("keys"), ParsedSql.parse("SELECT t. values ?| #{keys} FROM t").namedParameters());
+    }
+
+    // Regression: inside a bracket group a MyBatis binding ended at its first '}', even one in quoted metadata or a
+    // comment; the quote left behind then hid a following positional '?', so mixed parameter styles were not rejected.
+    @Test
+    public void testQuotedMybatisClosingBraceCannotHideFollowingPositionalBinding() {
+        for (final String metadata : List.of("label='}'", "label=\"}\"", "label=`}`", "/* } */ jdbcType=INTEGER",
+                "-- }\n jdbcType=INTEGER")) {
+            final String sql = "SELECT ARRAY[#{id, " + metadata + "}, ?]";
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
+        }
+    }
+
+    // Controls: a quoted or commented '?', '}' or '(' in bracketed MyBatis metadata stays part of the binding.
+    @Test
+    public void testQuotedMybatisMetadataKeepsQuestionMarksAndBracesOutOfSqlClassification() {
+        for (final String metadata : List.of("label='}?('", "label=\"}?\"", "label=`}?`", "/* }? */ jdbcType=INTEGER")) {
+            final ParsedSql parsed = ParsedSql.parse("SELECT ARRAY[#{id, " + metadata + "}, doc ? 'key']");
+            assertEquals("SELECT ARRAY[?, doc ? 'key']", parsed.parameterizedSql());
+            assertEquals(List.of("id"), parsed.namedParameters());
+            assertEquals(1, parsed.parameterCount());
+        }
+    }
+
+    // Regression: the return slot of a JDBC call escape ended at the first '}' of its MyBatis binding, even one inside a
+    // quoted map key or label. "{#{map['}']} = call p(#{a})}" was then not read as a call and kept both bindings unparsed,
+    // and a quoted '}' label passed the text through unparsed instead of being rejected like any other quoted label.
+    @Test
+    public void testJdbcCallReturnSlotIgnoresQuotedClosingBrace() {
+        for (final String key : List.of("map['}']", "map['x''y']", "map[\"x\"\"y\"]", "map[`x``y`]")) {
+            final ParsedSql call = ParsedSql.parse("{#{" + key + "} = call p(#{a})}");
+            assertTrue(call.isDataOperation(), key);
+            assertEquals(List.of(key, "a"), call.namedParameters(), key);
+            assertEquals("{? = call p(?)}", call.parameterizedSql(), key);
+            assertEquals(2, call.parameterCount(), key);
+        }
+
+        assertEquals(List.of("r", "a"), ParsedSql.parse("{#{r /* } */} = call p(#{a})}").namedParameters());
+        assertEquals(List.of("r", "a"), ParsedSql.parse("{#{r, mode=OUT}= call p(#{a})}").namedParameters());
+
+        for (final String sql : List.of("{#{r, mode=OUT, label='}'} = call p(#{a})}", "{ #{r, label='}'} = call p(#{a})}",
+                "{#{r, mode=OUT, label='x'} = call p(#{a})}")) {
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
+        }
+    }
+
+    @Test
+    public void testJdbcCallReturnSlotRejectsMalformedMybatisBindings() {
+        for (final String prefix : List.of("{", "{ ", "{ /* return */ ")) {
+            for (final String slot : List.of("#{map['x\\'y']}", "#{map[\"x\\\"y\"]}", "#{map[`x\\`y`]}",
+                    "#{ map['x\\'y']}", "#{ map['x\\'y'] }", "#{r#{nested}}", "#{r #{nested}}")) {
+                final String sql = prefix + slot + " = call p(#{a})}";
+                final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
+                assertTrue(error.getMessage().contains("Malformed iBatis/MyBatis parameter"), sql);
+            }
+        }
     }
 }

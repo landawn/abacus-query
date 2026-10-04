@@ -1,5 +1,6 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -24,6 +25,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Dsl;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
+import com.landawn.abacus.query.SqlDialect;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
@@ -1042,5 +1044,92 @@ public class AbstractConditionTest extends TestBase {
         } finally {
             java.util.TimeZone.setDefault(defaultZone);
         }
+    }
+
+    // Regression: arity validation recognized only "*" and a trailing ".*", so a wildcard split by whitespace or comments
+    // ("users. *") failed tuple IN validation, while a comment ending in ".*" ("id -- x.*") disabled the check.
+    @Test
+    public void testTupleMembershipAcceptsWildcardProjectionsWithWhitespaceAndComments() {
+        for (final String projection : List.of("users. *", "users /* table */ . *", "* /* all columns */", "users.* -- all columns",
+                "\"some table\" . /* columns */ *", "users.\n\t*", "/* columns */ *", "#users.*", "#users. *", "##users . *")) {
+            final SubQuery subQuery = new SubQuery("users", List.of(projection), new Equal("active", true));
+
+            assertSame(subQuery, assertDoesNotThrow(() -> new InSubQuery(List.of("id", "name"), subQuery), projection).subQuery());
+            assertSame(subQuery, assertDoesNotThrow(() -> new NotInSubQuery(List.of("id", "name"), subQuery), projection).subQuery());
+        }
+    }
+
+    // Same wildcard detection for scalar and quantified (ALL/ANY/SOME) operands.
+    @Test
+    public void testScalarAndQuantifiedOperandsLeaveCommentedWildcardArityToTheDatabase() {
+        final SubQuery unknownArity = new SubQuery("users", List.of("id", "users. /* columns */ *"), null);
+
+        assertSame(unknownArity, assertDoesNotThrow(() -> new Equal("id", unknownArity)).propValue());
+        assertSame(unknownArity, assertDoesNotThrow(() -> new All(unknownArity)).subQuery());
+        assertSame(unknownArity, assertDoesNotThrow(() -> new Any(unknownArity)).subQuery());
+        assertSame(unknownArity, assertDoesNotThrow(() -> new Some(unknownArity)).subQuery());
+    }
+
+    // A whitespace-separated wildcard renders through the builder with its parameters.
+    @Test
+    public void testWildcardMembershipRetainsParametersWhenRenderedThroughTheBuilder() {
+        final SubQuery subQuery = new SubQuery("users", List.of("users. *"), new Equal("active", true));
+        final InSubQuery in = assertDoesNotThrow(() -> new InSubQuery(List.of("id", "name"), subQuery));
+        final NotInSubQuery notIn = assertDoesNotThrow(() -> new NotInSubQuery(List.of("id", "name"), subQuery));
+
+        assertEquals(List.of(true), in.parameters());
+        assertEquals(List.of(true), notIn.parameters());
+
+        final var inSql = Dsl.PSC.select("id").from("accounts").where(in).build();
+        final var notInSql = Dsl.PSC.select("id").from("accounts").where(notIn).build();
+
+        assertEquals("SELECT id FROM accounts WHERE (id, name) IN (SELECT users. * FROM users WHERE active = ?)", inSql.query());
+        assertEquals("SELECT id FROM accounts WHERE (id, name) NOT IN (SELECT users. * FROM users WHERE active = ?)", notInSql.query());
+        assertEquals(List.of(true), inSql.parameters());
+        assertEquals(List.of(true), notInSql.parameters());
+    }
+
+    // Controls: a '*' in a literal, quoted identifier, expression or comment does not disable arity validation.
+    @Test
+    public void testStarsInsideLiteralsIdentifiersAndExpressionsDoNotDisableArityValidation() {
+        for (final String projection : List.of("COUNT(*) /* rows */", "'users.*'", "\"users.*\"", "users.id * 2 /* product */", "id /* users.* */",
+                "id -- ignored.*", "id # ignored.*")) {
+            final SubQuery subQuery = new SubQuery("users", List.of(projection), null);
+
+            assertThrows(IllegalArgumentException.class, () -> new InSubQuery(List.of("id", "name"), subQuery), projection);
+            assertThrows(IllegalArgumentException.class, () -> new NotInSubQuery(List.of("id", "name"), subQuery), projection);
+            assertDoesNotThrow(() -> new Equal("id", subQuery), projection);
+
+            final SubQuery twoColumns = new SubQuery("users", List.of(projection, "id"), null);
+            assertThrows(IllegalArgumentException.class, () -> new Equal("id", twoColumns), projection);
+            assertThrows(IllegalArgumentException.class, () -> new Any(twoColumns), projection);
+        }
+    }
+
+    // The wildcard arity decision ignores comments, but SqlBuilder still rejects a comment token in a select item when the
+    // query is built. A #temp qualifier is a hash comment there too, except under a SQL Server dialect, which renders it.
+    @Test
+    public void testCommentedWildcardProjectionsAreRejectedWhenBuilt() {
+        final Dsl sqlServer = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+
+        for (final String projection : List.of("users /* table */ . *", "* /* all columns */", "users.* -- all columns", "\"some table\" . /* columns */ *",
+                "/* columns */ *")) {
+            final InSubQuery in = new InSubQuery(List.of("id", "name"), new SubQuery("users", List.of(projection), new Equal("active", true)));
+
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("accounts").where(in).build(), projection);
+            assertThrows(IllegalArgumentException.class, () -> sqlServer.select("id").from("accounts").where(in).build(), projection);
+        }
+
+        for (final String projection : List.of("#users.*", "#users. *")) {
+            final InSubQuery in = new InSubQuery(List.of("id", "name"), new SubQuery("users", List.of(projection), new Equal("active", true)));
+
+            assertThrows(IllegalArgumentException.class, () -> Dsl.PSC.select("id").from("accounts").where(in).build(), projection);
+            assertEquals("SELECT id FROM accounts WHERE (id, name) IN (SELECT " + projection + " FROM users WHERE active = ?)",
+                    sqlServer.select("id").from("accounts").where(in).build().query());
+        }
+
+        final InSubQuery spaced = new InSubQuery(List.of("id", "name"), new SubQuery("users", List.of("users.\n\t*"), new Equal("active", true)));
+        assertEquals("SELECT id FROM accounts WHERE (id, name) IN (SELECT users. * FROM users WHERE active = ?)",
+                Dsl.PSC.select("id").from("accounts").where(spaced).build().query());
     }
 }

@@ -7956,8 +7956,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgument(_sqlPolicy == sqlBuilder._sqlPolicy || !sqlBuilder._hasGeneratedParameterPlaceholder,
                 "A set-operation child with generated parameter placeholders must use the parent's SQL policy: parent=" + _sqlPolicy + ", child="
                         + sqlBuilder._sqlPolicy);
-        final Map<String, Integer> parentOccurrences = N.isEmpty(_namedParameterNameOccurrences) ? Collections.emptyMap()
-                : new HashMap<>(_namedParameterNameOccurrences);
+        final Map<String, Integer> parentOccurrences = new HashMap<>(_namedParameterNameOccurrences);
 
         final SP sp = sqlBuilder.build();
 
@@ -7978,7 +7977,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             checkSetOperationSubQuery(sql, operationName);
         }
 
-        mergeNamedParameterOccurrences(sqlBuilder._namedParameterNameOccurrences);
+        _namedParameterNameOccurrences.putAll(parentOccurrences);
         _generatedNamedParameterNames.addAll(childParameterNames);
         _renderedNamedParameterTokens.putAll(childParameterTokens);
 
@@ -8110,8 +8109,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 "A builder-backed subquery with generated parameter placeholders must use the parent's SQL policy: parent=" + _sqlPolicy + ", child="
                         + subQuery.sqlPolicy);
 
-        final Map<String, Integer> parentOccurrences = N.isEmpty(_namedParameterNameOccurrences) ? Collections.emptyMap()
-                : new HashMap<>(_namedParameterNameOccurrences);
+        final Map<String, Integer> parentOccurrences = new HashMap<>(_namedParameterNameOccurrences);
         final Set<String> childParameterNames = new HashSet<>(subQuery.generatedNamedParameterNames);
         final Map<String, String> childParameterTokens = new HashMap<>(subQuery.renderedNamedParameterTokens);
         final String sql = uniquifyChildNamedParameters(subQuery.rawSql(), subQuery.namedParameterNameOccurrences, parentOccurrences, childParameterNames,
@@ -8119,7 +8117,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         checkSubQuerySnapshot(sql);
 
-        mergeNamedParameterOccurrences(subQuery.namedParameterNameOccurrences);
+        _namedParameterNameOccurrences.putAll(parentOccurrences);
         _generatedNamedParameterNames.addAll(childParameterNames);
         _renderedNamedParameterTokens.putAll(childParameterTokens);
 
@@ -8155,11 +8153,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * generated on this (the parent) builder: colliding {@code <base>_<n>} names are shifted to unused
      * suffixes and the operand's placeholder tokens are replaced outside SQL quoted regions and comments.
      * {@code childParameterNames} and {@code childParameterTokens} are updated in place to the final names
-     * and tokens, ready to be merged into the parent's bookkeeping.
+     * and tokens, and {@code parentOccurrences} receives the merged occurrence bounds, ready to be
+     * committed to the parent's bookkeeping after the rewritten SQL has been validated.
      *
      * @param sql the operand query text built by the child builder
      * @param childOccurrences the child's named-parameter occurrence counts per base name
-     * @param parentOccurrences the parent's occurrence counts snapshot taken before the child was built
+     * @param parentOccurrences a mutable snapshot of the parent's counts; updated with the merged occurrence bounds
      * @param childParameterNames the generated names emitted by the child; updated to the final names
      * @param childParameterTokens the rendered tokens per generated name; updated to the final tokens
      * @param childSqlPolicy the SQL policy of the child builder
@@ -8196,6 +8195,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final Map<String, String> originalTokens = new HashMap<>(); // original name -> its token in sql (NAMED_SQL)
         final Map<String, String> finalNames = new LinkedHashMap<>(); // original name -> final name
         final Map<String, String> finalTokens = new HashMap<>(); // original name -> final token (NAMED_SQL)
+        final Map<String, Integer> renamedOccurrenceBounds = new HashMap<>();
         // Every token a custom handler rendered into sql, renamed or not, snapshot before the bookkeeping below changes
         // the token map: the rewrite treats each as data (see ChildPlaceholderRenames.dataTokens).
         final Set<String> childCustomTokens = new HashSet<>();
@@ -8236,6 +8236,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     while (_generatedNamedParameterNames.contains(newName) || childParameterNames.contains(newName)) {
                         newName = indexedNamedParameterName(name, ++suffix);
                     }
+
+                    renamedOccurrenceBounds.merge(name, suffix, Math::max);
                 }
 
                 boolean rewrite = rename;
@@ -8271,6 +8273,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     childParameterNames.add(newName);
                 }
             }
+        }
+
+        for (final Map.Entry<String, Integer> entry : childOccurrences.entrySet()) {
+            parentOccurrences.merge(entry.getKey(), entry.getValue(), Integer::sum);
+        }
+
+        // Literal names can force the rename to skip suffixes: two occurrences of "id" may emit
+        // "id" and "id_3" because "id_2" is already occupied. Preserve that high-water mark so
+        // composing this result again visits "id_3" for collision checks and handler conversion.
+        for (final Map.Entry<String, Integer> entry : renamedOccurrenceBounds.entrySet()) {
+            parentOccurrences.merge(entry.getKey(), entry.getValue(), Math::max);
         }
 
         if (finalNames.isEmpty()) {
@@ -8526,22 +8539,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return sb.toString();
-    }
-
-    /**
-     * Merges another builder's named-parameter occurrence counts into this builder's, summing the counts
-     * per base name so names generated later stay unique across the compound statement.
-     *
-     * @param occurrences the occurrence counts to merge (may be {@code null} or empty)
-     */
-    private void mergeNamedParameterOccurrences(final Map<String, Integer> occurrences) {
-        if (N.isEmpty(occurrences)) {
-            return;
-        }
-
-        for (final Map.Entry<String, Integer> entry : occurrences.entrySet()) {
-            _namedParameterNameOccurrences.merge(entry.getKey(), entry.getValue(), Integer::sum);
-        }
     }
 
     /**
@@ -11243,7 +11240,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
-    /** Shared rendering for direct and table-alias property mappings. */
+    /**
+     * Shared rendering for direct and table-alias property mappings. Implicit labels retain the
+     * requested property/column text, doubling any embedded identifier quote when the label is quoted.
+     */
     private void appendMappedColumn(final ColumnInfo column, final String tableAlias, final String propName, final String propAlias,
             final boolean withClassAlias, final String classAlias, final boolean isForSelect, final boolean quotePropAlias) {
         if (column.isUnqualified() && tableAlias != null && !tableAlias.isEmpty()) {
@@ -11263,7 +11263,16 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 _sb.append(classAlias).append(SK._PERIOD);
             }
 
-            _sb.append(Strings.isNotEmpty(propAlias) ? propAlias : propName);
+            final String alias = Strings.isNotEmpty(propAlias) ? propAlias : propName;
+
+            // The mapping also accepts physical column names, including quoted identifiers. Their
+            // delimiters are label content here, just as in the unmapped implicit-alias path.
+            if (quotePropAlias && alias.indexOf(_identifierQuote) >= 0) {
+                final String quote = String.valueOf(_identifierQuote);
+                _sb.append(alias.replace(quote, quote + quote));
+            } else {
+                _sb.append(alias);
+            }
 
             if (quotePropAlias) {
                 _sb.append(_identifierQuote);

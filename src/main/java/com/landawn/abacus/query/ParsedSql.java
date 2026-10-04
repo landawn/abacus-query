@@ -1294,7 +1294,7 @@ public final class ParsedSql {
     /**
      * Returns the index of the last token of the return-value marker of a JDBC call escape, or {@code -1} if
      * {@code slot} (the text of the token at {@code index}, without a glued opening brace) does not start one.
-     * A MyBatis binding may span tokens up to the one holding its {@code '}'}, which must end that token.
+     * A MyBatis binding may span tokens up to the one holding its unquoted {@code '}'}, which must end that token.
      */
     private static int jdbcCallReturnSlotEnd(final String slot, final List<String> words, final int index) {
         if (SK.QUESTION_MARK.equals(slot)) {
@@ -1310,10 +1310,18 @@ public final class ParsedSql {
             return -1;
         }
 
+        // The '}' is searched outside quoted regions and comments, as the constructor searches it: a '}' inside the binding's
+        // quoted metadata ("{#{r, label='}'} = call p}") cannot end the slot and turn the call into an unparsed statement.
+        // A quoted continuation token never closes the slot; the constructor then rejects it like any other quoted metadata.
         String token = slot;
+        int closing = findIbatisClosingBraceIndex(slot, LEFT_OF_IBATIS_NAMED_PARAMETER.length());
 
         for (int i = index;;) {
-            final int closing = token.indexOf('}');
+            if (closing == MALFORMED_IBATIS_MARKER) {
+                // Recover only the slot boundary so a following '= CALL' still reaches the constructor's marker validation.
+                // Returning -1 here would silently pass through the malformed binding and every argument of the call.
+                closing = token.lastIndexOf('}');
+            }
 
             if (closing >= 0) {
                 return closing == token.length() - 1 ? i : -1;
@@ -1324,6 +1332,7 @@ public final class ParsedSql {
             }
 
             token = words.get(i);
+            closing = !token.isEmpty() && isQuoteChar(token.charAt(0)) ? -1 : findIbatisContinuationClosingBraceIndex(token);
         }
     }
 
@@ -2100,7 +2109,9 @@ public final class ParsedSql {
                 index = Math.min(length, skipQuotedRegion(token, index, backslashEscapes) + 1);
             } else if (ch == '#' && index + 1 < length && token.charAt(index + 1) == '{') {
                 // MyBatis options may contain commas and spaces; the complete binding is one operand.
-                final int end = token.indexOf('}', index + 2);
+                // A brace inside quoted metadata or a comment cannot end that operand: leaving the closing quote
+                // behind would turn the following SQL (including positional bindings) into a quoted region.
+                final int end = findIbatisClosingBraceIndex(token, index + 2);
                 index = end < 0 ? length : end + 1;
             } else if (ch == '[' || ch == ']') {
                 index++;
