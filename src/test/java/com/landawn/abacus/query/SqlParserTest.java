@@ -5627,6 +5627,48 @@ public class SqlParserTest extends TestBase {
         }
     }
 
+    // Regression: any '.' after an INSERT's EXEC made the word a qualifier (a column of a table named exec), so SQL Server's
+    // module names with omitted leading parts ("EXEC ..p" = default database and schema, "EXEC .dbo.p") passed the gate as
+    // an ordinary INSERT although they run a procedure.
+    @Test
+    public void testInsertProcedureSourcesWithOmittedLeadingNamePartsAreRejected() {
+        for (final String procedure : List.of("..mutate", " ..mutate", " .dbo.mutate", ".dbo.mutate", " . . mutate", " /* c */ ..mutate", " .mutate",
+                " .[dbo].[mutate]", " .\"dbo\".\"mutate\"", " .`dbo`.`mutate`", " .dbo.mutate;", " .dbo.mutate -1", " .dbo.mutate +1",
+                " .dbo.mutate 'x'", " .dbo.mutate @a = 1", " .dbo.mutate ?", " .dbo.mutate :value", " .dbo /* c */ . mutate WITH RECOMPILE")) {
+            for (final String prefix : List.of("INSERT INTO t EXEC", "INSERT t (a) EXECUTE", "INSERT TOP ((SELECT 1)) INTO t EXEC",
+                    "WITH c AS (SELECT 1) INSERT INTO t EXEC", "SELECT 1; INSERT INTO t EXEC")) {
+                final String sql = prefix + procedure;
+                assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+                assertFalse(SqlParser.isReadOnlyQuery(sql), sql);
+            }
+        }
+
+        // A qualified name chain that ends the INSERT stays a call: MariaDB's "RETURNING exec.id" (table named top, INTO
+        // omitted) reads equally as SQL Server's INSERT TOP (SELECT ...) into a table named returning fed by "EXEC .id".
+        for (final String sql : List.of("INSERT top (SELECT id FROM s) RETURNING exec.id", "INSERT top (SELECT id FROM s) RETURNING exec.id e")) {
+            assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+    }
+
+    // Controls: a qualified column of a table named exec, followed by an operator, ',', a cast, AS or a reserved expression word,
+    // or used as an operand, and exec as a qualified target name, are not procedure sources.
+    @Test
+    public void testQualifiedExecColumnsAndTargetsRemainOrdinaryInserts() {
+        for (final String sql : List.of("INSERT INTO exec SET exec.a = 1", "INSERT INTO exec SET exec . a = 1, exec.\"b\" = 2",
+                "INSERT INTO t SET a = exec.b", "INSERT INTO t SET a = 1, b = exec.c + 1", "INSERT INTO t SET a = (exec.b)",
+                "INSERT top (SELECT id FROM s) RETURNING exec.id AS e", "INSERT top (SELECT id FROM s) RETURNING exec.id, id",
+                "INSERT top (SELECT id FROM s) RETURNING exec.*", "INSERT top (SELECT id FROM s) RETURNING exec.id::text",
+                "INSERT top (SELECT id FROM s) RETURNING execute.id IS NULL", "INSERT top (SELECT id FROM s) RETURNING exec.id * 2",
+                "INSERT INTO exec.t SELECT 1", "INSERT INTO s.exec SELECT 1", "INSERT INTO \"s\".exec SELECT 1", "INSERT INTO t AS exec SELECT 1",
+                "INSERT INTO t SELECT exec.a FROM exec", "INSERT INTO t VALUES (1) RETURNING exec.a", "INSERT INTO t (exec.a) VALUES (1)")) {
+            assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+        }
+
+        // A module name that omits only inner parts is unchanged: it starts with a name.
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t EXEC db..mutate"));
+        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t EXEC srv.db..mutate"));
+    }
+
     // Regression: an unquoted Oracle name may contain '#'. The SEARCH/CYCLE name scan stopped before it, so the '#' was then
     // skipped as a hash comment together with the rest of the line, and the clause (and the statement verb) was lost.
     @Test

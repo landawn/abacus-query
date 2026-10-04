@@ -5295,15 +5295,17 @@ public final class SqlParser {
                     // query source does (including a later RETURNING column named execute).
                     insertStatement = false;
                 } else if (insertDepth == 0 && (matchesToken(sql, index, end, "EXEC", false) || matchesToken(sql, index, end, "EXECUTE", false))
-                        && !isDotQualifiedToken(sql, index, end, tokenizerConfig, memo)) {
+                        && !followsQualifierDot(sql, index, tokenizerConfig, memo)) {
                     // INSERT [INTO] names the target, and AS names its alias. Those identifier slots may be
                     // called exec/execute, as may columns inside (...); only a later top-level word is a call.
+                    // A '.' after the word is decided by startsProcedureReference: it does not by itself make the
+                    // word a qualifier, since SQL Server names a module with omitted leading parts as "..p" / ".dbo.p".
                     final boolean identifier = previousInsertWordStart >= 0
                             && (matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INSERT", false)
                                     || matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INTO", false)
                                     || matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "AS", false));
 
-                    if (!identifier && startsProcedureReference(sql, end, tokenizerConfig, memo)) {
+                    if (!identifier && startsProcedureReference(sql, index, end, tokenizerConfig, memo)) {
                         return true; // INSERT [INTO] target [(columns)] EXEC[UTE] procedure (SQL Server)
                     }
                 }
@@ -5346,13 +5348,15 @@ public final class SqlParser {
      * Whether the text after an INSERT's {@code EXEC}/{@code EXECUTE} word at {@code wordEnd} can name what SQL Server runs
      * there: a module name, variable or parameter binding, a bracketed or quoted name, or a parenthesized command string.
      * A word that ends the text, or is followed by {@code ;}, {@code ,}, {@code )}, a symbolic or SQL Server-reserved keyword operator,
-     * a {@code CASE} expression boundary, a {@code .}/{@code ::} qualification or {@code AS}, is a column instead.
+     * a {@code CASE} expression boundary, a {@code ::} cast or {@code AS}, is a column instead.
      * That keeps MariaDB's {@code INSERT top (SELECT ...) RETURNING exec}, whose target
      * table named top reads like SQL Server's {@code INSERT TOP (...)} clause, and MySQL's {@code SET exec = 1} accepted.
      * A word followed by a name stays a call ({@code RETURNING exec alias} could equally be {@code TOP (SELECT ...)}, a
-     * target table named returning and {@code EXEC procedure}).
+     * target table named returning and {@code EXEC procedure}). A word followed by {@code .} is decided by
+     * {@link #startsLeadingDotProcedureReference}.
      */
-    private static boolean startsProcedureReference(final String sql, final int wordEnd, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+    private static boolean startsProcedureReference(final String sql, final int wordStart, final int wordEnd, final TokenizerConfig tokenizerConfig,
+            final HashScanMemo memo) {
         final int next = skipLeadingWhitespaceAndComments(sql, wordEnd, tokenizerConfig, memo);
 
         if (next >= sql.length()) {
@@ -5361,16 +5365,12 @@ public final class SqlParser {
 
         final char ch = sql.charAt(next);
 
+        if (ch == '.') {
+            return startsLeadingDotProcedureReference(sql, wordStart, next, tokenizerConfig, memo);
+        }
+
         if (Character.isLetter(ch)) {
-            final int end = identifierEnd(sql, next);
-            // These expression continuations are reserved in SQL Server, so none can be an unquoted procedure name.
-            // Keep other words (including DIV/XOR), quoted names and variables as possible procedure references.
-            return !matchesToken(sql, next, end, "AS", false) && !matchesToken(sql, next, end, "IS", false) && !matchesToken(sql, next, end, "NOT", false)
-                    && !matchesToken(sql, next, end, "IN", false) && !matchesToken(sql, next, end, "BETWEEN", false)
-                    && !matchesToken(sql, next, end, "LIKE", false) && !matchesToken(sql, next, end, "AND", false) && !matchesToken(sql, next, end, "OR", false)
-                    && !matchesToken(sql, next, end, "COLLATE", false) && !matchesToken(sql, next, end, "WHEN", false)
-                    && !matchesToken(sql, next, end, "THEN", false) && !matchesToken(sql, next, end, "ELSE", false)
-                    && !matchesToken(sql, next, end, "END", false);
+            return !isReservedExpressionContinuation(sql, next);
         }
 
         // A binding can supply the procedure name or its return-status variable. Named parameters reach this scan with
@@ -5379,7 +5379,86 @@ public final class SqlParser {
             return next + 1 >= sql.length() || sql.charAt(next + 1) != ':';
         }
 
-        return ";,)=<>+-*/%|&^.!".indexOf(ch) < 0;
+        return ";,)=<>+-*/%|&^!".indexOf(ch) < 0;
+    }
+
+    /**
+     * Whether an INSERT's {@code EXEC}/{@code EXECUTE} word at {@code wordStart}, followed by the {@code .} at {@code dot},
+     * runs a module named with omitted leading parts rather than qualifying a column of a table named exec. SQL Server
+     * reserves EXEC and reads an empty part as the default database or schema, so {@code EXEC ..p}, {@code EXEC .dbo.p}
+     * and {@code EXEC.dbo.p} all call {@code p}; treating every following {@code .} as a qualifier passed them through.
+     *
+     * <p>An empty name part ({@code ..}) is never a column reference, so it is a call. For a name chain
+     * ({@code exec.a}, {@code exec . "a"}), what follows the chain decides, as for an unqualified word: an operator,
+     * {@code ,}, {@code )}, {@code ::} or a reserved expression word makes it a column (MySQL {@code SET exec.a = 1},
+     * MariaDB {@code RETURNING exec.a AS x}), as does {@code exec.*}. The end of the text, {@code ;}, a name, a binding
+     * or a sign stays a call: {@code RETURNING exec.a} at the end reads equally as SQL Server's complete
+     * {@code EXEC .a}, and a procedure argument may be a signed constant ({@code EXEC .dbo.p -1}). An {@code EXEC}
+     * directly after an operator or {@code ,} is an expression operand, never INSERT's procedure source.</p>
+     */
+    private static boolean startsLeadingDotProcedureReference(final String sql, final int wordStart, int index, final TokenizerConfig tokenizerConfig,
+            final HashScanMemo memo) {
+        final int previous = skipBackwardWhitespaceAndComments(sql, wordStart - 1, tokenizerConfig, memo);
+
+        if (previous >= 0 && "=<>+-*/%|&^!,".indexOf(sql.charAt(previous)) >= 0) {
+            return false;
+        }
+
+        final int length = sql.length();
+
+        while (index < length && sql.charAt(index) == '.') {
+            index = skipLeadingWhitespaceAndComments(sql, index + 1, tokenizerConfig, memo);
+
+            if (index >= length || sql.charAt(index) == '.') {
+                return true; // an empty name part (or a dangling '.'): only a module name omits a part
+            }
+
+            final char ch = sql.charAt(index);
+
+            if (ch == '*') {
+                return false; // "exec.*": every column of a table named exec
+            } else if (ch == '"' || ch == '`') {
+                index = skipQuotedLiteral(sql, index, ch);
+            } else if (ch == '[') {
+                index = skipBracketQuotedIdentifier(sql, index);
+            } else if (isIdentifierChar(ch)) {
+                index = identifierEnd(sql, index);
+            } else {
+                return true; // not a name part a column reference can have: stay conservative
+            }
+
+            index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
+        }
+
+        if (index >= length) {
+            return true;
+        }
+
+        final char ch = sql.charAt(index);
+
+        if (Character.isLetter(ch)) {
+            return !isReservedExpressionContinuation(sql, index);
+        }
+
+        if (ch == ':') {
+            return index + 1 >= length || sql.charAt(index + 1) != ':';
+        }
+
+        return "=<>*/%|&^!,)".indexOf(ch) < 0;
+    }
+
+    /**
+     * Whether the word at {@code index} continues an expression and is reserved in SQL Server, so it can be neither an
+     * unquoted procedure name nor a procedure argument. Other words (including DIV/XOR) are kept as possible references.
+     */
+    private static boolean isReservedExpressionContinuation(final String sql, final int index) {
+        final int end = identifierEnd(sql, index);
+
+        return matchesToken(sql, index, end, "AS", false) || matchesToken(sql, index, end, "IS", false) || matchesToken(sql, index, end, "NOT", false)
+                || matchesToken(sql, index, end, "IN", false) || matchesToken(sql, index, end, "BETWEEN", false) || matchesToken(sql, index, end, "LIKE", false)
+                || matchesToken(sql, index, end, "AND", false) || matchesToken(sql, index, end, "OR", false) || matchesToken(sql, index, end, "COLLATE", false)
+                || matchesToken(sql, index, end, "WHEN", false) || matchesToken(sql, index, end, "THEN", false) || matchesToken(sql, index, end, "ELSE", false)
+                || matchesToken(sql, index, end, "END", false);
     }
 
     private static boolean isJdbcCallEscape(final String sql, final int openingBraceIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
@@ -5615,16 +5694,21 @@ public final class SqlParser {
 
     private static boolean isDotQualifiedToken(final String sql, final int startIndex, final int endIndex, final TokenizerConfig tokenizerConfig,
             final HashScanMemo memo) {
-        final int previousIndex = skipBackwardWhitespaceAndComments(sql, startIndex - 1, tokenizerConfig, memo);
-
-        // The '.' that ends a numeric literal ("1.INTO", "1.DELETE") is a decimal point, not a qualifier.
-        if (previousIndex >= 0 && sql.charAt(previousIndex) == '.' && !isNumericLiteralDecimalPoint(sql, previousIndex)) {
+        if (followsQualifierDot(sql, startIndex, tokenizerConfig, memo)) {
             return true;
         }
 
         final int nextIndex = skipLeadingWhitespaceAndComments(sql, endIndex, tokenizerConfig, memo);
 
         return nextIndex < sql.length() && sql.charAt(nextIndex) == '.';
+    }
+
+    /** Whether the token at {@code startIndex} is a later part of a qualified name: it follows a qualifying {@code .}. */
+    private static boolean followsQualifierDot(final String sql, final int startIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        final int previousIndex = skipBackwardWhitespaceAndComments(sql, startIndex - 1, tokenizerConfig, memo);
+
+        // The '.' that ends a numeric literal ("1.INTO", "1.DELETE") is a decimal point, not a qualifier.
+        return previousIndex >= 0 && sql.charAt(previousIndex) == '.' && !isNumericLiteralDecimalPoint(sql, previousIndex);
     }
 
     /**
