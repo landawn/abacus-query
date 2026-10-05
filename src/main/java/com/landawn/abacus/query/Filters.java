@@ -4405,8 +4405,8 @@ public final class Filters {
      * @param propName the property/column name
      * @param values array of non-{@code null} values to exclude; a single {@link Collection} or array argument (other than
      *            {@code byte[]}, which stays one binary value) is treated as the value list itself, so
-     *            {@code in(p, (Object) List.of(1, 2))} renders {@code p IN (1, 2)}; to compare against a single collection-valued
-     *            value, wrap it: {@code in(p, List.of(list))}. An {@code Object[]} holding exactly one array or collection is
+     *            {@code notIn(p, (Object) List.of(1, 2))} renders {@code p NOT IN (1, 2)}; to compare against a single collection-valued
+     *            value, wrap it: {@code notIn(p, List.of(list))}. An {@code Object[]} holding exactly one array or collection is
      *            unpacked the same way
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
