@@ -41,6 +41,8 @@
 		<lombok.version>1.18.48</lombok.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<!-- Allows test runs with JaCoCo disabled as well as its late-bound agent options. -->
+		<argLine></argLine>
 	</properties>
 
 	<dependencies>
@@ -69,6 +71,12 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
+			<version>${junit.jupiter.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-params</artifactId>
 			<version>${junit.jupiter.version}</version>
 			<scope>test</scope>
 		</dependency>
@@ -146,9 +154,10 @@
 						<include>**/AbacusQueryTestSuite.java</include>
 					</includes>
 					<useModulePath>false</useModulePath>
-					<testFailureIgnore>true</testFailureIgnore> <!-- set to false if you want failures to fail the build -->
+					<testFailureIgnore>false</testFailureIgnore>
 					<argLine>
-          				-Dfile.encoding=UTF-8
+						@{argLine}
+						-Dfile.encoding=UTF-8
 						--add-opens java.base/java.lang=ALL-UNNAMED
 						--add-opens java.base/java.lang.reflect=ALL-UNNAMED
 						--add-opens java.base/java.io=ALL-UNNAMED

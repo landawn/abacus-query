@@ -38,10 +38,15 @@ SUFFIXES = [
 ]
 # known aliases: test class stem -> source class simple name
 ALIASES = {
-    "PSC": "SqlBuilder",          # PSCTest exercises SqlBuilder (prepared-statement compiler)
-    "SK": "Selection",            # SK = selection key? verify
+    "SqlBuilderSupportedSqlTest": "SqlBuilder",
+    "ParsedSqlValidationTest": "ParsedSql",
     "Simple": "AbstractQueryBuilder",
     "CriteriaBuilderAdd": "Criteria",
+}
+INTENTIONAL_SPLITS = {
+    "SqlBuilder": "The supported-SQL catalog is a separate executable specification.",
+    "SqlDialect": "Pagination is kept as a focused dialect behavior suite.",
+    "ParsedSql": "Scanner preconditions are kept in a focused validation suite.",
 }
 
 
@@ -54,6 +59,8 @@ def source_classes(repo_root: str) -> dict:
             if not fn.endswith(".java"):
                 continue
             stem = fn[:-5]
+            if stem in ("package-info", "module-info"):
+                continue
             # nested types share a file; record the file stem as the source class
             rel = os.path.relpath(os.path.join(dp, fn), repo_root).replace(os.sep, "/")
             out.setdefault(stem, rel)
@@ -73,7 +80,7 @@ def stem_to_source(test_name: str) -> str:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", default="scripts/test_audit/parse_output.json")
+    ap.add_argument("--input", default=".audit/test-audit/parse_output.json")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
@@ -88,20 +95,30 @@ def main():
     # map: source class -> { file -> set(class_name) }
     by_source = defaultdict(lambda: defaultdict(set))
     orphan_classes = []
+    dependency_contracts = []
+    method_owners = {(m["file"], m["class_name"]) for m in methods}
     for c in classes:
+        qualified_name = c.get("qualified_name", c["name"])
+        if (c["file"], qualified_name) not in method_owners:
+            continue  # Fixtures and helper classes are not independent test units.
         # skip the file-level suite / helpers / TestBase
         if c["name"] in ("AbacusQueryTestSuite", "TestBase", "CodeHelper", "Maven"):
             continue
-        stem = stem_to_source(c["name"])
+        owner = qualified_name.split(".")[0]
+        if owner == "SKTest":
+            dependency_contracts.append({"class": owner, "file": c["file"], "source": "com.landawn.abacus.util.SK (abacus-common)"})
+            continue
+        direct = owner.removesuffix("Test")
+        stem = direct if direct in srcs else stem_to_source(owner)
         if stem not in srcs:
             # try alias fallback
-            if c["name"] in ALIASES and ALIASES[c["name"]] in srcs:
-                stem = ALIASES[c["name"]]
+            if owner in ALIASES and ALIASES[owner] in srcs:
+                stem = ALIASES[owner]
             else:
                 orphan_classes.append({"class": c["name"], "file": c["file"],
                                        "guessed_source": stem})
                 continue
-        by_source[stem][c["file"]].add(c["name"])
+        by_source[stem][c["file"]].add(qualified_name)
 
     # also attach methods count per class
     class_methods = defaultdict(int)
@@ -109,10 +126,11 @@ def main():
         class_methods[(m["file"], m["class_name"])] += 1
 
     cross_file = []
+    intentional_splits = []
     multi_class_one_file = []
     for src, files in sorted(by_source.items()):
         if len(files) > 1:
-            cross_file.append({
+            entry = {
                 "source": src,
                 "source_file": srcs.get(src, "?"),
                 "test_files": [
@@ -120,9 +138,14 @@ def main():
                      "method_counts": {c: class_methods[(f, c)] for c in cs}}
                     for f, cs in sorted(files.items())
                 ],
-            })
+            }
+            if src in INTENTIONAL_SPLITS:
+                entry["reason"] = INTENTIONAL_SPLITS[src]
+                intentional_splits.append(entry)
+            else:
+                cross_file.append(entry)
         for f, cs in files.items():
-            if len(cs) > 1:
+            if len({name.split(".")[0] for name in cs}) > 1:
                 multi_class_one_file.append({
                     "source": src,
                     "file": f,
@@ -139,6 +162,8 @@ def main():
 
     report = {
         "cross_file_scattering": cross_file,
+        "intentional_splits": intentional_splits,
+        "dependency_contracts": dependency_contracts,
         "multi_class_one_file": multi_class_one_file,
         "orphan_test_classes": orphan_classes,
         "untested_source_classes": sorted(untested),

@@ -4,13 +4,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -27,6 +30,7 @@ import com.landawn.abacus.util.NamingPolicy;
 public class ConditionTest extends TestBase {
 
     private ComposableCondition simpleCondition;
+
     private ComposableCondition complexCondition;
 
     @BeforeEach
@@ -35,36 +39,16 @@ public class ConditionTest extends TestBase {
         complexCondition = Filters.and(Filters.gt("age", 18), Filters.eq("status", "active"));
     }
 
-    // Tests for operator() method
-
     @Test
-    void testGetOperatorReturnsCorrectOperator() {
-        assertEquals(Operator.EQUAL, simpleCondition.operator());
-        assertEquals(Operator.AND, complexCondition.operator());
-    }
+    void testAndChaining() {
+        ComposableCondition condition1 = Filters.eq("field1", "value1");
+        ComposableCondition condition2 = Filters.eq("field2", "value2");
+        ComposableCondition condition3 = Filters.eq("field3", "value3");
 
-    @Test
-    void testGetOperatorNeverReturnsNull() {
-        assertNotNull(simpleCondition.operator());
-        assertNotNull(complexCondition.operator());
+        Condition result = condition1.and(condition2).and(condition3);
 
-        // Test with various condition types
-        assertNotNull(Filters.gt("age", 25).operator());
-        assertNotNull(Filters.like("name", "%john%").operator());
-        assertNotNull(Filters.isNull("description").operator());
-        assertNotNull(Filters.in("status", Arrays.asList("active", "pending")).operator());
-    }
-
-    @Test
-    void testGetOperatorConsistency() {
-        // Same condition type should always return same operator
-        Condition eq1 = Filters.eq("field1", "value1");
-        Condition eq2 = Filters.eq("field2", "value2");
-        assertEquals(eq1.operator(), eq2.operator());
-
-        Condition gt1 = Filters.gt("field1", 10);
-        Condition gt2 = Filters.gt("field2", 20);
-        assertEquals(gt1.operator(), gt2.operator());
+        assertNotNull(result);
+        assertEquals(Operator.AND, result.operator());
     }
 
     // Tests for and() method
@@ -97,231 +81,6 @@ public class ConditionTest extends TestBase {
         assertNotSame(simpleCondition, result);
     }
 
-    @Test
-    void testAndChaining() {
-        ComposableCondition condition1 = Filters.eq("field1", "value1");
-        ComposableCondition condition2 = Filters.eq("field2", "value2");
-        ComposableCondition condition3 = Filters.eq("field3", "value3");
-
-        Condition result = condition1.and(condition2).and(condition3);
-
-        assertNotNull(result);
-        assertEquals(Operator.AND, result.operator());
-    }
-
-    // Tests for or() method
-
-    @Test
-    void testOrCreatesOrCondition() {
-        Condition other = Filters.eq("type", "admin");
-        Condition result = simpleCondition.or(other);
-
-        assertNotNull(result);
-        assertEquals(Operator.OR, result.operator());
-        assertTrue(result instanceof Or);
-    }
-
-    @Test
-    void testOrReturnsNewInstance() {
-        Condition other = Filters.isNull("deleted_at");
-        Condition result = simpleCondition.or(other);
-
-        assertNotSame(simpleCondition, result);
-        assertNotSame(other, result);
-    }
-
-    @Test
-    void testOrWithSelf() {
-        Condition result = simpleCondition.or(simpleCondition);
-
-        assertNotNull(result);
-        assertEquals(Operator.OR, result.operator());
-        assertNotSame(simpleCondition, result);
-    }
-
-    @Test
-    void testOrChaining() {
-        ComposableCondition condition1 = Filters.eq("status", "active");
-        ComposableCondition condition2 = Filters.eq("status", "pending");
-        ComposableCondition condition3 = Filters.eq("status", "processing");
-
-        Condition result = condition1.or(condition2).or(condition3);
-
-        assertNotNull(result);
-        assertEquals(Operator.OR, result.operator());
-    }
-
-    @Test
-    void testOrWithNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> simpleCondition.or(null));
-    }
-
-    // Tests for xor() method
-
-    @Test
-    void testXorCreatesOrCondition() {
-        Condition other = Filters.eq("type", "admin");
-        Condition result = simpleCondition.xor(other);
-
-        assertNotNull(result);
-        assertEquals(Operator.OR, result.operator());
-        assertTrue(result instanceof Or);
-    }
-
-    @Test
-    void testXorReturnsNewInstance() {
-        Condition other = Filters.eq("type", "admin");
-        Condition result = simpleCondition.xor(other);
-
-        assertNotSame(simpleCondition, result);
-        assertNotSame(other, result);
-    }
-
-    @Test
-    void testXorWithNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> simpleCondition.xor(null));
-    }
-
-    @Test
-    void testXorSemantics() {
-        // XOR should produce (A AND NOT B) OR (NOT A AND B)
-        ComposableCondition a = Filters.eq("x", 1);
-        ComposableCondition b = Filters.eq("y", 2);
-        Or result = a.xor(b);
-
-        // The result should be an Or with 2 conditions (each an And)
-        assertEquals(2, result.conditions().size());
-        assertTrue(result.conditions().get(0) instanceof And);
-        assertTrue(result.conditions().get(1) instanceof And);
-    }
-
-    // Tests for not() method
-
-    @Test
-    void testNotCreatesNotCondition() {
-        Condition result = simpleCondition.not();
-
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
-        assertTrue(result instanceof Not);
-    }
-
-    @Test
-    void testNotReturnsNewInstance() {
-        Condition result = simpleCondition.not();
-        assertNotSame(simpleCondition, result);
-    }
-
-    @Test
-    void testNotWithComplexCondition() {
-        Condition result = complexCondition.not();
-
-        assertNotNull(result);
-        assertEquals(Operator.NOT, result.operator());
-    }
-
-    // Tests for parameters() method
-
-    @Test
-    void testParametersNeverReturnsNull() {
-        assertNotNull(simpleCondition.parameters());
-        assertNotNull(complexCondition.parameters());
-
-        // Test with condition that has no parameters
-        Condition noParamCondition = Filters.isNull("field");
-        assertNotNull(noParamCondition.parameters());
-    }
-
-    @Test
-    void testParametersReturnsCorrectParameters() {
-        List<Object> params = simpleCondition.parameters();
-        assertTrue(params.contains("John"));
-
-        // Test with multiple parameters
-        Condition betweenCondition = Filters.between("age", 18, 65);
-        List<Object> betweenParams = betweenCondition.parameters();
-        assertEquals(2, betweenParams.size());
-        assertTrue(betweenParams.contains(18));
-        assertTrue(betweenParams.contains(65));
-    }
-
-    @Test
-    void testParametersWithInCondition() {
-        List<String> values = Arrays.asList("active", "pending", "processing");
-        Condition inCondition = Filters.in("status", values);
-        List<Object> params = inCondition.parameters();
-
-        assertEquals(values.size(), params.size());
-        for (String value : values) {
-            assertTrue(params.contains(value));
-        }
-    }
-
-    @Test
-    void testParametersWithComplexCondition() {
-        List<Object> params = complexCondition.parameters();
-
-        // Complex condition should contain parameters from all sub-conditions
-        assertTrue(params.contains(18));
-        assertTrue(params.contains("active"));
-    }
-
-    @Test
-    void testParametersReturnsImmutableList() {
-        List<Object> params = simpleCondition.parameters();
-
-        // Should not be able to modify the returned list
-        assertThrows(UnsupportedOperationException.class, () -> params.add("newValue"));
-        assertThrows(UnsupportedOperationException.class, () -> params.remove(0));
-        assertThrows(UnsupportedOperationException.class, () -> params.clear());
-    }
-
-    // Tests for toSql(NamingPolicy) method
-
-    @Test
-    void testToSqlWithNamingPolicy() {
-        String result = simpleCondition.toSql(NamingPolicy.SNAKE_CASE);
-
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertTrue(result.contains("name"));
-    }
-
-    @Test
-    void testToSqlWithDifferentNamingPolicies() {
-        Condition camelCaseCondition = Filters.eq("firstName", "John");
-
-        String snakeCase = camelCaseCondition.toSql(NamingPolicy.SNAKE_CASE);
-        String upperCase = camelCaseCondition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
-        String noChange = camelCaseCondition.toSql(NamingPolicy.NO_CHANGE);
-
-        assertNotNull(snakeCase);
-        assertNotNull(upperCase);
-        assertNotNull(noChange);
-
-        // Results should be different based on naming policy
-        assertFalse(snakeCase.equals(upperCase));
-        assertFalse(snakeCase.equals(noChange));
-    }
-
-    @Test
-    void testToSqlWithComplexCondition() {
-        String result = complexCondition.toSql(NamingPolicy.SNAKE_CASE);
-
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        // Should contain elements from all sub-conditions
-        assertTrue(result.contains("age"));
-        assertTrue(result.contains("status"));
-        assertTrue(result.contains("AND"));
-    }
-
-    @Test
-    void testToSqlIsAHardRename() throws NoSuchMethodException {
-        assertEquals(String.class, Condition.class.getMethod("toSql", NamingPolicy.class).getReturnType());
-        assertThrows(NoSuchMethodException.class, () -> Condition.class.getMethod("toString", NamingPolicy.class));
-    }
-
     // Integration Tests
 
     @Test
@@ -335,68 +94,6 @@ public class ConditionTest extends TestBase {
 
         assertNotNull(result);
         assertEquals(Operator.NOT, result.operator());
-    }
-
-    @Test
-    void testParameterManagementWithComposableOperations() {
-        ComposableCondition condition1 = Filters.eq("name", "John");
-        ComposableCondition condition2 = Filters.gt("age", 25);
-        Condition combined = condition1.and(condition2);
-
-        List<Object> params = combined.parameters();
-        assertEquals(2, params.size());
-        assertTrue(params.contains("John"));
-        assertTrue(params.contains(25));
-    }
-
-    // Edge Cases and Error Conditions
-
-    @Test
-    void testConditionWithNullParameters() {
-        Condition nullCondition = Filters.eq("field", null);
-
-        assertNotNull(nullCondition);
-        assertEquals(Operator.EQUAL, nullCondition.operator());
-
-        List<Object> params = nullCondition.parameters();
-        assertEquals(0, params.size());
-    }
-
-    @Test
-    void testConditionWithEmptyStringParameters() {
-        Condition emptyCondition = Filters.eq("field", "");
-
-        assertNotNull(emptyCondition);
-        List<Object> params = emptyCondition.parameters();
-        assertEquals(1, params.size());
-        assertEquals("", params.get(0));
-    }
-
-    @Test
-    void testConditionWithLargeParameterList() {
-        // Create condition with many parameters
-        List<Integer> largeList = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-        Condition inCondition = Filters.in("id", largeList);
-
-        List<Object> params = inCondition.parameters();
-        assertEquals(largeList.size(), params.size());
-    }
-
-    @Test
-    void testConditionChainPerformance() {
-        // Test performance with long condition chains
-        ComposableCondition chain = Filters.eq("field1", "value1");
-
-        for (int i = 2; i <= 100; i++) {
-            chain = chain.and(Filters.eq("field" + i, "value" + i));
-        }
-
-        assertNotNull(chain);
-        assertEquals(Operator.AND, chain.operator());
-
-        // Should still be able to get parameters
-        List<Object> params = chain.parameters();
-        assertEquals(100, params.size());
     }
 
     // Contract Validation Tests
@@ -448,8 +145,332 @@ public class ConditionTest extends TestBase {
     }
 
     @Test
+    void testConditionChainPerformance() {
+        // Test performance with long condition chains
+        ComposableCondition chain = Filters.eq("field1", "value1");
+
+        for (int i = 2; i <= 100; i++) {
+            chain = chain.and(Filters.eq("field" + i, "value" + i));
+        }
+
+        assertNotNull(chain);
+        assertEquals(Operator.AND, chain.operator());
+
+        // Should still be able to get parameters
+        List<Object> params = chain.parameters();
+        assertEquals(100, params.size());
+    }
+
+    @Test
     void testConditionDoesNotClaimDeepImmutabilityMarker() {
         assertFalse(com.landawn.abacus.util.Immutable.class.isAssignableFrom(Condition.class));
         assertFalse(Condition.class.isAnnotationPresent(com.landawn.abacus.annotation.Immutable.class));
+    }
+
+    @Test
+    void testConditionWithEmptyStringParameters() {
+        Condition emptyCondition = Filters.eq("field", "");
+
+        assertNotNull(emptyCondition);
+        List<Object> params = emptyCondition.parameters();
+        assertEquals(1, params.size());
+        assertEquals("", params.get(0));
+    }
+
+    @Test
+    void testConditionWithLargeParameterList() {
+        // Create condition with many parameters
+        List<Integer> largeList = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        Condition inCondition = Filters.in("id", largeList);
+
+        List<Object> params = inCondition.parameters();
+        assertEquals(largeList.size(), params.size());
+    }
+
+    // Edge Cases and Error Conditions
+
+    @Test
+    void testConditionWithNullParameters() {
+        Condition nullCondition = Filters.eq("field", null);
+
+        assertNotNull(nullCondition);
+        assertEquals(Operator.EQUAL, nullCondition.operator());
+
+        List<Object> params = nullCondition.parameters();
+        assertEquals(0, params.size());
+    }
+
+    @Test
+    void testGetOperatorConsistency() {
+        // Same condition type should always return same operator
+        Condition eq1 = Filters.eq("field1", "value1");
+        Condition eq2 = Filters.eq("field2", "value2");
+        assertEquals(eq1.operator(), eq2.operator());
+
+        Condition gt1 = Filters.gt("field1", 10);
+        Condition gt2 = Filters.gt("field2", 20);
+        assertEquals(gt1.operator(), gt2.operator());
+    }
+
+    @Test
+    void testGetOperatorNeverReturnsNull() {
+        assertNotNull(simpleCondition.operator());
+        assertNotNull(complexCondition.operator());
+
+        // Test with various condition types
+        assertNotNull(Filters.gt("age", 25).operator());
+        assertNotNull(Filters.like("name", "%john%").operator());
+        assertNotNull(Filters.isNull("description").operator());
+        assertNotNull(Filters.in("status", Arrays.asList("active", "pending")).operator());
+    }
+
+    // Tests for operator() method
+
+    @Test
+    void testGetOperatorReturnsCorrectOperator() {
+        assertEquals(Operator.EQUAL, simpleCondition.operator());
+        assertEquals(Operator.AND, complexCondition.operator());
+    }
+
+    // Tests for not() method
+
+    @Test
+    void testNotCreatesNotCondition() {
+        Condition result = simpleCondition.not();
+
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.operator());
+        assertTrue(result instanceof Not);
+    }
+
+    @Test
+    void testNotReturnsNewInstance() {
+        Condition result = simpleCondition.not();
+        assertNotSame(simpleCondition, result);
+    }
+
+    @Test
+    void testNotWithComplexCondition() {
+        Condition result = complexCondition.not();
+
+        assertNotNull(result);
+        assertEquals(Operator.NOT, result.operator());
+    }
+
+    @Test
+    void testOrChaining() {
+        ComposableCondition condition1 = Filters.eq("status", "active");
+        ComposableCondition condition2 = Filters.eq("status", "pending");
+        ComposableCondition condition3 = Filters.eq("status", "processing");
+
+        Condition result = condition1.or(condition2).or(condition3);
+
+        assertNotNull(result);
+        assertEquals(Operator.OR, result.operator());
+    }
+
+    // Tests for or() method
+
+    @Test
+    void testOrCreatesOrCondition() {
+        Condition other = Filters.eq("type", "admin");
+        Condition result = simpleCondition.or(other);
+
+        assertNotNull(result);
+        assertEquals(Operator.OR, result.operator());
+        assertTrue(result instanceof Or);
+    }
+
+    @Test
+    void testOrReturnsNewInstance() {
+        Condition other = Filters.isNull("deleted_at");
+        Condition result = simpleCondition.or(other);
+
+        assertNotSame(simpleCondition, result);
+        assertNotSame(other, result);
+    }
+
+    @Test
+    void testOrWithNullCondition() {
+        assertThrows(IllegalArgumentException.class, () -> simpleCondition.or(null));
+    }
+
+    @Test
+    void testOrWithSelf() {
+        Condition result = simpleCondition.or(simpleCondition);
+
+        assertNotNull(result);
+        assertEquals(Operator.OR, result.operator());
+        assertNotSame(simpleCondition, result);
+    }
+
+    @Test
+    void testParameterManagementWithComposableOperations() {
+        ComposableCondition condition1 = Filters.eq("name", "John");
+        ComposableCondition condition2 = Filters.gt("age", 25);
+        Condition combined = condition1.and(condition2);
+
+        List<Object> params = combined.parameters();
+        assertEquals(2, params.size());
+        assertTrue(params.contains("John"));
+        assertTrue(params.contains(25));
+    }
+
+    // Tests for parameters() method
+
+    @Test
+    void testParametersNeverReturnsNull() {
+        assertNotNull(simpleCondition.parameters());
+        assertNotNull(complexCondition.parameters());
+
+        // Test with condition that has no parameters
+        Condition noParamCondition = Filters.isNull("field");
+        assertNotNull(noParamCondition.parameters());
+    }
+
+    @Test
+    void testParametersReturnsCorrectParameters() {
+        List<Object> params = simpleCondition.parameters();
+        assertTrue(params.contains("John"));
+
+        // Test with multiple parameters
+        Condition betweenCondition = Filters.between("age", 18, 65);
+        List<Object> betweenParams = betweenCondition.parameters();
+        assertEquals(2, betweenParams.size());
+        assertTrue(betweenParams.contains(18));
+        assertTrue(betweenParams.contains(65));
+    }
+
+    @Test
+    void testParametersReturnsImmutableList() {
+        List<Object> params = simpleCondition.parameters();
+
+        // Should not be able to modify the returned list
+        assertThrows(UnsupportedOperationException.class, () -> params.add("newValue"));
+        assertThrows(UnsupportedOperationException.class, () -> params.remove(0));
+        assertThrows(UnsupportedOperationException.class, () -> params.clear());
+    }
+
+    @Test
+    void testParametersWithComplexCondition() {
+        List<Object> params = complexCondition.parameters();
+
+        // Complex condition should contain parameters from all sub-conditions
+        assertTrue(params.contains(18));
+        assertTrue(params.contains("active"));
+    }
+
+    @Test
+    void testParametersWithInCondition() {
+        List<String> values = Arrays.asList("active", "pending", "processing");
+        Condition inCondition = Filters.in("status", values);
+        List<Object> params = inCondition.parameters();
+
+        assertEquals(values.size(), params.size());
+        for (String value : values) {
+            assertTrue(params.contains(value));
+        }
+    }
+
+    @Test
+    void testToSqlIsAHardRename() throws NoSuchMethodException {
+        assertEquals(String.class, Condition.class.getMethod("toSql", NamingPolicy.class).getReturnType());
+        assertThrows(NoSuchMethodException.class, () -> Condition.class.getMethod("toString", NamingPolicy.class));
+    }
+
+    @Test
+    void testToSqlWithComplexCondition() {
+        String result = complexCondition.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        // Should contain elements from all sub-conditions
+        assertTrue(result.contains("age"));
+        assertTrue(result.contains("status"));
+        assertTrue(result.contains("AND"));
+    }
+
+    @Test
+    void testToSqlWithDifferentNamingPolicies() {
+        Condition camelCaseCondition = Filters.eq("firstName", "John");
+
+        String snakeCase = camelCaseCondition.toSql(NamingPolicy.SNAKE_CASE);
+        String upperCase = camelCaseCondition.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
+        String noChange = camelCaseCondition.toSql(NamingPolicy.NO_CHANGE);
+
+        assertNotNull(snakeCase);
+        assertNotNull(upperCase);
+        assertNotNull(noChange);
+
+        // Results should be different based on naming policy
+        assertFalse(snakeCase.equals(upperCase));
+        assertFalse(snakeCase.equals(noChange));
+    }
+
+    // Tests for toSql(NamingPolicy) method
+
+    @Test
+    void testToSqlWithNamingPolicy() {
+        String result = simpleCondition.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertTrue(result.contains("name"));
+    }
+
+    // Tests for xor() method
+
+    @Test
+    void testXorCreatesOrCondition() {
+        Condition other = Filters.eq("type", "admin");
+        Condition result = simpleCondition.xor(other);
+
+        assertNotNull(result);
+        assertEquals(Operator.OR, result.operator());
+        assertTrue(result instanceof Or);
+    }
+
+    @Test
+    void testXorReturnsNewInstance() {
+        Condition other = Filters.eq("type", "admin");
+        Condition result = simpleCondition.xor(other);
+
+        assertNotSame(simpleCondition, result);
+        assertNotSame(other, result);
+    }
+
+    @Test
+    void testXorSemantics() {
+        // XOR should produce (A AND NOT B) OR (NOT A AND B)
+        ComposableCondition a = Filters.eq("x", 1);
+        ComposableCondition b = Filters.eq("y", 2);
+        Or result = a.xor(b);
+
+        // The result should be an Or with 2 conditions (each an And)
+        assertEquals(2, result.conditions().size());
+        assertTrue(result.conditions().get(0) instanceof And);
+        assertTrue(result.conditions().get(1) instanceof And);
+    }
+
+    @Test
+    void testXorWithNullCondition() {
+        assertThrows(IllegalArgumentException.class, () -> simpleCondition.xor(null));
+    }
+
+    @Nested
+    class SharedContracts {
+        @Test
+        void testNullDefaultsAndEmptyInputsKeepTheirExistingMeaning() {
+            assertEquals("age IS NULL", new Equal("age", null).toSql(null));
+            assertEquals("age IS NOT NULL", SqlExpression.notEqual("age", null));
+            assertEquals("SELECT id FROM users", new SubQuery("users", List.of("id"), null).toSql(null));
+            assertEquals("1 = 1", new And((Condition[]) null).toString());
+            assertEquals("1 = 0", new Or((Collection<Condition>) null).toString());
+            assertEquals("", SqlExpression.and((String[]) null));
+            assertEquals("", SqlExpression.plus((Object[]) null));
+            assertNull(Operator.of(null));
+            assertTrue(Criteria.builder().build().findConditions(null).isEmpty());
+            assertFalse(new Equal("age", null).equals(null));
+        }
     }
 }

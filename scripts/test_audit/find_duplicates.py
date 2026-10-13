@@ -35,7 +35,7 @@ def similarity(a: str, b: str) -> float:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", default="scripts/test_audit/parse_output.json")
+    ap.add_argument("--input", default=".audit/test-audit/parse_output.json")
     ap.add_argument("--out", default=None, help="write report here (else stdout)")
     ap.add_argument("--min-size", type=int, default=2)
     ap.add_argument("--cross-file", action="store_true")
@@ -65,6 +65,8 @@ def main():
                 for b in lst[i+1:]:
                     if id(b) in seen:
                         continue
+                    if (a.get("annotation_key"), a.get("parameter_signature")) != (b.get("annotation_key"), b.get("parameter_signature")):
+                        continue
                     if similarity(a["norm_body"], b["norm_body"]) >= args.sim_threshold:
                         cluster.append(b)
                         seen.add(id(b))
@@ -76,7 +78,7 @@ def main():
     else:
         by_key = defaultdict(list)
         for m in methods:
-            by_key[m["norm_body"]].append(m)
+            by_key[(m["norm_body"], m.get("annotation_key", ""), m.get("parameter_signature", ""))].append(m)
         groups = [g for g in by_key.values() if len(g) >= args.min_size]
         groups.sort(key=lambda g: -len(g))
 

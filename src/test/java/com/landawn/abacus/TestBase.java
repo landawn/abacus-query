@@ -10,7 +10,7 @@ import com.landawn.abacus.type.Type;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.TypeReference;
 
-@Tag("base-test")
+@Tag("unit")
 public abstract class TestBase {
 
     public static final char[] NULL_CHAR_ARRAY = "null".toCharArray();

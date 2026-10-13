@@ -9,9 +9,8 @@ TestBase.assertHaveSameElements / N.assertXxx helpers.
 The report lists file, class, method name, line range, and the method body so a
 human can add a meaningful assertion (or replace a try/catch with assertThrows).
 
-Options:
-  --tagged-only   only flag methods in classes carrying @Tag("base-test") or @Tag("2025")
-                  (i.e. methods that actually run under `mvn test`)
+All tests are audited by default. --tagged-only restricts the report to unit
+tags (including inherited tags); it is not a substitute for JUnit discovery.
 """
 from __future__ import annotations
 
@@ -20,15 +19,15 @@ import json
 import sys
 
 
-RUN_TAGS = {"base-test", "2025"}
+RUN_TAGS = {"unit", "base-test", "2025"}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", default="scripts/test_audit/parse_output.json")
+    ap.add_argument("--input", default=".audit/test-audit/parse_output.json")
     ap.add_argument("--out", default=None)
-    ap.add_argument("--tagged-only", action="store_true", default=True,
-                    help="default true: only methods in tagged classes run; flag those")
+    ap.add_argument("--tagged-only", action="store_true", default=False,
+                    help="restrict to unit/base-test/2025 tags (including inherited tags)")
     ap.add_argument("--include-untagged", dest="tagged_only", action="store_false")
     args = ap.parse_args()
 
@@ -39,7 +38,7 @@ def main():
     for m in methods:
         if m.get("has_assertion"):
             continue
-        if args.tagged_only and m.get("class_tag") not in RUN_TAGS:
+        if args.tagged_only and not RUN_TAGS.intersection(m.get("class_tags", [m.get("class_tag")])):
             # untagged classes (or tagged with something other than base-test/2025)
             # don't run under `mvn test`, so don't flag them.
             continue

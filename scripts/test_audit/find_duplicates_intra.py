@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from collections import defaultdict
 from difflib import SequenceMatcher
 
@@ -32,12 +33,12 @@ def sim(a: str, b: str) -> float:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", default="scripts/test_audit/parse_output.json")
+    ap.add_argument("--input", default=".audit/test-audit/parse_output.json")
     ap.add_argument("--out", default=None)
     ap.add_argument("--sim-threshold", type=float, default=0.93)
     ap.add_argument("--exact-only", action="store_true")
-    ap.add_argument("--min-body-len", type=int, default=80,
-                    help="ignore very short methods (likely trivially similar)")
+    ap.add_argument("--min-body-len", type=int, default=0,
+                    help="optional minimum fingerprint length; defaults to including short validation tests")
     args = ap.parse_args()
 
     data = json.load(open(args.input, encoding="utf-8"))
@@ -56,8 +57,8 @@ def main():
         if args.exact_only:
             by_body = defaultdict(list)
             for m in ms:
-                by_body[m["norm_body"]].append(m)
-            for body, lst in by_body.items():
+                by_body[(m["norm_body"], m.get("annotation_key", ""), m.get("parameter_signature", ""))].append(m)
+            for (body, _, _), lst in by_body.items():
                 if len(lst) >= 2 and len(body) >= args.min_body_len:
                     groups.append({"file": file, "class": cls,
                                    "members": [{"name": m["name"], "line": m["sig_line"]}
@@ -78,6 +79,8 @@ def main():
                 if len(b["norm_body"]) < args.min_body_len:
                     continue
                 if a["name"] == b["name"]:
+                    continue
+                if (a.get("annotation_key"), a.get("parameter_signature")) != (b.get("annotation_key"), b.get("parameter_signature")):
                     continue
                 s = sim(a["norm_body"], b["norm_body"])
                 if s >= args.sim_threshold:

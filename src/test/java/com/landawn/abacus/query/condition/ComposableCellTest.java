@@ -16,26 +16,58 @@ import com.landawn.abacus.util.NamingPolicy;
 
 public class ComposableCellTest extends TestBase {
 
-    private static final class TestComposableCell extends ComposableCell {
-        TestComposableCell(final Operator operator, final Condition condition) {
-            super(operator, condition);
-        }
-    }
-
-    private static final class EmptyComposableCell extends ComposableCell {
-        EmptyComposableCell() {
-            super();
-        }
-    }
-
     @Test
-    public void testConstructor_NullOperatorThrowsIllegalArgumentException() {
+    void testConstructor_NullOperatorThrowsIllegalArgumentException() {
         // A null operator is an IllegalArgumentException (previously threw NullPointerException).
         assertThrows(IllegalArgumentException.class, () -> new TestComposableCell(null, Filters.eq("status", "ACTIVE")));
     }
 
     @Test
-    public void testGetCondition() {
+    void testDefaultConstructor_EmptyState_Batch2() {
+        final EmptyComposableCell left = new EmptyComposableCell();
+        final EmptyComposableCell right = new EmptyComposableCell();
+
+        assertTrue(left.condition() == null);
+        assertTrue(left.parameters().isEmpty());
+        assertEquals(left, right);
+        assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    void testDefaultConstructorToString_NullOperator() {
+        // A ComposableCell created via the package-private default constructor has a
+        // null operator (mirrors Kryo deserialization of partially-populated state).
+        // Calling toString() must not NPE.
+        final EmptyComposableCell cell = new EmptyComposableCell();
+
+        final String result = cell.toSql(NamingPolicy.NO_CHANGE);
+        assertNotNull(result);
+        // The operator should render as the literal "null" placeholder.
+        assertTrue(result.contains("null"));
+
+        // Also verify the no-arg toString() variant and a null NamingPolicy both work.
+        assertNotNull(cell.toString());
+        assertNotNull(cell.toSql(null));
+    }
+
+    @Test
+    void testEquals() {
+        final TestComposableCell left = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
+        final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
+
+        assertEquals(left, right);
+    }
+
+    @Test
+    void testEquals_DifferentCondition() {
+        final TestComposableCell left = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
+        final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "INACTIVE"));
+
+        assertNotEquals(left, right);
+    }
+
+    @Test
+    void testGetCondition() {
         final Equal wrapped = Filters.eq("status", "ACTIVE");
         final TestComposableCell cell = new TestComposableCell(Operator.NOT, wrapped);
 
@@ -43,24 +75,7 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
-    public void testParameters() {
-        final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.between("age", 18, 65));
-
-        assertEquals(Arrays.asList(18, 65), cell.parameters());
-    }
-
-    @Test
-    public void testToString() {
-        final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.eq("userName", "ACTIVE"));
-
-        final String sql = cell.toSql(NamingPolicy.SNAKE_CASE);
-
-        assertTrue(sql.contains("NOT"));
-        assertTrue(sql.contains("user_name"));
-    }
-
-    @Test
-    public void testHashCode() {
+    void testHashCode() {
         final TestComposableCell left = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
         final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
 
@@ -68,7 +83,15 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
-    public void testHashCodeTracksMutableValueInWrappedCondition() {
+    void testHashCode_DifferentCondition() {
+        final TestComposableCell left = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
+        final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "INACTIVE"));
+
+        assertNotEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    void testHashCodeTracksMutableValueInWrappedCondition() {
         // The wrapped Binary snapshots the array at construction, so external mutation must not leak into
         // the cell's rendering, equality, or hash code.
         final byte[] value = { 1 };
@@ -89,7 +112,14 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
-    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
+    void testParameters() {
+        final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.between("age", 18, 65));
+
+        assertEquals(Arrays.asList(18, 65), cell.parameters());
+    }
+
+    @Test
+    void testParametersArrayCopyIsNotSharedAcrossCalls() {
         // ComposableCell.parameters() is not memoized: each call must hand out the wrapped condition's fresh defensive copy.
         final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.eq("payload", new byte[] { 1 }));
 
@@ -101,60 +131,30 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
-    public void testHashCode_DifferentCondition() {
-        final TestComposableCell left = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
-        final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "INACTIVE"));
-
-        assertNotEquals(left.hashCode(), right.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        final TestComposableCell left = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
-        final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
-
-        assertEquals(left, right);
-    }
-
-    @Test
-    public void testEquals_DifferentCondition() {
-        final TestComposableCell left = new TestComposableCell(Operator.NOT, Filters.eq("status", "ACTIVE"));
-        final TestComposableCell right = new TestComposableCell(Operator.NOT, Filters.eq("status", "INACTIVE"));
-
-        assertNotEquals(left, right);
-    }
-
-    @Test
-    public void testDefaultConstructor_EmptyState_Batch2() {
-        final EmptyComposableCell left = new EmptyComposableCell();
-        final EmptyComposableCell right = new EmptyComposableCell();
-
-        assertTrue(left.condition() == null);
-        assertTrue(left.parameters().isEmpty());
-        assertEquals(left, right);
-        assertEquals(left.hashCode(), right.hashCode());
-    }
-
-    @Test
-    public void testDefaultConstructorToString_NullOperator() {
-        // A ComposableCell created via the package-private default constructor has a
-        // null operator (mirrors Kryo deserialization of partially-populated state).
-        // Calling toString() must not NPE.
-        final EmptyComposableCell cell = new EmptyComposableCell();
-
-        final String result = cell.toSql(NamingPolicy.NO_CHANGE);
-        assertNotNull(result);
-        // The operator should render as the literal "null" placeholder.
-        assertTrue(result.contains("null"));
-
-        // Also verify the no-arg toString() variant and a null NamingPolicy both work.
-        assertNotNull(cell.toString());
-        assertNotNull(cell.toSql(null));
-    }
-
-    @Test
-    public void testQuantifiedOperatorRequiresSubQuery() {
+    void testQuantifiedOperatorRequiresSubQuery() {
         // A quantified operator (ANY/ALL/SOME) must wrap a SubQuery; any other condition is rejected.
         assertThrows(IllegalArgumentException.class, () -> new TestComposableCell(Operator.ANY, Filters.eq("a", 1)));
+    }
+
+    @Test
+    void testToString() {
+        final TestComposableCell cell = new TestComposableCell(Operator.NOT, Filters.eq("userName", "ACTIVE"));
+
+        final String sql = cell.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertTrue(sql.contains("NOT"));
+        assertTrue(sql.contains("user_name"));
+    }
+
+    private static final class TestComposableCell extends ComposableCell {
+        TestComposableCell(final Operator operator, final Condition condition) {
+            super(operator, condition);
+        }
+    }
+
+    private static final class EmptyComposableCell extends ComposableCell {
+        EmptyComposableCell() {
+            super();
+        }
     }
 }

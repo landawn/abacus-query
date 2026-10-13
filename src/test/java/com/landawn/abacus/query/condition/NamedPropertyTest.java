@@ -1,6 +1,7 @@
 package com.landawn.abacus.query.condition;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -22,8 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -33,10 +32,377 @@ import com.landawn.abacus.query.Filters;
  * Comprehensive test class for NamedProperty.
  * Tests all public methods including factory method, condition creation methods, and utilities.
  */
-@Tag("2025")
 public class NamedPropertyTest extends TestBase {
+
     @Test
-    public void testConstructorWithPropertyName() {
+    void test2ndPass_betweenRangeOrderPreserved() {
+        // NamedProperty.between(min, max) must forward min and max in that order.
+        NamedProperty p = NamedProperty.of("age");
+        Between b = p.between(18, 65);
+        assertEquals(Integer.valueOf(18), b.minValue());
+        assertEquals(Integer.valueOf(65), b.maxValue());
+    }
+
+    @Test
+    void test2ndPass_cacheKeysCaseSensitive() {
+        // Cache MUST treat property names case-sensitively (avoid wrong matching).
+        NamedProperty lower = NamedProperty.of("CaseTest_zzz");
+        NamedProperty upper = NamedProperty.of("casetest_zzz");
+        // They should be distinct instances and not equal.
+        assertNotSame(lower, upper);
+        assertNotEquals(lower, upper);
+    }
+
+    @Test
+    void test2ndPass_cacheKeysWhitespaceSensitive() {
+        // " foo" vs "foo" must NOT match in the cache.
+        NamedProperty noSpace = NamedProperty.of("zzz_uniq");
+        NamedProperty leadSpace = NamedProperty.of(" zzz_uniq");
+        assertNotSame(noSpace, leadSpace);
+        assertNotEquals(noSpace, leadSpace);
+    }
+
+    @Test
+    void test2ndPass_constructorBypassesCache_butEqualityHolds() {
+        // public constructor bypasses cache; pool only used through of().
+        NamedProperty viaCtor = new NamedProperty("uncached_prop_xyz");
+        NamedProperty viaOf = NamedProperty.of("uncached_prop_xyz");
+        // Not necessarily same instance (one constructed directly)
+        // But should still be equal (value-equality).
+        assertEquals(viaCtor, viaOf);
+        assertEquals(viaCtor.hashCode(), viaOf.hashCode());
+    }
+
+    // --- 2nd-pass review verification tests ---
+
+    @Test
+    void test2ndPass_eachComparatorMapsToCorrectOperator() {
+        // Verify NO copy/paste bug in operator mapping for any comparator method.
+        NamedProperty p = NamedProperty.of("col");
+        assertEquals(Operator.EQUAL, p.equal(1).operator());
+        assertEquals(Operator.EQUAL, p.eq(1).operator());
+        assertEquals(Operator.NOT_EQUAL, p.notEqual(1).operator());
+        assertEquals(Operator.NOT_EQUAL, p.ne(1).operator());
+        assertEquals(Operator.GREATER_THAN, p.greaterThan(1).operator());
+        assertEquals(Operator.GREATER_THAN, p.gt(1).operator());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, p.greaterThanOrEqual(1).operator());
+        assertEquals(Operator.GREATER_THAN_OR_EQUAL, p.ge(1).operator());
+        assertEquals(Operator.LESS_THAN, p.lessThan(1).operator());
+        assertEquals(Operator.LESS_THAN, p.lt(1).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, p.lessThanOrEqual(1).operator());
+        assertEquals(Operator.LESS_THAN_OR_EQUAL, p.le(1).operator());
+    }
+
+    @Test
+    void test2ndPass_equalsAnyArrayWithNullValues_throwsIAE_orHandlesGracefully() {
+        // equalsAny(null) - explicit null array
+        NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((Object[]) null));
+    }
+
+    @Test
+    void test2ndPass_equalWithNull_rendersIsNull() {
+        // CRITICAL: equal(null) MUST render as "col IS NULL" not "col = NULL"
+        NamedProperty p = NamedProperty.of("col");
+        Equal eq = p.equal(null);
+        assertTrue(eq.toString().contains("IS NULL"));
+        assertFalse(eq.toString().contains("= NULL"));
+    }
+
+    @Test
+    void test2ndPass_inEmptyArrayThrowsViaAbstractInCheck() {
+        // Filters.in -> new In which checks notEmpty
+        NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.in(new int[] {}));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new long[] {}));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new double[] {}));
+        assertThrows(IllegalArgumentException.class, () -> p.in(java.util.Collections.emptyList()));
+    }
+
+    @Test
+    void test2ndPass_likeWildcardsAreCorrectlyPlaced() {
+        NamedProperty p = NamedProperty.of("col");
+        assertEquals("foo%", p.startsWith("foo").propValue());
+        assertEquals("%foo", p.endsWith("foo").propValue());
+        assertEquals("%foo%", p.contains("foo").propValue());
+        assertEquals("foo%", p.notStartsWith("foo").propValue());
+        assertEquals("%foo", p.notEndsWith("foo").propValue());
+        assertEquals("%foo%", p.notContains("foo").propValue());
+    }
+
+    @Test
+    void test2ndPass_returnedConditionsAreFresh_notCached() {
+        // After np.equal("x"), the returned Equal must be a fresh instance,
+        // not a shared/cached one (otherwise a caller mutating it would break others).
+        NamedProperty p = NamedProperty.of("col");
+        Equal e1 = p.equal("x");
+        Equal e2 = p.equal("x");
+        assertNotSame(e1, e2, "Each equal() call must return a fresh Equal instance");
+        // But they should be value-equal:
+        assertEquals(e1, e2);
+    }
+
+    @Test
+    void testAnyEqual_DoubleArray() {
+        final NamedProperty property = NamedProperty.of("rate");
+        final Or condition = property.equalsAny(new double[] { 1.5, 2.0, 2.5 });
+
+        assertNotNull(condition);
+        assertEquals(3, condition.conditions().size());
+        assertEquals(Double.valueOf(1.5), ((Equal) condition.conditions().get(0)).propValue());
+        assertEquals(Double.valueOf(2.0), ((Equal) condition.conditions().get(1)).propValue());
+        assertEquals(Double.valueOf(2.5), ((Equal) condition.conditions().get(2)).propValue());
+    }
+
+    @Test
+    void testAnyEqual_DoubleArray_Empty() {
+        final NamedProperty property = NamedProperty.of("score");
+
+        assertThrows(IllegalArgumentException.class, () -> property.equalsAny(new double[0]));
+    }
+
+    @Test
+    void testAnyEqual_DoubleArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("score");
+        final Or condition = property.equalsAny(new double[] { 99.9 });
+
+        assertEquals(1, condition.conditions().size());
+    }
+
+    @Test
+    void testAnyEqual_LongArray() {
+        final NamedProperty property = NamedProperty.of("user_id");
+        final Or condition = property.equalsAny(new long[] { 1001L, 1002L, 1003L });
+
+        assertNotNull(condition);
+        assertEquals(3, condition.conditions().size());
+        assertEquals(Long.valueOf(1001L), ((Equal) condition.conditions().get(0)).propValue());
+        assertEquals(Long.valueOf(1002L), ((Equal) condition.conditions().get(1)).propValue());
+        assertEquals(Long.valueOf(1003L), ((Equal) condition.conditions().get(2)).propValue());
+    }
+
+    @Test
+    void testAnyEqual_LongArray_Empty() {
+        final NamedProperty property = NamedProperty.of("id");
+
+        assertThrows(IllegalArgumentException.class, () -> property.equalsAny(new long[0]));
+    }
+
+    @Test
+    void testAnyEqual_LongArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("id");
+        final Or condition = property.equalsAny(new long[] { 42L });
+
+        assertEquals(1, condition.conditions().size());
+    }
+
+    @Test
+    void testAnyEqualWithArray() {
+        NamedProperty prop = NamedProperty.of("color");
+        Or condition = prop.equalsAny("red", "green", "blue");
+
+        assertEquals(3, condition.conditions().size());
+    }
+
+    @Test
+    void testAnyEqualWithCollection() {
+        NamedProperty np = NamedProperty.of("city");
+        List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
+
+        Or or = np.equalsAny(cities);
+
+        assertNotNull(or);
+        assertEquals(3, or.conditions().size());
+    }
+
+    @Test
+    void testAnyEqualWithEmptyArray() {
+        NamedProperty prop = NamedProperty.of("city");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            prop.equalsAny();
+        });
+    }
+
+    @Test
+    void testAnyEqualWithEmptyCollection() {
+        NamedProperty status = NamedProperty.of("status");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            status.equalsAny(Arrays.asList());
+        });
+    }
+
+    @Test
+    void testAnyEqualWithPrimitiveArray() {
+        NamedProperty prop = NamedProperty.of("priority");
+        Or condition = prop.equalsAny(new int[] { 1, 2, 3 });
+
+        assertEquals(3, condition.conditions().size());
+        assertEquals(Integer.valueOf(1), ((Equal) condition.conditions().get(0)).propValue());
+    }
+
+    @Test
+    void testAnyEqualWithSingleValue() {
+        NamedProperty status = NamedProperty.of("status");
+
+        Or or = status.equalsAny("active");
+
+        assertNotNull(or);
+        assertEquals(1, or.conditions().size());
+    }
+
+    @Test
+    void testAnyEqualWithVarargs() {
+        NamedProperty np = NamedProperty.of("color");
+        Or or = np.equalsAny("red", "green", "blue");
+
+        assertNotNull(or);
+        assertEquals(3, or.conditions().size());
+    }
+
+    @Test
+    void testBetween() {
+        NamedProperty np = NamedProperty.of("age");
+        Between between = np.between(18, 65);
+
+        assertNotNull(between);
+        assertEquals("age", between.propName());
+        assertEquals(18, (Integer) between.minValue());
+        assertEquals(65, (Integer) between.maxValue());
+    }
+
+    @Test
+    void testBetween_nullBound_throwsIAE() {
+        NamedProperty p = NamedProperty.of("age");
+        assertThrows(IllegalArgumentException.class, () -> p.between(null, 65));
+        assertThrows(IllegalArgumentException.class, () -> p.between(18, null));
+        assertThrows(IllegalArgumentException.class, () -> p.notBetween(null, 65));
+        assertThrows(IllegalArgumentException.class, () -> p.notBetween(18, null));
+        assertThrows(IllegalArgumentException.class, () -> p.between(Filters.expr(" "), 65));
+        assertThrows(IllegalArgumentException.class, () -> p.notBetween(18, Filters.eq("x", 1)));
+        assertEquals("age BETWEEN 18 AND 65", p.between(18, 65).toString());
+    }
+
+    @Test
+    void testBetweenWithStrings() {
+        NamedProperty code = NamedProperty.of("code");
+
+        Between between = code.between("A", "Z");
+
+        assertNotNull(between);
+        assertEquals("code", between.propName());
+        assertEquals("A", between.minValue());
+        assertEquals("Z", between.maxValue());
+    }
+
+    @Test
+    void testChainedConditions() {
+        NamedProperty age = NamedProperty.of("age");
+
+        Equal eq = age.eq(25);
+        GreaterThan gt = age.gt(18);
+        Between between = age.between(20, 30);
+
+        assertNotNull(eq);
+        assertNotNull(gt);
+        assertNotNull(between);
+    }
+
+    @Test
+    void testComparison_nullValue_throwsIAE() {
+        NamedProperty p = NamedProperty.of("age");
+        assertThrows(IllegalArgumentException.class, () -> p.greaterThan(null));
+        assertThrows(IllegalArgumentException.class, () -> p.gt(null));
+        assertThrows(IllegalArgumentException.class, () -> p.greaterThanOrEqual(null));
+        assertThrows(IllegalArgumentException.class, () -> p.ge(null));
+        assertThrows(IllegalArgumentException.class, () -> p.lessThan(null));
+        assertThrows(IllegalArgumentException.class, () -> p.lt(null));
+        assertThrows(IllegalArgumentException.class, () -> p.lessThanOrEqual(null));
+        assertThrows(IllegalArgumentException.class, () -> p.le(null));
+        assertThrows(IllegalArgumentException.class, () -> p.gt(Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> p.lt(Filters.eq("x", 1)));
+        assertThrows(IllegalArgumentException.class, () -> p.eq(Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> p.ne(Filters.eq("x", 1)));
+        // the equality operators accept null and render it as IS [NOT] NULL instead of throwing
+        assertEquals("age IS NULL", p.eq(null).toString());
+        assertEquals("age IS NOT NULL", p.ne(null).toString());
+    }
+
+    @Test
+    void testComparisonOperators() {
+        NamedProperty value = NamedProperty.of("value");
+
+        Equal eq = value.eq(100);
+        NotEqual ne = value.ne(0);
+        GreaterThan gt = value.gt(50);
+        GreaterThanOrEqual ge = value.ge(50);
+        LessThan lt = value.lt(150);
+        LessThanOrEqual le = value.le(150);
+
+        assertNotNull(eq);
+        assertNotNull(ne);
+        assertNotNull(gt);
+        assertNotNull(ge);
+        assertNotNull(lt);
+        assertNotNull(le);
+    }
+
+    @Test
+    void testComplexAnyEqualWithMixedTypes() {
+        NamedProperty type = NamedProperty.of("type");
+
+        Or or = type.equalsAny("A", "B", "C", "D");
+
+        assertEquals(4, or.conditions().size());
+    }
+
+    @Test
+    void testComplexUsageWithOr() {
+        NamedProperty priority = NamedProperty.of("priority");
+
+        Or or = priority.equalsAny(1, 2, 3, 4, 5);
+
+        assertEquals(5, or.conditions().size());
+    }
+
+    @Test
+    void testConstructor() {
+        NamedProperty prop = new NamedProperty("testProperty");
+        assertEquals("testProperty", prop.toString());
+    }
+
+    @Test
+    void testConstructorAndFactoryRejectBlankPropertyName() {
+        assertThrows(IllegalArgumentException.class, () -> new NamedProperty("   "));
+        assertThrows(IllegalArgumentException.class, () -> NamedProperty.of("   "));
+    }
+
+    @Test
+    void testConstructorWithCamelCase() {
+        NamedProperty np = new NamedProperty("firstName");
+
+        assertEquals("firstName", np.propName());
+    }
+
+    @Test
+    void testConstructorWithEmptyString() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NamedProperty("");
+        });
+    }
+
+    @Test
+    void testConstructorWithNullThrowsIAE() {
+        // Constructor rejects null with IllegalArgumentException, consistent with of(null) and the
+        // rest of the name-validation surface (previously threw NullPointerException).
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NamedProperty(null);
+        });
+    }
+
+    @Test
+    void testConstructorWithPropertyName() {
         NamedProperty np = new NamedProperty("age");
 
         assertNotNull(np);
@@ -44,7 +410,677 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testOfMethod() {
+    void testConstructorWithUnderscore() {
+        NamedProperty np = new NamedProperty("first_name");
+
+        assertEquals("first_name", np.propName());
+    }
+
+    @Test
+    void testContains() {
+        NamedProperty np = NamedProperty.of("description");
+        Like contains = np.contains("important");
+
+        assertNotNull(contains);
+        assertEquals("description", contains.propName());
+        String value = contains.propValue().toString();
+        assertTrue(value.startsWith("%"));
+        assertTrue(value.endsWith("%"));
+    }
+
+    @Test
+    void testEndsWith() {
+        NamedProperty np = NamedProperty.of("filename");
+        Like endsWith = np.endsWith(".pdf");
+
+        assertNotNull(endsWith);
+        assertEquals("filename", endsWith.propName());
+        assertTrue(endsWith.propValue().toString().startsWith("%"));
+    }
+
+    @Test
+    void testEq() {
+        NamedProperty np = NamedProperty.of("status");
+        Equal equal = np.eq("active");
+
+        assertNotNull(equal);
+        assertEquals("status", equal.propName());
+        assertEquals("active", equal.propValue());
+    }
+
+    @Test
+    void testEqual() {
+        NamedProperty np = NamedProperty.of("status");
+        Equal equal = np.equal("active");
+
+        assertNotNull(equal);
+        assertEquals("status", equal.propName());
+        assertEquals("active", equal.propValue());
+    }
+
+    @Test
+    void testEquals() {
+        NamedProperty np1 = NamedProperty.of("status");
+        NamedProperty np2 = NamedProperty.of("status");
+
+        assertEquals(np1, np2);
+    }
+
+    @Test
+    void testEqualsAny_AllPrimitiveArrayTypes() {
+        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to equalsAny(Object...)
+        // as a SINGLE element, producing a one-branch OR over a quoted string literal.
+        assertEquals("((active = true) OR (active = false))", NamedProperty.of("active").equalsAny(new boolean[] { true, false }).toString());
+        assertEquals("((grade = 'A') OR (grade = 'B') OR (grade = 'C'))", NamedProperty.of("grade").equalsAny(new char[] { 'A', 'B', 'C' }).toString());
+        assertEquals("((flag = 0) OR (flag = 1) OR (flag = 2))", NamedProperty.of("flag").equalsAny(new byte[] { 0, 1, 2 }).toString());
+        assertEquals("((level = 1) OR (level = 2) OR (level = 3))", NamedProperty.of("level").equalsAny(new short[] { 1, 2, 3 }).toString());
+        assertEquals("((ratio = 0.25) OR (ratio = 0.5) OR (ratio = 0.75))", NamedProperty.of("ratio").equalsAny(new float[] { 0.25f, 0.5f, 0.75f }).toString());
+
+        // One OR branch per array element, each carrying the boxed primitive value.
+        final Or byteOr = NamedProperty.of("flag").equalsAny(new byte[] { 0, 1, 2 });
+        assertEquals(3, byteOr.conditions().size());
+        assertEquals(Byte.valueOf((byte) 0), ((Equal) byteOr.conditions().get(0)).propValue());
+        assertEquals(Byte.valueOf((byte) 2), ((Equal) byteOr.conditions().get(2)).propValue());
+
+        final Or charOr = NamedProperty.of("grade").equalsAny(new char[] { 'A', 'B', 'C' });
+        assertEquals(3, charOr.conditions().size());
+        assertEquals(Character.valueOf('A'), ((Equal) charOr.conditions().get(0)).propValue());
+
+        final NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((boolean[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new boolean[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((char[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new char[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((byte[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new byte[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((short[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new short[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((float[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new float[0]));
+    }
+
+    @Test
+    void testEqualsAnyAndNotInWithObjectTypedLoneCollectionUnpackValues() {
+        // Regression: a collection statically typed Object selected equalsAny(Object...) and became ONE comparison against
+        // the whole list ("((id = '[1, 2]'))"), unlike Filters.in(String, Object...).
+        final NamedProperty id = NamedProperty.of("id");
+
+        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) Arrays.asList(1, 2)).toString());
+        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) new int[] { 1, 2 }).toString());
+        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) new Integer[] { 1, 2 }).toString());
+        assertEquals(id.equalsAny(Arrays.asList(1, 2)), id.equalsAny((Object) Arrays.asList(1, 2)));
+        assertEquals("id NOT IN (1, 2)", id.notIn((Object) Arrays.asList(1, 2)).toString());
+        assertEquals("id IN (1, 2)", id.in((Object) new long[] { 1L, 2L }).toString());
+
+        // A lone null element behaves as in equalsAny(Collection): eq(p, null) renders IS NULL.
+        assertEquals("((id = 1) OR (id IS NULL))", id.equalsAny((Object) Arrays.asList(1, null)).toString());
+
+        // An empty lone collection or array is an empty value list.
+        assertThrows(IllegalArgumentException.class, () -> id.equalsAny((Object) Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> id.equalsAny((Object) new int[0]));
+        assertThrows(IllegalArgumentException.class, () -> id.notIn((Object) Collections.emptyList()));
+
+        // Unchanged: a lone byte[] is one (binary) value, and several collection arguments are several values.
+        assertEquals(1, id.equalsAny((Object) new byte[] { 1, 2 }).conditions().size());
+        assertEquals("((id = '[1]') OR (id = '[2]'))", id.equalsAny(Arrays.asList(1), Arrays.asList(2)).toString());
+    }
+
+    @Test
+    void testEqualsAnyRejectsCollectionThatBecomesEmptyDuringIteration() {
+        Collection<Object> unstableValues = new AbstractCollection<>() {
+            @Override
+            public Iterator<Object> iterator() {
+                return Collections.emptyIterator();
+            }
+
+            @Override
+            public int size() {
+                return 1;
+            }
+        };
+
+        assertThrows(IllegalArgumentException.class, () -> NamedProperty.of("status").equalsAny(unstableValues));
+    }
+
+    @Test
+    void testEqualsDifferentProperty() {
+        NamedProperty np1 = NamedProperty.of("age");
+        NamedProperty np2 = NamedProperty.of("name");
+
+        assertNotEquals(np1, np2);
+    }
+
+    @Test
+    void testEqualsDifferentType() {
+        NamedProperty np = NamedProperty.of("test");
+
+        assertNotEquals(np, "not a named property");
+    }
+
+    @Test
+    void testEqualsNull() {
+        NamedProperty np = NamedProperty.of("test");
+
+        assertNotEquals(np, null);
+    }
+
+    @Test
+    void testEqualsSameInstance() {
+        NamedProperty np = NamedProperty.of("test");
+
+        assertEquals(np, np);
+    }
+
+    @Test
+    void testEqWithNumber() {
+        NamedProperty np = NamedProperty.of("count");
+        Equal equal = np.eq(5);
+
+        assertEquals("count", equal.propName());
+        assertEquals(5, (Integer) equal.propValue());
+    }
+
+    @Test
+    void testGe() {
+        NamedProperty np = NamedProperty.of("score");
+        GreaterThanOrEqual ge = np.ge(60);
+
+        assertNotNull(ge);
+        assertEquals("score", ge.propName());
+        assertEquals(60, (Integer) ge.propValue());
+    }
+
+    @Test
+    void testGreaterThan() {
+        final NamedProperty property = NamedProperty.of("age");
+        final GreaterThan condition = property.greaterThan(18);
+
+        assertEquals("age", condition.propName());
+        assertEquals(Integer.valueOf(18), condition.propValue());
+    }
+
+    @Test
+    void testGreaterThanOrEqual() {
+        final NamedProperty property = NamedProperty.of("score");
+        final GreaterThanOrEqual condition = property.greaterThanOrEqual(60);
+
+        assertEquals("score", condition.propName());
+        assertEquals(Integer.valueOf(60), condition.propValue());
+    }
+
+    @Test
+    void testGt() {
+        NamedProperty np = NamedProperty.of("age");
+        GreaterThan gt = np.gt(18);
+
+        assertNotNull(gt);
+        assertEquals("age", gt.propName());
+        assertEquals(18, (Integer) gt.propValue());
+    }
+
+    @Test
+    void testHashCode() {
+        NamedProperty np1 = NamedProperty.of("age");
+        NamedProperty np2 = NamedProperty.of("age");
+
+        assertEquals(np1.hashCode(), np2.hashCode());
+    }
+
+    @Test
+    void testHashCodeDifferent() {
+        NamedProperty np1 = NamedProperty.of("age");
+        NamedProperty np2 = NamedProperty.of("name");
+
+        assertNotEquals(np1.hashCode(), np2.hashCode());
+    }
+
+    @Test
+    void testIn_AllPrimitiveArrayTypes() {
+        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to in(Object...)
+        // as a SINGLE element and render as one quoted string literal, e.g. "col IN ('[1, 2]')".
+        assertEquals("active IN (true, false)", NamedProperty.of("active").in(new boolean[] { true, false }).toString());
+        assertEquals("grade IN ('A', 'B', 'C')", NamedProperty.of("grade").in(new char[] { 'A', 'B', 'C' }).toString());
+        assertEquals("flag IN (0, 1, 2)", NamedProperty.of("flag").in(new byte[] { 0, 1, 2 }).toString());
+        assertEquals("level IN (1, 2, 3)", NamedProperty.of("level").in(new short[] { 1, 2, 3 }).toString());
+        assertEquals("ratio IN (0.25, 0.5, 0.75)", NamedProperty.of("ratio").in(new float[] { 0.25f, 0.5f, 0.75f }).toString());
+
+        // Parity with the Filters counterparts.
+        assertEquals(Filters.in("active", new boolean[] { true, false }), NamedProperty.of("active").in(new boolean[] { true, false }));
+        assertEquals(Filters.in("grade", new char[] { 'A', 'B' }), NamedProperty.of("grade").in(new char[] { 'A', 'B' }));
+        assertEquals(Filters.in("flag", new byte[] { 0, 1 }), NamedProperty.of("flag").in(new byte[] { 0, 1 }));
+        assertEquals(Filters.in("level", new short[] { 1, 2 }), NamedProperty.of("level").in(new short[] { 1, 2 }));
+        assertEquals(Filters.in("ratio", new float[] { 0.5f, 1.5f }), NamedProperty.of("ratio").in(new float[] { 0.5f, 1.5f }));
+
+        final NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.in((boolean[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new boolean[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.in((char[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new char[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.in((byte[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new byte[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.in((short[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new short[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.in((float[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(new float[0]));
+    }
+
+    @Test
+    void testIn_DoubleArray() {
+        final NamedProperty property = NamedProperty.of("rate");
+        final In condition = property.in(new double[] { 1.5, 2.0, 2.5 });
+
+        assertNotNull(condition);
+        assertEquals("rate", condition.propName());
+        assertEquals(3, condition.values().size());
+    }
+
+    @Test
+    void testIn_DoubleArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("score");
+        final In condition = property.in(new double[] { 99.9 });
+
+        assertEquals(1, condition.values().size());
+    }
+
+    @Test
+    void testIn_LongArray() {
+        final NamedProperty property = NamedProperty.of("user_id");
+        final In condition = property.in(new long[] { 1001L, 1002L, 1003L });
+
+        assertNotNull(condition);
+        assertEquals("user_id", condition.propName());
+        assertEquals(3, condition.values().size());
+    }
+
+    @Test
+    void testIn_LongArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("id");
+        final In condition = property.in(new long[] { 42L });
+
+        assertEquals(1, condition.values().size());
+    }
+
+    @Test
+    void testIn_nullOrPredicateElement_throwsIAE() {
+        NamedProperty p = NamedProperty.of("status");
+        assertThrows(IllegalArgumentException.class, () -> p.in("a", null));
+        assertThrows(IllegalArgumentException.class, () -> p.in(Arrays.asList("a", null)));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn("a", null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(Arrays.asList("a", null)));
+        assertThrows(IllegalArgumentException.class, () -> p.in("a", Filters.eq("x", 1)));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(Arrays.asList("a", Filters.eq("x", 1))));
+        assertThrows(IllegalArgumentException.class, () -> p.in("a", Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn("a", Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny("a", Filters.eq("x", 1)));
+        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(Arrays.asList("a", Filters.expr(" "))));
+        assertEquals("status IN ('a', 'b')", p.in("a", "b").toString());
+    }
+
+    @Test
+    void testInAndNotInWithSubQuery() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
+
+        InSubQuery inCondition = NamedProperty.of("user_id").in(subQuery);
+        assertEquals("user_id IN (SELECT id FROM active_users)", inCondition.toString());
+
+        NotInSubQuery notInCondition = NamedProperty.of("user_id").notIn(subQuery);
+        assertEquals("user_id NOT IN (SELECT id FROM active_users)", notInCondition.toString());
+    }
+
+    @Test
+    void testInWithArray() {
+        NamedProperty prop = NamedProperty.of("status");
+        In condition = prop.in("active", "pending", "approved");
+
+        assertEquals("status", condition.propName());
+        assertEquals(3, condition.values().size());
+    }
+
+    @Test
+    void testInWithCollection() {
+        NamedProperty np = NamedProperty.of("id");
+        Set<Integer> ids = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
+
+        In in = np.in(ids);
+
+        assertNotNull(in);
+        assertEquals("id", in.propName());
+        assertEquals(5, in.values().size());
+    }
+
+    @Test
+    void testInWithPrimitiveArray() {
+        NamedProperty prop = NamedProperty.of("id");
+        In condition = prop.in(new int[] { 1, 2, 3 });
+
+        assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
+    }
+
+    @Test
+    void testInWithSingleValue() {
+        NamedProperty id = NamedProperty.of("id");
+
+        In in = id.in(1);
+
+        assertNotNull(in);
+        assertEquals("id", in.propName());
+        assertEquals(1, in.values().size());
+    }
+
+    @Test
+    void testInWithVarargs() {
+        NamedProperty np = NamedProperty.of("status");
+        In in = np.in("active", "pending", "approved");
+
+        assertNotNull(in);
+        assertEquals("status", in.propName());
+        assertEquals(3, in.values().size());
+    }
+
+    @Test
+    void testIsNotNull() {
+        NamedProperty np = NamedProperty.of("email");
+        IsNotNull isNotNull = np.isNotNull();
+
+        assertNotNull(isNotNull);
+        assertEquals("email", isNotNull.propName());
+    }
+
+    @Test
+    void testIsNull() {
+        NamedProperty np = NamedProperty.of("deletedDate");
+        IsNull isNull = np.isNull();
+
+        assertNotNull(isNull);
+        assertEquals("deletedDate", isNull.propName());
+    }
+
+    @Test
+    void testLe() {
+        NamedProperty np = NamedProperty.of("quantity");
+        LessThanOrEqual le = np.le(10);
+
+        assertNotNull(le);
+        assertEquals("quantity", le.propName());
+        assertEquals(10, (Integer) le.propValue());
+    }
+
+    @Test
+    void testLessThan() {
+        final NamedProperty property = NamedProperty.of("price");
+        final LessThan condition = property.lessThan(100);
+
+        assertEquals("price", condition.propName());
+        assertEquals(Integer.valueOf(100), condition.propValue());
+    }
+
+    @Test
+    void testLessThanOrEqual() {
+        final NamedProperty property = NamedProperty.of("quantity");
+        final LessThanOrEqual condition = property.lessThanOrEqual(10);
+
+        assertEquals("quantity", condition.propName());
+        assertEquals(Integer.valueOf(10), condition.propValue());
+    }
+
+    @Test
+    void testLike() {
+        NamedProperty np = NamedProperty.of("name");
+        Like like = np.like("John%");
+
+        assertNotNull(like);
+        assertEquals("name", like.propName());
+        // Like extends Binary which has getValue()
+        assertEquals("John%", like.propValue());
+    }
+
+    // Removed: testBtDeprecatedMethod() - bt() method has been removed. Use between() instead.
+
+    @Test
+    void testLikePatterns() {
+        NamedProperty name = NamedProperty.of("name");
+
+        Like starts = name.startsWith("John");
+        Like ends = name.endsWith("Smith");
+        Like contains = name.contains("middle");
+        Like custom = name.like("J%n");
+
+        assertNotNull(starts);
+        assertNotNull(ends);
+        assertNotNull(contains);
+        assertNotNull(custom);
+    }
+
+    @Test
+    void testLt() {
+        NamedProperty np = NamedProperty.of("price");
+        LessThan lt = np.lt(100);
+
+        assertNotNull(lt);
+        assertEquals("price", lt.propName());
+        assertEquals(100, (Integer) lt.propValue());
+    }
+
+    @Test
+    void testMultipleNamedProperties() {
+        NamedProperty username = NamedProperty.of("username");
+        NamedProperty email = NamedProperty.of("email");
+        NamedProperty age = NamedProperty.of("age");
+
+        assertNotNull(username);
+        assertNotNull(email);
+        assertNotNull(age);
+
+        assertNotSame(username, email);
+        assertNotSame(email, age);
+    }
+
+    @Test
+    void testNaNAndInfinityFactories() {
+        NamedProperty prop = NamedProperty.of("ratio");
+
+        assertEquals("ratio IS NAN", prop.isNaN().toString());
+        assertEquals("ratio IS NOT NAN", prop.isNotNaN().toString());
+        assertEquals("ratio IS INFINITE", prop.isInfinite().toString());
+        assertEquals("ratio IS NOT INFINITE", prop.isNotInfinite().toString());
+    }
+
+    @Test
+    void testNe() {
+        NamedProperty np = NamedProperty.of("status");
+        NotEqual notEqual = np.ne("deleted");
+
+        assertNotNull(notEqual);
+        assertEquals("status", notEqual.propName());
+        assertEquals("deleted", notEqual.propValue());
+    }
+
+    @Test
+    void testNotBetween() {
+        final NamedProperty property = NamedProperty.of("age");
+        final NotBetween condition = property.notBetween(18, 65);
+
+        assertEquals("age", condition.propName());
+        assertEquals(Integer.valueOf(18), condition.minValue());
+        assertEquals(Integer.valueOf(65), condition.maxValue());
+    }
+
+    @Test
+    void testNotContains() {
+        final NamedProperty property = NamedProperty.of("description");
+        final NotLike condition = property.notContains("draft");
+
+        assertEquals("description", condition.propName());
+        assertEquals("%draft%", condition.propValue());
+    }
+
+    @Test
+    void testNotEndsWith() {
+        final NamedProperty property = NamedProperty.of("email");
+        final NotLike condition = property.notEndsWith("@temp.com");
+
+        assertEquals("email", condition.propName());
+        assertEquals("%@temp.com", condition.propValue());
+    }
+
+    @Test
+    void testNotEqual() {
+        final NamedProperty property = NamedProperty.of("status");
+        final NotEqual condition = property.notEqual("deleted");
+
+        assertEquals("status", condition.propName());
+        assertEquals("deleted", condition.propValue());
+    }
+
+    @Test
+    void testNotIn_AllPrimitiveArrayTypes() {
+        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to notIn(Object...)
+        // as a SINGLE element and render as one quoted string literal.
+        assertEquals("active NOT IN (false)", NamedProperty.of("active").notIn(new boolean[] { false }).toString());
+        assertEquals("grade NOT IN ('D', 'F')", NamedProperty.of("grade").notIn(new char[] { 'D', 'F' }).toString());
+        assertEquals("flag NOT IN (0, 1)", NamedProperty.of("flag").notIn(new byte[] { 0, 1 }).toString());
+        assertEquals("level NOT IN (0, 9)", NamedProperty.of("level").notIn(new short[] { 0, 9 }).toString());
+        assertEquals("ratio NOT IN (0.0, 1.0)", NamedProperty.of("ratio").notIn(new float[] { 0.0f, 1.0f }).toString());
+
+        // Parity with the Filters counterparts.
+        assertEquals(Filters.notIn("active", new boolean[] { false }), NamedProperty.of("active").notIn(new boolean[] { false }));
+        assertEquals(Filters.notIn("grade", new char[] { 'D', 'F' }), NamedProperty.of("grade").notIn(new char[] { 'D', 'F' }));
+        assertEquals(Filters.notIn("flag", new byte[] { 0, 1 }), NamedProperty.of("flag").notIn(new byte[] { 0, 1 }));
+        assertEquals(Filters.notIn("level", new short[] { 0, 9 }), NamedProperty.of("level").notIn(new short[] { 0, 9 }));
+        assertEquals(Filters.notIn("ratio", new float[] { 0.0f, 1.0f }), NamedProperty.of("ratio").notIn(new float[] { 0.0f, 1.0f }));
+
+        final NamedProperty p = NamedProperty.of("col");
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((boolean[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new boolean[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((char[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new char[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((byte[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new byte[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((short[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new short[0]));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn((float[]) null));
+        assertThrows(IllegalArgumentException.class, () -> p.notIn(new float[0]));
+    }
+
+    @Test
+    void testNotIn_Collection() {
+        final NamedProperty property = NamedProperty.of("department");
+        final NotIn condition = property.notIn(java.util.Arrays.asList("Temp", "Archived"));
+
+        assertNotNull(condition);
+        assertEquals("department", condition.propName());
+        assertEquals(2, condition.values().size());
+    }
+
+    @Test
+    void testNotIn_Collection_SingleElement() {
+        final NamedProperty property = NamedProperty.of("type");
+        final NotIn condition = property.notIn(java.util.Collections.singletonList("invalid"));
+
+        assertEquals(1, condition.values().size());
+    }
+
+    @Test
+    void testNotIn_DoubleArray() {
+        final NamedProperty property = NamedProperty.of("rate");
+        final NotIn condition = property.notIn(new double[] { 0.0, -1.0 });
+
+        assertNotNull(condition);
+        assertEquals("rate", condition.propName());
+        assertEquals(2, condition.values().size());
+    }
+
+    @Test
+    void testNotIn_DoubleArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("score");
+        final NotIn condition = property.notIn(new double[] { 0.0 });
+
+        assertEquals(1, condition.values().size());
+    }
+
+    @Test
+    void testNotIn_LongArray() {
+        final NamedProperty property = NamedProperty.of("user_id");
+        final NotIn condition = property.notIn(new long[] { 999L, 1000L });
+
+        assertNotNull(condition);
+        assertEquals("user_id", condition.propName());
+        assertEquals(2, condition.values().size());
+    }
+
+    @Test
+    void testNotIn_LongArray_SingleElement() {
+        final NamedProperty property = NamedProperty.of("id");
+        final NotIn condition = property.notIn(new long[] { 42L });
+
+        assertEquals(1, condition.values().size());
+    }
+
+    @Test
+    void testNotIn_ObjectVarargs() {
+        final NamedProperty property = NamedProperty.of("status");
+        final NotIn condition = property.notIn("deleted", "archived");
+
+        assertNotNull(condition);
+        assertEquals("status", condition.propName());
+        assertEquals(2, condition.values().size());
+    }
+
+    @Test
+    void testNotIn_ObjectVarargs_SingleValue() {
+        final NamedProperty property = NamedProperty.of("type");
+        final NotIn condition = property.notIn("invalid");
+
+        assertEquals(1, condition.values().size());
+    }
+
+    @Test
+    void testNotInWithPrimitiveArray() {
+        NamedProperty prop = NamedProperty.of("id");
+        NotIn condition = prop.notIn(new int[] { 4, 5, 6 });
+
+        assertEquals(Arrays.asList(4, 5, 6), condition.parameters());
+    }
+
+    @Test
+    void testNotLike() {
+        NamedProperty np = NamedProperty.of("email");
+        NotLike notLike = np.notLike("%@temp.com");
+
+        assertNotNull(notLike);
+        assertEquals("email", notLike.propName());
+        // NotLike extends Binary which has getValue()
+        assertEquals("%@temp.com", notLike.propValue());
+    }
+
+    @Test
+    void testNotStartsWith() {
+        final NamedProperty property = NamedProperty.of("code");
+        final NotLike condition = property.notStartsWith("TMP");
+
+        assertEquals("code", condition.propName());
+        assertEquals("TMP%", condition.propValue());
+    }
+
+    @Test
+    void testNullChecks() {
+        NamedProperty field = NamedProperty.of("optionalField");
+
+        IsNull isNull = field.isNull();
+        IsNotNull isNotNull = field.isNotNull();
+
+        assertNotNull(isNull);
+        assertNotNull(isNotNull);
+    }
+
+    @Test
+    void testNullEmptySymmetry() {
+        assertEquals(Filters.isNullOrEmpty("name"), NamedProperty.of("name").isNullOrEmpty());
+        assertEquals(Filters.isNotNullAndNotEmpty("name"), NamedProperty.of("name").isNotNullAndNotEmpty());
+    }
+
+    @Test
+    void testOfMethod() {
         NamedProperty np = NamedProperty.of("username");
 
         assertNotNull(np);
@@ -52,7 +1088,7 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testOfMethodCaching() {
+    void testOfMethodCaching() {
         NamedProperty np1 = NamedProperty.of("age");
         NamedProperty np2 = NamedProperty.of("age");
 
@@ -60,7 +1096,7 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testOfMethodCachingIsAtomicDuringConcurrentFirstAccess() throws Exception {
+    void testOfMethodCachingIsAtomicDuringConcurrentFirstAccess() throws Exception {
         final int threadCount = 24;
         final String propName = "concurrentProperty" + System.nanoTime();
         final ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -95,187 +1131,35 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testOfMethodWithNullThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            NamedProperty.of(null);
-        });
+    void testOfMethodWithComplexName() {
+        NamedProperty np = NamedProperty.of("user.address.city");
+
+        assertEquals("user.address.city", np.propName());
     }
 
     @Test
-    public void testConstructorWithNullThrowsIAE() {
-        // Constructor rejects null with IllegalArgumentException, consistent with of(null) and the
-        // rest of the name-validation surface (previously threw NullPointerException).
-        assertThrows(IllegalArgumentException.class, () -> {
-            new NamedProperty(null);
-        });
-    }
-
-    @Test
-    public void testOfMethodWithEmptyStringThrowsException() {
+    void testOfMethodWithEmptyStringThrowsException() {
         assertThrows(IllegalArgumentException.class, () -> {
             NamedProperty.of("");
         });
     }
 
     @Test
-    public void testPropName() {
+    void testOfMethodWithNullThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            NamedProperty.of(null);
+        });
+    }
+
+    @Test
+    void testPropName() {
         NamedProperty np = NamedProperty.of("email");
 
         assertEquals("email", np.propName());
     }
 
     @Test
-    public void testEqual() {
-        NamedProperty np = NamedProperty.of("status");
-        Equal equal = np.equal("active");
-
-        assertNotNull(equal);
-        assertEquals("status", equal.propName());
-        assertEquals("active", equal.propValue());
-    }
-
-    @Test
-    public void testEq() {
-        NamedProperty np = NamedProperty.of("status");
-        Equal equal = np.eq("active");
-
-        assertNotNull(equal);
-        assertEquals("status", equal.propName());
-        assertEquals("active", equal.propValue());
-    }
-
-    @Test
-    public void testEqWithNumber() {
-        NamedProperty np = NamedProperty.of("count");
-        Equal equal = np.eq(5);
-
-        assertEquals("count", equal.propName());
-        assertEquals(5, (Integer) equal.propValue());
-    }
-
-    @Test
-    public void testAnyEqualWithVarargs() {
-        NamedProperty np = NamedProperty.of("color");
-        Or or = np.equalsAny("red", "green", "blue");
-
-        assertNotNull(or);
-        assertEquals(3, or.conditions().size());
-    }
-
-    @Test
-    public void testAnyEqualWithCollection() {
-        NamedProperty np = NamedProperty.of("city");
-        List<String> cities = Arrays.asList("New York", "Los Angeles", "Chicago");
-
-        Or or = np.equalsAny(cities);
-
-        assertNotNull(or);
-        assertEquals(3, or.conditions().size());
-    }
-
-    @Test
-    public void testNe() {
-        NamedProperty np = NamedProperty.of("status");
-        NotEqual notEqual = np.ne("deleted");
-
-        assertNotNull(notEqual);
-        assertEquals("status", notEqual.propName());
-        assertEquals("deleted", notEqual.propValue());
-    }
-
-    @Test
-    public void testGt() {
-        NamedProperty np = NamedProperty.of("age");
-        GreaterThan gt = np.gt(18);
-
-        assertNotNull(gt);
-        assertEquals("age", gt.propName());
-        assertEquals(18, (Integer) gt.propValue());
-    }
-
-    @Test
-    public void testGe() {
-        NamedProperty np = NamedProperty.of("score");
-        GreaterThanOrEqual ge = np.ge(60);
-
-        assertNotNull(ge);
-        assertEquals("score", ge.propName());
-        assertEquals(60, (Integer) ge.propValue());
-    }
-
-    @Test
-    public void testLt() {
-        NamedProperty np = NamedProperty.of("price");
-        LessThan lt = np.lt(100);
-
-        assertNotNull(lt);
-        assertEquals("price", lt.propName());
-        assertEquals(100, (Integer) lt.propValue());
-    }
-
-    @Test
-    public void testLe() {
-        NamedProperty np = NamedProperty.of("quantity");
-        LessThanOrEqual le = np.le(10);
-
-        assertNotNull(le);
-        assertEquals("quantity", le.propName());
-        assertEquals(10, (Integer) le.propValue());
-    }
-
-    @Test
-    public void testIsNull() {
-        NamedProperty np = NamedProperty.of("deletedDate");
-        IsNull isNull = np.isNull();
-
-        assertNotNull(isNull);
-        assertEquals("deletedDate", isNull.propName());
-    }
-
-    @Test
-    public void testIsNotNull() {
-        NamedProperty np = NamedProperty.of("email");
-        IsNotNull isNotNull = np.isNotNull();
-
-        assertNotNull(isNotNull);
-        assertEquals("email", isNotNull.propName());
-    }
-
-    @Test
-    public void testBetween() {
-        NamedProperty np = NamedProperty.of("age");
-        Between between = np.between(18, 65);
-
-        assertNotNull(between);
-        assertEquals("age", between.propName());
-        assertEquals(18, (Integer) between.minValue());
-        assertEquals(65, (Integer) between.maxValue());
-    }
-
-    @Test
-    public void testLike() {
-        NamedProperty np = NamedProperty.of("name");
-        Like like = np.like("John%");
-
-        assertNotNull(like);
-        assertEquals("name", like.propName());
-        // Like extends Binary which has getValue()
-        assertEquals("John%", like.propValue());
-    }
-
-    @Test
-    public void testNotLike() {
-        NamedProperty np = NamedProperty.of("email");
-        NotLike notLike = np.notLike("%@temp.com");
-
-        assertNotNull(notLike);
-        assertEquals("email", notLike.propName());
-        // NotLike extends Binary which has getValue()
-        assertEquals("%@temp.com", notLike.propValue());
-    }
-
-    @Test
-    public void testStartsWith() {
+    void testStartsWith() {
         NamedProperty np = NamedProperty.of("code");
         Like startsWith = np.startsWith("PRD");
 
@@ -285,917 +1169,9 @@ public class NamedPropertyTest extends TestBase {
     }
 
     @Test
-    public void testEndsWith() {
-        NamedProperty np = NamedProperty.of("filename");
-        Like endsWith = np.endsWith(".pdf");
-
-        assertNotNull(endsWith);
-        assertEquals("filename", endsWith.propName());
-        assertTrue(endsWith.propValue().toString().startsWith("%"));
-    }
-
-    @Test
-    public void testContains() {
-        NamedProperty np = NamedProperty.of("description");
-        Like contains = np.contains("important");
-
-        assertNotNull(contains);
-        assertEquals("description", contains.propName());
-        String value = contains.propValue().toString();
-        assertTrue(value.startsWith("%"));
-        assertTrue(value.endsWith("%"));
-    }
-
-    @Test
-    public void testInWithVarargs() {
-        NamedProperty np = NamedProperty.of("status");
-        In in = np.in("active", "pending", "approved");
-
-        assertNotNull(in);
-        assertEquals("status", in.propName());
-        assertEquals(3, in.values().size());
-    }
-
-    @Test
-    public void testInWithCollection() {
-        NamedProperty np = NamedProperty.of("id");
-        Set<Integer> ids = new HashSet<>(Arrays.asList(1, 2, 3, 4, 5));
-
-        In in = np.in(ids);
-
-        assertNotNull(in);
-        assertEquals("id", in.propName());
-        assertEquals(5, in.values().size());
-    }
-
-    @Test
-    public void testHashCode() {
-        NamedProperty np1 = NamedProperty.of("age");
-        NamedProperty np2 = NamedProperty.of("age");
-
-        assertEquals(np1.hashCode(), np2.hashCode());
-    }
-
-    @Test
-    public void testHashCodeDifferent() {
-        NamedProperty np1 = NamedProperty.of("age");
-        NamedProperty np2 = NamedProperty.of("name");
-
-        assertNotEquals(np1.hashCode(), np2.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        NamedProperty np1 = NamedProperty.of("status");
-        NamedProperty np2 = NamedProperty.of("status");
-
-        assertEquals(np1, np2);
-    }
-
-    @Test
-    public void testEqualsSameInstance() {
-        NamedProperty np = NamedProperty.of("test");
-
-        assertEquals(np, np);
-    }
-
-    @Test
-    public void testEqualsNull() {
-        NamedProperty np = NamedProperty.of("test");
-
-        assertNotEquals(np, null);
-    }
-
-    @Test
-    public void testEqualsDifferentType() {
-        NamedProperty np = NamedProperty.of("test");
-
-        assertNotEquals(np, "not a named property");
-    }
-
-    @Test
-    public void testEqualsDifferentProperty() {
-        NamedProperty np1 = NamedProperty.of("age");
-        NamedProperty np2 = NamedProperty.of("name");
-
-        assertNotEquals(np1, np2);
-    }
-
-    @Test
-    public void testToString() {
+    void testToString() {
         NamedProperty np = NamedProperty.of("username");
 
         assertEquals("username", np.toString());
-    }
-
-    @Test
-    public void testChainedConditions() {
-        NamedProperty age = NamedProperty.of("age");
-
-        Equal eq = age.eq(25);
-        GreaterThan gt = age.gt(18);
-        Between between = age.between(20, 30);
-
-        assertNotNull(eq);
-        assertNotNull(gt);
-        assertNotNull(between);
-    }
-
-    @Test
-    public void testComplexUsageWithOr() {
-        NamedProperty priority = NamedProperty.of("priority");
-
-        Or or = priority.equalsAny(1, 2, 3, 4, 5);
-
-        assertEquals(5, or.conditions().size());
-    }
-
-    @Test
-    public void testMultipleNamedProperties() {
-        NamedProperty username = NamedProperty.of("username");
-        NamedProperty email = NamedProperty.of("email");
-        NamedProperty age = NamedProperty.of("age");
-
-        assertNotNull(username);
-        assertNotNull(email);
-        assertNotNull(age);
-
-        assertNotSame(username, email);
-        assertNotSame(email, age);
-    }
-
-    // Removed: testBtDeprecatedMethod() - bt() method has been removed. Use between() instead.
-
-    @Test
-    public void testLikePatterns() {
-        NamedProperty name = NamedProperty.of("name");
-
-        Like starts = name.startsWith("John");
-        Like ends = name.endsWith("Smith");
-        Like contains = name.contains("middle");
-        Like custom = name.like("J%n");
-
-        assertNotNull(starts);
-        assertNotNull(ends);
-        assertNotNull(contains);
-        assertNotNull(custom);
-    }
-
-    @Test
-    public void testComparisonOperators() {
-        NamedProperty value = NamedProperty.of("value");
-
-        Equal eq = value.eq(100);
-        NotEqual ne = value.ne(0);
-        GreaterThan gt = value.gt(50);
-        GreaterThanOrEqual ge = value.ge(50);
-        LessThan lt = value.lt(150);
-        LessThanOrEqual le = value.le(150);
-
-        assertNotNull(eq);
-        assertNotNull(ne);
-        assertNotNull(gt);
-        assertNotNull(ge);
-        assertNotNull(lt);
-        assertNotNull(le);
-    }
-
-    @Test
-    public void testNullChecks() {
-        NamedProperty field = NamedProperty.of("optionalField");
-
-        IsNull isNull = field.isNull();
-        IsNotNull isNotNull = field.isNotNull();
-
-        assertNotNull(isNull);
-        assertNotNull(isNotNull);
-    }
-
-    @Test
-    public void testComplexAnyEqualWithMixedTypes() {
-        NamedProperty type = NamedProperty.of("type");
-
-        Or or = type.equalsAny("A", "B", "C", "D");
-
-        assertEquals(4, or.conditions().size());
-    }
-
-    @Test
-    public void testAnyEqualWithSingleValue() {
-        NamedProperty status = NamedProperty.of("status");
-
-        Or or = status.equalsAny("active");
-
-        assertNotNull(or);
-        assertEquals(1, or.conditions().size());
-    }
-
-    @Test
-    public void testAnyEqualWithEmptyCollection() {
-        NamedProperty status = NamedProperty.of("status");
-
-        assertThrows(IllegalArgumentException.class, () -> {
-            status.equalsAny(Arrays.asList());
-        });
-    }
-
-    @Test
-    public void testInWithSingleValue() {
-        NamedProperty id = NamedProperty.of("id");
-
-        In in = id.in(1);
-
-        assertNotNull(in);
-        assertEquals("id", in.propName());
-        assertEquals(1, in.values().size());
-    }
-
-    @Test
-    public void testBetweenWithStrings() {
-        NamedProperty code = NamedProperty.of("code");
-
-        Between between = code.between("A", "Z");
-
-        assertNotNull(between);
-        assertEquals("code", between.propName());
-        assertEquals("A", between.minValue());
-        assertEquals("Z", between.maxValue());
-    }
-
-    @Test
-    public void testConstructorWithCamelCase() {
-        NamedProperty np = new NamedProperty("firstName");
-
-        assertEquals("firstName", np.propName());
-    }
-
-    @Test
-    public void testConstructorWithUnderscore() {
-        NamedProperty np = new NamedProperty("first_name");
-
-        assertEquals("first_name", np.propName());
-    }
-
-    @Test
-    public void testOfMethodWithComplexName() {
-        NamedProperty np = NamedProperty.of("user.address.city");
-
-        assertEquals("user.address.city", np.propName());
-    }
-
-    @Test
-    public void testNotEqual() {
-        final NamedProperty property = NamedProperty.of("status");
-        final NotEqual condition = property.notEqual("deleted");
-
-        assertEquals("status", condition.propName());
-        assertEquals("deleted", condition.propValue());
-    }
-
-    @Test
-    public void testGreaterThan() {
-        final NamedProperty property = NamedProperty.of("age");
-        final GreaterThan condition = property.greaterThan(18);
-
-        assertEquals("age", condition.propName());
-        assertEquals(Integer.valueOf(18), condition.propValue());
-    }
-
-    @Test
-    public void testGreaterThanOrEqual() {
-        final NamedProperty property = NamedProperty.of("score");
-        final GreaterThanOrEqual condition = property.greaterThanOrEqual(60);
-
-        assertEquals("score", condition.propName());
-        assertEquals(Integer.valueOf(60), condition.propValue());
-    }
-
-    @Test
-    public void testLessThan() {
-        final NamedProperty property = NamedProperty.of("price");
-        final LessThan condition = property.lessThan(100);
-
-        assertEquals("price", condition.propName());
-        assertEquals(Integer.valueOf(100), condition.propValue());
-    }
-
-    @Test
-    public void testLessThanOrEqual() {
-        final NamedProperty property = NamedProperty.of("quantity");
-        final LessThanOrEqual condition = property.lessThanOrEqual(10);
-
-        assertEquals("quantity", condition.propName());
-        assertEquals(Integer.valueOf(10), condition.propValue());
-    }
-
-    @Test
-    public void testNotBetween() {
-        final NamedProperty property = NamedProperty.of("age");
-        final NotBetween condition = property.notBetween(18, 65);
-
-        assertEquals("age", condition.propName());
-        assertEquals(Integer.valueOf(18), condition.minValue());
-        assertEquals(Integer.valueOf(65), condition.maxValue());
-    }
-
-    @Test
-    public void testNotStartsWith() {
-        final NamedProperty property = NamedProperty.of("code");
-        final NotLike condition = property.notStartsWith("TMP");
-
-        assertEquals("code", condition.propName());
-        assertEquals("TMP%", condition.propValue());
-    }
-
-    @Test
-    public void testNotEndsWith() {
-        final NamedProperty property = NamedProperty.of("email");
-        final NotLike condition = property.notEndsWith("@temp.com");
-
-        assertEquals("email", condition.propName());
-        assertEquals("%@temp.com", condition.propValue());
-    }
-
-    @Test
-    public void testNotContains() {
-        final NamedProperty property = NamedProperty.of("description");
-        final NotLike condition = property.notContains("draft");
-
-        assertEquals("description", condition.propName());
-        assertEquals("%draft%", condition.propValue());
-    }
-
-    @Test
-    public void testAnyEqual_LongArray() {
-        final NamedProperty property = NamedProperty.of("user_id");
-        final Or condition = property.equalsAny(new long[] { 1001L, 1002L, 1003L });
-
-        assertNotNull(condition);
-        assertEquals(3, condition.conditions().size());
-        assertEquals(Long.valueOf(1001L), ((Equal) condition.conditions().get(0)).propValue());
-        assertEquals(Long.valueOf(1002L), ((Equal) condition.conditions().get(1)).propValue());
-        assertEquals(Long.valueOf(1003L), ((Equal) condition.conditions().get(2)).propValue());
-    }
-
-    @Test
-    public void testAnyEqual_LongArray_SingleElement() {
-        final NamedProperty property = NamedProperty.of("id");
-        final Or condition = property.equalsAny(new long[] { 42L });
-
-        assertEquals(1, condition.conditions().size());
-    }
-
-    @Test
-    public void testAnyEqual_LongArray_Empty() {
-        final NamedProperty property = NamedProperty.of("id");
-
-        assertThrows(IllegalArgumentException.class, () -> property.equalsAny(new long[0]));
-    }
-
-    @Test
-    public void testAnyEqual_DoubleArray() {
-        final NamedProperty property = NamedProperty.of("rate");
-        final Or condition = property.equalsAny(new double[] { 1.5, 2.0, 2.5 });
-
-        assertNotNull(condition);
-        assertEquals(3, condition.conditions().size());
-        assertEquals(Double.valueOf(1.5), ((Equal) condition.conditions().get(0)).propValue());
-        assertEquals(Double.valueOf(2.0), ((Equal) condition.conditions().get(1)).propValue());
-        assertEquals(Double.valueOf(2.5), ((Equal) condition.conditions().get(2)).propValue());
-    }
-
-    @Test
-    public void testAnyEqual_DoubleArray_SingleElement() {
-        final NamedProperty property = NamedProperty.of("score");
-        final Or condition = property.equalsAny(new double[] { 99.9 });
-
-        assertEquals(1, condition.conditions().size());
-    }
-
-    @Test
-    public void testAnyEqual_DoubleArray_Empty() {
-        final NamedProperty property = NamedProperty.of("score");
-
-        assertThrows(IllegalArgumentException.class, () -> property.equalsAny(new double[0]));
-    }
-
-    @Test
-    public void testIn_LongArray() {
-        final NamedProperty property = NamedProperty.of("user_id");
-        final In condition = property.in(new long[] { 1001L, 1002L, 1003L });
-
-        assertNotNull(condition);
-        assertEquals("user_id", condition.propName());
-        assertEquals(3, condition.values().size());
-    }
-
-    @Test
-    public void testIn_LongArray_SingleElement() {
-        final NamedProperty property = NamedProperty.of("id");
-        final In condition = property.in(new long[] { 42L });
-
-        assertEquals(1, condition.values().size());
-    }
-
-    @Test
-    public void testIn_DoubleArray() {
-        final NamedProperty property = NamedProperty.of("rate");
-        final In condition = property.in(new double[] { 1.5, 2.0, 2.5 });
-
-        assertNotNull(condition);
-        assertEquals("rate", condition.propName());
-        assertEquals(3, condition.values().size());
-    }
-
-    @Test
-    public void testIn_DoubleArray_SingleElement() {
-        final NamedProperty property = NamedProperty.of("score");
-        final In condition = property.in(new double[] { 99.9 });
-
-        assertEquals(1, condition.values().size());
-    }
-
-    @Test
-    public void testNotIn_ObjectVarargs() {
-        final NamedProperty property = NamedProperty.of("status");
-        final NotIn condition = property.notIn("deleted", "archived");
-
-        assertNotNull(condition);
-        assertEquals("status", condition.propName());
-        assertEquals(2, condition.values().size());
-    }
-
-    @Test
-    public void testNotIn_ObjectVarargs_SingleValue() {
-        final NamedProperty property = NamedProperty.of("type");
-        final NotIn condition = property.notIn("invalid");
-
-        assertEquals(1, condition.values().size());
-    }
-
-    @Test
-    public void testNotIn_LongArray() {
-        final NamedProperty property = NamedProperty.of("user_id");
-        final NotIn condition = property.notIn(new long[] { 999L, 1000L });
-
-        assertNotNull(condition);
-        assertEquals("user_id", condition.propName());
-        assertEquals(2, condition.values().size());
-    }
-
-    @Test
-    public void testNotIn_LongArray_SingleElement() {
-        final NamedProperty property = NamedProperty.of("id");
-        final NotIn condition = property.notIn(new long[] { 42L });
-
-        assertEquals(1, condition.values().size());
-    }
-
-    @Test
-    public void testNotIn_DoubleArray() {
-        final NamedProperty property = NamedProperty.of("rate");
-        final NotIn condition = property.notIn(new double[] { 0.0, -1.0 });
-
-        assertNotNull(condition);
-        assertEquals("rate", condition.propName());
-        assertEquals(2, condition.values().size());
-    }
-
-    @Test
-    public void testNotIn_DoubleArray_SingleElement() {
-        final NamedProperty property = NamedProperty.of("score");
-        final NotIn condition = property.notIn(new double[] { 0.0 });
-
-        assertEquals(1, condition.values().size());
-    }
-
-    @Test
-    public void testNotIn_Collection() {
-        final NamedProperty property = NamedProperty.of("department");
-        final NotIn condition = property.notIn(java.util.Arrays.asList("Temp", "Archived"));
-
-        assertNotNull(condition);
-        assertEquals("department", condition.propName());
-        assertEquals(2, condition.values().size());
-    }
-
-    @Test
-    public void testNotIn_Collection_SingleElement() {
-        final NamedProperty property = NamedProperty.of("type");
-        final NotIn condition = property.notIn(java.util.Collections.singletonList("invalid"));
-
-        assertEquals(1, condition.values().size());
-    }
-
-    @Test
-    public void testConstructor() {
-        NamedProperty prop = new NamedProperty("testProperty");
-        Assertions.assertEquals("testProperty", prop.toString());
-    }
-
-    @Test
-    public void testConstructorWithNull() {
-        // Constructor now rejects null with IllegalArgumentException, consistent with NamedProperty.of(null)
-        // and the rest of the name-validation surface (previously threw NullPointerException).
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new NamedProperty(null);
-        });
-    }
-
-    @Test
-    public void testConstructorWithEmptyString() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new NamedProperty("");
-        });
-    }
-
-    @Test
-    public void testOfMethodWithEmptyString() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            NamedProperty.of("");
-        });
-    }
-
-    @Test
-    public void testOfMethodWithNull() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            NamedProperty.of(null);
-        });
-    }
-
-    @Test
-    public void testConstructorAndFactoryRejectBlankPropertyName() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new NamedProperty("   "));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> NamedProperty.of("   "));
-    }
-
-    @Test
-    public void testAnyEqualWithArray() {
-        NamedProperty prop = NamedProperty.of("color");
-        Or condition = prop.equalsAny("red", "green", "blue");
-
-        Assertions.assertEquals(3, condition.conditions().size());
-    }
-
-    @Test
-    public void testAnyEqualWithPrimitiveArray() {
-        NamedProperty prop = NamedProperty.of("priority");
-        Or condition = prop.equalsAny(new int[] { 1, 2, 3 });
-
-        Assertions.assertEquals(3, condition.conditions().size());
-        Assertions.assertEquals(Integer.valueOf(1), ((Equal) condition.conditions().get(0)).propValue());
-    }
-
-    @Test
-    public void testAnyEqualWithEmptyArray() {
-        NamedProperty prop = NamedProperty.of("city");
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            prop.equalsAny();
-        });
-    }
-
-    @Test
-    public void testInWithArray() {
-        NamedProperty prop = NamedProperty.of("status");
-        In condition = prop.in("active", "pending", "approved");
-
-        Assertions.assertEquals("status", condition.propName());
-        Assertions.assertEquals(3, condition.values().size());
-    }
-
-    @Test
-    public void testInWithPrimitiveArray() {
-        NamedProperty prop = NamedProperty.of("id");
-        In condition = prop.in(new int[] { 1, 2, 3 });
-
-        Assertions.assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
-    }
-
-    @Test
-    public void testNotInWithPrimitiveArray() {
-        NamedProperty prop = NamedProperty.of("id");
-        NotIn condition = prop.notIn(new int[] { 4, 5, 6 });
-
-        Assertions.assertEquals(Arrays.asList(4, 5, 6), condition.parameters());
-    }
-
-    // --- 2nd-pass review verification tests ---
-
-    @Test
-    public void test2ndPass_eachComparatorMapsToCorrectOperator() {
-        // Verify NO copy/paste bug in operator mapping for any comparator method.
-        NamedProperty p = NamedProperty.of("col");
-        assertEquals(Operator.EQUAL, p.equal(1).operator());
-        assertEquals(Operator.EQUAL, p.eq(1).operator());
-        assertEquals(Operator.NOT_EQUAL, p.notEqual(1).operator());
-        assertEquals(Operator.NOT_EQUAL, p.ne(1).operator());
-        assertEquals(Operator.GREATER_THAN, p.greaterThan(1).operator());
-        assertEquals(Operator.GREATER_THAN, p.gt(1).operator());
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, p.greaterThanOrEqual(1).operator());
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, p.ge(1).operator());
-        assertEquals(Operator.LESS_THAN, p.lessThan(1).operator());
-        assertEquals(Operator.LESS_THAN, p.lt(1).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, p.lessThanOrEqual(1).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, p.le(1).operator());
-    }
-
-    @Test
-    public void test2ndPass_likeWildcardsAreCorrectlyPlaced() {
-        NamedProperty p = NamedProperty.of("col");
-        assertEquals("foo%", p.startsWith("foo").propValue());
-        assertEquals("%foo", p.endsWith("foo").propValue());
-        assertEquals("%foo%", p.contains("foo").propValue());
-        assertEquals("foo%", p.notStartsWith("foo").propValue());
-        assertEquals("%foo", p.notEndsWith("foo").propValue());
-        assertEquals("%foo%", p.notContains("foo").propValue());
-    }
-
-    @Test
-    public void test2ndPass_equalWithNull_rendersIsNull() {
-        // CRITICAL: equal(null) MUST render as "col IS NULL" not "col = NULL"
-        NamedProperty p = NamedProperty.of("col");
-        Equal eq = p.equal(null);
-        Assertions.assertTrue(eq.toString().contains("IS NULL"));
-        Assertions.assertFalse(eq.toString().contains("= NULL"));
-    }
-
-    @Test
-    public void test2ndPass_returnedConditionsAreFresh_notCached() {
-        // After np.equal("x"), the returned Equal must be a fresh instance,
-        // not a shared/cached one (otherwise a caller mutating it would break others).
-        NamedProperty p = NamedProperty.of("col");
-        Equal e1 = p.equal("x");
-        Equal e2 = p.equal("x");
-        assertNotSame(e1, e2, "Each equal() call must return a fresh Equal instance");
-        // But they should be value-equal:
-        assertEquals(e1, e2);
-    }
-
-    @Test
-    public void test2ndPass_equalsAnyArrayWithNullValues_throwsIAE_orHandlesGracefully() {
-        // equalsAny(null) - explicit null array
-        NamedProperty p = NamedProperty.of("col");
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((Object[]) null));
-    }
-
-    @Test
-    public void test2ndPass_inEmptyArrayThrowsViaAbstractInCheck() {
-        // Filters.in -> new In which checks notEmpty
-        NamedProperty p = NamedProperty.of("col");
-        assertThrows(IllegalArgumentException.class, () -> p.in(new int[] {}));
-        assertThrows(IllegalArgumentException.class, () -> p.in(new long[] {}));
-        assertThrows(IllegalArgumentException.class, () -> p.in(new double[] {}));
-        assertThrows(IllegalArgumentException.class, () -> p.in(java.util.Collections.emptyList()));
-    }
-
-    @Test
-    public void test2ndPass_betweenRangeOrderPreserved() {
-        // NamedProperty.between(min, max) must forward min and max in that order.
-        NamedProperty p = NamedProperty.of("age");
-        Between b = p.between(18, 65);
-        assertEquals(Integer.valueOf(18), b.minValue());
-        assertEquals(Integer.valueOf(65), b.maxValue());
-    }
-
-    @Test
-    public void test2ndPass_constructorBypassesCache_butEqualityHolds() {
-        // public constructor bypasses cache; pool only used through of().
-        NamedProperty viaCtor = new NamedProperty("uncached_prop_xyz");
-        NamedProperty viaOf = NamedProperty.of("uncached_prop_xyz");
-        // Not necessarily same instance (one constructed directly)
-        // But should still be equal (value-equality).
-        assertEquals(viaCtor, viaOf);
-        assertEquals(viaCtor.hashCode(), viaOf.hashCode());
-    }
-
-    @Test
-    public void test2ndPass_cacheKeysCaseSensitive() {
-        // Cache MUST treat property names case-sensitively (avoid wrong matching).
-        NamedProperty lower = NamedProperty.of("CaseTest_zzz");
-        NamedProperty upper = NamedProperty.of("casetest_zzz");
-        // They should be distinct instances and not equal.
-        assertNotSame(lower, upper);
-        Assertions.assertNotEquals(lower, upper);
-    }
-
-    @Test
-    public void test2ndPass_cacheKeysWhitespaceSensitive() {
-        // " foo" vs "foo" must NOT match in the cache.
-        NamedProperty noSpace = NamedProperty.of("zzz_uniq");
-        NamedProperty leadSpace = NamedProperty.of(" zzz_uniq");
-        assertNotSame(noSpace, leadSpace);
-        Assertions.assertNotEquals(noSpace, leadSpace);
-    }
-
-    @Test
-    public void testNullEmptySymmetry() {
-        assertEquals(Filters.isNullOrEmpty("name"), NamedProperty.of("name").isNullOrEmpty());
-        assertEquals(Filters.isNotNullAndNotEmpty("name"), NamedProperty.of("name").isNotNullAndNotEmpty());
-    }
-
-    @Test
-    public void testEqualsAnyRejectsCollectionThatBecomesEmptyDuringIteration() {
-        Collection<Object> unstableValues = new AbstractCollection<>() {
-            @Override
-            public Iterator<Object> iterator() {
-                return Collections.emptyIterator();
-            }
-
-            @Override
-            public int size() {
-                return 1;
-            }
-        };
-
-        assertThrows(IllegalArgumentException.class, () -> NamedProperty.of("status").equalsAny(unstableValues));
-    }
-
-    @Test
-    public void testNaNAndInfinityFactories() {
-        NamedProperty prop = NamedProperty.of("ratio");
-
-        assertEquals("ratio IS NAN", prop.isNaN().toString());
-        assertEquals("ratio IS NOT NAN", prop.isNotNaN().toString());
-        assertEquals("ratio IS INFINITE", prop.isInfinite().toString());
-        assertEquals("ratio IS NOT INFINITE", prop.isNotInfinite().toString());
-    }
-
-    @Test
-    public void testInAndNotInWithSubQuery() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM active_users");
-
-        InSubQuery inCondition = NamedProperty.of("user_id").in(subQuery);
-        assertEquals("user_id IN (SELECT id FROM active_users)", inCondition.toString());
-
-        NotInSubQuery notInCondition = NamedProperty.of("user_id").notIn(subQuery);
-        assertEquals("user_id NOT IN (SELECT id FROM active_users)", notInCondition.toString());
-    }
-
-    @Test
-    public void testIn_AllPrimitiveArrayTypes() {
-        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to in(Object...)
-        // as a SINGLE element and render as one quoted string literal, e.g. "col IN ('[1, 2]')".
-        assertEquals("active IN (true, false)", NamedProperty.of("active").in(new boolean[] { true, false }).toString());
-        assertEquals("grade IN ('A', 'B', 'C')", NamedProperty.of("grade").in(new char[] { 'A', 'B', 'C' }).toString());
-        assertEquals("flag IN (0, 1, 2)", NamedProperty.of("flag").in(new byte[] { 0, 1, 2 }).toString());
-        assertEquals("level IN (1, 2, 3)", NamedProperty.of("level").in(new short[] { 1, 2, 3 }).toString());
-        assertEquals("ratio IN (0.25, 0.5, 0.75)", NamedProperty.of("ratio").in(new float[] { 0.25f, 0.5f, 0.75f }).toString());
-
-        // Parity with the Filters counterparts.
-        assertEquals(Filters.in("active", new boolean[] { true, false }), NamedProperty.of("active").in(new boolean[] { true, false }));
-        assertEquals(Filters.in("grade", new char[] { 'A', 'B' }), NamedProperty.of("grade").in(new char[] { 'A', 'B' }));
-        assertEquals(Filters.in("flag", new byte[] { 0, 1 }), NamedProperty.of("flag").in(new byte[] { 0, 1 }));
-        assertEquals(Filters.in("level", new short[] { 1, 2 }), NamedProperty.of("level").in(new short[] { 1, 2 }));
-        assertEquals(Filters.in("ratio", new float[] { 0.5f, 1.5f }), NamedProperty.of("ratio").in(new float[] { 0.5f, 1.5f }));
-
-        final NamedProperty p = NamedProperty.of("col");
-        assertThrows(IllegalArgumentException.class, () -> p.in((boolean[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.in(new boolean[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.in((char[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.in(new char[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.in((byte[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.in(new byte[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.in((short[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.in(new short[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.in((float[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.in(new float[0]));
-    }
-
-    @Test
-    public void testNotIn_AllPrimitiveArrayTypes() {
-        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to notIn(Object...)
-        // as a SINGLE element and render as one quoted string literal.
-        assertEquals("active NOT IN (false)", NamedProperty.of("active").notIn(new boolean[] { false }).toString());
-        assertEquals("grade NOT IN ('D', 'F')", NamedProperty.of("grade").notIn(new char[] { 'D', 'F' }).toString());
-        assertEquals("flag NOT IN (0, 1)", NamedProperty.of("flag").notIn(new byte[] { 0, 1 }).toString());
-        assertEquals("level NOT IN (0, 9)", NamedProperty.of("level").notIn(new short[] { 0, 9 }).toString());
-        assertEquals("ratio NOT IN (0.0, 1.0)", NamedProperty.of("ratio").notIn(new float[] { 0.0f, 1.0f }).toString());
-
-        // Parity with the Filters counterparts.
-        assertEquals(Filters.notIn("active", new boolean[] { false }), NamedProperty.of("active").notIn(new boolean[] { false }));
-        assertEquals(Filters.notIn("grade", new char[] { 'D', 'F' }), NamedProperty.of("grade").notIn(new char[] { 'D', 'F' }));
-        assertEquals(Filters.notIn("flag", new byte[] { 0, 1 }), NamedProperty.of("flag").notIn(new byte[] { 0, 1 }));
-        assertEquals(Filters.notIn("level", new short[] { 0, 9 }), NamedProperty.of("level").notIn(new short[] { 0, 9 }));
-        assertEquals(Filters.notIn("ratio", new float[] { 0.0f, 1.0f }), NamedProperty.of("ratio").notIn(new float[] { 0.0f, 1.0f }));
-
-        final NamedProperty p = NamedProperty.of("col");
-        assertThrows(IllegalArgumentException.class, () -> p.notIn((boolean[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn(new boolean[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn((char[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn(new char[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn((byte[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn(new byte[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn((short[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn(new short[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn((float[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn(new float[0]));
-    }
-
-    @Test
-    public void testEqualsAny_AllPrimitiveArrayTypes() {
-        // Regression: boolean[], char[], byte[], short[] and float[] used to bind to equalsAny(Object...)
-        // as a SINGLE element, producing a one-branch OR over a quoted string literal.
-        assertEquals("((active = true) OR (active = false))", NamedProperty.of("active").equalsAny(new boolean[] { true, false }).toString());
-        assertEquals("((grade = 'A') OR (grade = 'B') OR (grade = 'C'))", NamedProperty.of("grade").equalsAny(new char[] { 'A', 'B', 'C' }).toString());
-        assertEquals("((flag = 0) OR (flag = 1) OR (flag = 2))", NamedProperty.of("flag").equalsAny(new byte[] { 0, 1, 2 }).toString());
-        assertEquals("((level = 1) OR (level = 2) OR (level = 3))", NamedProperty.of("level").equalsAny(new short[] { 1, 2, 3 }).toString());
-        assertEquals("((ratio = 0.25) OR (ratio = 0.5) OR (ratio = 0.75))", NamedProperty.of("ratio").equalsAny(new float[] { 0.25f, 0.5f, 0.75f }).toString());
-
-        // One OR branch per array element, each carrying the boxed primitive value.
-        final Or byteOr = NamedProperty.of("flag").equalsAny(new byte[] { 0, 1, 2 });
-        assertEquals(3, byteOr.conditions().size());
-        assertEquals(Byte.valueOf((byte) 0), ((Equal) byteOr.conditions().get(0)).propValue());
-        assertEquals(Byte.valueOf((byte) 2), ((Equal) byteOr.conditions().get(2)).propValue());
-
-        final Or charOr = NamedProperty.of("grade").equalsAny(new char[] { 'A', 'B', 'C' });
-        assertEquals(3, charOr.conditions().size());
-        assertEquals(Character.valueOf('A'), ((Equal) charOr.conditions().get(0)).propValue());
-
-        final NamedProperty p = NamedProperty.of("col");
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((boolean[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new boolean[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((char[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new char[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((byte[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new byte[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((short[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new short[0]));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny((float[]) null));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(new float[0]));
-    }
-
-    @Test
-    public void testBetween_nullBound_throwsIAE() {
-        NamedProperty p = NamedProperty.of("age");
-        assertThrows(IllegalArgumentException.class, () -> p.between(null, 65));
-        assertThrows(IllegalArgumentException.class, () -> p.between(18, null));
-        assertThrows(IllegalArgumentException.class, () -> p.notBetween(null, 65));
-        assertThrows(IllegalArgumentException.class, () -> p.notBetween(18, null));
-        assertThrows(IllegalArgumentException.class, () -> p.between(Filters.expr(" "), 65));
-        assertThrows(IllegalArgumentException.class, () -> p.notBetween(18, Filters.eq("x", 1)));
-        assertEquals("age BETWEEN 18 AND 65", p.between(18, 65).toString());
-    }
-
-    @Test
-    public void testComparison_nullValue_throwsIAE() {
-        NamedProperty p = NamedProperty.of("age");
-        assertThrows(IllegalArgumentException.class, () -> p.greaterThan(null));
-        assertThrows(IllegalArgumentException.class, () -> p.gt(null));
-        assertThrows(IllegalArgumentException.class, () -> p.greaterThanOrEqual(null));
-        assertThrows(IllegalArgumentException.class, () -> p.ge(null));
-        assertThrows(IllegalArgumentException.class, () -> p.lessThan(null));
-        assertThrows(IllegalArgumentException.class, () -> p.lt(null));
-        assertThrows(IllegalArgumentException.class, () -> p.lessThanOrEqual(null));
-        assertThrows(IllegalArgumentException.class, () -> p.le(null));
-        assertThrows(IllegalArgumentException.class, () -> p.gt(Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class, () -> p.lt(Filters.eq("x", 1)));
-        assertThrows(IllegalArgumentException.class, () -> p.eq(Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class, () -> p.ne(Filters.eq("x", 1)));
-        // the equality operators accept null and render it as IS [NOT] NULL instead of throwing
-        assertEquals("age IS NULL", p.eq(null).toString());
-        assertEquals("age IS NOT NULL", p.ne(null).toString());
-    }
-
-    @Test
-    public void testIn_nullOrPredicateElement_throwsIAE() {
-        NamedProperty p = NamedProperty.of("status");
-        assertThrows(IllegalArgumentException.class, () -> p.in("a", null));
-        assertThrows(IllegalArgumentException.class, () -> p.in(Arrays.asList("a", null)));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn("a", null));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn(Arrays.asList("a", null)));
-        assertThrows(IllegalArgumentException.class, () -> p.in("a", Filters.eq("x", 1)));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn(Arrays.asList("a", Filters.eq("x", 1))));
-        assertThrows(IllegalArgumentException.class, () -> p.in("a", Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class, () -> p.notIn("a", Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny("a", Filters.eq("x", 1)));
-        assertThrows(IllegalArgumentException.class, () -> p.equalsAny(Arrays.asList("a", Filters.expr(" "))));
-        assertEquals("status IN ('a', 'b')", p.in("a", "b").toString());
-    }
-
-    @Test
-    public void testEqualsAnyAndNotInWithObjectTypedLoneCollectionUnpackValues() {
-        // Regression: a collection statically typed Object selected equalsAny(Object...) and became ONE comparison against
-        // the whole list ("((id = '[1, 2]'))"), unlike Filters.in(String, Object...).
-        final NamedProperty id = NamedProperty.of("id");
-
-        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) Arrays.asList(1, 2)).toString());
-        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) new int[] { 1, 2 }).toString());
-        assertEquals("((id = 1) OR (id = 2))", id.equalsAny((Object) new Integer[] { 1, 2 }).toString());
-        assertEquals(id.equalsAny(Arrays.asList(1, 2)), id.equalsAny((Object) Arrays.asList(1, 2)));
-        assertEquals("id NOT IN (1, 2)", id.notIn((Object) Arrays.asList(1, 2)).toString());
-        assertEquals("id IN (1, 2)", id.in((Object) new long[] { 1L, 2L }).toString());
-
-        // A lone null element behaves as in equalsAny(Collection): eq(p, null) renders IS NULL.
-        assertEquals("((id = 1) OR (id IS NULL))", id.equalsAny((Object) Arrays.asList(1, null)).toString());
-
-        // An empty lone collection or array is an empty value list.
-        assertThrows(IllegalArgumentException.class, () -> id.equalsAny((Object) Collections.emptyList()));
-        assertThrows(IllegalArgumentException.class, () -> id.equalsAny((Object) new int[0]));
-        assertThrows(IllegalArgumentException.class, () -> id.notIn((Object) Collections.emptyList()));
-
-        // Unchanged: a lone byte[] is one (binary) value, and several collection arguments are several values.
-        assertEquals(1, id.equalsAny((Object) new byte[] { 1, 2 }).conditions().size());
-        assertEquals("((id = '[1]') OR (id = '[2]'))", id.equalsAny(Arrays.asList(1), Arrays.asList(2)).toString());
     }
 }

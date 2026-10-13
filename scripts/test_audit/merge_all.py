@@ -4,7 +4,7 @@ Batch-merge every test file under src/test/java that currently contains more
 than one top-level test class (extends TestBase) into a single canonical class.
 
 Dry-run by default (prints which files would change). With --apply it rewrites
-each file in place. A collision report is written to scripts/test_audit/merge_collisions.txt.
+each file in place. A collision report is written to .audit/test-audit/merge_collisions.txt.
 
 Re-runnable: files that already have a single test class are skipped.
 """
@@ -66,9 +66,11 @@ def main():
         else:
             print(f"would merge {os.path.relpath(path, repo_root)}: "
                   f"{[c.name for c in candidates]}")
-    coll_path = os.path.join(here, "merge_collisions.txt")
-    with open(coll_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(coll_lines))
+    coll_path = os.path.join(repo_root, ".audit", "test-audit", "merge_collisions.txt")
+    if args.apply:
+        os.makedirs(os.path.dirname(coll_path), exist_ok=True)
+        with open(coll_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(coll_lines))
     print(f"\n{changed} files merged, {skipped} skipped. "
           f"collision report -> {coll_path}", file=sys.stderr)
 

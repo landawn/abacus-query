@@ -5,7 +5,7 @@
     "generated_at": "2026-10-12",
     "java_target": "21",
     "source": {
-      "git_sha": "48b1b8d93cd885a375fe765d2f4b1787d55864cb"
+      "git_sha": "0b6001de74ed9c368645d6158ecb0a57a74e64bb"
     }
   },
   "packages": [
@@ -16979,7 +16979,7 @@
                 }
               ],
               "javadoc_summary": "Parses the given SQL string and returns a ParsedSql instance.",
-              "returns": "a ParsedSql instance for the given SQL (typically a cached instance)",
+              "returns": "a ParsedSql instance for the given SQL (typically a cached instance, unless the SQL is longer than #MAX_CACHEABLE_SQL_LENGTH characters)",
               "contract": [
                 "Parameter conversion is only applied when the SQL is a recognized data operation statement (see the class-level documentation)."
               ],
@@ -17152,7 +17152,20 @@
               "see_also": []
             }
           ],
-          "fields": []
+          "fields": [
+            {
+              "name": "MAX_CACHEABLE_SQL_LENGTH",
+              "modifiers": [
+                "public",
+                "static",
+                "final"
+              ],
+              "type": "int",
+              "value": "4096",
+              "javadoc_summary": "The maximum length (in chars, after String#trim()) of a SQL string that #parse(String) looks up in or stores into its cache.",
+              "nullability": "unspecified"
+            }
+          ]
         },
         {
           "fqn": "com.landawn.abacus.query.QueryUtil",

@@ -6,7 +6,7 @@ every source class has exactly one FooTest.java.
 
 All top-level test classes (extends TestBase) in each source file are merged into
 the target file's canonical test class. Imports are unioned. @Test method-name
-collisions keep the target's version. Non-test top-level classes in source files
+collisions abort before writing. Non-test top-level classes in source files
 (helper entities, etc.) are also moved into the target file as top-level classes
 (Jave allows multiple package-private top-level types alongside the public one).
 
@@ -109,11 +109,8 @@ def main():
     body_text = "\n\n".join(m["text"].strip("\n") for m in order)
     # rebuild class header: keep target canonical's leading annotations + signature
     header = tcanon.leading_annotations.rstrip("\n") + "\n" + tcanon.signature.strip()
-    # ensure @Tag("2025") present
-    if '@Tag("2025")' not in header:
-        # strip other @Tag, add 2025
-        header = re.sub(r'@Tag\s*\(\s*"[^"]*"\s*\)\s*', "", header)
-        header = '@Tag("2025")\n' + header.strip()
+    # Package-based discovery no longer requires the legacy year tag.
+    header = re.sub(r'@Tag\s*\(\s*"2025"\s*\)\s*', "", header)
     merged_class = f"{header} {{\n{body_text}\n}}\n"
 
     out_lines = []
@@ -137,6 +134,10 @@ def main():
           f"collisions={len(collisions)}", file=sys.stderr)
     for col in collisions:
         print(f"  collision: {col}", file=sys.stderr)
+
+    if collisions:
+        print("error: refusing to discard colliding members; review and rename or remove them explicitly", file=sys.stderr)
+        sys.exit(2)
 
     if args.apply:
         with open(args.target, "w", encoding="utf-8") as f:

@@ -1,29 +1,8 @@
 #!/usr/bin/env python3
-"""
-Merge all test classes in a single test file into one canonical class.
+"""Merge legacy top-level TestBase classes into their canonical test class.
 
-For a file FooTest.java that currently contains several top-level classes
-(Foo2025Test @Tag("2025"), FooTest untagged, Foo2026BatchTest, ...), produce a
-single:
-
-    @Tag("2025")
-    public class FooTest extends TestBase {
-        // union of all members, with @Test method-name collisions deduped
-        // (the most complete / longest body wins; ties prefer the tagged-2025
-        //  version because it is the version currently exercised by `mvn test`)
-    }
-
-Non-test top-level classes (those not extending TestBase) are preserved as-is.
-Imports are file-level and already shared, so they are kept verbatim.
-
-Nested classes / fields with colliding names across the merged classes are
-reported on stderr so a human can resolve them (the script keeps the first
-occurrence and skips later same-named nested classes/fields).
-
-Usage:
-    python merge_file.py <file.java>            # dry-run: print summary
-    python merge_file.py <file.java> --apply    # overwrite the file
-    python merge_file.py <file.java> --apply --out <new.java>   # write elsewhere
+Dry-run by default; --apply writes the result. Member-name collisions abort
+before writing. Review fixtures and lifecycle semantics before applying a merge.
 """
 from __future__ import annotations
 
@@ -69,31 +48,13 @@ def _has_tag_2025(c: ClassInfo) -> bool:
 
 
 def _build_header(leading: str, signature: str, file_stem: str) -> str:
-    """Build the merged class header: optional comment/javadoc, @Tag("2025"),
-    `public class <file_stem> extends ...`, and the opening brace."""
-    # Extract a leading /** ... */ (or // line-comment block) from `leading`.
-    comment = ""
-    rest = leading
-    m = re.match(r"\s*(/\*.*?\*/)", rest, flags=re.S)
-    if not m:
-        m = re.match(r"\s*((?://[^\n]*\n\s*)+//[^\n]*)", rest)
-    if m:
-        comment = m.group(1).strip()
-        rest = rest[m.end():]
-    # Drop any @Tag(...) and any modifiers (public/abstract/final) from the rest;
-    # we force @Tag("2025") and public below.
-    rest = re.sub(r'@Tag\s*\(\s*"[^"]*"\s*\)\s*', "", rest)
-    rest = re.sub(r"\b(public|abstract|final|static)\b", "", rest).strip()
-    # Rename the class in the signature to file_stem.
-    sig = re.sub(r"\b(class|interface|enum|record)\s+[A-Za-z_$][A-Za-z0-9_$]*",
-                 lambda mm: mm.group(0).rsplit(" ", 1)[0] + " " + file_stem,
-                 signature.strip(), count=1)
-    parts = []
-    if comment:
-        parts.append(comment)
-    parts.append('@Tag("2025")')
-    parts.append("public " + sig)
-    return "\n".join(parts) + " {"
+    """Build the header, preserving annotations other than the obsolete year tag."""
+    leading = re.sub(r'@Tag\s*\(\s*"2025"\s*\)\s*', "", leading)
+    leading = re.sub(r"\b(?:public|abstract|final|static)\s*$", "", leading).strip()
+    signature = re.sub(r"\b(class|interface|enum|record)\s+[A-Za-z_$][A-Za-z0-9_$]*",
+                       lambda match: match.group(1) + " " + file_stem, signature.strip(), count=1)
+    signature = re.sub(r"^public\s+", "", signature)
+    return (leading + "\n" if leading else "") + "public " + signature + " {"
 
 
 def merge_file(src: str, file_stem: str):
@@ -154,6 +115,10 @@ def merge_file(src: str, file_stem: str):
             else:
                 # init-block or unknown: append (rare)
                 order.append(m)
+
+    if collisions:
+        names = ", ".join(f"{kind} {name}" for kind, name, *_ in collisions)
+        raise ValueError(f"Refusing to discard colliding members: {names}. Review and rename or remove them explicitly.")
 
     # Reconstruct the merged class source. Preserve each member's original
     # indentation (members were already at 4-space indent inside their source
@@ -219,7 +184,7 @@ def main():
         print(f"{path}: nothing to merge (<=1 test class)", file=sys.stderr)
         return
     target = args.out or path
-    if args.apply or args.out:
+    if args.apply:
         with open(target, "w", encoding="utf-8") as f:
             f.write(res["text"])
         print(f"{target}: merged canonical={res['canonical']} "

@@ -1,5 +1,6 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -13,8 +14,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -25,52 +24,33 @@ import com.landawn.abacus.util.NamingPolicy;
  * Comprehensive test class for Junction.
  * Tests all public methods including constructors, condition management, parameters, copying, and string representation.
  */
-@Tag("2025")
 public class JunctionTest extends TestBase {
-    private static final class TestComposableWrapper extends ComposableCell {
-        TestComposableWrapper(final Condition condition) {
-            super(Operator.NOT, condition);
-        }
+
+    @Test
+    void testAdd() {
+        assertFalse(Arrays.stream(Junction.class.getDeclaredMethods()).anyMatch(method -> method.getName().equals("add")));
     }
 
     @Test
-    public void testConstructor_NullOperatorThrowsIllegalArgumentException() {
-        // A null operator is an IllegalArgumentException (previously threw NullPointerException),
-        // for both constructors and both Filters.junction factory overloads.
-        final Equal cond = Filters.eq("status", "active");
-        final List<Condition> conds = Arrays.asList(cond);
+    void testChildConditionSnapshotsMutableArrayValue() {
+        final byte[] value = { 1 };
+        final Junction junction = new Junction(Operator.AND, Filters.eq("payload", value));
 
-        assertThrows(IllegalArgumentException.class, () -> new Junction(null, cond));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(null, conds));
-        assertThrows(IllegalArgumentException.class, () -> Filters.junction(null, cond));
-        assertThrows(IllegalArgumentException.class, () -> Filters.junction(null, conds));
+        junction.hashCode();
+        value[0] = 2;
+
+        final Junction equalToSnapshot = new Junction(Operator.AND, Filters.eq("payload", new byte[] { 1 }));
+        assertEquals(junction, equalToSnapshot);
+        assertEquals(junction.hashCode(), equalToSnapshot.hashCode());
     }
 
     @Test
-    public void testConstructorWithOperatorAndConditions() {
-        Equal cond1 = Filters.eq("status", "active");
-        GreaterThan cond2 = Filters.gt("age", 18);
-
-        Junction junction = new Junction(Operator.AND, cond1, cond2);
-
-        assertNotNull(junction);
-        assertEquals(Operator.AND, junction.operator());
-        assertEquals(2, junction.conditions().size());
+    void testClear() {
+        assertFalse(Arrays.stream(Junction.class.getDeclaredMethods()).anyMatch(method -> method.getName().equals("clear")));
     }
 
     @Test
-    public void testConstructorWithOperatorAndCollection() {
-        List<Condition> conditions = Arrays.asList(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.isNotNull("email"));
-
-        Junction junction = new Junction(Operator.OR, conditions);
-
-        assertNotNull(junction);
-        assertEquals(Operator.OR, junction.operator());
-        assertEquals(3, junction.conditions().size());
-    }
-
-    @Test
-    public void testCollectionConstructorValidatesAndStoresOneSnapshot() {
+    void testCollectionConstructorValidatesAndStoresOneSnapshot() {
         final Condition validated = Filters.eq("status", "active");
         final Condition laterUnsafeValue = Filters.where(Filters.eq("id", 1));
         final int[] iterationCount = { 0 };
@@ -93,42 +73,26 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testConstructorWithEmptyConditions() {
-        Junction junction = new Junction(Operator.AND);
+    void testComplexJunctionAndOperation() {
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65), Filters.isNotNull("email"),
+                Filters.like("name", "John%"));
 
-        assertNotNull(junction);
-        assertEquals(Operator.AND, junction.operator());
-        assertEquals(0, junction.conditions().size());
+        assertEquals(4, junction.conditions().size());
+        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
+        assertTrue(sql.contains("AND"));
     }
 
     @Test
-    public void testConstructorRejectsClauseOperands() {
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.where(Filters.eq("a", 1))));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, Arrays.asList(new OrderBy("name"))));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("WHERE active = true")));
+    void testComplexJunctionOrOperation() {
+        Junction junction = new Junction(Operator.OR, Filters.eq("priority", 1), Filters.eq("urgent", true), Filters.lt("deadline", "2025-01-01"));
+
+        assertEquals(3, junction.conditions().size());
+        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
+        assertTrue(sql.contains("OR"));
     }
 
     @Test
-    public void testConstructorRejectsConnectorOperands() {
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.using("id")));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("ON a.id = b.a_id")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.eq("active", true).and(Filters.expr("USING (id)")));
-    }
-
-    @Test
-    public void testConstructorRejectsWrappedNonPredicateComponents() {
-        final SubQuery subQuery = new SubQuery("SELECT id FROM users");
-
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new OrderBy("name"))));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new TestComposableWrapper(new Any(subQuery))));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new SqlExpression(" "))));
-        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new Equal()));
-        Assertions.assertDoesNotThrow(() -> new Junction(Operator.AND, new TestComposableWrapper(new Equal("id", 1))));
-    }
-
-    @Test
-    public void testConditions() {
+    void testConditions() {
         Equal cond1 = Filters.eq("name", "John");
         LessThan cond2 = Filters.lt("price", 100);
 
@@ -142,228 +106,20 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testParameters() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65),
-                Filters.in("city", new String[] { "NYC", "LA" }));
+    void testConstructor_NullOperatorThrowsIllegalArgumentException() {
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException),
+        // for both constructors and both Filters.junction factory overloads.
+        final Equal cond = Filters.eq("status", "active");
+        final List<Condition> conds = Arrays.asList(cond);
 
-        List<Object> params = junction.parameters();
-
-        assertNotNull(params);
-        assertEquals(5, params.size());
-        assertEquals("active", params.get(0));
-        assertEquals(18, params.get(1));
-        assertEquals(65, params.get(2));
-        assertEquals("NYC", params.get(3));
-        assertEquals("LA", params.get(4));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(null, cond));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(null, conds));
+        assertThrows(IllegalArgumentException.class, () -> Filters.junction(null, cond));
+        assertThrows(IllegalArgumentException.class, () -> Filters.junction(null, conds));
     }
 
     @Test
-    public void testParametersEmpty() {
-        Junction junction = new Junction(Operator.OR);
-
-        List<Object> params = junction.parameters();
-
-        assertNotNull(params);
-        assertEquals(0, params.size());
-    }
-
-    @Test
-    public void testParametersNested() {
-        Junction innerJunction = new Junction(Operator.OR, Filters.eq("city", "NYC"), Filters.eq("city", "LA"));
-
-        Junction outerJunction = new Junction(Operator.AND, Filters.eq("status", "active"), innerJunction);
-
-        List<Object> params = outerJunction.parameters();
-
-        assertEquals(3, params.size());
-        assertEquals("active", params.get(0));
-        assertEquals("NYC", params.get(1));
-        assertEquals("LA", params.get(2));
-    }
-
-    @Test
-    public void testCopyPreservesConditions() {
-        Junction original = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
-        Junction copy = new Junction(original.operator(), original.conditions());
-
-        assertEquals(original.conditions(), copy.conditions());
-        assertNotEquals(original.conditions(), List.of());
-    }
-
-    @Test
-    public void testToStringWithNamingPolicy() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
-
-        String sql = junction.toSql(NamingPolicy.SNAKE_CASE);
-
-        assertNotNull(sql);
-        assertTrue(sql.contains("AND"));
-        assertTrue(sql.contains("status"));
-        assertTrue(sql.contains("age"));
-    }
-
-    @Test
-    public void testToStringEmptyUsesBooleanIdentities() {
-        assertEquals("1 = 1", new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE));
-        assertEquals("1 = 0", new Junction(Operator.OR).toSql(NamingPolicy.NO_CHANGE));
-    }
-
-    @Test
-    public void testToStringWithParentheses() {
-        Junction junction = new Junction(Operator.OR, Filters.eq("status", "active"), Filters.eq("status", "pending"));
-
-        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
-
-        assertTrue(sql.startsWith("("));
-        assertTrue(sql.endsWith(")"));
-        assertTrue(sql.contains(" OR "));
-    }
-
-    @Test
-    public void testToStringNested() {
-        Junction inner = new Junction(Operator.OR, Filters.eq("priority", 1), Filters.eq("priority", 2));
-
-        Junction outer = new Junction(Operator.AND, Filters.eq("status", "active"), inner);
-
-        String sql = outer.toSql(NamingPolicy.NO_CHANGE);
-
-        assertTrue(sql.contains("AND"));
-        assertTrue(sql.contains("OR"));
-    }
-
-    @Test
-    public void testHashCode() {
-        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
-        Junction j2 = new Junction(Operator.AND, Filters.eq("a", 1));
-
-        assertEquals(j1.hashCode(), j2.hashCode());
-    }
-
-    @Test
-    public void testChildConditionSnapshotsMutableArrayValue() {
-        final byte[] value = { 1 };
-        final Junction junction = new Junction(Operator.AND, Filters.eq("payload", value));
-
-        junction.hashCode();
-        value[0] = 2;
-
-        final Junction equalToSnapshot = new Junction(Operator.AND, Filters.eq("payload", new byte[] { 1 }));
-        assertEquals(junction, equalToSnapshot);
-        assertEquals(junction.hashCode(), equalToSnapshot.hashCode());
-    }
-
-    @Test
-    public void testHashCodeDifferent() {
-        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
-        Junction j2 = new Junction(Operator.OR, Filters.eq("a", 1));
-
-        assertNotEquals(j1.hashCode(), j2.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        Junction j1 = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
-
-        Junction j2 = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
-
-        assertEquals(j1, j2);
-    }
-
-    @Test
-    public void testEqualsSameInstance() {
-        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
-
-        assertEquals(j1, j1);
-    }
-
-    @Test
-    public void testEqualsNull() {
-        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
-
-        assertNotEquals(j1, null);
-    }
-
-    @Test
-    public void testEqualsDifferentType() {
-        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
-        String other = "not a junction";
-
-        assertNotEquals(j1, other);
-    }
-
-    @Test
-    public void testEqualsDifferentOperator() {
-        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
-        Junction j2 = new Junction(Operator.OR, Filters.eq("a", 1));
-
-        assertNotEquals(j1, j2);
-    }
-
-    @Test
-    public void testEqualsDifferentConditions() {
-        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
-        Junction j2 = new Junction(Operator.AND, Filters.eq("b", 2));
-
-        assertNotEquals(j1, j2);
-    }
-
-    @Test
-    public void testEqualsExactClassNotSubtype() {
-        // getClass()-based equals: a raw Junction(AND, ...) is NOT equal to a subtype (And) with identical fields.
-        Junction rawAnd = new Junction(Operator.AND, Filters.eq("a", 1));
-        And and = new And(Filters.eq("a", 1));
-
-        assertNotEquals(rawAnd, and);
-        assertNotEquals(and, rawAnd);
-
-        // Same-type equality is unaffected.
-        assertEquals(and, new And(Filters.eq("a", 1)));
-    }
-
-    @Test
-    public void testComplexJunctionAndOperation() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65), Filters.isNotNull("email"),
-                Filters.like("name", "John%"));
-
-        assertEquals(4, junction.conditions().size());
-        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
-        assertTrue(sql.contains("AND"));
-    }
-
-    @Test
-    public void testComplexJunctionOrOperation() {
-        Junction junction = new Junction(Operator.OR, Filters.eq("priority", 1), Filters.eq("urgent", true), Filters.lt("deadline", "2025-01-01"));
-
-        assertEquals(3, junction.conditions().size());
-        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
-        assertTrue(sql.contains("OR"));
-    }
-
-    @Test
-    public void testJunctionWithSingleCondition() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"));
-
-        assertEquals(1, junction.conditions().size());
-        assertFalse(junction.toSql(NamingPolicy.NO_CHANGE).isEmpty());
-    }
-
-    @Test
-    public void testJunctionConditionsListIsUnmodifiable() {
-        Junction junction = new Junction(Operator.AND);
-        List<Condition> conditions = junction.conditions();
-
-        assertThrows(UnsupportedOperationException.class, () -> conditions.add(Filters.eq("test", "value")));
-    }
-
-    @Test
-    public void testConstructor_WithNullElementInVarargs() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Junction(Operator.AND, Filters.eq("a", 1), null, Filters.eq("b", 2));
-        });
-    }
-
-    @Test
-    public void testConstructor_WithNullElementInCollection() {
+    void testConstructor_WithNullElementInCollection() {
         List<Condition> conditions = new java.util.ArrayList<>();
         conditions.add(Filters.eq("a", 1));
         conditions.add(null);
@@ -374,55 +130,112 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testToString_WithNullConditionInList() {
+    void testConstructor_WithNullElementInVarargs() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Junction(Operator.AND, Filters.eq("a", 1), null, Filters.eq("b", 2));
+        });
+    }
+
+    @Test
+    void testConstructorRejectionMessageOmitsEmptyOperator() {
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> new Junction(Operator.AND, Filters.eq("a", 1), Filters.subQuery("select 1")));
+        assertEquals("Condition SubQuery cannot be used in a junction constructor", e.getMessage());
+
+        final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
+                () -> new Junction(Operator.OR, Filters.eq("a", 1), Filters.expr("ORDER BY x")));
+        assertEquals("Condition SqlExpression \"ORDER BY x\" cannot be used in a junction constructor", e2.getMessage());
+
+        final IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class,
+                () -> new Junction(Operator.AND, Filters.eq("a", 1), new Where(Filters.eq("b", 2))));
+        assertEquals("Condition Where with operator 'WHERE' cannot be used in a junction constructor", e3.getMessage());
+    }
+
+    @Test
+    void testConstructorRejectsClauseOperands() {
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.where(Filters.eq("a", 1))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, Arrays.asList(new OrderBy("name"))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("WHERE active = true")));
+    }
+
+    @Test
+    void testConstructorRejectsConnectorOperand() {
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
+    }
+
+    @Test
+    void testConstructorRejectsConnectorOperands() {
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.using("id")));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("ON a.id = b.a_id")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.eq("active", true).and(Filters.expr("USING (id)")));
+    }
+
+    @Test
+    void testConstructorRejectsQuantifiedSubqueryBlankExpressionsAndUninitializedJunctions() {
+        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+
+        assertThrows(IllegalArgumentException.class, () -> new And(Filters.all(subQuery)));
+        assertThrows(IllegalArgumentException.class, () -> new Or(Filters.any(subQuery)));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.some(subQuery)));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("")));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new And()));
+    }
+
+    @Test
+    void testConstructorRejectsWrappedNonPredicateComponents() {
+        final SubQuery subQuery = new SubQuery("SELECT id FROM users");
+
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new OrderBy("name"))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new TestComposableWrapper(new Any(subQuery))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(new SqlExpression(" "))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new Equal()));
+        assertDoesNotThrow(() -> new Junction(Operator.AND, new TestComposableWrapper(new Equal("id", 1))));
+    }
+
+    @Test
+    void testConstructorWithEmptyConditions() {
         Junction junction = new Junction(Operator.AND);
-        // Access package-private field directly since conditions() now returns an unmodifiable view
-        junction.conditions.add(Filters.eq("a", 1));
-        junction.conditions.add(null);
-        junction.conditions.add(Filters.eq("b", 2));
 
-        String result = junction.toSql(NamingPolicy.NO_CHANGE);
-        assertNotNull(result);
-        assertTrue(result.contains("a"));
-        assertTrue(result.contains("b"));
+        assertNotNull(junction);
+        assertEquals(Operator.AND, junction.operator());
+        assertEquals(0, junction.conditions().size());
     }
 
     @Test
-    public void testParameters_WithNullConditionInList() {
-        Junction junction = new Junction(Operator.AND);
-        junction.conditions.add(Filters.eq("a", 1));
-        junction.conditions.add(null);
-        junction.conditions.add(Filters.eq("b", 2));
+    void testConstructorWithOperatorAndCollection() {
+        List<Condition> conditions = Arrays.asList(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.isNotNull("email"));
 
-        List<Object> params = junction.parameters();
-        assertEquals(2, params.size());
-        assertEquals(1, params.get(0));
-        assertEquals(2, params.get(1));
+        Junction junction = new Junction(Operator.OR, conditions);
+
+        assertNotNull(junction);
+        assertEquals(Operator.OR, junction.operator());
+        assertEquals(3, junction.conditions().size());
     }
 
     @Test
-    public void testToString_DefaultNamingPolicy() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("userName", "John"), Filters.gt("userAge", 18));
+    void testConstructorWithOperatorAndConditions() {
+        Equal cond1 = Filters.eq("status", "active");
+        GreaterThan cond2 = Filters.gt("age", 18);
 
-        String sql = junction.toString();
-        assertNotNull(sql);
-        assertTrue(sql.contains("userName") || sql.contains("user_name"));
+        Junction junction = new Junction(Operator.AND, cond1, cond2);
+
+        assertNotNull(junction);
+        assertEquals(Operator.AND, junction.operator());
+        assertEquals(2, junction.conditions().size());
     }
 
     @Test
-    public void testToString_AllNullConditions() {
-        Junction junction = new Junction(Operator.AND);
-        junction.conditions.add(null);
-        junction.conditions.add(null);
+    void testCopyPreservesConditions() {
+        Junction original = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
+        Junction copy = new Junction(original.operator(), original.conditions());
 
-        String result = junction.toSql(NamingPolicy.NO_CHANGE);
-
-        assertNotNull(result);
-        assertEquals("1 = 1", result);
+        assertEquals(original.conditions(), copy.conditions());
+        assertNotEquals(original.conditions(), List.of());
     }
 
     @Test
-    public void testDefaultConstructorToString() {
+    void testDefaultConstructorToString() {
         Junction junction = new Junction();
 
         assertNotNull(junction.toSql(NamingPolicy.NO_CHANGE));
@@ -432,7 +245,7 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testDefaultConstructorToString_NullOperatorWithConditions() {
+    void testDefaultConstructorToString_NullOperatorWithConditions() {
         // Simulate Kryo-deserialized state: default-constructed Junction (operator=null)
         // populated with non-null conditions afterwards. Must not NPE.
         Junction junction = new Junction();
@@ -448,88 +261,83 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testAdd() {
-        Assertions.assertFalse(Arrays.stream(Junction.class.getDeclaredMethods()).anyMatch(method -> method.getName().equals("add")));
+    void testEquals() {
+        Junction j1 = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
+
+        Junction j2 = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
+
+        assertEquals(j1, j2);
     }
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testRemove() {
-        Assertions.assertFalse(Arrays.stream(Junction.class.getDeclaredMethods()).anyMatch(method -> method.getName().equals("remove")));
+    void testEqualsDifferentConditions() {
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        Junction j2 = new Junction(Operator.AND, Filters.eq("b", 2));
+
+        assertNotEquals(j1, j2);
     }
 
     @Test
-    public void testClear() {
-        Assertions.assertFalse(Arrays.stream(Junction.class.getDeclaredMethods()).anyMatch(method -> method.getName().equals("clear")));
+    void testEqualsDifferentOperator() {
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        Junction j2 = new Junction(Operator.OR, Filters.eq("a", 1));
+
+        assertNotEquals(j1, j2);
     }
 
     @Test
-    public void testToString() {
-        Junction junction = new Junction(Operator.AND, Filters.eq("active", true), Filters.isNotNull("email"));
+    void testEqualsDifferentType() {
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        String other = "not a junction";
 
-        String result = junction.toString();
-
-        Assertions.assertTrue(result.contains("AND"));
-        Assertions.assertTrue(result.contains("active"));
-        Assertions.assertTrue(result.contains("email"));
-        Assertions.assertTrue(result.startsWith("("));
-        Assertions.assertTrue(result.endsWith(")"));
+        assertNotEquals(j1, other);
     }
 
     @Test
-    public void testToStringWithEmptyConditions() {
-        Assertions.assertEquals("1 = 1", new Junction(Operator.AND).toString());
-        Assertions.assertEquals("1 = 0", new Junction(Operator.OR).toString());
+    void testEqualsExactClassNotSubtype() {
+        // getClass()-based equals: a raw Junction(AND, ...) is NOT equal to a subtype (And) with identical fields.
+        Junction rawAnd = new Junction(Operator.AND, Filters.eq("a", 1));
+        And and = new And(Filters.eq("a", 1));
+
+        assertNotEquals(rawAnd, and);
+        assertNotEquals(and, rawAnd);
+
+        // Same-type equality is unaffected.
+        assertEquals(and, new And(Filters.eq("a", 1)));
     }
 
     @Test
-    public void testNestedJunctions() {
-        Junction inner1 = new Junction(Operator.AND, Filters.eq("a", 1), Filters.eq("b", 2));
-        Junction inner2 = new Junction(Operator.AND, Filters.eq("c", 3), Filters.eq("d", 4));
-        Junction outer = new Junction(Operator.OR, inner1, inner2);
+    void testEqualsNull() {
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
 
-        String result = outer.toString();
-
-        Assertions.assertTrue(result.contains("OR"));
-        Assertions.assertTrue(result.contains("AND"));
-        Assertions.assertTrue(result.contains("a"));
-        Assertions.assertTrue(result.contains("b"));
-        Assertions.assertTrue(result.contains("c"));
-        Assertions.assertTrue(result.contains("d"));
-    }
-
-    /**
-     * Second-pass locking test: parameters() must recursively collect parameters from
-     * nested junctions in left-to-right (depth-first) order.
-     */
-    @Test
-    public void testParametersRecursesIntoNestedJunctions() {
-        Junction inner = new Junction(Operator.AND, Filters.eq("a", 1), Filters.eq("b", 2));
-        Junction outer = new Junction(Operator.OR, Filters.eq("c", 3), inner, Filters.eq("d", 4));
-
-        List<Object> params = outer.parameters();
-
-        Assertions.assertEquals(Arrays.asList(3, 1, 2, 4), params);
+        assertNotEquals(j1, null);
     }
 
     @Test
-    public void testConstructorRejectsConnectorOperand() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.on("a.id", "b.a_id"), Filters.eq("active", true)));
+    void testEqualsSameInstance() {
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+
+        assertEquals(j1, j1);
     }
 
     @Test
-    public void testConstructorRejectsQuantifiedSubqueryBlankExpressionsAndUninitializedJunctions() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+    void testHashCode() {
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        Junction j2 = new Junction(Operator.AND, Filters.eq("a", 1));
 
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new And(Filters.all(subQuery)));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Or(Filters.any(subQuery)));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.some(subQuery)));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, Filters.expr("")));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.OR, new And()));
+        assertEquals(j1.hashCode(), j2.hashCode());
     }
 
     @Test
-    public void testInitializedEmptyJunctionsComposeAsPredicates() {
+    void testHashCodeDifferent() {
+        Junction j1 = new Junction(Operator.AND, Filters.eq("a", 1));
+        Junction j2 = new Junction(Operator.OR, Filters.eq("a", 1));
+
+        assertNotEquals(j1.hashCode(), j2.hashCode());
+    }
+
+    @Test
+    void testInitializedEmptyJunctionsComposeAsPredicates() {
         Junction junction = new Junction(Operator.OR, Filters.and(), Filters.or());
 
         assertEquals("((1 = 1) OR (1 = 0))", junction.toSql(NamingPolicy.NO_CHANGE));
@@ -538,8 +346,19 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testTrustedConstructorStillRejectsNonJunctionOperator() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.EQUAL, new java.util.ArrayList<>(), true));
+    void testJunctionConditionsListIsUnmodifiable() {
+        Junction junction = new Junction(Operator.AND);
+        List<Condition> conditions = junction.conditions();
+
+        assertThrows(UnsupportedOperationException.class, () -> conditions.add(Filters.eq("test", "value")));
+    }
+
+    @Test
+    void testJunctionWithSingleCondition() {
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"));
+
+        assertEquals(1, junction.conditions().size());
+        assertFalse(junction.toSql(NamingPolicy.NO_CHANGE).isEmpty());
     }
 
     /**
@@ -548,7 +367,7 @@ public class JunctionTest extends TestBase {
      * and()/or()/xor()/not(), and inside clauses. Only the uninitialized (null-operator) junction stays rejected.
      */
     @Test
-    public void testNestedEmptyJunctionsAreAcceptedEverywhere() {
+    void testNestedEmptyJunctionsAreAcceptedEverywhere() {
         assertEquals("((1 = 0))", Filters.and(Filters.or()).toSql(NamingPolicy.NO_CHANGE));
         assertEquals("((1 = 1) OR (id = 1))", Filters.or(Filters.and(), Filters.eq("id", 1)).toSql(NamingPolicy.NO_CHANGE));
         assertEquals("((1 = 1) OR (id = 1))", Filters.and().or(Filters.eq("id", 1)).toSql(NamingPolicy.NO_CHANGE));
@@ -559,35 +378,35 @@ public class JunctionTest extends TestBase {
         assertEquals("WHERE ((id = 1) AND (1 = 0))", new Where(Filters.and(Filters.eq("id", 1), Filters.or())).toSql(NamingPolicy.NO_CHANGE));
         assertEquals("HAVING 1 = 0", new Having(Filters.or()).toSql(NamingPolicy.NO_CHANGE));
         assertEquals("ON 1 = 1", new On(Filters.and()).toSql(NamingPolicy.NO_CHANGE));
-        Assertions.assertNotNull(Filters.and().xor(Filters.eq("id", 1)));
+        assertNotNull(Filters.and().xor(Filters.eq("id", 1)));
 
         // A blank SqlExpression is still an empty predicate and stays rejected in every position.
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.expr("  ")));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.eq("id", 1).or(Filters.expr("")));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr(" ")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.expr("  ")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.eq("id", 1).or(Filters.expr("")));
+        assertThrows(IllegalArgumentException.class, () -> new Where(Filters.expr(" ")));
         // Uninitialized junctions (null operator) stay rejected.
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Filters.and(new Or()));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Where(new And()));
-    }
-
-    /**
-     * Junction.parameters() is not memoized: each call must hand out the child conditions' fresh defensive
-     * array copies, so a caller mutating a returned array cannot affect later callers.
-     */
-    @Test
-    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
-        final Junction junction = new Junction(Operator.AND, Filters.eq("payload", new byte[] { 1 }), Filters.eq("id", 7));
-
-        final byte[] first = (byte[]) junction.parameters().get(0);
-        first[0] = 9;
-
-        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) junction.parameters().get(0)));
-        assertEquals(7, junction.parameters().get(1));
-        assertEquals("((payload = '[1]') AND (id = 7))", junction.toSql(NamingPolicy.NO_CHANGE));
+        assertThrows(IllegalArgumentException.class, () -> Filters.and(new Or()));
+        assertThrows(IllegalArgumentException.class, () -> new Where(new And()));
     }
 
     @Test
-    public void testNullNamingPolicyIsNormalizedBeforeRenderingChildren() {
+    void testNestedJunctions() {
+        Junction inner1 = new Junction(Operator.AND, Filters.eq("a", 1), Filters.eq("b", 2));
+        Junction inner2 = new Junction(Operator.AND, Filters.eq("c", 3), Filters.eq("d", 4));
+        Junction outer = new Junction(Operator.OR, inner1, inner2);
+
+        String result = outer.toString();
+
+        assertTrue(result.contains("OR"));
+        assertTrue(result.contains("AND"));
+        assertTrue(result.contains("a"));
+        assertTrue(result.contains("b"));
+        assertTrue(result.contains("c"));
+        assertTrue(result.contains("d"));
+    }
+
+    @Test
+    void testNullNamingPolicyIsNormalizedBeforeRenderingChildren() {
         final SqlExpression child = new SqlExpression("firstName = 'Ada'") {
             @Override
             public String toSql(final NamingPolicy namingPolicy) {
@@ -601,17 +420,197 @@ public class JunctionTest extends TestBase {
     }
 
     @Test
-    public void testConstructorRejectionMessageOmitsEmptyOperator() {
-        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> new Junction(Operator.AND, Filters.eq("a", 1), Filters.subQuery("select 1")));
-        assertEquals("Condition SubQuery cannot be used in a junction constructor", e.getMessage());
+    void testParameters() {
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.between("age", 18, 65),
+                Filters.in("city", new String[] { "NYC", "LA" }));
 
-        final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
-                () -> new Junction(Operator.OR, Filters.eq("a", 1), Filters.expr("ORDER BY x")));
-        assertEquals("Condition SqlExpression \"ORDER BY x\" cannot be used in a junction constructor", e2.getMessage());
+        List<Object> params = junction.parameters();
 
-        final IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class,
-                () -> new Junction(Operator.AND, Filters.eq("a", 1), new Where(Filters.eq("b", 2))));
-        assertEquals("Condition Where with operator 'WHERE' cannot be used in a junction constructor", e3.getMessage());
+        assertNotNull(params);
+        assertEquals(5, params.size());
+        assertEquals("active", params.get(0));
+        assertEquals(18, params.get(1));
+        assertEquals(65, params.get(2));
+        assertEquals("NYC", params.get(3));
+        assertEquals("LA", params.get(4));
+    }
+
+    @Test
+    void testParameters_WithNullConditionInList() {
+        Junction junction = new Junction(Operator.AND);
+        junction.conditions.add(Filters.eq("a", 1));
+        junction.conditions.add(null);
+        junction.conditions.add(Filters.eq("b", 2));
+
+        List<Object> params = junction.parameters();
+        assertEquals(2, params.size());
+        assertEquals(1, params.get(0));
+        assertEquals(2, params.get(1));
+    }
+
+    /**
+     * Junction.parameters() is not memoized: each call must hand out the child conditions' fresh defensive
+     * array copies, so a caller mutating a returned array cannot affect later callers.
+     */
+    @Test
+    void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        final Junction junction = new Junction(Operator.AND, Filters.eq("payload", new byte[] { 1 }), Filters.eq("id", 7));
+
+        final byte[] first = (byte[]) junction.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) junction.parameters().get(0)));
+        assertEquals(7, junction.parameters().get(1));
+        assertEquals("((payload = '[1]') AND (id = 7))", junction.toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    void testParametersEmpty() {
+        Junction junction = new Junction(Operator.OR);
+
+        List<Object> params = junction.parameters();
+
+        assertNotNull(params);
+        assertEquals(0, params.size());
+    }
+
+    @Test
+    void testParametersNested() {
+        Junction innerJunction = new Junction(Operator.OR, Filters.eq("city", "NYC"), Filters.eq("city", "LA"));
+
+        Junction outerJunction = new Junction(Operator.AND, Filters.eq("status", "active"), innerJunction);
+
+        List<Object> params = outerJunction.parameters();
+
+        assertEquals(3, params.size());
+        assertEquals("active", params.get(0));
+        assertEquals("NYC", params.get(1));
+        assertEquals("LA", params.get(2));
+    }
+
+    /**
+     * Second-pass locking test: parameters() must recursively collect parameters from
+     * nested junctions in left-to-right (depth-first) order.
+     */
+    @Test
+    void testParametersRecursesIntoNestedJunctions() {
+        Junction inner = new Junction(Operator.AND, Filters.eq("a", 1), Filters.eq("b", 2));
+        Junction outer = new Junction(Operator.OR, Filters.eq("c", 3), inner, Filters.eq("d", 4));
+
+        List<Object> params = outer.parameters();
+
+        assertEquals(Arrays.asList(3, 1, 2, 4), params);
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void testRemove() {
+        assertFalse(Arrays.stream(Junction.class.getDeclaredMethods()).anyMatch(method -> method.getName().equals("remove")));
+    }
+
+    @Test
+    void testToString() {
+        Junction junction = new Junction(Operator.AND, Filters.eq("active", true), Filters.isNotNull("email"));
+
+        String result = junction.toString();
+
+        assertTrue(result.contains("AND"));
+        assertTrue(result.contains("active"));
+        assertTrue(result.contains("email"));
+        assertTrue(result.startsWith("("));
+        assertTrue(result.endsWith(")"));
+    }
+
+    @Test
+    void testToString_AllNullConditions() {
+        Junction junction = new Junction(Operator.AND);
+        junction.conditions.add(null);
+        junction.conditions.add(null);
+
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
+
+        assertNotNull(result);
+        assertEquals("1 = 1", result);
+    }
+
+    @Test
+    void testToString_DefaultNamingPolicy() {
+        Junction junction = new Junction(Operator.AND, Filters.eq("userName", "John"), Filters.gt("userAge", 18));
+
+        String sql = junction.toString();
+        assertNotNull(sql);
+        assertTrue(sql.contains("userName") || sql.contains("user_name"));
+    }
+
+    @Test
+    void testToString_WithNullConditionInList() {
+        Junction junction = new Junction(Operator.AND);
+        // Access package-private field directly since conditions() now returns an unmodifiable view
+        junction.conditions.add(Filters.eq("a", 1));
+        junction.conditions.add(null);
+        junction.conditions.add(Filters.eq("b", 2));
+
+        String result = junction.toSql(NamingPolicy.NO_CHANGE);
+        assertNotNull(result);
+        assertTrue(result.contains("a"));
+        assertTrue(result.contains("b"));
+    }
+
+    @Test
+    void testToStringEmptyUsesBooleanIdentities() {
+        assertEquals("1 = 1", new Junction(Operator.AND).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("1 = 0", new Junction(Operator.OR).toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    void testToStringNested() {
+        Junction inner = new Junction(Operator.OR, Filters.eq("priority", 1), Filters.eq("priority", 2));
+
+        Junction outer = new Junction(Operator.AND, Filters.eq("status", "active"), inner);
+
+        String sql = outer.toSql(NamingPolicy.NO_CHANGE);
+
+        assertTrue(sql.contains("AND"));
+        assertTrue(sql.contains("OR"));
+    }
+
+    @Test
+    void testToStringWithEmptyConditions() {
+        assertEquals("1 = 1", new Junction(Operator.AND).toString());
+        assertEquals("1 = 0", new Junction(Operator.OR).toString());
+    }
+
+    @Test
+    void testToStringWithNamingPolicy() {
+        Junction junction = new Junction(Operator.AND, Filters.eq("status", "active"), Filters.gt("age", 18));
+
+        String sql = junction.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertNotNull(sql);
+        assertTrue(sql.contains("AND"));
+        assertTrue(sql.contains("status"));
+        assertTrue(sql.contains("age"));
+    }
+
+    @Test
+    void testToStringWithParentheses() {
+        Junction junction = new Junction(Operator.OR, Filters.eq("status", "active"), Filters.eq("status", "pending"));
+
+        String sql = junction.toSql(NamingPolicy.NO_CHANGE);
+
+        assertTrue(sql.startsWith("("));
+        assertTrue(sql.endsWith(")"));
+        assertTrue(sql.contains(" OR "));
+    }
+
+    @Test
+    void testTrustedConstructorStillRejectsNonJunctionOperator() {
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.EQUAL, new java.util.ArrayList<>(), true));
+    }
+
+    private static final class TestComposableWrapper extends ComposableCell {
+        TestComposableWrapper(final Condition condition) {
+            super(Operator.NOT, condition);
+        }
     }
 }

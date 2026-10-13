@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -21,6 +20,228 @@ import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class AbstractInSubQueryTest extends TestBase {
+
+    @Test
+    void testConstructor_AllowsStructuredWildcardProjectionWithUnknownArity() {
+        SubQuery wildcard = new SubQuery("users", Arrays.asList("*"), null);
+        InSubQuery condition = new InSubQuery(Arrays.asList("id", "name"), wildcard);
+
+        assertEquals("(id, name) IN (SELECT * FROM users)", condition.toSql(NamingPolicy.NO_CHANGE));
+
+        SubQuery qualifiedWildcard = new SubQuery("users u", Arrays.asList("u.*"), null);
+        assertDoesNotThrow(() -> new InSubQuery(Arrays.asList("id", "name"), qualifiedWildcard));
+    }
+
+    @Test
+    void testConstructor_RejectsBlankPropertyNames() {
+        final SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("   ", subQuery));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("id", "   "), subQuery));
+    }
+
+    @Test
+    void testConstructor_RejectsSubQueryArityMismatch() {
+        final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id"), Filters.eq("status", "ACTIVE"));
+
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery));
+    }
+
+    @Test
+    void testConstructorValidatesDefensivePropertySnapshotIsNonEmpty() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new TestAbstractInSubQuery(new NominallyNonEmptyCollection<>(), Filters.subQuery("SELECT id FROM users")));
+    }
+
+    @Test
+    void testDefaultConstructor_EmptyState() {
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery();
+
+        assertEquals(null, condition.propName());
+        assertTrue(condition.propNames().isEmpty());
+        assertTrue(condition.parameters().isEmpty());
+    }
+
+    @Test
+    void testDefaultConstructorToString() {
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery();
+
+        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
+
+        assertNotNull(sql);
+    }
+
+    @Test
+    void testEquals() {
+        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+
+        assertEquals(left, right);
+    }
+
+    @Test
+    void testEquals_DifferentSubQuery() {
+        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "INACTIVE")));
+
+        assertNotEquals(left, right);
+    }
+
+    @Test
+    void testGetPropNames() {
+        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
+
+        assertEquals("user_id", condition.propName());
+        assertEquals(Arrays.asList("user_id"), condition.propNames().stream().toList());
+    }
+
+    @Test
+    void testGetPropNames_MultipleProperties() {
+        final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id", "right_id"), Filters.eq("active", true));
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery);
+
+        assertEquals("leftId", condition.propName());
+        assertEquals(Arrays.asList("leftId", "rightId"), condition.propNames().stream().toList());
+    }
+
+    @Test
+    void testGetPropNames_Unmodifiable() {
+        final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id", "right_id"), Filters.eq("active", true));
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery);
+
+        assertThrows(UnsupportedOperationException.class, () -> condition.propNames().add("tenantId"));
+    }
+
+    @Test
+    void testGetSubQuery() {
+        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
+
+        assertEquals(subQuery, condition.subQuery());
+    }
+
+    @Test
+    void testHashCode() {
+        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE"));
+        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id", subQuery);
+        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+
+        assertEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    void testHashCode_DifferentSubQuery() {
+        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "INACTIVE")));
+
+        assertNotEquals(left.hashCode(), right.hashCode());
+    }
+
+    @Test
+    void testParameters() {
+        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE"));
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
+
+        assertEquals(Arrays.asList("ACTIVE"), condition.parameters());
+    }
+
+    @Test
+    void testParametersArrayCopyIsNotSharedAcrossCalls() {
+        // AbstractInSubQuery.parameters() is not memoized: each call must hand out the subquery's fresh defensive copy.
+        final SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 1 }));
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("id", subQuery);
+
+        final byte[] first = (byte[]) condition.parameters().get(0);
+        first[0] = 9;
+
+        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) condition.parameters().get(0)));
+        assertEquals("id IN (SELECT id FROM users WHERE payload = '[1]')", condition.toString());
+    }
+
+    @Test
+    void testRejectsUnsupportedOperator() {
+        SubQuery one = Filters.subQuery("SELECT id FROM users");
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("id", Operator.EQUAL, one));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TestAbstractInSubQuery(Arrays.asList("a", "b"), Operator.EQUAL, Filters.subQuery("SELECT a, b FROM t")));
+        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("id", null, one));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TestAbstractInSubQuery(Arrays.asList("a", "b"), (Operator) null, Filters.subQuery("SELECT a, b FROM t")));
+    }
+
+    @Test
+    void testSubQueryConditionSnapshotsMutableArrayValue() {
+        // The nested Binary snapshots its array value at construction, so mutating the caller's array
+        // afterwards must not change the rendered SQL, the hash, or equality with the {1} variant.
+        final byte[] value = { 1 };
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", value)));
+
+        final int hashBeforeMutation = condition.hashCode();
+        value[0] = 2;
+
+        assertEquals("user_id IN (SELECT id FROM users WHERE payload = '[1]')", condition.toSql(NamingPolicy.NO_CHANGE));
+        assertEquals(hashBeforeMutation, condition.hashCode());
+
+        final TestAbstractInSubQuery equalToSnapshot = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 1 })));
+        assertEquals(condition, equalToSnapshot);
+        assertEquals(condition.hashCode(), equalToSnapshot.hashCode());
+
+        final TestAbstractInSubQuery mutatedVariant = new TestAbstractInSubQuery("user_id",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 2 })));
+        assertNotEquals(condition, mutatedVariant);
+    }
+
+    // Verifies both single-column and multi-column SQL rendering.
+    @Test
+    void testToString() {
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("userId",
+                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
+
+        final String sql = condition.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertTrue(sql.contains("user_id"));
+        assertTrue(sql.contains("IN"));
+        assertTrue(sql.contains("SELECT"));
+    }
+
+    @Test
+    void testToString_MultipleProperties() {
+        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"),
+                Filters.subQuery("pairs", Arrays.asList("left_id", "right_id"), Filters.eq("status", "ACTIVE")));
+
+        final String sql = condition.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertTrue(sql.contains("(left_id, right_id)"));
+        assertTrue(sql.contains("IN"));
+    }
+
+    @Test
+    void testValidateSubQuerySelectArity_NullProjectionNameDoesNotNpe() {
+        // A projection containing null is not a wildcard; arity is still checked without NPE.
+        final SubQuery withNullProp = new SubQuery("SELECT 1") {
+            @Override
+            public com.landawn.abacus.util.ImmutableList<String> selectPropNames() {
+                final java.util.List<String> props = new java.util.ArrayList<>();
+                props.add(null);
+                props.add("id");
+                return com.landawn.abacus.util.ImmutableList.wrap(props);
+            }
+        };
+
+        assertDoesNotThrow(() -> AbstractCondition.validateSubQuerySelectArity(2, withNullProp));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.validateSubQuerySelectArity(1, withNullProp));
+    }
 
     private static final class NominallyNonEmptyCollection<E> extends AbstractCollection<E> {
         @Override
@@ -54,228 +275,5 @@ public class AbstractInSubQueryTest extends TestBase {
         TestAbstractInSubQuery(final Collection<String> propNames, final Operator operator, final SubQuery subQuery) {
             super(propNames, operator, subQuery);
         }
-    }
-
-    @Test
-    public void testRejectsUnsupportedOperator() {
-        SubQuery one = Filters.subQuery("SELECT id FROM users");
-        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("id", Operator.EQUAL, one));
-        assertThrows(IllegalArgumentException.class,
-                () -> new TestAbstractInSubQuery(Arrays.asList("a", "b"), Operator.EQUAL, Filters.subQuery("SELECT a, b FROM t")));
-        // A null operator is an IllegalArgumentException (previously threw NullPointerException).
-        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("id", null, one));
-        assertThrows(IllegalArgumentException.class,
-                () -> new TestAbstractInSubQuery(Arrays.asList("a", "b"), (Operator) null, Filters.subQuery("SELECT a, b FROM t")));
-    }
-
-    @Test
-    public void testGetPropNames() {
-        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
-
-        assertEquals("user_id", condition.propName());
-        assertEquals(Arrays.asList("user_id"), condition.propNames().stream().toList());
-    }
-
-    @Test
-    public void testGetPropNames_MultipleProperties() {
-        final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id", "right_id"), Filters.eq("active", true));
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery);
-
-        assertEquals("leftId", condition.propName());
-        assertEquals(Arrays.asList("leftId", "rightId"), condition.propNames().stream().toList());
-    }
-
-    @Test
-    public void testGetPropNames_Unmodifiable() {
-        final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id", "right_id"), Filters.eq("active", true));
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery);
-
-        assertThrows(UnsupportedOperationException.class, () -> condition.propNames().add("tenantId"));
-    }
-
-    @Test
-    public void testGetSubQuery() {
-        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("active", true));
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
-
-        assertEquals(subQuery, condition.subQuery());
-    }
-
-    @Test
-    public void testParameters() {
-        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE"));
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id", subQuery);
-
-        assertEquals(Arrays.asList("ACTIVE"), condition.parameters());
-    }
-
-    @Test
-    public void testHashCode() {
-        final SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE"));
-        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id", subQuery);
-        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-
-        assertEquals(left.hashCode(), right.hashCode());
-    }
-
-    @Test
-    public void testSubQueryConditionSnapshotsMutableArrayValue() {
-        // The nested Binary snapshots its array value at construction, so mutating the caller's array
-        // afterwards must not change the rendered SQL, the hash, or equality with the {1} variant.
-        final byte[] value = { 1 };
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", value)));
-
-        final int hashBeforeMutation = condition.hashCode();
-        value[0] = 2;
-
-        assertEquals("user_id IN (SELECT id FROM users WHERE payload = '[1]')", condition.toSql(NamingPolicy.NO_CHANGE));
-        assertEquals(hashBeforeMutation, condition.hashCode());
-
-        final TestAbstractInSubQuery equalToSnapshot = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 1 })));
-        assertEquals(condition, equalToSnapshot);
-        assertEquals(condition.hashCode(), equalToSnapshot.hashCode());
-
-        final TestAbstractInSubQuery mutatedVariant = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 2 })));
-        assertNotEquals(condition, mutatedVariant);
-    }
-
-    @Test
-    public void testHashCode_DifferentSubQuery() {
-        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "INACTIVE")));
-
-        assertNotEquals(left.hashCode(), right.hashCode());
-    }
-
-    @Test
-    public void testEquals() {
-        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-
-        assertEquals(left, right);
-    }
-
-    @Test
-    public void testEquals_DifferentSubQuery() {
-        final TestAbstractInSubQuery left = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-        final TestAbstractInSubQuery right = new TestAbstractInSubQuery("user_id",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "INACTIVE")));
-
-        assertNotEquals(left, right);
-    }
-
-    // Verifies both single-column and multi-column SQL rendering.
-    @Test
-    public void testToString() {
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("userId",
-                Filters.subQuery("users", Arrays.asList("id"), Filters.eq("status", "ACTIVE")));
-
-        final String sql = condition.toSql(NamingPolicy.SNAKE_CASE);
-
-        assertTrue(sql.contains("user_id"));
-        assertTrue(sql.contains("IN"));
-        assertTrue(sql.contains("SELECT"));
-    }
-
-    @Test
-    public void testToString_MultipleProperties() {
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"),
-                Filters.subQuery("pairs", Arrays.asList("left_id", "right_id"), Filters.eq("status", "ACTIVE")));
-
-        final String sql = condition.toSql(NamingPolicy.SNAKE_CASE);
-
-        assertTrue(sql.contains("(left_id, right_id)"));
-        assertTrue(sql.contains("IN"));
-    }
-
-    @Test
-    public void testDefaultConstructor_EmptyState() {
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery();
-
-        assertEquals(null, condition.propName());
-        assertTrue(condition.propNames().isEmpty());
-        assertTrue(condition.parameters().isEmpty());
-    }
-
-    @Test
-    public void testConstructor_RejectsSubQueryArityMismatch() {
-        final SubQuery subQuery = Filters.subQuery("pairs", Arrays.asList("left_id"), Filters.eq("status", "ACTIVE"));
-
-        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("leftId", "rightId"), subQuery));
-    }
-
-    @Test
-    public void testConstructorValidatesDefensivePropertySnapshotIsNonEmpty() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new TestAbstractInSubQuery(new NominallyNonEmptyCollection<>(), Filters.subQuery("SELECT id FROM users")));
-    }
-
-    @Test
-    public void testConstructor_AllowsStructuredWildcardProjectionWithUnknownArity() {
-        SubQuery wildcard = new SubQuery("users", Arrays.asList("*"), null);
-        InSubQuery condition = new InSubQuery(Arrays.asList("id", "name"), wildcard);
-
-        assertEquals("(id, name) IN (SELECT * FROM users)", condition.toSql(NamingPolicy.NO_CHANGE));
-
-        SubQuery qualifiedWildcard = new SubQuery("users u", Arrays.asList("u.*"), null);
-        assertDoesNotThrow(() -> new InSubQuery(Arrays.asList("id", "name"), qualifiedWildcard));
-    }
-
-    @Test
-    public void testValidateSubQuerySelectArity_NullProjectionNameDoesNotNpe() {
-        // A projection containing null is not a wildcard; arity is still checked without NPE.
-        final SubQuery withNullProp = new SubQuery("SELECT 1") {
-            @Override
-            public com.landawn.abacus.util.ImmutableList<String> selectPropNames() {
-                final java.util.List<String> props = new java.util.ArrayList<>();
-                props.add(null);
-                props.add("id");
-                return com.landawn.abacus.util.ImmutableList.wrap(props);
-            }
-        };
-
-        assertDoesNotThrow(() -> AbstractCondition.validateSubQuerySelectArity(2, withNullProp));
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.validateSubQuerySelectArity(1, withNullProp));
-    }
-
-    @Test
-    @Tag("2025")
-    public void testConstructor_RejectsBlankPropertyNames() {
-        final SubQuery subQuery = Filters.subQuery("SELECT id FROM users");
-
-        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery("   ", subQuery));
-        assertThrows(IllegalArgumentException.class, () -> new TestAbstractInSubQuery(Arrays.asList("id", "   "), subQuery));
-    }
-
-    @Test
-    public void testDefaultConstructorToString() {
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery();
-
-        final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
-
-        assertNotNull(sql);
-    }
-
-    @Test
-    public void testParametersArrayCopyIsNotSharedAcrossCalls() {
-        // AbstractInSubQuery.parameters() is not memoized: each call must hand out the subquery's fresh defensive copy.
-        final SubQuery subQuery = new SubQuery("users", Arrays.asList("id"), Filters.eq("payload", new byte[] { 1 }));
-        final TestAbstractInSubQuery condition = new TestAbstractInSubQuery("id", subQuery);
-
-        final byte[] first = (byte[]) condition.parameters().get(0);
-        first[0] = 9;
-
-        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) condition.parameters().get(0)));
-        assertEquals("id IN (SELECT id FROM users WHERE payload = '[1]')", condition.toString());
     }
 }

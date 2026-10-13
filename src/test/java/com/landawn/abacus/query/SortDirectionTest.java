@@ -6,42 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 
-@Tag("2025")
 public class SortDirectionTest extends TestBase {
-    @Test
-    public void testIsAscending_ASC() {
-        assertTrue(SortDirection.ASC.isAscending());
-    }
 
     @Test
-    public void testIsAscending_DESC() {
-        assertFalse(SortDirection.DESC.isAscending());
-    }
-
-    @Test
-    public void testValues() {
-        SortDirection[] values = SortDirection.values();
-        assertNotNull(values);
-        assertEquals(2, values.length);
-        assertEquals(SortDirection.ASC, values[0]);
-        assertEquals(SortDirection.DESC, values[1]);
-    }
-
-    @Test
-    public void testValueOf() {
-        assertEquals(SortDirection.ASC, SortDirection.valueOf("ASC"));
-        assertEquals(SortDirection.DESC, SortDirection.valueOf("DESC"));
-    }
-
-    @Test
-    public void testCompareTo() {
+    void testCompareTo() {
         // Enum compareTo is based on ordinal
         assertTrue(SortDirection.ASC.compareTo(SortDirection.DESC) < 0);
         assertTrue(SortDirection.DESC.compareTo(SortDirection.ASC) > 0);
@@ -49,37 +24,22 @@ public class SortDirectionTest extends TestBase {
     }
 
     @Test
-    public void testEquals() {
-        assertEquals(SortDirection.ASC, SortDirection.ASC);
-        assertEquals(SortDirection.DESC, SortDirection.DESC);
-        assertFalse(SortDirection.ASC.equals(SortDirection.DESC));
+    void testEnumComparison() {
+        // Test that enum instances are singletons
+        SortDirection asc1 = SortDirection.ASC;
+        SortDirection asc2 = SortDirection.ASC;
+        assertSame(asc1, asc2);
+
+        SortDirection desc1 = SortDirection.DESC;
+        SortDirection desc2 = SortDirection.DESC;
+        assertSame(desc1, desc2);
+
+        // Test that ASC and DESC are different
+        assertNotSame(SortDirection.ASC, SortDirection.DESC);
     }
 
     @Test
-    public void testHashCode() {
-        assertNotNull(SortDirection.ASC.hashCode());
-        assertNotNull(SortDirection.DESC.hashCode());
-    }
-
-    @Test
-    public void testGetDeclaringClass() {
-        assertEquals(SortDirection.class, SortDirection.ASC.getDeclaringClass());
-        assertEquals(SortDirection.class, SortDirection.DESC.getDeclaringClass());
-    }
-
-    @Test
-    public void testIsAscending() {
-        // Test ASC
-        SortDirection ascDirection = SortDirection.ASC;
-        assertTrue(ascDirection.isAscending());
-
-        // Test DESC
-        SortDirection descDirection = SortDirection.DESC;
-        assertFalse(descDirection.isAscending());
-    }
-
-    @Test
-    public void testEnumValues() {
+    void testEnumValues() {
         // Test that we have exactly 2 values
         SortDirection[] values = SortDirection.values();
         assertEquals(2, values.length);
@@ -99,43 +59,102 @@ public class SortDirectionTest extends TestBase {
     }
 
     @Test
-    public void testToString() {
-        // Test toString returns the enum name
-        assertEquals("ASC", SortDirection.ASC.toString());
-        assertEquals("DESC", SortDirection.DESC.toString());
+    void testEquals() {
+        assertEquals(SortDirection.ASC, SortDirection.ASC);
+        assertEquals(SortDirection.DESC, SortDirection.DESC);
+        assertFalse(SortDirection.ASC.equals(SortDirection.DESC));
     }
 
     @Test
-    public void testEnumComparison() {
-        // Test that enum instances are singletons
-        SortDirection asc1 = SortDirection.ASC;
-        SortDirection asc2 = SortDirection.ASC;
-        assertSame(asc1, asc2);
-
-        SortDirection desc1 = SortDirection.DESC;
-        SortDirection desc2 = SortDirection.DESC;
-        assertSame(desc1, desc2);
-
-        // Test that ASC and DESC are different
-        assertNotSame(SortDirection.ASC, SortDirection.DESC);
+    void testGetDeclaringClass() {
+        assertEquals(SortDirection.class, SortDirection.ASC.getDeclaringClass());
+        assertEquals(SortDirection.class, SortDirection.DESC.getDeclaringClass());
     }
 
     @Test
-    public void testOrdinal() {
-        // Test ordinal values
-        assertEquals(0, SortDirection.ASC.ordinal());
-        assertEquals(1, SortDirection.DESC.ordinal());
+    void testHashCode() {
+        assertNotNull(SortDirection.ASC.hashCode());
+        assertNotNull(SortDirection.DESC.hashCode());
     }
 
     @Test
-    public void testName() {
+    void testIsAscending() {
+        // Test ASC
+        SortDirection ascDirection = SortDirection.ASC;
+        assertTrue(ascDirection.isAscending());
+
+        // Test DESC
+        SortDirection descDirection = SortDirection.DESC;
+        assertFalse(descDirection.isAscending());
+    }
+
+    @Test
+    void testIsAscending_ASC() {
+        assertTrue(SortDirection.ASC.isAscending());
+    }
+
+    @Test
+    void testIsAscending_DESC() {
+        assertFalse(SortDirection.DESC.isAscending());
+    }
+
+    @Test
+    void testIsDescending() {
+        assertTrue(SortDirection.DESC.isDescending());
+    }
+
+    @Test
+    void testIsDescending_ASC() {
+        assertFalse(SortDirection.ASC.isDescending());
+    }
+
+    @Test
+    void testName() {
         // Test name() method
         assertEquals("ASC", SortDirection.ASC.name());
         assertEquals("DESC", SortDirection.DESC.name());
     }
 
     @Test
-    public void testSortDirection_classLevelExample() {
+    void testNullLookupPreservesValueOfContract() {
+        assertNull(SortDirection.of(null));
+        assertThrows(NullPointerException.class, () -> SortDirection.valueOf(null));
+    }
+
+    @Test
+    void testOf() {
+        assertEquals(SortDirection.ASC, SortDirection.of("ASC"));
+        assertEquals(SortDirection.ASC, SortDirection.of("asc"));
+        assertEquals(SortDirection.ASC, SortDirection.of("Asc"));
+        assertEquals(SortDirection.DESC, SortDirection.of("DESC"));
+        assertEquals(SortDirection.DESC, SortDirection.of("desc"));
+        assertEquals(SortDirection.DESC, SortDirection.of("Desc"));
+    }
+
+    @Test
+    void testOf_Unrecognized() {
+        assertNull(SortDirection.of("up"));
+        assertNull(SortDirection.of(""));
+        assertNull(SortDirection.of("ASC "));
+        assertNull(SortDirection.of(null));
+    }
+
+    @Test
+    void testOpposite() {
+        assertEquals(SortDirection.DESC, SortDirection.ASC.opposite());
+        assertEquals(SortDirection.ASC, SortDirection.DESC.opposite());
+        assertEquals(SortDirection.ASC, SortDirection.ASC.opposite().opposite());
+    }
+
+    @Test
+    void testOrdinal() {
+        // Test ordinal values
+        assertEquals(0, SortDirection.ASC.ordinal());
+        assertEquals(1, SortDirection.DESC.ordinal());
+    }
+
+    @Test
+    void testSortDirection_classLevelExample() {
         SortDirection direction = SortDirection.ASC;
         assertTrue(direction.isAscending());
 
@@ -144,7 +163,7 @@ public class SortDirectionTest extends TestBase {
     }
 
     @Test
-    public void testSortDirection_isAscending() {
+    void testSortDirection_isAscending() {
         SortDirection direction = SortDirection.ASC;
         boolean ascending = direction.isAscending();
         assertTrue(ascending);
@@ -155,37 +174,24 @@ public class SortDirectionTest extends TestBase {
     }
 
     @Test
-    public void testIsDescending() {
-        assertTrue(SortDirection.DESC.isDescending());
+    void testToString() {
+        // Test toString returns the enum name
+        assertEquals("ASC", SortDirection.ASC.toString());
+        assertEquals("DESC", SortDirection.DESC.toString());
     }
 
     @Test
-    public void testIsDescending_ASC() {
-        assertFalse(SortDirection.ASC.isDescending());
+    void testValueOf() {
+        assertEquals(SortDirection.ASC, SortDirection.valueOf("ASC"));
+        assertEquals(SortDirection.DESC, SortDirection.valueOf("DESC"));
     }
 
     @Test
-    public void testOpposite() {
-        assertEquals(SortDirection.DESC, SortDirection.ASC.opposite());
-        assertEquals(SortDirection.ASC, SortDirection.DESC.opposite());
-        assertEquals(SortDirection.ASC, SortDirection.ASC.opposite().opposite());
-    }
-
-    @Test
-    public void testOf() {
-        assertEquals(SortDirection.ASC, SortDirection.of("ASC"));
-        assertEquals(SortDirection.ASC, SortDirection.of("asc"));
-        assertEquals(SortDirection.ASC, SortDirection.of("Asc"));
-        assertEquals(SortDirection.DESC, SortDirection.of("DESC"));
-        assertEquals(SortDirection.DESC, SortDirection.of("desc"));
-        assertEquals(SortDirection.DESC, SortDirection.of("Desc"));
-    }
-
-    @Test
-    public void testOf_Unrecognized() {
-        assertNull(SortDirection.of("up"));
-        assertNull(SortDirection.of(""));
-        assertNull(SortDirection.of("ASC "));
-        assertNull(SortDirection.of(null));
+    void testValues() {
+        SortDirection[] values = SortDirection.values();
+        assertNotNull(values);
+        assertEquals(2, values.length);
+        assertEquals(SortDirection.ASC, values[0]);
+        assertEquals(SortDirection.DESC, values[1]);
     }
 }

@@ -11,8 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -23,338 +21,10 @@ import com.landawn.abacus.util.NamingPolicy;
 /**
  * Comprehensive test class for {@link GroupBy}.
  */
-@Tag("2025")
 public class GroupByTest extends TestBase {
-    @Test
-    public void testConstructorWithCondition() {
-        GroupBy groupBy = new GroupBy(Filters.expr("department"));
-
-        assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-    }
 
     @Test
-    public void testConstructorWithSingleProperty() {
-        GroupBy groupBy = new GroupBy("department");
-
-        assertNotNull(groupBy);
-        assertTrue(groupBy.toString().contains("department"));
-    }
-
-    @Test
-    public void testConstructorWithMultipleProperties() {
-        GroupBy groupBy = new GroupBy("department", "location", "year");
-        String result = groupBy.toString();
-
-        assertTrue(result.contains("department"));
-        assertTrue(result.contains("location"));
-        assertTrue(result.contains("year"));
-    }
-
-    @Test
-    public void testConstructorWithPropertyAndDirection() {
-        GroupBy groupBy = new GroupBy("salary", SortDirection.DESC);
-        String result = groupBy.toString();
-
-        assertTrue(result.contains("salary"));
-        assertTrue(result.contains("DESC"));
-    }
-
-    @Test
-    public void testConstructorWithPropertyAndAscDirection() {
-        GroupBy groupBy = new GroupBy("name", SortDirection.ASC);
-        String result = groupBy.toString();
-
-        assertTrue(result.contains("name"));
-        assertTrue(result.contains("ASC"));
-    }
-
-    @Test
-    public void testConstructorWithCollectionAndDirection() {
-        List<String> props = Arrays.asList("region", "category");
-        GroupBy groupBy = new GroupBy(props, SortDirection.DESC);
-        String result = groupBy.toString();
-
-        assertTrue(result.contains("region"));
-        assertTrue(result.contains("category"));
-        assertTrue(result.contains("DESC"));
-    }
-
-    @Test
-    public void testConstructorWithMap() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("department", SortDirection.ASC);
-        orders.put("salary", SortDirection.DESC);
-
-        GroupBy groupBy = new GroupBy(orders);
-        String result = groupBy.toString();
-
-        assertTrue(result.contains("department"));
-        assertTrue(result.contains("salary"));
-        assertTrue(result.contains("ASC"));
-        assertTrue(result.contains("DESC"));
-    }
-
-    @Test
-    public void testToString() {
-        GroupBy groupBy = new GroupBy("status");
-        String result = groupBy.toString();
-
-        assertTrue(result.contains("GROUP BY") || result.contains("status"));
-    }
-
-    @Test
-    public void testToStringWithNamingPolicy() {
-        GroupBy groupBy = new GroupBy("productCategory");
-        String result = groupBy.toSql(NamingPolicy.SNAKE_CASE);
-
-        assertNotNull(result);
-        assertTrue(result.contains("product_category") || result.contains("productCategory"));
-    }
-
-    @Test
-    public void testParameters() {
-        GroupBy groupBy = new GroupBy("department");
-
-        assertNotNull(groupBy.parameters());
-        assertTrue(groupBy.parameters().isEmpty());
-    }
-
-    @Test
-    public void testEquals() {
-        GroupBy groupBy1 = new GroupBy("department");
-        GroupBy groupBy2 = new GroupBy("department");
-        GroupBy groupBy3 = new GroupBy("location");
-
-        assertEquals(groupBy1, groupBy2);
-        assertNotEquals(groupBy1, groupBy3);
-    }
-
-    @Test
-    public void testEqualsWithDirection() {
-        GroupBy groupBy1 = new GroupBy("salary", SortDirection.DESC);
-        GroupBy groupBy2 = new GroupBy("salary", SortDirection.DESC);
-        GroupBy groupBy3 = new GroupBy("salary", SortDirection.ASC);
-
-        assertEquals(groupBy1, groupBy2);
-        assertNotEquals(groupBy1, groupBy3);
-    }
-
-    @Test
-    public void testHashCode() {
-        GroupBy groupBy1 = new GroupBy("department");
-        GroupBy groupBy2 = new GroupBy("department");
-
-        assertEquals(groupBy1.hashCode(), groupBy2.hashCode());
-    }
-
-    @Test
-    public void testHashCodeConsistency() {
-        GroupBy groupBy = new GroupBy("category", SortDirection.ASC);
-        int hash1 = groupBy.hashCode();
-        int hash2 = groupBy.hashCode();
-
-        assertEquals(hash1, hash2);
-    }
-
-    @Test
-    public void testWithThreeProperties() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("year", SortDirection.DESC);
-        orders.put("month", SortDirection.DESC);
-        orders.put("day", SortDirection.ASC);
-
-        GroupBy groupBy = new GroupBy(orders);
-        String result = groupBy.toString();
-
-        assertTrue(result.contains("year"));
-        assertTrue(result.contains("month"));
-        assertTrue(result.contains("day"));
-    }
-
-    @Test
-    public void testOperatorType() {
-        GroupBy groupBy = new GroupBy("column");
-
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-        assertNotEquals(Operator.ORDER_BY, groupBy.operator());
-    }
-
-    @Test
-    public void testWithExpression() {
-        GroupBy groupBy = new GroupBy(Filters.expr("YEAR(order_date)"));
-        String result = groupBy.toString();
-
-        assertNotNull(result);
-        assertTrue(result.contains("YEAR") || result.length() > 0);
-    }
-
-    @Test
-    public void testEmptyParameterList() {
-        List<String> props = Arrays.asList("col1", "col2", "col3");
-        GroupBy groupBy = new GroupBy(props, SortDirection.ASC);
-
-        // GroupBy should not have parameters
-        assertEquals(0, groupBy.parameters().size());
-    }
-
-    @Test
-    public void testMultipleColumnsFormatting() {
-        GroupBy groupBy = new GroupBy("col1", "col2", "col3", "col4");
-        String result = groupBy.toString();
-
-        // Should contain all columns
-        assertTrue(result.contains("col1"));
-        assertTrue(result.contains("col2"));
-        assertTrue(result.contains("col3"));
-        assertTrue(result.contains("col4"));
-    }
-
-    @Test
-    public void testSortDirectionPreservation() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("first", SortDirection.DESC);
-        orders.put("second", SortDirection.ASC);
-        orders.put("third", SortDirection.DESC);
-
-        GroupBy groupBy = new GroupBy(orders);
-        String result = groupBy.toString();
-
-        assertNotNull(result);
-        assertTrue(result.length() > 0);
-    }
-
-    @Test
-    public void testWithSingleElementCollection() {
-        List<String> props = Arrays.asList("singleColumn");
-        GroupBy groupBy = new GroupBy(props, SortDirection.ASC);
-
-        String result = groupBy.toString();
-        assertTrue(result.contains("singleColumn"));
-        assertTrue(result.contains("ASC"));
-    }
-
-    @Test
-    public void testGetCondition() {
-        SqlExpression condition = Filters.expr("department, location");
-        GroupBy groupBy = new GroupBy(condition);
-
-        Condition retrieved = groupBy.condition();
-        assertEquals(condition, retrieved);
-    }
-
-    @Test
-    public void testToString_NoArgs() {
-        GroupBy groupBy = new GroupBy("category", "region");
-        String result = groupBy.toString();
-
-        assertTrue(result.contains("category"));
-        assertTrue(result.contains("region"));
-    }
-
-    @Test
-    public void testEquals_DifferentClass() {
-        GroupBy groupBy = new GroupBy("column");
-        OrderBy orderBy = new OrderBy("column");
-        assertNotEquals(groupBy, orderBy);
-    }
-
-    @Test
-    public void testConstructorWithEmptyMap() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        assertThrows(IllegalArgumentException.class, () -> {
-            new GroupBy(orders);
-        });
-    }
-
-    @Test
-    public void testConstructorRejectsBlankPropertyNames() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("   ", SortDirection.ASC);
-
-        assertThrows(IllegalArgumentException.class, () -> new GroupBy("   "));
-        assertThrows(IllegalArgumentException.class, () -> new GroupBy("   ", SortDirection.ASC));
-        assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("department", "   "), SortDirection.ASC));
-        assertThrows(IllegalArgumentException.class, () -> new GroupBy(orders));
-    }
-
-    @Test
-    public void testConstructorWithCollectionOfOne() {
-        List<String> props = Arrays.asList("singleCol");
-        GroupBy groupBy = new GroupBy(props, SortDirection.DESC);
-
-        assertTrue(groupBy.toString().contains("singleCol"));
-    }
-
-    @Test
-    public void testConstructorWithVarArgs() {
-        GroupBy groupBy = new GroupBy("department", "location");
-
-        Assertions.assertNotNull(groupBy);
-        Assertions.assertEquals(Operator.GROUP_BY, groupBy.operator());
-        String result = groupBy.toString();
-        Assertions.assertTrue(result.contains("department"));
-        Assertions.assertTrue(result.contains("location"));
-    }
-
-    @Test
-    public void testConstructorWithSinglePropName() {
-        GroupBy groupBy = new GroupBy("category");
-
-        Assertions.assertNotNull(groupBy);
-        String result = groupBy.toString();
-        Assertions.assertTrue(result.contains("GROUP BY"));
-        Assertions.assertTrue(result.contains("category"));
-    }
-
-    @Test
-    public void testConstructorWithPropNameAndDirection() {
-        GroupBy groupBy = new GroupBy("sales_amount", SortDirection.DESC);
-
-        Assertions.assertNotNull(groupBy);
-        String result = groupBy.toString();
-        Assertions.assertTrue(result.contains("sales_amount"));
-        Assertions.assertTrue(result.contains("DESC"));
-    }
-
-    @Test
-    public void testEmptyPropNames() {
-        assertThrows(IllegalArgumentException.class, () -> new GroupBy(new String[0]));
-    }
-
-    @Test
-    public void testMultiplePropNamesWithSortDirection() {
-        GroupBy groupBy = new GroupBy(Arrays.asList("col1", "col2", "col3"), SortDirection.ASC);
-        String result = groupBy.toString();
-
-        Assertions.assertTrue(result.contains("col1"));
-        Assertions.assertTrue(result.contains("col2"));
-        Assertions.assertTrue(result.contains("col3"));
-        Assertions.assertTrue(result.contains("ASC"));
-    }
-
-    @Test
-    public void testMapConstructor_nullOrEmptyMap_messageNamesGroupings() {
-        // the message must name this constructor's parameter, not the OrderBy path's 'orders'
-        IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> new GroupBy((Map<String, SortDirection>) null));
-        assertTrue(e1.getMessage().contains("groupings"), e1.getMessage());
-
-        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> new GroupBy(new LinkedHashMap<>()));
-        assertTrue(e2.getMessage().contains("groupings"), e2.getMessage());
-
-        Map<String, SortDirection> nullDirection = new LinkedHashMap<>();
-        nullDirection.put("department", null);
-        IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class, () -> new GroupBy(nullDirection));
-        assertTrue(e3.getMessage().contains("department"), e3.getMessage());
-
-        Map<String, SortDirection> groupings = new LinkedHashMap<>();
-        groupings.put("department", SortDirection.ASC);
-        groupings.put("salary", SortDirection.DESC);
-        assertEquals("GROUP BY department ASC, salary DESC", new GroupBy(groupings).toString());
-    }
-
-    @Test
-    public void testCommentOnlyPropertyNameRejected() {
+    void testCommentOnlyPropertyNameRejected() {
         // A comment-only name would be stripped at render time, leaving "GROUP BY ASC" / "GROUP BY , name".
         assertThrows(IllegalArgumentException.class, () -> new GroupBy("/* x */", SortDirection.ASC));
         assertThrows(IllegalArgumentException.class, () -> new GroupBy("/* x */", "name"));
@@ -372,15 +42,185 @@ public class GroupByTest extends TestBase {
     }
 
     @Test
-    public void testPropertyNameWithCommentAndRealTokenAccepted() {
-        // Comments are stripped at render time, but the real token keeps the entry well-formed.
-        assertEquals("GROUP BY dept ASC", new GroupBy("dept /* d */", SortDirection.ASC).toString());
-        // A #name (possible SQL Server temporary identifier) is not treated as comment-only by the constructor.
-        assertNotNull(new GroupBy("#tmp", "dept"));
+    void testConstructorRejectsBlankPropertyNames() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("   ", SortDirection.ASC);
+
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("   "));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy("   ", SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("department", "   "), SortDirection.ASC));
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(orders));
     }
 
     @Test
-    public void testGroupingKeyBlockCommentLeftOpenUnderAnyLexicalReadingIsRejected() {
+    void testConstructorWithCollectionAndDirection() {
+        List<String> props = Arrays.asList("region", "category");
+        GroupBy groupBy = new GroupBy(props, SortDirection.DESC);
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("region"));
+        assertTrue(result.contains("category"));
+        assertTrue(result.contains("DESC"));
+    }
+
+    @Test
+    void testConstructorWithCollectionOfOne() {
+        List<String> props = Arrays.asList("singleCol");
+        GroupBy groupBy = new GroupBy(props, SortDirection.DESC);
+
+        assertTrue(groupBy.toString().contains("singleCol"));
+    }
+
+    @Test
+    void testConstructorWithCondition() {
+        GroupBy groupBy = new GroupBy(Filters.expr("department"));
+
+        assertNotNull(groupBy);
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
+    }
+
+    @Test
+    void testConstructorWithEmptyMap() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        assertThrows(IllegalArgumentException.class, () -> {
+            new GroupBy(orders);
+        });
+    }
+
+    @Test
+    void testConstructorWithMap() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("department", SortDirection.ASC);
+        orders.put("salary", SortDirection.DESC);
+
+        GroupBy groupBy = new GroupBy(orders);
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("department"));
+        assertTrue(result.contains("salary"));
+        assertTrue(result.contains("ASC"));
+        assertTrue(result.contains("DESC"));
+    }
+
+    @Test
+    void testConstructorWithMultipleProperties() {
+        GroupBy groupBy = new GroupBy("department", "location", "year");
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("department"));
+        assertTrue(result.contains("location"));
+        assertTrue(result.contains("year"));
+    }
+
+    @Test
+    void testConstructorWithPropertyAndAscDirection() {
+        GroupBy groupBy = new GroupBy("name", SortDirection.ASC);
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("name"));
+        assertTrue(result.contains("ASC"));
+    }
+
+    @Test
+    void testConstructorWithPropertyAndDirection() {
+        GroupBy groupBy = new GroupBy("salary", SortDirection.DESC);
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("salary"));
+        assertTrue(result.contains("DESC"));
+    }
+
+    @Test
+    void testConstructorWithPropNameAndDirection() {
+        GroupBy groupBy = new GroupBy("sales_amount", SortDirection.DESC);
+
+        assertNotNull(groupBy);
+        String result = groupBy.toString();
+        assertTrue(result.contains("sales_amount"));
+        assertTrue(result.contains("DESC"));
+    }
+
+    @Test
+    void testConstructorWithSingleProperty() {
+        GroupBy groupBy = new GroupBy("department");
+
+        assertNotNull(groupBy);
+        assertTrue(groupBy.toString().contains("department"));
+    }
+
+    @Test
+    void testConstructorWithSinglePropName() {
+        GroupBy groupBy = new GroupBy("category");
+
+        assertNotNull(groupBy);
+        String result = groupBy.toString();
+        assertTrue(result.contains("GROUP BY"));
+        assertTrue(result.contains("category"));
+    }
+
+    @Test
+    void testConstructorWithVarArgs() {
+        GroupBy groupBy = new GroupBy("department", "location");
+
+        assertNotNull(groupBy);
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
+        String result = groupBy.toString();
+        assertTrue(result.contains("department"));
+        assertTrue(result.contains("location"));
+    }
+
+    @Test
+    void testEmptyParameterList() {
+        List<String> props = Arrays.asList("col1", "col2", "col3");
+        GroupBy groupBy = new GroupBy(props, SortDirection.ASC);
+
+        // GroupBy should not have parameters
+        assertEquals(0, groupBy.parameters().size());
+    }
+
+    @Test
+    void testEmptyPropNames() {
+        assertThrows(IllegalArgumentException.class, () -> new GroupBy(new String[0]));
+    }
+
+    @Test
+    void testEquals() {
+        GroupBy groupBy1 = new GroupBy("department");
+        GroupBy groupBy2 = new GroupBy("department");
+        GroupBy groupBy3 = new GroupBy("location");
+
+        assertEquals(groupBy1, groupBy2);
+        assertNotEquals(groupBy1, groupBy3);
+    }
+
+    @Test
+    void testEquals_DifferentClass() {
+        GroupBy groupBy = new GroupBy("column");
+        OrderBy orderBy = new OrderBy("column");
+        assertNotEquals(groupBy, orderBy);
+    }
+
+    @Test
+    void testEqualsWithDirection() {
+        GroupBy groupBy1 = new GroupBy("salary", SortDirection.DESC);
+        GroupBy groupBy2 = new GroupBy("salary", SortDirection.DESC);
+        GroupBy groupBy3 = new GroupBy("salary", SortDirection.ASC);
+
+        assertEquals(groupBy1, groupBy2);
+        assertNotEquals(groupBy1, groupBy3);
+    }
+
+    @Test
+    void testGetCondition() {
+        SqlExpression condition = Filters.expr("department, location");
+        GroupBy groupBy = new GroupBy(condition);
+
+        Condition retrieved = groupBy.condition();
+        assertEquals(condition, retrieved);
+    }
+
+    @Test
+    void testGroupingKeyBlockCommentLeftOpenUnderAnyLexicalReadingIsRejected() {
         // Regression: a "/*" after a "--" comment ended by a lone '\r', or past a quote inside a "#" comment or a [..]
         // identifier, was not seen as an unclosed comment, so the renderer silently dropped the later grouping keys.
         assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("a -- c\r/* x", "b"), SortDirection.DESC));
@@ -401,10 +241,168 @@ public class GroupByTest extends TestBase {
 
     // Regression: PostgreSQL, SQL Server and H2 nest block comments, so "a /* x /* y */" is still open there.
     @Test
-    public void testGroupingKeyNestedBlockCommentLeftOpenIsRejected() {
+    void testGroupingKeyNestedBlockCommentLeftOpenIsRejected() {
         final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new GroupBy("a /* x /* y */", "b"));
         assertTrue(e.getMessage().contains("unterminated block comment"), e.getMessage());
         assertThrows(IllegalArgumentException.class, () -> new GroupBy(Arrays.asList("a", "b /* x /* y */"), SortDirection.DESC));
         assertThrows(IllegalArgumentException.class, () -> Filters.groupBy(Arrays.asList("a /* x /* y */"), SortDirection.ASC));
+    }
+
+    @Test
+    void testHashCode() {
+        GroupBy groupBy1 = new GroupBy("department");
+        GroupBy groupBy2 = new GroupBy("department");
+
+        assertEquals(groupBy1.hashCode(), groupBy2.hashCode());
+    }
+
+    @Test
+    void testHashCodeConsistency() {
+        GroupBy groupBy = new GroupBy("category", SortDirection.ASC);
+        int hash1 = groupBy.hashCode();
+        int hash2 = groupBy.hashCode();
+
+        assertEquals(hash1, hash2);
+    }
+
+    @Test
+    void testMapConstructor_nullOrEmptyMap_messageNamesGroupings() {
+        // the message must name this constructor's parameter, not the OrderBy path's 'orders'
+        IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> new GroupBy((Map<String, SortDirection>) null));
+        assertTrue(e1.getMessage().contains("groupings"), e1.getMessage());
+
+        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> new GroupBy(new LinkedHashMap<>()));
+        assertTrue(e2.getMessage().contains("groupings"), e2.getMessage());
+
+        Map<String, SortDirection> nullDirection = new LinkedHashMap<>();
+        nullDirection.put("department", null);
+        IllegalArgumentException e3 = assertThrows(IllegalArgumentException.class, () -> new GroupBy(nullDirection));
+        assertTrue(e3.getMessage().contains("department"), e3.getMessage());
+
+        Map<String, SortDirection> groupings = new LinkedHashMap<>();
+        groupings.put("department", SortDirection.ASC);
+        groupings.put("salary", SortDirection.DESC);
+        assertEquals("GROUP BY department ASC, salary DESC", new GroupBy(groupings).toString());
+    }
+
+    @Test
+    void testMultipleColumnsFormatting() {
+        GroupBy groupBy = new GroupBy("col1", "col2", "col3", "col4");
+        String result = groupBy.toString();
+
+        // Should contain all columns
+        assertTrue(result.contains("col1"));
+        assertTrue(result.contains("col2"));
+        assertTrue(result.contains("col3"));
+        assertTrue(result.contains("col4"));
+    }
+
+    @Test
+    void testMultiplePropNamesWithSortDirection() {
+        GroupBy groupBy = new GroupBy(Arrays.asList("col1", "col2", "col3"), SortDirection.ASC);
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("col1"));
+        assertTrue(result.contains("col2"));
+        assertTrue(result.contains("col3"));
+        assertTrue(result.contains("ASC"));
+    }
+
+    @Test
+    void testOperatorType() {
+        GroupBy groupBy = new GroupBy("column");
+
+        assertEquals(Operator.GROUP_BY, groupBy.operator());
+        assertNotEquals(Operator.ORDER_BY, groupBy.operator());
+    }
+
+    @Test
+    void testParameters() {
+        GroupBy groupBy = new GroupBy("department");
+
+        assertNotNull(groupBy.parameters());
+        assertTrue(groupBy.parameters().isEmpty());
+    }
+
+    @Test
+    void testPropertyNameWithCommentAndRealTokenAccepted() {
+        // Comments are stripped at render time, but the real token keeps the entry well-formed.
+        assertEquals("GROUP BY dept ASC", new GroupBy("dept /* d */", SortDirection.ASC).toString());
+        // A #name (possible SQL Server temporary identifier) is not treated as comment-only by the constructor.
+        assertNotNull(new GroupBy("#tmp", "dept"));
+    }
+
+    @Test
+    void testSortDirectionPreservation() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("first", SortDirection.DESC);
+        orders.put("second", SortDirection.ASC);
+        orders.put("third", SortDirection.DESC);
+
+        GroupBy groupBy = new GroupBy(orders);
+        String result = groupBy.toString();
+
+        assertNotNull(result);
+        assertTrue(result.length() > 0);
+    }
+
+    @Test
+    void testToString() {
+        GroupBy groupBy = new GroupBy("status");
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("GROUP BY") || result.contains("status"));
+    }
+
+    @Test
+    void testToString_NoArgs() {
+        GroupBy groupBy = new GroupBy("category", "region");
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("category"));
+        assertTrue(result.contains("region"));
+    }
+
+    @Test
+    void testToStringWithNamingPolicy() {
+        GroupBy groupBy = new GroupBy("productCategory");
+        String result = groupBy.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertNotNull(result);
+        assertTrue(result.contains("product_category") || result.contains("productCategory"));
+    }
+
+    @Test
+    void testWithExpression() {
+        GroupBy groupBy = new GroupBy(Filters.expr("YEAR(order_date)"));
+        String result = groupBy.toString();
+
+        assertNotNull(result);
+        assertTrue(result.contains("YEAR") || result.length() > 0);
+    }
+
+    @Test
+    void testWithSingleElementCollection() {
+        List<String> props = Arrays.asList("singleColumn");
+        GroupBy groupBy = new GroupBy(props, SortDirection.ASC);
+
+        String result = groupBy.toString();
+        assertTrue(result.contains("singleColumn"));
+        assertTrue(result.contains("ASC"));
+    }
+
+    @Test
+    void testWithThreeProperties() {
+        Map<String, SortDirection> orders = new LinkedHashMap<>();
+        orders.put("year", SortDirection.DESC);
+        orders.put("month", SortDirection.DESC);
+        orders.put("day", SortDirection.ASC);
+
+        GroupBy groupBy = new GroupBy(orders);
+        String result = groupBy.toString();
+
+        assertTrue(result.contains("year"));
+        assertTrue(result.contains("month"));
+        assertTrue(result.contains("day"));
     }
 }

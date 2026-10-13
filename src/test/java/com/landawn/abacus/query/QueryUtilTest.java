@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -27,32 +27,1041 @@ import com.landawn.abacus.annotation.Column;
 import com.landawn.abacus.annotation.Id;
 import com.landawn.abacus.annotation.NonColumn;
 import com.landawn.abacus.annotation.Table;
-import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.parser.ParserUtil.BeanInfo;
 import com.landawn.abacus.parser.ParserUtil.PropInfo;
+import com.landawn.abacus.parser.ParserUtil;
 import com.landawn.abacus.query.entity.Account;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.NamingPolicy;
 
-@Tag("2025")
 public class QueryUtilTest extends TestBase {
-    @Test
-    public void testQuotedIdentifierConversionPreservesEscapedAndUnicodeSegments() {
-        for (final String quoted : List.of("\"a.\"\"b\"", "`a.``b`", "[a.]]b]", "U&\"a.002e\" UESCAPE '.'", "u&\"a.002e\" UESCAPE E'.'",
-                "U&\"a[002e\" UESCAPE '['", "U&\"a.002e\" UESCAPE E'\\056'", "U&\"a.002e\" UESCAPE E'\\x2e'", "U&\"a.002e\" UESCAPE E'\\u002e'",
-                "U&\"a.002e\" UESCAPE E'\\U0000002e'")) {
-            final String identifier = "firstName." + quoted + ".lastName";
-            assertEquals("first_name." + quoted + ".last_name", QueryUtil.convertIdentifier(identifier, NamingPolicy.SNAKE_CASE));
-            assertEquals("FIRST_NAME." + quoted + ".LAST_NAME", QueryUtil.convertIdentifier(identifier, NamingPolicy.SCREAMING_SNAKE_CASE));
-        }
 
-        assertEquals(".\"a.b\"..first_name.", QueryUtil.convertIdentifier(".\"a.b\"..firstName.", NamingPolicy.SNAKE_CASE));
-        assertEquals("first_name.\"unterminated.lastName", QueryUtil.convertIdentifier("firstName.\"unterminated.lastName", NamingPolicy.SNAKE_CASE));
+    // Regression: appendRawExpression had no direct tests; its argument checks used literal names instead of cs constants,
+    // and a backslash before a quote that does not close its own region (\" inside '...') switched the rest to verbatim.
+    @Test
+    void testAppendRawExpressionReturnsTheVerbatimStartAndRejectsNullArguments() {
+        final int[] verbatimFrom = new int[1];
+
+        assertEquals("first_name = 'x'", renderRaw("firstName = 'x'", false, verbatimFrom));
+        assertEquals(-1, verbatimFrom[0]);
+
+        // Verbatim from the first token whose extent depends on the backslash reading, at its exact index in expr.
+        assertEquals("a_b = 'C:\\' AND firstName = 1", renderRaw("aB = 'C:\\' AND firstName = 1", false, verbatimFrom));
+        assertEquals(5, verbatimFrom[0]);
+
+        // A backslash before a quote that does not close the region leaves both readings in agreement.
+        assertEquals("payload = '{\"a\":\"b\\\"c\"}' AND created_at > 1", renderRaw("payload = '{\"a\":\"b\\\"c\"}' AND createdAt > 1", false, verbatimFrom));
+        assertEquals(-1, verbatimFrom[0]);
+
+        // backslashEscapesOnly (MySQL) takes the tokenizer's reading as authoritative and never goes verbatim.
+        assertEquals("a = 'It\\'s' AND first_name = 1", renderRaw("a = 'It\\'s' AND firstName = 1", true, verbatimFrom));
+        assertEquals(-1, verbatimFrom[0]);
+
+        // Appends to what the builder already holds, and keeps the line break between two adjacent string literals.
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+        final StringBuilder sb = new StringBuilder("WHERE ");
+        final String lines = "msg = 'hello '\n'world'";
+        assertEquals(-1, QueryUtil.appendRawExpression(sb, lines, tokenizer.tokenize(lines), tokenizer, false, w -> w, w -> w));
+        assertEquals("WHERE msg = 'hello '\n'world'", sb.toString());
+
+        // Tokens that cannot be located in expr: nothing is guessed, the whole of expr is appended as written.
+        final StringBuilder fallback = new StringBuilder();
+        assertEquals(0, QueryUtil.appendRawExpression(fallback, "zz = 'C:\\' AND firstName = 1", tokenizer.tokenize("aB = 'C:\\' AND firstName = 1"), tokenizer,
+                false, w -> w.toUpperCase(), w -> w.toUpperCase()));
+        assertEquals("zz = 'C:\\' AND firstName = 1", fallback.toString());
+
+        final List<String> tokens = tokenizer.tokenize("a");
+        final java.util.function.UnaryOperator<String> same = w -> w;
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(null, "a", tokens, tokenizer, false, same, same));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), null, tokens, tokenizer, false, same, same));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", null, tokenizer, false, same, same));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, null, false, same, same));
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, tokenizer, false, null, same));
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, tokenizer, false, same, null));
+        assertTrue(e.getMessage().contains(cs.qualifiedPartConverter), e.getMessage());
     }
 
     @Test
-    public void testQuotedIdentifierChainsPreserveSegmentBoundariesForEveryNamingPolicy() {
+    void testColumnAnnotatedBeanPropertyIsAPlainColumn() {
+        // A bean-typed property marked @Column (e.g. a JSON column) is not a sub-entity: it maps to itself and is
+        // qualified like any other column instead of being expanded into bogus "geo.lat" paths.
+        final ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(ColumnBeanAddress.class, NamingPolicy.SNAKE_CASE);
+        assertEquals("geo", map.get("geo"));
+        assertFalse(map.containsKey("geo.lat"));
+        assertEquals("SELECT ad.id AS \"id\", ad.street AS \"street\", ad.geo AS \"geo\" FROM address ad",
+                PSC.selectFrom(ColumnBeanAddress.class).build().query());
+        assertEquals("SELECT ad.geo AS \"geo\" FROM address ad WHERE ad.geo = ?",
+                PSC.select("geo").from(ColumnBeanAddress.class).where(Filters.eq("geo", 1)).build().query());
+
+        // Nested under a real sub-entity, the column is qualified by the sub-entity's table alias.
+        final ImmutableMap<String, String> personMap = QueryUtil.propToColumnNameMap(ColumnBeanPerson.class, NamingPolicy.SNAKE_CASE);
+        assertEquals("ad.geo", personMap.get("addr.geo"));
+        assertFalse(personMap.containsKey("addr.geo.lat"));
+        assertTrue(PSC.selectFrom(ColumnBeanPerson.class, true).build().query().contains("ad.geo AS \"addr.geo\""));
+    }
+
+    @Test
+    void testColumnInfoIsUnqualifiedIsAHardRename() throws NoSuchMethodException {
+        assertEquals(boolean.class, QueryUtil.ColumnInfo.class.getMethod("isUnqualified").getReturnType());
+        assertThrows(NoSuchMethodException.class, () -> QueryUtil.ColumnInfo.class.getMethod("hasNoDot"));
+    }
+
+    @Test
+    void testColumnToPropertyMapExactNamesWinOverCaseFoldedAliases() {
+        ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(CaseDistinctColumns.class);
+
+        assertEquals("lowerCaseColumn", map.get("code"));
+        assertEquals("upperCaseColumn", map.get("CODE"));
+    }
+
+    @Test
+    void testColumnToPropertyMapFiltersExplicitColumnsExcludedByMetadata() {
+        final ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(ReverseLookupFilteredEntity.class);
+
+        assertEquals("visible", map.get("visible_column"));
+        assertEquals("visible", map.get("VISIBLE_COLUMN"));
+        assertFalse(map.containsKey("hidden_annotation_column"), map.toString());
+        assertFalse(map.containsKey("hidden_table_column"), map.toString());
+        assertFalse(map.containsValue("hiddenByAnnotation"), map.toString());
+        assertFalse(map.containsValue("hiddenByTable"), map.toString());
+    }
+
+    @Test
+    void testColumnToPropertyMapRespectsTableColumnExclusions() {
+        ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(TestUser.class);
+
+        assertEquals("name", map.get("user_name"));
+        assertFalse(map.containsKey("tempData"), map.toString());
+        assertFalse(map.containsValue("tempData"), map.toString());
+    }
+
+    @Test
+    void testCommentAndEscapeConstructsDoNotHideColumnQualifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(LexicalColumnNames.class, NamingPolicy.NO_CHANGE);
+
+        // Only identifier quoting hides a dot. A hash comment, a backslash escape, a string literal and a
+        // dash comment are SQL-script constructs: reading them here would drop a real qualifier and let the
+        // builder prepend a table alias to an already-qualified column.
+        for (final String propName : List.of("hashQualified", "backslashQualified", "literalDotExpression", "dashQualified", "bracketedLiteral",
+                "unterminatedBracketLiteral", "dotlessExpression")) {
+            assertFalse(map.get(propName).isUnqualified(), propName);
+
+            final Selection selection = Selection.builder(LexicalColumnNames.class).tableAlias("l").includedPropNames(List.of(propName)).build();
+            assertEquals("SELECT " + map.get(propName).columnName() + " AS \"" + propName + "\" FROM lexical_columns l",
+                    PSC.selectFrom(selection).build().query());
+        }
+
+        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedLexicalColumns.class, NamingPolicy.NO_CHANGE);
+        assertEquals("#temp.column", nestedMap.get("child.hashQualified"));
+        assertEquals("COALESCE(x, 'N.A')", nestedMap.get("child.literalDotExpression"));
+        assertEquals("COALESCE(x, '[N.A]')", nestedMap.get("child.bracketedLiteral"));
+        assertEquals("COALESCE(x, '[') || t.suffix", nestedMap.get("child.unterminatedBracketLiteral"));
+        assertEquals("COALESCE(x, 1)", nestedMap.get("child.dotlessExpression"));
+
+        // A single identifier, quoted or not, still takes the sub-entity qualifier.
+        assertEquals("q.\"double.dot\"", QueryUtil.propToColumnNameMap(NestedQuotedColumns.class, NamingPolicy.NO_CHANGE).get("child.doubleQuoted"));
+    }
+
+    @Test
+    void testConvertIdentifier_qualifiedPascalCaseSegment_noSpuriousUnderscore() {
+        // Each dot-separated segment is converted on its own: the qualifier must not act as a word
+        // boundary of the next segment (converting the whole name turned "acc.Id" into "acc._id").
+        assertEquals("acc.id", QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE));
+        assertEquals("o.account_id", QueryUtil.convertIdentifier("o.AccountId", NamingPolicy.SNAKE_CASE));
+        assertEquals("T.FIRST_NAME", QueryUtil.convertIdentifier("T.FirstName", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("acc.firstName", QueryUtil.convertIdentifier("acc.first_name", NamingPolicy.CAMEL_CASE));
+
+        // per-segment underscore-run preservation and empty segments are unchanged
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE));
+        assertEquals("a..b", QueryUtil.convertIdentifier("a..b", NamingPolicy.SNAKE_CASE));
+
+        // the condition rendering path agrees with the builder, which strips its alias before converting
+        assertEquals("acc.id = 1", Filters.eq("acc.Id", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertTrue(PSC.select("*").from("account acc").where(Filters.eq("acc.Id", 1)).build().query().endsWith("acc.id = ?"));
+    }
+
+    @Test
+    void testConvertIdentifierPreservesLeadingAndTrailingUnderscoreRuns() {
+        // NamingPolicy.convert alone drops leading/trailing '_' runs; convertIdentifier must keep them
+        // and convert only the part in between (shared by SqlExpression.toSql and the builders).
+        assertEquals("first_name", QueryUtil.convertIdentifier("firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("_first_name", QueryUtil.convertIdentifier("_firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name_", QueryUtil.convertIdentifier("firstName_", NamingPolicy.SNAKE_CASE));
+        assertEquals("__first_name__", QueryUtil.convertIdentifier("__firstName__", NamingPolicy.SNAKE_CASE));
+        assertEquals("_FIRST_NAME", QueryUtil.convertIdentifier("_firstName", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_firstName", QueryUtil.convertIdentifier("_first_name", NamingPolicy.CAMEL_CASE));
+        assertEquals("__x", QueryUtil.convertIdentifier("__x", NamingPolicy.SNAKE_CASE));
+        assertEquals("__X", QueryUtil.convertIdentifier("__x", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_1", QueryUtil.convertIdentifier("_1", NamingPolicy.SNAKE_CASE));
+        assertEquals("_1", QueryUtil.convertIdentifier("_1", NamingPolicy.SCREAMING_SNAKE_CASE));
+
+        // all-underscore identifiers are returned as-is
+        assertEquals("_", QueryUtil.convertIdentifier("_", NamingPolicy.SNAKE_CASE));
+        assertEquals("___", QueryUtil.convertIdentifier("___", NamingPolicy.SCREAMING_SNAKE_CASE));
+
+        // NO_CHANGE / null policy, null / empty identifier: returned as-is
+        assertEquals("_firstName_", QueryUtil.convertIdentifier("_firstName_", NamingPolicy.NO_CHANGE));
+        assertEquals("_firstName_", QueryUtil.convertIdentifier("_firstName_", null));
+        assertEquals("", QueryUtil.convertIdentifier("", NamingPolicy.SNAKE_CASE));
+        assertEquals(null, QueryUtil.convertIdentifier(null, NamingPolicy.SNAKE_CASE));
+
+        // the condition rendering path goes through the same helper (builder-path parity is pinned in AbstractQueryBuilderTest)
+        assertEquals("_first_name = other_value", Filters.expr("_firstName = otherValue").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    void testConvertIdentifierPreservesQuotedSegments() {
+        assertEquals("t.\"First.Name\"", QueryUtil.convertIdentifier("t.\"First.Name\"", NamingPolicy.SNAKE_CASE));
+        assertEquals("\"firstName\"", QueryUtil.convertIdentifier("\"firstName\"", NamingPolicy.SNAKE_CASE));
+        assertEquals("[firstName]", QueryUtil.convertIdentifier("[firstName]", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("my_table.`firstName`", QueryUtil.convertIdentifier("myTable.`firstName`", NamingPolicy.SNAKE_CASE));
+        assertEquals("\"My.Schema\".first_name", QueryUtil.convertIdentifier("\"My.Schema\".firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("U&\"aB\".first_name", QueryUtil.convertIdentifier("U&\"aB\".firstName", NamingPolicy.SNAKE_CASE));
+        // unquoted behavior unchanged
+        assertEquals("acc.id", QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE));
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE));
+        assertEquals("user_ids[1]", QueryUtil.convertIdentifier("userIds[1]", NamingPolicy.SNAKE_CASE));
+        // condition and builder paths now agree
+        assertEquals("t.\"First.Name\" = 1", Filters.eq("t.\"First.Name\"", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("\"firstName\" = 1", Filters.eq("\"firstName\"", 1).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT a FROM t WHERE t.\"First.Name\" = ?", PSC.select("a").from("t").where(Filters.eq("t.\"First.Name\"", 1)).build().query());
+    }
+
+    @Test
+    void testConvertIdentifierPreservesUnderscoreRunsPerQualifiedSegment() {
+        // leading/trailing '_' runs are preserved for EVERY dot-separated segment, not just the whole string
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE));
+        assertEquals("T.__V", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.CAMEL_CASE));
+        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.KEBAB_CASE));
+        assertEquals("acc._id", QueryUtil.convertIdentifier("acc._id", NamingPolicy.SNAKE_CASE));
+        assertEquals("ACC._ID", QueryUtil.convertIdentifier("acc._id", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("a._b_.c_", QueryUtil.convertIdentifier("a._b_.c_", NamingPolicy.SNAKE_CASE));
+        assertEquals("A._B_.C_", QueryUtil.convertIdentifier("a._b_.c_", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("_t._id_", QueryUtil.convertIdentifier("_t._id_", NamingPolicy.SNAKE_CASE));
+        assertEquals("t.first_name_", QueryUtil.convertIdentifier("t.firstName_", NamingPolicy.SNAKE_CASE));
+        assertEquals("acc._first_name", QueryUtil.convertIdentifier("acc._firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("acc._firstName", QueryUtil.convertIdentifier("acc._first_name", NamingPolicy.CAMEL_CASE));
+
+        // all-underscore segments and identifiers are kept as-is
+        assertEquals("t.__", QueryUtil.convertIdentifier("t.__", NamingPolicy.SNAKE_CASE));
+        assertEquals("_._", QueryUtil.convertIdentifier("_._", NamingPolicy.SCREAMING_SNAKE_CASE));
+
+        // segments WITHOUT edge runs are converted one segment at a time: the qualifier is not part of the
+        // column's word structure (converting "t.firstName" as one name gave "T.firstName" under UPPER_CAMEL_CASE)
+        assertEquals("t.first_name", QueryUtil.convertIdentifier("t.firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("T.FirstName", QueryUtil.convertIdentifier("t.firstName", NamingPolicy.UPPER_CAMEL_CASE));
+
+        // internal runs are NOT preserved: they follow the naming policy (8.0.0 collapses a__b -> a_b)
+        assertEquals(NamingPolicy.SNAKE_CASE.convert("a__b"), QueryUtil.convertIdentifier("a__b", NamingPolicy.SNAKE_CASE));
+        assertEquals(NamingPolicy.CAMEL_CASE.convert("a__b"), QueryUtil.convertIdentifier("a__b", NamingPolicy.CAMEL_CASE));
+
+        // the SqlExpression path renders qualified names through the same helper
+        assertEquals("t.__v = acc._id", Filters.expr("t.__v = acc._id").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    void testConvertIdentifierQualifiedIdentityAndConversionBoundaries() {
+        // Qualified ASCII names need no temporary segments when snake-case conversion is an identity.
+        for (final String name : new String[] { "u.id", "schema.table.name", "a..b", ".id.", "." }) {
+            assertSame(name, QueryUtil.convertIdentifier(name, NamingPolicy.SNAKE_CASE));
+        }
+        // The identity path must not bypass per-segment conversion or edge-underscore preservation.
+        assertEquals("acc.id", QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE));
+        assertEquals("u.first_name", QueryUtil.convertIdentifier("u.firstName", NamingPolicy.SNAKE_CASE));
+        assertEquals("u._first_name_", QueryUtil.convertIdentifier("u._firstName_", NamingPolicy.SNAKE_CASE));
+        assertEquals("u.a_b", QueryUtil.convertIdentifier("u.a__b", NamingPolicy.SNAKE_CASE));
+        assertEquals("u.名称", QueryUtil.convertIdentifier("u.名称", NamingPolicy.SNAKE_CASE));
+        assertEquals("U.ID", QueryUtil.convertIdentifier("u.id", NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("u.firstName", QueryUtil.convertIdentifier("u.first_name", NamingPolicy.CAMEL_CASE));
+    }
+
+    @Test
+    void testExcludingSubEntityRootAlsoExcludesExpandedProperties() {
+        Set<String> excluded = Collections.singleton("child");
+        ImmutableList<String> names = QueryUtil.selectPropNames(ParentWithFilteredChild.class, true, excluded);
+
+        assertEquals(Collections.singletonList("id"), names);
+
+        String sql = PSC.selectFrom(ParentWithFilteredChild.class, true, excluded).build().query();
+        assertEquals("SELECT id AS \"id\" FROM parent_with_filtered_child", sql);
+    }
+
+    @Test
+    void testGetColumn2PropNameMap() {
+        ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(Account.class);
+        assertNotNull(map);
+    }
+
+    @Test
+    void testGetColumn2PropNameMap_NullClass() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.columnToPropNameMap(null);
+        });
+    }
+
+    @Test
+    void testGetIdFieldNames() {
+        List<String> ids = QueryUtil.idPropNames(Account.class);
+        assertNotNull(ids);
+    }
+
+    @Test
+    void testGetIdFieldNames_NullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.idPropNames(null);
+        });
+    }
+
+    @Test
+    void testGetInsertPropNames_EmptyExcluded() {
+        Collection<String> props = QueryUtil.insertPropNames(Account.class, new HashSet<>());
+        assertNotNull(props);
+    }
+
+    // --- 2026-06-22 API review: get*PropNames now return immutable lists on BOTH paths ---
+
+    @Test
+    void testGetInsertPropNames_ReturnsImmutableListBothPaths() {
+        // no-exclusion path
+        ImmutableList<String> noExcl = QueryUtil.insertPropNames(TestUser.class, null);
+        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
+
+        // exclusion path
+        ImmutableList<String> withExcl = QueryUtil.insertPropNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
+        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
+
+        // entity-based no-exclusion path
+        ImmutableList<String> entityNoExcl = QueryUtil.insertPropNames(new TestUser(), null);
+        assertThrows(UnsupportedOperationException.class, () -> entityNoExcl.add("x"));
+    }
+
+    @Test
+    void testGetInsertPropNames_WithClass() {
+        Collection<String> props = QueryUtil.insertPropNames(Account.class, Collections.emptySet());
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetInsertPropNames_WithClassAndExcluded() {
+        Set<String> excluded = new HashSet<>();
+        excluded.add("createdTime");
+        Collection<String> props = QueryUtil.insertPropNames(Account.class, excluded);
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetInsertPropNames_WithClassNullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.insertPropNames(null, Collections.emptySet());
+        });
+    }
+
+    @Test
+    void testGetInsertPropNames_WithEntity() {
+        Account account = new Account();
+        Collection<String> props = QueryUtil.insertPropNames(account, Collections.emptySet());
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetInsertPropNames_WithEntityNullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.insertPropNames((Object) null, Collections.emptySet()));
+    }
+
+    @Test
+    void testGetInsertPropNames_WithExcludedProps() {
+        Account account = new Account();
+        Set<String> excluded = new HashSet<>();
+        excluded.add("id");
+        Collection<String> props = QueryUtil.insertPropNames(account, excluded);
+        assertNotNull(props);
+        assertFalse(props.contains("id"));
+    }
+
+    @Test
+    void testGetInsertPropNamesWithClass() {
+        Set<String> excludedProps = new HashSet<>();
+
+        // Test without exclusions
+        Collection<String> props = QueryUtil.insertPropNames(TestUser.class, excludedProps);
+        assertNotNull(props);
+        assertTrue(props.contains("id"));
+        assertTrue(props.contains("name"));
+        assertFalse(props.contains("email"));
+
+        // Test with exclusions
+        excludedProps.add("email");
+        props = QueryUtil.insertPropNames(TestUser.class, excludedProps);
+        assertTrue(props.contains("id"));
+        assertTrue(props.contains("name"));
+        assertFalse(props.contains("email"));
+    }
+
+    @Test
+    void testGetInsertPropNamesWithEntity() {
+        TestUser user = new TestUser();
+
+        // Test with default ID value (should exclude ID)
+        user.setId(null);
+        Set<String> excludedProps = new HashSet<>();
+        Collection<String> props = QueryUtil.insertPropNames(user, excludedProps);
+        assertNotNull(props);
+        assertFalse(props.contains("id"));
+        assertTrue(props.contains("name"));
+        assertFalse(props.contains("email"));
+
+        // Test with non-default ID value (should include ID)
+        user.setId(123L);
+        props = QueryUtil.insertPropNames(user, excludedProps);
+        assertTrue(props.contains("id"));
+        assertTrue(props.contains("name"));
+        assertFalse(props.contains("email"));
+
+        // Test with excluded properties
+        excludedProps.add("email");
+        props = QueryUtil.insertPropNames(user, excludedProps);
+        assertTrue(props.contains("name"));
+        assertFalse(props.contains("email"));
+    }
+
+    @Test
+    void testGetInsertUpdatePropNames_NoExclusionReturnStableInstance() {
+        assertSame(QueryUtil.insertPropNames(TestUser.class, null), QueryUtil.insertPropNames(TestUser.class, null));
+        assertSame(QueryUtil.updatePropNames(TestUser.class, null), QueryUtil.updatePropNames(TestUser.class, null));
+    }
+
+    @Test
+    void testGetSelectPropNames() {
+        Collection<String> props = QueryUtil.selectPropNames(Account.class, false, Collections.emptySet());
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetSelectPropNames_ConcurrentFirstAccessReturnsSafelyPublishedStableInstance() throws InterruptedException {
+        final int threadCount = 24;
+        final ImmutableList<?>[] results = new ImmutableList<?>[threadCount];
+        final CountDownLatch ready = new CountDownLatch(threadCount);
+        final CountDownLatch start = new CountDownLatch(1);
+        final CountDownLatch done = new CountDownLatch(threadCount);
+        final Thread[] threads = new Thread[threadCount];
+
+        for (int i = 0; i < threadCount; i++) {
+            final int index = i;
+            threads[i] = new Thread(() -> {
+                ready.countDown();
+
+                try {
+                    start.await();
+                    results[index] = QueryUtil.selectPropNames(ConcurrentCacheEntity.class, false, null);
+                } catch (final InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    done.countDown();
+                }
+            });
+            threads[i].setDaemon(true);
+            threads[i].start();
+        }
+
+        assertTrue(ready.await(10, TimeUnit.SECONDS), "Worker threads did not become ready");
+        start.countDown();
+        assertTrue(done.await(10, TimeUnit.SECONDS), "Concurrent cache initialization did not complete");
+
+        for (final Thread thread : threads) {
+            thread.join();
+        }
+
+        assertNotNull(results[0]);
+        assertTrue(results[0].contains("id"));
+        assertTrue(results[0].contains("value"));
+
+        for (int i = 1; i < results.length; i++) {
+            assertSame(results[0], results[i]);
+        }
+    }
+
+    @Test
+    void testGetSelectPropNames_EmptyExcluded() {
+        Collection<String> props = QueryUtil.selectPropNames(Account.class, false, new HashSet<>());
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetSelectPropNames_IncludeSubEntity() {
+        Collection<String> props = QueryUtil.selectPropNames(Account.class, true, Collections.emptySet());
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetSelectPropNames_InstanceOverloadDelegatesToClass() {
+        TestUser user = new TestUser();
+        ImmutableList<String> viaInstance = QueryUtil.selectPropNames(user, false, null);
+        ImmutableList<String> viaClass = QueryUtil.selectPropNames(TestUser.class, false, null);
+        assertEquals(viaClass, viaInstance);
+        assertTrue(viaInstance.contains("name"));
+        assertFalse(viaInstance.contains("email"));
+    }
+
+    @Test
+    void testGetSelectPropNames_InstanceOverloadNullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.selectPropNames((Object) null, false, null));
+    }
+
+    @Test
+    void testGetSelectPropNames_NoExclusionReturnsStableInstance() {
+        // The no-exclusion path is memoized, so repeated calls return the same instance
+        // (this identity is relied upon by the builders' == fast paths).
+        ImmutableList<String> first = QueryUtil.selectPropNames(TestUser.class, false, null);
+        ImmutableList<String> second = QueryUtil.selectPropNames(TestUser.class, false, null);
+        assertSame(first, second);
+
+        // Sub-entity variant uses a different slot, so it is a different (but also stable) instance.
+        ImmutableList<String> withSub = QueryUtil.selectPropNames(TestUser.class, true, null);
+        assertSame(withSub, QueryUtil.selectPropNames(TestUser.class, true, null));
+    }
+
+    @Test
+    void testGetSelectPropNames_NullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.selectPropNames(null, false, Collections.emptySet());
+        });
+    }
+
+    @Test
+    void testGetSelectPropNames_ReturnsImmutableListBothPaths() {
+        ImmutableList<String> noExcl = QueryUtil.selectPropNames(TestUser.class, false, null);
+        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
+
+        ImmutableList<String> withExcl = QueryUtil.selectPropNames(TestUser.class, false, new HashSet<>(Arrays.asList("email")));
+        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
+    }
+
+    @Test
+    void testGetSelectPropNames_WithExcluded() {
+        Set<String> excluded = new HashSet<>();
+        excluded.add("id");
+        Collection<String> props = QueryUtil.selectPropNames(Account.class, false, excluded);
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetTableAlias() {
+        String alias = QueryUtil.tableAlias(Account.class);
+        assertEquals("acc", alias);
+    }
+
+    @Test
+    void testGetTableAlias_NullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.tableAlias(null);
+        });
+    }
+
+    @Test
+    void testGetTableNameAndAlias() {
+        String tableName = QueryUtil.tableNameAndAlias(Account.class);
+        assertNotNull(tableName);
+    }
+
+    @Test
+    void testGetTableNameAndAlias_AliaslessAnnotation() {
+        String tableName = QueryUtil.tableNameAndAlias(QueryUtilTest.AliaslessEntity.class, null);
+
+        assertEquals("aliasless_table", tableName);
+    }
+
+    @Test
+    void testGetTableNameAndAlias_MatchesBuilderResolverForEveryNamingPolicy() {
+        // Regression: the class-name-derived branch applied NamingPolicy.convert() directly, while the
+        // builders go through SqlBuilder.getTableName(), which keeps the simple class name untouched for
+        // KEBAB_CASE / UPPER_CAMEL_CASE -- so the helper rendered "alias-only-entity ao" where the
+        // FROM clause said "AliasOnlyEntity ao".
+        for (final NamingPolicy np : NamingPolicy.values()) {
+            assertEquals(AbstractQueryBuilder.getTableName(AliasOnlyEntity.class, np) + " ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, np), np.name());
+            assertEquals(AbstractQueryBuilder.getTableName(Account.class, np) + " " + AbstractQueryBuilder.tableAlias(Account.class),
+                    QueryUtil.tableNameAndAlias(Account.class, np), np.name());
+        }
+
+        assertEquals("AliasOnlyEntity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.KEBAB_CASE));
+        assertEquals("alias_only_entity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    void testGetTableNameAndAlias_NoChange() {
+        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.NO_CHANGE);
+        assertNotNull(tableName);
+    }
+
+    @Test
+    void testGetTableNameAndAlias_NullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.tableNameAndAlias(null);
+        });
+    }
+
+    @Test
+    void testGetTableNameAndAlias_NullCheckWithPolicy() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.tableNameAndAlias(null, NamingPolicy.SNAKE_CASE);
+        });
+    }
+
+    @Test
+    void testGetTableNameAndAlias_UpperCase() {
+        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+        assertNotNull(tableName);
+    }
+
+    @Test
+    void testGetTableNameAndAlias_WithNamingPolicy() {
+        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.SNAKE_CASE);
+        assertNotNull(tableName);
+    }
+
+    @Test
+    void testGetTableNameAndAliasHonorsTableValueAndAliasOnly() {
+        // Regression (2026-07-03): only @Table.name() was read, so the deprecated @Table("...") value
+        // form returned "" and an alias-only @Table returned " ao" (leading-space garbage) -- both
+        // diverging from the FROM clause the query builders render for the same class.
+        assertEquals("value_form_accounts", QueryUtil.tableNameAndAlias(ValueFormEntity.class, NamingPolicy.SNAKE_CASE));
+        assertEquals("alias_only_entity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    void testGetUpdatePropNames() {
+        Collection<String> props = QueryUtil.updatePropNames(Account.class, Collections.emptySet());
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetUpdatePropNames_EmptyExcluded() {
+        Collection<String> props = QueryUtil.updatePropNames(Account.class, new HashSet<>());
+        assertNotNull(props);
+    }
+
+    @Test
+    void testGetUpdatePropNames_InstanceOverloadDelegatesToClass() {
+        TestUser user = new TestUser();
+        ImmutableList<String> viaInstance = QueryUtil.updatePropNames(user, null);
+        ImmutableList<String> viaClass = QueryUtil.updatePropNames(TestUser.class, null);
+        assertEquals(viaClass, viaInstance);
+        assertTrue(viaInstance.contains("name"));
+        assertFalse(viaInstance.contains("email"));
+    }
+
+    @Test
+    void testGetUpdatePropNames_InstanceOverloadNullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.updatePropNames((Object) null, null));
+    }
+
+    @Test
+    void testGetUpdatePropNames_NullCheck() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.updatePropNames(null, Collections.emptySet());
+        });
+    }
+
+    @Test
+    void testGetUpdatePropNames_ReturnsImmutableListBothPaths() {
+        ImmutableList<String> noExcl = QueryUtil.updatePropNames(TestUser.class, null);
+        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
+
+        ImmutableList<String> withExcl = QueryUtil.updatePropNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
+        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
+    }
+
+    @Test
+    void testGetUpdatePropNames_WithExcluded() {
+        Set<String> excluded = new HashSet<>();
+        excluded.add("createdTime");
+        Collection<String> props = QueryUtil.updatePropNames(Account.class, excluded);
+        assertNotNull(props);
+    }
+
+    @Test
+    void testHasUnterminatedBlockCommentIsLinear() {
+        // Regression: resuming after each unterminated quote, and searching for '\r' from every "--", was quadratic
+        // (80 KB of "\"\\" took seconds). Each input below takes milliseconds when the scan is linear.
+        final String quotes = "/*x*/ a" + "\"\\".repeat(100_000) + "'\\".repeat(50_000) + "`\\".repeat(50_000);
+        final String comments = "a /* x */ " + "-- c\n".repeat(60_000) + "--\r".repeat(60_000);
+
+        final long start = System.nanoTime();
+        assertFalse(QueryUtil.hasUnterminatedBlockComment(quotes));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment(comments));
+        assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) < 5_000, "hasUnterminatedBlockComment is not linear");
+    }
+
+    // Regression: PostgreSQL, SQL Server and H2 nest block comments, so "id /* outer /* inner */" is still open there; the scan
+    // stopped at the first "*/" and accepted it.
+    @Test
+    void testHasUnterminatedBlockCommentNestedReading() {
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("id /* outer /* inner */"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("/*/**/"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* x */ b /* y /* z */"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* x /* y */ */ /* z"));
+        // Quotes are not special inside a comment, so a quote there does not hide a nested opener.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* it's /* x */"));
+
+        // Balanced nesting, or comments one after another, are closed under both readings.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("id /* a /* b */ */"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("id /* a */ /* b */"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("/* a /* b /* c */ */ */ x"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("/**/ /**/"));
+        // A quoted "/*" is data, not a nested opener.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("'/*' /* a */"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("/* a */ \"/*\""));
+    }
+
+    @Test
+    void testHasUnterminatedBlockCommentReadings() {
+        // Covers every lexical reading of the fail-closed sort-key / DISTINCT ON check.
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.hasUnterminatedBlockComment(null));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("a DESC"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("a /* c */"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* c"));
+
+        // Quoted text, doubled quotes and line comments hide an opener.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("COALESCE(a, '/*')"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("\"a/*b\""));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("'it''s /*'"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("a -- /*\n"));
+
+        // Backslash escapes: '\'' is closed under one reading and open under the other.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("'a\\'/*'"));
+        // A "--" comment ended by a lone '\r' (default tokenizer) exposes the opener; MySQL/SQLite end it only at '\n'.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a -- c\r/* x"));
+        // A stray quote in a '#' comment or an [it's] identifier must not hide the opener, even if a later quote pairs with it.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a # it's\n/* x 'y'"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("[it's] /* it's"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("[a'] /* x '"));
+        // Fail-closed trade-offs: one reading sees an open comment.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("[a/*b]"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a # note /*"));
+    }
+
+    @Test
+    void testIncludedSubEntityPropertiesExcludeNonColumns() {
+        ImmutableList<String> names = QueryUtil.selectPropNames(ParentWithFilteredChild.class, true, null);
+
+        assertTrue(names.contains("child.visible"), names.toString());
+        assertFalse(names.contains("child.hiddenByAnnotation"), names.toString());
+        assertFalse(names.contains("child.hiddenByTable"), names.toString());
+    }
+
+    @Test
+    void testIsNonColumn() {
+        Set<String> columnFields = new HashSet<>();
+        columnFields.add("id");
+        columnFields.add("firstName");
+
+        Set<String> nonColumnFields = new HashSet<>();
+        nonColumnFields.add("tempField");
+
+        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
+        PropInfo propInfo = beanInfo.getPropInfo("id");
+
+        assertFalse(QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo));
+    }
+
+    @Test
+    void testIsNonColumn_EmptySets() {
+        Set<String> columnFields = new HashSet<>();
+        Set<String> nonColumnFields = new HashSet<>();
+
+        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
+        PropInfo propInfo = beanInfo.getPropInfo("id");
+
+        boolean result = QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo);
+        assertFalse(result);
+    }
+
+    @Test
+    void testIsNonColumn_NonColumnField() {
+        Set<String> columnFields = new HashSet<>();
+        columnFields.add("id");
+
+        Set<String> nonColumnFields = new HashSet<>();
+        nonColumnFields.add("tempField");
+
+        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
+        PropInfo tempProp = beanInfo.getPropInfo("tempField");
+
+        if (tempProp != null) {
+            assertTrue(QueryUtil.isNonColumn(columnFields, nonColumnFields, tempProp));
+        }
+    }
+
+    @Test
+    void testIsNonColumn_NullPropInfoThrowsIllegalArgument() {
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.isNonColumn(Collections.emptySet(), Collections.emptySet(), null));
+    }
+
+    @Test
+    void testLongQuotedIdentifierChainsRetainEverySegment() {
+        final String input = "\"part.with.dot\".firstName.".repeat(1_024) + "[last.part]";
+        final String expected = "\"part.with.dot\".first_name.".repeat(1_024) + "[last.part]";
+
+        assertEquals(expected, QueryUtil.convertIdentifier(input, NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    void testNestedPropertyExclusionsMatchCompletePathSegments() {
+        final Class<?> entityClass = NestedBranch.class;
+        final List<String> all = List.of("firstLeaf.value", "secondLeaf.value");
+
+        assertEquals(all, QueryUtil.selectPropNames(entityClass, true, null));
+        assertEquals(List.of("secondLeaf.value"), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf")));
+        assertEquals(List.of("secondLeaf.value"), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf.value")));
+        assertEquals(List.of(), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf", "secondLeaf")));
+        assertEquals(all, QueryUtil.selectPropNames(entityClass, true, new HashSet<>(Arrays.asList(null, "", "first", "firstLeaf.", "firstLeaf.val"))));
+    }
+
+    @Test
+    void testNestedQuotedColumnDotsRetainSubEntityQualifier() {
+        final ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(NestedQuotedColumns.class, NamingPolicy.SNAKE_CASE);
+
+        assertEquals("q.\"double.dot\"", map.get("child.doubleQuoted"));
+        assertEquals("q.`backtick.dot`", map.get("child.backtickQuoted"));
+        assertEquals("q.[bracket.dot]", map.get("child.bracketQuoted"));
+        assertEquals("q.\"escaped\"\".dot\"", map.get("child.escapedQuote"));
+        assertEquals("q.[escaped]].dot]", map.get("child.escapedBracket"));
+        assertEquals("source.\"qualified.dot\"", map.get("child.qualified"));
+    }
+
+    @Test
+    void testPatternForAlphanumericColumnName() {
+        assertNotNull(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN);
+        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user_name").matches());
+        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user123").matches());
+        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user-name").matches());
+        assertFalse(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user.name").matches());
+        assertFalse(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user name").matches());
+    }
+
+    @Test
+    void testPropertyToColumnMap() {
+        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
+        assertNotNull(map);
+    }
+
+    @Test
+    void testPropertyToColumnMap_AllNonColumnProperties() {
+        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(QueryUtilTest.NonColumnOnlyEntity.class, NamingPolicy.SNAKE_CASE);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testPropertyToColumnMap_DifferentPolicies() {
+        ImmutableMap<String, String> lower = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
+        ImmutableMap<String, String> upper = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+        ImmutableMap<String, String> noChange = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
+
+        assertNotNull(lower);
+        assertNotNull(upper);
+        assertNotNull(noChange);
+    }
+
+    @Test
+    void testPropertyToColumnMap_MapClass() {
+        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(HashMap.class, NamingPolicy.SNAKE_CASE);
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    void testPropertyToColumnMap_MapEntityClassReturnsEmpty() {
+        // Map-assignable classes get an empty map (documented behavior).
+        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(HashMap.class, NamingPolicy.SNAKE_CASE);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testPropertyToColumnMap_NoChange() {
+        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
+        assertNotNull(map);
+    }
+
+    @Test
+    void testPropertyToColumnMap_NullClass() {
+        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(null, NamingPolicy.SNAKE_CASE);
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    void testPropertyToColumnMap_NullEntityClassAndNullPolicyReturnsEmpty() {
+        // Both null: still returns empty map.
+        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(null, null);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testPropertyToColumnMap_NullEntityClassReturnsEmpty() {
+        // Documented contract: null entityClass returns an empty map (does not throw).
+        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(null, NamingPolicy.SNAKE_CASE);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testPropertyToColumnMap_NullNamingPolicyUsesSnakeCase() {
+        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(QueryUtilTest.AliaslessEntity.class, null);
+
+        assertEquals("simple_value", result.get("simpleValue"));
+    }
+
+    @Test
+    void testPropertyToColumnMap_UpperCase() {
+        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+        assertNotNull(map);
+    }
+
+    @Test
+    void testPropertyToColumnMap_WithSelfReferentialEntityDoesNotThrow() {
+        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(SelfReferentialEntity.class, NamingPolicy.SNAKE_CASE);
+
+        assertEquals("id", result.get("id"));
+        assertFalse(result.containsKey("parent.parent"));
+    }
+
+    @Test
+    void testPropertyToColumnMapCapsDeepNestedExpansion() {
+        final ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(DeepNestedRoot.class, NamingPolicy.SNAKE_CASE);
+
+        assertFalse(result.containsKey("middle.leaf.tail.value"));
+        assertFalse(result.containsKey("middle.leaf.tail"));
+    }
+
+    @Test
+    void testPropertyToColumnMapWithRepeatedNestedType() {
+        final ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
+
+        assertEquals("nested_leaf.value", result.get("branch.firstLeaf.value"));
+        assertEquals("nested_leaf.value", result.get("branch.secondLeaf.value"));
+    }
+
+    @Test
+    void testPropToColumnInfoMap() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.SNAKE_CASE);
+
+        assertEquals(new QueryUtil.ColumnInfo("first_name", true), map.get("firstName"));
+        assertEquals(new QueryUtil.ColumnInfo("first_name", true), map.get("first_name"));
+        assertEquals("first_name", map.get("firstName").columnName());
+        assertTrue(map.get("firstName").isUnqualified());
+
+        ImmutableMap<String, QueryUtil.ColumnInfo> nestedMap = QueryUtil.propToColumnInfoMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
+        QueryUtil.ColumnInfo nested = nestedMap.get("branch.firstLeaf.value");
+        assertEquals(QueryUtil.propToColumnNameMap(NestedRoot.class, NamingPolicy.SNAKE_CASE).get("branch.firstLeaf.value"), nested.columnName());
+        assertFalse(nested.isUnqualified());
+    }
+
+    @Test
+    void testPropToColumnInfoMap_NoChange() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.NO_CHANGE);
+
+        assertEquals(new QueryUtil.ColumnInfo("firstName", true), map.get("firstName"));
+    }
+
+    @Test
+    void testPropToColumnInfoMap_NullClass() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.propToColumnInfoMap(null, NamingPolicy.SNAKE_CASE);
+        });
+    }
+
+    @Test
+    void testPropToColumnInfoMap_NullNamingPolicyUsesSnakeCase() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> result = QueryUtil.propToColumnInfoMap(QueryUtilTest.AliaslessEntity.class, null);
+
+        assertEquals("simple_value", result.get("simpleValue").columnName());
+        assertTrue(result.get("simpleValue").isUnqualified());
+    }
+
+    @Test
+    void testPropToColumnInfoMap_QualifiedMappedColumnIsNotPrefixedAgain() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(QualifiedColumnEntity.class, NamingPolicy.SNAKE_CASE);
+
+        assertEquals(new QueryUtil.ColumnInfo("source.value", false), map.get("value"));
+        assertEquals(new QueryUtil.ColumnInfo("source.value", false), map.get("source.value"));
+
+        String sql = PSC.selectFrom(QualifiedColumnEntity.class).build().query();
+        assertEquals("SELECT source.value AS \"value\" FROM qualified_column_entity q", sql);
+        assertFalse(sql.contains("q.source.value"));
+    }
+
+    @Test
+    void testPropToColumnInfoMap_UpperCase() {
+        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
+
+        assertEquals(new QueryUtil.ColumnInfo("FIRST_NAME", true), map.get("firstName"));
+    }
+
+    @Test
+    void testQueryUtil_patternForAlphanumericColumnName() {
+        boolean isValid = QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("column_name").matches();
+        assertTrue(isValid);
+        boolean isInvalid = QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("column name").matches();
+        assertFalse(isInvalid);
+    }
+
+    @Test
+    void testQueryUtil_RepeatQuestionMark() {
+        String placeholders = QueryUtil.placeholders(3);
+        assertEquals("?, ?, ?", placeholders);
+        String sql = "INSERT INTO users (name, email, age) VALUES (" + placeholders + ")";
+        assertEquals("INSERT INTO users (name, email, age) VALUES (?, ?, ?)", sql);
+    }
+
+    @Test
+    void testQueryUtil_RepeatQuestionMark_zero() {
+        String placeholders = QueryUtil.placeholders(0);
+        assertEquals("", placeholders);
+    }
+
+    @Test
+    void testQuotedColumnDotsDoNotSuppressTableAliases() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(QuotedColumnNames.class, NamingPolicy.SNAKE_CASE);
+
+        for (final String propName : List.of("doubleQuoted", "backtickQuoted", "bracketQuoted", "escapedQuote", "escapedBracket")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertTrue(column.isUnqualified(), propName);
+            assertEquals(column, map.get(column.columnName()));
+            final Selection selection = Selection.builder(QuotedColumnNames.class).tableAlias("q").includedPropNames(List.of(propName)).build();
+            assertEquals("SELECT q." + column.columnName() + " AS \"" + propName + "\" FROM quoted_columns q", PSC.selectFrom(selection).build().query());
+        }
+
+        assertFalse(map.get("qualified").isUnqualified());
+        final Selection qualified = Selection.builder(QuotedColumnNames.class).tableAlias("q").includedPropNames(List.of("qualified")).build();
+        assertEquals("SELECT source.\"qualified.dot\" AS \"qualified\" FROM quoted_columns q", PSC.selectFrom(qualified).build().query());
+    }
+
+    @Test
+    void testQuotedColumnMappingsRetainAliasesInConditionsAndOrdering() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(QuotedColumnNames.class, NamingPolicy.SNAKE_CASE);
+
+        for (final String propName : List.of("doubleQuoted", "backtickQuoted", "bracketQuoted", "escapedQuote", "escapedBracket")) {
+            final String columnName = map.get(propName).columnName();
+            // WHERE resolves the joined table's property map; ORDER BY resolves the original table's map.
+            final AbstractQueryBuilder.SP result = PSC.select(propName)
+                    .from(QuotedColumnNames.class, "a")
+                    .join(QuotedColumnNames.class, "b")
+                    .on("a.id = b.id")
+                    .where(Filters.eq("b." + propName, "match"))
+                    .orderBy("a." + propName)
+                    .build();
+
+            assertEquals("SELECT a." + columnName + " AS \"" + propName + "\" FROM quoted_columns a JOIN quoted_columns b ON a.id = b.id WHERE b." + columnName
+                    + " = ? ORDER BY a." + columnName, result.query(), propName);
+            assertEquals(List.of("match"), result.parameters(), propName);
+        }
+    }
+
+    @Test
+    void testQuotedIdentifierChainsPreserveSegmentBoundariesForEveryNamingPolicy() {
         final String quoted = "U&\"part.with.dot\" UESCAPE '.'";
         final String identifier = "._first_name_." + quoted + "..__last_name__.";
         final Map<NamingPolicy, String> expected = Map.of(NamingPolicy.CAMEL_CASE, "._firstName_." + quoted + "..__lastName__.", NamingPolicy.UPPER_CAMEL_CASE,
@@ -69,23 +1078,273 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Test
-    public void testLongQuotedIdentifierChainsRetainEverySegment() {
-        final String input = "\"part.with.dot\".firstName.".repeat(1_024) + "[last.part]";
-        final String expected = "\"part.with.dot\".first_name.".repeat(1_024) + "[last.part]";
+    void testQuotedIdentifierConversionPreservesEscapedAndUnicodeSegments() {
+        for (final String quoted : List.of("\"a.\"\"b\"", "`a.``b`", "[a.]]b]", "U&\"a.002e\" UESCAPE '.'", "u&\"a.002e\" UESCAPE E'.'",
+                "U&\"a[002e\" UESCAPE '['", "U&\"a.002e\" UESCAPE E'\\056'", "U&\"a.002e\" UESCAPE E'\\x2e'", "U&\"a.002e\" UESCAPE E'\\u002e'",
+                "U&\"a.002e\" UESCAPE E'\\U0000002e'")) {
+            final String identifier = "firstName." + quoted + ".lastName";
+            assertEquals("first_name." + quoted + ".last_name", QueryUtil.convertIdentifier(identifier, NamingPolicy.SNAKE_CASE));
+            assertEquals("FIRST_NAME." + quoted + ".LAST_NAME", QueryUtil.convertIdentifier(identifier, NamingPolicy.SCREAMING_SNAKE_CASE));
+        }
 
-        assertEquals(expected, QueryUtil.convertIdentifier(input, NamingPolicy.SNAKE_CASE));
+        assertEquals(".\"a.b\"..first_name.", QueryUtil.convertIdentifier(".\"a.b\"..firstName.", NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name.\"unterminated.lastName", QueryUtil.convertIdentifier("firstName.\"unterminated.lastName", NamingPolicy.SNAKE_CASE));
     }
 
     @Test
-    public void testNestedPropertyExclusionsMatchCompletePathSegments() {
-        final Class<?> entityClass = NestedBranch.class;
-        final List<String> all = List.of("firstLeaf.value", "secondLeaf.value");
+    void testRegisterEntityPropColumnNameMap() {
+        // Direct cycle detection should stop recursive expansion instead of failing the entire lookup.
+        Set<Class<?>> registeringClasses = new HashSet<>();
+        registeringClasses.add(TestUser.class);
 
-        assertEquals(all, QueryUtil.selectPropNames(entityClass, true, null));
-        assertEquals(List.of("secondLeaf.value"), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf")));
-        assertEquals(List.of("secondLeaf.value"), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf.value")));
-        assertEquals(List.of(), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf", "secondLeaf")));
-        assertEquals(all, QueryUtil.selectPropNames(entityClass, true, new HashSet<>(Arrays.asList(null, "", "first", "firstLeaf.", "firstLeaf.val"))));
+        ImmutableMap<String, String> result = QueryUtil.registerEntityPropColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE, registeringClasses);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testRepeatQuestionMark() {
+        String qm = QueryUtil.placeholders(3);
+        assertEquals("?, ?, ?", qm);
+    }
+
+    @Test
+    void testRepeatQuestionMark_AllCachedValues() {
+        for (int i = 0; i <= 30; i++) {
+            String result = QueryUtil.placeholders(i);
+            assertNotNull(result);
+            if (i == 0) {
+                assertEquals("", result);
+            } else if (i == 1) {
+                assertEquals("?", result);
+            } else {
+                assertTrue(result.startsWith("?"));
+            }
+        }
+    }
+
+    @Test
+    void testRepeatQuestionMark_Cached() {
+        String qm1 = QueryUtil.placeholders(5);
+        String qm2 = QueryUtil.placeholders(5);
+        assertEquals(qm1, qm2);
+    }
+
+    @Test
+    void testRepeatQuestionMark_Large() {
+        String qm = QueryUtil.placeholders(100);
+        assertNotNull(qm);
+        assertTrue(qm.contains("?"));
+    }
+
+    @Test
+    void testRepeatQuestionMark_Negative() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            QueryUtil.placeholders(-1);
+        });
+    }
+
+    @Test
+    void testRepeatQuestionMark_NonCachedValue() {
+        String result = QueryUtil.placeholders(50);
+        assertNotNull(result);
+        assertEquals(148, result.length()); // "?, " * 50 = 150 - 2 = 148 characters
+    }
+
+    @Test
+    void testRepeatQuestionMark_One() {
+        String qm = QueryUtil.placeholders(1);
+        assertEquals("?", qm);
+    }
+
+    @Test
+    void testRepeatQuestionMark_SpecialCachedValues() {
+        assertNotNull(QueryUtil.placeholders(100));
+        assertNotNull(QueryUtil.placeholders(200));
+        assertNotNull(QueryUtil.placeholders(300));
+        assertNotNull(QueryUtil.placeholders(500));
+        assertNotNull(QueryUtil.placeholders(1000));
+    }
+
+    @Test
+    void testRepeatQuestionMark_Zero() {
+        String qm = QueryUtil.placeholders(0);
+        assertEquals("", qm);
+    }
+
+    @Test
+    void testSqlBuilder_FromSelfReferentialEntityDoesNotFail() {
+        String sql = PSC.select("id").from(SelfReferentialEntity.class).where(Filters.eq("id", 1L)).build().query();
+
+        assertTrue(sql.contains("FROM self_referential_entity"));
+        assertTrue(sql.contains("WHERE id = ?"));
+    }
+
+    @Test
+    void testTerminateLineCommentProtectsOnlyOpenCommentBoundaries() {
+        for (final String sql : List.of("SELECT 1 -- tail", "SELECT 1 # tail", "SELECT '-- quoted' -- tail")) {
+            assertEquals(sql + '\n', QueryUtil.terminateLineComment(sql));
+        }
+
+        for (final String sql : List.of("", "SELECT 1", "SELECT '-- quoted'", "SELECT '# quoted'", "SELECT [-- quoted]", "SELECT 1 /* tail */",
+                "SELECT 1 -- tail\n", "SELECT 1 # tail\r\n")) {
+            assertSame(sql, QueryUtil.terminateLineComment(sql), sql);
+        }
+
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.terminateLineComment(null));
+    }
+
+    @Test
+    void testTerminateLineCommentSupportsStandardAndEscapeStrings() {
+        for (final String sql : List.of("'a\\' -- tail", "'a\\' # tail", "N'a\\' -- tail", "E'a\\' -- quoted' -- tail", "a\u0301E'a\\' -- tail")) {
+            assertEquals(sql + '\n', QueryUtil.terminateLineComment(sql), sql);
+        }
+        for (final String sql : List.of("'a\\' -- tail\n", "'a\\'", "E'a\\' -- quoted'", "e'a\\' # quoted'")) {
+            assertSame(sql, QueryUtil.terminateLineComment(sql), sql);
+        }
+    }
+
+    @Test
+    void testUnicodeEscapeClausesDoNotHideFollowingUsingColumns() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+        final SqlBuilder builder = PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b");
+
+        // The '[' escape belongs to the first identifier, and must not hide a qualifier in the next one.
+        assertThrows(IllegalArgumentException.class, () -> builder.using(List.of("bracketEscape", "qualifiedUnicode")));
+
+        // The rejected list must also leave the join ready for a valid list containing punctuation escapes.
+        assertEquals("SELECT * FROM unicode_columns a JOIN unicode_columns b USING (" + map.get("dotEscape").columnName() + ", "
+                + map.get("bracketEscape").columnName() + ")", builder.using(List.of("dotEscape", "bracketEscape")).build().query());
+    }
+
+    @Test
+    void testUnicodeEscapeStringClausesDoNotHideOrInventQualifyingDots() {
+        for (final String escape : List.of("E'.'", "e'['", "E'\\\\'", "E'\\056'", "E'\\x2e'", "E'\\u002e'", "E'\\U0000002e'")) {
+            final String identifier = "U&\"name\" UESCAPE " + escape;
+            assertEquals(-1, QueryUtil.indexOfQualifyingDot(identifier), escape);
+            assertEquals(identifier.length(), QueryUtil.indexOfQualifyingDot(identifier + ".value"), escape);
+            assertEquals(identifier + ".first_name", QueryUtil.convertIdentifier(identifier + ".firstName", NamingPolicy.SNAKE_CASE), escape);
+        }
+    }
+
+    @Test
+    void testUnicodeEscapeStringClausesRetainTableAndNestedQualifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("escapeString", "lowercaseEscapeString", "escapedBackslash", "octalEscapeString", "hexEscapeString",
+                "unicodeEscapeString", "literalXEscapeString")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertTrue(column.isUnqualified(), propName);
+            assertEquals("SELECT a." + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a JOIN unicode_columns b ON a.id = b.id",
+                    PSC.select(propName).from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on("a.id = b.id").build().query(), propName);
+            assertEquals("u." + column.columnName(), nestedMap.get("child." + propName), propName);
+        }
+    }
+
+    @Test
+    void testUnicodeEscapeStringsDoNotTreatInvalidClausesOrExpressionsAsIdentifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("invalidWhitespaceEscape", "invalidPlusEscape", "invalidMultipleEscapes", "invalidEscapeKeyword",
+                "invalidEmptyEscape", "invalidShortUnicodeEscape", "invalidOutOfRangeUnicodeEscape", "invalidNullEscape", "invalidSurrogateEscape",
+                "invalidHexDigitEscape", "escapeStringExpression")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertFalse(column.isUnqualified(), propName);
+            assertEquals("SELECT " + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a",
+                    PSC.select(propName).from(UnicodeColumnNames.class, "a").build().query(), propName);
+        }
+    }
+
+    @Test
+    void testUnicodeIdentifierEscapeClausesDoNotHideOrInventUsingQualifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("unicodeQuoted", "unicodeQuotedDot", "unicodeEscapedQuote", "customEscape", "dotEscape", "bracketEscape")) {
+            final String columnName = map.get(propName).columnName();
+            final String expected = "SELECT * FROM unicode_columns a JOIN unicode_columns b USING (" + columnName + ")";
+            assertEquals(expected, PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").using(propName).build().query());
+            assertEquals(expected,
+                    PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on(Filters.using(propName)).build().query());
+        }
+
+        for (final String propName : List.of("qualifiedUnicode", "unicodeQuotedQualifier", "escapedQualifier")) {
+            final SqlBuilder builder = PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b");
+            assertThrows(IllegalArgumentException.class, () -> builder.using(propName), propName);
+            builder.on("a.id = b.id").build();
+        }
+    }
+
+    @Test
+    void testUnicodeIdentifiersRetainSelfJoinAndNestedQualifiers() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("combiningMark", "spacingMark", "enclosingMark", "supplementaryLetter", "letterNumber", "connectorPunctuation",
+                "supplementarySymbol", "unicodeQuoted", "unicodeQuotedDot", "unicodeEscapedQuote", "customEscape", "dotEscape", "bracketEscape")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertTrue(column.isUnqualified(), propName);
+            assertEquals(column, map.get(column.columnName()));
+
+            // A self-join makes dropping this qualifier observable: both tables expose the same mapped name.
+            assertEquals("SELECT a." + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a JOIN unicode_columns b ON a.id = b.id",
+                    PSC.select(propName).from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on("a.id = b.id").build().query(), propName);
+            assertEquals("u." + column.columnName(), nestedMap.get("child." + propName), propName);
+        }
+    }
+
+    @Test
+    void testUnicodeQualifiedNamesAndExpressionsAreNotPrefixedAgain() {
+        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
+        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
+
+        for (final String propName : List.of("qualifiedUnicode", "unicodeQuotedQualifier", "escapedQualifier", "unicodeExpression",
+                "unicodeEscapeExpression")) {
+            final QueryUtil.ColumnInfo column = map.get(propName);
+            assertFalse(column.isUnqualified(), propName);
+            assertEquals("SELECT " + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a",
+                    PSC.select(propName).from(UnicodeColumnNames.class, "a").build().query(), propName);
+            assertEquals(column.columnName(), nestedMap.get("child." + propName), propName);
+        }
+    }
+
+    @Nested
+    class Validation {
+        @Test
+        void testQualifyingDotScannerRetainsItsRequiredSourcePrecondition() {
+            assertThrows(NullPointerException.class, () -> QueryUtil.indexOfQualifyingDot(null));
+            assertEquals(-1, QueryUtil.indexOfQualifyingDot(""));
+            assertEquals(1, QueryUtil.indexOfQualifyingDot("p.first_name"));
+        }
+
+        @Test
+        void testRecursiveMetadataRegistrationAndPublicDefaultsStillAcceptNullPolicy() {
+            assertTrue(QueryUtil.registerEntityPropColumnNameMap(Person.class, null, new HashSet<>()).containsKey("firstName"));
+            assertTrue(QueryUtil.registerEntityPropColumnNameMap(Person.class, null, Collections.singleton(Person.class)).isEmpty());
+            assertEquals(QueryUtil.propToColumnNameMap(Person.class, NamingPolicy.SNAKE_CASE), QueryUtil.propToColumnNameMap(Person.class, null));
+            assertTrue(QueryUtil.propToColumnNameMap(null, null).isEmpty());
+        }
+
+        @Test
+        void testTopLevelMetadataRegistrationRejectsNullPolicyBeforeInspectingTheClass() {
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> QueryUtil.registerEntityPropColumnNameMap(null, null, null)).getMessage()
+                    .contains(cs.entityClass));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> QueryUtil.registerEntityPropColumnNameMap(String.class, null, null)).getMessage()
+                    .contains(cs.namingPolicy));
+            assertThrows(IllegalArgumentException.class, () -> QueryUtil.registerEntityPropColumnNameMap(Person.class, null, null));
+        }
+
+        public static class Person {
+            private String firstName;
+
+            public String getFirstName() {
+                return firstName;
+            }
+
+            public void setFirstName(final String firstName) {
+                this.firstName = firstName;
+            }
+        }
     }
 
     @Table("value_form_accounts")
@@ -362,662 +1621,9 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
-    @Test
-    public void testGetTableNameAndAliasHonorsTableValueAndAliasOnly() {
-        // Regression (2026-07-03): only @Table.name() was read, so the deprecated @Table("...") value
-        // form returned "" and an alias-only @Table returned " ao" (leading-space garbage) -- both
-        // diverging from the FROM clause the query builders render for the same class.
-        assertEquals("value_form_accounts", QueryUtil.tableNameAndAlias(ValueFormEntity.class, NamingPolicy.SNAKE_CASE));
-        assertEquals("alias_only_entity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.SNAKE_CASE));
-    }
-
-    @Test
-    public void testGetTableNameAndAlias_MatchesBuilderResolverForEveryNamingPolicy() {
-        // Regression: the class-name-derived branch applied NamingPolicy.convert() directly, while the
-        // builders go through SqlBuilder.getTableName(), which keeps the simple class name untouched for
-        // KEBAB_CASE / UPPER_CAMEL_CASE -- so the helper rendered "alias-only-entity ao" where the
-        // FROM clause said "AliasOnlyEntity ao".
-        for (final NamingPolicy np : NamingPolicy.values()) {
-            assertEquals(AbstractQueryBuilder.getTableName(AliasOnlyEntity.class, np) + " ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, np), np.name());
-            assertEquals(AbstractQueryBuilder.getTableName(Account.class, np) + " " + AbstractQueryBuilder.tableAlias(Account.class),
-                    QueryUtil.tableNameAndAlias(Account.class, np), np.name());
-        }
-
-        assertEquals("AliasOnlyEntity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.KEBAB_CASE));
-        assertEquals("alias_only_entity ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, NamingPolicy.SNAKE_CASE));
-    }
-
-    @Test
-    public void testGetColumn2PropNameMap() {
-        ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(Account.class);
-        assertNotNull(map);
-    }
-
-    @Test
-    public void testColumnToPropertyMapExactNamesWinOverCaseFoldedAliases() {
-        ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(CaseDistinctColumns.class);
-
-        assertEquals("lowerCaseColumn", map.get("code"));
-        assertEquals("upperCaseColumn", map.get("CODE"));
-    }
-
-    @Test
-    public void testColumnToPropertyMapRespectsTableColumnExclusions() {
-        ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(TestUser.class);
-
-        assertEquals("name", map.get("user_name"));
-        assertFalse(map.containsKey("tempData"), map.toString());
-        assertFalse(map.containsValue("tempData"), map.toString());
-    }
-
-    @Test
-    public void testColumnToPropertyMapFiltersExplicitColumnsExcludedByMetadata() {
-        final ImmutableMap<String, String> map = QueryUtil.columnToPropNameMap(ReverseLookupFilteredEntity.class);
-
-        assertEquals("visible", map.get("visible_column"));
-        assertEquals("visible", map.get("VISIBLE_COLUMN"));
-        assertFalse(map.containsKey("hidden_annotation_column"), map.toString());
-        assertFalse(map.containsKey("hidden_table_column"), map.toString());
-        assertFalse(map.containsValue("hiddenByAnnotation"), map.toString());
-        assertFalse(map.containsValue("hiddenByTable"), map.toString());
-    }
-
-    @Test
-    public void testGetColumn2PropNameMap_NullClass() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.columnToPropNameMap(null);
-        });
-    }
-
-    @Test
-    public void testPropertyToColumnMap() {
-        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
-        assertNotNull(map);
-    }
-
-    @Test
-    public void testPropertyToColumnMap_NoChange() {
-        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
-        assertNotNull(map);
-    }
-
-    @Test
-    public void testPropertyToColumnMap_UpperCase() {
-        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-        assertNotNull(map);
-    }
-
-    @Test
-    public void testPropertyToColumnMap_NullClass() {
-        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(null, NamingPolicy.SNAKE_CASE);
-        assertTrue(map.isEmpty());
-    }
-
-    @Test
-    public void testPropertyToColumnMap_MapClass() {
-        ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(HashMap.class, NamingPolicy.SNAKE_CASE);
-        assertTrue(map.isEmpty());
-    }
-
-    @Test
-    public void testGetInsertPropNames_WithEntity() {
-        Account account = new Account();
-        Collection<String> props = QueryUtil.insertPropNames(account, Collections.emptySet());
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetInsertPropNames_WithExcludedProps() {
-        Account account = new Account();
-        Set<String> excluded = new HashSet<>();
-        excluded.add("id");
-        Collection<String> props = QueryUtil.insertPropNames(account, excluded);
-        assertNotNull(props);
-        assertFalse(props.contains("id"));
-    }
-
-    @Test
-    public void testGetInsertPropNames_WithClass() {
-        Collection<String> props = QueryUtil.insertPropNames(Account.class, Collections.emptySet());
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetInsertPropNames_WithClassNullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.insertPropNames(null, Collections.emptySet());
-        });
-    }
-
-    @Test
-    public void testGetInsertPropNames_WithEntityNullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.insertPropNames((Object) null, Collections.emptySet()));
-    }
-
-    @Test
-    public void testGetInsertPropNames_WithClassAndExcluded() {
-        Set<String> excluded = new HashSet<>();
-        excluded.add("createdTime");
-        Collection<String> props = QueryUtil.insertPropNames(Account.class, excluded);
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetSelectPropNames() {
-        Collection<String> props = QueryUtil.selectPropNames(Account.class, false, Collections.emptySet());
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetSelectPropNames_IncludeSubEntity() {
-        Collection<String> props = QueryUtil.selectPropNames(Account.class, true, Collections.emptySet());
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetSelectPropNames_WithExcluded() {
-        Set<String> excluded = new HashSet<>();
-        excluded.add("id");
-        Collection<String> props = QueryUtil.selectPropNames(Account.class, false, excluded);
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetSelectPropNames_NullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.selectPropNames(null, false, Collections.emptySet());
-        });
-    }
-
-    @Test
-    public void testGetUpdatePropNames() {
-        Collection<String> props = QueryUtil.updatePropNames(Account.class, Collections.emptySet());
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetUpdatePropNames_WithExcluded() {
-        Set<String> excluded = new HashSet<>();
-        excluded.add("createdTime");
-        Collection<String> props = QueryUtil.updatePropNames(Account.class, excluded);
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetUpdatePropNames_NullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.updatePropNames(null, Collections.emptySet());
-        });
-    }
-
-    @Test
-    public void testGetIdFieldNames() {
-        List<String> ids = QueryUtil.idPropNames(Account.class);
-        assertNotNull(ids);
-    }
-
-    @Test
-    public void testGetIdFieldNames_NullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.idPropNames(null);
-        });
-    }
-
-    @Test
-    public void testRepeatQuestionMark() {
-        String qm = QueryUtil.placeholders(3);
-        assertEquals("?, ?, ?", qm);
-    }
-
-    @Test
-    public void testRepeatQuestionMark_One() {
-        String qm = QueryUtil.placeholders(1);
-        assertEquals("?", qm);
-    }
-
-    @Test
-    public void testRepeatQuestionMark_Zero() {
-        String qm = QueryUtil.placeholders(0);
-        assertEquals("", qm);
-    }
-
-    @Test
-    public void testRepeatQuestionMark_Large() {
-        String qm = QueryUtil.placeholders(100);
-        assertNotNull(qm);
-        assertTrue(qm.contains("?"));
-    }
-
-    @Test
-    public void testRepeatQuestionMark_Negative() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.placeholders(-1);
-        });
-    }
-
-    @Test
-    public void testRepeatQuestionMark_Cached() {
-        String qm1 = QueryUtil.placeholders(5);
-        String qm2 = QueryUtil.placeholders(5);
-        assertEquals(qm1, qm2);
-    }
-
-    @Test
-    public void testRepeatQuestionMark_SpecialCachedValues() {
-        assertNotNull(QueryUtil.placeholders(100));
-        assertNotNull(QueryUtil.placeholders(200));
-        assertNotNull(QueryUtil.placeholders(300));
-        assertNotNull(QueryUtil.placeholders(500));
-        assertNotNull(QueryUtil.placeholders(1000));
-    }
-
-    @Test
-    public void testGetTableAlias() {
-        String alias = QueryUtil.tableAlias(Account.class);
-        assertEquals("acc", alias);
-    }
-
-    @Test
-    public void testGetTableAlias_NullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.tableAlias(null);
-        });
-    }
-
-    @Test
-    public void testGetTableNameAndAlias() {
-        String tableName = QueryUtil.tableNameAndAlias(Account.class);
-        assertNotNull(tableName);
-    }
-
-    @Test
-    public void testGetTableNameAndAlias_WithNamingPolicy() {
-        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.SNAKE_CASE);
-        assertNotNull(tableName);
-    }
-
-    @Test
-    public void testGetTableNameAndAlias_UpperCase() {
-        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-        assertNotNull(tableName);
-    }
-
-    @Test
-    public void testGetTableNameAndAlias_NoChange() {
-        String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.NO_CHANGE);
-        assertNotNull(tableName);
-    }
-
-    @Test
-    public void testGetTableNameAndAlias_NullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.tableNameAndAlias(null);
-        });
-    }
-
-    @Test
-    public void testGetTableNameAndAlias_NullCheckWithPolicy() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.tableNameAndAlias(null, NamingPolicy.SNAKE_CASE);
-        });
-    }
-
-    @Test
-    public void testPropertyToColumnMap_DifferentPolicies() {
-        ImmutableMap<String, String> lower = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE);
-        ImmutableMap<String, String> upper = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-        ImmutableMap<String, String> noChange = QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.NO_CHANGE);
-
-        assertNotNull(lower);
-        assertNotNull(upper);
-        assertNotNull(noChange);
-    }
-
-    @Test
-    public void testGetInsertPropNames_EmptyExcluded() {
-        Collection<String> props = QueryUtil.insertPropNames(Account.class, new HashSet<>());
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetSelectPropNames_EmptyExcluded() {
-        Collection<String> props = QueryUtil.selectPropNames(Account.class, false, new HashSet<>());
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testGetUpdatePropNames_EmptyExcluded() {
-        Collection<String> props = QueryUtil.updatePropNames(Account.class, new HashSet<>());
-        assertNotNull(props);
-    }
-
-    @Test
-    public void testRepeatQuestionMark_AllCachedValues() {
-        for (int i = 0; i <= 30; i++) {
-            String result = QueryUtil.placeholders(i);
-            assertNotNull(result);
-            if (i == 0) {
-                assertEquals("", result);
-            } else if (i == 1) {
-                assertEquals("?", result);
-            } else {
-                assertTrue(result.startsWith("?"));
-            }
-        }
-    }
-
-    @Test
-    public void testRepeatQuestionMark_NonCachedValue() {
-        String result = QueryUtil.placeholders(50);
-        assertNotNull(result);
-        assertEquals(148, result.length()); // "?, " * 50 = 150 - 2 = 148 characters
-    }
-
-    @Test
-    public void testPropToColumnInfoMap() {
-        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.SNAKE_CASE);
-
-        assertEquals(new QueryUtil.ColumnInfo("first_name", true), map.get("firstName"));
-        assertEquals(new QueryUtil.ColumnInfo("first_name", true), map.get("first_name"));
-        assertEquals("first_name", map.get("firstName").columnName());
-        assertTrue(map.get("firstName").isUnqualified());
-
-        ImmutableMap<String, QueryUtil.ColumnInfo> nestedMap = QueryUtil.propToColumnInfoMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
-        QueryUtil.ColumnInfo nested = nestedMap.get("branch.firstLeaf.value");
-        assertEquals(QueryUtil.propToColumnNameMap(NestedRoot.class, NamingPolicy.SNAKE_CASE).get("branch.firstLeaf.value"), nested.columnName());
-        assertFalse(nested.isUnqualified());
-    }
-
-    @Test
-    public void testPropToColumnInfoMap_QualifiedMappedColumnIsNotPrefixedAgain() {
-        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(QualifiedColumnEntity.class, NamingPolicy.SNAKE_CASE);
-
-        assertEquals(new QueryUtil.ColumnInfo("source.value", false), map.get("value"));
-        assertEquals(new QueryUtil.ColumnInfo("source.value", false), map.get("source.value"));
-
-        String sql = PSC.selectFrom(QualifiedColumnEntity.class).build().query();
-        assertEquals("SELECT source.value AS \"value\" FROM qualified_column_entity q", sql);
-        assertFalse(sql.contains("q.source.value"));
-    }
-
-    @Test
-    public void testQuotedColumnDotsDoNotSuppressTableAliases() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(QuotedColumnNames.class, NamingPolicy.SNAKE_CASE);
-
-        for (final String propName : List.of("doubleQuoted", "backtickQuoted", "bracketQuoted", "escapedQuote", "escapedBracket")) {
-            final QueryUtil.ColumnInfo column = map.get(propName);
-            assertTrue(column.isUnqualified(), propName);
-            assertEquals(column, map.get(column.columnName()));
-            final Selection selection = Selection.builder(QuotedColumnNames.class).tableAlias("q").includedPropNames(List.of(propName)).build();
-            assertEquals("SELECT q." + column.columnName() + " AS \"" + propName + "\" FROM quoted_columns q", PSC.selectFrom(selection).build().query());
-        }
-
-        assertFalse(map.get("qualified").isUnqualified());
-        final Selection qualified = Selection.builder(QuotedColumnNames.class).tableAlias("q").includedPropNames(List.of("qualified")).build();
-        assertEquals("SELECT source.\"qualified.dot\" AS \"qualified\" FROM quoted_columns q", PSC.selectFrom(qualified).build().query());
-    }
-
-    @Test
-    public void testQuotedColumnMappingsRetainAliasesInConditionsAndOrdering() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(QuotedColumnNames.class, NamingPolicy.SNAKE_CASE);
-
-        for (final String propName : List.of("doubleQuoted", "backtickQuoted", "bracketQuoted", "escapedQuote", "escapedBracket")) {
-            final String columnName = map.get(propName).columnName();
-            // WHERE resolves the joined table's property map; ORDER BY resolves the original table's map.
-            final AbstractQueryBuilder.SP result = PSC.select(propName)
-                    .from(QuotedColumnNames.class, "a")
-                    .join(QuotedColumnNames.class, "b")
-                    .on("a.id = b.id")
-                    .where(Filters.eq("b." + propName, "match"))
-                    .orderBy("a." + propName)
-                    .build();
-
-            assertEquals("SELECT a." + columnName + " AS \"" + propName + "\" FROM quoted_columns a JOIN quoted_columns b ON a.id = b.id WHERE b." + columnName
-                    + " = ? ORDER BY a." + columnName, result.query(), propName);
-            assertEquals(List.of("match"), result.parameters(), propName);
-        }
-    }
-
-    @Test
-    public void testUnicodeIdentifiersRetainSelfJoinAndNestedQualifiers() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
-        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
-
-        for (final String propName : List.of("combiningMark", "spacingMark", "enclosingMark", "supplementaryLetter", "letterNumber", "connectorPunctuation",
-                "supplementarySymbol", "unicodeQuoted", "unicodeQuotedDot", "unicodeEscapedQuote", "customEscape", "dotEscape", "bracketEscape")) {
-            final QueryUtil.ColumnInfo column = map.get(propName);
-            assertTrue(column.isUnqualified(), propName);
-            assertEquals(column, map.get(column.columnName()));
-
-            // A self-join makes dropping this qualifier observable: both tables expose the same mapped name.
-            assertEquals("SELECT a." + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a JOIN unicode_columns b ON a.id = b.id",
-                    PSC.select(propName).from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on("a.id = b.id").build().query(), propName);
-            assertEquals("u." + column.columnName(), nestedMap.get("child." + propName), propName);
-        }
-    }
-
-    @Test
-    public void testUnicodeEscapeStringClausesRetainTableAndNestedQualifiers() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
-        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
-
-        for (final String propName : List.of("escapeString", "lowercaseEscapeString", "escapedBackslash", "octalEscapeString", "hexEscapeString",
-                "unicodeEscapeString", "literalXEscapeString")) {
-            final QueryUtil.ColumnInfo column = map.get(propName);
-            assertTrue(column.isUnqualified(), propName);
-            assertEquals("SELECT a." + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a JOIN unicode_columns b ON a.id = b.id",
-                    PSC.select(propName).from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on("a.id = b.id").build().query(), propName);
-            assertEquals("u." + column.columnName(), nestedMap.get("child." + propName), propName);
-        }
-    }
-
-    @Test
-    public void testUnicodeEscapeStringClausesDoNotHideOrInventQualifyingDots() {
-        for (final String escape : List.of("E'.'", "e'['", "E'\\\\'", "E'\\056'", "E'\\x2e'", "E'\\u002e'", "E'\\U0000002e'")) {
-            final String identifier = "U&\"name\" UESCAPE " + escape;
-            assertEquals(-1, QueryUtil.indexOfQualifyingDot(identifier), escape);
-            assertEquals(identifier.length(), QueryUtil.indexOfQualifyingDot(identifier + ".value"), escape);
-            assertEquals(identifier + ".first_name", QueryUtil.convertIdentifier(identifier + ".firstName", NamingPolicy.SNAKE_CASE), escape);
-        }
-    }
-
-    @Test
-    public void testUnicodeEscapeStringsDoNotTreatInvalidClausesOrExpressionsAsIdentifiers() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
-
-        for (final String propName : List.of("invalidWhitespaceEscape", "invalidPlusEscape", "invalidMultipleEscapes", "invalidEscapeKeyword",
-                "invalidEmptyEscape", "invalidShortUnicodeEscape", "invalidOutOfRangeUnicodeEscape", "invalidNullEscape", "invalidSurrogateEscape",
-                "invalidHexDigitEscape", "escapeStringExpression")) {
-            final QueryUtil.ColumnInfo column = map.get(propName);
-            assertFalse(column.isUnqualified(), propName);
-            assertEquals("SELECT " + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a",
-                    PSC.select(propName).from(UnicodeColumnNames.class, "a").build().query(), propName);
-        }
-    }
-
-    @Test
-    public void testTerminateLineCommentProtectsOnlyOpenCommentBoundaries() {
-        for (final String sql : List.of("SELECT 1 -- tail", "SELECT 1 # tail", "SELECT '-- quoted' -- tail")) {
-            assertEquals(sql + '\n', QueryUtil.terminateLineComment(sql));
-        }
-
-        for (final String sql : List.of("", "SELECT 1", "SELECT '-- quoted'", "SELECT '# quoted'", "SELECT [-- quoted]", "SELECT 1 /* tail */",
-                "SELECT 1 -- tail\n", "SELECT 1 # tail\r\n")) {
-            assertSame(sql, QueryUtil.terminateLineComment(sql), sql);
-        }
-
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.terminateLineComment(null));
-    }
-
-    @Test
-    public void testTerminateLineCommentSupportsStandardAndEscapeStrings() {
-        for (final String sql : List.of("'a\\' -- tail", "'a\\' # tail", "N'a\\' -- tail", "E'a\\' -- quoted' -- tail", "a\u0301E'a\\' -- tail")) {
-            assertEquals(sql + '\n', QueryUtil.terminateLineComment(sql), sql);
-        }
-        for (final String sql : List.of("'a\\' -- tail\n", "'a\\'", "E'a\\' -- quoted'", "e'a\\' # quoted'")) {
-            assertSame(sql, QueryUtil.terminateLineComment(sql), sql);
-        }
-    }
-
-    @Test
-    public void testUnicodeQualifiedNamesAndExpressionsAreNotPrefixedAgain() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
-        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
-
-        for (final String propName : List.of("qualifiedUnicode", "unicodeQuotedQualifier", "escapedQualifier", "unicodeExpression",
-                "unicodeEscapeExpression")) {
-            final QueryUtil.ColumnInfo column = map.get(propName);
-            assertFalse(column.isUnqualified(), propName);
-            assertEquals("SELECT " + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a",
-                    PSC.select(propName).from(UnicodeColumnNames.class, "a").build().query(), propName);
-            assertEquals(column.columnName(), nestedMap.get("child." + propName), propName);
-        }
-    }
-
-    @Test
-    public void testUnicodeIdentifierEscapeClausesDoNotHideOrInventUsingQualifiers() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
-
-        for (final String propName : List.of("unicodeQuoted", "unicodeQuotedDot", "unicodeEscapedQuote", "customEscape", "dotEscape", "bracketEscape")) {
-            final String columnName = map.get(propName).columnName();
-            final String expected = "SELECT * FROM unicode_columns a JOIN unicode_columns b USING (" + columnName + ")";
-            assertEquals(expected, PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").using(propName).build().query());
-            assertEquals(expected,
-                    PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b").on(Filters.using(propName)).build().query());
-        }
-
-        for (final String propName : List.of("qualifiedUnicode", "unicodeQuotedQualifier", "escapedQualifier")) {
-            final SqlBuilder builder = PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b");
-            assertThrows(IllegalArgumentException.class, () -> builder.using(propName), propName);
-            builder.on("a.id = b.id").build();
-        }
-    }
-
-    @Test
-    public void testUnicodeEscapeClausesDoNotHideFollowingUsingColumns() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
-        final SqlBuilder builder = PSC.select("*").from(UnicodeColumnNames.class, "a").join(UnicodeColumnNames.class, "b");
-
-        // The '[' escape belongs to the first identifier, and must not hide a qualifier in the next one.
-        assertThrows(IllegalArgumentException.class, () -> builder.using(List.of("bracketEscape", "qualifiedUnicode")));
-
-        // The rejected list must also leave the join ready for a valid list containing punctuation escapes.
-        assertEquals("SELECT * FROM unicode_columns a JOIN unicode_columns b USING (" + map.get("dotEscape").columnName() + ", "
-                + map.get("bracketEscape").columnName() + ")", builder.using(List.of("dotEscape", "bracketEscape")).build().query());
-    }
-
-    @Test
-    public void testCommentAndEscapeConstructsDoNotHideColumnQualifiers() {
-        final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(LexicalColumnNames.class, NamingPolicy.NO_CHANGE);
-
-        // Only identifier quoting hides a dot. A hash comment, a backslash escape, a string literal and a
-        // dash comment are SQL-script constructs: reading them here would drop a real qualifier and let the
-        // builder prepend a table alias to an already-qualified column.
-        for (final String propName : List.of("hashQualified", "backslashQualified", "literalDotExpression", "dashQualified", "bracketedLiteral",
-                "unterminatedBracketLiteral", "dotlessExpression")) {
-            assertFalse(map.get(propName).isUnqualified(), propName);
-
-            final Selection selection = Selection.builder(LexicalColumnNames.class).tableAlias("l").includedPropNames(List.of(propName)).build();
-            assertEquals("SELECT " + map.get(propName).columnName() + " AS \"" + propName + "\" FROM lexical_columns l",
-                    PSC.selectFrom(selection).build().query());
-        }
-
-        final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedLexicalColumns.class, NamingPolicy.NO_CHANGE);
-        assertEquals("#temp.column", nestedMap.get("child.hashQualified"));
-        assertEquals("COALESCE(x, 'N.A')", nestedMap.get("child.literalDotExpression"));
-        assertEquals("COALESCE(x, '[N.A]')", nestedMap.get("child.bracketedLiteral"));
-        assertEquals("COALESCE(x, '[') || t.suffix", nestedMap.get("child.unterminatedBracketLiteral"));
-        assertEquals("COALESCE(x, 1)", nestedMap.get("child.dotlessExpression"));
-
-        // A single identifier, quoted or not, still takes the sub-entity qualifier.
-        assertEquals("q.\"double.dot\"", QueryUtil.propToColumnNameMap(NestedQuotedColumns.class, NamingPolicy.NO_CHANGE).get("child.doubleQuoted"));
-    }
-
     @lombok.Data
     static class NestedLexicalColumns {
         private LexicalColumnNames child;
-    }
-
-    @Test
-    public void testNestedQuotedColumnDotsRetainSubEntityQualifier() {
-        final ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(NestedQuotedColumns.class, NamingPolicy.SNAKE_CASE);
-
-        assertEquals("q.\"double.dot\"", map.get("child.doubleQuoted"));
-        assertEquals("q.`backtick.dot`", map.get("child.backtickQuoted"));
-        assertEquals("q.[bracket.dot]", map.get("child.bracketQuoted"));
-        assertEquals("q.\"escaped\"\".dot\"", map.get("child.escapedQuote"));
-        assertEquals("q.[escaped]].dot]", map.get("child.escapedBracket"));
-        assertEquals("source.\"qualified.dot\"", map.get("child.qualified"));
-    }
-
-    @Test
-    public void testColumnInfoIsUnqualifiedIsAHardRename() throws NoSuchMethodException {
-        assertEquals(boolean.class, QueryUtil.ColumnInfo.class.getMethod("isUnqualified").getReturnType());
-        assertThrows(NoSuchMethodException.class, () -> QueryUtil.ColumnInfo.class.getMethod("hasNoDot"));
-    }
-
-    @Test
-    public void testPropToColumnInfoMap_UpperCase() {
-        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE);
-
-        assertEquals(new QueryUtil.ColumnInfo("FIRST_NAME", true), map.get("firstName"));
-    }
-
-    @Test
-    public void testPropToColumnInfoMap_NoChange() {
-        ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(Account.class, NamingPolicy.NO_CHANGE);
-
-        assertEquals(new QueryUtil.ColumnInfo("firstName", true), map.get("firstName"));
-    }
-
-    @Test
-    public void testPropToColumnInfoMap_NullClass() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            QueryUtil.propToColumnInfoMap(null, NamingPolicy.SNAKE_CASE);
-        });
-    }
-
-    @Test
-    public void testIsNonColumn() {
-        Set<String> columnFields = new HashSet<>();
-        columnFields.add("id");
-        columnFields.add("firstName");
-
-        Set<String> nonColumnFields = new HashSet<>();
-        nonColumnFields.add("tempField");
-
-        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
-        PropInfo propInfo = beanInfo.getPropInfo("id");
-
-        assertFalse(QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo));
-    }
-
-    @Test
-    public void testIsNonColumn_NonColumnField() {
-        Set<String> columnFields = new HashSet<>();
-        columnFields.add("id");
-
-        Set<String> nonColumnFields = new HashSet<>();
-        nonColumnFields.add("tempField");
-
-        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
-        PropInfo tempProp = beanInfo.getPropInfo("tempField");
-
-        if (tempProp != null) {
-            assertTrue(QueryUtil.isNonColumn(columnFields, nonColumnFields, tempProp));
-        }
-    }
-
-    @Test
-    public void testIsNonColumn_EmptySets() {
-        Set<String> columnFields = new HashSet<>();
-        Set<String> nonColumnFields = new HashSet<>();
-
-        BeanInfo beanInfo = ParserUtil.getBeanInfo(Account.class);
-        PropInfo propInfo = beanInfo.getPropInfo("id");
-
-        boolean result = QueryUtil.isNonColumn(columnFields, nonColumnFields, propInfo);
-        assertFalse(result);
     }
 
     @Table(name = "test_user", alias = "tu", columnFields = { "id", "name" }, nonColumnFields = { "tempData" })
@@ -1305,429 +1911,6 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
-    @Test
-    public void testPropertyToColumnMapWithRepeatedNestedType() {
-        final ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(NestedRoot.class, NamingPolicy.SNAKE_CASE);
-
-        assertEquals("nested_leaf.value", result.get("branch.firstLeaf.value"));
-        assertEquals("nested_leaf.value", result.get("branch.secondLeaf.value"));
-    }
-
-    @Test
-    public void testPropertyToColumnMapCapsDeepNestedExpansion() {
-        final ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(DeepNestedRoot.class, NamingPolicy.SNAKE_CASE);
-
-        assertFalse(result.containsKey("middle.leaf.tail.value"));
-        assertFalse(result.containsKey("middle.leaf.tail"));
-    }
-
-    @Test
-    public void testGetInsertPropNamesWithEntity() {
-        TestUser user = new TestUser();
-
-        // Test with default ID value (should exclude ID)
-        user.setId(null);
-        Set<String> excludedProps = new HashSet<>();
-        Collection<String> props = QueryUtil.insertPropNames(user, excludedProps);
-        assertNotNull(props);
-        assertFalse(props.contains("id"));
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-
-        // Test with non-default ID value (should include ID)
-        user.setId(123L);
-        props = QueryUtil.insertPropNames(user, excludedProps);
-        assertTrue(props.contains("id"));
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-
-        // Test with excluded properties
-        excludedProps.add("email");
-        props = QueryUtil.insertPropNames(user, excludedProps);
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-    }
-
-    @Test
-    public void testGetInsertPropNamesWithClass() {
-        Set<String> excludedProps = new HashSet<>();
-
-        // Test without exclusions
-        Collection<String> props = QueryUtil.insertPropNames(TestUser.class, excludedProps);
-        assertNotNull(props);
-        assertTrue(props.contains("id"));
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-
-        // Test with exclusions
-        excludedProps.add("email");
-        props = QueryUtil.insertPropNames(TestUser.class, excludedProps);
-        assertTrue(props.contains("id"));
-        assertTrue(props.contains("name"));
-        assertFalse(props.contains("email"));
-    }
-
-    @Test
-    public void testRegisterEntityPropColumnNameMap() {
-        // Direct cycle detection should stop recursive expansion instead of failing the entire lookup.
-        Set<Class<?>> registeringClasses = new HashSet<>();
-        registeringClasses.add(TestUser.class);
-
-        ImmutableMap<String, String> result = QueryUtil.registerEntityPropColumnNameMap(TestUser.class, NamingPolicy.SNAKE_CASE, registeringClasses);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void testPropertyToColumnMap_WithSelfReferentialEntityDoesNotThrow() {
-        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(SelfReferentialEntity.class, NamingPolicy.SNAKE_CASE);
-
-        assertEquals("id", result.get("id"));
-        assertFalse(result.containsKey("parent.parent"));
-    }
-
-    @Test
-    public void testSqlBuilder_FromSelfReferentialEntityDoesNotFail() {
-        String sql = PSC.select("id").from(SelfReferentialEntity.class).where(Filters.eq("id", 1L)).build().query();
-
-        assertTrue(sql.contains("FROM self_referential_entity"));
-        assertTrue(sql.contains("WHERE id = ?"));
-    }
-
-    // --- 2026-06-22 API review: get*PropNames now return immutable lists on BOTH paths ---
-
-    @Test
-    public void testGetInsertPropNames_ReturnsImmutableListBothPaths() {
-        // no-exclusion path
-        ImmutableList<String> noExcl = QueryUtil.insertPropNames(TestUser.class, null);
-        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
-
-        // exclusion path
-        ImmutableList<String> withExcl = QueryUtil.insertPropNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
-        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
-
-        // entity-based no-exclusion path
-        ImmutableList<String> entityNoExcl = QueryUtil.insertPropNames(new TestUser(), null);
-        assertThrows(UnsupportedOperationException.class, () -> entityNoExcl.add("x"));
-    }
-
-    @Test
-    public void testGetSelectPropNames_ReturnsImmutableListBothPaths() {
-        ImmutableList<String> noExcl = QueryUtil.selectPropNames(TestUser.class, false, null);
-        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
-
-        ImmutableList<String> withExcl = QueryUtil.selectPropNames(TestUser.class, false, new HashSet<>(Arrays.asList("email")));
-        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
-    }
-
-    @Test
-    public void testGetUpdatePropNames_ReturnsImmutableListBothPaths() {
-        ImmutableList<String> noExcl = QueryUtil.updatePropNames(TestUser.class, null);
-        assertThrows(UnsupportedOperationException.class, () -> noExcl.add("x"));
-
-        ImmutableList<String> withExcl = QueryUtil.updatePropNames(TestUser.class, new HashSet<>(Arrays.asList("email")));
-        assertThrows(UnsupportedOperationException.class, () -> withExcl.add("x"));
-    }
-
-    @Test
-    public void testGetSelectPropNames_NoExclusionReturnsStableInstance() {
-        // The no-exclusion path is memoized, so repeated calls return the same instance
-        // (this identity is relied upon by the builders' == fast paths).
-        ImmutableList<String> first = QueryUtil.selectPropNames(TestUser.class, false, null);
-        ImmutableList<String> second = QueryUtil.selectPropNames(TestUser.class, false, null);
-        assertSame(first, second);
-
-        // Sub-entity variant uses a different slot, so it is a different (but also stable) instance.
-        ImmutableList<String> withSub = QueryUtil.selectPropNames(TestUser.class, true, null);
-        assertSame(withSub, QueryUtil.selectPropNames(TestUser.class, true, null));
-    }
-
-    @Test
-    public void testGetSelectPropNames_ConcurrentFirstAccessReturnsSafelyPublishedStableInstance() throws InterruptedException {
-        final int threadCount = 24;
-        final ImmutableList<?>[] results = new ImmutableList<?>[threadCount];
-        final CountDownLatch ready = new CountDownLatch(threadCount);
-        final CountDownLatch start = new CountDownLatch(1);
-        final CountDownLatch done = new CountDownLatch(threadCount);
-        final Thread[] threads = new Thread[threadCount];
-
-        for (int i = 0; i < threadCount; i++) {
-            final int index = i;
-            threads[i] = new Thread(() -> {
-                ready.countDown();
-
-                try {
-                    start.await();
-                    results[index] = QueryUtil.selectPropNames(ConcurrentCacheEntity.class, false, null);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } finally {
-                    done.countDown();
-                }
-            });
-            threads[i].setDaemon(true);
-            threads[i].start();
-        }
-
-        assertTrue(ready.await(10, TimeUnit.SECONDS), "Worker threads did not become ready");
-        start.countDown();
-        assertTrue(done.await(10, TimeUnit.SECONDS), "Concurrent cache initialization did not complete");
-
-        for (final Thread thread : threads) {
-            thread.join();
-        }
-
-        assertNotNull(results[0]);
-        assertTrue(results[0].contains("id"));
-        assertTrue(results[0].contains("value"));
-
-        for (int i = 1; i < results.length; i++) {
-            assertSame(results[0], results[i]);
-        }
-    }
-
-    @Test
-    public void testGetInsertUpdatePropNames_NoExclusionReturnStableInstance() {
-        assertSame(QueryUtil.insertPropNames(TestUser.class, null), QueryUtil.insertPropNames(TestUser.class, null));
-        assertSame(QueryUtil.updatePropNames(TestUser.class, null), QueryUtil.updatePropNames(TestUser.class, null));
-    }
-
-    @Test
-    public void testGetSelectPropNames_InstanceOverloadDelegatesToClass() {
-        TestUser user = new TestUser();
-        ImmutableList<String> viaInstance = QueryUtil.selectPropNames(user, false, null);
-        ImmutableList<String> viaClass = QueryUtil.selectPropNames(TestUser.class, false, null);
-        assertEquals(viaClass, viaInstance);
-        assertTrue(viaInstance.contains("name"));
-        assertFalse(viaInstance.contains("email"));
-    }
-
-    @Test
-    public void testGetSelectPropNames_InstanceOverloadNullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.selectPropNames((Object) null, false, null));
-    }
-
-    @Test
-    public void testGetUpdatePropNames_InstanceOverloadDelegatesToClass() {
-        TestUser user = new TestUser();
-        ImmutableList<String> viaInstance = QueryUtil.updatePropNames(user, null);
-        ImmutableList<String> viaClass = QueryUtil.updatePropNames(TestUser.class, null);
-        assertEquals(viaClass, viaInstance);
-        assertTrue(viaInstance.contains("name"));
-        assertFalse(viaInstance.contains("email"));
-    }
-
-    @Test
-    public void testGetUpdatePropNames_InstanceOverloadNullCheck() {
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.updatePropNames((Object) null, null));
-    }
-
-    @Test
-    public void testIsNonColumn_NullPropInfoThrowsIllegalArgument() {
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.isNonColumn(Collections.emptySet(), Collections.emptySet(), null));
-    }
-
-    @Test
-    public void testQueryUtil_patternForAlphanumericColumnName() {
-        boolean isValid = QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("column_name").matches();
-        assertTrue(isValid);
-        boolean isInvalid = QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("column name").matches();
-        assertFalse(isInvalid);
-    }
-
-    @Test
-    public void testQueryUtil_RepeatQuestionMark() {
-        String placeholders = QueryUtil.placeholders(3);
-        assertEquals("?, ?, ?", placeholders);
-        String sql = "INSERT INTO users (name, email, age) VALUES (" + placeholders + ")";
-        assertEquals("INSERT INTO users (name, email, age) VALUES (?, ?, ?)", sql);
-    }
-
-    @Test
-    public void testQueryUtil_RepeatQuestionMark_zero() {
-        String placeholders = QueryUtil.placeholders(0);
-        assertEquals("", placeholders);
-    }
-
-    @Test
-    public void testPatternForAlphanumericColumnName() {
-        assertNotNull(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN);
-        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user_name").matches());
-        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user123").matches());
-        assertTrue(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user-name").matches());
-        assertFalse(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user.name").matches());
-        assertFalse(QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher("user name").matches());
-    }
-
-    @Test
-    public void testPropToColumnInfoMap_NullNamingPolicyUsesSnakeCase() {
-        ImmutableMap<String, QueryUtil.ColumnInfo> result = QueryUtil.propToColumnInfoMap(QueryUtilTest.AliaslessEntity.class, null);
-
-        assertEquals("simple_value", result.get("simpleValue").columnName());
-        assertTrue(result.get("simpleValue").isUnqualified());
-    }
-
-    @Test
-    public void testPropertyToColumnMap_NullNamingPolicyUsesSnakeCase() {
-        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(QueryUtilTest.AliaslessEntity.class, null);
-
-        assertEquals("simple_value", result.get("simpleValue"));
-    }
-
-    @Test
-    public void testPropertyToColumnMap_AllNonColumnProperties() {
-        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(QueryUtilTest.NonColumnOnlyEntity.class, NamingPolicy.SNAKE_CASE);
-
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void testGetTableNameAndAlias_AliaslessAnnotation() {
-        String tableName = QueryUtil.tableNameAndAlias(QueryUtilTest.AliaslessEntity.class, null);
-
-        assertEquals("aliasless_table", tableName);
-    }
-
-    @Test
-    public void testPropertyToColumnMap_NullEntityClassReturnsEmpty() {
-        // Documented contract: null entityClass returns an empty map (does not throw).
-        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(null, NamingPolicy.SNAKE_CASE);
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void testPropertyToColumnMap_NullEntityClassAndNullPolicyReturnsEmpty() {
-        // Both null: still returns empty map.
-        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(null, null);
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void testPropertyToColumnMap_MapEntityClassReturnsEmpty() {
-        // Map-assignable classes get an empty map (documented behavior).
-        ImmutableMap<String, String> result = QueryUtil.propToColumnNameMap(HashMap.class, NamingPolicy.SNAKE_CASE);
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    public void testIncludedSubEntityPropertiesExcludeNonColumns() {
-        ImmutableList<String> names = QueryUtil.selectPropNames(ParentWithFilteredChild.class, true, null);
-
-        assertTrue(names.contains("child.visible"), names.toString());
-        assertFalse(names.contains("child.hiddenByAnnotation"), names.toString());
-        assertFalse(names.contains("child.hiddenByTable"), names.toString());
-    }
-
-    @Test
-    public void testExcludingSubEntityRootAlsoExcludesExpandedProperties() {
-        Set<String> excluded = Collections.singleton("child");
-        ImmutableList<String> names = QueryUtil.selectPropNames(ParentWithFilteredChild.class, true, excluded);
-
-        assertEquals(Collections.singletonList("id"), names);
-
-        String sql = PSC.selectFrom(ParentWithFilteredChild.class, true, excluded).build().query();
-        assertEquals("SELECT id AS \"id\" FROM parent_with_filtered_child", sql);
-    }
-
-    @Test
-    public void testConvertIdentifierPreservesLeadingAndTrailingUnderscoreRuns() {
-        // NamingPolicy.convert alone drops leading/trailing '_' runs; convertIdentifier must keep them
-        // and convert only the part in between (shared by SqlExpression.toSql and the builders).
-        assertEquals("first_name", QueryUtil.convertIdentifier("firstName", NamingPolicy.SNAKE_CASE));
-        assertEquals("_first_name", QueryUtil.convertIdentifier("_firstName", NamingPolicy.SNAKE_CASE));
-        assertEquals("first_name_", QueryUtil.convertIdentifier("firstName_", NamingPolicy.SNAKE_CASE));
-        assertEquals("__first_name__", QueryUtil.convertIdentifier("__firstName__", NamingPolicy.SNAKE_CASE));
-        assertEquals("_FIRST_NAME", QueryUtil.convertIdentifier("_firstName", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("_firstName", QueryUtil.convertIdentifier("_first_name", NamingPolicy.CAMEL_CASE));
-        assertEquals("__x", QueryUtil.convertIdentifier("__x", NamingPolicy.SNAKE_CASE));
-        assertEquals("__X", QueryUtil.convertIdentifier("__x", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("_1", QueryUtil.convertIdentifier("_1", NamingPolicy.SNAKE_CASE));
-        assertEquals("_1", QueryUtil.convertIdentifier("_1", NamingPolicy.SCREAMING_SNAKE_CASE));
-
-        // all-underscore identifiers are returned as-is
-        assertEquals("_", QueryUtil.convertIdentifier("_", NamingPolicy.SNAKE_CASE));
-        assertEquals("___", QueryUtil.convertIdentifier("___", NamingPolicy.SCREAMING_SNAKE_CASE));
-
-        // NO_CHANGE / null policy, null / empty identifier: returned as-is
-        assertEquals("_firstName_", QueryUtil.convertIdentifier("_firstName_", NamingPolicy.NO_CHANGE));
-        assertEquals("_firstName_", QueryUtil.convertIdentifier("_firstName_", null));
-        assertEquals("", QueryUtil.convertIdentifier("", NamingPolicy.SNAKE_CASE));
-        assertEquals(null, QueryUtil.convertIdentifier(null, NamingPolicy.SNAKE_CASE));
-
-        // the condition rendering path goes through the same helper (builder-path parity is pinned in AbstractQueryBuilderTest)
-        assertEquals("_first_name = other_value", Filters.expr("_firstName = otherValue").toSql(NamingPolicy.SNAKE_CASE));
-    }
-
-    @Test
-    public void testConvertIdentifierPreservesUnderscoreRunsPerQualifiedSegment() {
-        // leading/trailing '_' runs are preserved for EVERY dot-separated segment, not just the whole string
-        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE));
-        assertEquals("T.__V", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.CAMEL_CASE));
-        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.KEBAB_CASE));
-        assertEquals("acc._id", QueryUtil.convertIdentifier("acc._id", NamingPolicy.SNAKE_CASE));
-        assertEquals("ACC._ID", QueryUtil.convertIdentifier("acc._id", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("a._b_.c_", QueryUtil.convertIdentifier("a._b_.c_", NamingPolicy.SNAKE_CASE));
-        assertEquals("A._B_.C_", QueryUtil.convertIdentifier("a._b_.c_", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("_t._id_", QueryUtil.convertIdentifier("_t._id_", NamingPolicy.SNAKE_CASE));
-        assertEquals("t.first_name_", QueryUtil.convertIdentifier("t.firstName_", NamingPolicy.SNAKE_CASE));
-        assertEquals("acc._first_name", QueryUtil.convertIdentifier("acc._firstName", NamingPolicy.SNAKE_CASE));
-        assertEquals("acc._firstName", QueryUtil.convertIdentifier("acc._first_name", NamingPolicy.CAMEL_CASE));
-
-        // all-underscore segments and identifiers are kept as-is
-        assertEquals("t.__", QueryUtil.convertIdentifier("t.__", NamingPolicy.SNAKE_CASE));
-        assertEquals("_._", QueryUtil.convertIdentifier("_._", NamingPolicy.SCREAMING_SNAKE_CASE));
-
-        // segments WITHOUT edge runs are converted one segment at a time: the qualifier is not part of the
-        // column's word structure (converting "t.firstName" as one name gave "T.firstName" under UPPER_CAMEL_CASE)
-        assertEquals("t.first_name", QueryUtil.convertIdentifier("t.firstName", NamingPolicy.SNAKE_CASE));
-        assertEquals("T.FirstName", QueryUtil.convertIdentifier("t.firstName", NamingPolicy.UPPER_CAMEL_CASE));
-
-        // internal runs are NOT preserved: they follow the naming policy (8.0.0 collapses a__b -> a_b)
-        assertEquals(NamingPolicy.SNAKE_CASE.convert("a__b"), QueryUtil.convertIdentifier("a__b", NamingPolicy.SNAKE_CASE));
-        assertEquals(NamingPolicy.CAMEL_CASE.convert("a__b"), QueryUtil.convertIdentifier("a__b", NamingPolicy.CAMEL_CASE));
-
-        // the SqlExpression path renders qualified names through the same helper
-        assertEquals("t.__v = acc._id", Filters.expr("t.__v = acc._id").toSql(NamingPolicy.SNAKE_CASE));
-    }
-
-    @Test
-    public void testConvertIdentifier_qualifiedPascalCaseSegment_noSpuriousUnderscore() {
-        // Each dot-separated segment is converted on its own: the qualifier must not act as a word
-        // boundary of the next segment (converting the whole name turned "acc.Id" into "acc._id").
-        assertEquals("acc.id", QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE));
-        assertEquals("o.account_id", QueryUtil.convertIdentifier("o.AccountId", NamingPolicy.SNAKE_CASE));
-        assertEquals("T.FIRST_NAME", QueryUtil.convertIdentifier("T.FirstName", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("acc.firstName", QueryUtil.convertIdentifier("acc.first_name", NamingPolicy.CAMEL_CASE));
-
-        // per-segment underscore-run preservation and empty segments are unchanged
-        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE));
-        assertEquals("a..b", QueryUtil.convertIdentifier("a..b", NamingPolicy.SNAKE_CASE));
-
-        // the condition rendering path agrees with the builder, which strips its alias before converting
-        assertEquals("acc.id = 1", Filters.eq("acc.Id", 1).toSql(NamingPolicy.SNAKE_CASE));
-        assertTrue(PSC.select("*").from("account acc").where(Filters.eq("acc.Id", 1)).build().query().endsWith("acc.id = ?"));
-    }
-
-    @Test
-    public void testConvertIdentifierQualifiedIdentityAndConversionBoundaries() {
-        // Qualified ASCII names need no temporary segments when snake-case conversion is an identity.
-        for (final String name : new String[] { "u.id", "schema.table.name", "a..b", ".id.", "." }) {
-            assertSame(name, QueryUtil.convertIdentifier(name, NamingPolicy.SNAKE_CASE));
-        }
-        // The identity path must not bypass per-segment conversion or edge-underscore preservation.
-        assertEquals("acc.id", QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE));
-        assertEquals("u.first_name", QueryUtil.convertIdentifier("u.firstName", NamingPolicy.SNAKE_CASE));
-        assertEquals("u._first_name_", QueryUtil.convertIdentifier("u._firstName_", NamingPolicy.SNAKE_CASE));
-        assertEquals("u.a_b", QueryUtil.convertIdentifier("u.a__b", NamingPolicy.SNAKE_CASE));
-        assertEquals("u.名称", QueryUtil.convertIdentifier("u.名称", NamingPolicy.SNAKE_CASE));
-        assertEquals("U.ID", QueryUtil.convertIdentifier("u.id", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("u.firstName", QueryUtil.convertIdentifier("u.first_name", NamingPolicy.CAMEL_CASE));
-    }
-
     static class ParentWithFilteredChild {
         private long id;
 
@@ -1782,43 +1965,6 @@ public class QueryUtilTest extends TestBase {
         public void setHiddenByTable(final String hiddenByTable) {
             this.hiddenByTable = hiddenByTable;
         }
-    }
-
-    @Test
-    public void testConvertIdentifierPreservesQuotedSegments() {
-        assertEquals("t.\"First.Name\"", QueryUtil.convertIdentifier("t.\"First.Name\"", NamingPolicy.SNAKE_CASE));
-        assertEquals("\"firstName\"", QueryUtil.convertIdentifier("\"firstName\"", NamingPolicy.SNAKE_CASE));
-        assertEquals("[firstName]", QueryUtil.convertIdentifier("[firstName]", NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("my_table.`firstName`", QueryUtil.convertIdentifier("myTable.`firstName`", NamingPolicy.SNAKE_CASE));
-        assertEquals("\"My.Schema\".first_name", QueryUtil.convertIdentifier("\"My.Schema\".firstName", NamingPolicy.SNAKE_CASE));
-        assertEquals("U&\"aB\".first_name", QueryUtil.convertIdentifier("U&\"aB\".firstName", NamingPolicy.SNAKE_CASE));
-        // unquoted behavior unchanged
-        assertEquals("acc.id", QueryUtil.convertIdentifier("acc.Id", NamingPolicy.SNAKE_CASE));
-        assertEquals("t.__v", QueryUtil.convertIdentifier("t.__v", NamingPolicy.SNAKE_CASE));
-        assertEquals("user_ids[1]", QueryUtil.convertIdentifier("userIds[1]", NamingPolicy.SNAKE_CASE));
-        // condition and builder paths now agree
-        assertEquals("t.\"First.Name\" = 1", Filters.eq("t.\"First.Name\"", 1).toSql(NamingPolicy.SNAKE_CASE));
-        assertEquals("\"firstName\" = 1", Filters.eq("\"firstName\"", 1).toSql(NamingPolicy.SNAKE_CASE));
-        assertEquals("SELECT a FROM t WHERE t.\"First.Name\" = ?", PSC.select("a").from("t").where(Filters.eq("t.\"First.Name\"", 1)).build().query());
-    }
-
-    @Test
-    public void testColumnAnnotatedBeanPropertyIsAPlainColumn() {
-        // A bean-typed property marked @Column (e.g. a JSON column) is not a sub-entity: it maps to itself and is
-        // qualified like any other column instead of being expanded into bogus "geo.lat" paths.
-        final ImmutableMap<String, String> map = QueryUtil.propToColumnNameMap(ColumnBeanAddress.class, NamingPolicy.SNAKE_CASE);
-        assertEquals("geo", map.get("geo"));
-        assertFalse(map.containsKey("geo.lat"));
-        assertEquals("SELECT ad.id AS \"id\", ad.street AS \"street\", ad.geo AS \"geo\" FROM address ad",
-                PSC.selectFrom(ColumnBeanAddress.class).build().query());
-        assertEquals("SELECT ad.geo AS \"geo\" FROM address ad WHERE ad.geo = ?",
-                PSC.select("geo").from(ColumnBeanAddress.class).where(Filters.eq("geo", 1)).build().query());
-
-        // Nested under a real sub-entity, the column is qualified by the sub-entity's table alias.
-        final ImmutableMap<String, String> personMap = QueryUtil.propToColumnNameMap(ColumnBeanPerson.class, NamingPolicy.SNAKE_CASE);
-        assertEquals("ad.geo", personMap.get("addr.geo"));
-        assertFalse(personMap.containsKey("addr.geo.lat"));
-        assertTrue(PSC.selectFrom(ColumnBeanPerson.class, true).build().query().contains("ad.geo AS \"addr.geo\""));
     }
 
     public static class ColumnBeanGeo {
@@ -1897,112 +2043,5 @@ public class QueryUtilTest extends TestBase {
         verbatimFrom[0] = QueryUtil.appendRawExpression(sb, expr, tokenizer.tokenize(expr), tokenizer, backslashEscapesOnly, snake, snake);
 
         return sb.toString();
-    }
-
-    // Regression: appendRawExpression had no direct tests; its argument checks used literal names instead of cs constants,
-    // and a backslash before a quote that does not close its own region (\" inside '...') switched the rest to verbatim.
-    @Test
-    public void testAppendRawExpressionReturnsTheVerbatimStartAndRejectsNullArguments() {
-        final int[] verbatimFrom = new int[1];
-
-        assertEquals("first_name = 'x'", renderRaw("firstName = 'x'", false, verbatimFrom));
-        assertEquals(-1, verbatimFrom[0]);
-
-        // Verbatim from the first token whose extent depends on the backslash reading, at its exact index in expr.
-        assertEquals("a_b = 'C:\\' AND firstName = 1", renderRaw("aB = 'C:\\' AND firstName = 1", false, verbatimFrom));
-        assertEquals(5, verbatimFrom[0]);
-
-        // A backslash before a quote that does not close the region leaves both readings in agreement.
-        assertEquals("payload = '{\"a\":\"b\\\"c\"}' AND created_at > 1", renderRaw("payload = '{\"a\":\"b\\\"c\"}' AND createdAt > 1", false, verbatimFrom));
-        assertEquals(-1, verbatimFrom[0]);
-
-        // backslashEscapesOnly (MySQL) takes the tokenizer's reading as authoritative and never goes verbatim.
-        assertEquals("a = 'It\\'s' AND first_name = 1", renderRaw("a = 'It\\'s' AND firstName = 1", true, verbatimFrom));
-        assertEquals(-1, verbatimFrom[0]);
-
-        // Appends to what the builder already holds, and keeps the line break between two adjacent string literals.
-        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
-        final StringBuilder sb = new StringBuilder("WHERE ");
-        final String lines = "msg = 'hello '\n'world'";
-        assertEquals(-1, QueryUtil.appendRawExpression(sb, lines, tokenizer.tokenize(lines), tokenizer, false, w -> w, w -> w));
-        assertEquals("WHERE msg = 'hello '\n'world'", sb.toString());
-
-        // Tokens that cannot be located in expr: nothing is guessed, the whole of expr is appended as written.
-        final StringBuilder fallback = new StringBuilder();
-        assertEquals(0, QueryUtil.appendRawExpression(fallback, "zz = 'C:\\' AND firstName = 1", tokenizer.tokenize("aB = 'C:\\' AND firstName = 1"), tokenizer,
-                false, w -> w.toUpperCase(), w -> w.toUpperCase()));
-        assertEquals("zz = 'C:\\' AND firstName = 1", fallback.toString());
-
-        final List<String> tokens = tokenizer.tokenize("a");
-        final java.util.function.UnaryOperator<String> same = w -> w;
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(null, "a", tokens, tokenizer, false, same, same));
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), null, tokens, tokenizer, false, same, same));
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", null, tokenizer, false, same, same));
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, null, false, same, same));
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, tokenizer, false, null, same));
-        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> QueryUtil.appendRawExpression(new StringBuilder(), "a", tokens, tokenizer, false, same, null));
-        assertTrue(e.getMessage().contains(cs.qualifiedPartConverter), e.getMessage());
-    }
-
-    @Test
-    public void testHasUnterminatedBlockCommentReadings() {
-        // Covers every lexical reading of the fail-closed sort-key / DISTINCT ON check.
-        assertThrows(IllegalArgumentException.class, () -> QueryUtil.hasUnterminatedBlockComment(null));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("a DESC"));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("a /* c */"));
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* c"));
-
-        // Quoted text, doubled quotes and line comments hide an opener.
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("COALESCE(a, '/*')"));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("\"a/*b\""));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("'it''s /*'"));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("a -- /*\n"));
-
-        // Backslash escapes: '\'' is closed under one reading and open under the other.
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("'a\\'/*'"));
-        // A "--" comment ended by a lone '\r' (default tokenizer) exposes the opener; MySQL/SQLite end it only at '\n'.
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("a -- c\r/* x"));
-        // A stray quote in a '#' comment or an [it's] identifier must not hide the opener, even if a later quote pairs with it.
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("a # it's\n/* x 'y'"));
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("[it's] /* it's"));
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("[a'] /* x '"));
-        // Fail-closed trade-offs: one reading sees an open comment.
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("[a/*b]"));
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("a # note /*"));
-    }
-
-    // Regression: PostgreSQL, SQL Server and H2 nest block comments, so "id /* outer /* inner */" is still open there; the scan
-    // stopped at the first "*/" and accepted it.
-    @Test
-    public void testHasUnterminatedBlockCommentNestedReading() {
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("id /* outer /* inner */"));
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("/*/**/"));
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* x */ b /* y /* z */"));
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* x /* y */ */ /* z"));
-        // Quotes are not special inside a comment, so a quote there does not hide a nested opener.
-        assertTrue(QueryUtil.hasUnterminatedBlockComment("a /* it's /* x */"));
-
-        // Balanced nesting, or comments one after another, are closed under both readings.
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("id /* a /* b */ */"));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("id /* a */ /* b */"));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("/* a /* b /* c */ */ */ x"));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("/**/ /**/"));
-        // A quoted "/*" is data, not a nested opener.
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("'/*' /* a */"));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment("/* a */ \"/*\""));
-    }
-
-    @Test
-    public void testHasUnterminatedBlockCommentIsLinear() {
-        // Regression: resuming after each unterminated quote, and searching for '\r' from every "--", was quadratic
-        // (80 KB of "\"\\" took seconds). Each input below takes milliseconds when the scan is linear.
-        final String quotes = "/*x*/ a" + "\"\\".repeat(100_000) + "'\\".repeat(50_000) + "`\\".repeat(50_000);
-        final String comments = "a /* x */ " + "-- c\n".repeat(60_000) + "--\r".repeat(60_000);
-
-        final long start = System.nanoTime();
-        assertFalse(QueryUtil.hasUnterminatedBlockComment(quotes));
-        assertFalse(QueryUtil.hasUnterminatedBlockComment(comments));
-        assertTrue(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start) < 5_000, "hasUnterminatedBlockComment is not linear");
     }
 }

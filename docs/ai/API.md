@@ -1,5 +1,5 @@
 # abacus-query API Index (v4.9.5)
-- Build: 48b1b8d93cd885a375fe765d2f4b1787d55864cb
+- Build: 0b6001de74ed9c368645d6158ecb0a57a74e64bb
 - Java: 21
 - Generated: 2026-10-12
 
@@ -7179,7 +7179,9 @@ Represents a parsed SQL statement with support for named parameters and paramete
 **Nullability:** unspecified
 
 #### Public Fields
-- (none)
+- **Declaration:** `public static final int MAX_CACHEABLE_SQL_LENGTH`
+  - **Summary:** The maximum length (in chars, after String#trim()) of a SQL string that #parse(String) looks up in or stores into its cache.
+  - **Nullability:** unspecified
 
 #### Public Constructors
 - (none)
@@ -7192,7 +7194,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
   - Parameter conversion is only applied when the SQL is a recognized data operation statement (see the class-level documentation).
 - **Parameters:**
   - `sql` (`String`) — the SQL string to parse (must not be null, empty, or blank)
-- **Returns:** a ParsedSql instance for the given SQL (typically a cached instance)
+- **Returns:** a ParsedSql instance for the given SQL (typically a cached instance, unless the SQL is longer than #MAX_CACHEABLE_SQL_LENGTH characters)
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank (including SQL made up only of characters that String#trim() removes, such as control characters); or if parameter detection in a recognized data-operation statement finds mixed styles (?, :propName, #{propName}), an iBatis/MyBatis parameter missing its closing brace or with an empty property name before its ':' or ',' (#{:id}), an unpaired UTF-16 surrogate in or immediately before a prospective colon-style name, or an unpaired surrogate directly after a '?' opening the content of a standalone bracket group
 - **Examples:**

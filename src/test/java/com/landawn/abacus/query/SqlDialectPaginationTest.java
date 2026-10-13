@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -23,43 +22,91 @@ import com.landawn.abacus.util.NamingPolicy;
  * Per-product detection predicates on {@link ProductInfo} ({@code isMySQL()}, {@code isOracle()}, ...)
  * and their consistency with {@link AbstractQueryBuilder#resolveDialectFamily(ProductInfo)}.
  */
-@Tag("2025")
 public class SqlDialectPaginationTest extends TestBase {
+
     @Test
-    public void testPredicatesMatchTheirProduct() {
-        assertTrue(ProductInfo.of("Oracle").isOracle());
-        assertTrue(ProductInfo.of("DB2").isDB2());
-        assertTrue(ProductInfo.of("SQL Server").isSQLServer());
-        assertTrue(ProductInfo.of("MySQL").isMySQL());
-        assertTrue(ProductInfo.of("MariaDB").isMariaDB());
-        assertTrue(ProductInfo.of("PostgreSQL").isPostgreSQL());
-        assertTrue(ProductInfo.of("SQLite").isSQLite());
-        assertTrue(ProductInfo.of("H2").isH2());
+    void testAbsentVersionIsNormalizedToEmptyAndConsistent() {
+        // Absent/null version normalizes to "" across all construction paths, so version() is never null
+        // and equals/hashCode stay consistent regardless of how "no version" was expressed.
+        assertEquals("", ProductInfo.of("Oracle").version());
+        assertEquals("", ProductInfo.of("Oracle", null).version());
+        assertEquals("", new ProductInfo("Oracle", null).version());
+
+        assertEquals(ProductInfo.of("Oracle"), ProductInfo.of("Oracle", null));
+        assertEquals(ProductInfo.of("Oracle"), new ProductInfo("Oracle", null));
+        assertEquals(ProductInfo.of("Oracle").hashCode(), new ProductInfo("Oracle", null).hashCode());
     }
 
     @Test
-    public void testPredicatesAreCaseInsensitiveSubstringMatches() {
-        // Raw DatabaseMetaData.getDatabaseProductName() values are recognized.
-        assertTrue(ProductInfo.of("Oracle Database 19c").isOracle());
-        assertTrue(ProductInfo.of("Microsoft SQL Server").isSQLServer());
-        assertTrue(ProductInfo.of("sqlserver").isSQLServer());
-        assertTrue(ProductInfo.of("MYSQL").isMySQL());
-        assertTrue(ProductInfo.of("PostgreSQL 16.1").isPostgreSQL());
+    void testControlOnlyVersionsAreNotComparable() {
+        for (final String version : List.of("\u0000", "\u0001\u0002", " \u0000\t", "\u001b")) {
+            final ProductInfo invalid = ProductInfo.of("PostgreSQL", version);
+            assertFalse(invalid.isVersionAtLeast("1"));
+            assertFalse(invalid.isVersionAtMost("1"));
+
+            final ProductInfo valid = ProductInfo.of("PostgreSQL", "1");
+            assertFalse(valid.isVersionAtLeast(version));
+            assertFalse(valid.isVersionAtMost(version));
+        }
     }
 
     @Test
-    public void testMySqlAndMariaDbAreDistinctProducts() {
-        final ProductInfo mysql = ProductInfo.of("MySQL");
-        assertTrue(mysql.isMySQL());
-        assertFalse(mysql.isMariaDB());
+    void testDb2UsesFetchPagination() {
+        String sql = dslFor("DB2").select("*").from("users").limit(10).build().query();
+        assertEquals("SELECT * FROM users FETCH FIRST 10 ROWS ONLY", sql);
 
-        final ProductInfo mariadb = ProductInfo.of("MariaDB");
-        assertTrue(mariadb.isMariaDB());
-        assertFalse(mariadb.isMySQL());
+        sql = dslFor("DB2/LINUXX8664").select("*").from("users").orderBy("id").limit(10, 20).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
     }
 
     @Test
-    public void testInvalidNamesAreRejectedAndUnknownProductReturnsFalse() {
+    void testDialectToBuilderAndProductNameValidation() {
+        SqlDialect base = SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).build();
+        SqlDialect variant = base.toBuilder().identifierQuote(SqlDialect.IdentifierQuote.BACKTICK).build();
+        assertEquals(NamingPolicy.SNAKE_CASE, variant.namingPolicy());
+        assertEquals(SqlDialect.IdentifierQuote.BACKTICK, variant.identifierQuote());
+
+        assertThrows(IllegalArgumentException.class, () -> new ProductInfo(null, "1"));
+        assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(" "));
+    }
+
+    @Test
+    void testExplicitIdentifierQuoteWinsOverProductInfo() {
+        final Dsl mysqlDoubleQuoteDsl = Dsl.forDialect(SqlDialect.builder()
+                .namingPolicy(NamingPolicy.SNAKE_CASE)
+                .sqlPolicy(SqlPolicy.PARAMETERIZED_SQL)
+                .identifierQuote(IdentifierQuote.DOUBLE_QUOTE)
+                .productInfo(ProductInfo.of("MySQL"))
+                .build());
+
+        final String sql = mysqlDoubleQuoteDsl.selectFrom(QdpUser.class).build().query();
+        assertEquals("SELECT id AS \"id\", first_name AS \"firstName\" FROM qdp_user", sql);
+    }
+
+    @Test
+    void testFetchStyleStandaloneOffset() {
+        final String sql = dslFor("Oracle").select("*").from("users").orderBy("id").offset(20).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS", sql);
+    }
+
+    @Test
+    void testGenericExpressionLimitRerenderedOnFetchDialects() {
+        String sql = dslFor("Oracle").select("*").from("users").append(Filters.limit("10")).build().query();
+        assertEquals("SELECT * FROM users FETCH FIRST 10 ROWS ONLY", sql);
+
+        sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit("10 OFFSET 20")).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+
+        sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").append(Filters.limit("10")).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+
+        // On LIMIT-style dialects the parsed count/offset render back to the same LIMIT/OFFSET text.
+        sql = dslFor("MySQL").select("*").from("users").append(Filters.limit("10 OFFSET 20")).build().query();
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
+    }
+
+    @Test
+    void testInvalidNamesAreRejectedAndUnknownProductReturnsFalse() {
         assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(null));
         assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(""));
         assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(" "));
@@ -76,94 +123,53 @@ public class SqlDialectPaginationTest extends TestBase {
     }
 
     @Test
-    public void testVersionAtLeastAndAtMostAreInclusive() {
-        final ProductInfo mysql = ProductInfo.of("MySQL", "8.0.32");
-        assertTrue(mysql.isVersionAtLeast("8.0"));
-        assertTrue(mysql.isVersionAtLeast("8.0.32")); // equal -> inclusive
-        assertFalse(mysql.isVersionAtLeast("8.1"));
-        assertFalse(mysql.isVersionAtLeast("9"));
+    void testLimitConditionUsesDialectPagination() {
+        // The Limit condition path (appendLimit) delegates to limit(int) / limit(int, int).
+        String sql = dslFor("Oracle").select("*").from("users").append(Filters.limit(10)).build().query();
+        assertEquals("SELECT * FROM users FETCH FIRST 10 ROWS ONLY", sql);
 
-        assertTrue(mysql.isVersionAtMost("8.1"));
-        assertTrue(mysql.isVersionAtMost("8.0.32")); // equal -> inclusive
-        assertFalse(mysql.isVersionAtMost("8.0"));
+        sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit(10, 20)).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
     }
 
     @Test
-    public void testVersionComparisonPadsMissingComponentsWithZero() {
-        final ProductInfo v = ProductInfo.of("MySQL", "8.0");
-        assertTrue(v.isVersionAtLeast("8.0.0")); // 8.0 == 8.0.0
-        assertTrue(v.isVersionAtMost("8.0.0"));
-        assertFalse(v.isVersionAtLeast("8.0.1"));
-    }
-
-    @Test
-    public void testVersionComparisonParsesLeadingNumericRun() {
-        final ProductInfo oracle = ProductInfo.of("Oracle", "19c");
-        assertTrue(oracle.isVersionAtLeast("18"));
-        assertTrue(oracle.isVersionAtLeast("19"));
-        assertFalse(oracle.isVersionAtLeast("21"));
-        assertTrue(oracle.isVersionAtMost("21"));
-    }
-
-    @Test
-    public void testVersionComparisonReturnsFalseWhenNotComparable() {
-        assertFalse(ProductInfo.of("MySQL").isVersionAtLeast("8.0")); // absent version ("") -> not comparable
-        assertFalse(ProductInfo.of("MySQL", "unknown").isVersionAtLeast("8")); // not leading-numeric
-        assertFalse(ProductInfo.of("MySQL", "8.").isVersionAtLeast("8")); // empty trailing component
-        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast(null)); // null argument
-        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("abc")); // unparseable argument
-        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("8.")); // malformed comparison version
-        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtMost(null));
-    }
-
-    @Test
-    public void testControlOnlyVersionsAreNotComparable() {
-        for (final String version : List.of("\u0000", "\u0001\u0002", " \u0000\t", "\u001b")) {
-            final ProductInfo invalid = ProductInfo.of("PostgreSQL", version);
-            assertFalse(invalid.isVersionAtLeast("1"));
-            assertFalse(invalid.isVersionAtMost("1"));
-
-            final ProductInfo valid = ProductInfo.of("PostgreSQL", "1");
-            assertFalse(valid.isVersionAtLeast(version));
-            assertFalse(valid.isVersionAtMost(version));
+    void testLimitStyleProductsKeepLimitSyntax() {
+        for (final String product : new String[] { "PostgreSQL", "SQLite", "H2" }) {
+            final String sql = dslFor(product).select("*").from("users").limit(10).build().query();
+            assertEquals("SELECT * FROM users LIMIT 10", sql, product);
         }
     }
 
     @Test
-    public void testAbsentVersionIsNormalizedToEmptyAndConsistent() {
-        // Absent/null version normalizes to "" across all construction paths, so version() is never null
-        // and equals/hashCode stay consistent regardless of how "no version" was expressed.
-        assertEquals("", ProductInfo.of("Oracle").version());
-        assertEquals("", ProductInfo.of("Oracle", null).version());
-        assertEquals("", new ProductInfo("Oracle", null).version());
+    void testMySqlAndMariaDbAreDistinctProducts() {
+        final ProductInfo mysql = ProductInfo.of("MySQL");
+        assertTrue(mysql.isMySQL());
+        assertFalse(mysql.isMariaDB());
 
-        assertEquals(ProductInfo.of("Oracle"), ProductInfo.of("Oracle", null));
-        assertEquals(ProductInfo.of("Oracle"), new ProductInfo("Oracle", null));
-        assertEquals(ProductInfo.of("Oracle").hashCode(), new ProductInfo("Oracle", null).hashCode());
+        final ProductInfo mariadb = ProductInfo.of("MariaDB");
+        assertTrue(mariadb.isMariaDB());
+        assertFalse(mariadb.isMySQL());
     }
 
     @Test
-    public void testResolveDialectFamilyStaysConsistentWithPredicates() {
-        assertEquals(AbstractQueryBuilder.DialectFamily.ORACLE, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("Oracle Database 19c")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.DB2, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("DB2/LINUXX8664")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.SQL_SERVER, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("Microsoft SQL Server")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.MYSQL, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("MySQL")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.MYSQL, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("MariaDB")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.LIMIT_STYLE, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("PostgreSQL")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.DEFAULT, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("FancyNewDB")));
-        assertEquals(AbstractQueryBuilder.DialectFamily.DEFAULT, AbstractQueryBuilder.resolveDialectFamily(null));
-    }
+    void testMySqlAndMariaDbKeepLimitSyntax() {
+        String sql = dslFor("MySQL").select("*").from("users").limit(10, 20).build().query();
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
 
-    private static Dsl dslFor(final String productName) {
-        return Dsl.forDialect(SqlDialect.builder()
-                .namingPolicy(NamingPolicy.SNAKE_CASE)
-                .sqlPolicy(SqlPolicy.PARAMETERIZED_SQL)
-                .productInfo(ProductInfo.of(productName))
-                .build());
+        sql = dslFor("MariaDB").select("*").from("users").limit(10).build().query();
+        assertEquals("SELECT * FROM users LIMIT 10", sql);
     }
 
     @Test
-    public void testOracleLimit() {
+    void testMySqlProductInfoDefaultsToBacktickQuote() {
+        final Dsl mysqlDsl = dslFor("MySQL");
+
+        final String sql = mysqlDsl.selectFrom(QdpUser.class).build().query();
+        assertEquals("SELECT id AS `id`, first_name AS `firstName` FROM qdp_user", sql);
+    }
+
+    @Test
+    void testOracleLimit() {
         String sql = dslFor("Oracle").select("*").from("users").limit(10).build().query();
         assertEquals("SELECT * FROM users FETCH FIRST 10 ROWS ONLY", sql);
 
@@ -173,31 +179,7 @@ public class SqlDialectPaginationTest extends TestBase {
     }
 
     @Test
-    public void testOracleLimitWithOffset() {
-        final String sql = dslFor("Oracle").select("*").from("users").orderBy("id").limit(10, 20).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-    }
-
-    @Test
-    public void testOracleOffsetThenLimit() {
-        final String sql = dslFor("Oracle").select("*").from("users").orderBy("id").offset(20).limit(10).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH FIRST 10 ROWS ONLY", sql);
-    }
-
-    @Test
-    public void testOracleLimitThenOffsetThrows() {
-        // OFFSET must precede FETCH on FETCH-style dialects, so limit() consumes the OFFSET slot.
-        final SqlBuilder builder = dslFor("Oracle").select("*").from("users").limit(10);
-
-        try {
-            assertThrows(IllegalStateException.class, () -> builder.offset(20));
-        } finally {
-            builder.build();
-        }
-    }
-
-    @Test
-    public void testOracleLimitAndFetchRowsAreMutuallyExclusive() {
+    void testOracleLimitAndFetchRowsAreMutuallyExclusive() {
         final SqlBuilder limitFirst = dslFor("Oracle").select("*").from("users").limit(10);
 
         try {
@@ -216,119 +198,31 @@ public class SqlDialectPaginationTest extends TestBase {
     }
 
     @Test
-    public void testDb2UsesFetchPagination() {
-        String sql = dslFor("DB2").select("*").from("users").limit(10).build().query();
-        assertEquals("SELECT * FROM users FETCH FIRST 10 ROWS ONLY", sql);
+    void testOracleLimitThenOffsetThrows() {
+        // OFFSET must precede FETCH on FETCH-style dialects, so limit() consumes the OFFSET slot.
+        final SqlBuilder builder = dslFor("Oracle").select("*").from("users").limit(10);
 
-        sql = dslFor("DB2/LINUXX8664").select("*").from("users").orderBy("id").limit(10, 20).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-    }
-
-    @Test
-    public void testSqlServerLimit() {
-        // SQL Server has no FETCH FIRST without OFFSET, so a lone limit() emits OFFSET 0 ROWS.
-        final String sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").limit(10).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-    }
-
-    @Test
-    public void testSqlServerAppendCriteriaOrderByWithLimit() {
-        // The criteria's own ORDER BY renders before its LIMIT, so it satisfies SQL Server's
-        // OFFSET/FETCH ORDER BY prerequisite during the side-effect-free pre-validation.
-        String sql = dslFor("Microsoft SQL Server").select("id").from("users").append(Criteria.builder().orderBy("id").limit(10).build()).build().query();
-        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-
-        sql = dslFor("Microsoft SQL Server").select("id").from("users").append(Criteria.builder().orderBy("id").limit(10, 20).build()).build().query();
-        assertEquals("SELECT id FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-
-        // A criteria LIMIT without any ORDER BY (neither on the builder nor in the criteria) is still rejected.
-        final SqlBuilder noOrderBy = dslFor("Microsoft SQL Server").select("id").from("users");
-        assertThrows(IllegalStateException.class, () -> noOrderBy.append(Criteria.builder().limit(10).build()));
-        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", noOrderBy.orderBy("id").limit(10).build().query());
-    }
-
-    @Test
-    public void testSqlServerLimitWithOffset() {
-        final String sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").limit(10, 20).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-    }
-
-    @Test
-    public void testSqlServerOffsetThenLimitOmitsOffsetZero() {
-        final String sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").offset(20).limit(10).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-    }
-
-    @Test
-    public void testMySqlAndMariaDbKeepLimitSyntax() {
-        String sql = dslFor("MySQL").select("*").from("users").limit(10, 20).build().query();
-        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
-
-        sql = dslFor("MariaDB").select("*").from("users").limit(10).build().query();
-        assertEquals("SELECT * FROM users LIMIT 10", sql);
-    }
-
-    @Test
-    public void testLimitStyleProductsKeepLimitSyntax() {
-        for (final String product : new String[] { "PostgreSQL", "SQLite", "H2" }) {
-            final String sql = dslFor(product).select("*").from("users").limit(10).build().query();
-            assertEquals("SELECT * FROM users LIMIT 10", sql, product);
+        try {
+            assertThrows(IllegalStateException.class, () -> builder.offset(20));
+        } finally {
+            builder.build();
         }
     }
 
     @Test
-    public void testUnrecognizedOrMissingProductInfoUsesDefaultSyntax() {
-        String sql = dslFor("CockroachDB").select("*").from("users").limit(10).build().query();
-        assertEquals("SELECT * FROM users LIMIT 10", sql);
-
-        // Predefined DSL constants carry no product info and are unchanged.
-        sql = PSC.select("*").from("users").limit(10).offset(20).build().query();
-        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
-
-        assertThrows(IllegalArgumentException.class, () -> dslFor(" "));
-    }
-
-    @Test
-    public void testFetchStyleStandaloneOffset() {
-        final String sql = dslFor("Oracle").select("*").from("users").orderBy("id").offset(20).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS", sql);
-    }
-
-    @Test
-    public void testLimitConditionUsesDialectPagination() {
-        // The Limit condition path (appendLimit) delegates to limit(int) / limit(int, int).
-        String sql = dslFor("Oracle").select("*").from("users").append(Filters.limit(10)).build().query();
-        assertEquals("SELECT * FROM users FETCH FIRST 10 ROWS ONLY", sql);
-
-        sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit(10, 20)).build().query();
+    void testOracleLimitWithOffset() {
+        final String sql = dslFor("Oracle").select("*").from("users").orderBy("id").limit(10, 20).build().query();
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
     }
 
     @Test
-    public void testGenericExpressionLimitRerenderedOnFetchDialects() {
-        String sql = dslFor("Oracle").select("*").from("users").append(Filters.limit("10")).build().query();
-        assertEquals("SELECT * FROM users FETCH FIRST 10 ROWS ONLY", sql);
-
-        sql = dslFor("Oracle").select("*").from("users").orderBy("id").append(Filters.limit("10 OFFSET 20")).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-
-        sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").append(Filters.limit("10")).build().query();
-        assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
-
-        // On LIMIT-style dialects the parsed count/offset render back to the same LIMIT/OFFSET text.
-        sql = dslFor("MySQL").select("*").from("users").append(Filters.limit("10 OFFSET 20")).build().query();
-        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
+    void testOracleOffsetThenLimit() {
+        final String sql = dslFor("Oracle").select("*").from("users").orderBy("id").offset(20).limit(10).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH FIRST 10 ROWS ONLY", sql);
     }
 
     @Test
-    public void testPlaceholderExpressionLimitIsRejectedBeforeDialectRendering() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.limit("? OFFSET ?"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.limit(":count"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.limit("#{count}"));
-    }
-
-    @Test
-    public void testParsedExpressionLimitRerenderedPerDialect() {
+    void testParsedExpressionLimitRerenderedPerDialect() {
         // MySQL's comma form (offset, count) is now parsed and re-rendered in the target dialect's syntax.
         String sql = dslFor("Oracle").select("*").from("users").append(Filters.limit("20, 10")).build().query();
         assertEquals("SELECT * FROM users OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
@@ -352,28 +246,36 @@ public class SqlDialectPaginationTest extends TestBase {
     }
 
     @Test
-    public void testMySqlProductInfoDefaultsToBacktickQuote() {
-        final Dsl mysqlDsl = dslFor("MySQL");
-
-        final String sql = mysqlDsl.selectFrom(QdpUser.class).build().query();
-        assertEquals("SELECT id AS `id`, first_name AS `firstName` FROM qdp_user", sql);
+    void testPlaceholderExpressionLimitIsRejectedBeforeDialectRendering() {
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit("? OFFSET ?"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit(":count"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.limit("#{count}"));
     }
 
     @Test
-    public void testExplicitIdentifierQuoteWinsOverProductInfo() {
-        final Dsl mysqlDoubleQuoteDsl = Dsl.forDialect(SqlDialect.builder()
-                .namingPolicy(NamingPolicy.SNAKE_CASE)
-                .sqlPolicy(SqlPolicy.PARAMETERIZED_SQL)
-                .identifierQuote(IdentifierQuote.DOUBLE_QUOTE)
-                .productInfo(ProductInfo.of("MySQL"))
-                .build());
-
-        final String sql = mysqlDoubleQuoteDsl.selectFrom(QdpUser.class).build().query();
-        assertEquals("SELECT id AS \"id\", first_name AS \"firstName\" FROM qdp_user", sql);
+    void testPredicatesAreCaseInsensitiveSubstringMatches() {
+        // Raw DatabaseMetaData.getDatabaseProductName() values are recognized.
+        assertTrue(ProductInfo.of("Oracle Database 19c").isOracle());
+        assertTrue(ProductInfo.of("Microsoft SQL Server").isSQLServer());
+        assertTrue(ProductInfo.of("sqlserver").isSQLServer());
+        assertTrue(ProductInfo.of("MYSQL").isMySQL());
+        assertTrue(ProductInfo.of("PostgreSQL 16.1").isPostgreSQL());
     }
 
     @Test
-    public void testProductInfoFactories() {
+    void testPredicatesMatchTheirProduct() {
+        assertTrue(ProductInfo.of("Oracle").isOracle());
+        assertTrue(ProductInfo.of("DB2").isDB2());
+        assertTrue(ProductInfo.of("SQL Server").isSQLServer());
+        assertTrue(ProductInfo.of("MySQL").isMySQL());
+        assertTrue(ProductInfo.of("MariaDB").isMariaDB());
+        assertTrue(ProductInfo.of("PostgreSQL").isPostgreSQL());
+        assertTrue(ProductInfo.of("SQLite").isSQLite());
+        assertTrue(ProductInfo.of("H2").isH2());
+    }
+
+    @Test
+    void testProductInfoFactories() {
         final ProductInfo nameOnly = ProductInfo.of("Oracle");
         assertEquals("Oracle", nameOnly.name());
         assertEquals("", nameOnly.version()); // absent version is normalized to "" (never null)
@@ -384,14 +286,139 @@ public class SqlDialectPaginationTest extends TestBase {
     }
 
     @Test
-    public void testDialectToBuilderAndProductNameValidation() {
-        SqlDialect base = SqlDialect.builder().namingPolicy(NamingPolicy.SNAKE_CASE).build();
-        SqlDialect variant = base.toBuilder().identifierQuote(SqlDialect.IdentifierQuote.BACKTICK).build();
-        assertEquals(NamingPolicy.SNAKE_CASE, variant.namingPolicy());
-        assertEquals(SqlDialect.IdentifierQuote.BACKTICK, variant.identifierQuote());
+    void testResolvedFetchLimitAfterOffsetRowsOnLimitStyleDialect() {
+        final Dsl postgres = dslFor("PostgreSQL");
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
+                postgres.select("*").from("users").offsetRows(5).fetchNextRows(10).build().query());
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 99999999999 ROWS ONLY",
+                postgres.select("*").from("users").offsetRows(5).append(new Limit("FETCH NEXT 99999999999 ROWS ONLY")).build().query());
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
+                postgres.select("*").from("users").offsetRows(5).append(new Limit("FETCH NEXT 10 ROWS ONLY")).build().query());
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
+                postgres.select("*").from("users").offsetRows(5).append(Criteria.builder().limit("FETCH NEXT 10 ROWS ONLY").build()).build().query());
+        assertEquals("SELECT * FROM users LIMIT 10", postgres.select("*").from("users").append(new Limit("FETCH NEXT 10 ROWS ONLY")).build().query());
+        assertThrows(IllegalStateException.class, () -> postgres.select("*").from("users").offset(5).append(new Limit("FETCH NEXT 10 ROWS ONLY")));
+    }
 
-        assertThrows(IllegalArgumentException.class, () -> new ProductInfo(null, "1"));
-        assertThrows(IllegalArgumentException.class, () -> ProductInfo.of(" "));
+    @Test
+    void testResolveDialectFamilyStaysConsistentWithPredicates() {
+        assertEquals(AbstractQueryBuilder.DialectFamily.ORACLE, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("Oracle Database 19c")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.DB2, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("DB2/LINUXX8664")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.SQL_SERVER, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("Microsoft SQL Server")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.MYSQL, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("MySQL")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.MYSQL, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("MariaDB")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.LIMIT_STYLE, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("PostgreSQL")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.DEFAULT, AbstractQueryBuilder.resolveDialectFamily(ProductInfo.of("FancyNewDB")));
+        assertEquals(AbstractQueryBuilder.DialectFamily.DEFAULT, AbstractQueryBuilder.resolveDialectFamily(null));
+    }
+
+    @Test
+    void testSqlServerAppendCriteriaOrderByWithLimit() {
+        // The criteria's own ORDER BY renders before its LIMIT, so it satisfies SQL Server's
+        // OFFSET/FETCH ORDER BY prerequisite during the side-effect-free pre-validation.
+        String sql = dslFor("Microsoft SQL Server").select("id").from("users").append(Criteria.builder().orderBy("id").limit(10).build()).build().query();
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+
+        sql = dslFor("Microsoft SQL Server").select("id").from("users").append(Criteria.builder().orderBy("id").limit(10, 20).build()).build().query();
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+
+        // A criteria LIMIT without any ORDER BY (neither on the builder nor in the criteria) is still rejected.
+        final SqlBuilder noOrderBy = dslFor("Microsoft SQL Server").select("id").from("users");
+        assertThrows(IllegalStateException.class, () -> noOrderBy.append(Criteria.builder().limit(10).build()));
+        assertEquals("SELECT id FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", noOrderBy.orderBy("id").limit(10).build().query());
+    }
+
+    @Test
+    void testSqlServerLimit() {
+        // SQL Server has no FETCH FIRST without OFFSET, so a lone limit() emits OFFSET 0 ROWS.
+        final String sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").limit(10).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+    }
+
+    @Test
+    void testSqlServerLimitWithOffset() {
+        final String sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").limit(10, 20).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+    }
+
+    @Test
+    void testSqlServerOffsetThenLimitOmitsOffsetZero() {
+        final String sql = dslFor("Microsoft SQL Server").select("*").from("users").orderBy("id").offset(20).limit(10).build().query();
+        assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", sql);
+    }
+
+    @Test
+    void testUnrecognizedOrMissingProductInfoUsesDefaultSyntax() {
+        String sql = dslFor("CockroachDB").select("*").from("users").limit(10).build().query();
+        assertEquals("SELECT * FROM users LIMIT 10", sql);
+
+        // Predefined DSL constants carry no product info and are unchanged.
+        sql = PSC.select("*").from("users").limit(10).offset(20).build().query();
+        assertEquals("SELECT * FROM users LIMIT 10 OFFSET 20", sql);
+
+        assertThrows(IllegalArgumentException.class, () -> dslFor(" "));
+    }
+
+    @Test
+    void testUnresolvedFetchLimitRejectedOnUpdateAndDelete() {
+        final Dsl mysql = dslFor("MySQL");
+        assertThrows(IllegalStateException.class, () -> mysql.deleteFrom("t").fetchFirstRows(5));
+        assertThrows(IllegalStateException.class, () -> mysql.deleteFrom("t").append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
+        assertThrows(IllegalStateException.class,
+                () -> mysql.update("t").set("a").append(Criteria.builder().where(Filters.eq("b", 1)).limit("FETCH NEXT 99999999999 ROWS ONLY").build()));
+        final SqlBuilder builder = mysql.update("t").set("a");
+        assertThrows(IllegalStateException.class, () -> builder.append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
+        assertEquals("UPDATE t SET a = ? LIMIT 5", builder.limit(5).build().query());
+        assertEquals("UPDATE t SET a = ? LIMIT 99999999999", mysql.update("t").set("a").append(new Limit("LIMIT 99999999999")).build().query());
+    }
+
+    @Test
+    void testVersionAtLeastAndAtMostAreInclusive() {
+        final ProductInfo mysql = ProductInfo.of("MySQL", "8.0.32");
+        assertTrue(mysql.isVersionAtLeast("8.0"));
+        assertTrue(mysql.isVersionAtLeast("8.0.32")); // equal -> inclusive
+        assertFalse(mysql.isVersionAtLeast("8.1"));
+        assertFalse(mysql.isVersionAtLeast("9"));
+
+        assertTrue(mysql.isVersionAtMost("8.1"));
+        assertTrue(mysql.isVersionAtMost("8.0.32")); // equal -> inclusive
+        assertFalse(mysql.isVersionAtMost("8.0"));
+    }
+
+    @Test
+    void testVersionComparisonPadsMissingComponentsWithZero() {
+        final ProductInfo v = ProductInfo.of("MySQL", "8.0");
+        assertTrue(v.isVersionAtLeast("8.0.0")); // 8.0 == 8.0.0
+        assertTrue(v.isVersionAtMost("8.0.0"));
+        assertFalse(v.isVersionAtLeast("8.0.1"));
+    }
+
+    @Test
+    void testVersionComparisonParsesLeadingNumericRun() {
+        final ProductInfo oracle = ProductInfo.of("Oracle", "19c");
+        assertTrue(oracle.isVersionAtLeast("18"));
+        assertTrue(oracle.isVersionAtLeast("19"));
+        assertFalse(oracle.isVersionAtLeast("21"));
+        assertTrue(oracle.isVersionAtMost("21"));
+    }
+
+    @Test
+    void testVersionComparisonReturnsFalseWhenNotComparable() {
+        assertFalse(ProductInfo.of("MySQL").isVersionAtLeast("8.0")); // absent version ("") -> not comparable
+        assertFalse(ProductInfo.of("MySQL", "unknown").isVersionAtLeast("8")); // not leading-numeric
+        assertFalse(ProductInfo.of("MySQL", "8.").isVersionAtLeast("8")); // empty trailing component
+        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast(null)); // null argument
+        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("abc")); // unparseable argument
+        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("8.")); // malformed comparison version
+        assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtMost(null));
+    }
+
+    private static Dsl dslFor(final String productName) {
+        return Dsl.forDialect(SqlDialect.builder()
+                .namingPolicy(NamingPolicy.SNAKE_CASE)
+                .sqlPolicy(SqlPolicy.PARAMETERIZED_SQL)
+                .productInfo(ProductInfo.of(productName))
+                .build());
     }
 
     public static class QdpUser {
@@ -413,33 +440,5 @@ public class SqlDialectPaginationTest extends TestBase {
         public void setFirstName(final String firstName) {
             this.firstName = firstName;
         }
-    }
-
-    @Test
-    public void testUnresolvedFetchLimitRejectedOnUpdateAndDelete() {
-        final Dsl mysql = dslFor("MySQL");
-        assertThrows(IllegalStateException.class, () -> mysql.deleteFrom("t").fetchFirstRows(5));
-        assertThrows(IllegalStateException.class, () -> mysql.deleteFrom("t").append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
-        assertThrows(IllegalStateException.class,
-                () -> mysql.update("t").set("a").append(Criteria.builder().where(Filters.eq("b", 1)).limit("FETCH NEXT 99999999999 ROWS ONLY").build()));
-        final SqlBuilder builder = mysql.update("t").set("a");
-        assertThrows(IllegalStateException.class, () -> builder.append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
-        assertEquals("UPDATE t SET a = ? LIMIT 5", builder.limit(5).build().query());
-        assertEquals("UPDATE t SET a = ? LIMIT 99999999999", mysql.update("t").set("a").append(new Limit("LIMIT 99999999999")).build().query());
-    }
-
-    @Test
-    public void testResolvedFetchLimitAfterOffsetRowsOnLimitStyleDialect() {
-        final Dsl postgres = dslFor("PostgreSQL");
-        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
-                postgres.select("*").from("users").offsetRows(5).fetchNextRows(10).build().query());
-        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 99999999999 ROWS ONLY",
-                postgres.select("*").from("users").offsetRows(5).append(new Limit("FETCH NEXT 99999999999 ROWS ONLY")).build().query());
-        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
-                postgres.select("*").from("users").offsetRows(5).append(new Limit("FETCH NEXT 10 ROWS ONLY")).build().query());
-        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
-                postgres.select("*").from("users").offsetRows(5).append(Criteria.builder().limit("FETCH NEXT 10 ROWS ONLY").build()).build().query());
-        assertEquals("SELECT * FROM users LIMIT 10", postgres.select("*").from("users").append(new Limit("FETCH NEXT 10 ROWS ONLY")).build().query());
-        assertThrows(IllegalStateException.class, () -> postgres.select("*").from("users").offset(5).append(new Limit("FETCH NEXT 10 ROWS ONLY")));
     }
 }

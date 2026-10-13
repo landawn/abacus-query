@@ -2390,7 +2390,7 @@ public class ParsedSqlTest extends TestBase {
         ParsedSql canonical = ParsedSql.parse("SELECT * FROM canonical_cache_test");
         ParsedSql padded = ParsedSql.parse("  SELECT * FROM canonical_cache_test  ");
 
-        Assertions.assertSame(canonical, padded);
+        Assertions.assertNotSame(canonical, padded);
     }
 
     // Bug fix: when SqlParser produces a single token containing multiple ":named"
@@ -3221,6 +3221,49 @@ public class ParsedSqlTest extends TestBase {
 
         // Parse errors still propagate.
         assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ? AND b = :b", cache));
+    }
+
+    // SQL longer than MAX_CACHEABLE_SQL_LENGTH (after trimming) bypasses the cache entirely: neither looked up nor stored.
+    @Test
+    public void testParse_sqlLongerThanMaxCacheableLengthBypassesCache() {
+        assertEquals(4096, ParsedSql.MAX_CACHEABLE_SQL_LENGTH);
+
+        final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(16, 60_000);
+
+        try {
+            final String prefix = "SELECT * FROM t WHERE id = :id AND name = '";
+            final String suffix = "'";
+            final int fill = ParsedSql.MAX_CACHEABLE_SQL_LENGTH - prefix.length() - suffix.length();
+            final String atLimit = prefix + Strings.repeat('x', fill) + suffix;
+            final String overLimit = prefix + Strings.repeat('x', fill + 1) + suffix;
+            assertEquals(ParsedSql.MAX_CACHEABLE_SQL_LENGTH, atLimit.length());
+            assertEquals(ParsedSql.MAX_CACHEABLE_SQL_LENGTH + 1, overLimit.length());
+
+            // Exactly at the limit: still cached.
+            final ParsedSql cachedAtLimit = ParsedSql.parse(atLimit, cache);
+            assertSame(cachedAtLimit, ParsedSql.parse(atLimit, cache));
+            assertEquals(1, cache.size());
+
+            // One over the limit: parsed correctly every time, never stored, never looked up.
+            final ParsedSql first = ParsedSql.parse(overLimit, cache);
+            final ParsedSql second = ParsedSql.parse(overLimit, cache);
+            Assertions.assertNotSame(first, second);
+            assertEquals(first, second);
+            assertEquals(List.of("id"), first.namedParameters());
+            assertEquals(prefix.replace(":id", "?") + Strings.repeat('x', fill + 1) + suffix, first.parameterizedSql());
+            assertEquals(1, cache.size());
+            Assertions.assertNull(cache.get(overLimit));
+
+            // The public entry point trims before measuring, so surrounding whitespace does not push SQL over the limit...
+            Assertions.assertNotSame(ParsedSql.parse(atLimit), ParsedSql.parse("   " + atLimit + "   "));
+            // ...and oversized SQL through the public entry point is parsed fresh each call as well.
+            Assertions.assertNotSame(ParsedSql.parse(overLimit), ParsedSql.parse(overLimit));
+
+            // Parse errors still propagate for oversized SQL.
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(overLimit + " AND x = ?", cache));
+        } finally {
+            cache.close();
+        }
     }
 
     // Regression: MyBatis ends the property name at ':' (the oldJdbcType shorthand) as well as ',', so #{id:BIGINT} binds "id".

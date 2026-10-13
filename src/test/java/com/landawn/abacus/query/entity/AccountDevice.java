@@ -15,6 +15,7 @@ import com.landawn.abacus.annotation.Type;
  */
 @Table("device")
 public class AccountDevice {
+
     private long id;
     private long accountId;
     private String name;

@@ -15,6 +15,7 @@ import com.landawn.abacus.annotation.Type;
  */
 @Table(alias = "ac")
 public class AccountContact {
+
     private long id;
     private long accountId;
     private String mobile;

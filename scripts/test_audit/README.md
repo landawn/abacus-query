@@ -1,120 +1,81 @@
-# test_audit — reusable scripts for the three-part test-suite cleanup
+# Test audit tools
 
-These scripts parse the JUnit test suite under `src/test/java`, report duplicate
-test methods, report test methods without meaningful assertions, map test
-classes to the source classes they test, and merge multiple test classes in one
-file (or scattered across files) into a single canonical `FooTest.java`.
+These dependency-free Python tools inventory the current Java tests, identify
+duplicate candidates, and map tests to their production units.
 
-All scripts are plain Python 3 (no dependencies). Run them from the repo root.
+Run from the repository root:
 
-## Scripts
-
-### `parse_tests.py`
-Parses every `@Test` method in `src/test/java` and emits a JSON dump:
-`{files, classes, methods}` where each method has `file`, `class_name`,
-`class_tag`, `name`, `sig_line`, `sig_body`, `norm_body` (comments stripped,
-string/char literals collapsed, whitespace normalized — for dup detection), and
-`has_assertion`.
-
-```bash
-python scripts/test_audit/parse_tests.py --out scripts/test_audit/parse_output.json
+```sh
+python -B -m unittest discover -s scripts/test_audit -p 'test_*.py'
+python -B scripts/test_audit/parse_tests.py --out .audit/test-audit/parse_output.json
+python -B scripts/test_audit/find_duplicates_intra.py --exact-only --min-body-len 0 --out .audit/test-audit/intra_exact.json
+python -B scripts/test_audit/find_duplicates.py --out .audit/test-audit/cross_class.json
+python -B scripts/test_audit/find_no_assertions.py --out .audit/test-audit/no_assertions.json
+python -B scripts/test_audit/map_consolidation.py --out .audit/test-audit/consolidation.json
 ```
 
-### `find_duplicates.py`
-Exact-match (default) or fuzzy (`--fuzzy`) duplicate detection across the whole
-suite. Groups methods whose normalized bodies are identical (or >= similarity
-threshold). Use exact match for true duplicates; fuzzy mostly finds parallel
-structure across different classes (NOT duplicates).
+The report commands default to the freshly generated inventory under
+`.audit/test-audit`. Pass `--input` to use another inventory. The older JSON
+files alongside these scripts are historical snapshots, not current results.
 
-```bash
-python scripts/test_audit/find_duplicates.py --out scripts/test_audit/duplicates.json --show-body
+## Inventory and duplicate detection
+
+`java_tokens.py` masks comments, strings, character literals, and text blocks
+for source discovery while retaining their original positions. `parse_tests.py`
+records nested class paths, inherited tags, annotated methods, and assertion
+calls. Assertion words appearing only in comments or strings do not count.
+
+Duplicate fingerprints ignore signatures, comments, and code formatting while
+preserving SQL strings, character values, and code token boundaries. The
+duplicate tools also compare parameter signatures and annotations, including
+parameter sources. A different method name alone does not hide a duplicate.
+
+- `find_duplicates_intra.py --exact-only` compares methods in the same nested
+  class. Use `--min-body-len 0` to include short validation cases.
+- `find_duplicates.py` reports matching bodies across classes. Similar-looking
+  tests can use different fields, fixtures, policies, or lifecycle setup.
+- `--fuzzy` / `--sim-threshold` are review aids, not deletion instructions.
+- No duplicate report authorizes automatic deletion. Retain the stronger case
+  only after checking setup, exercised overloads, annotations, and expectations.
+
+`find_no_assertions.py` checks all tests by default. Its optional
+`--tagged-only` filter recognizes inherited `unit` and legacy tags, but tag
+inspection is not a substitute for actual JUnit discovery.
+
+`map_consolidation.py` assigns nested behavior groups to their enclosing unit,
+prefers an exact production-class name, excludes fixture-only classes, and
+documents the supported-SQL, pagination, and scanner-validation splits.
+Dependency contracts such as `SKTest` are reported separately. A missing
+name-based mapping does not establish missing runtime coverage.
+
+## Legacy merge utilities
+
+`java_struct.py` and `split_members.py` support the older top-level
+`TestBase` class merge tools:
+
+```sh
+python -B scripts/test_audit/merge_file.py path/to/FooTest.java
+python -B scripts/test_audit/merge_all.py
+python -B scripts/test_audit/merge_across_files.py --target path/to/FooTest.java --source path/to/LegacyTest.java
 ```
 
-### `find_duplicates_intra.py`
-Duplicate detection **within the same test class** — the right tool after
-consolidation, when every source class has one test class. Reports methods in
-the SAME class with identical (`--exact-only`) or highly similar bodies but
-different names. `--exact-only` is the reliable signal; fuzzy catches
-parallel-structure tests for different methods (usually distinct, not dups).
+These commands default to a dry run. `--apply` writes the changes; the
+cross-file tool then deletes the merged source files. Any colliding member name
+aborts before writing that merge. Resolve collisions explicitly rather than
+choosing a winner by name or test length. The batch collision log is written
+under `.audit/test-audit` only with `--apply`.
 
-```bash
-python scripts/test_audit/find_duplicates_intra.py --exact-only --min-body-len 60 --out scripts/test_audit/intra_exact.json
+The merge tools do not establish that different fixtures, superclass behavior,
+or lifecycle methods are equivalent. Review those dependencies and verify
+discovery and coverage after a merge.
+
+## Verification
+
+```sh
+mvn clean test jacoco:report
 ```
 
-### `find_no_assertions.py`
-Reports `@Test` methods whose body contains no meaningful assertion call
-(assertEquals/assertThrows/.../any custom `assert*`/`expect*`/`verify*` helper).
-`--tagged-only` (default) restricts to classes that actually run under `mvn test`
-(`@Tag("base-test")`/`@Tag("2025")`); `--include-untagged` checks all.
-
-```bash
-python scripts/test_audit/find_no_assertions.py --include-untagged --out scripts/test_audit/no_assertions_all.json
-```
-
-### `map_consolidation.py`
-Maps every test class to the source class it tests (by stripping
-`Test/2025Test/2026Test/BatchTest/...` suffixes) and reports:
-- `cross_file_scattering` — methods for one source class spread across >1 file
-- `multi_class_one_file` — one FooTest.java holding >1 class testing the same source
-- `orphan_test_classes` — test classes with no matching source (mostly nested helpers)
-- `untested_source_classes` — source classes with no test class
-
-```bash
-python scripts/test_audit/map_consolidation.py --out scripts/test_audit/consolidation_map.json
-```
-
-### `java_struct.py`
-Structural parser for a single Java test file: splits into `package`,
-`imports`, and top-level `ClassInfo` objects (each with `leading_annotations`,
-`signature`, `file_body`, `methods`). Used by the merge scripts. CLI:
-```bash
-python scripts/test_audit/java_struct.py path/to/FooTest.java
-```
-
-### `split_members.py`
-Splits a class body into its direct member blocks (`method` / `class` /
-`field` / `init-block`), each with verbatim `text` and `name`. Used by the merge
-scripts.
-
-### `merge_file.py`
-Merges all top-level test classes (extends `TestBase`) in ONE file into a single
-canonical class named after the file stem, tagged `@Tag("2025")` and made
-`public`. Method-name collisions keep the canonical (tagged, known-passing)
-version. Non-test top-level classes are preserved. Collision report on stderr.
-```bash
-python scripts/test_audit/merge_file.py path/to/FooTest.java --apply
-```
-
-### `merge_all.py`
-Batch driver: applies `merge_file.py` to every test file that currently has
->1 top-level test class. Re-runnable (single-class files are skipped).
-```bash
-python scripts/test_audit/merge_all.py --apply
-```
-
-### `merge_across_files.py`
-Cross-file consolidation: merges test classes from one or more `--source` files
-into a `--target` file, unions imports, dedups method names (target wins), and
-deletes the source files. Used for the sanctioned SqlParser split
-(SqlParserCoverageTest.java -> SqlParserTest.java).
-```bash
-python scripts/test_audit/merge_across_files.py \
-    --target src/test/java/.../SqlParserTest.java \
-    --source src/test/java/.../SqlParserCoverageTest.java --apply
-```
-
-## Reports written
-
-- `parse_output.json` — full parse dump
-- `duplicates.json` — cross-suite exact duplicates
-- `intra_exact.json` — intra-class exact duplicates
-- `no_assertions_all.json` — methods without assertions
-- `consolidation_map.json` — consolidation mapping report
-- `merge_collisions.txt` — per-file collision log from `merge_all.py`
-
-## Convention
-
-The merge produces `@Tag("2025") public class FooTest extends TestBase` so every
-merged class runs under `mvn test` (the suite `@IncludeTags({"base-test","2025"})`).
-Previously-untagged legacy/batch methods therefore start running; verify with
-`mvn clean test` after merging.
+The suite selects `com.landawn.abacus.query` and its subpackages and excludes
+`slow-test`. Year tags are no longer required. Compare executed invocations
+and coverage, not just source method counts: parameterized tests run multiple
+cases. See [the test conventions](../../src/test/java/README.md).

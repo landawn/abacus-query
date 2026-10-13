@@ -43,7 +43,10 @@ import com.landawn.abacus.util.Strings;
  *
  * <p>The class maintains an internal cache (a keyed object pool) of parsed SQL statements for
  * performance optimization, so repeated calls to {@link #parse(String)} with the same SQL string
- * typically return the same cached instance (subject to pool eviction after prolonged inactivity). Supported parameter formats include:</p>
+ * typically return the same cached instance (subject to pool eviction after prolonged inactivity). Only SQL whose
+ * trimmed length does not exceed {@link #MAX_CACHEABLE_SQL_LENGTH} characters is cached; longer SQL is parsed fresh on
+ * every call, so that oversized statements (for example a batch {@code INSERT} with thousands of inlined rows) neither
+ * evict the small, frequently reused statements nor pin large strings in memory. Supported parameter formats include:</p>
  * <ul>
  *   <li>Named parameters: {@code :paramName} or a dotted property path such as
  *       {@code :user.address.city}</li>
@@ -178,6 +181,12 @@ import com.landawn.abacus.util.Strings;
  */
 public final class ParsedSql {
 
+    /**
+     * The maximum length (in {@code char}s, after {@link String#trim()}) of a SQL string that {@link #parse(String)}
+     * looks up in or stores into its cache. Longer SQL is parsed on every call and never cached.
+     */
+    static final int MAX_CACHEABLE_SQL_LENGTH = 4096;
+
     private static final int EVICT_TIME = 60 * 1000;
 
     private static final int LIVE_TIME = 24 * 60 * 60 * 1000;
@@ -243,15 +252,18 @@ public final class ParsedSql {
     /**
      * Parses a nonblank SQL string whose outer argument validation has already completed.
      *
-     * @param sql the nonblank SQL string
+     * @param inputSql the nonblank SQL string
      * @throws IllegalArgumentException if a recognized data-operation statement mixes parameter styles,
      *         contains an iBatis/MyBatis marker without a closing brace or with an empty property name
      *         ({@code #{:id}}), or contains an unpaired UTF-16
      *         surrogate in a prospective colon-style name, its preceding boundary, or immediately after
      *         a positional marker opening a standalone bracket group
      */
-    private ParsedSql(final String sql) {
-        this.sql = sql.trim();
+    private ParsedSql(final String inputSql) {
+        this.sql = inputSql.trim();
+        // String.trim() also strips control characters (U+0000..U+001F) that Strings.isBlank does not treat as blank.
+        N.checkArgument(Strings.isNotBlank(this.sql), "sql must not be null, empty, or blank");
+
         hashCode = this.sql.hashCode();
 
         final List<String> tokens = SqlParser.tokenize(this.sql);
@@ -654,7 +666,8 @@ public final class ParsedSql {
 
     /**
      * Parses the given SQL string and returns a {@code ParsedSql} instance.
-     * This method uses an internal cache to avoid re-parsing the same SQL statements.
+     * This method uses an internal cache to avoid re-parsing the same SQL statements; SQL longer than
+     * {@link #MAX_CACHEABLE_SQL_LENGTH} characters (after trimming) bypasses the cache and is parsed on every call.
      * The SQL is analyzed to extract named parameters and convert them to standard JDBC placeholders.
      *
      * <p>The parser automatically detects and converts different parameter styles:</p>
@@ -691,7 +704,8 @@ public final class ParsedSql {
      * }</pre>
      *
      * @param sql the SQL string to parse (must not be {@code null}, empty, or blank)
-     * @return a {@code ParsedSql} instance for the given SQL (typically a cached instance)
+     * @return a {@code ParsedSql} instance for the given SQL (typically a cached instance, unless the SQL is longer
+     *         than {@link #MAX_CACHEABLE_SQL_LENGTH} characters)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank (including SQL made up only of
      *         characters that {@link String#trim()} removes, such as control characters); or if parameter detection
      *         in a recognized data-operation statement finds mixed styles ({@code ?}, {@code :propName},
@@ -701,13 +715,9 @@ public final class ParsedSql {
      *         directly after a {@code '?'} opening the content of a standalone bracket group
      */
     public static ParsedSql parse(final String sql) {
-        N.checkArgument(!Strings.isBlank(sql), "sql must not be null, empty, or blank");
+        N.checkArgument(Strings.isNotBlank(sql), "sql must not be null, empty, or blank");
 
-        final String normalizedSql = sql.trim();
-        // String.trim() also strips control characters (U+0000..U+001F) that Strings.isBlank does not treat as blank.
-        N.checkArgument(!normalizedSql.isEmpty(), "sql must not be null, empty, or blank");
-
-        return parse(normalizedSql, pool);
+        return parse(sql, pool);
     }
 
     /**
@@ -734,7 +744,8 @@ public final class ParsedSql {
 
     /**
      * Returns the instance cached in {@code cache} for an already validated and trimmed SQL string, parsing and
-     * caching it on a miss.
+     * caching it on a miss. SQL longer than {@link #MAX_CACHEABLE_SQL_LENGTH} characters is neither looked up nor
+     * stored: it is parsed and returned directly.
      *
      * <p>A closed cache is a permanent miss rather than an error. The pool registers its own JVM shutdown hook
      * that closes it, after which its {@code get}/{@code put} throw {@code IllegalStateException}; shutdown hooks
@@ -743,17 +754,17 @@ public final class ParsedSql {
      * that could not be created at all, typically because shutdown had already begun when this class was initialized
      * ({@code cache} is {@code null}, see {@link #createCache(Supplier)}), is a permanent miss as well.</p>
      *
-     * @param normalizedSql the nonblank SQL, already trimmed by {@link String#trim()}
+     * @param inputSql the nonblank SQL, already trimmed by {@link String#trim()}
      * @param cache the cache to consult and fill, or {@code null} to parse without caching
      * @return the cached instance, or a newly parsed one
      * @throws IllegalArgumentException if the SQL is rejected by parameter detection (see {@link #parse(String)})
      */
-    static ParsedSql parse(final String normalizedSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache) {
-        if (cache == null) {
-            return new ParsedSql(normalizedSql);
+    static ParsedSql parse(final String inputSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache) {
+        if (cache == null || inputSql.length() > MAX_CACHEABLE_SQL_LENGTH) {
+            return new ParsedSql(inputSql);
         }
 
-        ParsedSql result = cachedValue(normalizedSql, cache);
+        ParsedSql result = cachedValue(inputSql, cache);
 
         if (result != null) {
             return result;
@@ -763,21 +774,21 @@ public final class ParsedSql {
         // first-touch parses of unrelated SQL strings. ParsedSql is immutable and value-equal, so a
         // racing thread may build a duplicate; the pooled winner is returned in that case and the
         // loser's instance is simply discarded. Its own exceptions propagate: only cache access is guarded.
-        final ParsedSql parsed = new ParsedSql(normalizedSql);
+        final ParsedSql parsed = new ParsedSql(inputSql);
 
         if (cache.isClosed()) {
             return parsed;
         }
 
         synchronized (cache) {
-            result = cachedValue(normalizedSql, cache);
+            result = cachedValue(inputSql, cache);
 
             if (result != null) {
                 return result;
             }
 
             try {
-                cache.put(normalizedSql, Poolable.wrap(parsed, LIVE_TIME, MAX_IDLE_TIME));
+                cache.put(inputSql, Poolable.wrap(parsed, LIVE_TIME, MAX_IDLE_TIME));
             } catch (final IllegalStateException e) {
                 // Closed concurrently (JVM shutdown): return the parsed instance uncached.
             }

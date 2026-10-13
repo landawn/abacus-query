@@ -3,12 +3,11 @@ package com.landawn.abacus.query.condition;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -19,10 +18,20 @@ import com.landawn.abacus.util.NamingPolicy;
  * Comprehensive test class for {@link Having}.
  * Tests all public methods including construction, toString, equals, hashCode, and inherited methods.
  */
-@Tag("2025")
 public class HavingTest extends TestBase {
+
     @Test
-    public void testConstructorWithCondition() {
+    void testConstructorWithComplexCondition() {
+        Condition innerCondition = Filters.and(Filters.gt("AVG(salary)", 50000), Filters.lt("COUNT(*)", 100));
+        Having having = new Having(innerCondition);
+
+        assertNotNull(having);
+        assertEquals(Operator.HAVING, having.operator());
+        assertEquals(innerCondition, having.condition());
+    }
+
+    @Test
+    void testConstructorWithCondition() {
         Equal condition = Filters.eq("COUNT(*)", 5);
         Having having = new Having(condition);
 
@@ -31,42 +40,25 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testToString() {
-        Having having = new Having(Filters.gt("COUNT(*)", 10));
-        String result = having.toString();
-
-        assertTrue(result.contains("HAVING"));
-        assertTrue(result.contains("COUNT(*)"));
+    void testConstructorWithNullCondition() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Having(null);
+        });
     }
 
     @Test
-    public void testToStringWithNamingPolicy() {
-        Having having = new Having(Filters.gt("COUNT(*)", 5));
-        String result = having.toSql(NamingPolicy.SNAKE_CASE);
+    void testEmptyJunctionRendersBooleanIdentity() {
+        // An initialized empty junction is a complete predicate, so HAVING accepts it and renders its identity.
+        assertEquals("HAVING 1 = 0", new Having(Filters.or()).toString());
+        assertEquals("HAVING 1 = 1", Filters.having(Filters.and()).toString());
+        assertTrue(new Having(Filters.and()).parameters().isEmpty());
 
-        assertNotNull(result);
-        assertTrue(result.contains("HAVING"));
+        assertThrows(IllegalArgumentException.class, () -> new Having(Filters.expr("  ")));
+        assertThrows(IllegalArgumentException.class, () -> new Having(new Or()));
     }
 
     @Test
-    public void testParameters() {
-        Having having = new Having(Filters.gt("SUM(amount)", 1000));
-
-        assertNotNull(having.parameters());
-        assertEquals(1, having.parameters().size());
-        assertEquals(1000, having.parameters().get(0));
-    }
-
-    @Test
-    public void testParametersWithMultipleConditions() {
-        Condition condition = Filters.and(Filters.gt("COUNT(*)", 5), Filters.lt("AVG(price)", 100));
-        Having having = new Having(condition);
-
-        assertEquals(2, having.parameters().size());
-    }
-
-    @Test
-    public void testEquals() {
+    void testEquals() {
         Having having1 = new Having(Filters.gt("COUNT(*)", 5));
         Having having2 = new Having(Filters.gt("COUNT(*)", 5));
         Having having3 = new Having(Filters.gt("COUNT(*)", 10));
@@ -77,14 +69,7 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testEqualsWithNull() {
-        Having having = new Having(Filters.gt("COUNT(*)", 5));
-
-        assertNotEquals(having, null);
-    }
-
-    @Test
-    public void testEqualsWithDifferentClass() {
+    void testEqualsWithDifferentClass() {
         Having having = new Having(Filters.gt("COUNT(*)", 5));
         Where where = new Where(Filters.gt("COUNT(*)", 5));
 
@@ -92,7 +77,20 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testHashCode() {
+    void testEqualsWithNull() {
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
+
+        assertNotEquals(having, null);
+    }
+
+    @Test
+    void testGetOperator() {
+        Having having = new Having(Filters.gt("COUNT(*)", 0));
+        assertEquals(Operator.HAVING, having.operator());
+    }
+
+    @Test
+    void testHashCode() {
         Having having1 = new Having(Filters.gt("COUNT(*)", 5));
         Having having2 = new Having(Filters.gt("COUNT(*)", 5));
 
@@ -100,7 +98,7 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testHashCodeConsistency() {
+    void testHashCodeConsistency() {
         Having having = new Having(Filters.gt("SUM(total)", 1000));
         int hash1 = having.hashCode();
         int hash2 = having.hashCode();
@@ -109,52 +107,7 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testWithAggregateFunction() {
-        Having having = new Having(Filters.gt("MAX(salary)", 100000));
-        String result = having.toSql(NamingPolicy.SNAKE_CASE);
-
-        assertTrue(result.contains("HAVING"));
-        assertTrue(result.contains("max") || result.contains("MAX"));
-    }
-
-    @Test
-    public void testWithMinFunction() {
-        Having having = new Having(Filters.lt("MIN(age)", 18));
-
-        assertNotNull(having);
-        assertEquals(1, having.parameters().size());
-        assertEquals(18, having.parameters().get(0));
-    }
-
-    @Test
-    public void testWithComplexCondition() {
-        Condition complex = Filters.and(Filters.gt("COUNT(*)", 10), Filters.between("AVG(salary)", 50000, 100000));
-        Having having = new Having(complex);
-
-        assertNotNull(having);
-        assertEquals(3, having.parameters().size());
-    }
-
-    @Test
-    public void testWithOrCondition() {
-        Condition orCondition = Filters.or(Filters.gt("SUM(revenue)", 1000000), Filters.eq("COUNT(*)", 0));
-        Having having = new Having(orCondition);
-
-        String result = having.toString();
-        assertTrue(result.contains("OR"));
-    }
-
-    @Test
-    public void testWithExpression() {
-        Having having = new Having(Filters.expr("COUNT(DISTINCT customer_id) > 100"));
-
-        assertNotNull(having);
-        String result = having.toString();
-        assertTrue(result.contains("HAVING"));
-    }
-
-    @Test
-    public void testInheritedGetConditionMethod() {
+    void testInheritedGetConditionMethod() {
         Equal condition = Filters.eq("COUNT(*)", 5);
         Having having = new Having(condition);
 
@@ -163,25 +116,7 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testOperatorType() {
-        Having having = new Having(Filters.gt("COUNT(*)", 0));
-
-        assertEquals(Operator.HAVING, having.operator());
-        assertNotEquals(Operator.WHERE, having.operator());
-        assertNotEquals(Operator.GROUP_BY, having.operator());
-    }
-
-    @Test
-    public void testWithBetweenCondition() {
-        Having having = new Having(Filters.between("AVG(age)", 25, 40));
-
-        assertEquals(2, having.parameters().size());
-        assertEquals(25, having.parameters().get(0));
-        assertEquals(40, having.parameters().get(1));
-    }
-
-    @Test
-    public void testMultipleAggregatesWithAnd() {
+    void testMultipleAggregatesWithAnd() {
         Condition condition = Filters.and(Filters.gt("COUNT(*)", 5), Filters.gt("SUM(amount)", 10000), Filters.lt("AVG(price)", 500));
         Having having = new Having(condition);
 
@@ -193,15 +128,45 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testWithNullSafeCondition() {
-        Having having = new Having(Filters.isNotNull("COUNT(*)"));
+    void testOperatorType() {
+        Having having = new Having(Filters.gt("COUNT(*)", 0));
 
-        assertNotNull(having);
-        assertEquals(0, having.parameters().size());
+        assertEquals(Operator.HAVING, having.operator());
+        assertNotEquals(Operator.WHERE, having.operator());
+        assertNotEquals(Operator.GROUP_BY, having.operator());
     }
 
     @Test
-    public void testStringRepresentationFormat() {
+    void testParameters() {
+        Having having = new Having(Filters.gt("SUM(amount)", 1000));
+
+        assertNotNull(having.parameters());
+        assertEquals(1, having.parameters().size());
+        assertEquals(1000, having.parameters().get(0));
+    }
+
+    @Test
+    void testParametersWithMultipleConditions() {
+        Condition condition = Filters.and(Filters.gt("COUNT(*)", 5), Filters.lt("AVG(price)", 100));
+        Having having = new Having(condition);
+
+        assertEquals(2, having.parameters().size());
+    }
+
+    @Test
+    void testParametersWithMultipleValues() {
+        Condition innerCondition = Filters.between("AVG(price)", 100, 500);
+        Having having = new Having(innerCondition);
+
+        List<Object> params = having.parameters();
+        assertNotNull(params);
+        assertEquals(2, params.size());
+        assertEquals(100, params.get(0));
+        assertEquals(500, params.get(1));
+    }
+
+    @Test
+    void testStringRepresentationFormat() {
         Having having = new Having(Filters.ge("COUNT(*)", 1));
         String result = having.toSql(NamingPolicy.NO_CHANGE);
 
@@ -210,7 +175,16 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testToString_NoArgs() {
+    void testToString() {
+        Having having = new Having(Filters.gt("COUNT(*)", 10));
+        String result = having.toString();
+
+        assertTrue(result.contains("HAVING"));
+        assertTrue(result.contains("COUNT(*)"));
+    }
+
+    @Test
+    void testToString_NoArgs() {
         Having having = new Having(Filters.gt("SUM(sales)", 50000));
         String result = having.toString();
 
@@ -219,54 +193,79 @@ public class HavingTest extends TestBase {
     }
 
     @Test
-    public void testGetOperator() {
-        Having having = new Having(Filters.gt("COUNT(*)", 0));
-        assertEquals(Operator.HAVING, having.operator());
+    void testToStringWithNamingPolicy() {
+        Having having = new Having(Filters.gt("COUNT(*)", 5));
+        String result = having.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertNotNull(result);
+        assertTrue(result.contains("HAVING"));
     }
 
     @Test
-    public void testWithIsNull() {
+    void testWithAggregateFunction() {
+        Having having = new Having(Filters.gt("MAX(salary)", 100000));
+        String result = having.toSql(NamingPolicy.SNAKE_CASE);
+
+        assertTrue(result.contains("HAVING"));
+        assertTrue(result.contains("max") || result.contains("MAX"));
+    }
+
+    @Test
+    void testWithBetweenCondition() {
+        Having having = new Having(Filters.between("AVG(age)", 25, 40));
+
+        assertEquals(2, having.parameters().size());
+        assertEquals(25, having.parameters().get(0));
+        assertEquals(40, having.parameters().get(1));
+    }
+
+    @Test
+    void testWithComplexCondition() {
+        Condition complex = Filters.and(Filters.gt("COUNT(*)", 10), Filters.between("AVG(salary)", 50000, 100000));
+        Having having = new Having(complex);
+
+        assertNotNull(having);
+        assertEquals(3, having.parameters().size());
+    }
+
+    @Test
+    void testWithExpression() {
+        Having having = new Having(Filters.expr("COUNT(DISTINCT customer_id) > 100"));
+
+        assertNotNull(having);
+        String result = having.toString();
+        assertTrue(result.contains("HAVING"));
+    }
+
+    @Test
+    void testWithIsNull() {
         Having having = new Having(Filters.isNull("MAX(deletedAt)"));
         assertEquals(0, having.parameters().size());
     }
 
     @Test
-    public void testConstructorWithComplexCondition() {
-        Condition innerCondition = Filters.and(Filters.gt("AVG(salary)", 50000), Filters.lt("COUNT(*)", 100));
-        Having having = new Having(innerCondition);
+    void testWithMinFunction() {
+        Having having = new Having(Filters.lt("MIN(age)", 18));
 
-        Assertions.assertNotNull(having);
-        Assertions.assertEquals(Operator.HAVING, having.operator());
-        Assertions.assertEquals(innerCondition, having.condition());
+        assertNotNull(having);
+        assertEquals(1, having.parameters().size());
+        assertEquals(18, having.parameters().get(0));
     }
 
     @Test
-    public void testParametersWithMultipleValues() {
-        Condition innerCondition = Filters.between("AVG(price)", 100, 500);
-        Having having = new Having(innerCondition);
+    void testWithNullSafeCondition() {
+        Having having = new Having(Filters.isNotNull("COUNT(*)"));
 
-        List<Object> params = having.parameters();
-        Assertions.assertNotNull(params);
-        Assertions.assertEquals(2, params.size());
-        Assertions.assertEquals(100, params.get(0));
-        Assertions.assertEquals(500, params.get(1));
+        assertNotNull(having);
+        assertEquals(0, having.parameters().size());
     }
 
     @Test
-    public void testConstructorWithNullCondition() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            new Having(null);
-        });
-    }
+    void testWithOrCondition() {
+        Condition orCondition = Filters.or(Filters.gt("SUM(revenue)", 1000000), Filters.eq("COUNT(*)", 0));
+        Having having = new Having(orCondition);
 
-    @Test
-    public void testEmptyJunctionRendersBooleanIdentity() {
-        // An initialized empty junction is a complete predicate, so HAVING accepts it and renders its identity.
-        assertEquals("HAVING 1 = 0", new Having(Filters.or()).toString());
-        assertEquals("HAVING 1 = 1", Filters.having(Filters.and()).toString());
-        assertTrue(new Having(Filters.and()).parameters().isEmpty());
-
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Having(Filters.expr("  ")));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Having(new Or()));
+        String result = having.toString();
+        assertTrue(result.contains("OR"));
     }
 }

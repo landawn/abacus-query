@@ -17,6 +17,7 @@ import com.landawn.abacus.annotation.Type;
  */
 @Table(name = "account", alias = "acc")
 public class Account {
+
     @Id
     private long id;
     private String gui;
