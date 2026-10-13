@@ -1,5 +1,13 @@
 package com.landawn.abacus.query;
 
+import static com.landawn.abacus.query.Dsl.MSC;
+import static com.landawn.abacus.query.Dsl.NSB;
+import static com.landawn.abacus.query.Dsl.NSC;
+import static com.landawn.abacus.query.Dsl.PAC;
+import static com.landawn.abacus.query.Dsl.PLC;
+import static com.landawn.abacus.query.Dsl.PSB;
+import static com.landawn.abacus.query.Dsl.PSC;
+import static com.landawn.abacus.query.Dsl.SCSB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -34,7 +42,6 @@ import com.landawn.abacus.annotation.Column;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.query.AbstractQueryBuilder.SP;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
-import static com.landawn.abacus.query.Dsl.*;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
@@ -1539,13 +1546,13 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) "   "));
 
         Map<String, Object> props = Collections.singletonMap("id", 1);
-        assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) props, Collections.singleton("id")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert(props, Collections.singleton("id")));
 
         Map<String, Object> blankProps = Collections.singletonMap("   ", 1);
-        assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) blankProps, Collections.singleton("   ")));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert(blankProps, Collections.singleton("   ")));
 
         Map<Object, Object> nonStringProps = Collections.singletonMap(1, "invalid column");
-        assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) nonStringProps));
+        assertThrows(IllegalArgumentException.class, () -> PSC.insert(nonStringProps));
     }
 
     @Test
@@ -2114,7 +2121,7 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Test
     public void testSetObjectOverloadRejectsArray() {
-        assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) new String[] { "firstName", "lastName" }));
+        assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set(new String[] { "firstName", "lastName" }));
     }
 
     @Test
@@ -4265,8 +4272,8 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals(PSC.selectFrom(Account.class, "", true).build().query(), blankAlias);
         assertTrue(blankAlias.startsWith("SELECT acc.id AS \"id\""), blankAlias);
         assertTrue(blankAlias.endsWith(" FROM account acc, device"), blankAlias);
-        assertEquals("acc", SqlBuilder.tableAlias(" ", Account.class));
-        assertEquals("a", SqlBuilder.tableAlias("a", Account.class));
+        assertEquals("acc", AbstractQueryBuilder.tableAlias(" ", Account.class));
+        assertEquals("a", AbstractQueryBuilder.tableAlias("a", Account.class));
     }
 
     // Regression: ClickHouse/DuckDB leading join modifiers (ANY, ALL, GLOBAL, ARRAY, POSITIONAL, PASTE) were not
@@ -4294,12 +4301,12 @@ public class AbstractQueryBuilderTest extends TestBase {
     public void testSubEntityTableSharedByTwoPropertiesIsRejectedAndSelfReferenceIsNotExpanded() {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(SubEntityPerson.class, true));
         assertTrue(e.getMessage().contains("'homeAddress' and 'workAddress'") && e.getMessage().contains("'address ad'"), e.getMessage());
-        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.buildFromTableRefs(SubEntityPerson.class, null, null, NamingPolicy.SNAKE_CASE));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.buildFromTableRefs(SubEntityPerson.class, null, null, NamingPolicy.SNAKE_CASE));
 
         // Multi-selection path.
         assertThrows(IllegalArgumentException.class,
                 () -> PSC.selectFrom(List.of(Selection.builder(SubEntityPerson.class).tableAlias("p").includeSubEntityProperties(true).build())));
-        assertThrows(IllegalArgumentException.class, () -> SqlBuilder.getFromClause(List
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.getFromClause(List
                 .of(Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("id", "homeAddress.city", "workAddress.city")).build()),
                 NamingPolicy.SNAKE_CASE));
 
@@ -4309,14 +4316,14 @@ public class AbstractQueryBuilderTest extends TestBase {
                         .build()
                         .query());
         assertEquals("person p, address ad",
-                SqlBuilder.getFromClause(List.of(Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("homeAddress")).build(),
+                AbstractQueryBuilder.getFromClause(List.of(Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("homeAddress")).build(),
                         Selection.builder(SubEntityAddress.class).tableAlias("ad").build()), NamingPolicy.SNAKE_CASE));
 
         // Self-referencing sub-entity: its cyclic paths are not selected and add no table.
         assertEquals("SELECT n.id AS \"id\", n.name AS \"name\" FROM node n", PSC.selectFrom(SubEntityNode.class, true).build().query());
         assertEquals("SELECT x.id AS \"id\", x.name AS \"name\" FROM node x", PSC.selectFrom(SubEntityNode.class, "x", true).build().query());
-        assertEquals(Arrays.asList("node n"), SqlBuilder.buildFromTableRefs(SubEntityNode.class, null, null, NamingPolicy.SNAKE_CASE));
-        assertEquals("node x", SqlBuilder.getFromClause(
+        assertEquals(Arrays.asList("node n"), AbstractQueryBuilder.buildFromTableRefs(SubEntityNode.class, null, null, NamingPolicy.SNAKE_CASE));
+        assertEquals("node x", AbstractQueryBuilder.getFromClause(
                 List.of(Selection.builder(SubEntityNode.class).tableAlias("x").includeSubEntityProperties(true).build()), NamingPolicy.SNAKE_CASE));
         assertEquals(Arrays.asList("id", "name"), QueryUtil.selectPropNames(SubEntityNode.class, true, null));
     }
@@ -4974,12 +4981,12 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals("No properties remain after exclusions are applied", e.getMessage());
 
         // An entity map that is empty to begin with still names the parameter.
-        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set((Object) new LinkedHashMap<String, Object>(), Set.of("a")));
+        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set(new LinkedHashMap<>(), Set.of("a")));
         assertTrue(e.getMessage().contains("entity"), e.getMessage());
 
         final Map<Object, Object> nonStringKey = new LinkedHashMap<>();
         nonStringKey.put(1, "x");
-        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set((Object) nonStringKey));
+        e = assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set(nonStringKey));
         assertTrue(e.getMessage().startsWith("entity keys must be non-blank strings"), e.getMessage());
 
         final Map<String, Object> blankKey = new LinkedHashMap<>();
@@ -5051,15 +5058,15 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Test
     public void testMultiSelectFromClauseListsEachTableReferenceOnce() {
         assertEquals("account a",
-                SqlBuilder.getFromClause(
+                AbstractQueryBuilder.getFromClause(
                         List.of(Selection.builder(Account.class).tableAlias("a").build(), Selection.builder(Account.class).tableAlias("a").build()),
                         NamingPolicy.SNAKE_CASE));
         assertEquals("account a, account b",
-                SqlBuilder.getFromClause(
+                AbstractQueryBuilder.getFromClause(
                         List.of(Selection.builder(Account.class).tableAlias("a").build(), Selection.builder(Account.class).tableAlias("b").build()),
                         NamingPolicy.SNAKE_CASE));
         assertEquals("account acc, device",
-                SqlBuilder.getFromClause(List.of(Selection.builder(Account.class).tableAlias("acc").includeSubEntityProperties(true).build(),
+                AbstractQueryBuilder.getFromClause(List.of(Selection.builder(Account.class).tableAlias("acc").includeSubEntityProperties(true).build(),
                         Selection.builder(com.landawn.abacus.query.entity.AccountDevice.class).build()), NamingPolicy.SNAKE_CASE));
     }
 

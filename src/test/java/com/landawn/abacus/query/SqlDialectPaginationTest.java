@@ -1,6 +1,6 @@
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.Dsl.*;
+import static com.landawn.abacus.query.Dsl.PSC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
-import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.SqlDialect.ProductInfo;
 import com.landawn.abacus.query.SqlDialect.SqlPolicy;
-import com.landawn.abacus.util.NamingPolicy;
+import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Limit;
+import com.landawn.abacus.util.NamingPolicy;
 
 /**
  * Per-product detection predicates on {@link ProductInfo} ({@code isMySQL()}, {@code isOracle()}, ...)

@@ -1,6 +1,14 @@
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.Dsl.*;
+import static com.landawn.abacus.query.Dsl.MSB;
+import static com.landawn.abacus.query.Dsl.MSC;
+import static com.landawn.abacus.query.Dsl.NSB;
+import static com.landawn.abacus.query.Dsl.NSC;
+import static com.landawn.abacus.query.Dsl.PAC;
+import static com.landawn.abacus.query.Dsl.PLC;
+import static com.landawn.abacus.query.Dsl.PSB;
+import static com.landawn.abacus.query.Dsl.PSC;
+import static com.landawn.abacus.query.Dsl.SCSB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -44,11 +52,11 @@ import com.landawn.abacus.query.SqlDialect.ProductInfo;
 import com.landawn.abacus.query.SqlDialect.SqlPolicy;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
-import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.Having;
 import com.landawn.abacus.query.condition.Junction;
 import com.landawn.abacus.query.condition.Limit;
 import com.landawn.abacus.query.condition.Operator;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
@@ -70,7 +78,7 @@ public class SqlBuilderTest extends TestBase {
         input.put("lastName", "excluded");
         final Set<String> excluded = new java.util.HashSet<>(Collections.singleton("lastName"));
         // Force the Object overload whose factory creates the owned snapshot.
-        final SqlBuilder builder = NSC.insert((Object) input, excluded);
+        final SqlBuilder builder = NSC.insert(input, excluded);
         input.clear();
         input.put("bad--column", "after");
         excluded.add("firstName");
@@ -14804,18 +14812,18 @@ public class SqlBuilderTest extends TestBase {
     @Test
     public void testInsertBeanKeepsDefaultValuedNonIdPrimitive() {
         // only null values and default-valued ID properties are skipped; a non-ID primitive at its default is inserted
-        final SP sp = PSC.insert((Object) new com.landawn.abacus.query.entity.Account()).into("t").build();
+        final SP sp = PSC.insert(new com.landawn.abacus.query.entity.Account()).into("t").build();
         assertEquals("INSERT INTO t (status) VALUES (?)", sp.query());
         assertEquals(Arrays.asList(0), sp.parameters());
 
         // a non-default ID is inserted (only a DEFAULT-valued ID is skipped)
-        final SP withId = PSC.insert((Object) new com.landawn.abacus.query.entity.Account(5)).into("t").build();
+        final SP withId = PSC.insert(new com.landawn.abacus.query.entity.Account(5)).into("t").build();
         assertEquals("INSERT INTO t (id, status) VALUES (?, ?)", withId.query());
         assertEquals(Arrays.asList(5L, 0), withId.parameters());
 
         // the reworded @throws: excluding the only insertable value leaves nothing to insert
         final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> PSC.insert((Object) new com.landawn.abacus.query.entity.Account(), N.asSet("status")).into("t").build());
+                () -> PSC.insert(new com.landawn.abacus.query.entity.Account(), N.asSet("status")).into("t").build());
         assertTrue(e.getMessage().contains("No insertable values remain"), e.getMessage());
     }
 

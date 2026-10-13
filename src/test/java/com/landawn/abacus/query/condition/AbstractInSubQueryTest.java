@@ -244,8 +244,8 @@ public class AbstractInSubQueryTest extends TestBase {
             }
         };
 
-        assertDoesNotThrow(() -> AbstractInSubQuery.validateSubQuerySelectArity(2, withNullProp));
-        assertThrows(IllegalArgumentException.class, () -> AbstractInSubQuery.validateSubQuerySelectArity(1, withNullProp));
+        assertDoesNotThrow(() -> AbstractCondition.validateSubQuerySelectArity(2, withNullProp));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.validateSubQuerySelectArity(1, withNullProp));
     }
 
     @Test

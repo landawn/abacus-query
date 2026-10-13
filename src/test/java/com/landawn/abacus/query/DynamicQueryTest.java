@@ -121,7 +121,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendCollectionValidatesAndRendersOneSnapshot() {
-        Collection<String> changingCollection = new AbstractCollection<String>() {
+        Collection<String> changingCollection = new AbstractCollection<>() {
             private int iteratorCalls;
 
             @Override
@@ -143,7 +143,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendCollectionRejectsSnapshotThatBecomesEmpty() {
-        Collection<String> disappearingCollection = new AbstractCollection<String>() {
+        Collection<String> disappearingCollection = new AbstractCollection<>() {
             @Override
             public java.util.Iterator<String> iterator() {
                 return Collections.emptyIterator();
@@ -187,7 +187,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendMapValidatesAndRendersOneSnapshot() {
-        Map<String, String> changingMap = new AbstractMap<String, String>() {
+        Map<String, String> changingMap = new AbstractMap<>() {
             private int entrySetCalls;
 
             @Override
@@ -210,7 +210,7 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     public void testSelectAppendMapRejectsSnapshotThatBecomesEmpty() {
-        Map<String, String> disappearingMap = new AbstractMap<String, String>() {
+        Map<String, String> disappearingMap = new AbstractMap<>() {
             @Override
             public Set<Entry<String, String>> entrySet() {
                 return Collections.emptySet();

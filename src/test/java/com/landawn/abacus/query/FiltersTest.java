@@ -31,7 +31,6 @@ import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.CrossJoin;
 import com.landawn.abacus.query.condition.Equal;
 import com.landawn.abacus.query.condition.Exists;
-import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.FullJoin;
 import com.landawn.abacus.query.condition.GreaterThan;
 import com.landawn.abacus.query.condition.GreaterThanOrEqual;
@@ -68,6 +67,7 @@ import com.landawn.abacus.query.condition.Operator;
 import com.landawn.abacus.query.condition.Or;
 import com.landawn.abacus.query.condition.OrderBy;
 import com.landawn.abacus.query.condition.RightJoin;
+import com.landawn.abacus.query.condition.SqlExpression;
 import com.landawn.abacus.query.condition.SubQuery;
 import com.landawn.abacus.query.condition.Using;
 import com.landawn.abacus.query.condition.Where;
@@ -2960,9 +2960,9 @@ public class FiltersTest extends TestBase {
     @Test
     public void testLikeObjectOperandsAndVarargsIn() {
         SubQuery subQuery = Filters.subQuery("SELECT pattern FROM patterns");
-        assertEquals(subQuery, Filters.like("name", (Object) subQuery).propValue());
+        assertEquals(subQuery, Filters.like("name", subQuery).propValue());
         SqlExpression expression = Filters.expr("LOWER(pattern)");
-        assertEquals(expression, Filters.notLike("name", (Object) expression).propValue());
+        assertEquals(expression, Filters.notLike("name", expression).propValue());
         assertEquals(Arrays.asList("NEW", "OPEN"), Filters.in("status", "NEW", "OPEN").parameters());
         assertEquals(Arrays.asList("CLOSED", "DELETED"), Filters.notIn("status", "CLOSED", "DELETED").parameters());
     }
@@ -3030,9 +3030,9 @@ public class FiltersTest extends TestBase {
         props.put("id", 4L);
 
         assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual((Object) props));
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual((Object) props, Arrays.asList("id")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(props, Arrays.asList("id")));
         assertThrows(IllegalArgumentException.class, () -> Filters.allEqual((Object) props));
-        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual((Object) props, Arrays.asList("id")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(props, Arrays.asList("id")));
     }
 
     private static Map<String, Object> mapWithUnstableSize() {

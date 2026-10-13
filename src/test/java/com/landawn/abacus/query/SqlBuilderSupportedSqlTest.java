@@ -15,7 +15,11 @@
  */
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.Dsl.*;
+import static com.landawn.abacus.query.Dsl.LCSB;
+import static com.landawn.abacus.query.Dsl.MSC;
+import static com.landawn.abacus.query.Dsl.NSC;
+import static com.landawn.abacus.query.Dsl.PSC;
+import static com.landawn.abacus.query.Dsl.SCSB;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;

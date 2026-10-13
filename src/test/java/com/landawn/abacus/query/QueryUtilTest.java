@@ -1,6 +1,6 @@
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.Dsl.*;
+import static com.landawn.abacus.query.Dsl.PSC;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -378,8 +378,8 @@ public class QueryUtilTest extends TestBase {
         // KEBAB_CASE / UPPER_CAMEL_CASE -- so the helper rendered "alias-only-entity ao" where the
         // FROM clause said "AliasOnlyEntity ao".
         for (final NamingPolicy np : NamingPolicy.values()) {
-            assertEquals(SqlBuilder.getTableName(AliasOnlyEntity.class, np) + " ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, np), np.name());
-            assertEquals(SqlBuilder.getTableName(Account.class, np) + " " + SqlBuilder.tableAlias(Account.class),
+            assertEquals(AbstractQueryBuilder.getTableName(AliasOnlyEntity.class, np) + " ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, np), np.name());
+            assertEquals(AbstractQueryBuilder.getTableName(Account.class, np) + " " + AbstractQueryBuilder.tableAlias(Account.class),
                     QueryUtil.tableNameAndAlias(Account.class, np), np.name());
         }
 

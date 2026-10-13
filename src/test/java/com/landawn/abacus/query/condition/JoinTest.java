@@ -276,7 +276,7 @@ public class JoinTest extends TestBase {
 
     @Test
     public void testConstructorValidatesCopiedJoinEntitySnapshotIsNotEmpty() {
-        Collection<String> inconsistentCollection = new java.util.AbstractCollection<String>() {
+        Collection<String> inconsistentCollection = new java.util.AbstractCollection<>() {
             @Override
             public java.util.Iterator<String> iterator() {
                 return java.util.Collections.emptyIterator();

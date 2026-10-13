@@ -546,7 +546,7 @@ public class AbstractInTest extends TestBase {
     public void testRowValueCollectionRowIsValidatedByCopiedWidthNotSize() {
         // A Collection row whose size() disagrees with its iterator: the tuple that gets rendered is the
         // iterated one, so its width (not size()) must match the arity.
-        final Collection<Object> oversized = new AbstractCollection<Object>() {
+        final Collection<Object> oversized = new AbstractCollection<>() {
             @Override
             public Iterator<Object> iterator() {
                 return Arrays.<Object> asList(1, 2, 3).iterator();
@@ -563,7 +563,7 @@ public class AbstractInTest extends TestBase {
                 () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(oversized)));
         assertEquals("Each value row must have exactly 2 element(s) to match the number of property names, but found at least 3", over.getMessage());
 
-        final Collection<Object> undersized = new AbstractCollection<Object>() {
+        final Collection<Object> undersized = new AbstractCollection<>() {
             @Override
             public Iterator<Object> iterator() {
                 return Arrays.<Object> asList(1).iterator();
@@ -581,7 +581,7 @@ public class AbstractInTest extends TestBase {
         assertEquals("Each value row must have exactly 2 element(s) to match the number of property names, but found 1", under.getMessage());
 
         // size() == arity but nothing to iterate: used to render "(a, b) IN (())"
-        final Collection<Object> emptyIterator = new AbstractCollection<Object>() {
+        final Collection<Object> emptyIterator = new AbstractCollection<>() {
             @Override
             public Iterator<Object> iterator() {
                 return Collections.emptyIterator();

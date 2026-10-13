@@ -539,7 +539,7 @@ public class JunctionTest extends TestBase {
 
     @Test
     public void testTrustedConstructorStillRejectsNonJunctionOperator() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.EQUAL, new java.util.ArrayList<Condition>(), true));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.EQUAL, new java.util.ArrayList<>(), true));
     }
 
     /**
