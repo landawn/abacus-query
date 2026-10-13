@@ -1295,8 +1295,7 @@ public class SqlMapperTest extends TestBase {
         SqlMapper mapper = new SqlMapper();
         mapper.add("q", "SELECT 1", Map.of("k", "a\u0001b"));
 
-        IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> mapper.saveTo(new ByteArrayOutputStream()));
+        IllegalStateException e = assertThrows(IllegalStateException.class, () -> mapper.saveTo(new ByteArrayOutputStream()));
         assertTrue(e.getMessage().contains("Attribute 'k' for 'q'"));
     }
 

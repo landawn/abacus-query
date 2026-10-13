@@ -130,7 +130,7 @@ public class Binary extends ComposableCondition {
      * when {@link #propValue} is (or, for {@code IN}/{@code NOT IN}, contains) an array, {@code Date},
      * {@code Calendar} or a nested {@link Condition} such as a {@link SubQuery}, a quantified
      * {@link All}/{@link Any}/{@link Some} operand or a {@link SqlExpression}. Computed once at construction
-     * because the operand is immutable afterwards. A nested condition counts as mutable because its own
+     * because the operand reference and normalized membership entries remain fixed. A nested condition counts as mutable because its own
      * {@code parameters()} may hand out fresh defensive copies that a memoized outer list would otherwise
      * share across calls.
      */
@@ -244,8 +244,10 @@ public class Binary extends ComposableCondition {
     /**
      * Returns the property value without an unchecked generic cast. Arrays, dates, and calendars are
      * defensively copied, including those nested in an {@code IN}/{@code NOT IN} membership list.
-     * Membership lists are returned as unmodifiable copies. A collection used as a scalar value
-     * by another operator retains its concrete type and identity; callers must not mutate that
+     * Membership lists are returned unmodifiable. The owned list may be reused only when none of its elements
+     * is an array, date, calendar, or nested {@link Condition}. Nested conditions themselves are retained by
+     * reference even when the outer list is copied. A collection used as a scalar value by another operator
+     * retains its concrete type and identity; callers must not mutate that
      * collection while the condition is in use.
      *
      * <p>A Boolean right-hand value of {@code IS}/{@code IS NOT} is normalized at construction to the
@@ -260,7 +262,8 @@ public class Binary extends ComposableCondition {
 
     /**
      * Returns the property value cast to the supplied runtime type.
-     * This is the type-safe companion to {@link #propValue()} when the expected value type is known.
+     * This is the type-safe companion to {@link #propValue()} when the expected value type is known,
+     * with the same defensive-copy and membership-list reuse rules.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -486,7 +489,7 @@ public class Binary extends ComposableCondition {
         }
 
         // The copies are wrapped unmodifiable so propValue() cannot leak a mutable view of the
-        // internal membership list (mutation would silently desync the memoized parameters/hashCode).
+        // internal membership list (mutation would silently desync the memoized parameters).
         if (propValue instanceof final Collection<?> values) {
             final List<Object> valuesCopy = new ArrayList<>(values.size());
 
@@ -583,6 +586,13 @@ public class Binary extends ComposableCondition {
     /** Returns a safe public view while preserving identity for immutable and application-defined values. */
     private Object copyPropValueForExposure(final Object value) {
         if (isCollectionOperator(operator()) && value instanceof final Collection<?> values) {
+            // Reuse only membership lists owned by the constructor. A subclass can override operator()
+            // to report IN for a scalar collection that still belongs to the caller.
+            // The shared parameter-cache flag conservatively excludes nested conditions from reuse as well.
+            if (isCollectionOperator(operator) && !rebuildParametersPerCall) {
+                return value;
+            }
+
             final List<Object> copy = new ArrayList<>(values.size());
 
             for (final Object element : values) {

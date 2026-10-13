@@ -3,6 +3,7 @@ package com.landawn.abacus.query;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,6 +15,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,6 +28,46 @@ import com.landawn.abacus.util.Objectory;
 
 @Tag("2025")
 public class DynamicQueryTest extends TestBase {
+    @Test
+    public void testRetainedDynamicClauseHandlesReleaseTheirBuffersAfterBuild() {
+        final DynamicQuery.Builder builder = DynamicQuery.builder();
+        final DynamicQuery.SelectClause select = builder.select().append("category");
+        final DynamicQuery.FromClause from = builder.from().append("events");
+        final DynamicQuery.WhereClause where = builder.where().append("active = ?");
+        final DynamicQuery.GroupByClause groupBy = builder.groupBy().append("category");
+        final DynamicQuery.HavingClause having = builder.having().append("COUNT(*) > ?");
+        final DynamicQuery.OrderByClause orderBy = builder.orderBy().append("category");
+
+        assertEquals("SELECT category FROM events WHERE active = ? GROUP BY category HAVING COUNT(*) > ? ORDER BY category", builder.build());
+
+        for (final DynamicQuery.ClauseBuilder clause : List.of(select, from, where, groupBy, having, orderBy)) {
+            assertNull(clause.sb, "A retained closed clause must not keep a recycled SQL buffer alive");
+            clause.close();
+            assertThrows(IllegalStateException.class, clause::assertNotClosed);
+        }
+
+        assertThrows(IllegalStateException.class, () -> select.append("id"));
+        assertThrows(IllegalStateException.class, () -> from.append("other_events"));
+        assertThrows(IllegalStateException.class, () -> where.and("id = ?"));
+        assertThrows(IllegalStateException.class, () -> groupBy.append("id"));
+        assertThrows(IllegalStateException.class, () -> having.or("COUNT(*) = ?"));
+        assertThrows(IllegalStateException.class, () -> orderBy.append("id"));
+        assertThrows(IllegalStateException.class, builder::build);
+    }
+
+    @Test
+    public void testEmptyDynamicClauseHandlesReleaseTheirBuffers() {
+        final DynamicQuery.Builder builder = DynamicQuery.builder();
+        final List<DynamicQuery.ClauseBuilder> clauses = List.of(builder.select(), builder.from(), builder.where(), builder.groupBy(), builder.having(),
+                builder.orderBy());
+
+        assertEquals("", builder.build());
+
+        for (final DynamicQuery.ClauseBuilder clause : clauses) {
+            assertNull(clause.sb);
+        }
+    }
+
     @Test
     public void testCreate() {
         Builder builder = DynamicQuery.builder();

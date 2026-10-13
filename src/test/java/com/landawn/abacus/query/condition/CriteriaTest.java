@@ -33,8 +33,7 @@ public class CriteriaTest extends TestBase {
         final Criteria customModifier = Criteria.builder().selectModifier("DISTINCT -- trailing comment").where(Filters.eq("active", true)).build();
         final Criteria distinctOn = Criteria.builder().distinctOn("id -- trailing comment").where(Filters.eq("active", true)).build();
 
-        org.junit.jupiter.api.Assertions.assertAll(
-                () -> assertEquals(" DISTINCT -- trailing comment\n WHERE active = true", customModifier.toString()),
+        org.junit.jupiter.api.Assertions.assertAll(() -> assertEquals(" DISTINCT -- trailing comment\n WHERE active = true", customModifier.toString()),
                 () -> assertEquals(" DISTINCT ON (id -- trailing comment\n) WHERE active = true", distinctOn.toString()),
                 () -> assertEquals("DISTINCT -- trailing comment", customModifier.selectModifier()),
                 () -> assertEquals(" DISTINCT -- trailing comment", Criteria.builder().selectModifier("DISTINCT -- trailing comment").build().toString()),
@@ -1837,21 +1836,20 @@ public class CriteriaTest extends TestBase {
     public void testPairOverloadsRejectDuplicatePropertyName() {
         final String expectedFragment = "Duplicate property name";
 
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a", SortDirection.DESC, "a", SortDirection.ASC))
-                .getMessage()
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a", SortDirection.DESC, "a", SortDirection.ASC)).getMessage()
                 .contains(expectedFragment));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("a", SortDirection.DESC, "a", SortDirection.ASC))
-                .getMessage()
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("a", SortDirection.DESC, "a", SortDirection.ASC)).getMessage()
                 .contains(expectedFragment));
         assertTrue(assertThrows(IllegalArgumentException.class,
                 () -> Criteria.builder().orderBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC)).getMessage()
-                .contains(expectedFragment));
+                        .contains(expectedFragment));
         assertTrue(assertThrows(IllegalArgumentException.class,
                 () -> Criteria.builder().groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "b", SortDirection.DESC)).getMessage()
-                .contains(expectedFragment));
+                        .contains(expectedFragment));
 
         // Distinct names keep working, in call order.
-        assertEquals(" ORDER BY a DESC, b ASC", Criteria.builder().orderBy("a", SortDirection.DESC, "b", SortDirection.ASC).build().toSql(NamingPolicy.NO_CHANGE));
+        assertEquals(" ORDER BY a DESC, b ASC",
+                Criteria.builder().orderBy("a", SortDirection.DESC, "b", SortDirection.ASC).build().toSql(NamingPolicy.NO_CHANGE));
         assertEquals(" GROUP BY a ASC, b ASC, c DESC",
                 Criteria.builder().groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "c", SortDirection.DESC).build().toSql(NamingPolicy.NO_CHANGE));
 
@@ -1995,7 +1993,11 @@ public class CriteriaTest extends TestBase {
         assertEquals("SELECT DISTINCT a FROM t",
                 com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("-- x").build()).build().query());
         assertEquals("SELECT DISTINCT a FROM t WHERE b = ?",
-                com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("# x").where(Filters.eq("b", 1)).build()).build().query());
+                com.landawn.abacus.query.Dsl.PSC.select("a")
+                        .from("t")
+                        .append(Criteria.builder().distinctOn("# x").where(Filters.eq("b", 1)).build())
+                        .build()
+                        .query());
         assertEquals("SELECT DISTINCT ON (a -- x\n) a FROM t",
                 com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("a -- x").build()).build().query());
     }

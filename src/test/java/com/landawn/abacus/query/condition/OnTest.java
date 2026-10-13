@@ -444,7 +444,8 @@ public class OnTest extends TestBase {
                 .namingPolicy(NamingPolicy.SNAKE_CASE)
                 .sqlPolicy(com.landawn.abacus.query.SqlDialect.SqlPolicy.PARAMETERIZED_SQL)
                 .build());
-        assertEquals("SELECT * FROM a JOIN #tmp ON (a.id = #tmp.id)", sqlServer.select("*").from("a").join("#tmp").on(new On("a.id", "#tmp.id")).build().query());
+        assertEquals("SELECT * FROM a JOIN #tmp ON (a.id = #tmp.id)",
+                sqlServer.select("*").from("a").join("#tmp").on(new On("a.id", "#tmp.id")).build().query());
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.on("a.id", "/* x */"));
         assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());

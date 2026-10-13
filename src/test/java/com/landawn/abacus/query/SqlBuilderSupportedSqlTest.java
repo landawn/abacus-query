@@ -591,8 +591,8 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
         // "?" inside quoted literals, comments and bracket-quoted identifiers is still never rewritten, and
         // leading whitespace in the raw text (ParsedSql trims it) does not shift the substituted positions.
         final SubQuery tricky = new SubQuery("  SELECT id FROM x WHERE k = 'a?' AND [w?] = ? /* ? */ -- ?\n AND z = ? ", List.of("p", 2));
-        assertSp("SELECT * FROM account WHERE id IN (  SELECT id FROM x WHERE k = 'a?' AND [w?] = :param /* ? */ -- ?\n AND z = :param_2 )",
-                List.of("p", 2), NSC.select("*").from("account").where(Filters.in("id", tricky)).build());
+        assertSp("SELECT * FROM account WHERE id IN (  SELECT id FROM x WHERE k = 'a?' AND [w?] = :param /* ? */ -- ?\n AND z = :param_2 )", List.of("p", 2),
+                NSC.select("*").from("account").where(Filters.in("id", tricky)).build());
         assertSp("SELECT * FROM account WHERE id IN (  SELECT id FROM x WHERE k = 'a?' AND [w?] = 'p' /* ? */ -- ?\n AND z = 2 )", List.of(),
                 SCSB.select("*").from("account").where(Filters.in("id", tricky)).build());
     }
@@ -648,8 +648,7 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
         assertEquals(List.of(), scsbExists.parameters());
 
         final SP lcsb = LCSB.select("*").from("account").where(Filters.notIn("id", raw)).build();
-        assertEquals("SELECT * FROM account WHERE id NOT IN (SELECT id FROM orders WHERE x = 1 AND y = 'O''Brien' AND z = null AND t < NOW())",
-                lcsb.query());
+        assertEquals("SELECT * FROM account WHERE id NOT IN (SELECT id FROM orders WHERE x = 1 AND y = 'O''Brien' AND z = null AND t < NOW())", lcsb.query());
         assertEquals(List.of(), lcsb.parameters());
         assertEquals(-1, lcsb.query().indexOf('?'));
 

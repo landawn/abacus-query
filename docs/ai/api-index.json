@@ -2,10 +2,10 @@
   "library": {
     "name": "abacus-query",
     "version": "4.9.5",
-    "generated_at": "2026-10-03",
+    "generated_at": "2026-10-12",
     "java_target": "21",
     "source": {
-      "git_sha": "c3ca6bc8ac4e653735c2a39b54694b26298434c5"
+      "git_sha": "48b1b8d93cd885a375fe765d2f4b1787d55864cb"
     }
   },
   "packages": [
@@ -3898,7 +3898,7 @@
               "javadoc_summary": "Sets a single column or raw assignment expression for an UPDATE operation.",
               "returns": "this SqlBuilder instance for method chaining",
               "contract": [
-                "If expr contains an = sign, it is treated as a complete assignment and no placeholder is generated (identifiers are still normalized according to the naming policy)."
+                "If expr contains a top-level = sign outside quoted text, it is treated as a complete assignment and no placeholder is generated (identifiers are still normalized according to the naming policy)."
               ],
               "examples": [
                 "// Raw assignment expression (already contains '='):\nString sql = PSC.update(\"users\")\n                .set(\"name = 'John'\")\n                .where(Filters.equal(\"id\", 1))\n                .build().query();\n// Output: UPDATE users SET name = 'John' WHERE id = ?\n\n// Column name (placeholder is generated):\nString sql2 = PSC.update(\"users\")\n                 .set(\"status\")\n                 .where(Filters.equal(\"id\", 1))\n                 .build().query();\n// Output: UPDATE users SET status = ? WHERE id = ?"
@@ -3939,7 +3939,7 @@
               "javadoc_summary": "Sets columns for UPDATE operation with a collection of property or column names.",
               "returns": "this SqlBuilder instance for method chaining",
               "contract": [
-                "If a column name already contains an = sign, it is treated as a raw SET expression and no placeholder is appended."
+                "If an item contains a top-level = sign outside quoted text, it is treated as a raw SET expression and no placeholder is appended."
               ],
               "examples": [
                 "List<String> columns = Arrays.asList(\"firstName\", \"lastName\", \"email\");\nString sql = PSC.update(\"users\")\n                .set(columns)\n                .where(\"id = ?\")\n                .build().query();\n// Output: UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE id = ?"
@@ -4387,7 +4387,8 @@
               "javadoc_summary": "Generates the final SQL string and its parameters as an SP pair, then releases resources.",
               "returns": "an SP (SQL-Parameters) pair containing the SQL string and parameter list",
               "contract": [
-                "Once final rendering begins, the builder is closed even if rendering fails."
+                "Once final rendering begins, the builder is closed even if rendering fails.",
+                "Subclasses must capture any needed staged inputs before final rendering."
               ],
               "examples": [
                 "// Get SQL and parameters together\nSP sqlPair = PSC.select(\"*\")\n                .from(\"account\")\n                .where(Filters.equal(\"status\", \"ACTIVE\"))\n                .build();\n// sqlPair.query() returns: \"SELECT * FROM account WHERE status = ?\"\n// sqlPair.parameters() returns: [\"ACTIVE\"]\n\n// Get just the SQL string\nString sql = PSC.select(\"*\")\n                .from(\"users\")\n                .where(Filters.equal(\"status\", \"ACTIVE\"))\n                .build()\n                .query();\n// Output: SELECT * FROM users WHERE status = ?"
@@ -15915,7 +15916,7 @@
                 {
                   "name": "values",
                   "type": "Object[]",
-                  "javadoc": "array of non-null values to exclude; a single Collection or array argument (other than byte[], which stays one binary value) is treated as the value list itself, so in(p, (Object) List.of(1, 2)) renders p IN (1, 2); to compare against a single collection-valued value, wrap it: in(p, List.of(list)). An Object[] holding exactly one array or collection is unpacked the same way",
+                  "javadoc": "array of non-null values to exclude; a single Collection or array argument (other than byte[], which stays one binary value) is treated as the value list itself, so notIn(p, (Object) List.of(1, 2)) renders p NOT IN (1, 2); to compare against a single collection-valued value, wrap it: notIn(p, List.of(list)). An Object[] holding exactly one array or collection is unpacked the same way",
                   "nullability": "unspecified"
                 }
               ],
@@ -23416,6 +23417,8 @@
               "javadoc_summary": "Returns the property value without an unchecked generic cast.",
               "returns": "the property value, which may be null",
               "contract": [
+                "The owned list may be reused only when none of its elements is an array, date, calendar, or nested Condition.",
+                "Nested conditions themselves are retained by reference even when the outer list is copied.",
                 "A collection used as a scalar value by another operator retains its concrete type and identity; callers must not mutate that collection while the condition is in use."
               ],
               "examples": [],
@@ -23458,7 +23461,7 @@
               "javadoc_summary": "Returns the property value cast to the supplied runtime type.",
               "returns": "the property value cast to valueType, or null when the stored value is null; known mutable JDK values are returned as defensive copies",
               "contract": [
-                "This is the type-safe companion to #propValue() when the expected value type is known."
+                "This is the type-safe companion to #propValue() when the expected value type is known, with the same defensive-copy and membership-list reuse rules."
               ],
               "examples": [
                 "Equal cond = new Equal(\"status\", \"active\");\nString status = cond.propValueAs(String.class);   // \"active\""

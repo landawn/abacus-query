@@ -1,21 +1,28 @@
 package com.landawn.abacus.query.condition;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Array;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -67,8 +74,7 @@ public class AbstractConditionTest extends TestBase {
         assertEquals(propName + "\n DESC", AbstractCondition.createSortSpec(propName, SortDirection.DESC));
         assertEquals(propName + "\n DESC, lastName DESC", AbstractCondition.createSortSpec(List.of(propName, "lastName"), SortDirection.DESC));
         assertEquals(propName + "\n DESC", AbstractCondition.createSortSpec(java.util.Map.of(propName, SortDirection.DESC)));
-        assertEquals("ORDER BY first_name DESC, last_name DESC",
-                new OrderBy(List.of(propName, "lastName"), SortDirection.DESC).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("ORDER BY first_name DESC, last_name DESC", new OrderBy(List.of(propName, "lastName"), SortDirection.DESC).toSql(NamingPolicy.SNAKE_CASE));
     }
 
     @Test
@@ -107,10 +113,8 @@ public class AbstractConditionTest extends TestBase {
         assertEquals(Arrays.asList(1, true), new NotBetween("accountId", 1, singleColumn).parameters());
         assertEquals(Arrays.asList(true), new In("accountId", Arrays.asList(singleColumn)).parameters());
         assertEquals(Arrays.asList(1, true), new NotIn("accountId", Arrays.asList(1, singleColumn)).parameters());
-        assertEquals(Arrays.asList(true, 2),
-                new In(Arrays.asList("accountId", "tenantId"), Arrays.asList(Arrays.asList(singleColumn, 2))).parameters());
-        assertEquals(Arrays.asList(1, true),
-                new NotIn(Arrays.asList("accountId", "tenantId"), Arrays.asList(Arrays.asList(1, singleColumn))).parameters());
+        assertEquals(Arrays.asList(true, 2), new In(Arrays.asList("accountId", "tenantId"), Arrays.asList(Arrays.asList(singleColumn, 2))).parameters());
+        assertEquals(Arrays.asList(1, true), new NotIn(Arrays.asList("accountId", "tenantId"), Arrays.asList(Arrays.asList(1, singleColumn))).parameters());
     }
 
     @Test
@@ -121,8 +125,8 @@ public class AbstractConditionTest extends TestBase {
 
         // Raw text is not parsed for column count, and a wildcard can expand beyond its list entry.
         for (final SubQuery unknownArity : Arrays.asList(new SubQuery("SELECT id, tenantId FROM accounts WHERE active = ?", Arrays.asList(true)),
-                new SubQuery("accounts", "*", new Equal("active", true)),
-                new SubQuery("accounts a", Arrays.asList("id", "a.*"), new Equal("active", true)), builderSnapshot)) {
+                new SubQuery("accounts", "*", new Equal("active", true)), new SubQuery("accounts a", Arrays.asList("id", "a.*"), new Equal("active", true)),
+                builderSnapshot)) {
             assertSame(unknownArity, new Equal("accountId", unknownArity).propValue());
             assertSame(unknownArity, new Binary("accountId", Operator.IN, unknownArity).propValue());
             assertSame(unknownArity, new Binary("accountId", Operator.NOT_IN, unknownArity).propValue());
@@ -750,7 +754,7 @@ public class AbstractConditionTest extends TestBase {
         final Collection<String> propNames = new AbstractCollection<>() {
             @Override
             public Iterator<String> iterator() {
-                return List.<String>of().iterator();
+                return List.<String> of().iterator();
             }
 
             @Override
@@ -887,11 +891,11 @@ public class AbstractConditionTest extends TestBase {
 
     @Test
     public void testClauseKeywordColumnFollowedByExtendedPredicateOperatorIsNotAClause() {
-        for (final String predicate : new String[] { "offset <=> 5", "offset == 5", "offset ^= 5", "offset !< 5", "offset !> 5", "offset ~ 'x'",
-                "minus ~'x'", "offset !~ 'x'", "offset ~* 'x'", "offset !~* 'x'", "offset REGEXP 'x'", "offset rlike 'x'", "minus GLOB 'x*'",
-                "offset REGEXP col2", "offset SIMILAR TO 'x'", "offset similar to'x'", "offset NOT REGEXP 'x'", "offset NOT RLIKE 'x'",
-                "offset NOT GLOB 'x'", "offset NOT SIMILAR TO 'x'", "offset LIKE'x%'", "offset ILIKE'x%'", "offset REGEXP'x'",
-                "offset BETWEEN'1' AND '2'", "offset NOT LIKE'x%'", "offset IN(1, 2)", "offset /* c */ <=> 5" }) {
+        for (final String predicate : new String[] { "offset <=> 5", "offset == 5", "offset ^= 5", "offset !< 5", "offset !> 5", "offset ~ 'x'", "minus ~'x'",
+                "offset !~ 'x'", "offset ~* 'x'", "offset !~* 'x'", "offset REGEXP 'x'", "offset rlike 'x'", "minus GLOB 'x*'", "offset REGEXP col2",
+                "offset SIMILAR TO 'x'", "offset similar to'x'", "offset NOT REGEXP 'x'", "offset NOT RLIKE 'x'", "offset NOT GLOB 'x'",
+                "offset NOT SIMILAR TO 'x'", "offset LIKE'x%'", "offset ILIKE'x%'", "offset REGEXP'x'", "offset BETWEEN'1' AND '2'", "offset NOT LIKE'x%'",
+                "offset IN(1, 2)", "offset /* c */ <=> 5" }) {
             Assertions.assertFalse(AbstractCondition.isClause(Filters.expr(predicate)), predicate);
         }
 
@@ -903,8 +907,8 @@ public class AbstractConditionTest extends TestBase {
     @Test
     public void testRealClausesStillClassifiedAsClausesAfterOperatorWidening() {
         for (final String clause : new String[] { "OFFSET 5 ROWS", "OFFSET 5", "WHERE a = 1", "LIMIT 10", "UNION SELECT 1", "ORDER BY x", "GROUP BY x",
-                "WHERE ~flags & 4 = 0", "WHERE glob = 1", "WHERE regexp IS NULL", "WHERE rlike NOT IN (1)", "WHERE NOT regexp = 1",
-                "WHERE similar = 1", "WHERE glob", "HAVING COUNT(*) > 1", "EXCEPT SELECT 1", "MINUS SELECT 1" }) {
+                "WHERE ~flags & 4 = 0", "WHERE glob = 1", "WHERE regexp IS NULL", "WHERE rlike NOT IN (1)", "WHERE NOT regexp = 1", "WHERE similar = 1",
+                "WHERE glob", "HAVING COUNT(*) > 1", "EXCEPT SELECT 1", "MINUS SELECT 1" }) {
             Assertions.assertTrue(AbstractCondition.isClause(Filters.expr(clause)), clause);
         }
 
@@ -931,8 +935,7 @@ public class AbstractConditionTest extends TestBase {
 
     @Test
     public void testJunctionConstructorRejectionOmitsEmptyOperator() {
-        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> Filters.and(Filters.eq("a", 1), Filters.subQuery("select 1")));
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.subQuery("select 1")));
         assertTrue(e.getMessage().contains("SubQuery"), e.getMessage());
         Assertions.assertFalse(e.getMessage().contains("operator ''"), e.getMessage());
 
@@ -980,7 +983,8 @@ public class AbstractConditionTest extends TestBase {
         // Covers clause detection for a glued third keyword and a glued bracket, ON/USING connectors glued to a quoted or
         // bracketed name inside a Join, and identifier near misses that must stay predicates.
         assertTrue(AbstractCondition.isClause(Filters.expr("LEFT OUTER JOIN\"t\" ON 1=1")));
-        assertEquals("SELECT id FROM t LEFT OUTER JOIN\"t\" ON 1=1", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("LEFT OUTER JOIN\"t\" ON 1=1")).toString());
+        assertEquals("SELECT id FROM t LEFT OUTER JOIN\"t\" ON 1=1",
+                Filters.subQuery("t", Arrays.asList("id"), Filters.expr("LEFT OUTER JOIN\"t\" ON 1=1")).toString());
         assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("LEFT OUTER JOIN\"t\" ON 1=1")));
         assertEquals("SELECT id FROM t ORDER BY[id]", Filters.subQuery("t", Arrays.asList("id"), Filters.expr("ORDER BY[id]")).toString());
         assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.eq("a", 1), Filters.expr("ORDER BY[id]")));
@@ -1131,5 +1135,72 @@ public class AbstractConditionTest extends TestBase {
         final InSubQuery spaced = new InSubQuery(List.of("id", "name"), new SubQuery("users", List.of("users.\n\t*"), new Equal("active", true)));
         assertEquals("SELECT id FROM accounts WHERE (id, name) IN (SELECT users. * FROM users WHERE active = ?)",
                 Dsl.PSC.select("id").from("accounts").where(spaced).build().query());
+    }
+
+    @Test
+    public void testScalarSnapshotsRetainTheirIdentity() {
+        assertNull(AbstractCondition.snapshotMutableValue(null));
+
+        for (final Object value : List.of("literal", 42, Boolean.TRUE, new Object())) {
+            assertSame(value, AbstractCondition.snapshotMutableValue(value));
+        }
+    }
+
+    @Test
+    public void testPrimitiveArraySnapshotsKeepTheirTypeAndStorageIsolated() {
+        for (final Object value : List.of(new boolean[] { true, false }, new byte[] { 1, 2 }, new short[] { 1, 2 }, new char[] { 'a', 'b' }, new int[] { 1, 2 },
+                new long[] { 1, 2 }, new float[] { 1, 2 }, new double[] { 1, 2 })) {
+            final Object copy = AbstractCondition.snapshotMutableValue(value);
+            assertNotSame(value, copy);
+            assertEquals(value.getClass(), copy.getClass());
+            assertEquals(Array.get(value, 0), Array.get(copy, 0));
+            assertEquals(Array.get(value, 1), Array.get(copy, 1));
+
+            final Object firstValue = Array.get(value, 0);
+            Array.set(copy, 0, Array.get(copy, 1));
+            assertEquals(Array.get(value, 1), Array.get(copy, 0));
+            assertEquals(firstValue, Array.get(value, 0));
+            assertEquals(2, Array.getLength(value));
+        }
+    }
+
+    @Test
+    public void testReferenceArraySnapshotsCopyMutableLeavesAndAllowRepeatedReferences() {
+        final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        calendar.setTimeInMillis(1_000L);
+        final Date date = new Date(2_000L);
+        final Object[] shared = { new byte[] { 1, 2 }, date, calendar, null };
+        final Object[][] input = { shared, shared };
+
+        final Object[][] copy = (Object[][]) AbstractCondition.snapshotMutableValue(input);
+        assertNotSame(input, copy);
+        assertNotSame(shared, copy[0]);
+        assertNotSame(copy[0], copy[1]);
+        assertEquals(input.getClass(), copy.getClass());
+        assertNull(copy[0][3]);
+
+        ((byte[]) copy[0][0])[0] = 9;
+        ((Date) copy[0][1]).setTime(9_000L);
+        ((Calendar) copy[0][2]).setTimeInMillis(9_000L);
+
+        for (final Object[] row : new Object[][] { shared, copy[1] }) {
+            assertArrayEquals(new byte[] { 1, 2 }, (byte[]) row[0]);
+            assertEquals(2_000L, ((Date) row[1]).getTime());
+            assertEquals(1_000L, ((Calendar) row[2]).getTimeInMillis());
+        }
+    }
+
+    @Test
+    public void testArraySnapshotsRejectDirectAndIndirectCycles() {
+        final Object[] direct = new Object[1];
+        direct[0] = direct;
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.snapshotMutableValue(direct));
+
+        final Object[] first = new Object[1];
+        final Object[] second = { first };
+        first[0] = second;
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.snapshotMutableValue(first));
+
+        assertArrayEquals(new Object[] { "still usable" }, (Object[]) AbstractCondition.snapshotMutableValue(new Object[] { "still usable" }));
     }
 }

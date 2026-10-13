@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.IntPredicate;
 
+import com.landawn.abacus.util.IntList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.SK;
 import com.landawn.abacus.util.Strings;
@@ -963,9 +964,9 @@ public final class SqlParser {
     private static List<String> tokenize(final String sql, final TokenizerConfig tokenizerConfig) {
         final int sqlLength = sql.length();
         HashScanMemo memo = null;
-        // Preserve the source-length estimate: capping it creates extra backing arrays for dense
-        // operator streams, even when token strings themselves can be reused.
-        final List<String> tokens = new ArrayList<>(Math.max(16, sqlLength / 4));
+        // Source length can overestimate token count: a large literal or discarded comment may yield only one token.
+        // Preserve the estimate through 32 KiB statements, while bounding unused slots for large sparse input.
+        final List<String> tokens = new ArrayList<>(Math.max(16, Math.min(8192, sqlLength / 4)));
         int tokenStart = -1;
         int keepComments = -1;
 
@@ -1959,6 +1960,9 @@ public final class SqlParser {
             return true;
         }
 
+        IntList listContexts = null;
+        boolean identifierContext = false;
+
         // Walk backward over ","-separated list elements until something other than a list
         // continuation anchors the decision. Only the first skip above is (in the line-comment-aware
         // flavor) line-comment-aware; the per-element steps skip whitespace and block comments only
@@ -1969,12 +1973,24 @@ public final class SqlParser {
             final char ch = str.charAt(left);
 
             if (ch == ',') {
+                final int knownContext = memo.hashListContextState(str, left);
+
+                if (knownContext >= 0) {
+                    identifierContext = knownContext == 1;
+                    break;
+                }
+
+                if (listContexts == null) {
+                    listContexts = new IntList(2);
+                }
+
+                listContexts.add(left);
                 final int beforeComma = skipBackwardWhitespaceAndBlockComments(str, left - 1, memo);
                 final int beforeElement = skipBackwardListElement(str, beforeComma, tokenizerConfig, memo);
 
                 if (beforeElement >= beforeComma) {
                     // No recognizable list element before the ',' -> not an identifier list.
-                    return false;
+                    break;
                 }
 
                 left = skipBackwardWhitespaceAndBlockComments(str, beforeElement, memo);
@@ -1982,7 +1998,7 @@ public final class SqlParser {
             }
 
             if (!isIdentifierChar(ch)) {
-                return false;
+                break;
             }
 
             int tokenStart = left;
@@ -1991,10 +2007,19 @@ public final class SqlParser {
                 tokenStart--;
             }
 
-            return matchesAnyToken(str, tokenStart + 1, left + 1, hashIdentifierContextKeywords);
+            identifierContext = matchesAnyToken(str, tokenStart + 1, left + 1, hashIdentifierContextKeywords);
+            break;
         }
 
-        return false;
+        // Every visited comma has the same governing keyword. Reuse that conclusion for the next
+        // temp-table name instead of walking the entire FROM list again (quadratic for long lists).
+        if (listContexts != null) {
+            for (int i = 0, size = listContexts.size(); i < size; i++) {
+                memo.rememberHashListContextState(str, listContexts.get(i), identifierContext);
+            }
+        }
+
+        return identifierContext;
     }
 
     /**
@@ -2088,7 +2113,9 @@ public final class SqlParser {
      * units (a name plus an optional trailing alias, with a free {@code AS} between them) where
      * each unit is a dot-qualified chain of segments and each segment is an identifier token
      * (optionally prefixed with {@code #} or {@code ##}), a quoted/bracket-quoted identifier, or a
-     * balanced parenthesized derived-table expression.
+     * balanced parenthesized derived-table expression. When a trailing alias has used one unit,
+     * a function's argument list is consumed with its name as the remaining unit, including when
+     * whitespace or block comments separate the name and opening parenthesis.
      *
      * <p>Returns the index of the first character before the consumed element (possibly
      * {@code -1}), or {@code start} unchanged if no element was recognized there. A hash-identifier
@@ -2121,6 +2148,24 @@ public final class SqlParser {
                     }
 
                     left = openingParenthesis - 1;
+
+                    // A table-valued function and its arguments form one name unit. Counting its
+                    // arguments separately uses the alias's unit and drops a following #temp table.
+                    // Without an alias the existing two-unit budget already covers name + arguments.
+                    // Leave that path unchanged so VALUES/SELECT (x) keep their row-expression reading.
+                    if (units > 0) {
+                        final int beforeArguments = skipBackwardWhitespaceAndBlockComments(str, left, memo);
+
+                        if (beforeArguments >= 0) {
+                            final char before = str.charAt(beforeArguments);
+
+                            // A single-quoted literal cannot supply the function name in this absorption step.
+                            if (isIdentifierChar(before) || before == SK._DOUBLE_QUOTE || before == SK._BACKTICK || before == ']') {
+                                left = beforeArguments;
+                                continue;
+                            }
+                        }
+                    }
                 } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == ']') {
                     // Quoted / bracket-quoted identifier segment: skip back to the opening quote.
                     final char openChar = ch == ']' ? '[' : ch;
@@ -2485,7 +2530,9 @@ public final class SqlParser {
      * <p>A memo is bound to one string, one {@link TokenizerConfig} and one scan (every creation site
      * pairs a fresh memo with the single configuration that scan uses; the memo does not record the
      * configuration itself) and is never shared between threads. Its arrays are allocated on first
-     * use. A separate lazy prefix pass tracks bracket roles so chained subscripts share the same token
+     * use. The hash-classification state array also records the governing context of visited commas,
+     * so later temporary-table names reuse the list prefix already classified. A separate lazy prefix
+     * pass tracks bracket roles so chained subscripts share the same token
      * boundaries across tokenization and token search, without confusing a bracket-quoted root with an
      * unquoted identifier root.</p>
      */
@@ -2494,11 +2541,13 @@ public final class SqlParser {
         private static final byte LINE_AWARE_IDENTIFIER = 2;
         private static final byte BLOCK_ONLY_KNOWN = 4;
         private static final byte BLOCK_ONLY_IDENTIFIER = 8;
+        private static final byte LIST_CONTEXT_KNOWN = 16;
+        private static final byte LIST_CONTEXT_IDENTIFIER = 32;
 
         private final String str;
         private final int length;
 
-        /** Per position: KNOWN / IDENTIFIER bits for each flavor; {@code null} until first use. */
+        /** Per position: hash classification for both flavors and comma-list context; {@code null} until first use. */
         private byte[] hashIdentifierStates;
 
         /** Line-comment opener covering each position (or -1); valid for {@code [0, passEnd)}. */
@@ -2621,6 +2670,28 @@ public final class SqlParser {
             }
 
             hashIdentifierStates[index] |= bits;
+        }
+
+        int hashListContextState(final String scanned, final int comma) {
+            if (scanned != str || hashIdentifierStates == null || (hashIdentifierStates[comma] & LIST_CONTEXT_KNOWN) == 0) {
+                return -1;
+            }
+
+            return (hashIdentifierStates[comma] & LIST_CONTEXT_IDENTIFIER) != 0 ? 1 : 0;
+        }
+
+        void rememberHashListContextState(final String scanned, final int comma, final boolean identifier) {
+            if (scanned != str) {
+                return;
+            }
+
+            if (hashIdentifierStates == null) {
+                hashIdentifierStates = new byte[length];
+            }
+
+            // Comma-list traversal always skips block comments only, independently of the caller's
+            // line-comment mode. Spare bits share the existing per-position cache without another array.
+            hashIdentifierStates[comma] |= LIST_CONTEXT_KNOWN | (identifier ? LIST_CONTEXT_IDENTIFIER : 0);
         }
 
         /**

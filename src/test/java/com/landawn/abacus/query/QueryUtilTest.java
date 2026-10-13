@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,57 @@ import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
 public class QueryUtilTest extends TestBase {
+    @Test
+    public void testQuotedIdentifierConversionPreservesEscapedAndUnicodeSegments() {
+        for (final String quoted : List.of("\"a.\"\"b\"", "`a.``b`", "[a.]]b]", "U&\"a.002e\" UESCAPE '.'", "u&\"a.002e\" UESCAPE E'.'",
+                "U&\"a[002e\" UESCAPE '['", "U&\"a.002e\" UESCAPE E'\\056'", "U&\"a.002e\" UESCAPE E'\\x2e'", "U&\"a.002e\" UESCAPE E'\\u002e'",
+                "U&\"a.002e\" UESCAPE E'\\U0000002e'")) {
+            final String identifier = "firstName." + quoted + ".lastName";
+            assertEquals("first_name." + quoted + ".last_name", QueryUtil.convertIdentifier(identifier, NamingPolicy.SNAKE_CASE));
+            assertEquals("FIRST_NAME." + quoted + ".LAST_NAME", QueryUtil.convertIdentifier(identifier, NamingPolicy.SCREAMING_SNAKE_CASE));
+        }
+
+        assertEquals(".\"a.b\"..first_name.", QueryUtil.convertIdentifier(".\"a.b\"..firstName.", NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name.\"unterminated.lastName", QueryUtil.convertIdentifier("firstName.\"unterminated.lastName", NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testQuotedIdentifierChainsPreserveSegmentBoundariesForEveryNamingPolicy() {
+        final String quoted = "U&\"part.with.dot\" UESCAPE '.'";
+        final String identifier = "._first_name_." + quoted + "..__last_name__.";
+        final Map<NamingPolicy, String> expected = Map.of(NamingPolicy.CAMEL_CASE, "._firstName_." + quoted + "..__lastName__.", NamingPolicy.UPPER_CAMEL_CASE,
+                "._FirstName_." + quoted + "..__LastName__.", NamingPolicy.SNAKE_CASE, identifier, NamingPolicy.SCREAMING_SNAKE_CASE,
+                "._FIRST_NAME_." + quoted + "..__LAST_NAME__.", NamingPolicy.KEBAB_CASE, "._first-name_." + quoted + "..__last-name__.", NamingPolicy.NO_CHANGE,
+                identifier);
+
+        for (final NamingPolicy policy : NamingPolicy.values()) {
+            assertEquals(expected.get(policy), QueryUtil.convertIdentifier(identifier, policy), policy.toString());
+        }
+
+        assertSame(identifier, QueryUtil.convertIdentifier(identifier, null));
+        assertSame(identifier, QueryUtil.convertIdentifier(identifier, NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testLongQuotedIdentifierChainsRetainEverySegment() {
+        final String input = "\"part.with.dot\".firstName.".repeat(1_024) + "[last.part]";
+        final String expected = "\"part.with.dot\".first_name.".repeat(1_024) + "[last.part]";
+
+        assertEquals(expected, QueryUtil.convertIdentifier(input, NamingPolicy.SNAKE_CASE));
+    }
+
+    @Test
+    public void testNestedPropertyExclusionsMatchCompletePathSegments() {
+        final Class<?> entityClass = NestedBranch.class;
+        final List<String> all = List.of("firstLeaf.value", "secondLeaf.value");
+
+        assertEquals(all, QueryUtil.selectPropNames(entityClass, true, null));
+        assertEquals(List.of("secondLeaf.value"), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf")));
+        assertEquals(List.of("secondLeaf.value"), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf.value")));
+        assertEquals(List.of(), QueryUtil.selectPropNames(entityClass, true, Set.of("firstLeaf", "secondLeaf")));
+        assertEquals(all, QueryUtil.selectPropNames(entityClass, true, new HashSet<>(Arrays.asList(null, "", "first", "firstLeaf.", "firstLeaf.val"))));
+    }
+
     @Table("value_form_accounts")
     static class ValueFormEntity {
         private int id;
@@ -697,8 +749,7 @@ public class QueryUtilTest extends TestBase {
             assertTrue(column.isUnqualified(), propName);
             assertEquals(column, map.get(column.columnName()));
             final Selection selection = Selection.builder(QuotedColumnNames.class).tableAlias("q").includedPropNames(List.of(propName)).build();
-            assertEquals("SELECT q." + column.columnName() + " AS \"" + propName + "\" FROM quoted_columns q",
-                    PSC.selectFrom(selection).build().query());
+            assertEquals("SELECT q." + column.columnName() + " AS \"" + propName + "\" FROM quoted_columns q", PSC.selectFrom(selection).build().query());
         }
 
         assertFalse(map.get("qualified").isUnqualified());
@@ -713,11 +764,16 @@ public class QueryUtilTest extends TestBase {
         for (final String propName : List.of("doubleQuoted", "backtickQuoted", "bracketQuoted", "escapedQuote", "escapedBracket")) {
             final String columnName = map.get(propName).columnName();
             // WHERE resolves the joined table's property map; ORDER BY resolves the original table's map.
-            final AbstractQueryBuilder.SP result = PSC.select(propName).from(QuotedColumnNames.class, "a").join(QuotedColumnNames.class, "b")
-                    .on("a.id = b.id").where(Filters.eq("b." + propName, "match")).orderBy("a." + propName).build();
+            final AbstractQueryBuilder.SP result = PSC.select(propName)
+                    .from(QuotedColumnNames.class, "a")
+                    .join(QuotedColumnNames.class, "b")
+                    .on("a.id = b.id")
+                    .where(Filters.eq("b." + propName, "match"))
+                    .orderBy("a." + propName)
+                    .build();
 
-            assertEquals("SELECT a." + columnName + " AS \"" + propName + "\" FROM quoted_columns a JOIN quoted_columns b ON a.id = b.id WHERE b."
-                    + columnName + " = ? ORDER BY a." + columnName, result.query(), propName);
+            assertEquals("SELECT a." + columnName + " AS \"" + propName + "\" FROM quoted_columns a JOIN quoted_columns b ON a.id = b.id WHERE b." + columnName
+                    + " = ? ORDER BY a." + columnName, result.query(), propName);
             assertEquals(List.of("match"), result.parameters(), propName);
         }
     }
@@ -727,9 +783,8 @@ public class QueryUtilTest extends TestBase {
         final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
         final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
 
-        for (final String propName : List.of("combiningMark", "spacingMark", "enclosingMark", "supplementaryLetter", "letterNumber",
-                "connectorPunctuation", "supplementarySymbol", "unicodeQuoted", "unicodeQuotedDot", "unicodeEscapedQuote", "customEscape", "dotEscape",
-                "bracketEscape")) {
+        for (final String propName : List.of("combiningMark", "spacingMark", "enclosingMark", "supplementaryLetter", "letterNumber", "connectorPunctuation",
+                "supplementarySymbol", "unicodeQuoted", "unicodeQuotedDot", "unicodeEscapedQuote", "customEscape", "dotEscape", "bracketEscape")) {
             final QueryUtil.ColumnInfo column = map.get(propName);
             assertTrue(column.isUnqualified(), propName);
             assertEquals(column, map.get(column.columnName()));
@@ -809,7 +864,8 @@ public class QueryUtilTest extends TestBase {
         final ImmutableMap<String, QueryUtil.ColumnInfo> map = QueryUtil.propToColumnInfoMap(UnicodeColumnNames.class, NamingPolicy.NO_CHANGE);
         final ImmutableMap<String, String> nestedMap = QueryUtil.propToColumnNameMap(NestedUnicodeColumns.class, NamingPolicy.NO_CHANGE);
 
-        for (final String propName : List.of("qualifiedUnicode", "unicodeQuotedQualifier", "escapedQualifier", "unicodeExpression", "unicodeEscapeExpression")) {
+        for (final String propName : List.of("qualifiedUnicode", "unicodeQuotedQualifier", "escapedQualifier", "unicodeExpression",
+                "unicodeEscapeExpression")) {
             final QueryUtil.ColumnInfo column = map.get(propName);
             assertFalse(column.isUnqualified(), propName);
             assertEquals("SELECT " + column.columnName() + " AS \"" + propName + "\" FROM unicode_columns a",
@@ -1873,8 +1929,8 @@ public class QueryUtilTest extends TestBase {
 
         // Tokens that cannot be located in expr: nothing is guessed, the whole of expr is appended as written.
         final StringBuilder fallback = new StringBuilder();
-        assertEquals(0, QueryUtil.appendRawExpression(fallback, "zz = 'C:\\' AND firstName = 1", tokenizer.tokenize("aB = 'C:\\' AND firstName = 1"),
-                tokenizer, false, w -> w.toUpperCase(), w -> w.toUpperCase()));
+        assertEquals(0, QueryUtil.appendRawExpression(fallback, "zz = 'C:\\' AND firstName = 1", tokenizer.tokenize("aB = 'C:\\' AND firstName = 1"), tokenizer,
+                false, w -> w.toUpperCase(), w -> w.toUpperCase()));
         assertEquals("zz = 'C:\\' AND firstName = 1", fallback.toString());
 
         final List<String> tokens = tokenizer.tokenize("a");

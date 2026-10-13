@@ -400,7 +400,8 @@ public class SqlDialect {
 
             final String trimmed = version.trim();
 
-            if (!Character.isDigit(trimmed.charAt(0))) {
+            // trim() also removes control characters such as NUL that Strings.isBlank() does not treat as whitespace.
+            if (trimmed.isEmpty() || !Character.isDigit(trimmed.charAt(0))) {
                 return null;
             }
 

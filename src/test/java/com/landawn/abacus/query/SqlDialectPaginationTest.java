@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -112,6 +114,19 @@ public class SqlDialectPaginationTest extends TestBase {
         assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("abc")); // unparseable argument
         assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtLeast("8.")); // malformed comparison version
         assertFalse(ProductInfo.of("MySQL", "8.0").isVersionAtMost(null));
+    }
+
+    @Test
+    public void testControlOnlyVersionsAreNotComparable() {
+        for (final String version : List.of("\u0000", "\u0001\u0002", " \u0000\t", "\u001b")) {
+            final ProductInfo invalid = ProductInfo.of("PostgreSQL", version);
+            assertFalse(invalid.isVersionAtLeast("1"));
+            assertFalse(invalid.isVersionAtMost("1"));
+
+            final ProductInfo valid = ProductInfo.of("PostgreSQL", "1");
+            assertFalse(valid.isVersionAtLeast(version));
+            assertFalse(valid.isVersionAtMost(version));
+        }
     }
 
     @Test
@@ -416,7 +431,8 @@ public class SqlDialectPaginationTest extends TestBase {
     @Test
     public void testResolvedFetchLimitAfterOffsetRowsOnLimitStyleDialect() {
         final Dsl postgres = dslFor("PostgreSQL");
-        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY", postgres.select("*").from("users").offsetRows(5).fetchNextRows(10).build().query());
+        assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",
+                postgres.select("*").from("users").offsetRows(5).fetchNextRows(10).build().query());
         assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 99999999999 ROWS ONLY",
                 postgres.select("*").from("users").offsetRows(5).append(new Limit("FETCH NEXT 99999999999 ROWS ONLY")).build().query());
         assertEquals("SELECT * FROM users OFFSET 5 ROWS FETCH NEXT 10 ROWS ONLY",

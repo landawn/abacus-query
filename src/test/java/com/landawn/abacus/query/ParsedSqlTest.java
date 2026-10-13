@@ -66,8 +66,8 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testChainedAndMarkerLedSubscriptCommentsPreserveBindingRoles() {
-        for (final String sql : List.of("SELECT x[1][1 /* ] :ghost */ , :id]", "SELECT x[1] /* gap */ [1 -- ] :ghost\n, :id]",
-                "SELECT [:id /* ] :ghost */]", "SELECT x[1][1 /* [ ' :ghost */ , :id]")) {
+        for (final String sql : List.of("SELECT x[1][1 /* ] :ghost */ , :id]", "SELECT x[1] /* gap */ [1 -- ] :ghost\n, :id]", "SELECT [:id /* ] :ghost */]",
+                "SELECT x[1][1 /* [ ' :ghost */ , :id]")) {
             final ParsedSql parsed = ParsedSql.parse(sql);
             assertEquals(List.of("id"), parsed.namedParameters(), sql);
             assertEquals(1, parsed.parameterCount(), sql);
@@ -81,9 +81,9 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_GeometricLiteralsAndConstructorsHonorFinalCasts() {
-        for (final String operand : List.of("line '(0,0),(1,0)'::text", "pg_catalog.line'(0,0),(1,0)' ::text",
-                "line E'(0,0),(1,0)'::text", "line N'(0,0),(1,0)'::text", "line U&'(0,0),(1,0)'::text",
-                "line(point(0,0), point(1,0))::text", "pg_catalog.lseg(point(0,0), point(1,0)) /* gap */ ::text")) {
+        for (final String operand : List.of("line '(0,0),(1,0)'::text", "pg_catalog.line'(0,0),(1,0)' ::text", "line E'(0,0),(1,0)'::text",
+                "line N'(0,0),(1,0)'::text", "line U&'(0,0),(1,0)'::text", "line(point(0,0), point(1,0))::text",
+                "pg_catalog.lseg(point(0,0), point(1,0)) /* gap */ ::text")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String sql = grouped ? "SELECT ARRAY[?- " + operand + "]" : "SELECT ?- " + operand;
                 final ParsedSql parsed = ParsedSql.parse(sql);
@@ -96,10 +96,9 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_CastChainsSkipQuotedColonsAndArraySuffixes() {
-        for (final String operand : List.of("?::\"odd::type\" ::line", "?::\"odd\"\"::type\" ::line", "?::text[]::text ::line",
-                "?::text [] ::text ::line", "?::text[ ][]::text ::line", "?::varchar(30)[] ::line", "?::line [] ::line",
-                "?::text[3] ::line", "?::text [ 30 ][] ::line", "?::text ARRAY::text ::line", "?::text ARRAY[3]::text ::line",
-                "?::text array [3] ::text ::line")) {
+        for (final String operand : List.of("?::\"odd::type\" ::line", "?::\"odd\"\"::type\" ::line", "?::text[]::text ::line", "?::text [] ::text ::line",
+                "?::text[ ][]::text ::line", "?::varchar(30)[] ::line", "?::line [] ::line", "?::text[3] ::line", "?::text [ 30 ][] ::line",
+                "?::text ARRAY::text ::line", "?::text ARRAY[3]::text ::line", "?::text array [3] ::text ::line")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String sql = grouped ? "SELECT ARRAY[?- " + operand + "]" : "SELECT ?- " + operand;
                 final ParsedSql parsed = ParsedSql.parse(sql);
@@ -108,9 +107,8 @@ public class ParsedSqlTest extends TestBase {
             }
         }
 
-        for (final String operand : List.of("?::\"odd::line\"", "?::line[]", "?::line []", "?::line[ ][]", "?::line [3]",
-                "?::line ARRAY", "?::line ARRAY[3]", "?::line ARRAY [3]", "?::text[3] + other::line", "?::text[x] ::line",
-                "?::text ARRAY[3] + other::line", "?::text ARRAY[x] ::line")) {
+        for (final String operand : List.of("?::\"odd::line\"", "?::line[]", "?::line []", "?::line[ ][]", "?::line [3]", "?::line ARRAY", "?::line ARRAY[3]",
+                "?::line ARRAY [3]", "?::text[3] + other::line", "?::text[x] ::line", "?::text ARRAY[3] + other::line", "?::text ARRAY[x] ::line")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String sql = grouped ? "SELECT ARRAY[?- " + operand + "]" : "SELECT ?- " + operand;
                 assertEquals(2, ParsedSql.parse(sql).parameterCount(), sql);
@@ -165,10 +163,9 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_ChainedGeometricCastsUseTheFinalType() {
-        for (final String operand : List.of("CAST(? AS text)::line", "?::text ::line", "? :: text :: line",
-                "CAST(? AS text) :: pg_catalog . \"line\"", "?::text /* cast */ ::lseg", "?::varchar(30)::line",
-                "?::character varying::line", "?::character varying(30) ::line", "?::double precision::text ::line",
-                "?::timestamp(3) without time zone::text ::line")) {
+        for (final String operand : List.of("CAST(? AS text)::line", "?::text ::line", "? :: text :: line", "CAST(? AS text) :: pg_catalog . \"line\"",
+                "?::text /* cast */ ::lseg", "?::varchar(30)::line", "?::character varying::line", "?::character varying(30) ::line",
+                "?::double precision::text ::line", "?::timestamp(3) without time zone::text ::line")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String sql = grouped ? "SELECT ARRAY[?- " + operand + "]" : "SELECT ?- " + operand;
                 final ParsedSql parsed = ParsedSql.parse(sql);
@@ -177,8 +174,8 @@ public class ParsedSqlTest extends TestBase {
             }
         }
 
-        for (final String operand : List.of("?::line ::text", "CAST(? AS line)::text", "?::text + other::line",
-                "?::line ::varchar(30)", "?::line ::character varying", "?::varchar(30) + other::line")) {
+        for (final String operand : List.of("?::line ::text", "CAST(? AS line)::text", "?::text + other::line", "?::line ::varchar(30)",
+                "?::line ::character varying", "?::varchar(30) + other::line")) {
             final String sql = "SELECT ?- " + operand;
             assertEquals(2, ParsedSql.parse(sql).parameterCount(), sql);
         }
@@ -210,8 +207,7 @@ public class ParsedSqlTest extends TestBase {
         final int arrayMarker = sql.indexOf(", ?]") + 2;
         final int chained = sql.indexOf("arr[");
         assertEquals(5, parsed.parameterCount());
-        assertArrayEquals(new int[] { sql.indexOf('?'), arrayMarker, chained + 4, chained + 7, sql.lastIndexOf('?') },
-                parsed.positionalParameterOffsets());
+        assertArrayEquals(new int[] { sql.indexOf('?'), arrayMarker, chained + 4, chained + 7, sql.lastIndexOf('?') }, parsed.positionalParameterOffsets());
         assertEquals(sql, parsed.parameterizedSql());
         for (final String marker : List.of(":id", "#{id}")) {
             final String namedSql = "SELECT N'ARRAY[" + marker + "]', ARRAY['" + marker + "', " + marker + "]";
@@ -231,12 +227,11 @@ public class ParsedSqlTest extends TestBase {
             assertEquals(1, parsed.parameterCount(), sql);
             assertArrayEquals(new int[] { sql.lastIndexOf('?') }, parsed.positionalParameterOffsets(), sql);
         }
-        for (final String sql : List.of("SELECT INTERVAL ? DAY", "SELECT * FROM t WHERE name ILIKE ? ESCAPE '!'",
-                "SELECT * FROM t WHERE name SIMILAR TO ?", "SELECT CURRENT_TIMESTAMP AT TIME ZONE ?")) {
+        for (final String sql : List.of("SELECT INTERVAL ? DAY", "SELECT * FROM t WHERE name ILIKE ? ESCAPE '!'", "SELECT * FROM t WHERE name SIMILAR TO ?",
+                "SELECT CURRENT_TIMESTAMP AT TIME ZONE ?")) {
             assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
         }
     }
-
 
     @Test
     public void testParse_PositionalOffsetsRetainSourceLocationsWithoutSpecialSyntax() {
@@ -280,8 +275,8 @@ public class ParsedSqlTest extends TestBase {
     public void testParse_CommaSeparatedBindingsRetainAllOffsetsAcrossGroups() {
         // A large first group donates its offset array; later markers must append without losing it.
         for (final String prefix : List.of("ARRAY", "arr", "ARRAY ")) {
-            final String sql = "SELECT " + prefix + "[ ? ,\t? ,\n? ], arr[?][?], ARRAY["
-                    + String.join(", ", java.util.Collections.nCopies(2048, "?")) + "] FROM t WHERE id = ?";
+            final String sql = "SELECT " + prefix + "[ ? ,\t? ,\n? ], arr[?][?], ARRAY[" + String.join(", ", java.util.Collections.nCopies(2048, "?"))
+                    + "] FROM t WHERE id = ?";
             final ParsedSql parsed = ParsedSql.parse(sql);
             final int[] expected = java.util.stream.IntStream.range(0, sql.length()).filter(i -> sql.charAt(i) == '?').toArray();
             assertEquals(2054, parsed.parameterCount(), sql);
@@ -294,8 +289,8 @@ public class ParsedSqlTest extends TestBase {
     public void testParse_CommaBindingShortcutFallsBackForExpressionSyntax() {
         // Commas alone do not establish a simple binding list: quoted text, comments, operators
         // and nested expressions still require the complete classifier.
-        for (final String expression : List.of("?, doc ?? 'k', ?", "?, doc ? 'k', ?", "?, '?', ?", "?, COALESCE(?, 0)",
-                "? /* ? */ , ?", "? -- ?\n, ?", "? + ?", "JSON_OBJECT('k' VALUE ? NULL ON NULL), ?")) {
+        for (final String expression : List.of("?, doc ?? 'k', ?", "?, doc ? 'k', ?", "?, '?', ?", "?, COALESCE(?, 0)", "? /* ? */ , ?", "? -- ?\n, ?", "? + ?",
+                "JSON_OBJECT('k' VALUE ? NULL ON NULL), ?")) {
             final String sql = "SELECT ARRAY[" + expression + "] FROM t";
             assertEquals(2, ParsedSql.parse(sql).parameterCount(), sql);
             assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql + " WHERE id = :id"), sql);
@@ -307,8 +302,8 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_DeferredOperandChecksKeepQuestionMarkContexts() {
-        for (final String expression : List.of("doc /* gap */ ? 'k'", "(doc) ? 'k'", "doc ? :key", "doc ? #{key}",
-                "?- CAST(:key AS line)", "JSON_OBJECT('k' VALUE :key NULL ON NULL)")) {
+        for (final String expression : List.of("doc /* gap */ ? 'k'", "(doc) ? 'k'", "doc ? :key", "doc ? #{key}", "?- CAST(:key AS line)",
+                "JSON_OBJECT('k' VALUE :key NULL ON NULL)")) {
             final ParsedSql parsed = ParsedSql.parse("SELECT " + expression + " FROM t");
             final boolean named = expression.contains(":key") || expression.contains("#{key}");
             assertEquals(named ? 1 : 0, parsed.parameterCount(), expression);
@@ -322,8 +317,8 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_StandaloneSubscriptsRejectMixedParameterStyles() {
-        for (final String sql : List.of("SELECT ARRAY [?, :id]", "SELECT ARRAY [ :id, ? ]", "SELECT ARRAY [?, #{id}]",
-                "SELECT ARRAY [ ? /* comment */ , :id ]", "SELECT ARRAY [ :id /* comment */ , ? ]")) {
+        for (final String sql : List.of("SELECT ARRAY [?, :id]", "SELECT ARRAY [ :id, ? ]", "SELECT ARRAY [?, #{id}]", "SELECT ARRAY [ ? /* comment */ , :id ]",
+                "SELECT ARRAY [ :id /* comment */ , ? ]")) {
             assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
         }
     }
@@ -396,8 +391,7 @@ public class ParsedSqlTest extends TestBase {
         // Restoring the opener must happen before operand classification: option text is opaque,
         // even when it contains question marks or unbalanced parentheses. A quoted cast suffix
         // must not make the restored binding look like a quoted SQL token.
-        for (final String binding : List.of("#{ key, typeHandler=handler(?) }", "#{ key, typeHandler=handler( }",
-                "#{ key, typeHandler=handler) }")) {
+        for (final String binding : List.of("#{ key, typeHandler=handler(?) }", "#{ key, typeHandler=handler( }", "#{ key, typeHandler=handler) }")) {
             for (final String operator : List.of("??", "@??")) {
                 final String type = operator.equals("??") ? "text" : "jsonpath";
                 for (final String cast : List.of("", "::\"" + type + "\"", " :: \"" + type + "\"")) {
@@ -517,9 +511,8 @@ public class ParsedSqlTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY[?-:n]"));
 
         // In operator position the same spellings remain PostgreSQL operators and bind nothing.
-        for (final String sql : List.of("SELECT * FROM t WHERE box1 ?- box2", "SELECT * FROM t WHERE line1 ?|| line2",
-                "SELECT * FROM t WHERE p1 ?| p2", "SELECT * FROM t WHERE tags ?& ARRAY['a']", "SELECT ARRAY[a ?- b]",
-                "SELECT ARRAY[a ?|| b]")) {
+        for (final String sql : List.of("SELECT * FROM t WHERE box1 ?- box2", "SELECT * FROM t WHERE line1 ?|| line2", "SELECT * FROM t WHERE p1 ?| p2",
+                "SELECT * FROM t WHERE tags ?& ARRAY['a']", "SELECT ARRAY[a ?- b]", "SELECT ARRAY[a ?|| b]")) {
             assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
         }
 
@@ -528,8 +521,8 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_CompactMarkerChainsRetainEveryOffsetInsideAndOutsideBrackets() {
-        for (final String expression : List.of("?||?||?", "?-?-?", "?|?|?", "?&?&?", "?#?#?", "? || ? || ?",
-                "?/* left */||?/* right */||?", "?-- left\n||?-- right\n||?")) {
+        for (final String expression : List.of("?||?||?", "?-?-?", "?|?|?", "?&?&?", "?#?#?", "? || ? || ?", "?/* left */||?/* right */||?",
+                "?-- left\n||?-- right\n||?")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String sql = grouped ? "SELECT ARRAY[" + expression + "] FROM t" : "SELECT " + expression + " FROM t";
                 final int first = sql.indexOf('?');
@@ -574,8 +567,8 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_JsonOperatorAcceptsNullAndClauseNamedOperands() {
-        for (final String rightOperand : List.of("NULL", "null", "format", "absent", "t.format", "t.absent", "t.\"NULL\"",
-                "format('%s', 'key')", "pg_catalog.format('%s', 'key')")) {
+        for (final String rightOperand : List.of("NULL", "null", "format", "absent", "t.format", "t.absent", "t.\"NULL\"", "format('%s', 'key')",
+                "pg_catalog.format('%s', 'key')")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String expression = "payload ? " + rightOperand;
                 final String sql = grouped ? "SELECT ARRAY[" + expression + "] FROM t" : "SELECT " + expression + " FROM t";
@@ -636,8 +629,8 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_SqlJsonClausePlaceholdersSurviveCommentsCaseAndNesting() {
-        for (final String clause : List.of("null on null", "absent on null", "format json", "NULL /* gap */ ON NULL",
-                "ABSENT -- gap\n ON NULL", "FORMAT /* gap */ JSON")) {
+        for (final String clause : List.of("null on null", "absent on null", "format json", "NULL /* gap */ ON NULL", "ABSENT -- gap\n ON NULL",
+                "FORMAT /* gap */ JSON")) {
             for (final String expression : List.of("json_object('k' value ? " + clause + ")",
                     "json_array(json_object('outer' value json_object('inner' value ? " + clause + ")))")) {
                 for (final boolean grouped : new boolean[] { false, true }) {
@@ -657,11 +650,9 @@ public class ParsedSqlTest extends TestBase {
         // Explicit geometry types disambiguate unary ?-/ ?| from a JDBC marker followed by arithmetic.
         // The equivalent bracket-free lseg spelling keeps cast fixtures independent of the tokenizer's
         // preexisting ambiguity when a bracket-group token contains a quoted closing bracket.
-        for (final String expression : List.of("?- lseg '[(0,0),(1,0)]'", "?| line '{1,0,0}'",
-                "?-lseg(point(0,0), point(1,0))", "?|line(point(0,0), point(0,1))",
-                "?- '(0,0),(1,0)'::lseg", "?| '{1,0,0}'::line",
-                "?- CAST('(0,0),(1,0)' AS lseg)", "?| CAST('{1,0,0}' AS line)",
-                "?- /* geometry */ lseg '[(0,0),(1,0)]'", "?| -- geometry\n line '{1,0,0}'")) {
+        for (final String expression : List.of("?- lseg '[(0,0),(1,0)]'", "?| line '{1,0,0}'", "?-lseg(point(0,0), point(1,0))",
+                "?|line(point(0,0), point(0,1))", "?- '(0,0),(1,0)'::lseg", "?| '{1,0,0}'::line", "?- CAST('(0,0),(1,0)' AS lseg)",
+                "?| CAST('{1,0,0}' AS line)", "?- /* geometry */ lseg '[(0,0),(1,0)]'", "?| -- geometry\n line '{1,0,0}'")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String sql = grouped ? "SELECT ARRAY[" + expression + "] FROM t" : "SELECT " + expression + " FROM t";
                 final ParsedSql parsed = ParsedSql.parse(sql);
@@ -689,8 +680,7 @@ public class ParsedSqlTest extends TestBase {
         final String closing = ")".repeat(4_096);
         for (final String binding : List.of("?", ":geometry", "#{ geometry, jdbcType=OTHER }")) {
             for (final boolean grouped : new boolean[] { false, true }) {
-                final String sql = "SELECT " + (grouped ? "ARRAY[" : "") + "?- " + opening + "CAST(" + binding + " AS line)" + closing
-                        + (grouped ? "]" : "");
+                final String sql = "SELECT " + (grouped ? "ARRAY[" : "") + "?- " + opening + "CAST(" + binding + " AS line)" + closing + (grouped ? "]" : "");
                 final ParsedSql parsed = ParsedSql.parse(sql);
                 final boolean positional = binding.equals("?");
 
@@ -737,8 +727,8 @@ public class ParsedSqlTest extends TestBase {
         for (final String type : List.of("line", "lseg")) {
             final String literal = type.equals("line") ? "'{1,0,0}'" : "'(0,0),(1,0)'";
             for (final String typeName : List.of(type, type.toUpperCase(java.util.Locale.ROOT), "\"" + type + "\"", "pg_catalog." + type,
-                    "\"pg_catalog\".\"" + type + "\"", "\"pg_catalog\" . \"" + type + "\"", "pg_catalog . " + type,
-                    "pg_catalog.\"" + type + "\"", "\"pg_catalog\"." + type)) {
+                    "\"pg_catalog\".\"" + type + "\"", "\"pg_catalog\" . \"" + type + "\"", "pg_catalog . " + type, "pg_catalog.\"" + type + "\"",
+                    "\"pg_catalog\"." + type)) {
                 for (final String operand : List.of("?", ":geometry", "#{geometry}", "#{ geometry, jdbcType=OTHER }", literal)) {
                     for (final String cast : List.of(operand + "::" + typeName, operand + ":: " + typeName, operand + " :: " + typeName,
                             "CAST(" + operand + " AS " + typeName + ")")) {
@@ -792,8 +782,8 @@ public class ParsedSqlTest extends TestBase {
             assertEquals("SELECT ?::\"type:literal#{literal}\"", parsed.parameterizedSql(), sql);
         }
 
-        for (final String sql : List.of("SELECT ':geometry::\"line\"'", "SELECT '#{geometry}::\"line\"'",
-                "SELECT \"column::line:geometry\"", "SELECT [column::line:geometry]")) {
+        for (final String sql : List.of("SELECT ':geometry::\"line\"'", "SELECT '#{geometry}::\"line\"'", "SELECT \"column::line:geometry\"",
+                "SELECT [column::line:geometry]")) {
             final ParsedSql parsed = ParsedSql.parse(sql);
             assertEquals(0, parsed.parameterCount(), sql);
             assertEquals(sql, parsed.parameterizedSql(), sql);
@@ -804,8 +794,7 @@ public class ParsedSqlTest extends TestBase {
     public void testParse_SqlJsonQueryBodiesDoNotUseConstructorValueClauses() {
         // FORMAT is the right operand and JSON its output alias in these SELECT bodies, not an option.
         for (final String query : List.of("SELECT payload ? format JSON FROM t", "select payload ? FORMAT json from t",
-                "/* query */ SELECT payload ? format JSON FROM t",
-                "WITH source AS (SELECT payload, format FROM t) SELECT payload ? format JSON FROM source",
+                "/* query */ SELECT payload ? format JSON FROM t", "WITH source AS (SELECT payload, format FROM t) SELECT payload ? format JSON FROM source",
                 "(SELECT payload ? format JSON FROM t)", "SELECT payload ? /* operand */ format JSON FROM t")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String expression = "JSON_ARRAY(" + query + ")";
@@ -833,8 +822,7 @@ public class ParsedSqlTest extends TestBase {
         }
 
         for (final String sql : List.of("SELECT JSON_ARRAY(SELECT payload ? format JSON FROM t WHERE id = ?)",
-                "SELECT JSON_ARRAY(SELECT JSON_OBJECT('k' VALUE ? FORMAT JSON) FROM t)",
-                "SELECT JSON_ARRAY(SELECT JSON_ARRAY(? NULL ON NULL) FROM t)",
+                "SELECT JSON_ARRAY(SELECT JSON_OBJECT('k' VALUE ? FORMAT JSON) FROM t)", "SELECT JSON_ARRAY(SELECT JSON_ARRAY(? NULL ON NULL) FROM t)",
                 "SELECT JSON_OBJECT('query' VALUE JSON_ARRAY(SELECT payload ? format JSON FROM t), 'binding' VALUE ? FORMAT JSON)",
                 "SELECT JSON_ARRAY(JSON_ARRAY(SELECT payload ? format JSON FROM t), ? FORMAT JSON)")) {
             final ParsedSql parsed = ParsedSql.parse(sql);
@@ -853,8 +841,8 @@ public class ParsedSqlTest extends TestBase {
         assertArrayEquals(new int[] { quotedMarker.indexOf('?') }, quoted.positionalParameterOffsets());
         assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT ARRAY['#{'], ?, :id FROM t"));
 
-        for (final String binding : List.of("#{ segment }", "#{ segment, typeHandler=handler(foo) }",
-                "#{ segment, typeHandler=handler( }", "#{ segment, typeHandler=handler) }")) {
+        for (final String binding : List.of("#{ segment }", "#{ segment, typeHandler=handler(foo) }", "#{ segment, typeHandler=handler( }",
+                "#{ segment, typeHandler=handler) }")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String prefix = grouped ? "SELECT ARRAY[" : "SELECT ";
                 final String suffix = grouped ? "]" : "";
@@ -928,8 +916,7 @@ public class ParsedSqlTest extends TestBase {
 
         // A marker that opens or closes an element has no operand on one side and stays a placeholder,
         // so a named binding in the same group is still a genuine mix of styles.
-        for (final String mixed : List.of("SELECT ARRAY [:id, ?]", "SELECT ARRAY [?, :id]", "SELECT ARRAY [:id ?]",
-                "SELECT ARRAY [? :id]")) {
+        for (final String mixed : List.of("SELECT ARRAY [:id, ?]", "SELECT ARRAY [?, :id]", "SELECT ARRAY [:id ?]", "SELECT ARRAY [? :id]")) {
             assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(mixed), mixed);
         }
 
@@ -948,8 +935,7 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_SubscriptPlaceholdersRespectOperatorAndKeywordBoundaries() {
-        for (final String sql : List.of("SELECT ARRAY[x=? AND(y=?)] FROM t", "SELECT ARRAY[x=? OR(y=?)] FROM t",
-                "SELECT ARRAY[(x=?)+(y=?)] FROM t")) {
+        for (final String sql : List.of("SELECT ARRAY[x=? AND(y=?)] FROM t", "SELECT ARRAY[x=? OR(y=?)] FROM t", "SELECT ARRAY[(x=?)+(y=?)] FROM t")) {
             final ParsedSql parsed = ParsedSql.parse(sql);
             assertEquals(sql, parsed.parameterizedSql());
             assertEquals(2, parsed.parameterCount(), sql);
@@ -990,9 +976,9 @@ public class ParsedSqlTest extends TestBase {
 
     @Test
     public void testParse_SubscriptJsonOperandsKeepCommentsQuotesAndBindingsIntact() {
-        for (final String sql : List.of("SELECT ARRAY[:payload /* ? :ignored */ ? /* right */ 'key']",
-                "SELECT ARRAY[:payload -- ? :ignored\n ? 'key']", "SELECT ARRAY[:payload ? -- ? :ignored\n 'key']",
-                "SELECT ARRAY[:payload?'key']", "SELECT ARRAY[(:payload)::jsonb ? 'key']", "SELECT ARRAY[:payload ? ('key')]")) {
+        for (final String sql : List.of("SELECT ARRAY[:payload /* ? :ignored */ ? /* right */ 'key']", "SELECT ARRAY[:payload -- ? :ignored\n ? 'key']",
+                "SELECT ARRAY[:payload ? -- ? :ignored\n 'key']", "SELECT ARRAY[:payload?'key']", "SELECT ARRAY[(:payload)::jsonb ? 'key']",
+                "SELECT ARRAY[:payload ? ('key')]")) {
             final ParsedSql parsed = ParsedSql.parse(sql);
             // A converted marker is kept apart from an adjacent operator '?' so the pair is not a pgJDBC "??" escape.
             assertEquals(sql.replace(":payload?", "? ?").replace(":payload", "?"), parsed.parameterizedSql());
@@ -1011,8 +997,8 @@ public class ParsedSqlTest extends TestBase {
         assertEquals(List.of("payload"), ibatis.namedParameters());
         assertEquals(1, ibatis.parameterCount());
 
-        for (final String sql : List.of("SELECT ARRAY['{ \"a\": 1 }'::jsonb ? 'a']", "SELECT ARRAY[\"has spaces\" ? 'key']",
-                "SELECT ARRAY[docs[1] ? 'key']", "SELECT ARRAY[E'it\\'s a key' ? 'key']")) {
+        for (final String sql : List.of("SELECT ARRAY['{ \"a\": 1 }'::jsonb ? 'a']", "SELECT ARRAY[\"has spaces\" ? 'key']", "SELECT ARRAY[docs[1] ? 'key']",
+                "SELECT ARRAY[E'it\\'s a key' ? 'key']")) {
             final ParsedSql parsed = ParsedSql.parse(sql);
             assertEquals(sql, parsed.parameterizedSql());
             assertEquals(0, parsed.parameterCount(), sql);
@@ -1058,8 +1044,7 @@ public class ParsedSqlTest extends TestBase {
         assertTrue(ibatisMessage.contains("inside a bracket group"), ibatisMessage);
 
         // Ordinary positional conflicts get the same general guidance, but no bracket-specific sentence.
-        final String plainMessage = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ? AND b = :b"))
-                .getMessage();
+        final String plainMessage = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ? AND b = :b")).getMessage();
         assertTrue(plainMessage.contains("found positional '?' and named ':propName'"), plainMessage);
         assertFalse(plainMessage.contains("bracket group"), plainMessage);
         assertTrue(plainMessage.contains("JSON existence operator"), plainMessage);
@@ -1129,8 +1114,7 @@ public class ParsedSqlTest extends TestBase {
         for (final String expression : List.of("?-1", "?||'x'")) {
             for (final boolean grouped : new boolean[] { false, true }) {
                 for (final String binding : List.of(":other", "#{other}")) {
-                    final String sql = grouped ? "SELECT ARRAY[" + expression + ", " + binding + "]"
-                            : "SELECT " + expression + ", " + binding + " FROM t";
+                    final String sql = grouped ? "SELECT ARRAY[" + expression + ", " + binding + "]" : "SELECT " + expression + ", " + binding + " FROM t";
                     final String message = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql)).getMessage();
 
                     assertEquals(grouped, message.contains("inside a bracket group"), message);
@@ -2458,8 +2442,7 @@ public class ParsedSqlTest extends TestBase {
     @Test
     public void testParse_UnicodeIdentifierNamesAndDottedPaths() {
         final String supplementaryLetter = new String(Character.toChars(0x10400));
-        final ParsedSql parsed = ParsedSql.parse(
-                "SELECT :用户.地址_2, :na\u0301me, :" + supplementaryLetter + "Value FROM users");
+        final ParsedSql parsed = ParsedSql.parse("SELECT :用户.地址_2, :na\u0301me, :" + supplementaryLetter + "Value FROM users");
 
         Assertions.assertEquals("SELECT ?, ?, ? FROM users", parsed.parameterizedSql());
         Assertions.assertEquals(Arrays.asList("用户.地址_2", "na\u0301me", supplementaryLetter + "Value"), parsed.namedParameters());
@@ -3109,8 +3092,7 @@ public class ParsedSqlTest extends TestBase {
                 { "SELECT * FROM t WHERE x = :a:b", "SELECT * FROM t WHERE x = ? ?" },
                 { "SELECT * FROM t WHERE x = #{a}#{b}", "SELECT * FROM t WHERE x = ? ?" }, { "SELECT a[:lo:hi] FROM t", "SELECT a[? ?] FROM t" },
                 { "SELECT * FROM t WHERE #{a}?|array['x']", "SELECT * FROM t WHERE ? ?|array['x']" },
-                { "SELECT * FROM t WHERE :a?|array['x']", "SELECT * FROM t WHERE ? ?|array['x']" },
-                { "SELECT a[#{a}?|x] FROM t", "SELECT a[? ?|x] FROM t" },
+                { "SELECT * FROM t WHERE :a?|array['x']", "SELECT * FROM t WHERE ? ?|array['x']" }, { "SELECT a[#{a}?|x] FROM t", "SELECT a[? ?|x] FROM t" },
                 // Complete escapes cannot pair with the converted marker, so the output stays compact.
                 { "SELECT * FROM t WHERE payload??:key", "SELECT * FROM t WHERE payload???" },
                 { "SELECT * FROM t WHERE payload ?? :key", "SELECT * FROM t WHERE payload ?? ?" } };
@@ -3305,7 +3287,8 @@ public class ParsedSqlTest extends TestBase {
         assertEquals("SELECT * FROM t WHERE msg = 'hello '\n'world' AND id = ?", parsed.parameterizedSql());
         assertEquals(1, parsed.parameterCount());
 
-        assertEquals("SELECT * FROM t WHERE msg = 'a'\n'b' AND id = ?", ParsedSql.parse("SELECT * FROM t WHERE msg = 'a' -- c\n'b' AND id = ?").parameterizedSql());
+        assertEquals("SELECT * FROM t WHERE msg = 'a'\n'b' AND id = ?",
+                ParsedSql.parse("SELECT * FROM t WHERE msg = 'a' -- c\n'b' AND id = ?").parameterizedSql());
         parsed = ParsedSql.parse("SELECT * FROM t WHERE msg = 'a'\r\n'b' AND id = :id");
         assertEquals("SELECT * FROM t WHERE msg = 'a'\n'b' AND id = ?", parsed.parameterizedSql());
         assertEquals(List.of("id"), parsed.namedParameters());
@@ -3622,8 +3605,8 @@ public class ParsedSqlTest extends TestBase {
         assertEquals(1, parsed.parameterCount());
         assertArrayEquals(new int[] { 37 }, parsed.positionalParameterOffsets());
 
-        for (final String frame : List.of("ORDER BY d DESC RANGE ?-1 PRECEDING", "PARTITION BY g ORDER BY d RANGE ?-1 PRECEDING", "ORDER BY d GROUPS ?- 1 FOLLOWING",
-                "ORDER BY d GROUPS ?-1 PRECEDING", "ORDER BY d ROWS ?-1 PRECEDING", "ORDER BY d RANGE ?||'1 day' PRECEDING",
+        for (final String frame : List.of("ORDER BY d DESC RANGE ?-1 PRECEDING", "PARTITION BY g ORDER BY d RANGE ?-1 PRECEDING",
+                "ORDER BY d GROUPS ?- 1 FOLLOWING", "ORDER BY d GROUPS ?-1 PRECEDING", "ORDER BY d ROWS ?-1 PRECEDING", "ORDER BY d RANGE ?||'1 day' PRECEDING",
                 "ORDER BY d RANGE BETWEEN ?-1 PRECEDING AND CURRENT ROW", "ORDER BY d RANGE ? * 2 PRECEDING", "ORDER BY d RANGE ?::interval PRECEDING",
                 "ORDER BY d RANGE (?-1) PRECEDING")) {
             sql = "SELECT sum(x) OVER (" + frame + ") FROM t";
@@ -3894,25 +3877,25 @@ public class ParsedSqlTest extends TestBase {
 
         // VALUES after a ')', INSERT or the table of INSERT INTO is the row constructor too.
         for (final String sql : new String[] { "INSERT INTO t (a) VALUES ? FORMAT JSON", "INSERT INTO s.t VALUES ? FORMAT JSON",
-                "INSERT INTO \"s\".\"t\" VALUES ? FORMAT JSON", "INSERT INTO s . t VALUES ? FORMAT JSON",
-                "WITH x AS (VALUES ? FORMAT JSON) SELECT * FROM x", "MERGE INTO t USING s ON t.id = s.id WHEN NOT MATCHED THEN INSERT VALUES ? FORMAT JSON" }) {
+                "INSERT INTO \"s\".\"t\" VALUES ? FORMAT JSON", "INSERT INTO s . t VALUES ? FORMAT JSON", "WITH x AS (VALUES ? FORMAT JSON) SELECT * FROM x",
+                "MERGE INTO t USING s ON t.id = s.id WHEN NOT MATCHED THEN INSERT VALUES ? FORMAT JSON" }) {
             assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
         }
 
         // A set operation's ALL/DISTINCT, EXPLAIN (ANALYZE) and an identity override also introduce a row constructor.
-        for (final String sql : new String[] { "SELECT CAST('[1]' AS JSON) UNION ALL VALUES ? FORMAT JSON", "SELECT CAST('[1]' AS JSON) UNION DISTINCT VALUES ? FORMAT JSON",
-                "SELECT 1 EXCEPT ALL VALUES ? FORMAT JSON", "EXPLAIN VALUES ? FORMAT JSON", "EXPLAIN ANALYZE VALUES ? FORMAT JSON",
-                "INSERT INTO t OVERRIDING SYSTEM VALUE VALUES ? FORMAT JSON", "INSERT INTO t (j) OVERRIDING USER VALUE VALUES ? FORMAT JSON",
-                "SELECT * FROM t WHERE x = ALL (VALUES ? FORMAT JSON)" }) {
+        for (final String sql : new String[] { "SELECT CAST('[1]' AS JSON) UNION ALL VALUES ? FORMAT JSON",
+                "SELECT CAST('[1]' AS JSON) UNION DISTINCT VALUES ? FORMAT JSON", "SELECT 1 EXCEPT ALL VALUES ? FORMAT JSON", "EXPLAIN VALUES ? FORMAT JSON",
+                "EXPLAIN ANALYZE VALUES ? FORMAT JSON", "INSERT INTO t OVERRIDING SYSTEM VALUE VALUES ? FORMAT JSON",
+                "INSERT INTO t (j) OVERRIDING USER VALUE VALUES ? FORMAT JSON", "SELECT * FROM t WHERE x = ALL (VALUES ? FORMAT JSON)" }) {
             assertEquals(1, ParsedSql.parse(sql).parameterCount(), sql);
         }
 
         // A column named values still takes the JSON existence operator, also before words that read like a postfix clause
         // (PostgreSQL: values ? format tests the key in column format, and JSON is a bare alias).
-        for (final String sql : new String[] { "SELECT * FROM t WHERE values ? 'k'", "SELECT * FROM t WHERE (values ? 'k')", "SELECT DISTINCT values ? 'k' FROM t",
-                "SELECT * FROM t WHERE values ? format", "SELECT values ? format JSON FROM t", "SELECT a, values ? format JSON FROM t",
-                "SELECT ALL values ? 'k' FROM t", "SELECT count(DISTINCT values ? 'k') FROM t", "SELECT * FROM t WHERE a = 1 AND values ? 'k'",
-                "SELECT CASE WHEN values ? 'k' THEN 1 END FROM t", "SELECT * FROM t ORDER BY values ? 'k'" }) {
+        for (final String sql : new String[] { "SELECT * FROM t WHERE values ? 'k'", "SELECT * FROM t WHERE (values ? 'k')",
+                "SELECT DISTINCT values ? 'k' FROM t", "SELECT * FROM t WHERE values ? format", "SELECT values ? format JSON FROM t",
+                "SELECT a, values ? format JSON FROM t", "SELECT ALL values ? 'k' FROM t", "SELECT count(DISTINCT values ? 'k') FROM t",
+                "SELECT * FROM t WHERE a = 1 AND values ? 'k'", "SELECT CASE WHEN values ? 'k' THEN 1 END FROM t", "SELECT * FROM t ORDER BY values ? 'k'" }) {
             assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
         }
 
@@ -3923,14 +3906,13 @@ public class ParsedSqlTest extends TestBase {
     // qualification dot or IS [NOT] DISTINCT FROM, rejecting valid named bindings in the same query as mixed styles.
     @Test
     public void testValuesColumnInJsonAndQualifiedExpressions() {
-        for (final String sql : new String[] { "SELECT JSON_OBJECT('present' VALUE values ? 'k') FROM t",
-                "SELECT JSON_OBJECT('present': values ? 'k') FROM t", "SELECT JSON_OBJECTAGG('present' VALUE values ? 'k') FROM t",
-                "SELECT JSON_OBJECT(KEY values ? 'k' VALUE 1) FROM t", "SELECT JSON_OBJECT('present' VALUE /* operand */ values ? 'k') FROM t",
-                "SELECT JSON_OBJECT('present' VALUE values ?| array['k']) FROM t", "SELECT JSON_OBJECT('present': values ?& array['k']) FROM t",
-                "SELECT JSON_OBJECT('nested' VALUE JSON_OBJECT('present' VALUE values ? 'k')) FROM t",
-                "SELECT t . values ? 'k' FROM t", "SELECT t. values ? 'k' FROM t", "SELECT \"t\". values ? 'k' FROM t",
-                "SELECT t /* qualifier */ . /* column */ values ? 'k' FROM t", "SELECT t . values ?| array['k'] FROM t",
-                "SELECT t. values ?& array['k'] FROM t", "SELECT true IS DISTINCT FROM values ? 'k' FROM t",
+        for (final String sql : new String[] { "SELECT JSON_OBJECT('present' VALUE values ? 'k') FROM t", "SELECT JSON_OBJECT('present': values ? 'k') FROM t",
+                "SELECT JSON_OBJECTAGG('present' VALUE values ? 'k') FROM t", "SELECT JSON_OBJECT(KEY values ? 'k' VALUE 1) FROM t",
+                "SELECT JSON_OBJECT('present' VALUE /* operand */ values ? 'k') FROM t", "SELECT JSON_OBJECT('present' VALUE values ?| array['k']) FROM t",
+                "SELECT JSON_OBJECT('present': values ?& array['k']) FROM t",
+                "SELECT JSON_OBJECT('nested' VALUE JSON_OBJECT('present' VALUE values ? 'k')) FROM t", "SELECT t . values ? 'k' FROM t",
+                "SELECT t. values ? 'k' FROM t", "SELECT \"t\". values ? 'k' FROM t", "SELECT t /* qualifier */ . /* column */ values ? 'k' FROM t",
+                "SELECT t . values ?| array['k'] FROM t", "SELECT t. values ?& array['k'] FROM t", "SELECT true IS DISTINCT FROM values ? 'k' FROM t",
                 "SELECT true IS NOT DISTINCT FROM values ? 'k' FROM t", "SELECT true IS /* predicate */ DISTINCT /* operand */ FROM values ? 'k' FROM t" }) {
             assertEquals(0, ParsedSql.parse(sql).parameterCount(), sql);
             assertEquals(1, ParsedSql.parse(sql + " WHERE id = ?").parameterCount(), sql);
@@ -3938,8 +3920,7 @@ public class ParsedSqlTest extends TestBase {
             assertEquals(List.of("id"), ParsedSql.parse(sql + " WHERE id = #{id}").namedParameters(), sql);
         }
 
-        assertEquals(List.of("key", "id"),
-                ParsedSql.parse("SELECT JSON_OBJECT('present' VALUE values ? :key) FROM t WHERE id = :id").namedParameters());
+        assertEquals(List.of("key", "id"), ParsedSql.parse("SELECT JSON_OBJECT('present' VALUE values ? :key) FROM t WHERE id = :id").namedParameters());
         assertEquals(List.of("keys"), ParsedSql.parse("SELECT t. values ?| #{keys} FROM t").namedParameters());
     }
 
@@ -3947,8 +3928,7 @@ public class ParsedSqlTest extends TestBase {
     // comment; the quote left behind then hid a following positional '?', so mixed parameter styles were not rejected.
     @Test
     public void testQuotedMybatisClosingBraceCannotHideFollowingPositionalBinding() {
-        for (final String metadata : List.of("label='}'", "label=\"}\"", "label=`}`", "/* } */ jdbcType=INTEGER",
-                "-- }\n jdbcType=INTEGER")) {
+        for (final String metadata : List.of("label='}'", "label=\"}\"", "label=`}`", "/* } */ jdbcType=INTEGER", "-- }\n jdbcType=INTEGER")) {
             final String sql = "SELECT ARRAY[#{id, " + metadata + "}, ?]";
             assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
         }
@@ -3990,8 +3970,8 @@ public class ParsedSqlTest extends TestBase {
     @Test
     public void testJdbcCallReturnSlotRejectsMalformedMybatisBindings() {
         for (final String prefix : List.of("{", "{ ", "{ /* return */ ")) {
-            for (final String slot : List.of("#{map['x\\'y']}", "#{map[\"x\\\"y\"]}", "#{map[`x\\`y`]}",
-                    "#{ map['x\\'y']}", "#{ map['x\\'y'] }", "#{r#{nested}}", "#{r #{nested}}")) {
+            for (final String slot : List.of("#{map['x\\'y']}", "#{map[\"x\\\"y\"]}", "#{map[`x\\`y`]}", "#{ map['x\\'y']}", "#{ map['x\\'y'] }",
+                    "#{r#{nested}}", "#{r #{nested}}")) {
                 final String sql = prefix + slot + " = call p(#{a})}";
                 final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql), sql);
                 assertTrue(error.getMessage().contains("Malformed iBatis/MyBatis parameter"), sql);

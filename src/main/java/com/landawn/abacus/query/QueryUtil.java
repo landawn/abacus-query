@@ -467,7 +467,15 @@ public final class QueryUtil {
      * @throws NullPointerException if {@code text} is {@code null}
      */
     static int indexOfQualifyingDot(final String text) {
-        for (int i = 0, len = text.length(); i < len; i++) {
+        return indexOfQualifyingDot(text, 0);
+    }
+
+    /**
+     * Scans from an unquoted segment boundary and returns an absolute index in {@code text}.
+     * Callers resume immediately after a qualifying dot, so no open quote state needs to be carried into this scan.
+     */
+    private static int indexOfQualifyingDot(final String text, final int fromIndex) {
+        for (int i = fromIndex, len = text.length(); i < len; i++) {
             final char ch = text.charAt(i);
 
             if (ch == SK._PERIOD) {
@@ -1176,7 +1184,9 @@ public final class QueryUtil {
 
             outer: for (final String propName : val[slot]) {
                 for (final String excludedPropName : excludedPropNames) {
-                    if (excludedPropName != null && (propName.equals(excludedPropName) || propName.startsWith(excludedPropName + SK.PERIOD))) {
+                    // Compare the path boundary directly instead of allocating a prefix for every property/exclusion pair.
+                    if (excludedPropName != null && propName.startsWith(excludedPropName)
+                            && (propName.length() == excludedPropName.length() || propName.charAt(excludedPropName.length()) == SK._PERIOD)) {
                         continue outer;
                     }
                 }
@@ -1582,8 +1592,9 @@ public final class QueryUtil {
         int start = 0;
 
         while (true) {
-            final int relativeDot = indexOfQualifyingDot(identifier.substring(start));
-            final int end = relativeDot < 0 ? identifier.length() : start + relativeDot;
+            // Scan the original text: copying the remaining suffix for every segment grows quadratically for long qualified names.
+            final int dot = indexOfQualifyingDot(identifier, start);
+            final int end = dot < 0 ? identifier.length() : dot;
             final String segment = identifier.substring(start, end);
             final char first = segment.isEmpty() ? 0 : segment.charAt(0);
 
@@ -1593,7 +1604,7 @@ public final class QueryUtil {
                 sb.append(convertIdentifierSegment(segment, namingPolicy));
             }
 
-            if (relativeDot < 0) {
+            if (dot < 0) {
                 return sb.toString();
             }
 

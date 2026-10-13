@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.9.5)
-- Build: c3ca6bc8ac4e653735c2a39b54694b26298434c5
+- Build: 48b1b8d93cd885a375fe765d2f4b1787d55864cb
 - Java: 21
-- Generated: 2026-10-03
+- Generated: 2026-10-12
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -1799,7 +1799,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This set(final String expr)`
 - **Summary:** Sets a single column or raw assignment expression for an UPDATE operation.
 - **Contract:**
-  - If expr contains an = sign, it is treated as a complete assignment and no placeholder is generated (identifiers are still normalized according to the naming policy).
+  - If expr contains a top-level = sign outside quoted text, it is treated as a complete assignment and no placeholder is generated (identifiers are still normalized according to the naming policy).
 - **Parameters:**
   - `expr` (`String`) — a column name (placeholder will be appended) or a complete col = value assignment
 - **Returns:** this SqlBuilder instance for method chaining
@@ -1826,7 +1826,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This set(final Collection<String> propOrColumnNames)`
 - **Summary:** Sets columns for UPDATE operation with a collection of property or column names.
 - **Contract:**
-  - If a column name already contains an = sign, it is treated as a raw SET expression and no placeholder is appended.
+  - If an item contains a top-level = sign outside quoted text, it is treated as a raw SET expression and no placeholder is appended.
 - **Parameters:**
   - `propOrColumnNames` (`Collection<String>`) — the collection of columns to update
 - **Returns:** this SqlBuilder instance for method chaining
@@ -2003,6 +2003,7 @@ Base class for fluent SQL builders.
 - **Summary:** Generates the final SQL string and its parameters as an SP pair, then releases resources.
 - **Contract:**
   - Once final rendering begins, the builder is closed even if rendering fails.
+  - Subclasses must capture any needed staged inputs before final rendering.
 - **Parameters:**
   - (none)
 - **Returns:** an SP (SQL-Parameters) pair containing the SQL string and parameter list
@@ -6743,7 +6744,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a NOT IN condition with an array of object values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `values` (`Object[]`) — array of non-null values to exclude; a single Collection or array argument (other than byte\[\], which stays one binary value) is treated as the value list itself, so in(p, (Object) List.of(1, 2)) renders p IN (1, 2); to compare against a single collection-valued value, wrap it: in(p, List.of(list)). An Object\[\] holding exactly one array or collection is unpacked the same way
+  - `values` (`Object[]`) — array of non-null values to exclude; a single Collection or array argument (other than byte\[\], which stays one binary value) is treated as the value list itself, so notIn(p, (Object) List.of(1, 2)) renders p NOT IN (1, 2); to compare against a single collection-valued value, wrap it: notIn(p, List.of(list)). An Object\[\] holding exactly one array or collection is unpacked the same way
 - **Returns:** a NotIn condition
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a SqlExpression containing a SQL token or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected); or if an element of values is a cyclic object array
@@ -10199,6 +10200,8 @@ Base class for binary conditions that compare a property with a value.
 - **Signature:** `public Object propValue()`
 - **Summary:** Returns the property value without an unchecked generic cast.
 - **Contract:**
+  - The owned list may be reused only when none of its elements is an array, date, calendar, or nested Condition.
+  - Nested conditions themselves are retained by reference even when the outer list is copied.
   - A collection used as a scalar value by another operator retains its concrete type and identity; callers must not mutate that collection while the condition is in use.
 - **Parameters:**
   - (none)
@@ -10207,7 +10210,7 @@ Base class for binary conditions that compare a property with a value.
 - **Signature:** `public <T> T propValueAs(final Class<T> valueType)`
 - **Summary:** Returns the property value cast to the supplied runtime type.
 - **Contract:**
-  - This is the type-safe companion to #propValue() when the expected value type is known.
+  - This is the type-safe companion to #propValue() when the expected value type is known, with the same defensive-copy and membership-list reuse rules.
 - **Parameters:**
   - `valueType` (`Class<T>`) — the requested value type; must not be null
 - **Returns:** the property value cast to valueType, or null when the stored value is null; known mutable JDK values are returned as defensive copies

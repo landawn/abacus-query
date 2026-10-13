@@ -24,8 +24,7 @@ import com.landawn.abacus.util.NamingPolicy;
 public class JoinTest extends TestBase {
     @Test
     public void testTableLineCommentsDoNotConsumeJoinBoundaries() {
-        assertEquals("JOIN orders o -- trailing comment\n ON o.id = a.id",
-                new Join("orders o -- trailing comment", new On("o.id", "a.id")).toString());
+        assertEquals("JOIN orders o -- trailing comment\n ON o.id = a.id", new Join("orders o -- trailing comment", new On("o.id", "a.id")).toString());
         assertEquals("JOIN (orders o -- trailing comment\n CROSS JOIN products p) ON o.id = p.id",
                 new Join(List.of("orders o -- trailing comment", "products p"), new On("o.id", "p.id")).toString());
         assertEquals("CROSS JOIN (orders o CROSS JOIN products p -- trailing comment\n)",

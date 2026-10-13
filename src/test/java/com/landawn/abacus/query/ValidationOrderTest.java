@@ -40,10 +40,9 @@ class ValidationOrderTest {
     void filtersCheckParametersInSignatureOrder() {
         assertEquals("Property name must not be null, empty, or blank",
                 assertThrows(IllegalArgumentException.class, () -> Filters.contains(" ", null)).getMessage());
-        assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> Filters.orderBy("first", null, " ", SortDirection.ASC)).getMessage().contains("SortDirection for 'first'"));
-        assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> Filters.anyOfAllEqual(Collections.emptyList(), null)).getMessage().contains("entities"));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("first", null, " ", SortDirection.ASC)).getMessage()
+                .contains("SortDirection for 'first'"));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Collections.emptyList(), null)).getMessage().contains("entities"));
     }
 
     @Test

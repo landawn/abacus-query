@@ -1,6 +1,7 @@
 package com.landawn.abacus.query.condition;
 
 import static com.landawn.abacus.query.Dsl.PSC;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,9 +14,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
@@ -23,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 @Tag("2025")
@@ -734,8 +740,8 @@ public class BinaryTest extends TestBase {
 
     @Test
     public void testNullIsRejectedForNonNullAwareOperators() {
-        final Operator[] operators = { Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL,
-                Operator.LIKE, Operator.NOT_LIKE };
+        final Operator[] operators = { Operator.GREATER_THAN, Operator.GREATER_THAN_OR_EQUAL, Operator.LESS_THAN, Operator.LESS_THAN_OR_EQUAL, Operator.LIKE,
+                Operator.NOT_LIKE };
 
         for (final Operator operator : operators) {
             assertThrows(IllegalArgumentException.class, () -> new Binary("col", operator, null));
@@ -1066,5 +1072,111 @@ public class BinaryTest extends TestBase {
         final Binary inSecond = new Binary("payload", Operator.IN, Arrays.asList(new byte[] { 1, 2 }));
         assertEquals(inFirst, inSecond);
         assertEquals(inFirst.hashCode(), inSecond.hashCode());
+    }
+
+    @Test
+    public void testMembershipAccessorsReuseTheOwnedImmutableScalarSnapshot() {
+        for (final Operator operator : List.of(Operator.IN, Operator.NOT_IN)) {
+            final List<Integer> source = new ArrayList<>(List.of(1, 2, 3));
+            final Binary condition = new Binary("id", operator, source);
+            final List<?> exposed = (List<?>) condition.propValue();
+            source.clear();
+
+            assertSame(exposed, condition.propValue());
+            assertSame(exposed, condition.propValueAs(List.class));
+            assertEquals(List.of(1, 2, 3), exposed);
+            assertThrows(UnsupportedOperationException.class, exposed::clear);
+            assertEquals(List.of(1, 2, 3), condition.parameters());
+            assertEquals("id " + operator + " (1, 2, 3)", condition.toString());
+        }
+    }
+
+    @Test
+    public void testOverriddenMembershipOperatorDoesNotExposeARetainedScalarCollection() {
+        for (final Operator membershipOperator : List.of(Operator.IN, Operator.NOT_IN)) {
+            final List<Integer> source = new ArrayList<>(List.of(1, 2, 3));
+            final Binary condition = new Binary("id", Operator.EQUAL, source) {
+                @Override
+                public Operator operator() {
+                    return membershipOperator;
+                }
+            };
+
+            assertEquals(membershipOperator, condition.operator());
+            final List<?> exposed = (List<?>) condition.propValue();
+            final List<?> typedExposure = condition.propValueAs(List.class);
+            assertNotSame(source, exposed);
+            assertNotSame(exposed, typedExposure);
+            assertEquals(List.of(1, 2, 3), exposed);
+            assertEquals(exposed, typedExposure);
+            assertThrows(UnsupportedOperationException.class, exposed::clear);
+            assertThrows(UnsupportedOperationException.class, typedExposure::clear);
+            assertEquals(List.of(1, 2, 3), source);
+            source.set(0, 9);
+            assertEquals(List.of(1, 2, 3), exposed);
+            assertEquals(List.of(1, 2, 3), typedExposure);
+        }
+    }
+
+    @Test
+    public void testMutableMembershipValuesStayIsolatedAcrossAccessorsAndParameters() {
+        for (final Operator operator : List.of(Operator.IN, Operator.NOT_IN)) {
+            final byte[] bytes = { 1, 2 };
+            final Date date = new Date(2_000L);
+            final Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            calendar.setTimeInMillis(3_000L);
+            final Object[] nested = { new int[] { 4, 5 } };
+            final Binary condition = new Binary("value", operator, List.of(bytes, date, calendar, nested));
+            final int hash = condition.hashCode();
+
+            bytes[0] = 9;
+            date.setTime(9_000L);
+            calendar.setTimeInMillis(9_000L);
+            ((int[]) nested[0])[0] = 9;
+
+            final List<?> exposed = (List<?>) condition.propValue();
+            final List<?> parameters = condition.parameters();
+            assertNotSame(exposed, condition.propValue());
+            assertNotSame(exposed.get(0), parameters.get(0));
+            assertThrows(UnsupportedOperationException.class, exposed::clear);
+
+            for (final List<?> view : List.of(exposed, parameters)) {
+                ((byte[]) view.get(0))[0] = 8;
+                ((Date) view.get(1)).setTime(8_000L);
+                ((Calendar) view.get(2)).setTimeInMillis(8_000L);
+                ((int[]) ((Object[]) view.get(3))[0])[0] = 8;
+            }
+
+            for (final List<?> view : List.of(condition.propValueAs(List.class), condition.parameters())) {
+                assertArrayEquals(new byte[] { 1, 2 }, (byte[]) view.get(0));
+                assertEquals(2_000L, ((Date) view.get(1)).getTime());
+                assertEquals(3_000L, ((Calendar) view.get(2)).getTimeInMillis());
+                assertArrayEquals(new int[] { 4, 5 }, (int[]) ((Object[]) view.get(3))[0]);
+            }
+            assertEquals(hash, condition.hashCode());
+        }
+    }
+
+    @Test
+    public void testMembershipConditionParametersAreReadOnEveryCall() {
+        final AtomicInteger reads = new AtomicInteger();
+        final SqlExpression expression = new SqlExpression("custom_expression") {
+            @Override
+            public ImmutableList<Object> parameters() {
+                return ImmutableList.of(reads.incrementAndGet());
+            }
+        };
+        final Binary condition = new Binary("id", Operator.IN, List.of(expression));
+
+        final List<?> exposed = (List<?>) condition.propValue();
+        final List<?> typedExposure = condition.propValueAs(List.class);
+        assertNotSame(exposed, typedExposure);
+        assertSame(expression, exposed.get(0));
+        assertSame(expression, typedExposure.get(0));
+        assertThrows(UnsupportedOperationException.class, exposed::clear);
+        assertThrows(UnsupportedOperationException.class, typedExposure::clear);
+        assertEquals(0, reads.get());
+        assertEquals(List.of(1), condition.parameters());
+        assertEquals(List.of(2), condition.parameters());
     }
 }

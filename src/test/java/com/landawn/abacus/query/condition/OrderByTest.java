@@ -500,8 +500,7 @@ public class OrderByTest extends TestBase {
 
     @Test
     public void testNullDirectionMessageDoesNotMentionSortMap() {
-        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> Criteria.builder().orderBy("a", SortDirection.ASC, "b", null));
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a", SortDirection.ASC, "b", null));
         assertTrue(e.getMessage().contains("'b'"), e.getMessage());
         Assertions.assertFalse(e.getMessage().contains("sort map"), e.getMessage());
     }
@@ -543,7 +542,8 @@ public class OrderByTest extends TestBase {
         // "/*" one dialect would treat as inert, are rejected too (the builder's own orderBy still accepts "[a/*b]").
         assertThrows(IllegalArgumentException.class, () -> new OrderBy("[a/*b]", SortDirection.DESC));
         assertThrows(IllegalArgumentException.class, () -> new OrderBy("a # note /*", SortDirection.DESC));
-        assertEquals("SELECT a FROM t ORDER BY [a/*b] DESC", com.landawn.abacus.query.Dsl.PSC.select("a").from("t").orderBy("[a/*b]", SortDirection.DESC).build().query());
+        assertEquals("SELECT a FROM t ORDER BY [a/*b] DESC",
+                com.landawn.abacus.query.Dsl.PSC.select("a").from("t").orderBy("[a/*b]", SortDirection.DESC).build().query());
     }
 
     // Regression: PostgreSQL, SQL Server and H2 nest block comments, so "a /* x /* y */" is still open there.

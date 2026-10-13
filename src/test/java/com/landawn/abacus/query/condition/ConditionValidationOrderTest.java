@@ -34,15 +34,16 @@ class ConditionValidationOrderTest {
 
         final Object[] cyclicMinimum = new Object[1];
         cyclicMinimum[0] = cyclicMinimum;
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> new NotBetween("age", cyclicMinimum, null)).getMessage().contains("Cyclic object arrays"));
+        assertTrue(
+                assertThrows(IllegalArgumentException.class, () -> new NotBetween("age", cyclicMinimum, null)).getMessage().contains("Cyclic object arrays"));
     }
 
     @Test
     void criteriaChecksSortPairsInSignatureOrder() {
         final String firstDirectionError = "SortDirection for 'firstName' must not be null";
 
-        assertEquals(firstDirectionError, assertThrows(IllegalArgumentException.class,
-                () -> Criteria.builder().orderBy("firstName", null, "", SortDirection.ASC)).getMessage());
+        assertEquals(firstDirectionError,
+                assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("firstName", null, "", SortDirection.ASC)).getMessage());
         assertEquals(firstDirectionError, assertThrows(IllegalArgumentException.class,
                 () -> Criteria.builder().groupBy("firstName", null, "firstName", SortDirection.DESC, "thirdName", SortDirection.ASC)).getMessage());
 

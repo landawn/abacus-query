@@ -25,8 +25,7 @@ class BuilderNullArgumentTest {
                 () -> AbstractQueryBuilder.getFromClause(Arrays.asList(invalidEntity, null), NamingPolicy.SNAKE_CASE));
         assertTrue(exception.getMessage().contains("selection"));
         assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.getFromClause(null, NamingPolicy.SNAKE_CASE));
-        assertThrows(IllegalArgumentException.class,
-                () -> AbstractQueryBuilder.getFromClause(Collections.singletonList(null), NamingPolicy.SNAKE_CASE));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.getFromClause(Collections.singletonList(null), NamingPolicy.SNAKE_CASE));
     }
 
     @Test

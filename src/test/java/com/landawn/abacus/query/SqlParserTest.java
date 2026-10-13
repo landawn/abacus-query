@@ -10,8 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntPredicate;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -22,9 +24,128 @@ import com.landawn.abacus.TestBase;
 public class SqlParserTest extends TestBase {
 
     @Test
+    public void testSparseSqlDoesNotChangeTokenContents() {
+        final String content = "a".repeat(1024 * 1024);
+        final String literal = "'" + content + "'";
+
+        assertEquals(List.of(content), SqlParser.tokenize(content));
+        assertEquals(List.of(literal), SqlParser.tokenize(literal));
+        assertEquals(List.of("SELECT", " ", "1"), SqlParser.tokenize("/*" + content + "*/ SELECT 1"));
+        assertEquals(List.of("SELECT", " ", "1"), SqlParser.tokenize("--" + content + "\nSELECT 1"));
+        assertEquals(List.of(), SqlParser.tokenize("/*" + content + "*/"));
+    }
+
+    @Test
+    public void testDenseSqlGrowsBeyondTheInitialTokenCapacity() {
+        final int count = 20000;
+        final List<String> expected = new ArrayList<>(count * 2 + 1);
+
+        for (int i = 0; i < count; i++) {
+            expected.add("x");
+            expected.add(",");
+        }
+
+        expected.add("x");
+        assertEquals(expected, SqlParser.tokenize("x,".repeat(count) + "x"));
+    }
+
+    @Test
+    public void testLongTemporaryTableListsRetainEveryIdentifier() {
+        final int count = 6000;
+        final String sql = "SELECT * FROM " + "#t,##u,".repeat(count) + "#last WHERE id = :id";
+        final List<String> tokens = SqlParser.tokenize(sql);
+
+        assertEquals(count, tokens.stream().filter("#t"::equals).count());
+        assertEquals(count, tokens.stream().filter("##u"::equals).count());
+        assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE"));
+        assertEquals("SELECT * FROM " + "#t,##u,".repeat(count) + "#last WHERE id = ?", ParsedSql.parse(sql).parameterizedSql());
+    }
+
+    @Test
+    public void testCommaContextMemoPreservesAliasesQuotesCommentsAndSeparateClauses() {
+        final String sql = "SELECT * FROM #first a, dbo.[second] AS b, fn(1, 2) c, /* gap */ ##last d WHERE value IN (1, # comment\n2)";
+
+        assertEquals(
+                List.of("SELECT", " ", "*", " ", "FROM", " ", "#first", " ", "a", ",", " ", "dbo.[second]", " ", "AS", " ", "b", ",", " ", "fn", "(", "1", ",",
+                        " ", "2", ")", " ", "c", ",", " ", "##last", " ", "d", " ", "WHERE", " ", "value", " ", "IN", " ", "(", "1", ",", " ", "2", ")"),
+                SqlParser.tokenize(sql));
+        assertEquals(-1, SqlParser.indexOfToken(sql, "comment"));
+
+        final String independentLists = "SELECT a, # ignored\nb FROM #first, ##second WHERE c IN (1, # ignored too\n2)";
+        final IntPredicate matcher = SqlParser.hashPrefixedIdentifierMatcher(independentLists, SqlParser.defaultTokenizerConfig());
+
+        // Visit the later entries first as well: cached comma anchors must not depend on tokenization order.
+        assertTrue(matcher.test(independentLists.indexOf("##second")));
+        assertFalse(matcher.test(independentLists.indexOf("# ignored too")));
+        assertTrue(matcher.test(independentLists.indexOf("#first")));
+        assertFalse(matcher.test(independentLists.indexOf("# ignored")));
+    }
+
+    @Test
+    public void testTemporaryTablesAfterFunctionsKeepTheirBindings() {
+        for (final String function : List.of("fn(1, 2)", "dbo.fn (1, 2)", "dbo.[fn]/* name gap */(1, 2)", "\"fn\"(1, 2)",
+                "dbo.[fn]]x]/* name gap */(1, fn(2, 3))", "\"schema\".\"f\"\"n\"(1, 2)", "`schema`.`f``n`/* name gap */(1, 2)",
+                "fn((SELECT id FROM #inner))")) {
+            for (final String alias : List.of("", " f", " AS f", " AS [f]", " /* alias gap */ AS \"f\"")) {
+                final String sql = "SELECT * FROM " + function + alias + ", #next WHERE id = :id";
+                final List<String> tokens = SqlParser.tokenize(sql);
+
+                assertTrue(tokens.contains("#next"), sql);
+                assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE"), sql);
+                assertEquals(List.of("id"), ParsedSql.parse(sql).namedParameters(), sql);
+                assertTrue(ParsedSql.parse(sql).parameterizedSql().endsWith(", #next WHERE id = ?"), sql);
+                assertFalse(SqlParser.isSyntacticallyReadQuery(sql + "; DELETE FROM t"), sql);
+                assertFalse(SqlParser.isReadOrInsertQuery(sql + "; DELETE FROM t"), sql);
+
+                for (final String prefix : List.of("SELECT ", "INSERT INTO t(a) SELECT ")) {
+                    final String expression = prefix + function + alias + ", # comment\n:id";
+                    assertFalse(SqlParser.tokenize(expression).contains("#"), expression);
+                    assertEquals(List.of("id"), ParsedSql.parse(expression).namedParameters(), expression);
+                    assertEquals(-1, SqlParser.indexOfToken(expression, "comment"), expression);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testInsertRowSourcesDoNotTurnHashCommentsIntoIdentifiers() {
+        for (final String rowSource : List.of("SELECT", "SELECT DISTINCT", "VALUES", "VALUE")) {
+            final String sql = "INSERT INTO t(a) " + rowSource + " (1), #row\n(:id)";
+            final ParsedSql parsed = ParsedSql.parse(sql);
+
+            assertEquals(List.of("id"), parsed.namedParameters(), sql);
+            assertFalse(parsed.parameterizedSql().contains("#row"), sql);
+            assertEquals(-1, SqlParser.indexOfToken(sql, "#row"), sql);
+        }
+
+        final String aliased = "INSERT INTO t(a) SELECT (1) value, #row\n:id";
+        assertEquals(List.of("id"), ParsedSql.parse(aliased).namedParameters());
+        assertFalse(ParsedSql.parse(aliased).parameterizedSql().contains("#row"));
+    }
+
+    @Test
+    public void testSingleQuotedLiteralsDoNotSupplyAliasedFunctionNames() {
+        // These malformed literal(argument) inputs pin lexical hash-comment classification without asserting SQL grammar validity.
+        for (final String literal : List.of("'fn'", "'f''n'", "N'fn'", "dbo.'fn'")) {
+            for (final String gap : List.of("", " ", "/* name gap */")) {
+                for (final String alias : List.of(" f", " AS f", " AS [f]")) {
+                    final String sql = "SELECT * FROM " + literal + gap + "(1, 2)" + alias + ", #ignored :notBound\nWHERE id = :id";
+                    final IntPredicate matcher = SqlParser.hashPrefixedIdentifierMatcher(sql, SqlParser.defaultTokenizerConfig());
+
+                    assertFalse(matcher.test(sql.indexOf("#ignored")), sql);
+                    assertFalse(SqlParser.tokenize(sql).contains("#ignored"), sql);
+                    assertEquals(-1, SqlParser.indexOfToken(sql, "#ignored"), sql);
+                    assertEquals(List.of("id"), ParsedSql.parse(sql).namedParameters(), sql);
+                    assertFalse(ParsedSql.parse(sql).parameterizedSql().contains("notBound"), sql);
+                }
+            }
+        }
+    }
+
+    @Test
     public void testSubscriptTokenBoundsIgnoreCommentDelimiters() {
-        for (final String expression : List.of("ARRAY[1 /* ] :ghost */ , :id]", "ARRAY[1 /* [ ' */ , :id]",
-                "ARRAY[1 -- ] ' :ghost\n, :id]", "ARRAY[1 -- [ :ghost\r\n, :id]")) {
+        for (final String expression : List.of("ARRAY[1 /* ] :ghost */ , :id]", "ARRAY[1 /* [ ' */ , :id]", "ARRAY[1 -- ] ' :ghost\n, :id]",
+                "ARRAY[1 -- [ :ghost\r\n, :id]")) {
             final String sql = "SELECT " + expression + " FROM t";
             assertEquals(List.of("SELECT", " ", expression, " ", "FROM", " ", "t"), SqlParser.tokenize(sql), sql);
             assertEquals(expression, SqlParser.nextToken(sql, 7), sql);
@@ -177,7 +298,11 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testTokenizerDerivedBucketsKeepUnicodeAndCaseVariantsIndependent() {
         final SqlParser.TokenizerConfig first = SqlParser.TokenizerConfig.builder()
-                .withSeparator("π>").withSeparator("π>>").withSeparator("😀>").withSeparator("order by").build();
+                .withSeparator("π>")
+                .withSeparator("π>>")
+                .withSeparator("😀>")
+                .withSeparator("order by")
+                .build();
         final SqlParser.TokenizerConfig second = first.toBuilder().withoutSeparator("π>>").withSeparator("😀>>").build();
         final SqlParser.Tokenizer firstTokenizer = SqlParser.tokenizer(first);
         final SqlParser.Tokenizer secondTokenizer = SqlParser.tokenizer(second);
@@ -193,8 +318,8 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testRangeScannersPreservePrefixedQuotesAndArbitrarySearchOffsets() {
-        for (final String quoted : List.of("N'it''s'", "E'it\\'s'", "\"a.b\"", "[a]]b]",
-                "prefix" + (char) 96 + "a" + (char) 96 + (char) 96 + "b" + (char) 96, "'unterminated")) {
+        for (final String quoted : List.of("N'it''s'", "E'it\\'s'", "\"a.b\"", "[a]]b]", "prefix" + (char) 96 + "a" + (char) 96 + (char) 96 + "b" + (char) 96,
+                "'unterminated")) {
             final boolean unterminated = quoted.equals("'unterminated");
             final String sql = "/* lead */ " + quoted + (unterminated ? "" : "tail /* gap */ WHERE x = 1");
             final int start = sql.indexOf(quoted);
@@ -222,8 +347,7 @@ public class SqlParserTest extends TestBase {
             assertEquals("", SqlParser.nextToken(sql, sql.length() + 10), sql);
             assertEquals(sql.length(), SqlParser.nextTokenEndIndex(sql, sql.length() + 10), sql);
         }
-        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
-                .withoutSeparator('\r').withoutSeparator('\n').build());
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withoutSeparator('\r').withoutSeparator('\n').build());
         final String sql = "--ignored\r\nword";
         // Extraction consumes the first comment terminator; tokenize reprocesses it. A custom
         // configuration that removes newlines makes this existing distinction observable.
@@ -280,9 +404,16 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testTokenizerSeparatorBucketsKeepLongestMatchesAndUnicode() {
         final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
-                .withSeparator("~>").withSeparator("~>>").withSeparator("~>>>")
-                .withSeparator("π>").withSeparator("π>>").withSeparator("😀>").withSeparator("😀>>")
-                .withSeparator(" +").withSeparator(" ++").build());
+                .withSeparator("~>")
+                .withSeparator("~>>")
+                .withSeparator("~>>>")
+                .withSeparator("π>")
+                .withSeparator("π>>")
+                .withSeparator("😀>")
+                .withSeparator("😀>>")
+                .withSeparator(" +")
+                .withSeparator(" ++")
+                .build());
         for (final String separator : List.of("~>", "~>>", "~>>>", "π>", "π>>", "😀>", "😀>>", " +", " ++")) {
             // A shorter candidate shares the same first character; suffix truncation must still find it.
             for (final String suffix : List.of("y", "")) {
@@ -298,8 +429,8 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testTokenizerQuoteCrossingCandidateDoesNotHideShorterSeparator() {
-        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
-                .withSeparator("~").withSeparator("~'").withSeparator("~[").build());
+        final SqlParser.Tokenizer tokenizer = SqlParser
+                .tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("~").withSeparator("~'").withSeparator("~[").build());
         for (final String quoted : List.of("'text'", "[text]")) {
             final String sql = "x~" + quoted;
             assertEquals(List.of("x", "~", quoted), tokenizer.tokenize(sql), sql);
@@ -3360,10 +3491,8 @@ public class SqlParserTest extends TestBase {
         // it could still finish): the memo must be a pure optimization.
         assertEquals(Arrays.asList("INSERT", " ", "INTO", " ", "t", " ", "(", "a", ")", " ", "VALUES", " ", "(", "1", ")", " ", ",", " ", "(", "2", ")", " ",
                 ",", " ", "(", "3", ")", " ", ",", " ", "(", "4", ")", " "), SqlParser.tokenize(multiRowInsertWithHashCommentPerRow(4)));
-        assertEquals(
-                Arrays.asList("INSERT", " ", "INTO", " ", "t", " ", "(", "a", ")", " ", "VALUES", " ", "(", "1", ")", ",", " ", "(", "2", ")", ",", " ", "(",
-                        "3", ")", ",", " ", "(", "4", ")"),
-                SqlParser.tokenize("INSERT INTO t (a) VALUES (1), #row1\n(2), #row2\n(3), #row3\n(4)"));
+        assertEquals(Arrays.asList("INSERT", " ", "INTO", " ", "t", " ", "(", "a", ")", " ", "VALUES", " ", "(", "1", ")", ",", " ", "(", "2", ")", ",", " ",
+                "(", "3", ")", ",", " ", "(", "4", ")"), SqlParser.tokenize("INSERT INTO t (a) VALUES (1), #row1\n(2), #row2\n(3), #row3\n(4)"));
         // Identifier contexts are still recognized after a parenthesized list element.
         assertEquals(Arrays.asList("FROM", " ", "(", "SELECT", " ", "1", ")", " ", "d", ",", " ", "#t"), SqlParser.tokenize("FROM (SELECT 1) d, #t"));
         assertEquals(Arrays.asList("FROM", " ", "t1", ",", " ", "(", "SELECT", " ", "1", " ", ")", " ", "d", ",", " ", "#t2"),
@@ -3547,8 +3676,7 @@ public class SqlParserTest extends TestBase {
             final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(separator).build());
 
             for (final String spelling : List.of("order by", "ORDER BY", "Order By", " order by ", "\tORDER BY\n")) {
-                for (final String clause : List.of("order by", "ORDER BY", "Order By", "ORDER  BY", "ORDER\tBY",
-                        "ORDER /* gap */ BY", "ORDER -- gap\n BY")) {
+                for (final String clause : List.of("order by", "ORDER BY", "Order By", "ORDER  BY", "ORDER\tBY", "ORDER /* gap */ BY", "ORDER -- gap\n BY")) {
                     final String sql = "SELECT x FROM t " + clause + " x";
                     assertEquals(16, tokenizer.indexOfToken(sql, spelling, 0, false), separator + ": " + sql + " / " + spelling);
                     assertEquals(16, tokenizer.indexOfToken(sql, spelling, 16, false), sql);
@@ -3583,8 +3711,8 @@ public class SqlParserTest extends TestBase {
         assertEquals(sql.lastIndexOf("ORDER"), tokenizer.indexOfToken(sql, "ORDER BY"));
         assertEquals(-1, tokenizer.indexOfToken("'ORDER BY' /* order by */ preORDER BY ORDER BYpost", "ORDER BY"));
 
-        final SqlParser.Tokenizer longest = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder()
-                .withSeparator("order by").withSeparator("order byx").build());
+        final SqlParser.Tokenizer longest = SqlParser
+                .tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("order by").withSeparator("order byx").build());
         assertEquals(-1, longest.indexOfToken("x order byx y", "ORDER BY"));
     }
 
@@ -3668,14 +3796,8 @@ public class SqlParserTest extends TestBase {
     public void testConfiguredSeparatorSearchUsesUnicodeCaseComparison() {
         // Lowercasing alone disagrees with equalsIgnoreCase for sigma and Turkish I; UTF-16 char
         // classification also misses supplementary letters and case-bearing non-letter symbols.
-        final String[][] spellings = {
-                { " \u03a3", " \u03c2" },
-                { " \u0130", " i" },
-                { " I", " \u0131" },
-                { " S", " \u017f" },
-                { " \ud801\udc00", " \ud801\udc28" },
-                { " \u2160", " \u2170" }
-        };
+        final String[][] spellings = { { " \u03a3", " \u03c2" }, { " \u0130", " i" }, { " I", " \u0131" }, { " S", " \u017f" },
+                { " \ud801\udc00", " \ud801\udc28" }, { " \u2160", " \u2170" } };
 
         for (final String[] pair : spellings) {
             final String separator = pair[0];
@@ -3747,8 +3869,7 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testQueryClassificationIgnoresNamedParameterKeywords() {
         for (final String sql : List.of("SELECT :into FROM t", "SELECT #{into} FROM t", "SELECT #{ into, jdbcType=VARCHAR } FROM t",
-                "SELECT * FROM t WHERE t.select = :into", "SELECT :insert OR REPLACE('a', 'b', 'c')",
-                "SELECT #{insert} OR REPLACE('a', 'b', 'c')")) {
+                "SELECT * FROM t WHERE t.select = :into", "SELECT :insert OR REPLACE('a', 'b', 'c')", "SELECT #{insert} OR REPLACE('a', 'b', 'c')")) {
             assertTrue(SqlParser.isSelectQuery(sql), sql);
             assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
@@ -3826,13 +3947,11 @@ public class SqlParserTest extends TestBase {
         for (String sql : new String[] { "INSERT INTO t (execute) VALUES (1)", "INSERT INTO execute VALUES (1)",
                 "INSERT INTO exec (execute, exec) VALUES (1, 2)", "INSERT INTO execute (execute) SELECT execute FROM s",
                 "insert into execute (exec, execute) values (1, 2)", "INSERT execute (exec) VALUES (1)",
-                "INSERT /* target */ INTO /* name */ execute /* columns */ (exec) VALUES (1)",
-                "INSERT INTO public.execute (exec) VALUES (1)", "INSERT INTO execute . t (execute) VALUES (1)",
-                "INSERT INTO public /* qualifier */ . execute (exec) VALUES (1)",
-                "INSERT INTO \"execute\" (execute) VALUES (1)", "INSERT INTO [execute] ([exec]) VALUES (1)",
-                "INSERT INTO `execute` (`exec`) VALUES (1)", "INSERT INTO t AS execute (exec) VALUES (1)",
-                "INSERT INTO t AS /* alias */ exec (execute) SELECT execute FROM s", "INSERT INTO execute DEFAULT VALUES",
-                "INSERT INTO t (execute[1]) VALUES (1)", "INSERT INTO t (SELECT execute FROM s) RETURNING execute",
+                "INSERT /* target */ INTO /* name */ execute /* columns */ (exec) VALUES (1)", "INSERT INTO public.execute (exec) VALUES (1)",
+                "INSERT INTO execute . t (execute) VALUES (1)", "INSERT INTO public /* qualifier */ . execute (exec) VALUES (1)",
+                "INSERT INTO \"execute\" (execute) VALUES (1)", "INSERT INTO [execute] ([exec]) VALUES (1)", "INSERT INTO `execute` (`exec`) VALUES (1)",
+                "INSERT INTO t AS execute (exec) VALUES (1)", "INSERT INTO t AS /* alias */ exec (execute) SELECT execute FROM s",
+                "INSERT INTO execute DEFAULT VALUES", "INSERT INTO t (execute[1]) VALUES (1)", "INSERT INTO t (SELECT execute FROM s) RETURNING execute",
                 "SELECT 1; INSERT INTO execute (exec) VALUES (1); INSERT INTO t (execute) VALUES (2)" }) {
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
             assertTrue(SqlParser.tokenizer().isReadOrInsertQuery(sql), sql);
@@ -3844,13 +3963,11 @@ public class SqlParserTest extends TestBase {
         // Consuming an identifier slot or a column list must leave the real procedure-source slot visible,
         // including after quoted/qualified targets, table variables, comments, hints and statement boundaries.
         for (String sql : new String[] { "INSERT INTO t EXEC p", "INSERT INTO t (execute) EXEC p", "INSERT INTO t (exec, execute) EXECUTE p",
-                "INSERT INTO execute EXEC p", "INSERT execute EXECUTE p", "INSERT INTO execute (exec) EXECUTE p",
-                "INSERT INTO public.execute (exec) EXEC p", "INSERT INTO execute.t (execute) EXECUTE p",
-                "INSERT INTO \"t\" EXEC p", "INSERT INTO [t] EXEC p", "INSERT INTO `t` EXEC p",
-                "INSERT INTO @t EXEC p", "INSERT INTO #t EXEC p", "INSERT INTO _t EXEC p",
-                "INSERT INTO t (a) /* source */ EXEC('SELECT 1')", "INSERT INTO t WITH (TABLOCK) (a) EXECUTE p",
-                "INSERT INTO t AS execute (a) EXEC p", "INSERT INTO t VALUES (1); INSERT INTO execute (exec) EXEC p",
-                "INSERT INTO execute VALUES (1); EXEC p" }) {
+                "INSERT INTO execute EXEC p", "INSERT execute EXECUTE p", "INSERT INTO execute (exec) EXECUTE p", "INSERT INTO public.execute (exec) EXEC p",
+                "INSERT INTO execute.t (execute) EXECUTE p", "INSERT INTO \"t\" EXEC p", "INSERT INTO [t] EXEC p", "INSERT INTO `t` EXEC p",
+                "INSERT INTO @t EXEC p", "INSERT INTO #t EXEC p", "INSERT INTO _t EXEC p", "INSERT INTO t (a) /* source */ EXEC('SELECT 1')",
+                "INSERT INTO t WITH (TABLOCK) (a) EXECUTE p", "INSERT INTO t AS execute (a) EXEC p",
+                "INSERT INTO t VALUES (1); INSERT INTO execute (exec) EXEC p", "INSERT INTO execute VALUES (1); EXEC p" }) {
             assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
             assertFalse(SqlParser.tokenizer().isReadOrInsertQuery(sql), sql);
         }
@@ -3946,9 +4063,9 @@ public class SqlParserTest extends TestBase {
         // a second statement verb without a preceding ';' starts a new statement
         for (String sql : new String[] { "SELECT 1 DELETE FROM t", "SELECT * FROM t\nDELETE FROM x", "SELECT * FROM t\nTRUNCATE TABLE x",
                 "SELECT * FROM t\nDROP TABLE x", "SELECT * FROM t\nEXEC p", "SELECT * FROM t\nEXEC('DELETE FROM x')", "SELECT 1 UPDATE t SET a = 2",
-                "SELECT 1 MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN DELETE", "SELECT 1 CREATE TABLE x (a int)",
-                "SELECT 1 ALTER TABLE t ADD b int", "select 1 delete from t", "INSERT INTO t VALUES (1) UPDATE t SET a = 2",
-                "INSERT INTO t SELECT 1 DELETE FROM t", "SELECT 1 CALL p", "SELECT 1 CALL p(1)", "select 1 call my_proc" }) {
+                "SELECT 1 MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN DELETE", "SELECT 1 CREATE TABLE x (a int)", "SELECT 1 ALTER TABLE t ADD b int",
+                "select 1 delete from t", "INSERT INTO t VALUES (1) UPDATE t SET a = 2", "INSERT INTO t SELECT 1 DELETE FROM t", "SELECT 1 CALL p",
+                "SELECT 1 CALL p(1)", "select 1 call my_proc" }) {
             assertFalse(batches.isSyntacticallyReadQuery(sql), sql);
             assertFalse(batches.isReadOrInsertQuery(sql), sql);
         }
@@ -3961,10 +4078,10 @@ public class SqlParserTest extends TestBase {
 
         // verbs that are part of a clause, inside parentheses, function calls, or a statement's own verb are not splits
         for (String sql : new String[] { "SELECT * FROM t FOR UPDATE", "SELECT * FROM t ORDER BY id FOR UPDATE SKIP LOCKED",
-                "WITH t AS (SELECT 1) SELECT * FROM t", "WITH t AS (SELECT 1), u AS (SELECT 2) SELECT * FROM t, u",
-                "SELECT * FROM t WITH (UPDLOCK)", "SELECT delete_flag, update_time FROM t", "SELECT TRUNCATE(x, 2) FROM t",
-                "SELECT * FROM t WHERE x = 1 UNION SELECT 1", "SELECT * FROM t WHERE a = 'DELETE FROM x'", "SELECT [delete] FROM t",
-                "SELECT * FROM #tmp", "SELECT @@ROWCOUNT", "SELECT 1 -- DELETE FROM t", "SELECT 1 /* DELETE FROM t */" }) {
+                "WITH t AS (SELECT 1) SELECT * FROM t", "WITH t AS (SELECT 1), u AS (SELECT 2) SELECT * FROM t, u", "SELECT * FROM t WITH (UPDLOCK)",
+                "SELECT delete_flag, update_time FROM t", "SELECT TRUNCATE(x, 2) FROM t", "SELECT * FROM t WHERE x = 1 UNION SELECT 1",
+                "SELECT * FROM t WHERE a = 'DELETE FROM x'", "SELECT [delete] FROM t", "SELECT * FROM #tmp", "SELECT @@ROWCOUNT", "SELECT 1 -- DELETE FROM t",
+                "SELECT 1 /* DELETE FROM t */" }) {
             assertTrue(batches.isSyntacticallyReadQuery(sql), sql);
         }
 
@@ -3973,7 +4090,8 @@ public class SqlParserTest extends TestBase {
         assertFalse(batches.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON DUPLICATE KEY UPDATE a = 2"));
         assertFalse(batches.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT DO UPDATE SET a = 2"));
         assertFalse(batches.isReadOrInsertQuery("WITH t AS (SELECT 1) DELETE FROM t"));
-        assertFalse(batches.isSyntacticallyReadQuery("MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE SET a = 1 WHEN NOT MATCHED THEN INSERT (a) VALUES (1)"));
+        assertFalse(batches.isSyntacticallyReadQuery(
+                "MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE SET a = 1 WHEN NOT MATCHED THEN INSERT (a) VALUES (1)"));
 
         // the built-in configuration is unchanged
         assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 DELETE FROM t"));
@@ -3987,9 +4105,8 @@ public class SqlParserTest extends TestBase {
         final SqlParser.Tokenizer batches = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSemicolonlessBatches(true).build());
 
         for (String sql : new String[] { "SELECT * FROM a JOIN b ON 1=1 DELETE FROM u", "SELECT * FROM a JOIN b ON 1=1 UPDATE u SET x=1",
-                "SELECT * FROM a JOIN b ON 1=1 DROP TABLE u", "SELECT * FROM a JOIN b ON 1=1 EXEC sp_who",
-                "SELECT a, 1 FROM t GROUP BY key, 1 DELETE FROM z", "SELECT * FROM t WHERE do > 1 DELETE FROM u",
-                "SELECT * FROM a JOIN b ON (1=1) DELETE FROM u" }) {
+                "SELECT * FROM a JOIN b ON 1=1 DROP TABLE u", "SELECT * FROM a JOIN b ON 1=1 EXEC sp_who", "SELECT a, 1 FROM t GROUP BY key, 1 DELETE FROM z",
+                "SELECT * FROM t WHERE do > 1 DELETE FROM u", "SELECT * FROM a JOIN b ON (1=1) DELETE FROM u" }) {
             assertFalse(batches.isSyntacticallyReadQuery(sql), sql);
             assertFalse(batches.isReadOrInsertQuery(sql), sql);
         }
@@ -4128,8 +4245,8 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testOperatorFamiliesPreserveCommentBoundaries() {
-        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder()
-                .withSeparator("x-").withSeparator("x/").withSeparator("π/").withSeparator("||/").build());
+        final SqlParser.Tokenizer tokenizer = SqlParser
+                .tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("x-").withSeparator("x/").withSeparator("π/").withSeparator("||/").build());
 
         // ASCII letters can begin configured operators too; Unicode families use the same boundary rule.
         for (final String sql : new String[] { "x--ignored\nz", "x/*ignored*/z", "π/*ignored*/z" }) {
@@ -4291,8 +4408,8 @@ public class SqlParserTest extends TestBase {
     public void testPostgresSubscriptCannotPoseAsBracketIdentifierToHideStatement() {
         // "[b[1]]" reads as ONE bracket identifier (with "]]" as an escaped ']') that swallows "; DELETE ...",
         // while PostgreSQL reads nested / jsonb subscripts and runs the DELETE.
-        for (final String sql : new String[] { "SELECT a[b[1]] FROM t; DELETE FROM t; SELECT c[1] FROM t", "SELECT j[' ]'] FROM t; DELETE FROM t; SELECT ' -- '",
-                "SELECT a[1 /* ] ' */ ] FROM t; DELETE FROM t; SELECT ' -- '" }) {
+        for (final String sql : new String[] { "SELECT a[b[1]] FROM t; DELETE FROM t; SELECT c[1] FROM t",
+                "SELECT j[' ]'] FROM t; DELETE FROM t; SELECT ' -- '", "SELECT a[1 /* ] ' */ ] FROM t; DELETE FROM t; SELECT ' -- '" }) {
             assertReadGatesReject(sql);
         }
 
@@ -4498,7 +4615,8 @@ public class SqlParserTest extends TestBase {
         // ... also with "[" as punctuation (H2 Oracle mode) and with H2's "//" comments
         assertReadGatesReject("SELECT 1#{; DELETE FROM t;## AS [} FROM t");
         assertReadGatesReject("SELECT 1#{; DELETE FROM t;}#t// '?--x");
-        for (final String sql : new String[] { "SELECT #{into} FROM t", "SELECT #{ into, jdbcType=VARCHAR } FROM t", "SELECT a FROM t WHERE b = #{list[0].b}" }) {
+        for (final String sql : new String[] { "SELECT #{into} FROM t", "SELECT #{ into, jdbcType=VARCHAR } FROM t",
+                "SELECT a FROM t WHERE b = #{list[0].b}" }) {
             assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
         }
 
@@ -4515,8 +4633,8 @@ public class SqlParserTest extends TestBase {
     public void testSemicolonlessBatchUnanchoredTempTableIsSqlToEveryScanner() {
         // With batches on, "#t.c" is a temp-table column to the statement splitter; masking and the other scanners
         // used to read it as a MySQL comment instead, skipping the '\' quote that hid the DELETE from the splitter.
-        for (final String sql : new String[] { "SELECT * FROM #t WHERE #t.c = '\\' ; DELETE FROM y --'",
-                "SELECT * FROM #t WHERE #t.c = '\\' DELETE FROM y --'", "SELECT #t.c INTO x FROM #t", "SELECT #t.c FROM #t DELETE FROM y" }) {
+        for (final String sql : new String[] { "SELECT * FROM #t WHERE #t.c = '\\' ; DELETE FROM y --'", "SELECT * FROM #t WHERE #t.c = '\\' DELETE FROM y --'",
+                "SELECT #t.c INTO x FROM #t", "SELECT #t.c FROM #t DELETE FROM y" }) {
             assertBatchGatesReject(sql);
         }
 
@@ -4665,15 +4783,17 @@ public class SqlParserTest extends TestBase {
         }
 
         // A nested INSERT is an insert: the read gate rejects it, the read-or-insert gate accepts it like a top-level one.
-        for (final String sql : new String[] { "SELECT * FROM FINAL TABLE (INSERT INTO t VALUES (4, 40))", "SELECT * FROM NEW TABLE (INSERT INTO t VALUES (1))" }) {
+        for (final String sql : new String[] { "SELECT * FROM FINAL TABLE (INSERT INTO t VALUES (4, 40))",
+                "SELECT * FROM NEW TABLE (INSERT INTO t VALUES (1))" }) {
             assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
             assertFalse(BATCHES.isSyntacticallyReadQuery(sql), sql);
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
             assertTrue(BATCHES.isReadOrInsertQuery(sql), sql);
         }
 
-        for (final String sql : new String[] { "INSERT INTO t SELECT id + 10, a FROM OLD TABLE (UPDATE t SET a = 0)", "INSERT INTO log SELECT * FROM OLD TABLE (DELETE FROM t)",
-                "INSERT INTO x SELECT a FROM (DELETE FROM t OUTPUT deleted.a) AS d", "INSERT INTO x SELECT * FROM (UPDATE t SET a=1 OUTPUT inserted.*) u",
+        for (final String sql : new String[] { "INSERT INTO t SELECT id + 10, a FROM OLD TABLE (UPDATE t SET a = 0)",
+                "INSERT INTO log SELECT * FROM OLD TABLE (DELETE FROM t)", "INSERT INTO x SELECT a FROM (DELETE FROM t OUTPUT deleted.a) AS d",
+                "INSERT INTO x SELECT * FROM (UPDATE t SET a=1 OUTPUT inserted.*) u",
                 "INSERT INTO x (a) SELECT a FROM (MERGE t USING s ON 1=1 WHEN MATCHED THEN DELETE OUTPUT deleted.a) AS c(a)" }) {
             assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
             assertFalse(BATCHES.isReadOrInsertQuery(sql), sql);
@@ -4712,9 +4832,10 @@ public class SqlParserTest extends TestBase {
     // these emptied the table on sqlite-jdbc 3.46.
     @Test
     public void testSqliteReadingRunsStatementsBeforeLexError() {
-        for (final String sql : new String[] { "SELECT 1 AS [a'] ; DELETE FROM t ; '", "SELECT 1 AS [x'] ; DELETE FROM t /* '", "SELECT 'a\\' ; DELETE FROM t /* '",
-                "SELECT 1 AS [a'] ; DELETE FROM t ; ']'", "SELECT :a(') ; DELETE FROM t ; --'", "SELECT @a(') ; DELETE FROM t ; --'",
-                "SELECT $a(') ; DELETE FROM t ; --'", "SELECT #a(') ; DELETE FROM t ; --'", "SELECT $a::b(') ; DELETE FROM t ; --'" }) {
+        for (final String sql : new String[] { "SELECT 1 AS [a'] ; DELETE FROM t ; '", "SELECT 1 AS [x'] ; DELETE FROM t /* '",
+                "SELECT 'a\\' ; DELETE FROM t /* '", "SELECT 1 AS [a'] ; DELETE FROM t ; ']'", "SELECT :a(') ; DELETE FROM t ; --'",
+                "SELECT @a(') ; DELETE FROM t ; --'", "SELECT $a(') ; DELETE FROM t ; --'", "SELECT #a(') ; DELETE FROM t ; --'",
+                "SELECT $a::b(') ; DELETE FROM t ; --'" }) {
             assertAllReadGatesReject(sql);
         }
 
@@ -4881,12 +5002,12 @@ public class SqlParserTest extends TestBase {
     // engine that runs a DELETE nested in a query, continues "DELETE value" only with WITH, OUTPUT, FROM, WHERE or OPTION.
     @Test
     public void testVerbNamedJsonObjectKeyIsNotANestedStatement() {
-        for (final String sql : new String[] { "SELECT JSON_OBJECT(delete:1) FROM (VALUES 'key') AS t(delete)", "SELECT JSON_OBJECT(delete: 1, update : col) FROM t",
-                "SELECT JSON_OBJECTAGG(delete:1) FROM t", "SELECT JSON_OBJECT(delete:delete) FROM t", "SELECT JSON_OBJECT(delete VALUE 1) FROM t",
-                "SELECT JSON_OBJECT(delete VALUE ?, merge VALUE 'x') FROM t", "SELECT JSON_OBJECT(KEY delete VALUE 1) FROM t",
-                "SELECT JSON_OBJECT(delete VALUE NULL) FROM (VALUES 'key') AS t(delete)", "SELECT JSON_OBJECT(delete VALUE -1) FROM t",
-                "SELECT JSON_OBJECT(delete VALUE .5) FROM (VALUES 'key') AS t(delete)", "SELECT JSON_OBJECT(delete VALUE -.5, update VALUE +1) FROM t",
-                "SELECT id FROM t WHERE (delete ILIKE .5)",
+        for (final String sql : new String[] { "SELECT JSON_OBJECT(delete:1) FROM (VALUES 'key') AS t(delete)",
+                "SELECT JSON_OBJECT(delete: 1, update : col) FROM t", "SELECT JSON_OBJECTAGG(delete:1) FROM t", "SELECT JSON_OBJECT(delete:delete) FROM t",
+                "SELECT JSON_OBJECT(delete VALUE 1) FROM t", "SELECT JSON_OBJECT(delete VALUE ?, merge VALUE 'x') FROM t",
+                "SELECT JSON_OBJECT(KEY delete VALUE 1) FROM t", "SELECT JSON_OBJECT(delete VALUE NULL) FROM (VALUES 'key') AS t(delete)",
+                "SELECT JSON_OBJECT(delete VALUE -1) FROM t", "SELECT JSON_OBJECT(delete VALUE .5) FROM (VALUES 'key') AS t(delete)",
+                "SELECT JSON_OBJECT(delete VALUE -.5, update VALUE +1) FROM t", "SELECT id FROM t WHERE (delete ILIKE .5)",
                 "SELECT JSON_OBJECT(delete VALUE TRUE) FROM t", "SELECT JSON_OBJECT(delete VALUE col) FROM t", "SELECT JSON_OBJECT(delete VALUE t.col) FROM t",
                 "SELECT JSON_OBJECT(delete VALUE lower(col)) FROM t", "SELECT JSON_OBJECT(delete VALUE \"col\") FROM t",
                 "SELECT id FROM t WHERE (delete ILIKE NULL) OR (delete REGEXP -1) OR (delete GLOB FALSE)" }) {
@@ -4902,8 +5023,10 @@ public class SqlParserTest extends TestBase {
 
         // SQL Server's continuations of DELETE value, its qualified name or a hint keep the statement reading.
         for (final String sql : new String[] { "INSERT INTO x SELECT a FROM (DELETE value OUTPUT deleted.a) AS d",
-                "INSERT INTO x SELECT a FROM (DELETE value WITH (TABLOCK) OUTPUT deleted.a) AS d", "INSERT INTO x SELECT a FROM (DELETE value.dbo.t OUTPUT deleted.a) AS d",
-                "INSERT INTO x SELECT a FROM (DELETE value /* c */ OUTPUT deleted.a) AS d", "INSERT INTO x SELECT a FROM (DELETE value FROM value OUTPUT deleted.a) AS d" }) {
+                "INSERT INTO x SELECT a FROM (DELETE value WITH (TABLOCK) OUTPUT deleted.a) AS d",
+                "INSERT INTO x SELECT a FROM (DELETE value.dbo.t OUTPUT deleted.a) AS d",
+                "INSERT INTO x SELECT a FROM (DELETE value /* c */ OUTPUT deleted.a) AS d",
+                "INSERT INTO x SELECT a FROM (DELETE value FROM value OUTPUT deleted.a) AS d" }) {
             assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
         }
 
@@ -4966,7 +5089,8 @@ public class SqlParserTest extends TestBase {
             assertAllReadGatesReject(sql);
         }
 
-        assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x (a) SELECT a FROM (MERGE t USING s ON 1=1 WHEN MATCHED THEN DELETE OUTPUT deleted.a) AS c(a)"));
+        assertFalse(
+                SqlParser.isReadOrInsertQuery("INSERT INTO x (a) SELECT a FROM (MERGE t USING s ON 1=1 WHEN MATCHED THEN DELETE OUTPUT deleted.a) AS c(a)"));
         assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT a FROM (DELETE TOP (1) FROM t OUTPUT deleted.a) AS d"));
         assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT a FROM (DELETE #t OUTPUT deleted.a\n) AS d"));
         assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM FINAL TABLE (INSERT t (a) OUTPUT inserted.a VALUES (1))"));
@@ -4989,15 +5113,16 @@ public class SqlParserTest extends TestBase {
     public void testNestedWithListsResolveInLinearTime() {
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
             for (final String sql : new String[] { "SELECT 1 FROM t WHERE a IN " + "(WITH ".repeat(16000),
-                    "SELECT 1 FROM t WHERE a IN " + "(WITH c AS (SELECT a FROM t WHERE b IN ".repeat(2000), "SELECT 1 FROM t WHERE a IN " + "x AS (WITH ".repeat(16000),
-                    "SELECT 1 FROM t WHERE a IN " + "x AS (WITH a AS (SELECT 1) ".repeat(8000) }) {
+                    "SELECT 1 FROM t WHERE a IN " + "(WITH c AS (SELECT a FROM t WHERE b IN ".repeat(2000),
+                    "SELECT 1 FROM t WHERE a IN " + "x AS (WITH ".repeat(16000), "SELECT 1 FROM t WHERE a IN " + "x AS (WITH a AS (SELECT 1) ".repeat(8000) }) {
                 SqlParser.isSyntacticallyReadQuery(sql);
                 SqlParser.isReadOrInsertQuery(sql);
             }
         });
 
         for (final String sql : new String[] { "SELECT * FROM OLD TABLE (WITH x AS (SELECT 1) DELETE FROM t)",
-                "SELECT * FROM NEW TABLE (WITH x AS (SELECT 1) (UPDATE t SET a = 1))", "WITH a AS (WITH b AS (SELECT 1) DELETE FROM t RETURNING *) SELECT * FROM a",
+                "SELECT * FROM NEW TABLE (WITH x AS (SELECT 1) (UPDATE t SET a = 1))",
+                "WITH a AS (WITH b AS (SELECT 1) DELETE FROM t RETURNING *) SELECT * FROM a",
                 "WITH a AS (WITH b AS (SELECT 1) (DELETE FROM t RETURNING *)) SELECT * FROM a",
                 "WITH a AS (WITH b AS (SELECT 1) UPSERT INTO t VALUES (1) RETURNING *) SELECT * FROM a",
                 "SELECT * FROM t WHERE x IN (WITH RECURSIVE r (n) AS (SELECT 1) DELETE FROM t RETURNING *)" }) {
@@ -5008,7 +5133,8 @@ public class SqlParserTest extends TestBase {
         assertTrue(SqlParser.isReadOrInsertQuery("SELECT * FROM (WITH x AS (SELECT 1) INSERT INTO t SELECT * FROM x RETURNING *) s"));
 
         for (final String sql : new String[] { "WITH a AS (WITH b AS (SELECT 1) SELECT * FROM b) SELECT * FROM a",
-                "SELECT * FROM t WHERE a IN (WITH x AS (SELECT 1) SELECT * FROM x)", "SELECT * FROM t WHERE a IN (WITH delete AS (SELECT 1) SELECT * FROM delete)" }) {
+                "SELECT * FROM t WHERE a IN (WITH x AS (SELECT 1) SELECT * FROM x)",
+                "SELECT * FROM t WHERE a IN (WITH delete AS (SELECT 1) SELECT * FROM delete)" }) {
             assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
         }
@@ -5019,7 +5145,8 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testBracketedStatementSourceWithCteOrUpsertIsRejected() {
         for (final String sql : new String[] { "SELECT * FROM [WITH x AS (SELECT 1) DELETE FROM t RETURNING *]",
-                "SELECT * FROM [ WITH x AS (SELECT 1) UPDATE t SET a = 1 RETURNING a ]", "SELECT * FROM [WITH d AS (DELETE FROM t RETURNING *) SELECT * FROM d]",
+                "SELECT * FROM [ WITH x AS (SELECT 1) UPDATE t SET a = 1 RETURNING a ]",
+                "SELECT * FROM [WITH d AS (DELETE FROM t RETURNING *) SELECT * FROM d]",
                 "SELECT * FROM [WITH d AS (UPDATE t SET a = 1 RETURNING *) SELECT * FROM d]", "SELECT * FROM [WITH d AS (DELETE FROM t) SELECT 1]",
                 "SELECT * FROM [/**/WITH x AS (SELECT ']') DELETE FROM t RETURNING *]" }) {
             assertAllReadGatesReject(sql);
@@ -5069,8 +5196,8 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testBracketNameAfterOpeningParenthesisIsNotANestedStatement() {
         for (final String sql : new String[] { "SELECT MAX([Update Date]) FROM #tmp", "SELECT COUNT([Update Date]) FROM t WHERE name LIKE '[a-c]%'",
-                "SELECT ISNULL([Delete Flag], 0) FROM [dbo].[Sales-Data]", "SELECT * FROM #t WHERE ([Merge Key] = 1)", "SELECT ([Update Date]) FROM t -- it's\r\n",
-                "SELECT [Name] FROM t WHERE [Name] IN (SELECT [Name] FROM #names) AND ([Update Date] IS NULL)",
+                "SELECT ISNULL([Delete Flag], 0) FROM [dbo].[Sales-Data]", "SELECT * FROM #t WHERE ([Merge Key] = 1)",
+                "SELECT ([Update Date]) FROM t -- it's\r\n", "SELECT [Name] FROM t WHERE [Name] IN (SELECT [Name] FROM #names) AND ([Update Date] IS NULL)",
                 "SELECT * FROM t WHERE ( [Delete Flag] IS NULL) AND name LIKE '[a-c]%'", "SELECT a FROM t WHERE ([delete] IS NULL) AND b LIKE '[0-9]'" }) {
             assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
@@ -5167,8 +5294,9 @@ public class SqlParserTest extends TestBase {
         }
 
         // Oracle q-quotes: paired, same-character, letter and upper-case NQ delimiters, and a closer not followed by "'".
-        for (final String sql : new String[] { "SELECT q'( ' )' ; DELETE FROM t --'", "SELECT q'< ' >' ; DELETE FROM t --'", "SELECT q'! ' !' ; DELETE FROM t --'",
-                "SELECT q'a ' a' ; DELETE FROM t --'", "SELECT NQ'[ ' ]' ; DELETE FROM t --'", "SELECT q'[ ] ' ]' ; DELETE FROM t --'" }) {
+        for (final String sql : new String[] { "SELECT q'( ' )' ; DELETE FROM t --'", "SELECT q'< ' >' ; DELETE FROM t --'",
+                "SELECT q'! ' !' ; DELETE FROM t --'", "SELECT q'a ' a' ; DELETE FROM t --'", "SELECT NQ'[ ' ]' ; DELETE FROM t --'",
+                "SELECT q'[ ] ' ]' ; DELETE FROM t --'" }) {
             assertAllReadGatesReject(sql);
         }
 
@@ -5188,8 +5316,8 @@ public class SqlParserTest extends TestBase {
     // in H2 (REGULAR, MSSQLServer and PostgreSQL modes) while every gate accepted it.
     @Test
     public void testH2DollarQuoteAfterUnicodeSpaceIsRead() {
-        final int[] spaces = { 0x00A0, 0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A, 0x2028, 0x2029,
-                0x202F, 0x205F, 0x3000 };
+        final int[] spaces = { 0x00A0, 0x1680, 0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007, 0x2008, 0x2009, 0x200A, 0x2028, 0x2029, 0x202F,
+                0x205F, 0x3000 };
         assertEquals(18, spaces.length);
 
         for (final int space : spaces) {
@@ -5208,8 +5336,7 @@ public class SqlParserTest extends TestBase {
         for (final String sql : new String[] { "SELECT '\\' AS c, x.* FROM NEW TABLE (UPDATE t /* /* */ ) */ SET a = 0) x -- '",
                 "SELECT '\\' AS c, x.* FROM OLD TABLE (DELETE /* /* */ ) */ FROM t) x -- '",
                 "SELECT '\\' AS c, x.* FROM FINAL TABLE (MERGE /* /* */ ) */ INTO t KEY(id) VALUES (1, 99)) x -- '",
-                "SELECT $$ ' $$ AS c, x.* FROM NEW TABLE (UPDATE t /* /* */ ) */ SET a = 0) x -- '",
-                "SELECT $a$ ' $a$ /* /* */ */ ; DELETE FROM t ; --'" }) {
+                "SELECT $$ ' $$ AS c, x.* FROM NEW TABLE (UPDATE t /* /* */ ) */ SET a = 0) x -- '", "SELECT $a$ ' $a$ /* /* */ */ ; DELETE FROM t ; --'" }) {
             assertAllReadGatesReject(sql);
         }
 
@@ -5231,8 +5358,8 @@ public class SqlParserTest extends TestBase {
             assertAllReadGatesReject(sql);
         }
 
-        for (final String sql : new String[] { "SELECT * FROM [((WITH x AS (SELECT 1) SELECT * FROM x))]", "SELECT * FROM [WITH d AS (SELECT 1) SELECT * FROM d]",
-                "SELECT * FROM [EXPLAIN SELECT 1]", "SELECT a[(1)], [(Update Date)] FROM t" }) {
+        for (final String sql : new String[] { "SELECT * FROM [((WITH x AS (SELECT 1) SELECT * FROM x))]",
+                "SELECT * FROM [WITH d AS (SELECT 1) SELECT * FROM d]", "SELECT * FROM [EXPLAIN SELECT 1]", "SELECT a[(1)], [(Update Date)] FROM t" }) {
             assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
         }
@@ -5310,8 +5437,7 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testCtePrefixedInsertStillAcceptsOrdinarySourcesAndExecuteIdentifiers() {
         for (final String sql : List.of("WITH c AS (SELECT id FROM t) INSERT INTO c VALUES (1)",
-                "WITH c AS (SELECT id FROM t) INSERT INTO c SELECT execute FROM s",
-                "WITH c AS (SELECT id FROM t) INSERT INTO execute (exec) SELECT id FROM c",
+                "WITH c AS (SELECT id FROM t) INSERT INTO c SELECT execute FROM s", "WITH c AS (SELECT id FROM t) INSERT INTO execute (exec) SELECT id FROM c",
                 "WITH c AS (SELECT execute FROM t) SELECT execute FROM c")) {
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
         }
@@ -5332,12 +5458,9 @@ public class SqlParserTest extends TestBase {
     // too (a later RETURNING column may be named execute), and a table or alias named top is no TOP clause.
     @Test
     public void testInsertTopScalarQueryKeepsOrdinarySourcesAndExecuteIdentifiers() {
-        for (final String sql : List.of("INSERT TOP ((SELECT 1)) INTO t VALUES (1)",
-                "INSERT TOP ((SELECT 1)) INTO t SELECT execute FROM s",
-                "INSERT TOP ((SELECT 1)) INTO execute (exec) SELECT id FROM s",
-                "INSERT INTO t (id) (SELECT execute FROM s)",
-                "INSERT INTO t (SELECT execute FROM s) RETURNING execute",
-                "INSERT INTO top (SELECT execute FROM s) RETURNING execute",
+        for (final String sql : List.of("INSERT TOP ((SELECT 1)) INTO t VALUES (1)", "INSERT TOP ((SELECT 1)) INTO t SELECT execute FROM s",
+                "INSERT TOP ((SELECT 1)) INTO execute (exec) SELECT id FROM s", "INSERT INTO t (id) (SELECT execute FROM s)",
+                "INSERT INTO t (SELECT execute FROM s) RETURNING execute", "INSERT INTO top (SELECT execute FROM s) RETURNING execute",
                 "INSERT INTO t AS top (SELECT execute FROM s) RETURNING execute")) {
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
         }
@@ -5349,11 +5472,9 @@ public class SqlParserTest extends TestBase {
     // so the UPDATE or DELETE that followed passed the read-or-insert gate.
     @Test
     public void testSuffixIdentifierCannotHideTheMainMutation() {
-        for (final String suffix : List.of("SEARCH DEPTH FIRST BY id SET insert ", "CYCLE id SET insert USING path ",
-                "CYCLE id SET seen USING insert ", "SEARCH BREADTH FIRST BY id SET ord CYCLE id SET insert TO 1 DEFAULT 0 USING path ",
-                "CYCLE id SET seen TO 'YY' DEFAULT 'N'\n'N' USING insert ",
-                "CYCLE id SET seen TO 'YY' DEFAULT E'N'\n'N' USING insert ",
-                "CYCLE id SET seen TO 'Y'::text DEFAULT 'N'::text USING insert ")) {
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY id SET insert ", "CYCLE id SET insert USING path ", "CYCLE id SET seen USING insert ",
+                "SEARCH BREADTH FIRST BY id SET ord CYCLE id SET insert TO 1 DEFAULT 0 USING path ", "CYCLE id SET seen TO 'YY' DEFAULT 'N'\n'N' USING insert ",
+                "CYCLE id SET seen TO 'YY' DEFAULT E'N'\n'N' USING insert ", "CYCLE id SET seen TO 'Y'::text DEFAULT 'N'::text USING insert ")) {
             final String update = RECURSIVE_CTE + suffix + "UPDATE target SET x = 1";
             assertTrue(SqlParser.isUpdateQuery(update), update);
             assertFalse(SqlParser.isReadOrInsertQuery(update), update);
@@ -5370,8 +5491,7 @@ public class SqlParserTest extends TestBase {
     public void testSuffixNamesRemainIdentifiersInReadQueriesAndNestedCtes() {
         for (final String suffix : List.of("SEARCH DEPTH FIRST BY id SET update ", "CYCLE id SET delete USING merge ",
                 "SEARCH DEPTH FIRST BY id SET \ud83d\ude00 ", "CYCLE id SET seen USING i\u0301nsert ",
-                "CYCLE id SET seen TO 'YY' DEFAULT 'N'\n'N' USING update ",
-                "CYCLE id SET seen TO 'Y'::text DEFAULT 'N'::text USING update ",
+                "CYCLE id SET seen TO 'YY' DEFAULT 'N'\n'N' USING update ", "CYCLE id SET seen TO 'Y'::text DEFAULT 'N'::text USING update ",
                 "SEARCH DEPTH FIRST BY id SET \"order\" CYCLE id SET insert TO 'yes' DEFAULT 'no' USING path ")) {
             final String sql = RECURSIVE_CTE + suffix + "SELECT * FROM c";
             assertTrue(SqlParser.isSelectQuery(sql), sql);
@@ -5395,10 +5515,8 @@ public class SqlParserTest extends TestBase {
     // lost their verb.
     @Test
     public void testUnicodeEscapedSuffixNamesPreserveReadAndMutationClassification() {
-        for (final String suffix : List.of("SEARCH DEPTH FIRST BY U&\"id\" SET ord ",
-                "SEARCH BREADTH FIRST BY u&\"i\\0064\" SET U&\"up\\0064ate\" ",
-                "SEARCH DEPTH FIRST BY id SET U&\"or\"\"der\" ",
-                "CYCLE U&\"id\" SET seen USING path ", "CYCLE id SET U&\"insert\" USING path ",
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY U&\"id\" SET ord ", "SEARCH BREADTH FIRST BY u&\"i\\0064\" SET U&\"up\\0064ate\" ",
+                "SEARCH DEPTH FIRST BY id SET U&\"or\"\"der\" ", "CYCLE U&\"id\" SET seen USING path ", "CYCLE id SET U&\"insert\" USING path ",
                 "CYCLE id SET seen USING u&\"pa\\0074h\" ")) {
             assertSuffixReadAndMutationClassification(suffix);
         }
@@ -5409,10 +5527,8 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testUnicodeEscapedSuffixNamesConsumeTheirEscapeClause() {
         for (final String suffix : List.of("SEARCH DEPTH FIRST BY U&\"i!0064\" UESCAPE '!' SET ord ",
-                "SEARCH BREADTH FIRST BY id SET u&\"up!0064ate\" /* name */ uescape /* escape */ '!' ",
-                "CYCLE U&\"i!0064\" UESCAPE E'!' SET seen USING path ",
-                "CYCLE id SET U&\"in!0073ert\" UESCAPE '!' USING path ",
-                "CYCLE id SET seen USING U&\"pa!0074h\" UESCAPE $escape$!$escape$ ",
+                "SEARCH BREADTH FIRST BY id SET u&\"up!0064ate\" /* name */ uescape /* escape */ '!' ", "CYCLE U&\"i!0064\" UESCAPE E'!' SET seen USING path ",
+                "CYCLE id SET U&\"in!0073ert\" UESCAPE '!' USING path ", "CYCLE id SET seen USING U&\"pa!0074h\" UESCAPE $escape$!$escape$ ",
                 "CYCLE id SET seen USING U&\"pa!0074h\" -- name\n UESCAPE e'\\041' ")) {
             assertSuffixReadAndMutationClassification(suffix);
         }
@@ -5447,14 +5563,14 @@ public class SqlParserTest extends TestBase {
             assertTrue(SqlParser.isSyntacticallyReadQuery("WITH outer_cte AS (" + sql + ") SELECT * FROM outer_cte"), sql);
             assertFalse(SqlParser.isReadOrInsertQuery(pairCte + suffix + "UPDATE target SET x = 1"), suffix);
             assertFalse(SqlParser.isReadOrInsertQuery(pairCte + suffix + "REPLACE INTO target SELECT id FROM c"), suffix);
-            assertFalse(SqlParser.isReadOrInsertQuery("WITH outer_cte AS (" + pairCte + suffix
-                    + "UPDATE target SET x = 1 RETURNING x) SELECT * FROM outer_cte"), suffix);
+            assertFalse(
+                    SqlParser.isReadOrInsertQuery("WITH outer_cte AS (" + pairCte + suffix + "UPDATE target SET x = 1 RETURNING x) SELECT * FROM outer_cte"),
+                    suffix);
         }
 
         for (final String sql : List.of(RECURSIVE_CTE + "CYCLE id RESTRICT SELECT * FROM c",
                 RECURSIVE_CTE + "SEARCH DEPTH FIRST BY id DESC NULLS LAST SET ord SELECT * FROM c",
-                "WITH c(id) AS (SELECT 1 FROM dual UNION ALL SELECT id + 1 FROM c WHERE id < 2) "
-                        + "CYCLE id SET seen TO 'Y' DEFAULT 'N' SELECT * FROM c")) {
+                "WITH c(id) AS (SELECT 1 FROM dual UNION ALL SELECT id + 1 FROM c WHERE id < 2) " + "CYCLE id SET seen TO 'Y' DEFAULT 'N' SELECT * FROM c")) {
             assertTrue(SqlParser.isSelectQuery(sql), sql);
             assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
             assertTrue(SqlParser.isSyntacticallyReadQuery("WITH outer_cte AS (" + sql + ") SELECT * FROM outer_cte"), sql);
@@ -5496,8 +5612,9 @@ public class SqlParserTest extends TestBase {
         final String pgCte = "WITH RECURSIVE c(id) AS (SELECT 1 UNION ALL SELECT id + 1 FROM c WHERE id < 2) ";
 
         for (final String marks : List.of("TO 1 DEFAULT 0", "TO true DEFAULT false", "TO 'Y'::char(1) DEFAULT 'N'::char(1)",
-                "TO numeric(3, 0) '1' DEFAULT numeric(3, 0) '0'", "TO timestamp(3) with time zone '2020-01-01' DEFAULT timestamp(3) with time zone '2020-01-02'",
-                "TO \"char\" 'Y' DEFAULT \"char\" 'N'", "TO $$Y$$ DEFAULT $t$N$t$")) {
+                "TO numeric(3, 0) '1' DEFAULT numeric(3, 0) '0'",
+                "TO timestamp(3) with time zone '2020-01-01' DEFAULT timestamp(3) with time zone '2020-01-02'", "TO \"char\" 'Y' DEFAULT \"char\" 'N'",
+                "TO $$Y$$ DEFAULT $t$N$t$")) {
             final String clause = pgCte + "CYCLE id SET is_cycle " + marks + " USING path ";
             assertTrue(SqlParser.isSelectQuery(clause + "SELECT * FROM c"), marks);
             assertTrue(SqlParser.isSyntacticallyReadQuery(clause + "SELECT * FROM c"), marks);
@@ -5508,8 +5625,8 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testCycleMarkTypeModifiersAllowParenthesizedConstants() {
-        for (final String marks : List.of("TO numeric((3), 0) '1' DEFAULT numeric((3), 0) '0'",
-                "TO numeric(((3)), ((0))) '1' DEFAULT 0", "TO 1 DEFAULT numeric(/* precision */ (3), (0)) '0'")) {
+        for (final String marks : List.of("TO numeric((3), 0) '1' DEFAULT numeric((3), 0) '0'", "TO numeric(((3)), ((0))) '1' DEFAULT 0",
+                "TO 1 DEFAULT numeric(/* precision */ (3), (0)) '0'")) {
             assertSuffixReadAndMutationClassification("CYCLE id SET seen " + marks + " USING path ");
         }
     }
@@ -5571,8 +5688,8 @@ public class SqlParserTest extends TestBase {
         for (final String sql : List.of("INSERT top (SELECT id FROM s) RETURNING exec", "INSERT top (SELECT id FROM s) RETURNING exec, id",
                 "INSERT top (SELECT id FROM s) RETURNING exec AS e", "INSERT top (SELECT id FROM s) RETURNING execute + 1",
                 "INSERT top (SELECT id FROM s) RETURNING exec /* last */", "INSERT top (SELECT id FROM s) RETURNING exec::text",
-                "INSERT top (SELECT id FROM s) RETURNING execute /* cast */ ::text", "INSERT INTO t SET exec = 1",
-                "INSERT INTO t SET exec = :value", "INSERT t SET a = 1, exec = 2")) {
+                "INSERT top (SELECT id FROM s) RETURNING execute /* cast */ ::text", "INSERT INTO t SET exec = 1", "INSERT INTO t SET exec = :value",
+                "INSERT t SET a = 1, exec = 2")) {
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
         }
 
@@ -5613,10 +5730,10 @@ public class SqlParserTest extends TestBase {
 
     @Test
     public void testInsertIntoTableNamedTopKeepsKeywordOperatorExpressions() {
-        for (final String expression : List.of("exec IS NULL", "exec IS NOT NULL", "exec BETWEEN 1 AND 2", "exec NOT BETWEEN 1 AND 2",
-                "exec IN (1, 2)", "exec NOT IN (1, 2)", "exec LIKE 'a%'", "exec NOT LIKE 'a%'", "exec AND TRUE", "exec OR FALSE",
-                "exec COLLATE utf8mb4_bin", "execute /* column */ is /* predicate */ null", "CASE exec WHEN 0 THEN 1 ELSE 2 END",
-                "CASE WHEN exec THEN 1 ELSE 0 END", "CASE WHEN TRUE THEN exec ELSE 0 END", "CASE WHEN TRUE THEN 0 ELSE exec END")) {
+        for (final String expression : List.of("exec IS NULL", "exec IS NOT NULL", "exec BETWEEN 1 AND 2", "exec NOT BETWEEN 1 AND 2", "exec IN (1, 2)",
+                "exec NOT IN (1, 2)", "exec LIKE 'a%'", "exec NOT LIKE 'a%'", "exec AND TRUE", "exec OR FALSE", "exec COLLATE utf8mb4_bin",
+                "execute /* column */ is /* predicate */ null", "CASE exec WHEN 0 THEN 1 ELSE 2 END", "CASE WHEN exec THEN 1 ELSE 0 END",
+                "CASE WHEN TRUE THEN exec ELSE 0 END", "CASE WHEN TRUE THEN 0 ELSE exec END")) {
             final String sql = "INSERT top (SELECT id FROM s) RETURNING " + expression;
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
         }
@@ -5633,8 +5750,8 @@ public class SqlParserTest extends TestBase {
     @Test
     public void testInsertProcedureSourcesWithOmittedLeadingNamePartsAreRejected() {
         for (final String procedure : List.of("..mutate", " ..mutate", " .dbo.mutate", ".dbo.mutate", " . . mutate", " /* c */ ..mutate", " .mutate",
-                " .[dbo].[mutate]", " .\"dbo\".\"mutate\"", " .`dbo`.`mutate`", " .dbo.mutate;", " .dbo.mutate -1", " .dbo.mutate +1",
-                " .dbo.mutate 'x'", " .dbo.mutate @a = 1", " .dbo.mutate ?", " .dbo.mutate :value", " .dbo /* c */ . mutate WITH RECOMPILE")) {
+                " .[dbo].[mutate]", " .\"dbo\".\"mutate\"", " .`dbo`.`mutate`", " .dbo.mutate;", " .dbo.mutate -1", " .dbo.mutate +1", " .dbo.mutate 'x'",
+                " .dbo.mutate @a = 1", " .dbo.mutate ?", " .dbo.mutate :value", " .dbo /* c */ . mutate WITH RECOMPILE")) {
             for (final String prefix : List.of("INSERT INTO t EXEC", "INSERT t (a) EXECUTE", "INSERT TOP ((SELECT 1)) INTO t EXEC",
                     "WITH c AS (SELECT 1) INSERT INTO t EXEC", "SELECT 1; INSERT INTO t EXEC")) {
                 final String sql = prefix + procedure;
@@ -5654,13 +5771,13 @@ public class SqlParserTest extends TestBase {
     // or used as an operand, and exec as a qualified target name, are not procedure sources.
     @Test
     public void testQualifiedExecColumnsAndTargetsRemainOrdinaryInserts() {
-        for (final String sql : List.of("INSERT INTO exec SET exec.a = 1", "INSERT INTO exec SET exec . a = 1, exec.\"b\" = 2",
-                "INSERT INTO t SET a = exec.b", "INSERT INTO t SET a = 1, b = exec.c + 1", "INSERT INTO t SET a = (exec.b)",
-                "INSERT top (SELECT id FROM s) RETURNING exec.id AS e", "INSERT top (SELECT id FROM s) RETURNING exec.id, id",
-                "INSERT top (SELECT id FROM s) RETURNING exec.*", "INSERT top (SELECT id FROM s) RETURNING exec.id::text",
-                "INSERT top (SELECT id FROM s) RETURNING execute.id IS NULL", "INSERT top (SELECT id FROM s) RETURNING exec.id * 2",
-                "INSERT INTO exec.t SELECT 1", "INSERT INTO s.exec SELECT 1", "INSERT INTO \"s\".exec SELECT 1", "INSERT INTO t AS exec SELECT 1",
-                "INSERT INTO t SELECT exec.a FROM exec", "INSERT INTO t VALUES (1) RETURNING exec.a", "INSERT INTO t (exec.a) VALUES (1)")) {
+        for (final String sql : List.of("INSERT INTO exec SET exec.a = 1", "INSERT INTO exec SET exec . a = 1, exec.\"b\" = 2", "INSERT INTO t SET a = exec.b",
+                "INSERT INTO t SET a = 1, b = exec.c + 1", "INSERT INTO t SET a = (exec.b)", "INSERT top (SELECT id FROM s) RETURNING exec.id AS e",
+                "INSERT top (SELECT id FROM s) RETURNING exec.id, id", "INSERT top (SELECT id FROM s) RETURNING exec.*",
+                "INSERT top (SELECT id FROM s) RETURNING exec.id::text", "INSERT top (SELECT id FROM s) RETURNING execute.id IS NULL",
+                "INSERT top (SELECT id FROM s) RETURNING exec.id * 2", "INSERT INTO exec.t SELECT 1", "INSERT INTO s.exec SELECT 1",
+                "INSERT INTO \"s\".exec SELECT 1", "INSERT INTO t AS exec SELECT 1", "INSERT INTO t SELECT exec.a FROM exec",
+                "INSERT INTO t VALUES (1) RETURNING exec.a", "INSERT INTO t (exec.a) VALUES (1)")) {
             assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
         }
 
@@ -5675,8 +5792,8 @@ public class SqlParserTest extends TestBase {
     public void testOracleHashNamesInCteSuffixKeepTheMainVerb() {
         final String oracleCte = "WITH c(\"ID#\") AS (SELECT 1 FROM dual UNION ALL SELECT \"ID#\" + 1 FROM c WHERE \"ID#\" < 2) ";
 
-        for (final String suffix : List.of("SEARCH DEPTH FIRST BY ID# SET ord\n", "SEARCH DEPTH FIRST BY ID# SET ord ", "SEARCH DEPTH FIRST BY ID# ASC SET ord# ",
-                "CYCLE ID# SET cyc# TO 'Y' DEFAULT 'N'\n", "CYCLE ID#, x$# SET cyc TO 1 DEFAULT 0 ")) {
+        for (final String suffix : List.of("SEARCH DEPTH FIRST BY ID# SET ord\n", "SEARCH DEPTH FIRST BY ID# SET ord ",
+                "SEARCH DEPTH FIRST BY ID# ASC SET ord# ", "CYCLE ID# SET cyc# TO 'Y' DEFAULT 'N'\n", "CYCLE ID#, x$# SET cyc TO 1 DEFAULT 0 ")) {
             final String select = oracleCte + suffix + "SELECT * FROM c";
             assertTrue(SqlParser.isSelectQuery(select), select);
             assertTrue(SqlParser.isSyntacticallyReadQuery(select), select);

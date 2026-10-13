@@ -124,8 +124,7 @@ public class AbstractInTest extends TestBase {
     @Test
     public void testRejectsNullScalarAndTupleMembers() {
         assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("status", Arrays.asList("A", null, "B")));
-        assertThrows(IllegalArgumentException.class,
-                () -> new TestRowAbstractIn(Arrays.asList("id", "tenant"), Arrays.asList(Arrays.asList(1, null))));
+        assertThrows(IllegalArgumentException.class, () -> new TestRowAbstractIn(Arrays.asList("id", "tenant"), Arrays.asList(Arrays.asList(1, null))));
     }
 
     @Test
@@ -216,8 +215,7 @@ public class AbstractInTest extends TestBase {
 
     @Test
     public void testRejectsPredicateValuedMembers() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new TestAbstractIn("id", Arrays.asList(Filters.eq("status", "ACTIVE"), 2)));
+        assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("id", Arrays.asList(Filters.eq("status", "ACTIVE"), 2)));
     }
 
     @Test
@@ -306,10 +304,8 @@ public class AbstractInTest extends TestBase {
 
     @Test
     public void testEqualsAndHashCode_RowValueArrayMembershipUsesContentEquality() {
-        final TestRowAbstractIn left = new TestRowAbstractIn(Arrays.asList("a", "b"),
-                Arrays.asList(Arrays.asList(new byte[] { 1 }, new byte[] { 2 })));
-        final TestRowAbstractIn right = new TestRowAbstractIn(Arrays.asList("a", "b"),
-                Arrays.asList(Arrays.asList(new byte[] { 1 }, new byte[] { 2 })));
+        final TestRowAbstractIn left = new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(new byte[] { 1 }, new byte[] { 2 })));
+        final TestRowAbstractIn right = new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(new byte[] { 1 }, new byte[] { 2 })));
 
         assertEquals(left, right);
         assertEquals(left.hashCode(), right.hashCode());
@@ -509,8 +505,7 @@ public class AbstractInTest extends TestBase {
         // InSubQuery: single and multi-column
         assertEquals("_id IN (SELECT 1)", Filters.in("_id", Filters.subQuery("SELECT 1")).toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("_ID IN (SELECT 1)", Filters.in("_id", Filters.subQuery("SELECT 1")).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
-        assertEquals("(_id, __v) IN (SELECT 1, 2)",
-                Filters.in(Arrays.asList("_id", "__v"), Filters.subQuery("SELECT 1, 2")).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("(_id, __v) IN (SELECT 1, 2)", Filters.in(Arrays.asList("_id", "__v"), Filters.subQuery("SELECT 1, 2")).toSql(NamingPolicy.SNAKE_CASE));
 
         // structured SubQuery: selected prop names AND the table name keep their runs
         assertEquals("SELECT _id, first_name_ FROM _tbl WHERE _x = 1",

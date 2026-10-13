@@ -740,14 +740,14 @@ public abstract class AbstractCondition implements Condition {
      * @throws IllegalArgumentException if an object array contains a direct or indirect cycle
      */
     protected static Object snapshotMutableValue(final Object value) {
-        return snapshotMutableValue(value, new IdentityHashMap<>());
+        return snapshotMutableValue(value, null);
     }
 
     /**
      * Copies known mutable values while detecting object-array cycles.
      *
      * @param value the value to snapshot
-     * @param arraysBeingCopied the arrays on the active recursion path
+     * @param arraysBeingCopied the reference arrays on the active recursion path, or {@code null} until the first reference array
      * @return the snapshot, or the original immutable/unsupported value
      * @throws IllegalArgumentException if {@code value} contains an object-array cycle
      */
@@ -759,24 +759,29 @@ public abstract class AbstractCondition implements Condition {
         final Class<?> valueClass = value.getClass();
 
         if (valueClass.isArray()) {
-            if (arraysBeingCopied.put(value, Boolean.TRUE) != null) {
+            final int length = Array.getLength(value);
+            final Class<?> componentType = valueClass.getComponentType();
+
+            if (componentType.isPrimitive()) {
+                final Object copy = Array.newInstance(componentType, length);
+                System.arraycopy(value, 0, copy, 0, length);
+                return copy;
+            }
+
+            // Only reference arrays can form cycles. Allocate the traversal state lazily so ordinary
+            // scalar bindings, dates and primitive arrays do not allocate an unused identity map.
+            final IdentityHashMap<Object, Boolean> activeArrays = arraysBeingCopied == null ? new IdentityHashMap<>() : arraysBeingCopied;
+            if (activeArrays.put(value, Boolean.TRUE) != null) {
                 throw new IllegalArgumentException("Cyclic object arrays are not supported as condition values");
             }
 
-            final int length = Array.getLength(value);
-            final Class<?> componentType = valueClass.getComponentType();
             final Object copy = Array.newInstance(componentType, length);
-
             try {
-                if (componentType.isPrimitive()) {
-                    System.arraycopy(value, 0, copy, 0, length);
-                } else {
-                    for (int i = 0; i < length; i++) {
-                        Array.set(copy, i, snapshotMutableValue(Array.get(value, i), arraysBeingCopied));
-                    }
+                for (int i = 0; i < length; i++) {
+                    Array.set(copy, i, snapshotMutableValue(Array.get(value, i), activeArrays));
                 }
             } finally {
-                arraysBeingCopied.remove(value);
+                activeArrays.remove(value);
             }
 
             return copy;

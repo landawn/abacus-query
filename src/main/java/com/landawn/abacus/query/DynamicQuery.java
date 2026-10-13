@@ -1182,8 +1182,8 @@ public final class DynamicQuery {
      * to the object pool once the owning {@link Builder#build()} completes.
      */
     static abstract class ClauseBuilder {
-        /** The buffer holding this clause's SQL fragments; recycled to the object pool by {@link #close()}. */
-        final StringBuilder sb;
+        /** The buffer holding this clause's SQL fragments; recycled and cleared to {@code null} by {@link #close()}. */
+        StringBuilder sb;
 
         /** Closed-state marker; set by {@link #close()} when the owning {@link Builder#build()} recycles this clause's buffer. */
         private boolean isClosed;
@@ -1253,7 +1253,10 @@ public final class DynamicQuery {
             }
 
             isClosed = true;
-            Objectory.recycle(sb);
+            // Retained clause handles must not pin a recycled buffer, especially one that the pool discards for being oversized.
+            final StringBuilder buffer = sb;
+            sb = null;
+            Objectory.recycle(buffer);
         }
     }
 

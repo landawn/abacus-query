@@ -24,8 +24,7 @@ class NullArgumentContractTest {
 
     @Test
     void aliasValidationRejectsNullMapsButPreservesEmptyMaps() {
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Dsl.validateColumnAliases(null)).getMessage()
-                .contains(cs.propOrColumnNameAliases));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Dsl.validateColumnAliases(null)).getMessage().contains(cs.propOrColumnNameAliases));
         Dsl.validateColumnAliases(Collections.emptyMap());
         Dsl.validateColumnAliases(Collections.singletonMap("name", "display_name"));
         assertThrows(IllegalArgumentException.class, () -> Dsl.validateColumnAliases(Collections.singletonMap("name", null)));
@@ -33,10 +32,10 @@ class NullArgumentContractTest {
 
     @Test
     void topLevelMetadataRegistrationRejectsNullPolicyBeforeInspectingTheClass() {
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> QueryUtil.registerEntityPropColumnNameMap(null, null, null))
-                .getMessage().contains(cs.entityClass));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> QueryUtil.registerEntityPropColumnNameMap(String.class, null, null))
-                .getMessage().contains(cs.namingPolicy));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> QueryUtil.registerEntityPropColumnNameMap(null, null, null)).getMessage()
+                .contains(cs.entityClass));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> QueryUtil.registerEntityPropColumnNameMap(String.class, null, null)).getMessage()
+                .contains(cs.namingPolicy));
         assertThrows(IllegalArgumentException.class, () -> QueryUtil.registerEntityPropColumnNameMap(Person.class, null, null));
     }
 

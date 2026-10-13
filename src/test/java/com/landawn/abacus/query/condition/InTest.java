@@ -548,8 +548,7 @@ public class InTest extends TestBase {
         row.put("firstName", "John");
         // "lastName" intentionally absent
 
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> new In(Arrays.asList("firstName", "lastName"), Arrays.asList(row)));
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("firstName", "lastName"), Arrays.asList(row)));
         assertTrue(error.getMessage().contains("lastName"));
     }
 

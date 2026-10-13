@@ -2605,8 +2605,7 @@ public class FiltersTest extends TestBase {
     @SuppressWarnings("deprecation")
     public void testFilters_join() {
         // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> Filters.join("orders ON users.id = orders.user_id"));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.join("orders ON users.id = orders.user_id"));
         assertTrue(ex.getMessage().contains("JOIN requires a non-null ON/USING predicate"));
 
         Join join = Filters.join("orders", Filters.on("users.id", "orders.user_id"));
@@ -2617,8 +2616,7 @@ public class FiltersTest extends TestBase {
     @SuppressWarnings("deprecation")
     public void testFilters_leftJoin() {
         // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> Filters.leftJoin("orders ON users.id = orders.user_id"));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders ON users.id = orders.user_id"));
         assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"));
 
         LeftJoin leftJoin = Filters.leftJoin("orders", Filters.on("users.id", "orders.user_id"));
@@ -2629,8 +2627,7 @@ public class FiltersTest extends TestBase {
     @SuppressWarnings("deprecation")
     public void testFilters_rightJoin() {
         // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> Filters.rightJoin("orders ON users.id = orders.user_id"));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("orders ON users.id = orders.user_id"));
         assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"));
 
         RightJoin rightJoin = Filters.rightJoin("orders", Filters.on("users.id", "orders.user_id"));
@@ -2641,8 +2638,7 @@ public class FiltersTest extends TestBase {
     @SuppressWarnings("deprecation")
     public void testFilters_innerJoin() {
         // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> Filters.innerJoin("orders ON users.id = orders.user_id"));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("orders ON users.id = orders.user_id"));
         assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"));
 
         InnerJoin innerJoin = Filters.innerJoin("orders", Filters.on("users.id", "orders.user_id"));
@@ -2653,8 +2649,7 @@ public class FiltersTest extends TestBase {
     @SuppressWarnings("deprecation")
     public void testFilters_fullJoin() {
         // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> Filters.fullJoin("orders ON users.id = orders.user_id"));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("orders ON users.id = orders.user_id"));
         assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"));
 
         FullJoin fullJoin = Filters.fullJoin("orders", Filters.on("users.id", "orders.user_id"));
@@ -3141,8 +3136,7 @@ public class FiltersTest extends TestBase {
     @Test
     public void testPairOverloadsRejectDuplicatePropertyNames() {
         // D-L: a repeated name used to collapse silently into one entry with the last direction winning
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> Filters.groupBy("a", SortDirection.ASC, "a", SortDirection.DESC));
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "a", SortDirection.DESC));
         assertTrue(ex.getMessage().contains("Duplicate property name: a"));
         assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC));
         assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "b", SortDirection.DESC));
@@ -3155,8 +3149,7 @@ public class FiltersTest extends TestBase {
 
         // distinct names keep working
         assertEquals("GROUP BY a ASC, b DESC", Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.DESC).toString());
-        assertEquals("ORDER BY a ASC, b DESC, c ASC",
-                Filters.orderBy("a", SortDirection.ASC, "b", SortDirection.DESC, "c", SortDirection.ASC).toString());
+        assertEquals("ORDER BY a ASC, b DESC, c ASC", Filters.orderBy("a", SortDirection.ASC, "b", SortDirection.DESC, "c", SortDirection.ASC).toString());
     }
 
     @Test
@@ -3256,10 +3249,8 @@ public class FiltersTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> Filters.notIn("category", Arrays.asList("a", Filters.expr(" "))));
         assertThrows(IllegalArgumentException.class, () -> Filters.in("category", "a", Filters.expr(" ")));
         assertThrows(IllegalArgumentException.class, () -> Filters.notIn("category", "a", Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class,
-                () -> Filters.in(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
-        assertThrows(IllegalArgumentException.class,
-                () -> Filters.notIn(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
+        assertThrows(IllegalArgumentException.class, () -> Filters.in(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
+        assertThrows(IllegalArgumentException.class, () -> Filters.notIn(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
     }
 
     @Test
@@ -3380,7 +3371,8 @@ public class FiltersTest extends TestBase {
         final AbstractQueryBuilder.SP sp = Dsl.NSC.select("id").from("t").where(Filters.notIn("id", (Object) new int[] { 1, 2 })).build();
         assertEquals("SELECT id FROM t WHERE id NOT IN (:id1, :id2)", sp.query());
         assertEquals(Arrays.asList(1, 2), sp.parameters());
-        assertEquals("SELECT id FROM t WHERE id IN ('a', 'b')", Dsl.SCSB.select("id").from("t").where(Filters.in("id", (Object) Arrays.asList("a", "b"))).build().query());
+        assertEquals("SELECT id FROM t WHERE id IN ('a', 'b')",
+                Dsl.SCSB.select("id").from("t").where(Filters.in("id", (Object) Arrays.asList("a", "b"))).build().query());
 
         // The condition snapshots the lone collection: later mutation does not change it.
         final List<Integer> ids = new java.util.ArrayList<>(Arrays.asList(1, 2));

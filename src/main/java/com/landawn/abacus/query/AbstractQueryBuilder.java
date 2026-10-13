@@ -8763,10 +8763,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets a single column or raw assignment expression for an UPDATE operation.
      *
-     * <p>If {@code expr} contains an {@code =} sign, it is treated as a complete assignment and no
+     * <p>If {@code expr} contains a top-level {@code =} sign outside quoted text, it is treated as a complete assignment and no
      * placeholder is generated (identifiers are still normalized according to the naming policy).
      * Otherwise, it is treated as a column name and a parameter placeholder
      * ({@code = ?}, {@code = :name}, or {@code = #{name}}) is appended based on the SQL policy.</p>
+     *
+     * <p>Equality signs inside a quoted identifier, a quoted literal, or a parenthesized/array-subscript
+     * expression in the assignment target do not count as the assignment operator.</p>
+     *
+     * <p>Quote handling follows the configured dialect. For the default dialect, a backslash can require both
+     * standard and backslash-escaped readings; a top-level assignment found under either reading is preserved.
+     * This method does not validate SQL grammar. An unterminated quoted region does not supply an assignment
+     * operator under that reading.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -8803,7 +8811,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Sets columns for UPDATE operation with a collection of property or column names.
      * Generates parameterized placeholders ({@code ?}, {@code :name}, or {@code #{name}}) based on the SQL policy.
-     * If a column name already contains an {@code =} sign, it is treated as a raw SET expression and no placeholder is appended.
+     * If an item contains a top-level {@code =} sign outside quoted text, it is treated as a raw SET expression and no placeholder is appended.
+     * Quote handling follows the dialect and fallback rules described by {@link #set(String)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -8858,7 +8867,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     appendColumnName(columnName);
 
-                    if (columnName.indexOf('=') < 0) {
+                    if (!containsSetAssignment(columnName)) {
                         _sb.append(" = ?");
                     }
                 }
@@ -8875,7 +8884,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     appendColumnName(columnName);
 
-                    if (columnName.indexOf('=') < 0) {
+                    if (!containsSetAssignment(columnName)) {
                         _sb.append(" = ");
 
                         appendNamedParameter(nextNamedParameterName(columnName));
@@ -8894,7 +8903,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                     appendColumnName(columnName);
 
-                    if (columnName.indexOf('=') < 0) {
+                    if (!containsSetAssignment(columnName)) {
                         _sb.append(" = #{");
                         _sb.append(nextNamedParameterName(columnName));
                         _sb.append('}');
@@ -8909,6 +8918,42 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         _propOrColumnNames = null;
+    }
+
+    /** Reports whether a SET item already carries its own assignment operator. */
+    private boolean containsSetAssignment(final String expression) {
+        if (expression.indexOf('=') < 0) {
+            return false;
+        }
+
+        // An '=' in a delimited column name or an array-index expression is part of the assignment
+        // target, so it must not suppress its generated placeholder. Reuse the dialect's quote rules.
+        for (final LexicalReading reading : lexicalReadings(expression, false, false)) {
+            int depth = 0;
+
+            for (int i = 0, len = expression.length(); i < len; i++) {
+                final char ch = expression.charAt(i);
+
+                if (isScannedQuoteStart(ch)) {
+                    final int end = quotedRegionEnd(expression, i, reading.backslashEscapes(), reading.doubleQuotedBackslashEscapes());
+
+                    if (end < 0) {
+                        // This reading cannot establish an assignment after the open quote; another reading may still find one.
+                        break;
+                    }
+
+                    i = end - 1;
+                } else if (ch == '(' || ch == '[') {
+                    depth++;
+                } else if ((ch == ')' || ch == ']') && depth > 0) {
+                    depth--;
+                } else if (ch == '=' && depth == 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -9415,6 +9460,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * This is the canonical method for obtaining the SQL output from a builder.
      * Once final rendering begins, the builder is closed even if rendering fails. A rejected incomplete
      * qualified JOIN leaves the builder open so its {@code on(...)} or {@code using(...)} connector can be supplied.
+     * Closing releases the pooled SQL buffer and clears {@code _props}, {@code _propsList},
+     * {@code _propOrColumnNames}, {@code _propOrColumnNameAliases}, and {@code _multiSelects}.
+     * Subclasses must capture any needed staged inputs before final rendering.
      *
      * <p>To get just the SQL string, call {@code build().query()}. To get the parameter values,
      * call {@code build().parameters()}.</p>
@@ -9464,6 +9512,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         } finally {
             Objectory.recycle(_sb);
             _sb = null;
+
+            // Consumed builders need only their result parameters and placeholder metadata for composition.
+            // Drop staged inputs so retaining a closed builder cannot retain every copied batch row as well.
+            _props = null;
+            _propsList = null;
+            _propOrColumnNames = null;
+            _propOrColumnNameAliases = null;
+            _multiSelects = null;
 
             activeStringBuilderCounter.decrementAndGet();
         }

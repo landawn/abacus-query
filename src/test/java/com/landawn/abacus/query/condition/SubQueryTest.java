@@ -57,11 +57,9 @@ public class SubQueryTest extends TestBase {
 
     @Test
     public void testStructuredSubqueryTerminatesProjectionLineComments() {
-        assertEquals("SELECT id -- trailing comment\n, name FROM users",
-                new SubQuery("users", List.of("id -- trailing comment", "name"), null).toString());
+        assertEquals("SELECT id -- trailing comment\n, name FROM users", new SubQuery("users", List.of("id -- trailing comment", "name"), null).toString());
         assertEquals("SELECT id -- trailing comment\n FROM users", new SubQuery("users", "id -- trailing comment", null).toString());
-        assertEquals("SELECT \"id--suffix\" FROM \"users--archive\"",
-                new SubQuery("\"users--archive\"", "\"id--suffix\"", null).toString());
+        assertEquals("SELECT \"id--suffix\" FROM \"users--archive\"", new SubQuery("\"users--archive\"", "\"id--suffix\"", null).toString());
     }
 
     @Test
@@ -670,12 +668,9 @@ public class SubQueryTest extends TestBase {
     @Test
     public void testRawSqlBindingValidation() {
         assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("SELECT id FROM users WHERE status = ?"));
-        assertThrows(IllegalArgumentException.class,
-                () -> Filters.subQuery("SELECT id FROM users WHERE status = ?", Collections.emptyList()));
-        assertThrows(IllegalArgumentException.class,
-                () -> Filters.subQuery("SELECT id FROM users", Collections.singletonList("extra")));
-        assertThrows(IllegalArgumentException.class,
-                () -> Filters.subQuery("SELECT id FROM users WHERE status = :status", Collections.singletonList("OPEN")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("SELECT id FROM users WHERE status = ?", Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("SELECT id FROM users", Collections.singletonList("extra")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("SELECT id FROM users WHERE status = :status", Collections.singletonList("OPEN")));
         assertThrows(IllegalArgumentException.class,
                 () -> Filters.subQuery("SELECT id FROM users WHERE status = #{status}", Collections.singletonList("OPEN")));
         assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("SELECT id FROM users", (Collection<?>) null));
@@ -1018,14 +1013,17 @@ public class SubQueryTest extends TestBase {
 
         // Only SQL-valued bindings are inlined; the text is written verbatim (no naming policy), and a glued
         // placeholder, a negative expression after '-' and a trailing line comment are kept apart from their neighbours.
-        assertEquals("SELECT a FROM t WHERE b=NOW() AND c = ?", new SubQuery("SELECT a FROM t WHERE b=? AND c = ?", Arrays.asList(SqlExpression.of("NOW()"), "x")).rawSql());
+        assertEquals("SELECT a FROM t WHERE b=NOW() AND c = ?",
+                new SubQuery("SELECT a FROM t WHERE b=? AND c = ?", Arrays.asList(SqlExpression.of("NOW()"), "x")).rawSql());
         assertEquals("SELECT a FROM t WHERE b=firstName AND c = 1",
                 new SubQuery("SELECT a FROM t WHERE b=?AND c = 1", Arrays.asList(SqlExpression.of("firstName"))).rawSql());
         assertEquals("SELECT a FROM t WHERE b = 10- -1", new SubQuery("SELECT a FROM t WHERE b = 10-?", Arrays.asList(SqlExpression.of("-1"))).rawSql());
-        assertEquals("SELECT a FROM t WHERE b = x -- c\n AND c = 2", new SubQuery("SELECT a FROM t WHERE b = ? AND c = 2", Arrays.asList(SqlExpression.of("x -- c"))).rawSql());
+        assertEquals("SELECT a FROM t WHERE b = x -- c\n AND c = 2",
+                new SubQuery("SELECT a FROM t WHERE b = ? AND c = 2", Arrays.asList(SqlExpression.of("x -- c"))).rawSql());
 
         // A '?' inside a quoted literal is not a placeholder and is left alone.
-        assertEquals("SELECT a FROM t WHERE q = '?' AND b = NOW()", new SubQuery("SELECT a FROM t WHERE q = '?' AND b = ?", Arrays.asList(SqlExpression.of("NOW()"))).rawSql());
+        assertEquals("SELECT a FROM t WHERE q = '?' AND b = NOW()",
+                new SubQuery("SELECT a FROM t WHERE q = '?' AND b = ?", Arrays.asList(SqlExpression.of("NOW()"))).rawSql());
 
         assertEquals(sq, Filters.subQuery("SELECT id FROM orders WHERE created < ? AND total > ?", Arrays.asList(SqlExpression.of("CURRENT_DATE"), 100)));
     }
@@ -1135,9 +1133,8 @@ public class SubQueryTest extends TestBase {
     // Regression: a JSON operator on a column named values must not require an extra raw-subquery binding.
     @Test
     public void testValuesColumnExpressionsAcceptTheirActualBindings() {
-        for (final String sql : new String[] { "SELECT JSON_OBJECT('present' VALUE values ? 'k') FROM t",
-                "SELECT JSON_OBJECT('present': values ? 'k') FROM t", "SELECT t. values ? 'k' FROM t",
-                "SELECT true IS DISTINCT FROM values ? 'k' FROM t" }) {
+        for (final String sql : new String[] { "SELECT JSON_OBJECT('present' VALUE values ? 'k') FROM t", "SELECT JSON_OBJECT('present': values ? 'k') FROM t",
+                "SELECT t. values ? 'k' FROM t", "SELECT true IS DISTINCT FROM values ? 'k' FROM t" }) {
             assertTrue(new SubQuery(sql, List.of()).parameters().isEmpty(), sql);
             assertEquals(List.of(7), new SubQuery(sql + " WHERE id = ?", List.of(7)).parameters(), sql);
         }

@@ -82,7 +82,6 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("price -- comment", SqlExpression.renderValue(SqlExpression.of("price -- comment")));
     }
 
-
     private static Number customNumber(final String literal) {
         return new Number() {
             @Override
@@ -1550,7 +1549,9 @@ public class SqlExpressionTest extends TestBase {
     @Test
     public void testSqlServerTemporaryTablePredicatesRemainAccepted() {
         final com.landawn.abacus.query.Dsl sqlServer = com.landawn.abacus.query.Dsl.forDialect(com.landawn.abacus.query.Dsl.PSC.sqlDialect()
-                .toBuilder().productInfo(com.landawn.abacus.query.SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+                .toBuilder()
+                .productInfo(com.landawn.abacus.query.SqlDialect.ProductInfo.of("Microsoft SQL Server"))
+                .build());
         for (final String table : List.of("#tmp", "##tmp")) {
             final String predicate = table + ".id = 1";
             final String rawQuery = sqlServer.select("*").from(table).where(predicate).build().query();
@@ -1595,15 +1596,16 @@ public class SqlExpressionTest extends TestBase {
 
         assertEquals("first_name = #{ firstName }", Filters.expr("firstName = #{ firstName }").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("first_name = ${ firstName }", Filters.expr("firstName = ${ firstName }").toSql(NamingPolicy.SNAKE_CASE));
-        assertEquals("first_name = #{firstName, jdbcType=VARCHAR}",
-                Filters.expr("firstName = #{firstName, jdbcType=VARCHAR}").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("first_name = #{firstName, jdbcType=VARCHAR}", Filters.expr("firstName = #{firstName, jdbcType=VARCHAR}").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("first_name = #{ firstName, jdbcType = VARCHAR } AND last_name = ${ lastName }",
                 Filters.expr("firstName = #{ firstName, jdbcType = VARCHAR } AND lastName = ${ lastName }").toSql(NamingPolicy.SNAKE_CASE));
-        assertEquals("FIRST_NAME = #{ firstName } + LAST_NAME",
-                Filters.expr("firstName = #{ firstName } + lastName").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("FIRST_NAME = #{ firstName } + LAST_NAME", Filters.expr("firstName = #{ firstName } + lastName").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
         assertEquals("SELECT id FROM records WHERE first_name = #{ firstName, jdbcType=VARCHAR }",
-                com.landawn.abacus.query.Dsl.PSC.select("id").from("records")
-                        .where(Filters.expr("firstName = #{ firstName, jdbcType=VARCHAR }")).build().query());
+                com.landawn.abacus.query.Dsl.PSC.select("id")
+                        .from("records")
+                        .where(Filters.expr("firstName = #{ firstName, jdbcType=VARCHAR }"))
+                        .build()
+                        .query());
     }
 
     @Test
@@ -1629,8 +1631,8 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("CAST(amount AS BINARY_DOUBLE)", SqlExpression.of("CAST(amount AS BINARY_DOUBLE)").toSql(NamingPolicy.CAMEL_CASE));
         assertEquals("CAST(amount AS BINARY_FLOAT)", SqlExpression.of("CAST(amount AS BINARY_FLOAT)").toSql(NamingPolicy.CAMEL_CASE));
 
-        for (final String unit : new String[] { "DAY_HOUR", "DAY_MINUTE", "DAY_SECOND", "DAY_MICROSECOND", "HOUR_MINUTE", "HOUR_SECOND",
-                "HOUR_MICROSECOND", "MINUTE_SECOND", "MINUTE_MICROSECOND", "SECOND_MICROSECOND", "YEAR_MONTH" }) {
+        for (final String unit : new String[] { "DAY_HOUR", "DAY_MINUTE", "DAY_SECOND", "DAY_MICROSECOND", "HOUR_MINUTE", "HOUR_SECOND", "HOUR_MICROSECOND",
+                "MINUTE_SECOND", "MINUTE_MICROSECOND", "SECOND_MICROSECOND", "YEAR_MONTH" }) {
             assertEquals(unit, SqlExpression.of(unit).toSql(NamingPolicy.CAMEL_CASE), unit);
             assertEquals(unit, SqlExpression.of(unit).toSql(NamingPolicy.KEBAB_CASE), unit);
             assertTrue(SqlExpression.of("EXTRACT(" + unit + " FROM ts)").toSql(NamingPolicy.CAMEL_CASE).contains(unit), unit);
@@ -1714,13 +1716,14 @@ public class SqlExpressionTest extends TestBase {
                 "CAST(id AS numeric(10, 2))", "CAST(id AS double precision)", "CAST(id AS VARCHAR(10))", "CAST(CAST(id AS a_type) AS b_type)",
                 "CAST((id + 1) AS order_status)", "CAST(id AS my_type ARRAY)", "id :: order_status", "id:: order_status", "id ::order_status",
                 "id :: types.order_status", "id :: types. order_status", "id::types. order_status", "id::\"types\". order_status",
-                "id::\"types\" . order_status", "id :: \"types\" .order_status", "id :: my_type[]", "CAST(id AS a_type)::b_type",
-                "name collate my_collation", "name collate public. my_collation", "name collate \"public\" . my_collation" }) {
+                "id::\"types\" . order_status", "id :: \"types\" .order_status", "id :: my_type[]", "CAST(id AS a_type)::b_type", "name collate my_collation",
+                "name collate public. my_collation", "name collate \"public\" . my_collation" }) {
             assertEquals(expr, SqlExpression.of(expr).toSql(NamingPolicy.CAMEL_CASE), expr);
         }
 
         // Stripped comments collapse to one space, as elsewhere.
-        assertEquals("CAST(? AS pg_catalog . \"line\")", SqlExpression.of("CAST(? AS /* schema */ pg_catalog /* dot */ . \"line\")").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("CAST(? AS pg_catalog . \"line\")",
+                SqlExpression.of("CAST(? AS /* schema */ pg_catalog /* dot */ . \"line\")").toSql(NamingPolicy.CAMEL_CASE));
         assertEquals("CAST(created_at AS DATE)", SqlExpression.of("CAST(createdAt AS DATE)").toSql(NamingPolicy.SNAKE_CASE));
 
         // Columns around a type, an AS outside a CAST call and the words after a type's first word are still converted.
@@ -1748,7 +1751,8 @@ public class SqlExpressionTest extends TestBase {
 
         assertEquals("CAST(event_time AS STRING format 'YYYY' at time zone time_zone)",
                 SqlExpression.of("CAST(eventTime AS STRING format 'YYYY' at time zone timeZone)").toSql(NamingPolicy.SNAKE_CASE));
-        assertEquals("CAST(event_time AS TIMESTAMP format fmt_col)", SqlExpression.of("CAST(eventTime AS TIMESTAMP format fmtCol)").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("CAST(event_time AS TIMESTAMP format fmt_col)",
+                SqlExpression.of("CAST(eventTime AS TIMESTAMP format fmtCol)").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("CAST(x AS DATE default fallback_date on conversion error, 'DD-MM-YYYY')",
                 SqlExpression.of("CAST(x AS DATE default fallbackDate on conversion error, 'DD-MM-YYYY')").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("CAST(x AS DATE, fmt_col)", SqlExpression.of("CAST(x AS DATE, fmtCol)").toSql(NamingPolicy.SNAKE_CASE));
@@ -1803,8 +1807,7 @@ public class SqlExpressionTest extends TestBase {
 
         // The verbatim text starts exactly at the escape-dependent token, also after stripped comments.
         assertEquals("a_b = 'C:\\' AND firstName = 1", SqlExpression.of("aB /* x 'C:\\' */ = 'C:\\' AND firstName = 1").toSql(NamingPolicy.SNAKE_CASE));
-        assertEquals("a_b = 1 AND c_d = 'C:\\' AND eF = 1",
-                SqlExpression.of("aB = 1 # note 'x\n AND cD = 'C:\\' AND eF = 1").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("a_b = 1 AND c_d = 'C:\\' AND eF = 1", SqlExpression.of("aB = 1 # note 'x\n AND cD = 'C:\\' AND eF = 1").toSql(NamingPolicy.SNAKE_CASE));
         assertEquals("first_name = N'C:\\' AND lastName = 'x'", SqlExpression.of("firstName = N'C:\\' AND lastName = 'x'").toSql(NamingPolicy.SNAKE_CASE));
     }
 
@@ -1832,8 +1835,7 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("'2020-01-02'", SqlExpression.renderValue(java.sql.Date.valueOf("2020-01-02")));
         assertEquals("'03:04:05'", SqlExpression.renderValue(java.sql.Time.valueOf("03:04:05")));
         assertEquals("'2020-01-02 03:04:05.123'", SqlExpression.renderValue(java.sql.Timestamp.valueOf("2020-01-02 03:04:05.123")));
-        assertEquals("'2020-01-02 03:04:05.0'",
-                SqlExpression.renderValue(new java.util.Date(java.sql.Timestamp.valueOf("2020-01-02 03:04:05").getTime())));
+        assertEquals("'2020-01-02 03:04:05.0'", SqlExpression.renderValue(new java.util.Date(java.sql.Timestamp.valueOf("2020-01-02 03:04:05").getTime())));
 
         final java.util.Calendar calendar = new java.util.GregorianCalendar(java.util.TimeZone.getTimeZone("Asia/Tokyo"));
         calendar.clear();
@@ -1880,7 +1882,8 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("path = 'C:\\Temp\\\"x\"' AND created_at > 1", SqlExpression.of("path = 'C:\\Temp\\\"x\"' AND createdAt > 1").toSql(snake));
         // A value rendered by the library itself.
         assertEquals("(payload = '{\"name\":\"say \\\"hi\\\"\"}') AND (created_at > 1)",
-                SqlExpression.of(SqlExpression.and(SqlExpression.eq("payload", "{\"name\":\"say \\\"hi\\\"\"}"), SqlExpression.gt("createdAt", 1))).toSql(snake));
+                SqlExpression.of(SqlExpression.and(SqlExpression.eq("payload", "{\"name\":\"say \\\"hi\\\"\"}"), SqlExpression.gt("createdAt", 1)))
+                        .toSql(snake));
         // An E'...' string inside a subscript honors backslash escapes under both readings, like a top-level one.
         assertEquals("arr[E'a\\'b' || first_name] = 1", SqlExpression.of("arr[E'a\\'b' || firstName] = 1").toSql(snake));
 
@@ -1977,7 +1980,8 @@ public class SqlExpressionTest extends TestBase {
     public void testCollateArrayKeywordAndQualifiedSegmentsRenderExactly() {
         assertEquals("firstName collate utf8mb4_bin = 'x'", SqlExpression.of("first_name COLLATE utf8mb4_bin = 'x'").toSql(NamingPolicy.CAMEL_CASE));
         assertEquals("FirstName Collate utf8mb4_bin", SqlExpression.of("firstName COLLATE utf8mb4_bin").toSql(NamingPolicy.UPPER_CAMEL_CASE));
-        assertEquals("LAST_NAME COLLATE Latin1_General_CS_AS", SqlExpression.of("lastName COLLATE Latin1_General_CS_AS").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("LAST_NAME COLLATE Latin1_General_CS_AS",
+                SqlExpression.of("lastName COLLATE Latin1_General_CS_AS").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
         assertEquals("last_name collate \"de_DE\"", SqlExpression.of("lastName collate \"de_DE\"").toSql(NamingPolicy.SNAKE_CASE));
 
         assertEquals("Array[FIRST_NAME]", SqlExpression.of("Array[firstName]").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
@@ -2019,6 +2023,7 @@ public class SqlExpressionTest extends TestBase {
         assertEquals("SELECT id FROM account WHERE first_name = last_name",
                 com.landawn.abacus.query.Dsl.PSC.select("id").from("account").where("firstName\u3000= lastName").build().query());
     }
+
     @Test
     public void testNonAsciiSpaceAnywhereInAWordIsASeparator() {
         // Regression: a non-ASCII space at the START of a token (after '=', ',', '(' or a number), after "::type", or between
