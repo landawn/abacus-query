@@ -29,6 +29,30 @@ import com.landawn.abacus.util.NamingPolicy;
 
 public class InTest extends TestBase {
 
+    // Characterisation (R16-02): an all-scalar membership list exposes the membership values themselves as the
+    // memoized, unmodifiable parameter list; a Date element still forces a fresh defensive copy on every call.
+    @Test
+    void testAllScalarParametersAreMemoizedUnmodifiableAndEqualToValues() {
+        final In condition = new In("id", Arrays.asList(1, 2, 3));
+
+        final List<Object> parameters = condition.parameters();
+        assertEquals(Arrays.asList(1, 2, 3), parameters);
+        assertEquals(condition.values(), parameters);
+        assertSame(parameters, condition.parameters());
+        assertThrows(UnsupportedOperationException.class, () -> parameters.add(4));
+        assertThrows(UnsupportedOperationException.class, () -> parameters.set(0, 9));
+        assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
+        assertEquals("id IN (1, 2, 3)", condition.toString());
+
+        final java.util.Date date = new java.util.Date(1_000L);
+        final In dated = new In("createdOn", Arrays.asList(date, 2));
+        assertNotSame(dated.parameters(), dated.parameters());
+        assertNotSame(date, dated.parameters().get(0));
+        assertNotSame(dated.parameters().get(0), dated.parameters().get(0));
+        ((java.util.Date) dated.parameters().get(0)).setTime(4_000L);
+        assertEquals(1_000L, ((java.util.Date) dated.parameters().get(0)).getTime());
+    }
+
     @Test
     void testAnd() {
         In cond1 = new In("status", Arrays.asList("active", "pending"));
@@ -639,30 +663,6 @@ public class InTest extends TestBase {
         In userFilter = new In("user_id", userIds);
 
         assertEquals(5, userFilter.parameters().size());
-    }
-
-    // Characterisation (R16-02): an all-scalar membership list exposes the membership values themselves as the
-    // memoized, unmodifiable parameter list; a Date element still forces a fresh defensive copy on every call.
-    @Test
-    void testAllScalarParametersAreMemoizedUnmodifiableAndEqualToValues() {
-        final In condition = new In("id", Arrays.asList(1, 2, 3));
-
-        final List<Object> parameters = condition.parameters();
-        assertEquals(Arrays.asList(1, 2, 3), parameters);
-        assertEquals(condition.values(), parameters);
-        assertSame(parameters, condition.parameters());
-        assertThrows(UnsupportedOperationException.class, () -> parameters.add(4));
-        assertThrows(UnsupportedOperationException.class, () -> parameters.set(0, 9));
-        assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
-        assertEquals("id IN (1, 2, 3)", condition.toString());
-
-        final java.util.Date date = new java.util.Date(1_000L);
-        final In dated = new In("createdOn", Arrays.asList(date, 2));
-        assertNotSame(dated.parameters(), dated.parameters());
-        assertNotSame(date, dated.parameters().get(0));
-        assertNotSame(dated.parameters().get(0), dated.parameters().get(0));
-        ((java.util.Date) dated.parameters().get(0)).setTime(4_000L);
-        assertEquals(1_000L, ((java.util.Date) dated.parameters().get(0)).getTime());
     }
 
     @Nested

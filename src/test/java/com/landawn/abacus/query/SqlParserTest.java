@@ -480,25 +480,6 @@ public class SqlParserTest extends TestBase {
             assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t (update, delete) VALUES (1, 2)"));
         }
 
-        // Regression: PostgreSQL/pgJDBC dollar-quote tags accept ANY non-ASCII character, not only letters ($€$ is a tag).
-        @Test
-        void testDollarQuoteTagAcceptsAnyNonAsciiCharacter() {
-            for (final int tagChar : new int[] { 0x20AC, 0x00A7 }) {
-                final String c = Character.toString(tagChar);
-                assertAllReadGatesReject("SELECT $~$ ' $~$; DELETE FROM t; SELECT $~$ ' $~$".replace("~", c));
-                assertAllReadGatesReject("SELECT $a~$ ' $a~$; DELETE FROM t; SELECT $a~$ ' $a~$".replace("~", c));
-                assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $~$it's$~$ FROM t".replace("~", c)));
-            }
-
-            // A '$' glued to a non-ASCII character continues a PostgreSQL identifier ("x€$$it" is one name), so the quote
-            // after it is not hidden inside a dollar quote: the literal is unterminated.
-            assertReadGatesReject("SELECT x~$$it's$$ FROM t".replace("~", Character.toString(0x20AC)));
-
-            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$a$$"));
-            assertTrue(SqlParser.isReadOrInsertQuery("SELECT $tag$it's$tag$ FROM t"));
-            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM v$session WHERE x = $1"));
-        }
-
         // Covers the dollar-quote helpers the query builders' scanners share: PostgreSQL's tagged rule and H2's untagged one.
         @Test
         void testDollarQuoteEndUnderPostgreSqlAndH2Rules() {
@@ -539,6 +520,25 @@ public class SqlParserTest extends TestBase {
                 assertFalse(SqlParser.containsDollarQuoteOpener("a = 'x'", h2));
                 assertFalse(SqlParser.containsDollarQuoteOpener("v$session, a$$b, $1, ${x}, $col, $", h2));
             }
+        }
+
+        // Regression: PostgreSQL/pgJDBC dollar-quote tags accept ANY non-ASCII character, not only letters ($€$ is a tag).
+        @Test
+        void testDollarQuoteTagAcceptsAnyNonAsciiCharacter() {
+            for (final int tagChar : new int[] { 0x20AC, 0x00A7 }) {
+                final String c = Character.toString(tagChar);
+                assertAllReadGatesReject("SELECT $~$ ' $~$; DELETE FROM t; SELECT $~$ ' $~$".replace("~", c));
+                assertAllReadGatesReject("SELECT $a~$ ' $a~$; DELETE FROM t; SELECT $a~$ ' $a~$".replace("~", c));
+                assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $~$it's$~$ FROM t".replace("~", c)));
+            }
+
+            // A '$' glued to a non-ASCII character continues a PostgreSQL identifier ("x€$$it" is one name), so the quote
+            // after it is not hidden inside a dollar quote: the literal is unterminated.
+            assertReadGatesReject("SELECT x~$$it's$$ FROM t".replace("~", Character.toString(0x20AC)));
+
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$a$$"));
+            assertTrue(SqlParser.isReadOrInsertQuery("SELECT $tag$it's$tag$ FROM t"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM v$session WHERE x = $1"));
         }
 
         @Test
@@ -1543,6 +1543,30 @@ public class SqlParserTest extends TestBase {
         }
 
         @Test
+        void testKeywordScannersMatchWordsInPlace() {
+            // Characterisation (2026-10-13): the INTO OUTFILE, statement-start and CTE-list scanners compare words in
+            // place instead of reading a substring per word; the match stays case-insensitive and whole-word.
+            assertFalse(SqlParser.isSyntacticallyReadQuery("select * from t Into OutFile '/tmp/x'"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("select * from t into dumpFILE '/tmp/x'"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT intox, outfiles, into_outfile FROM t"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM t WHERE b = t.insert"));
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT OR ABORT INTO outfile VALUES (1)"));
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT OR FAIL INTO dumpfile VALUES (1)"));
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT HIGH_PRIORITY INTO outfile VALUES (1)"));
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT high_priorit INTO outfile VALUES (1)"));
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT OR IGNORE INTO t SELECT * FROM s INTO OUTFILE '/tmp/x'"));
+            // CTE list: AS / MATERIALIZED open a body, a verb-named CTE fills the name slot, SEARCH/CYCLE suffixes are skipped
+            assertTrue(SqlParser.isSyntacticallyReadQuery("with Delete as materialized (select 1) select * from delete"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("WITH RECURSIVE update AS (SELECT 1) SEARCH DEPTH FIRST BY insert SET ord SELECT * FROM update"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("WITH c AS (SELECT 1) uPDATE t SET a = 1"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("with c as (delete from t returning 1) select * from c"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM FINAL TABLE (insert into t values (1))"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t WHERE (merge IS NULL) AND (update, delete) = (1, 2)"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT x FROM (SELECT 1 AS x FROM (WITH d AS (SELECT 1) SELECT 1) y) z"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT x FROM (WITH d AS (SELECT 1) DELETE FROM t RETURNING 1) z"));
+        }
+
+        @Test
         void testLeadingDashCommentWithoutSpace_stillResolvesLeadingKeyword() {
             // Regression (2026-09-19): under MySQL's rule "--x" is not a comment, so that lexical mode
             // found no leading verb; the modes "disagreed" and isSelectQuery/isDeleteQuery returned
@@ -2535,32 +2559,6 @@ public class SqlParserTest extends TestBase {
         }
 
         @Test
-        void testStatementLeadingHashLabelIsNotAMySqlComment() {
-            // Regression (2026-10-13): a T-SQL name, and so a label, may start with '#', so a statement-leading "#x:" or "#:"
-            // is a label and the statement after it runs under SQL Server; reading the line as a MySQL comment hid it.
-            for (final String sql : new String[] { "SELECT 1; #x: DELETE FROM t", "SELECT 1; #: DELETE FROM t", "SELECT 1;#:DELETE FROM t",
-                    "SELECT 1; /* c */ #: UPDATE t SET a = 1", "SELECT 1; #: EXEC p", "SELECT 1; #x@1: DELETE FROM t", "#x: DELETE FROM t\nSELECT 1",
-                    "#: DELETE FROM t\nSELECT 1", "SELECT 1; #x: #y: DELETE FROM t", "SELECT 1; #x: SELECT a # INTO x FROM t",
-                    // '@' (and '#') may continue the label name
-                    "SELECT 1; #@: DELETE FROM t", "SELECT 1; #x@: DELETE FROM t", "SELECT 1;\n#x@y: DELETE FROM t", "SELECT 1;\n#x#y: DELETE FROM t" }) {
-                assertAllReadGatesReject(sql);
-            }
-
-            // A label before a SELECT stays a read; ordinary MySQL comment lines and temp tables are unaffected.
-            for (final String sql : new String[] { "SELECT 1; #x: SELECT 2", "SELECT 1; # note\nSELECT 2", "# note\nSELECT 1", "# TODO: delete later\nSELECT 1",
-                    "SELECT 1; # TODO: delete later\nSELECT 2", "SELECT * FROM #t; SELECT * FROM ##g", "SELECT a FROM t # c\nWHERE b = 1", "SELECT 1\n#c\n#c\n",
-                    "SELECT 1;\n#x::int\nSELECT 2", "SELECT 1;#x::\nSELECT 2" }) {
-                assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
-                assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
-            }
-            assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO #t VALUES (1)"));
-
-            // Documented fail-closed trade-off: a MySQL comment line that looks like a statement-leading label is rejected.
-            assertFalse(SqlParser.isSyntacticallyReadQuery("#TODO: delete later\nSELECT 1"));
-            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT 1;\n#TODO: delete later\nSELECT 2"));
-        }
-
-        @Test
         void testSemicolonlessBatchUnanchoredTempTableIsSqlToEveryScanner() {
             // With batches on, "#t.c" is a temp-table column to the statement splitter; masking and the other scanners
             // used to read it as a MySQL comment instead, skipping the '\' quote that hid the DELETE from the splitter.
@@ -2673,6 +2671,32 @@ public class SqlParserTest extends TestBase {
 
             assertTrue(SqlParser.isReadOnlyQuery("SELECT " + pathLiteral + ", 'x'"));
             assertTrue(SqlParser.isReadOnlyQuery("SELECT 'can" + backslash + "'t'"));
+        }
+
+        @Test
+        void testStatementLeadingHashLabelIsNotAMySqlComment() {
+            // Regression (2026-10-13): a T-SQL name, and so a label, may start with '#', so a statement-leading "#x:" or "#:"
+            // is a label and the statement after it runs under SQL Server; reading the line as a MySQL comment hid it.
+            for (final String sql : new String[] { "SELECT 1; #x: DELETE FROM t", "SELECT 1; #: DELETE FROM t", "SELECT 1;#:DELETE FROM t",
+                    "SELECT 1; /* c */ #: UPDATE t SET a = 1", "SELECT 1; #: EXEC p", "SELECT 1; #x@1: DELETE FROM t", "#x: DELETE FROM t\nSELECT 1",
+                    "#: DELETE FROM t\nSELECT 1", "SELECT 1; #x: #y: DELETE FROM t", "SELECT 1; #x: SELECT a # INTO x FROM t",
+                    // '@' (and '#') may continue the label name
+                    "SELECT 1; #@: DELETE FROM t", "SELECT 1; #x@: DELETE FROM t", "SELECT 1;\n#x@y: DELETE FROM t", "SELECT 1;\n#x#y: DELETE FROM t" }) {
+                assertAllReadGatesReject(sql);
+            }
+
+            // A label before a SELECT stays a read; ordinary MySQL comment lines and temp tables are unaffected.
+            for (final String sql : new String[] { "SELECT 1; #x: SELECT 2", "SELECT 1; # note\nSELECT 2", "# note\nSELECT 1", "# TODO: delete later\nSELECT 1",
+                    "SELECT 1; # TODO: delete later\nSELECT 2", "SELECT * FROM #t; SELECT * FROM ##g", "SELECT a FROM t # c\nWHERE b = 1", "SELECT 1\n#c\n#c\n",
+                    "SELECT 1;\n#x::int\nSELECT 2", "SELECT 1;#x::\nSELECT 2" }) {
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+                assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            }
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO #t VALUES (1)"));
+
+            // Documented fail-closed trade-off: a MySQL comment line that looks like a statement-leading label is rejected.
+            assertFalse(SqlParser.isSyntacticallyReadQuery("#TODO: delete later\nSELECT 1"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT 1;\n#TODO: delete later\nSELECT 2"));
         }
 
         // Controls: suffix column lists, following CTEs, quoted and dollar-quoted mark values, MariaDB's CYCLE ... RESTRICT,
@@ -2800,30 +2824,6 @@ public class SqlParserTest extends TestBase {
             assertTrue(SqlParser.isReadOrInsertQuery("insert delayed into OUTFILE values (1)"));
             // ...but a real trailing INTO OUTFILE after such an INSERT is still rejected.
             assertFalse(SqlParser.isReadOrInsertQuery("INSERT IGNORE INTO t SELECT * FROM s INTO OUTFILE '/tmp/x'"));
-        }
-
-        @Test
-        void testKeywordScannersMatchWordsInPlace() {
-            // Characterisation (2026-10-13): the INTO OUTFILE, statement-start and CTE-list scanners compare words in
-            // place instead of reading a substring per word; the match stays case-insensitive and whole-word.
-            assertFalse(SqlParser.isSyntacticallyReadQuery("select * from t Into OutFile '/tmp/x'"));
-            assertFalse(SqlParser.isSyntacticallyReadQuery("select * from t into dumpFILE '/tmp/x'"));
-            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT intox, outfiles, into_outfile FROM t"));
-            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM t WHERE b = t.insert"));
-            assertTrue(SqlParser.isReadOrInsertQuery("INSERT OR ABORT INTO outfile VALUES (1)"));
-            assertTrue(SqlParser.isReadOrInsertQuery("INSERT OR FAIL INTO dumpfile VALUES (1)"));
-            assertTrue(SqlParser.isReadOrInsertQuery("INSERT HIGH_PRIORITY INTO outfile VALUES (1)"));
-            assertFalse(SqlParser.isReadOrInsertQuery("INSERT high_priorit INTO outfile VALUES (1)"));
-            assertFalse(SqlParser.isReadOrInsertQuery("INSERT OR IGNORE INTO t SELECT * FROM s INTO OUTFILE '/tmp/x'"));
-            // CTE list: AS / MATERIALIZED open a body, a verb-named CTE fills the name slot, SEARCH/CYCLE suffixes are skipped
-            assertTrue(SqlParser.isSyntacticallyReadQuery("with Delete as materialized (select 1) select * from delete"));
-            assertTrue(SqlParser.isSyntacticallyReadQuery("WITH RECURSIVE update AS (SELECT 1) SEARCH DEPTH FIRST BY insert SET ord SELECT * FROM update"));
-            assertFalse(SqlParser.isSyntacticallyReadQuery("WITH c AS (SELECT 1) uPDATE t SET a = 1"));
-            assertFalse(SqlParser.isSyntacticallyReadQuery("with c as (delete from t returning 1) select * from c"));
-            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT * FROM FINAL TABLE (insert into t values (1))"));
-            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM t WHERE (merge IS NULL) AND (update, delete) = (1, 2)"));
-            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT x FROM (SELECT 1 AS x FROM (WITH d AS (SELECT 1) SELECT 1) y) z"));
-            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT x FROM (WITH d AS (SELECT 1) DELETE FROM t RETURNING 1) z"));
         }
 
         @Test
@@ -6391,43 +6391,6 @@ public class SqlParserTest extends TestBase {
     class HashScanMemoLinearity {
 
         @Test
-        void testFunctionCallGluedToHashCommentPerRowIsLinear() {
-            final StringBuilder hash = new StringBuilder("SELECT ");
-            final StringBuilder control = new StringBuilder("SELECT ");
-
-            for (int i = 0; i < 8000; i++) {
-                if (i > 0) {
-                    hash.append(",\n");
-                    control.append(",\n");
-                }
-
-                hash.append("f(").append(i).append(")#c").append(i).append('\n');
-                control.append("f(").append(i).append(")-- c").append(i).append('\n');
-            }
-
-            final String sql = hash.append(" FROM t").toString();
-            final List<String> expected = SqlParser.tokenize(control.append(" FROM t").toString());
-
-            // Every '#' preceded by ')' re-lexed the prefix from index 0 before the memo's group pass: ~3 s per call at this size.
-            assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
-                assertEquals(expected, SqlParser.tokenize(sql));
-                assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
-            });
-        }
-
-        @Test
-        void testMultiRowInsertWithHashTagPerRowIsLinear() {
-            final String sql = "INSERT INTO t VALUES " + "(1,2), #tag\n".repeat(8000) + "(0,0)";
-            final List<String> expected = SqlParser.tokenize("INSERT INTO t VALUES " + "(1,2), -- tag\n".repeat(8000) + "(0,0)");
-
-            // ~1.5 s per call at this size before the memo's group pass (quadratic in the row count).
-            assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
-                assertEquals(expected, SqlParser.tokenize(sql));
-                assertTrue(SqlParser.isReadOrInsertQuery(sql));
-            });
-        }
-
-        @Test
         void testBracketQuotedListElementBeforeHashIdentifierIsLinear() {
             final String sql = "SELECT 1 FROM " + "[t], #c\n".repeat(8000) + "u";
             final List<String> expected = new ArrayList<>(SqlParser.tokenize("SELECT 1 FROM " + "[t], zc\n".repeat(8000) + "u"));
@@ -6472,18 +6435,52 @@ public class SqlParserTest extends TestBase {
         }
 
         @Test
-        void testSemicolonlessBatchHashNameLinesAreLinear() {
-            // With batches on, an identifier-shaped "#c" line is SQL to the classification scanners but a comment to their
-            // backward walk, so every word on such a line walked back over all the lines above it (~3-8 s per call at
-            // this size before those walks used the backward-skip memo too).
-            // The last shape is one such line after a long indentation: its words store their own walks, since the '#'
-            // classification does not store the walk over the gap right before the '#'.
-            for (final String sql : new String[] { "SELECT 1" + "\n#c".repeat(32000), "SELECT 1" + "\n#c receive".repeat(32000),
-                    "SELECT 1" + "\n#c.x".repeat(32000), "SELECT 1\n" + " ".repeat(64000) + "#c" + " x".repeat(64000) }) {
-                assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
-                    assertTrue(BATCHES.isSyntacticallyReadQuery(sql));
-                    assertTrue(BATCHES.isReadOrInsertQuery(sql));
-                });
+        void testFunctionCallGluedToHashCommentPerRowIsLinear() {
+            final StringBuilder hash = new StringBuilder("SELECT ");
+            final StringBuilder control = new StringBuilder("SELECT ");
+
+            for (int i = 0; i < 8000; i++) {
+                if (i > 0) {
+                    hash.append(",\n");
+                    control.append(",\n");
+                }
+
+                hash.append("f(").append(i).append(")#c").append(i).append('\n');
+                control.append("f(").append(i).append(")-- c").append(i).append('\n');
+            }
+
+            final String sql = hash.append(" FROM t").toString();
+            final List<String> expected = SqlParser.tokenize(control.append(" FROM t").toString());
+
+            // Every '#' preceded by ')' re-lexed the prefix from index 0 before the memo's group pass: ~3 s per call at this size.
+            assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
+                assertEquals(expected, SqlParser.tokenize(sql));
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+            });
+        }
+
+        @Test
+        void testMemoizedBackwardSkipMatchesTheUnmemoizedWalk() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final java.lang.reflect.Method plainWalk = SqlParser.class.getDeclaredMethod("skipBackwardWhitespaceAndComments", String.class, int.class,
+                    SqlParser.TokenizerConfig.class, memoClass);
+            final java.lang.reflect.Method memoizedWalk = SqlParser.class.getDeclaredMethod("skipBackwardWhitespaceAndComments", String.class, int.class,
+                    SqlParser.TokenizerConfig.class, memoClass, boolean.class);
+            final java.lang.reflect.Constructor<?> newMemo = memoClass.getDeclaredConstructor(String.class);
+            plainWalk.setAccessible(true);
+            memoizedWalk.setAccessible(true);
+            newMemo.setAccessible(true);
+            final SqlParser.TokenizerConfig config = SqlParser.defaultTokenizerConfig();
+
+            for (final String sql : Arrays.asList("SELECT 1 FROM t\n-- a\n# b\n#c\n#d\n", "SELECT 1 FROM t\n#d", "SELECT 1 FROM t\n#d\n#d\n")) {
+                // Top-down on ONE memo: every walk below a comment line first meets the results (start and restart
+                // positions) that the walks from further down recorded.
+                final Object shared = newMemo.newInstance(sql);
+
+                for (int p = sql.length() - 1; p >= 0; p--) {
+                    assertEquals(plainWalk.invoke(null, sql, p, config, newMemo.newInstance(sql)), memoizedWalk.invoke(null, sql, p, config, shared, true),
+                            sql + " @" + p);
+                }
             }
         }
 
@@ -6515,27 +6512,30 @@ public class SqlParserTest extends TestBase {
         }
 
         @Test
-        void testMemoizedBackwardSkipMatchesTheUnmemoizedWalk() throws Exception {
-            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
-            final java.lang.reflect.Method plainWalk = SqlParser.class.getDeclaredMethod("skipBackwardWhitespaceAndComments", String.class, int.class,
-                    SqlParser.TokenizerConfig.class, memoClass);
-            final java.lang.reflect.Method memoizedWalk = SqlParser.class.getDeclaredMethod("skipBackwardWhitespaceAndComments", String.class, int.class,
-                    SqlParser.TokenizerConfig.class, memoClass, boolean.class);
-            final java.lang.reflect.Constructor<?> newMemo = memoClass.getDeclaredConstructor(String.class);
-            plainWalk.setAccessible(true);
-            memoizedWalk.setAccessible(true);
-            newMemo.setAccessible(true);
-            final SqlParser.TokenizerConfig config = SqlParser.defaultTokenizerConfig();
+        void testMultiRowInsertWithHashTagPerRowIsLinear() {
+            final String sql = "INSERT INTO t VALUES " + "(1,2), #tag\n".repeat(8000) + "(0,0)";
+            final List<String> expected = SqlParser.tokenize("INSERT INTO t VALUES " + "(1,2), -- tag\n".repeat(8000) + "(0,0)");
 
-            for (final String sql : Arrays.asList("SELECT 1 FROM t\n-- a\n# b\n#c\n#d\n", "SELECT 1 FROM t\n#d", "SELECT 1 FROM t\n#d\n#d\n")) {
-                // Top-down on ONE memo: every walk below a comment line first meets the results (start and restart
-                // positions) that the walks from further down recorded.
-                final Object shared = newMemo.newInstance(sql);
+            // ~1.5 s per call at this size before the memo's group pass (quadratic in the row count).
+            assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
+                assertEquals(expected, SqlParser.tokenize(sql));
+                assertTrue(SqlParser.isReadOrInsertQuery(sql));
+            });
+        }
 
-                for (int p = sql.length() - 1; p >= 0; p--) {
-                    assertEquals(plainWalk.invoke(null, sql, p, config, newMemo.newInstance(sql)), memoizedWalk.invoke(null, sql, p, config, shared, true),
-                            sql + " @" + p);
-                }
+        @Test
+        void testSemicolonlessBatchHashNameLinesAreLinear() {
+            // With batches on, an identifier-shaped "#c" line is SQL to the classification scanners but a comment to their
+            // backward walk, so every word on such a line walked back over all the lines above it (~3-8 s per call at
+            // this size before those walks used the backward-skip memo too).
+            // The last shape is one such line after a long indentation: its words store their own walks, since the '#'
+            // classification does not store the walk over the gap right before the '#'.
+            for (final String sql : new String[] { "SELECT 1" + "\n#c".repeat(32000), "SELECT 1" + "\n#c receive".repeat(32000),
+                    "SELECT 1" + "\n#c.x".repeat(32000), "SELECT 1\n" + " ".repeat(64000) + "#c" + " x".repeat(64000) }) {
+                assertTimeoutPreemptively(Duration.ofSeconds(2), () -> {
+                    assertTrue(BATCHES.isSyntacticallyReadQuery(sql));
+                    assertTrue(BATCHES.isReadOrInsertQuery(sql));
+                });
             }
         }
     }

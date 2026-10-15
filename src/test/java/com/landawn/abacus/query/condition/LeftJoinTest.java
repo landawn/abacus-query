@@ -323,6 +323,19 @@ public class LeftJoinTest extends TestBase {
         assertTrue(result.contains("LEFT JOIN customer_preferences cp"));
     }
 
+    @SuppressWarnings("deprecation")
+    @Test
+    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
+        // An open "/*" in the entity would comment out the ON predicate and everything rendered after the join.
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new LeftJoin("t /* x", ON_AB)).getMessage());
+        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new LeftJoin(List.of("a", "t /* x"), ON_AB)).getMessage());
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new LeftJoin("t /* x")).getMessage());
+        assertEquals("LEFT JOIN t /* x */ ON a.id = b.id", new LeftJoin("t /* x */", ON_AB).toString());
+    }
+
     @Test
     void testWithAdditionalFilters() {
         And multipleConditions = new And(
@@ -336,18 +349,5 @@ public class LeftJoinTest extends TestBase {
         LeftJoin join = new LeftJoin("employee_departments ed", ON_AB);
         String result = join.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(result.contains("employee_departments ed"));
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
-        // An open "/*" in the entity would comment out the ON predicate and everything rendered after the join.
-        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
-                assertThrows(IllegalArgumentException.class, () -> new LeftJoin("t /* x", ON_AB)).getMessage());
-        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
-                assertThrows(IllegalArgumentException.class, () -> new LeftJoin(List.of("a", "t /* x"), ON_AB)).getMessage());
-        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
-                assertThrows(IllegalArgumentException.class, () -> new LeftJoin("t /* x")).getMessage());
-        assertEquals("LEFT JOIN t /* x */ ON a.id = b.id", new LeftJoin("t /* x */", ON_AB).toString());
     }
 }

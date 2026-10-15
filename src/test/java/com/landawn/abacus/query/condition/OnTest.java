@@ -24,15 +24,25 @@ import com.landawn.abacus.util.NamingPolicy;
 public class OnTest extends TestBase {
 
     @Test
-    void testCommentOnlyRightPropNameMessageNamesRightPropName() {
-        // Regression: the comment-only check was left to Equal, whose message named its internal 'propValue' parameter.
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new On("a.id", "/* x */"));
-        assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
+    void testCommentCounterExamplesOnBothSides() {
+        // A terminated comment on the right side is stripped by the SqlExpression rendering.
+        assertEquals("ON a.id = b.id ", new On("a.id", "b.id /* c */").toString());
 
-        ex = assertThrows(IllegalArgumentException.class, () -> new On(Map.of("a.id", "-- x")));
-        assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
+        // Quoted identifiers, a #temp reference and optimizer hints are not unterminated comments.
+        assertEquals("ON \"a/*\" = b.id", new On("\"a/*\"", "b.id").toString());
+        assertEquals("ON `a/*` = b.id", new On("`a/*`", "b.id").toString());
+        assertEquals("ON a = \"b/*\"", new On("a", "\"b/*\"").toString());
+        assertEquals("ON #temp.id /* x */ = b", new On("#temp.id /* x */", "b").toString());
+        assertEquals("ON /*+ h */ a = b", new On("/*+ h */ a", "b").toString());
 
-        assertEquals("ON a.id = b.id", new On("a.id", "b.id").toString());
+        // Nested comments (PostgreSQL, SQL Server): a balanced nest is closed, an inner opener alone is not.
+        assertEquals("ON /* /* */ */ a = b", new On("/* /* */ */ a", "b").toString());
+        assertThrows(IllegalArgumentException.class, () -> new On("/* /* */ a", "b"));
+        assertThrows(IllegalArgumentException.class, () -> new On("a", "b /* /* */"));
+
+        // With both sides invalid, leftPropName is reported first.
+        assertEquals("leftPropName must not consist only of SQL comments: -- x",
+                assertThrows(IllegalArgumentException.class, () -> new On("-- x", "/* c */")).getMessage());
     }
 
     @Test
@@ -64,52 +74,15 @@ public class OnTest extends TestBase {
     }
 
     @Test
-    void testCreateOnConditionRejectsNullMapAndNullEntries() {
-        assertThrows(IllegalArgumentException.class, () -> On.createOnCondition((Map<String, String>) null));
-        final Map<String, String> invalid = new AbstractMap<>() {
-            @Override
-            public Set<Entry<String, String>> entrySet() {
-                return java.util.Collections.singleton(null);
-            }
-        };
-        final var error = assertThrows(IllegalArgumentException.class, () -> new On(invalid));
-        assertEquals("propNamePairs must not contain a null entry", error.getMessage());
-    }
+    void testCommentOnlyRightPropNameMessageNamesRightPropName() {
+        // Regression: the comment-only check was left to Equal, whose message named its internal 'propValue' parameter.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new On("a.id", "/* x */"));
+        assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
 
-    @Test
-    void testMySqlDashReadingOfUnterminatedBlockCommentPropNames() {
-        // Regression: MySQL reads "a --/*" as "a - -" plus an open block comment (it needs whitespace after "--"); both
-        // sides were accepted and rendered "ON a --/* <newline> = b".
-        assertEquals("leftPropName must not contain an unterminated block comment: a --/*",
-                assertThrows(IllegalArgumentException.class, () -> new On("a --/*", "b")).getMessage());
-        assertEquals("rightPropName must not contain an unterminated block comment: b --/*",
-                assertThrows(IllegalArgumentException.class, () -> new On("a", "b --/*")).getMessage());
-        assertThrows(IllegalArgumentException.class, () -> new On(Map.of("a --x /* y", "b")));
+        ex = assertThrows(IllegalArgumentException.class, () -> new On(Map.of("a.id", "-- x")));
+        assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
 
-        // With whitespace after "--" every dialect reads a line comment, which the renderer terminates.
-        assertEquals("ON a -- /* x\n = b", new On("a -- /* x", "b").toString());
-    }
-
-    @Test
-    void testCommentCounterExamplesOnBothSides() {
-        // A terminated comment on the right side is stripped by the SqlExpression rendering.
-        assertEquals("ON a.id = b.id ", new On("a.id", "b.id /* c */").toString());
-
-        // Quoted identifiers, a #temp reference and optimizer hints are not unterminated comments.
-        assertEquals("ON \"a/*\" = b.id", new On("\"a/*\"", "b.id").toString());
-        assertEquals("ON `a/*` = b.id", new On("`a/*`", "b.id").toString());
-        assertEquals("ON a = \"b/*\"", new On("a", "\"b/*\"").toString());
-        assertEquals("ON #temp.id /* x */ = b", new On("#temp.id /* x */", "b").toString());
-        assertEquals("ON /*+ h */ a = b", new On("/*+ h */ a", "b").toString());
-
-        // Nested comments (PostgreSQL, SQL Server): a balanced nest is closed, an inner opener alone is not.
-        assertEquals("ON /* /* */ */ a = b", new On("/* /* */ */ a", "b").toString());
-        assertThrows(IllegalArgumentException.class, () -> new On("/* /* */ a", "b"));
-        assertThrows(IllegalArgumentException.class, () -> new On("a", "b /* /* */"));
-
-        // With both sides invalid, leftPropName is reported first.
-        assertEquals("leftPropName must not consist only of SQL comments: -- x",
-                assertThrows(IllegalArgumentException.class, () -> new On("-- x", "/* c */")).getMessage());
+        assertEquals("ON a.id = b.id", new On("a.id", "b.id").toString());
     }
 
     @Test
@@ -301,6 +274,19 @@ public class OnTest extends TestBase {
     }
 
     @Test
+    void testCreateOnConditionRejectsNullMapAndNullEntries() {
+        assertThrows(IllegalArgumentException.class, () -> On.createOnCondition((Map<String, String>) null));
+        final Map<String, String> invalid = new AbstractMap<>() {
+            @Override
+            public Set<Entry<String, String>> entrySet() {
+                return java.util.Collections.singleton(null);
+            }
+        };
+        final var error = assertThrows(IllegalArgumentException.class, () -> new On(invalid));
+        assertEquals("propNamePairs must not contain a null entry", error.getMessage());
+    }
+
+    @Test
     void testCreateOnConditionSnapshotsEveryEntryWhenReportedSizeIsStale() {
         final Map<String, String> liveMap = new AbstractMap<>() {
             @Override
@@ -450,6 +436,20 @@ public class OnTest extends TestBase {
 
         ex = assertThrows(IllegalArgumentException.class, () -> Filters.on("a.id", "# x"));
         assertTrue(ex.getMessage().contains("rightPropName"), ex.getMessage());
+    }
+
+    @Test
+    void testMySqlDashReadingOfUnterminatedBlockCommentPropNames() {
+        // Regression: MySQL reads "a --/*" as "a - -" plus an open block comment (it needs whitespace after "--"); both
+        // sides were accepted and rendered "ON a --/* <newline> = b".
+        assertEquals("leftPropName must not contain an unterminated block comment: a --/*",
+                assertThrows(IllegalArgumentException.class, () -> new On("a --/*", "b")).getMessage());
+        assertEquals("rightPropName must not contain an unterminated block comment: b --/*",
+                assertThrows(IllegalArgumentException.class, () -> new On("a", "b --/*")).getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new On(Map.of("a --x /* y", "b")));
+
+        // With whitespace after "--" every dialect reads a line comment, which the renderer terminates.
+        assertEquals("ON a -- /* x\n = b", new On("a -- /* x", "b").toString());
     }
 
     @Test

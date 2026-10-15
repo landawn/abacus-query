@@ -296,18 +296,18 @@ public class NotBetweenTest extends TestBase {
         SqlExpression maxExpr = new SqlExpression("MAX(age)");
         NotBetween condition = new NotBetween("score", minExpr, maxExpr);
 
-        List<Object> params = condition.parameters();
-        assertNotNull(params);
+        assertEquals(List.of(), condition.parameters());
+        assertEquals("score NOT BETWEEN MIN(age) AND MAX(age)", condition.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test
     void testParametersWithConditionValues() {
         SqlExpression minExpr = Filters.expr("(SELECT MIN(salary) FROM employees)");
         SqlExpression maxExpr = Filters.expr("(SELECT AVG(salary) FROM employees)");
-        NotBetween notBetween = Filters.notBetween("salary", minExpr, maxExpr);
+        NotBetween condition = Filters.notBetween("salary", minExpr, maxExpr);
 
-        List<Object> params = notBetween.parameters();
-        assertEquals(minExpr.parameters().size() + maxExpr.parameters().size(), params.size());
+        assertEquals(List.of(), condition.parameters());
+        assertEquals("salary NOT BETWEEN (SELECT MIN(salary) FROM employees) AND (SELECT AVG(salary) FROM employees)", condition.toSql(NamingPolicy.NO_CHANGE));
     }
 
     @Test

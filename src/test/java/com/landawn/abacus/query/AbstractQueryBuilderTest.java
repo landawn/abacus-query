@@ -353,75 +353,6 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Nested
     class Joins {
         @Test
-        void testConnectorAfterCompletedSetOperandDoesNotMutateSql() {
-            final SqlBuilder builder = PSC.select("id").from("people").union("SELECT id FROM archived_people");
-            assertTrue(assertThrows(IllegalStateException.class, () -> builder.on("a.id = b.id")).getMessage().contains("completed set-operation operand"));
-            assertSql("SELECT id FROM people UNION SELECT id FROM archived_people", List.of(), builder.build());
-        }
-
-        @Test
-        void testEntityJoinOverloadsUseDeclaredTableAliases() {
-            final Map<String, UnaryOperator<SqlBuilder>> joins = new LinkedHashMap<>();
-            joins.put("INNER JOIN", builder -> builder.innerJoin(QueryTestSupport.Order.class));
-            joins.put("LEFT JOIN", builder -> builder.leftJoin(QueryTestSupport.Order.class));
-            joins.put("RIGHT JOIN", builder -> builder.rightJoin(QueryTestSupport.Order.class));
-            joins.put("FULL JOIN", builder -> builder.fullJoin(QueryTestSupport.Order.class));
-            for (final var join : joins.entrySet()) {
-                assertSql("SELECT * FROM users u " + join.getKey() + " user_order o ON u.id = o.user_id", List.of(),
-                        join.getValue().apply(PSC.select("*").from("users u")).on("u.id = o.userId").build());
-            }
-            assertSql("SELECT * FROM users u CROSS JOIN user_order o", List.of(),
-                    PSC.select("*").from("users u").crossJoin(QueryTestSupport.Order.class).build());
-        }
-
-        @Test
-        void testJoinConditionGroupsMultipleTablesWithCrossJoin() {
-            final Criteria join = Criteria.builder().join(List.of("orders o", "payments p"), Filters.on("u.id", "o.userId")).build();
-            assertSql("SELECT * FROM users u JOIN (orders o CROSS JOIN payments p) ON (u.id = o.user_id)", List.of(),
-                    PSC.select("*").from("users u").append(join).build());
-        }
-
-        @Test
-        void testJoinExprWithUnterminatedBlockCommentIsRejected() {
-            // Regression: join("t /* x") rendered "JOIN t /* x ON ...", commenting out the join predicate and every later
-            // clause; the builder now agrees with Join's entity validation.
-            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").join("t /* x"));
-            assertEquals("joinExpr must not contain an unterminated block comment: t /* x", e.getMessage());
-
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").leftJoin("t /* x ON a.id = t.id"));
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").crossJoin("t /* x"));
-
-            // A terminated block comment and a quoted "/*" are kept verbatim.
-            assertEquals("SELECT * FROM a JOIN t /* x */ u ON a.id = u.id", PSC.select("*").from("a").join("t /* x */ u").on("a.id = u.id").build().query());
-            assertEquals("SELECT * FROM a JOIN t ON t.c = '/*'", PSC.select("*").from("a").join("t ON t.c = '/*'").build().query());
-        }
-
-        @Test
-        void testEveryStringJoinRejectsUnterminatedBlockCommentAfterConnectorCheck() {
-            final String message = "joinExpr must not contain an unterminated block comment: t /* x";
-            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").innerJoin("t /* x")).getMessage());
-            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").leftJoin("t /* x")).getMessage());
-            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").rightJoin("t /* x")).getMessage());
-            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").fullJoin("t /* x")).getMessage());
-            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").crossJoin("t /* x")).getMessage());
-            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").naturalJoin("t /* x")).getMessage());
-
-            // An expression with both defects keeps the earlier top-level-connector message; a connector hidden inside the
-            // open comment is not top-level, so that input reports the comment.
-            final String connectorMessage = "CROSS JOIN and NATURAL JOIN expressions must not contain a top-level ON or USING connector";
-            assertEquals(connectorMessage,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").crossJoin("t ON a = b /* x")).getMessage());
-            assertEquals(connectorMessage,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").naturalJoin("t USING (id) /* x")).getMessage());
-            assertEquals("joinExpr must not contain an unterminated block comment: t /* x ON a = b",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").crossJoin("t /* x ON a = b")).getMessage());
-
-            // A closed nested comment is accepted.
-            assertEquals("SELECT * FROM a JOIN t /* /* */ */ ON a.id = t.id",
-                    PSC.select("*").from("a").join("t /* /* */ */").on("a.id = t.id").build().query());
-        }
-
-        @Test
         void testAppendCriteriaJoinTracksFollowUpOnUsingEligibility() {
             // An open qualified JOIN must be completed before a Criteria join may follow.
             final SqlBuilder openJoin = PSC.select("u.id").from("users u").join("orders o");
@@ -446,6 +377,13 @@ public class AbstractQueryBuilderTest extends TestBase {
             final SqlBuilder crossJoined = PSC.select("u.id").from("users u").append(Criteria.builder().join(Filters.crossJoin("payments")).build());
             assertThrows(IllegalStateException.class, () -> crossJoined.on("payments.user_id = u.id"));
             assertEquals("SELECT u.id FROM users u CROSS JOIN payments", crossJoined.build().query());
+        }
+
+        @Test
+        void testConnectorAfterCompletedSetOperandDoesNotMutateSql() {
+            final SqlBuilder builder = PSC.select("id").from("people").union("SELECT id FROM archived_people");
+            assertTrue(assertThrows(IllegalStateException.class, () -> builder.on("a.id = b.id")).getMessage().contains("completed set-operation operand"));
+            assertSql("SELECT id FROM people UNION SELECT id FROM archived_people", List.of(), builder.build());
         }
 
         @Test
@@ -501,6 +439,21 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testEntityJoinOverloadsUseDeclaredTableAliases() {
+            final Map<String, UnaryOperator<SqlBuilder>> joins = new LinkedHashMap<>();
+            joins.put("INNER JOIN", builder -> builder.innerJoin(QueryTestSupport.Order.class));
+            joins.put("LEFT JOIN", builder -> builder.leftJoin(QueryTestSupport.Order.class));
+            joins.put("RIGHT JOIN", builder -> builder.rightJoin(QueryTestSupport.Order.class));
+            joins.put("FULL JOIN", builder -> builder.fullJoin(QueryTestSupport.Order.class));
+            for (final var join : joins.entrySet()) {
+                assertSql("SELECT * FROM users u " + join.getKey() + " user_order o ON u.id = o.user_id", List.of(),
+                        join.getValue().apply(PSC.select("*").from("users u")).on("u.id = o.userId").build());
+            }
+            assertSql("SELECT * FROM users u CROSS JOIN user_order o", List.of(),
+                    PSC.select("*").from("users u").crossJoin(QueryTestSupport.Order.class).build());
+        }
+
+        @Test
         void testEntityJoinOverloadsWithAlias() {
             final String innerJoinSql = PSC.select("*").from(Account.class, "a").innerJoin(Account.class, "a2").on("a.id = a2.id").build().query();
             final String leftJoinSql = PSC.select("*").from(Account.class, "a").leftJoin(Account.class, "a2").on("a.id = a2.id").build().query();
@@ -513,6 +466,31 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertTrue(rightJoinSql.contains("RIGHT JOIN account a2"));
             assertTrue(fullJoinSql.contains("FULL JOIN account a2"));
             assertTrue(crossJoinSql.contains("CROSS JOIN account a2"));
+        }
+
+        @Test
+        void testEveryStringJoinRejectsUnterminatedBlockCommentAfterConnectorCheck() {
+            final String message = "joinExpr must not contain an unterminated block comment: t /* x";
+            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").innerJoin("t /* x")).getMessage());
+            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").leftJoin("t /* x")).getMessage());
+            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").rightJoin("t /* x")).getMessage());
+            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").fullJoin("t /* x")).getMessage());
+            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").crossJoin("t /* x")).getMessage());
+            assertEquals(message, assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").naturalJoin("t /* x")).getMessage());
+
+            // An expression with both defects keeps the earlier top-level-connector message; a connector hidden inside the
+            // open comment is not top-level, so that input reports the comment.
+            final String connectorMessage = "CROSS JOIN and NATURAL JOIN expressions must not contain a top-level ON or USING connector";
+            assertEquals(connectorMessage,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").crossJoin("t ON a = b /* x")).getMessage());
+            assertEquals(connectorMessage,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").naturalJoin("t USING (id) /* x")).getMessage());
+            assertEquals("joinExpr must not contain an unterminated block comment: t /* x ON a = b",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").crossJoin("t /* x ON a = b")).getMessage());
+
+            // A closed nested comment is accepted.
+            assertEquals("SELECT * FROM a JOIN t /* /* */ */ ON a.id = t.id",
+                    PSC.select("*").from("a").join("t /* /* */ */").on("a.id = t.id").build().query());
         }
 
         @Test
@@ -655,6 +633,13 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertThrows(IllegalStateException.class, () -> PSC.select("id").from("users").orderBy("id").innerJoin(Account.class));
         }
 
+        @Test
+        void testJoinConditionGroupsMultipleTablesWithCrossJoin() {
+            final Criteria join = Criteria.builder().join(List.of("orders o", "payments p"), Filters.on("u.id", "o.userId")).build();
+            assertSql("SELECT * FROM users u JOIN (orders o CROSS JOIN payments p) ON (u.id = o.user_id)", List.of(),
+                    PSC.select("*").from("users u").append(join).build());
+        }
+
         // Covers the dialect-aware JOIN-connector and FROM-separator scans on further dialects: a standard 'C:\' literal cannot
         // hide a CROSS JOIN connector or the separator after the primary table, while dialect comment/bracket rules still apply.
         @Test
@@ -746,6 +731,21 @@ public class AbstractQueryBuilderTest extends TestBase {
                 final String query = PSC.select("*").from("review_parent p").join(ReviewChild.class, alias).on(Filters.eq("c.value", 7)).build().query();
                 assertTrue(query.endsWith(" ON c.stored_value = ?"), query);
             }
+        }
+
+        @Test
+        void testJoinExprWithUnterminatedBlockCommentIsRejected() {
+            // Regression: join("t /* x") rendered "JOIN t /* x ON ...", commenting out the join predicate and every later
+            // clause; the builder now agrees with Join's entity validation.
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").join("t /* x"));
+            assertEquals("joinExpr must not contain an unterminated block comment: t /* x", e.getMessage());
+
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").leftJoin("t /* x ON a.id = t.id"));
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a").crossJoin("t /* x"));
+
+            // A terminated block comment and a quoted "/*" are kept verbatim.
+            assertEquals("SELECT * FROM a JOIN t /* x */ u ON a.id = u.id", PSC.select("*").from("a").join("t /* x */ u").on("a.id = u.id").build().query());
+            assertEquals("SELECT * FROM a JOIN t ON t.c = '/*'", PSC.select("*").from("a").join("t ON t.c = '/*'").build().query());
         }
 
         // Pins a deliberate trade-off of the leading join modifiers: an alias literally named like one (GLOBAL, PASTE,
@@ -1426,7 +1426,7 @@ public class AbstractQueryBuilderTest extends TestBase {
          * would require a logger mock and is out of scope.)
          */
         @Test
-        void testManyBuildersDoNotLeakOrThrow_Pass2() {
+        void testManyBuildersDoNotLeakOrThrow() {
             for (int i = 0; i < 32; i++) {
                 String sql = PSC.select("id").from(Account.class).where(Filters.eq("id", i)).build().query();
                 assertNotNull(sql);
@@ -3678,7 +3678,7 @@ public class AbstractQueryBuilderTest extends TestBase {
          * The normal happy path should still produce SQL with the sub-entity tables.
          */
         @Test
-        void testSelectWithSubEntities_DoesNotThrow_Pass2() {
+        void testSelectWithSubEntities_DoesNotThrow() {
             // Force the include-sub-entities select path. Using PSC.selectFrom(Class, boolean)
             // exercises both helpers that previously dereferenced propInfo without a null check.
             String sql = PSC.selectFrom(Account.class, true).build().query();
@@ -3890,6 +3890,309 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals(Arrays.asList(1, 2, 3), pscSp.parameters());
         }
 
+        // Regression: the comment guard always read \' as an escaped quote, so "'C:\' -- note" passed it on standard-string dialects and swallowed the WHERE.
+        @Test
+        void testCommentGuardChecksStandardStringReadingOutsideMySql() {
+            final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+            final Dsl oracle = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Oracle")).build());
+            final Dsl sqlServer = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
+            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+
+            assertThrows(IllegalArgumentException.class, () -> pg.update("account").set("dir = 'C:\\' -- normalize dir").where("status = 0"));
+            assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set("dir = 'C:\\' -- normalize dir").where("status = 0"));
+            assertThrows(IllegalArgumentException.class, () -> oracle.select("'a\\' -- x'").from("account"));
+            assertThrows(IllegalArgumentException.class, () -> pg.select("id").from("account").orderBy("'a\\' -- x'"));
+            assertThrows(IllegalArgumentException.class, () -> sqlServer.select("'C:\\' + #t.firstName -- c").from("#t"));
+            // The SQL Server temporary-table scan no longer hides "#t" behind the backslash reading, so the guard applies to raw WHERE text.
+            assertThrows(IllegalArgumentException.class, () -> sqlServer.select("id").from("#t").where("'C:\\' + #t.name = 'x' -- c"));
+
+            // E'...' strings and MySQL strings keep their backslash escapes.
+            assertEquals("UPDATE account SET dir = E'C:\\' -- quoted' WHERE status = 0",
+                    pg.update("account").set("dir = E'C:\\' -- quoted'").where("status = 0").build().query());
+            assertEquals("UPDATE account SET dir = 'it\\'s -- fine' WHERE status = 0",
+                    mysql.update("account").set("dir = 'it\\'s -- fine'").where("status = 0").build().query());
+        }
+
+        // Pins the fail-closed choice of the comment guard without product info: DEFAULT may be any server, and under the
+        // standard string reading (no backslash escapes) "'it\'s -- fine'" ends at "\'", leaving a real "--" comment.
+        @Test
+        void testCommentGuardRejectsMySqlStyleEscapedLiteralWithoutProductInfo() {
+            assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set("note = 'it\\'s -- fine'"));
+
+            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+            assertEquals("UPDATE t SET note = 'it\\'s -- fine' WHERE a = ?",
+                    mysql.update("t").set("note = 'it\\'s -- fine'").where(Filters.eq("a", 1)).build().query());
+        }
+
+        // Covers the comment guard's string readings (near misses stay accepted; H2/SQLite and non-E prefixes are standard)
+        // and MySQL hash handling inside quotes and backticks.
+        @Test
+        void testCommentGuardStringReadingNearMissesAndQuotedHashes() {
+            final Dsl pg = lexDialect(PSC, "PostgreSQL");
+            final Dsl h2 = lexDialect(PSC, "H2");
+            final Dsl sqlite = lexDialect(PSC, "SQLite");
+            final Dsl mysql = lexDialect(PSC, "MySQL");
+
+            assertEquals("UPDATE t SET dir = 'C:\\', note = 'x' WHERE a = 1", pg.update("t").set("dir = 'C:\\', note = 'x'").where("a = 1").build().query());
+            assertEquals("SELECT 'a\\\\b' AS x FROM t", pg.select("'a\\\\b' AS x").from("t").build().query());
+            assertThrows(IllegalArgumentException.class, () -> h2.select("'x\\' -- c").from("t"));
+            assertThrows(IllegalArgumentException.class, () -> sqlite.select("'x\\' -- c").from("t"));
+            // "fee'...'" is an identifier followed by a standard string, not an E'...' escape string.
+            assertThrows(IllegalArgumentException.class, () -> pg.select("fee'a\\' -- x'").from("t"));
+
+            assertEquals("SELECT 'a##b' AS x FROM t", mysql.select("'a##b' AS x").from("t").build().query());
+            assertEquals("SELECT `a#b` FROM t", mysql.select("`a#b`").from("t").build().query());
+            assertEquals("SELECT a ## b FROM t", PSC.select("a ## b").from("t").build().query());
+        }
+
+        // Regression: with an explicit MySQL dialect the comment guard still exempted ##, #>, #- and ?#, which MySQL reads as comments.
+        @Test
+        void testCommentGuardTreatsEveryHashAsCommentUnderMySql() {
+            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+
+            assertThrows(IllegalArgumentException.class, () -> mysql.update("account").set("status = 1 ## reset").where("status = 0"));
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("a #> b").from("t"));
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("a #-b").from("t"));
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("a ?# b").from("t"));
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("a#>>b").from("t"));
+
+            // A MyBatis marker is still a data token, and PostgreSQL keeps its hash operators.
+            assertEquals("UPDATE account SET status = #{status} WHERE status = 0",
+                    mysql.update("account").set("status = #{status}").where("status = 0").build().query());
+            final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+            assertEquals("SELECT a ## b FROM t", pg.select("a ## b").from("t").build().query());
+        }
+
+        @Test
+        void testCommentTokenAfterBackslashEscapedQuoteInsideSingleQuotedLiteralIsRejected() {
+            // Inside a single-quoted string literal a backslash DOES escape the following quote (\'), so the next
+            // quote closes the string and a trailing comment token (-- or /* */) must be rejected.
+            // Regression: the scanner previously misread "\''" as a doubled-quote ('') escape and stayed "inside"
+            // the string, hiding the trailing comment token from the guard.
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("note = '\\'' -- x").from("docs").build().query());
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("note = '\\'' /* x */").from("docs").build().query());
+
+            // The backslash-escaped-quote literal on its own (no trailing comment) is still accepted.
+            final String okSql = PSC.select("note = '\\''").from("docs").build().query();
+            assertNotNull(okSql);
+        }
+
+        @Test
+        void testCommentTokenAfterBackslashTerminatedQuotedIdentifierIsRejected() {
+            // A backslash before the closing quote of a double-quoted or backtick-quoted identifier does NOT escape
+            // that quote (backslash escaping applies only inside single-quoted string literals), so the closing quote
+            // terminates the identifier and the trailing "--" is a real SQL comment token that must be rejected.
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("orders").using("\"a\\\" -- x"));
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("orders").using("`a\\` -- x"));
+
+            // A comment-like token that is genuinely inside a quoted identifier is still allowed.
+            final String sql = PSC.select("*").from("users").join("orders").using("\"a--b\"").build().query();
+            assertTrue(sql.contains("a--b"));
+        }
+
+        @Test
+        void testCommentTokensInsideSqlServerBracketIdentifierAreAllowed() {
+            assertEquals("SELECT [a--b] FROM records", Dsl.PSB.select("[a--b]").from("records").build().query());
+            assertEquals("SELECT [a]]--b] FROM records", Dsl.PSB.select("[a]]--b]").from("records").build().query());
+        }
+
+        @Test
+        void testCompactCheckpointsCopyValuesAndRestoreNestedMutations() {
+            final SqlBuilder builder = NSC.update("users").set("id", 1);
+            final String originalSql = builder._sb.toString();
+            builder._aliasPropColumnNameMap = new java.util.HashMap<>();
+            builder._aliasPropColumnNameMap.put("u", Collections.emptyMap());
+            builder._namedParameterNameOccurrences.put(null, null);
+            // A snapshot of live Map.Entry objects would follow these in-place value changes.
+            // Nested failures must restore their own starting state before the outer rollback.
+            assertThrows(IllegalStateException.class, () -> builder.mutateAtomically(() -> {
+                builder._parameters.set(0, 9);
+                builder._namedParameterNameOccurrences.put("id", 9);
+                builder._namedParameterNameOccurrences.put(null, 7);
+                builder._renderedNamedParameterTokens.put("id", "changed");
+                builder._generatedNamedParameterNames.add("id_9");
+                builder.calledOpSet.add("temporary");
+                // The protected entry point restores text rewritten before the start length, not only appended text.
+                builder._sb.replace(0, 6, "BROKEN");
+                builder._aliasPropColumnNameMap.clear();
+                assertThrows(IllegalArgumentException.class, () -> builder.mutateAtomically(() -> {
+                    builder._parameters.clear();
+                    builder._namedParameterNameOccurrences.put("id", 10);
+                    builder._renderedNamedParameterTokens.clear();
+                    builder._generatedNamedParameterNames.clear();
+                    builder.calledOpSet.clear();
+                    throw new IllegalArgumentException("inner");
+                }));
+                assertEquals(Integer.valueOf(9), builder._namedParameterNameOccurrences.get("id"));
+                assertEquals(List.of(9), builder._parameters);
+                assertEquals("changed", builder._renderedNamedParameterTokens.get("id"));
+                throw new IllegalStateException("outer");
+            }));
+            assertEquals(originalSql, builder._sb.toString());
+            assertEquals(Collections.singletonMap("u", Collections.emptyMap()), builder._aliasPropColumnNameMap);
+            assertEquals(List.of(1), builder._parameters);
+            assertEquals(Integer.valueOf(1), builder._namedParameterNameOccurrences.get("id"));
+            assertTrue(builder._namedParameterNameOccurrences.containsKey(null));
+            assertNull(builder._namedParameterNameOccurrences.get(null));
+            // The default ":id" token is not stored (absence means the default form).
+            assertNull(builder._renderedNamedParameterTokens.get("id"));
+            assertEquals(Set.of("id"), builder._generatedNamedParameterNames);
+            assertTrue(builder.calledOpSet.isEmpty());
+            builder._namedParameterNameOccurrences.remove(null);
+            assertEquals("UPDATE users SET id = :id, id = :id_2", builder.set("id", 2).build().query());
+        }
+
+        @Test
+        void testComposedFragmentsProtectStandardBackslashLiteralBoundaries() {
+            assertEquals("SELECT * FROM users CROSS JOIN (SELECT 'a\\') a -- tail\n WHERE id = ?",
+                    PSC.select("*").from("users").crossJoin("(SELECT 'a\\') a -- tail").where(Filters.eq("id", 1)).build().query());
+            assertEquals("SELECT * FROM users CROSS JOIN (SELECT E'a\\' -- quoted') a WHERE id = ?",
+                    PSC.select("*").from("users").crossJoin("(SELECT E'a\\' -- quoted') a").where(Filters.eq("id", 1)).build().query());
+
+            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+            assertEquals("SELECT * FROM users CROSS JOIN (SELECT 'a\\' -- quoted') a WHERE id = ?",
+                    mysql.select("*").from("users").crossJoin("(SELECT 'a\\' -- quoted') a").where(Filters.eq("id", 1)).build().query());
+        }
+
+        @Test
+        void testComposedQueriesRejectTerminatorsAfterStandardBackslashLiterals() {
+            final SqlBuilder parent = PSC.select("id").from("users");
+            assertThrows(IllegalArgumentException.class, () -> parent.union("SELECT 'a\\';"));
+            assertEquals("SELECT id FROM users", parent.build().query());
+
+            final SqlBuilder snapshot = PSC.select("id").from("users").append("WHERE value = 'a\\';");
+            assertThrows(IllegalArgumentException.class, snapshot::toSubQuery);
+        }
+
+        // Regression: the builder's scanners did not know dollar-quoted strings, so the quote in $$'$$ (text on PostgreSQL and
+        // H2) read as an unterminated string that hid the comment after it: on H2, "UPDATE t SET a = $$'$$ // c WHERE id = ?"
+        // updated every row, and "--" did the same on PostgreSQL, H2 and the default dialect. Raw expressions also collapsed
+        // the whitespace of, and converted the words in, a dollar-quoted string ($$Hello World$$ became $$Hello world$$).
+        @Test
+        void testDollarQuotedStringsAreQuotedTextForCommentChecksAndRendering() {
+            final Dsl h2 = lexDialect(PSC, "H2");
+            final Dsl pg = lexDialect(PSC, "PostgreSQL");
+            final Dsl mysql = lexDialect(PSC, "MySQL");
+
+            // A trailing line comment after a dollar-quoted string is ended before the next clause.
+            assertEquals("UPDATE t SET a = $$'$$ // c\n WHERE id = ?",
+                    h2.update("t").set("a", SqlExpression.of("$$'$$ // c")).where(Filters.eq("id", 1)).build().query());
+            assertEquals("UPDATE t SET a = $$'$$ -- c\n WHERE id = ?",
+                    h2.update("t").set("a", SqlExpression.of("$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
+            // H2 has no tagged dollar quotes: there "$t$" is no quote and the comment is inside the unterminated string.
+            assertEquals("UPDATE t SET a = $t$'$t$ -- c WHERE id = ?",
+                    h2.update("t").set("a", SqlExpression.of("$t$'$t$ -- c")).where(Filters.eq("id", 1)).build().query());
+
+            for (final Dsl dsl : List.of(PSC, pg)) {
+                assertEquals("UPDATE t SET a = $$'$$ -- c\n WHERE id = ?",
+                        dsl.update("t").set("a", SqlExpression.of("$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
+                assertEquals("UPDATE t SET a = $t$'$t$ -- c\n WHERE id = ?",
+                        dsl.update("t").set("a", SqlExpression.of("$t$'$t$ -- c")).where(Filters.eq("id", 1)).build().query());
+                assertEquals("SELECT a FROM t WHERE a = $$\"$$ -- c\n ORDER BY id",
+                        dsl.select("a").from("t").where("a = $$\"$$ -- c").orderBy("id").build().query());
+                assertEquals("UPDATE t SET a = ? WHERE (b = $$[$$ -- c\n) AND (id = ?)",
+                        dsl.update("t").set("a", 1).where(Filters.and(Filters.expr("b = $$[$$ -- c"), Filters.eq("id", 1))).build().query());
+                assertEquals("SELECT a FROM (SELECT $$'$$ AS v) s -- c\n WHERE x = ?",
+                        dsl.select("a").from("(SELECT $$'$$ AS v) s -- c").where(Filters.eq("x", 1)).build().query());
+                assertEquals("SELECT a FROM t JOIN u ON t.a = $$'$$ -- c\n WHERE id = ?",
+                        dsl.select("a").from("t").join("u").on("t.a = $$'$$ -- c").where(Filters.eq("id", 1)).build().query());
+                assertEquals("SELECT a FROM t GROUP BY a HAVING count(*) > $$'$$ -- c\n ORDER BY a",
+                        dsl.select("a").from("t").groupBy("a").having("count(*) > $$'$$ -- c").orderBy("a").build().query());
+                assertEquals("SELECT a FROM t WHERE a = $$'$$ -- c\n ORDER BY id",
+                        dsl.select("a").from("t").append(" WHERE a = $$'$$ -- c").orderBy("id").build().query());
+                assertEquals("SELECT a FROM t WHERE x IN (SELECT x FROM u WHERE y = $$'$$ -- c\n)",
+                        dsl.select("a").from("t").where(Filters.in("x", Filters.subQuery("SELECT x FROM u WHERE y = $$'$$ -- c"))).build().query());
+
+                // The comment guard finds the comment, as it does after an ordinary string.
+                assertEquals("SQL comment token is not allowed in SQL expression: $$'$$ -- c",
+                        assertThrows(IllegalArgumentException.class, () -> dsl.select("$$'$$ -- c").from("t")).getMessage());
+                assertEquals("SQL comment token is not allowed in column expression: a = $$'$$ -- c",
+                        assertThrows(IllegalArgumentException.class, () -> dsl.update("t").set("a = $$'$$ -- c")).getMessage());
+                assertThrows(IllegalArgumentException.class, () -> dsl.select("a").from("t").orderBy("$$'$$ -- c"));
+
+                // A dollar-quoted string renders as written; the names around it are still converted, and an AS inside it
+                // splits off no alias.
+                assertEquals("SELECT $$Hello World$$ AS greeting FROM t", dsl.select("$$Hello World$$ AS greeting").from("t").build().query());
+                assertEquals("SELECT $$foo  as  bar$$ FROM users", dsl.select("$$foo  as  bar$$").from("users").build().query());
+                assertEquals("SELECT acc.first_name AS \"firstName\" FROM account acc WHERE note = $$Hello World$$ AND acc.last_name = 1",
+                        dsl.select("firstName").from(Account.class).where("note = $$Hello World$$ AND lastName = 1").build().query());
+            }
+
+            // The tokenizer can keep a dollar quote and the comment after it in one token: in a subscript, or after a non-ASCII
+            // space, which the rendering emits as a plain space (H2 reads it as one anyway). The emitted text is checked too.
+            for (final Dsl dsl : List.of(PSC, pg, h2)) {
+                assertEquals("UPDATE t SET b = ARRAY[$$']$$] -- c\n WHERE id = ?",
+                        dsl.update("t").set("b", SqlExpression.of("ARRAY[$$']$$] -- c")).where(Filters.eq("id", 1)).build().query());
+                assertEquals("SELECT a FROM t WHERE a = x[1:$$']$$] -- c\n ORDER BY id",
+                        dsl.select("a").from("t").where("a = x[1:$$']$$] -- c").orderBy("id").build().query());
+                assertEquals("UPDATE t SET a = $$'$$ -- c\n WHERE id = ?",
+                        dsl.update("t").set("a", SqlExpression.of("　$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
+                assertEquals("UPDATE t SET a = 'x' || $$'$$ -- c\n WHERE id = ?",
+                        dsl.update("t").set("a", SqlExpression.of("'x' || $$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
+                assertThrows(IllegalArgumentException.class, () -> dsl.update("t").set("a = 　$$'$$ -- c"));
+                // A dollar-quoted string in an array constructor is kept as written too; the column after it is converted.
+                assertEquals("SELECT a FROM t WHERE tags = ARRAY[$$a  b$$, first_name]",
+                        dsl.select("a").from("t").where("tags = ARRAY[$$a  b$$, firstName]").build().query());
+                // The "as" inside the string is no alias keyword: the item keeps its own alias and gets no automatic one
+                // ("AS label AS \"a || ...\"" was a syntax error).
+                assertEquals("SELECT a || $$ as of $$ AS label FROM t", dsl.select("a || $$ as of $$  AS label").from("t").build().query());
+                assertEquals("SELECT a || $$ as of $$ AS label FROM t", dsl.select("a || $$ as of $$\n AS label").from("t").build().query());
+                assertEquals("SELECT first_name || $$ as of $$ AS label FROM t", dsl.select("firstName || $$ as of $$ AS label").from("t").build().query());
+            }
+
+            // SQL Server, Oracle, DB2 and SQLite have no dollar quotes either: their scanners read none.
+            for (final Dsl dsl : List.of(lexDialect(PSC, "Microsoft SQL Server"), lexDialect(PSC, "Oracle"), lexDialect(PSC, "SQLite"))) {
+                assertEquals("UPDATE t SET a = $$'$$ -- c WHERE id = ?",
+                        dsl.update("t").set("a", SqlExpression.of("$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
+                assertEquals("SELECT $$'$$ -- c FROM t", dsl.select("$$'$$ -- c").from("t").build().query());
+                assertEquals("SELECT $$foo AS bar$$ FROM t", dsl.select("$$foo  as  bar$$").from("t").build().query());
+            }
+
+            // The MySQL family has no dollar quotes: "$$" is a name there, and the quote opens a string.
+            assertEquals("UPDATE t SET a = $$'$$ -- c WHERE id = ?",
+                    mysql.update("t").set("a", SqlExpression.of("$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
+            assertEquals("SELECT $$'$$ -- c FROM t", mysql.select("$$'$$ -- c").from("t").build().query());
+            assertEquals("SELECT a FROM t WHERE a = $$a b$$", mysql.select("a").from("t").where("a = $$a  b$$").build().query());
+            // The unterminated-block-comment check is dialect-agnostic and reads dollar quotes for MySQL too (fail closed).
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("a").from("t WHERE c = $$ OR d = '$$ /* x '"));
+        }
+
+        @Test
+        void testDoubleHashNotTreatedAsSqlCommentInExpressions() {
+            // ## is a whitelisted two-char token; the second # must not be re-examined as lone #
+            String sql = PSC.select("*").from("users").where(Filters.expr("status = '##ACTIVE##'")).build().query();
+            assertNotNull(sql);
+            assertTrue(sql.contains("##ACTIVE##"), "## inside value must not be rejected as SQL comment");
+        }
+
+        // Regression: the tokenizer reads \' as an escaped quote, so after a standard literal such as 'C:\' every quote boundary
+        // was off by one: a later string was converted as an identifier, and "-- n/a" inside a later string was stripped
+        // as a comment, truncating the WHERE clause.
+        @Test
+        void testEscapeDependentQuoteInRawExpressionIsEmittedVerbatim() {
+            final String noteExpr = SqlExpression.and(SqlExpression.eq("path", "C:\\"), SqlExpression.eq("note", "-- n/a"));
+
+            // The verbatim text ends inside a line comment under the backslash reading, so it is terminated before ORDER BY.
+            assertEquals("SELECT id FROM t WHERE (path = 'C:\\') AND (note = '-- n/a')\n ORDER BY id",
+                    PSC.select("id").from("t").where(Filters.expr(noteExpr)).orderBy("id").build().query());
+
+            final Dsl postgres = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+            assertEquals("SELECT id FROM t WHERE (path = 'C:\\') AND (note = '-- n/a')\n ORDER BY id",
+                    postgres.select("id").from("t").where(Filters.expr(noteExpr)).orderBy("id").build().query());
+
+            final String likeExpr = SqlExpression.and(SqlExpression.like("fileName", "%\\"), SqlExpression.eq("ownerName", "John Smith"));
+            final String built = PSC.select("id").from("t").where(Filters.expr(likeExpr)).build().query();
+            assertEquals("SELECT id FROM t WHERE (file_name LIKE '%\\') AND (ownerName = 'John Smith')", built);
+            assertEquals(Filters.expr(likeExpr).toSql(NamingPolicy.SNAKE_CASE), built.substring(built.indexOf("WHERE ") + 6));
+
+            // MySQL always reads \' as an escape, which is how the tokenizer reads it, so conversion continues there.
+            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
+            assertEquals("SELECT id FROM t WHERE a = 'It\\'s' AND first_name = 'x'",
+                    mysql.select("id").from("t").where(Filters.expr("a = 'It\\'s' AND firstName = 'x'")).build().query());
+            assertEquals("SELECT id FROM t WHERE a = 'It\\'s' AND firstName = 'x'",
+                    PSC.select("id").from("t").where(Filters.expr("a = 'It\\'s' AND firstName = 'x'")).build().query());
+        }
+
         // The checkpoint of an append-only clause records only the buffer length (no copy of the SQL built so far per
         // clause call): a clause rejected after a wide select list must still leave the SQL byte-identical.
         @Test
@@ -3947,332 +4250,191 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("SELECT DISTINCT id FROM t ORDER BY id", ordered.append(Criteria.builder().distinct().build()).build().query());
         }
 
-        // Only tokens that differ from the default ":name" are recorded, so a batch INSERT no longer retains one
-        // redundant String and map node per placeholder; the set-operation rewrite reads absent entries as ":name".
+        // Regression: the sort spec of a condition-layer ORDER BY / GROUP BY (Filters.orderBy/groupBy, Criteria.orderBy/groupBy) is
+        // composed without knowing the dialect, so on H2 a "//" comment in a key swallowed that key's direction and every later key
+        // ("ORDER BY a // c DESC, b ASC\n" ran as "ORDER BY a"). It is now rejected on H2, as orderBy(String)/groupBy(String) reject it.
         @Test
-        void testRenderedNamedParameterTokensStoreOnlyCustomForms() {
-            final List<Map<String, Object>> rows = new ArrayList<>();
+        void testH2ConditionLayerSortKeyWithDoubleSlashIsRejectedLikeBuilderOrderBy() {
+            final Dsl h2 = lexDialect(PSC, "H2");
+            final String orderBy = "SQL comment token is not allowed in ORDER BY expression: ";
+            final String groupBy = "SQL comment token is not allowed in GROUP BY expression: ";
 
-            for (int i = 0; i < 3; i++) {
-                final Map<String, Object> row = new LinkedHashMap<>();
-                row.put("id", i);
-                row.put("name", "n" + i);
-                rows.add(row);
+            assertEquals(orderBy + "a // c DESC, b ASC", assertThrows(IllegalArgumentException.class,
+                    () -> h2.select("id").from("t").append(Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC))).getMessage());
+            assertEquals(orderBy + "a // c DESC", assertThrows(IllegalArgumentException.class,
+                    () -> h2.select("id").from("t").append(Criteria.builder().orderBy("a // c", SortDirection.DESC).limit(3).build())).getMessage());
+            // The key in the middle and last position, with and without directions.
+            assertEquals(orderBy + "x, a // c, b",
+                    assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.orderBy("x", "a // c", "b"))).getMessage());
+            assertEquals(orderBy + "x DESC, y DESC, a // c DESC",
+                    assertThrows(IllegalArgumentException.class,
+                            () -> h2.select("id").from("t").append(Criteria.builder().orderBy(List.of("x", "y", "a // c"), SortDirection.DESC).build()))
+                                    .getMessage());
+            final Map<String, SortDirection> orders = new LinkedHashMap<>();
+            orders.put("x", SortDirection.ASC);
+            orders.put("a // c", SortDirection.DESC);
+            orders.put("b", SortDirection.ASC);
+            assertEquals(orderBy + "x ASC, a // c DESC, b ASC",
+                    assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Criteria.builder().orderBy(orders).build()))
+                            .getMessage());
+            assertEquals(groupBy + "a // c, b", assertThrows(IllegalArgumentException.class,
+                    () -> h2.select("id").from("t").append(Criteria.builder().groupBy("a // c", "b").having("count(*) > 1").build())).getMessage());
+            assertEquals(groupBy + "x DESC, a // c DESC", assertThrows(IllegalArgumentException.class,
+                    () -> h2.select("id").from("t").append(Filters.groupBy(List.of("x", "a // c"), SortDirection.DESC))).getMessage());
+            assertEquals(groupBy + "a // c DESC",
+                    assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.groupBy("a // c", SortDirection.DESC)))
+                            .getMessage());
+            // Like orderBy(String), every "//" comment is rejected: one ended inside the key, one in the last key, a raw clause.
+            assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").orderBy("a // c\n", SortDirection.DESC));
+            assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.orderBy("a // c\n", SortDirection.DESC)));
+            assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.orderBy("x", "a // c")));
+            assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.orderBy(Filters.expr("a DESC // newest"))));
+            // A Criteria in a structured sub-query, and in a DELETE statement.
+            assertThrows(IllegalArgumentException.class, () -> h2.select("id")
+                    .from("t")
+                    .where(Filters.in("id", Filters.subQuery("u", List.of("id"), Criteria.builder().where(Filters.eq("k", 1)).orderBy("a // c").build())))
+                    .build());
+
+            // The rejection is rolled back: no clause slot, select modifier or statement prefix is left behind.
+            final SqlBuilder select = h2.select("id").from("t").where(Filters.eq("x", 1));
+            assertThrows(IllegalArgumentException.class,
+                    () -> select.append(Criteria.builder().distinctOn("a // c").groupBy("g").orderBy("a // c", SortDirection.DESC).build()));
+            assertThrows(IllegalArgumentException.class, () -> select.append(Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC)));
+            assertEquals("SELECT DISTINCT ON (a // c\n) id FROM t WHERE x = ? GROUP BY g ORDER BY a DESC",
+                    select.append(Criteria.builder().distinctOn("a // c").groupBy("g").orderBy("a", SortDirection.DESC).build()).build().query());
+            final SqlBuilder delete = h2.deleteFrom("t");
+            assertThrows(IllegalArgumentException.class, () -> delete.append(Criteria.builder().where(Filters.eq("id", 1)).orderBy("a // c").build()));
+            assertEquals("DELETE FROM t WHERE id = ?", delete.where(Filters.eq("id", 1)).build().query());
+
+            // Not rejected on H2: "--" and block comments, which the tokenizer drops, and "//" in quoted text, a $$ string or
+            // another comment.
+            assertEquals("SELECT id FROM t ORDER BY a DESC, b ASC",
+                    h2.select("id").from("t").append(Filters.orderBy("a -- c", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
+            assertEquals("SELECT id FROM t ORDER BY a DESC, b ASC",
+                    h2.select("id").from("t").append(Filters.orderBy("a /* // */", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
+            assertEquals("SELECT id FROM t ORDER BY a DESC, b ASC",
+                    h2.select("id").from("t").append(Filters.orderBy("a -- c // d", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
+            assertEquals("SELECT id FROM t GROUP BY 'a//b', b HAVING count(*) > 1",
+                    h2.select("id").from("t").append(Criteria.builder().groupBy("'a//b'", "b").having("count(*) > 1").build()).build().query());
+            assertTrue(h2.select("id")
+                    .from("t")
+                    .append(Filters.orderBy("$$//$$", SortDirection.DESC))
+                    .build()
+                    .query()
+                    .startsWith("SELECT id FROM t ORDER BY $$//$$ DESC"));
+
+            // Other dialects read "//" as an operator: byte-identical output.
+            for (final Dsl other : List.of(PSC, lexDialect(PSC, "PostgreSQL"))) {
+                assertEquals("SELECT id FROM t ORDER BY a // c DESC, b ASC",
+                        other.select("id").from("t").append(Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
+                assertEquals("SELECT id FROM t ORDER BY a // c DESC LIMIT 3",
+                        other.select("id").from("t").append(Criteria.builder().orderBy("a // c", SortDirection.DESC).limit(3).build()).build().query());
+                assertEquals("SELECT id FROM t GROUP BY a // c, b HAVING count(*) > 1",
+                        other.select("id").from("t").append(Criteria.builder().groupBy("a // c", "b").having("count(*) > 1").build()).build().query());
+                assertEquals("SELECT id FROM t GROUP BY a // c DESC",
+                        other.select("id").from("t").append(Filters.groupBy("a // c", SortDirection.DESC)).build().query());
+                assertEquals("SELECT id FROM t ORDER BY a DESC, b ASC",
+                        other.select("id").from("t").append(Filters.orderBy("a -- c", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
+            }
+        }
+
+        // Regression: Criteria.Builder.distinctOn composes "DISTINCT ON (" + list + ")" without knowing the dialect and ends only
+        // "--"/"#" comments, so on H2 an appended Criteria rendered "SELECT DISTINCT ON (a // c)\n id FROM t" (the ')' inside the
+        // comment) and "DISTINCT ON (// c)\n" for a comment-only list. The list is now rendered as distinctOn(String) renders it.
+        @Test
+        void testH2CriteriaDistinctOnWithDoubleSlashRendersLikeBuilderDistinctOn() {
+            final Dsl h2 = lexDialect(PSC, "H2");
+
+            assertEquals("SELECT DISTINCT ON (a // c\n) id FROM t",
+                    h2.select("id").from("t").append(Criteria.builder().distinctOn("a // c").build()).build().query());
+            assertEquals("SELECT DISTINCT id FROM t", h2.select("id").from("t").append(Criteria.builder().distinctOn("// c").build()).build().query());
+            assertEquals("SELECT DISTINCT ON (a, b // c\n) id FROM t WHERE x = ?",
+                    h2.select("id").from("t").append(Criteria.builder().distinctOn("a, b // c").where(Filters.eq("x", 1)).build()).build().query());
+            assertEquals("SELECT DISTINCT id FROM t WHERE x = ?",
+                    h2.select("id").from("t").append(Criteria.builder().distinctOn("// a\n// b").where(Filters.eq("x", 1)).build()).build().query());
+            // A raw Criteria modifier of the same form is read the same way.
+            assertEquals("SELECT DISTINCT ON (a // c\n) id FROM t",
+                    h2.select("id").from("t").append(Criteria.builder().selectModifier("DISTINCT ON (a // c)").build()).build().query());
+            // But a raw modifier whose list is closed before its "//" note ends in a ')' of the note: it is left to selectModifier,
+            // which ends the note after it, exactly as the builder's own selectModifier renders the same text (rewriting it as a
+            // DISTINCT ON list gave "... // one row per (dept\n) id": a stray ')' and an H2 syntax error).
+            assertEquals("SELECT DISTINCT ON (dept) // one row per (dept)\n id FROM t",
+                    h2.select("id").from("t").append(Criteria.builder().selectModifier("DISTINCT ON (dept) // one row per (dept)").build()).build().query());
+            for (final String modifier : List.of("DISTINCT ON (dept) // (latest)", "DISTINCT ON (dept, a) // see f(x)", "DISTINCT ON (a) // c)",
+                    "DISTINCT ON (f(a)) // g(b)", "DISTINCT ON (a // c\n) x // d)")) {
+                assertEquals(h2.select("id").from("t").selectModifier(modifier).build().query(),
+                        h2.select("id").from("t").append(Criteria.builder().selectModifier(modifier).build()).build().query(), modifier);
             }
 
-            final SqlBuilder named = NSC.batchInsert(rows).into("t");
-            assertEquals("INSERT INTO t (id, name) VALUES (:id_0, :name_0), (:id_1, :name_1), (:id_2, :name_2)", named.build().query());
-            assertEquals(Set.of("id_0", "name_0", "id_1", "name_1", "id_2", "name_2"), named._generatedNamedParameterNames);
-            assertTrue(named._renderedNamedParameterTokens.isEmpty());
+            // Identical to the builder's own distinctOn, also for "--" and block comments, comments ended inside the list, and a
+            // "//" in quoted text or an H2 $$ string.
+            for (final String list : List.of("a // c", "// c", "// a\n// b", "a, b // c", "a // c\nb", "a\n// c", "a // c\n", "a // b -- c", "a -- c // d",
+                    "a -- c", "-- c", "a /* // */", "'//' // c", "'a//b'", "$$//$$", "a", "f(a) // c", "f(a, (b)) // see (x)", "a // see b)", "a /* ) */ // c",
+                    "')' // c", "$$)$$ // c")) {
+                assertEquals(h2.select("id").distinctOn(list).from("t").build().query(),
+                        h2.select("id").from("t").append(Criteria.builder().distinctOn(list).build()).build().query(), list);
+            }
 
-            final Dsl custom = Dsl
-                    .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
-            final SqlBuilder customNamed = custom.batchInsert(rows).into("t");
-            assertEquals("INSERT INTO t (id, name) VALUES (${id_0}, ${name_0}), (${id_1}, ${name_1}), (${id_2}, ${name_2})", customNamed.build().query());
-            assertEquals(Map.of("id_0", "${id_0}", "name_0", "${name_0}", "id_1", "${id_1}", "name_1", "${name_1}", "id_2", "${id_2}", "name_2", "${name_2}"),
-                    customNamed._renderedNamedParameterTokens);
+            // An unterminated block comment is still rejected by selectModifier (distinctOn rejects it too), leaving no modifier.
+            final SqlBuilder builder = h2.select("id").from("t");
+            assertEquals("selectModifier must not contain an unterminated block comment: DISTINCT ON (// c /* x)",
+                    assertThrows(IllegalArgumentException.class, () -> builder.append(Criteria.builder().selectModifier("DISTINCT ON (// c /* x)").build()))
+                            .getMessage());
+            assertEquals("SELECT DISTINCT id FROM t", builder.append(Criteria.builder().distinctOn("// c").build()).build().query());
 
-            // A handler that renders the default form for some names only records the others.
-            final Dsl mixed = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
-                if (name.startsWith("id")) {
-                    sb.append(':').append(name);
-                } else {
-                    sb.append("${").append(name).append('}');
-                }
-            }).build());
-            final SqlBuilder mixedNamed = mixed.batchInsert(rows).into("t");
-            assertEquals("INSERT INTO t (id, name) VALUES (:id_0, ${name_0}), (:id_1, ${name_1}), (:id_2, ${name_2})", mixedNamed.build().query());
-            assertEquals(Map.of("name_0", "${name_0}", "name_1", "${name_1}", "name_2", "${name_2}"), mixedNamed._renderedNamedParameterTokens);
-
-            final SP compound = NSC.select("id")
-                    .from("users")
-                    .where(Filters.eq("id", 1))
-                    .union(NSC.select("id").from("archive").where(Filters.eq("id", 3)))
-                    .build();
-            assertEquals("SELECT id FROM users WHERE id = :id UNION SELECT id FROM archive WHERE id = :id_2", compound.query());
-            assertEquals(List.of(1, 3), compound.parameters());
+            // Other dialects read "//" as an operator: byte-identical output.
+            for (final Dsl other : List.of(PSC, lexDialect(PSC, "PostgreSQL"))) {
+                assertEquals("SELECT DISTINCT ON (a // c) id FROM t",
+                        other.select("id").from("t").append(Criteria.builder().distinctOn("a // c").build()).build().query());
+                assertEquals("SELECT DISTINCT ON (// c) id FROM t",
+                        other.select("id").from("t").append(Criteria.builder().distinctOn("// c").build()).build().query());
+                assertEquals("SELECT DISTINCT ON (a -- c\n) id FROM t",
+                        other.select("id").from("t").append(Criteria.builder().distinctOn("a -- c").build()).build().query());
+            }
         }
 
-        // Only the exact default token ":" + name is left out of _renderedNamedParameterTokens. Every other form is
-        // recorded, including a same-length one that differs after the colon, which a set-operation rename relies on.
+        // Regression: on H2 a fragment holding only "//" comments was not comment-only (the tokenizer renders "//" as two '/'
+        // tokens), so where("// c") emitted the empty predicate "WHERE // c\n" while where("-- c") was rejected. It is now
+        // rejected (or, for distinctOn, treated as blank) like its "--" form; "//" stays an operator on other dialects.
         @Test
-        void testRenderedNamedParameterTokensRecordEveryNonDefaultForm() {
-            final java.util.function.Function<BiConsumer<StringBuilder, String>, Dsl> withHandler = handler -> Dsl
-                    .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler(handler).build());
-            final Map<String, BiConsumer<StringBuilder, String>> handlers = new LinkedHashMap<>(); // the token rendered for "id"
-            handlers.put(":id", (sb, name) -> sb.append(':').append(name));
-            handlers.put(":id ", (sb, name) -> sb.append(':').append(name).append(' '));
-            handlers.put("::id", (sb, name) -> sb.append("::").append(name));
-            handlers.put(":i", (sb, name) -> sb.append(':').append(name, 0, name.length() - 1));
-            handlers.put(":iX", (sb, name) -> sb.append(':').append(name, 0, name.length() - 1).append('X'));
-            handlers.put(":ID", (sb, name) -> sb.append(':').append(name.toUpperCase()));
-            handlers.put("${id}", (sb, name) -> sb.append("${").append(name).append('}'));
-
-            handlers.forEach((token, handler) -> {
-                final SqlBuilder builder = withHandler.apply(handler).select("id").from("a").where(Filters.eq("id", 1));
-                assertEquals(token.equals(":id") ? Map.of() : Map.of("id", token), builder._renderedNamedParameterTokens, token);
-                assertEquals("SELECT id FROM a WHERE id = " + token, builder.build().query());
-            });
-
-            // Were ":ID" taken for the default form, the child's renamed placeholder would stay ":ID" next to the parent's.
-            final Dsl upper = withHandler.apply(handlers.get(":ID"));
-            final SqlBuilder compound = upper.select("id").from("a").where(Filters.eq("id", 1)).union(upper.select("id").from("b").where(Filters.eq("id", 2)));
-            assertEquals(Map.of("id", ":ID", "id_2", ":ID_2"), compound._renderedNamedParameterTokens);
-            final SP sp = compound.build();
-            assertEquals("SELECT id FROM a WHERE id = :ID UNION SELECT id FROM b WHERE id = :ID_2", sp.query());
-            assertEquals(List.of(1, 2), sp.parameters());
-        }
-
-        // The set-operation rename and the raw-sub-query rewrite follow the same storage rule as appendNamedParameter: a
-        // default ":name" token is never stored, and a custom token is stored under the final name. A renamed custom token
-        // that is not recorded makes a later composition rename the wrong text and bind two values to one placeholder.
-        @Test
-        void testSetOperationAndRawSubQueryRenamesStoreOnlyNonDefaultTokens() {
-            final SqlBuilder defaultUnion = NSC.select("id").from("a").where(Filters.eq("id", 1)).union(NSC.select("id").from("b").where(Filters.eq("id", 2)));
-            assertTrue(defaultUnion._renderedNamedParameterTokens.isEmpty());
-            assertEquals(Set.of("id", "id_2"), defaultUnion._generatedNamedParameterNames);
-            assertEquals("SELECT id FROM a WHERE id = :id UNION SELECT id FROM b WHERE id = :id_2", defaultUnion.build().query());
-
-            final SqlBuilder defaultRaw = NSC.select("id").from("a").where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE p = ?", List.of(9))));
-            assertTrue(defaultRaw._renderedNamedParameterTokens.isEmpty());
-            final SP defaultRawSp = defaultRaw.build();
-            assertEquals("SELECT id FROM a WHERE id IN (SELECT x FROM y WHERE p = :param)", defaultRawSp.query());
-            assertEquals(List.of(9), defaultRawSp.parameters());
-
-            final Dsl custom = Dsl
-                    .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
-            final SqlBuilder customRaw = custom.select("id").from("a").where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE p = ?", List.of(9))));
-            assertEquals(Map.of("param", "${param}"), customRaw._renderedNamedParameterTokens);
-            assertEquals("SELECT id FROM a WHERE id IN (SELECT x FROM y WHERE p = ${param})", customRaw.build().query());
-
-            final SqlBuilder parent = custom.select("id").from("a").where(Filters.eq("id", 1)).union(custom.select("id").from("b").where(Filters.eq("id", 2)));
-            assertEquals(Map.of("id", "${id}", "id_2", "${id_2}"), parent._renderedNamedParameterTokens);
-            final SqlBuilder grand = custom.select("id")
-                    .from("g")
-                    .where(Filters.and(Filters.eq("id", 0), Filters.eq("id", 0)))
-                    .union(custom.select("id").from(parent, "p"));
-            assertEquals(Map.of("id", "${id}", "id_2", "${id_2}", "id_3", "${id_3}", "id_4", "${id_4}"), grand._renderedNamedParameterTokens);
-            final SP grandSp = grand.build();
-            assertEquals("SELECT id FROM g WHERE (id = ${id}) AND (id = ${id_2}) UNION SELECT id FROM "
-                    + "(SELECT id FROM a WHERE id = ${id_3} UNION SELECT id FROM b WHERE id = ${id_4}) p", grandSp.query());
-            assertEquals(List.of(0, 0, 1, 2), grandSp.parameters());
-
-            // A handler whose form depends on the name: a rename turns a default token into a custom one, or the reverse.
-            final Dsl suffixedCustom = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
-                if (name.matches(".*_[0-9]+")) {
-                    sb.append("${").append(name).append('}');
-                } else {
-                    sb.append(':').append(name);
-                }
-            }).build());
-            final SqlBuilder suffixedParent = suffixedCustom.select("id")
-                    .from("a")
-                    .where(Filters.eq("id", 1))
-                    .union(suffixedCustom.select("id").from("b").where(Filters.eq("id", 2)));
-            assertEquals(Map.of("id_2", "${id_2}"), suffixedParent._renderedNamedParameterTokens);
-            final SqlBuilder suffixedGrand = suffixedCustom.select("id")
-                    .from("g")
-                    .where(Filters.eq("id", 0))
-                    .union(suffixedCustom.select("id").from(suffixedParent, "p"));
-            assertEquals(Map.of("id_2", "${id_2}", "id_3", "${id_3}"), suffixedGrand._renderedNamedParameterTokens);
-            final SP suffixedSp = suffixedGrand.build();
-            assertEquals(
-                    "SELECT id FROM g WHERE id = :id UNION SELECT id FROM (SELECT id FROM a WHERE id = ${id_2} UNION SELECT id FROM b WHERE id = ${id_3}) p",
-                    suffixedSp.query());
-            assertEquals(List.of(0, 1, 2), suffixedSp.parameters());
-
-            final Dsl unsuffixedCustom = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
-                if (name.matches(".*_[0-9]+")) {
-                    sb.append(':').append(name);
-                } else {
-                    sb.append("${").append(name).append('}');
-                }
-            }).build());
-            final SqlBuilder unsuffixedParent = unsuffixedCustom.select("id")
-                    .from("a")
-                    .where(Filters.eq("id", 1))
-                    .union(unsuffixedCustom.select("id").from("b").where(Filters.eq("id", 2)));
-            assertEquals(Map.of("id", "${id}"), unsuffixedParent._renderedNamedParameterTokens);
-            final SqlBuilder unsuffixedGrand = unsuffixedCustom.select("id")
-                    .from("g")
-                    .where(Filters.eq("id", 0))
-                    .union(unsuffixedCustom.select("id").from(unsuffixedParent, "p"));
-            assertEquals(Map.of("id", "${id}"), unsuffixedGrand._renderedNamedParameterTokens);
-            final SP unsuffixedSp = unsuffixedGrand.build();
-            assertEquals("SELECT id FROM g WHERE id = ${id} UNION SELECT id FROM (SELECT id FROM a WHERE id = :id_2 UNION SELECT id FROM b WHERE id = :id_3) p",
-                    unsuffixedSp.query());
-            assertEquals(List.of(0, 1, 2), unsuffixedSp.parameters());
-        }
-
-        // The library's own clause mutations undo a failure by truncating the buffer (the append-only invariant of _sb). An
-        // overridden hook that shortens the buffer breaks that invariant: the lost text cannot be restored, which is reported
-        // as a suppressed IllegalStateException instead of padding the SQL with NUL characters.
-        @Test
-        void testShortenedBufferInAppendOnlyMutationIsReportedNotPadded() {
-            final SqlBuilder builder = new SqlBuilder(PSC.sqlDialect()) {
-                @Override
-                protected void appendColumnName(final String propName) {
-                    if ("shrink".equals(propName)) {
-                        _sb.setLength(3);
-                        throw new IllegalArgumentException("hook failed");
-                    }
-
-                    super.appendColumnName(propName);
-                }
-            };
-            builder._op = com.landawn.abacus.util.OperationType.QUERY;
-            builder._propOrColumnNames = List.of("id");
-            builder.from("t");
-            assertEquals("SELECT id FROM t", builder._sb.toString());
-
-            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.eq("shrink", 1)));
-            assertEquals("hook failed", e.getMessage());
-            assertEquals(1, e.getSuppressed().length);
-            assertTrue(e.getSuppressed()[0] instanceof IllegalStateException, String.valueOf(e.getSuppressed()[0]));
-            assertTrue(e.getSuppressed()[0].getMessage().contains("shortened from 16 to 3"), e.getSuppressed()[0].getMessage());
-            assertEquals("SEL", builder._sb.toString());
-            assertTrue(builder._sb.chars().noneMatch(ch -> ch == 0));
-
-            // The protected mutateAtomically(Runnable) restores the whole buffer, so a shrink there is undone exactly.
-            final SqlBuilder protectedBuilder = PSC.select("id").from("t");
-            final IllegalStateException failure = assertThrows(IllegalStateException.class, () -> protectedBuilder.mutateAtomically(() -> {
-                protectedBuilder._sb.setLength(3);
-                throw new IllegalStateException("mutation failed");
-            }));
-            assertEquals(0, failure.getSuppressed().length);
-            assertEquals("SELECT id FROM t WHERE id = ?", protectedBuilder.where(Filters.eq("id", 1)).build().query());
-        }
-
-        // Regression: every checkpoint level attached its own "Cannot restore" IllegalStateException, so nested library
-        // checkpoints reported the same failure twice, and a truncating checkpoint nested in a full-copy one claimed the text
-        // was lost although the enclosing checkpoint restored it exactly. Only the outermost checkpoint reports, and only if
-        // the text is really lost.
-        @Test
-        void testShortenedBufferIsReportedOnceAndOnlyWhenNotRestored() {
-            // from(Class, Collection) runs from(Collection) inside its own checkpoint: two nested truncating checkpoints.
-            final SqlBuilder nested = new SqlBuilder(PSC.sqlDialect()) {
-                @Override
-                protected void appendColumnName(final Class<?> entityClass, final com.landawn.abacus.parser.ParserUtil.BeanInfo entityInfo,
-                        final com.landawn.abacus.util.ImmutableMap<String, QueryUtil.ColumnInfo> propColumnNameMap, final String tableAlias,
-                        final String propName, final String propAlias, final boolean withClassAlias, final String classAlias, final boolean isForSelect,
-                        final boolean quotePropAlias) {
-                    if ("shrink".equals(propName)) {
-                        _sb.setLength(3);
-                        throw new IllegalArgumentException("hook failed");
-                    }
-
-                    super.appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName, propAlias, withClassAlias, classAlias, isForSelect,
-                            quotePropAlias);
-                }
-            };
-            nested._op = com.landawn.abacus.util.OperationType.QUERY;
-            nested._propOrColumnNames = List.of("id");
-            nested.from("t");
-            nested.unionSelect(List.of("id", "shrink"));
-            assertEquals("SELECT id FROM t UNION ", nested._sb.toString());
-
-            final IllegalArgumentException twice = assertThrows(IllegalArgumentException.class, () -> nested.from(Account.class, List.of("account")));
-            assertEquals("hook failed", twice.getMessage());
-            assertEquals(1, twice.getSuppressed().length);
-            assertTrue(twice.getSuppressed()[0].getMessage().contains("shortened from 23 to 3"), twice.getSuppressed()[0].getMessage());
-            assertEquals("SEL", nested._sb.toString());
-
-            // A library clause wrapped in the protected full-copy mutateAtomically(Runnable): the enclosing checkpoint restores
-            // the text exactly, so nothing is reported.
-            final SqlBuilder outer = new SqlBuilder(PSC.sqlDialect()) {
-                @Override
-                protected void appendColumnName(final String propName) {
-                    if ("shrink".equals(propName)) {
-                        _sb.setLength(3);
-                        throw new IllegalArgumentException("hook failed");
-                    }
-
-                    super.appendColumnName(propName);
-                }
-            };
-            outer._op = com.landawn.abacus.util.OperationType.QUERY;
-            outer._propOrColumnNames = List.of("id");
-            outer.from("t");
-
-            final IllegalArgumentException restored = assertThrows(IllegalArgumentException.class,
-                    () -> outer.mutateAtomically(() -> outer.where(Filters.eq("shrink", 1))));
-            assertEquals("hook failed", restored.getMessage());
-            assertEquals(0, restored.getSuppressed().length);
-            assertEquals("SELECT id FROM t", outer._sb.toString());
-            assertEquals("SELECT id FROM t WHERE id = ?", outer.where(Filters.eq("id", 1)).build().query());
-
-            // The nesting count is balanced after a failure: the same clause run afterwards at top level reports, exactly once.
-            final SqlBuilder again = new SqlBuilder(PSC.sqlDialect()) {
-                @Override
-                protected void appendColumnName(final String propName) {
-                    if ("shrink".equals(propName)) {
-                        _sb.setLength(3);
-                        throw new IllegalArgumentException("hook failed");
-                    }
-
-                    super.appendColumnName(propName);
-                }
-            };
-            again._op = com.landawn.abacus.util.OperationType.QUERY;
-            again._propOrColumnNames = List.of("id");
-            again.from("t");
-            assertThrows(IllegalArgumentException.class, () -> again.mutateAtomically(() -> again.where(Filters.eq("shrink", 1))));
-            assertEquals(1, assertThrows(IllegalArgumentException.class, () -> again.where(Filters.eq("shrink", 1))).getSuppressed().length);
-        }
-
-        // Regression: the comment guard always read \' as an escaped quote, so "'C:\' -- note" passed it on standard-string dialects and swallowed the WHERE.
-        @Test
-        void testCommentGuardChecksStandardStringReadingOutsideMySql() {
-            final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
-            final Dsl oracle = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Oracle")).build());
-            final Dsl sqlServer = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("Microsoft SQL Server")).build());
-            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
-
-            assertThrows(IllegalArgumentException.class, () -> pg.update("account").set("dir = 'C:\\' -- normalize dir").where("status = 0"));
-            assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set("dir = 'C:\\' -- normalize dir").where("status = 0"));
-            assertThrows(IllegalArgumentException.class, () -> oracle.select("'a\\' -- x'").from("account"));
-            assertThrows(IllegalArgumentException.class, () -> pg.select("id").from("account").orderBy("'a\\' -- x'"));
-            assertThrows(IllegalArgumentException.class, () -> sqlServer.select("'C:\\' + #t.firstName -- c").from("#t"));
-            // The SQL Server temporary-table scan no longer hides "#t" behind the backslash reading, so the guard applies to raw WHERE text.
-            assertThrows(IllegalArgumentException.class, () -> sqlServer.select("id").from("#t").where("'C:\\' + #t.name = 'x' -- c"));
-
-            // E'...' strings and MySQL strings keep their backslash escapes.
-            assertEquals("UPDATE account SET dir = E'C:\\' -- quoted' WHERE status = 0",
-                    pg.update("account").set("dir = E'C:\\' -- quoted'").where("status = 0").build().query());
-            assertEquals("UPDATE account SET dir = 'it\\'s -- fine' WHERE status = 0",
-                    mysql.update("account").set("dir = 'it\\'s -- fine'").where("status = 0").build().query());
-        }
-
-        // Pins the fail-closed choice of the comment guard without product info: DEFAULT may be any server, and under the
-        // standard string reading (no backslash escapes) "'it\'s -- fine'" ends at "\'", leaving a real "--" comment.
-        @Test
-        void testCommentGuardRejectsMySqlStyleEscapedLiteralWithoutProductInfo() {
-            assertThrows(IllegalArgumentException.class, () -> PSC.update("t").set("note = 'it\\'s -- fine'"));
-
-            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
-            assertEquals("UPDATE t SET note = 'it\\'s -- fine' WHERE a = ?",
-                    mysql.update("t").set("note = 'it\\'s -- fine'").where(Filters.eq("a", 1)).build().query());
-        }
-
-        // Covers the comment guard's string readings (near misses stay accepted; H2/SQLite and non-E prefixes are standard)
-        // and MySQL hash handling inside quotes and backticks.
-        @Test
-        void testCommentGuardStringReadingNearMissesAndQuotedHashes() {
-            final Dsl pg = lexDialect(PSC, "PostgreSQL");
+        void testH2DoubleSlashCommentOnlyFragmentIsRejectedLikeDashComment() {
             final Dsl h2 = lexDialect(PSC, "H2");
-            final Dsl sqlite = lexDialect(PSC, "SQLite");
-            final Dsl mysql = lexDialect(PSC, "MySQL");
+            final Dsl h2raw = lexDialect(SCSB, "H2");
+            final String message = "SQL expression must contain more than comments: ";
 
-            assertEquals("UPDATE t SET dir = 'C:\\', note = 'x' WHERE a = 1", pg.update("t").set("dir = 'C:\\', note = 'x'").where("a = 1").build().query());
-            assertEquals("SELECT 'a\\\\b' AS x FROM t", pg.select("'a\\\\b' AS x").from("t").build().query());
-            assertThrows(IllegalArgumentException.class, () -> h2.select("'x\\' -- c").from("t"));
-            assertThrows(IllegalArgumentException.class, () -> sqlite.select("'x\\' -- c").from("t"));
-            // "fee'...'" is an identifier followed by a standard string, not an E'...' escape string.
-            assertThrows(IllegalArgumentException.class, () -> pg.select("fee'a\\' -- x'").from("t"));
+            for (final String commentOnly : List.of("// c", "// a\n// b", "/* x */ // c", "// c\n-- d", "  // c \r\n ")) {
+                assertEquals(message + commentOnly, assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").where(commentOnly)).getMessage());
+                assertEquals(message + commentOnly,
+                        assertThrows(IllegalArgumentException.class, () -> h2.select("a").from("t").groupBy("a").having(commentOnly)).getMessage());
+                assertEquals(message + commentOnly,
+                        assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").join("u").on(commentOnly)).getMessage());
+                assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").join("u").on(commentOnly, "u.x = 1"));
+                assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").where(Filters.expr(commentOnly)));
+                assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").where(Filters.and(Filters.expr(commentOnly), Filters.eq("a", 1))));
+                assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").append(Criteria.builder().where(commentOnly).build()));
+                assertThrows(IllegalArgumentException.class, () -> h2raw.update("t").set("a", SqlExpression.of(commentOnly)));
+                assertEquals("SELECT DISTINCT a FROM t", h2.select("a").distinctOn(commentOnly).from("t").build().query());
 
-            assertEquals("SELECT 'a##b' AS x FROM t", mysql.select("'a##b' AS x").from("t").build().query());
-            assertEquals("SELECT `a#b` FROM t", mysql.select("`a#b`").from("t").build().query());
-            assertEquals("SELECT a ## b FROM t", PSC.select("a ## b").from("t").build().query());
+                // A rejection is rolled back: the builder stays usable.
+                final SqlBuilder builder = h2.deleteFrom("t");
+                assertThrows(IllegalArgumentException.class, () -> builder.where(commentOnly));
+                assertEquals("DELETE FROM t WHERE id = ?", builder.where(Filters.eq("id", 1)).build().query());
+            }
+
+            // The "--" forms, for comparison.
+            assertEquals(message + "-- c", assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").where("-- c")).getMessage());
+            assertEquals("SELECT DISTINCT a FROM t", h2.select("a").distinctOn("-- c").from("t").build().query());
+
+            // Not comment-only: an operand before the comment, or "//" inside quoted text or an H2 $$ string.
+            assertEquals("DELETE FROM t WHERE a // b\n", h2.deleteFrom("t").where("a // b").build().query());
+            assertEquals("DELETE FROM t WHERE '//'", h2.deleteFrom("t").where("'//'").build().query());
+            assertEquals("DELETE FROM t WHERE $$//$$\n", h2.deleteFrom("t").where("$$//$$").build().query());
+
+            // Other dialects read "//" as an operator: unchanged.
+            final Dsl pg = lexDialect(PSC, "PostgreSQL");
+            assertEquals("DELETE FROM t WHERE a // b", pg.deleteFrom("t").where("a // b").build().query());
+            assertEquals("DELETE FROM t WHERE // c", pg.deleteFrom("t").where("// c").build().query());
+            assertEquals("SELECT DISTINCT ON (// c) a FROM t", pg.select("a").distinctOn("// c").from("t").build().query());
         }
 
         // Regression: "//" is a line comment only in H2, and the builder neither newline-terminated nor rejected it the way
@@ -4433,482 +4595,6 @@ public class AbstractQueryBuilderTest extends TestBase {
                 assertEquals("SELECT a FROM t WHERE x = 1 // c ORDER BY a", other.select("a").from("t").where("x = 1 // c").orderBy("a").build().query());
                 assertEquals("SELECT count(*) AS cnt // c FROM t", other.select("count(*) AS cnt // c").from("t").build().query());
             }
-        }
-
-        // Regression: the builder's scanners did not know dollar-quoted strings, so the quote in $$'$$ (text on PostgreSQL and
-        // H2) read as an unterminated string that hid the comment after it: on H2, "UPDATE t SET a = $$'$$ // c WHERE id = ?"
-        // updated every row, and "--" did the same on PostgreSQL, H2 and the default dialect. Raw expressions also collapsed
-        // the whitespace of, and converted the words in, a dollar-quoted string ($$Hello World$$ became $$Hello world$$).
-        @Test
-        void testDollarQuotedStringsAreQuotedTextForCommentChecksAndRendering() {
-            final Dsl h2 = lexDialect(PSC, "H2");
-            final Dsl pg = lexDialect(PSC, "PostgreSQL");
-            final Dsl mysql = lexDialect(PSC, "MySQL");
-
-            // A trailing line comment after a dollar-quoted string is ended before the next clause.
-            assertEquals("UPDATE t SET a = $$'$$ // c\n WHERE id = ?",
-                    h2.update("t").set("a", SqlExpression.of("$$'$$ // c")).where(Filters.eq("id", 1)).build().query());
-            assertEquals("UPDATE t SET a = $$'$$ -- c\n WHERE id = ?",
-                    h2.update("t").set("a", SqlExpression.of("$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
-            // H2 has no tagged dollar quotes: there "$t$" is no quote and the comment is inside the unterminated string.
-            assertEquals("UPDATE t SET a = $t$'$t$ -- c WHERE id = ?",
-                    h2.update("t").set("a", SqlExpression.of("$t$'$t$ -- c")).where(Filters.eq("id", 1)).build().query());
-
-            for (final Dsl dsl : List.of(PSC, pg)) {
-                assertEquals("UPDATE t SET a = $$'$$ -- c\n WHERE id = ?",
-                        dsl.update("t").set("a", SqlExpression.of("$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
-                assertEquals("UPDATE t SET a = $t$'$t$ -- c\n WHERE id = ?",
-                        dsl.update("t").set("a", SqlExpression.of("$t$'$t$ -- c")).where(Filters.eq("id", 1)).build().query());
-                assertEquals("SELECT a FROM t WHERE a = $$\"$$ -- c\n ORDER BY id",
-                        dsl.select("a").from("t").where("a = $$\"$$ -- c").orderBy("id").build().query());
-                assertEquals("UPDATE t SET a = ? WHERE (b = $$[$$ -- c\n) AND (id = ?)",
-                        dsl.update("t").set("a", 1).where(Filters.and(Filters.expr("b = $$[$$ -- c"), Filters.eq("id", 1))).build().query());
-                assertEquals("SELECT a FROM (SELECT $$'$$ AS v) s -- c\n WHERE x = ?",
-                        dsl.select("a").from("(SELECT $$'$$ AS v) s -- c").where(Filters.eq("x", 1)).build().query());
-                assertEquals("SELECT a FROM t JOIN u ON t.a = $$'$$ -- c\n WHERE id = ?",
-                        dsl.select("a").from("t").join("u").on("t.a = $$'$$ -- c").where(Filters.eq("id", 1)).build().query());
-                assertEquals("SELECT a FROM t GROUP BY a HAVING count(*) > $$'$$ -- c\n ORDER BY a",
-                        dsl.select("a").from("t").groupBy("a").having("count(*) > $$'$$ -- c").orderBy("a").build().query());
-                assertEquals("SELECT a FROM t WHERE a = $$'$$ -- c\n ORDER BY id",
-                        dsl.select("a").from("t").append(" WHERE a = $$'$$ -- c").orderBy("id").build().query());
-                assertEquals("SELECT a FROM t WHERE x IN (SELECT x FROM u WHERE y = $$'$$ -- c\n)",
-                        dsl.select("a").from("t").where(Filters.in("x", Filters.subQuery("SELECT x FROM u WHERE y = $$'$$ -- c"))).build().query());
-
-                // The comment guard finds the comment, as it does after an ordinary string.
-                assertEquals("SQL comment token is not allowed in SQL expression: $$'$$ -- c",
-                        assertThrows(IllegalArgumentException.class, () -> dsl.select("$$'$$ -- c").from("t")).getMessage());
-                assertEquals("SQL comment token is not allowed in column expression: a = $$'$$ -- c",
-                        assertThrows(IllegalArgumentException.class, () -> dsl.update("t").set("a = $$'$$ -- c")).getMessage());
-                assertThrows(IllegalArgumentException.class, () -> dsl.select("a").from("t").orderBy("$$'$$ -- c"));
-
-                // A dollar-quoted string renders as written; the names around it are still converted, and an AS inside it
-                // splits off no alias.
-                assertEquals("SELECT $$Hello World$$ AS greeting FROM t", dsl.select("$$Hello World$$ AS greeting").from("t").build().query());
-                assertEquals("SELECT $$foo  as  bar$$ FROM users", dsl.select("$$foo  as  bar$$").from("users").build().query());
-                assertEquals("SELECT acc.first_name AS \"firstName\" FROM account acc WHERE note = $$Hello World$$ AND acc.last_name = 1",
-                        dsl.select("firstName").from(Account.class).where("note = $$Hello World$$ AND lastName = 1").build().query());
-            }
-
-            // The tokenizer can keep a dollar quote and the comment after it in one token: in a subscript, or after a non-ASCII
-            // space, which the rendering emits as a plain space (H2 reads it as one anyway). The emitted text is checked too.
-            for (final Dsl dsl : List.of(PSC, pg, h2)) {
-                assertEquals("UPDATE t SET b = ARRAY[$$']$$] -- c\n WHERE id = ?",
-                        dsl.update("t").set("b", SqlExpression.of("ARRAY[$$']$$] -- c")).where(Filters.eq("id", 1)).build().query());
-                assertEquals("SELECT a FROM t WHERE a = x[1:$$']$$] -- c\n ORDER BY id",
-                        dsl.select("a").from("t").where("a = x[1:$$']$$] -- c").orderBy("id").build().query());
-                assertEquals("UPDATE t SET a = $$'$$ -- c\n WHERE id = ?",
-                        dsl.update("t").set("a", SqlExpression.of("　$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
-                assertEquals("UPDATE t SET a = 'x' || $$'$$ -- c\n WHERE id = ?",
-                        dsl.update("t").set("a", SqlExpression.of("'x' || $$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
-                assertThrows(IllegalArgumentException.class, () -> dsl.update("t").set("a = 　$$'$$ -- c"));
-                // A dollar-quoted string in an array constructor is kept as written too; the column after it is converted.
-                assertEquals("SELECT a FROM t WHERE tags = ARRAY[$$a  b$$, first_name]",
-                        dsl.select("a").from("t").where("tags = ARRAY[$$a  b$$, firstName]").build().query());
-                // The "as" inside the string is no alias keyword: the item keeps its own alias and gets no automatic one
-                // ("AS label AS \"a || ...\"" was a syntax error).
-                assertEquals("SELECT a || $$ as of $$ AS label FROM t", dsl.select("a || $$ as of $$  AS label").from("t").build().query());
-                assertEquals("SELECT a || $$ as of $$ AS label FROM t", dsl.select("a || $$ as of $$\n AS label").from("t").build().query());
-                assertEquals("SELECT first_name || $$ as of $$ AS label FROM t", dsl.select("firstName || $$ as of $$ AS label").from("t").build().query());
-            }
-
-            // SQL Server, Oracle, DB2 and SQLite have no dollar quotes either: their scanners read none.
-            for (final Dsl dsl : List.of(lexDialect(PSC, "Microsoft SQL Server"), lexDialect(PSC, "Oracle"), lexDialect(PSC, "SQLite"))) {
-                assertEquals("UPDATE t SET a = $$'$$ -- c WHERE id = ?",
-                        dsl.update("t").set("a", SqlExpression.of("$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
-                assertEquals("SELECT $$'$$ -- c FROM t", dsl.select("$$'$$ -- c").from("t").build().query());
-                assertEquals("SELECT $$foo AS bar$$ FROM t", dsl.select("$$foo  as  bar$$").from("t").build().query());
-            }
-
-            // The MySQL family has no dollar quotes: "$$" is a name there, and the quote opens a string.
-            assertEquals("UPDATE t SET a = $$'$$ -- c WHERE id = ?",
-                    mysql.update("t").set("a", SqlExpression.of("$$'$$ -- c")).where(Filters.eq("id", 1)).build().query());
-            assertEquals("SELECT $$'$$ -- c FROM t", mysql.select("$$'$$ -- c").from("t").build().query());
-            assertEquals("SELECT a FROM t WHERE a = $$a b$$", mysql.select("a").from("t").where("a = $$a  b$$").build().query());
-            // The unterminated-block-comment check is dialect-agnostic and reads dollar quotes for MySQL too (fail closed).
-            assertThrows(IllegalArgumentException.class, () -> mysql.select("a").from("t WHERE c = $$ OR d = '$$ /* x '"));
-        }
-
-        // Regression: on H2 a fragment holding only "//" comments was not comment-only (the tokenizer renders "//" as two '/'
-        // tokens), so where("// c") emitted the empty predicate "WHERE // c\n" while where("-- c") was rejected. It is now
-        // rejected (or, for distinctOn, treated as blank) like its "--" form; "//" stays an operator on other dialects.
-        @Test
-        void testH2DoubleSlashCommentOnlyFragmentIsRejectedLikeDashComment() {
-            final Dsl h2 = lexDialect(PSC, "H2");
-            final Dsl h2raw = lexDialect(SCSB, "H2");
-            final String message = "SQL expression must contain more than comments: ";
-
-            for (final String commentOnly : List.of("// c", "// a\n// b", "/* x */ // c", "// c\n-- d", "  // c \r\n ")) {
-                assertEquals(message + commentOnly, assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").where(commentOnly)).getMessage());
-                assertEquals(message + commentOnly,
-                        assertThrows(IllegalArgumentException.class, () -> h2.select("a").from("t").groupBy("a").having(commentOnly)).getMessage());
-                assertEquals(message + commentOnly,
-                        assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").join("u").on(commentOnly)).getMessage());
-                assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").join("u").on(commentOnly, "u.x = 1"));
-                assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").where(Filters.expr(commentOnly)));
-                assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").where(Filters.and(Filters.expr(commentOnly), Filters.eq("a", 1))));
-                assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").append(Criteria.builder().where(commentOnly).build()));
-                assertThrows(IllegalArgumentException.class, () -> h2raw.update("t").set("a", SqlExpression.of(commentOnly)));
-                assertEquals("SELECT DISTINCT a FROM t", h2.select("a").distinctOn(commentOnly).from("t").build().query());
-
-                // A rejection is rolled back: the builder stays usable.
-                final SqlBuilder builder = h2.deleteFrom("t");
-                assertThrows(IllegalArgumentException.class, () -> builder.where(commentOnly));
-                assertEquals("DELETE FROM t WHERE id = ?", builder.where(Filters.eq("id", 1)).build().query());
-            }
-
-            // The "--" forms, for comparison.
-            assertEquals(message + "-- c", assertThrows(IllegalArgumentException.class, () -> h2.deleteFrom("t").where("-- c")).getMessage());
-            assertEquals("SELECT DISTINCT a FROM t", h2.select("a").distinctOn("-- c").from("t").build().query());
-
-            // Not comment-only: an operand before the comment, or "//" inside quoted text or an H2 $$ string.
-            assertEquals("DELETE FROM t WHERE a // b\n", h2.deleteFrom("t").where("a // b").build().query());
-            assertEquals("DELETE FROM t WHERE '//'", h2.deleteFrom("t").where("'//'").build().query());
-            assertEquals("DELETE FROM t WHERE $$//$$\n", h2.deleteFrom("t").where("$$//$$").build().query());
-
-            // Other dialects read "//" as an operator: unchanged.
-            final Dsl pg = lexDialect(PSC, "PostgreSQL");
-            assertEquals("DELETE FROM t WHERE a // b", pg.deleteFrom("t").where("a // b").build().query());
-            assertEquals("DELETE FROM t WHERE // c", pg.deleteFrom("t").where("// c").build().query());
-            assertEquals("SELECT DISTINCT ON (// c) a FROM t", pg.select("a").distinctOn("// c").from("t").build().query());
-        }
-
-        // Regression: Criteria.Builder.distinctOn composes "DISTINCT ON (" + list + ")" without knowing the dialect and ends only
-        // "--"/"#" comments, so on H2 an appended Criteria rendered "SELECT DISTINCT ON (a // c)\n id FROM t" (the ')' inside the
-        // comment) and "DISTINCT ON (// c)\n" for a comment-only list. The list is now rendered as distinctOn(String) renders it.
-        @Test
-        void testH2CriteriaDistinctOnWithDoubleSlashRendersLikeBuilderDistinctOn() {
-            final Dsl h2 = lexDialect(PSC, "H2");
-
-            assertEquals("SELECT DISTINCT ON (a // c\n) id FROM t",
-                    h2.select("id").from("t").append(Criteria.builder().distinctOn("a // c").build()).build().query());
-            assertEquals("SELECT DISTINCT id FROM t", h2.select("id").from("t").append(Criteria.builder().distinctOn("// c").build()).build().query());
-            assertEquals("SELECT DISTINCT ON (a, b // c\n) id FROM t WHERE x = ?",
-                    h2.select("id").from("t").append(Criteria.builder().distinctOn("a, b // c").where(Filters.eq("x", 1)).build()).build().query());
-            assertEquals("SELECT DISTINCT id FROM t WHERE x = ?",
-                    h2.select("id").from("t").append(Criteria.builder().distinctOn("// a\n// b").where(Filters.eq("x", 1)).build()).build().query());
-            // A raw Criteria modifier of the same form is read the same way.
-            assertEquals("SELECT DISTINCT ON (a // c\n) id FROM t",
-                    h2.select("id").from("t").append(Criteria.builder().selectModifier("DISTINCT ON (a // c)").build()).build().query());
-            // But a raw modifier whose list is closed before its "//" note ends in a ')' of the note: it is left to selectModifier,
-            // which ends the note after it, exactly as the builder's own selectModifier renders the same text (rewriting it as a
-            // DISTINCT ON list gave "... // one row per (dept\n) id": a stray ')' and an H2 syntax error).
-            assertEquals("SELECT DISTINCT ON (dept) // one row per (dept)\n id FROM t",
-                    h2.select("id").from("t").append(Criteria.builder().selectModifier("DISTINCT ON (dept) // one row per (dept)").build()).build().query());
-            for (final String modifier : List.of("DISTINCT ON (dept) // (latest)", "DISTINCT ON (dept, a) // see f(x)", "DISTINCT ON (a) // c)",
-                    "DISTINCT ON (f(a)) // g(b)", "DISTINCT ON (a // c\n) x // d)")) {
-                assertEquals(h2.select("id").from("t").selectModifier(modifier).build().query(),
-                        h2.select("id").from("t").append(Criteria.builder().selectModifier(modifier).build()).build().query(), modifier);
-            }
-
-            // Identical to the builder's own distinctOn, also for "--" and block comments, comments ended inside the list, and a
-            // "//" in quoted text or an H2 $$ string.
-            for (final String list : List.of("a // c", "// c", "// a\n// b", "a, b // c", "a // c\nb", "a\n// c", "a // c\n", "a // b -- c", "a -- c // d",
-                    "a -- c", "-- c", "a /* // */", "'//' // c", "'a//b'", "$$//$$", "a", "f(a) // c", "f(a, (b)) // see (x)", "a // see b)", "a /* ) */ // c",
-                    "')' // c", "$$)$$ // c")) {
-                assertEquals(h2.select("id").distinctOn(list).from("t").build().query(),
-                        h2.select("id").from("t").append(Criteria.builder().distinctOn(list).build()).build().query(), list);
-            }
-
-            // An unterminated block comment is still rejected by selectModifier (distinctOn rejects it too), leaving no modifier.
-            final SqlBuilder builder = h2.select("id").from("t");
-            assertEquals("selectModifier must not contain an unterminated block comment: DISTINCT ON (// c /* x)",
-                    assertThrows(IllegalArgumentException.class, () -> builder.append(Criteria.builder().selectModifier("DISTINCT ON (// c /* x)").build()))
-                            .getMessage());
-            assertEquals("SELECT DISTINCT id FROM t", builder.append(Criteria.builder().distinctOn("// c").build()).build().query());
-
-            // Other dialects read "//" as an operator: byte-identical output.
-            for (final Dsl other : List.of(PSC, lexDialect(PSC, "PostgreSQL"))) {
-                assertEquals("SELECT DISTINCT ON (a // c) id FROM t",
-                        other.select("id").from("t").append(Criteria.builder().distinctOn("a // c").build()).build().query());
-                assertEquals("SELECT DISTINCT ON (// c) id FROM t",
-                        other.select("id").from("t").append(Criteria.builder().distinctOn("// c").build()).build().query());
-                assertEquals("SELECT DISTINCT ON (a -- c\n) id FROM t",
-                        other.select("id").from("t").append(Criteria.builder().distinctOn("a -- c").build()).build().query());
-            }
-        }
-
-        // Regression: the sort spec of a condition-layer ORDER BY / GROUP BY (Filters.orderBy/groupBy, Criteria.orderBy/groupBy) is
-        // composed without knowing the dialect, so on H2 a "//" comment in a key swallowed that key's direction and every later key
-        // ("ORDER BY a // c DESC, b ASC\n" ran as "ORDER BY a"). It is now rejected on H2, as orderBy(String)/groupBy(String) reject it.
-        @Test
-        void testH2ConditionLayerSortKeyWithDoubleSlashIsRejectedLikeBuilderOrderBy() {
-            final Dsl h2 = lexDialect(PSC, "H2");
-            final String orderBy = "SQL comment token is not allowed in ORDER BY expression: ";
-            final String groupBy = "SQL comment token is not allowed in GROUP BY expression: ";
-
-            assertEquals(orderBy + "a // c DESC, b ASC", assertThrows(IllegalArgumentException.class,
-                    () -> h2.select("id").from("t").append(Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC))).getMessage());
-            assertEquals(orderBy + "a // c DESC", assertThrows(IllegalArgumentException.class,
-                    () -> h2.select("id").from("t").append(Criteria.builder().orderBy("a // c", SortDirection.DESC).limit(3).build())).getMessage());
-            // The key in the middle and last position, with and without directions.
-            assertEquals(orderBy + "x, a // c, b",
-                    assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.orderBy("x", "a // c", "b"))).getMessage());
-            assertEquals(orderBy + "x DESC, y DESC, a // c DESC",
-                    assertThrows(IllegalArgumentException.class,
-                            () -> h2.select("id").from("t").append(Criteria.builder().orderBy(List.of("x", "y", "a // c"), SortDirection.DESC).build()))
-                                    .getMessage());
-            final Map<String, SortDirection> orders = new LinkedHashMap<>();
-            orders.put("x", SortDirection.ASC);
-            orders.put("a // c", SortDirection.DESC);
-            orders.put("b", SortDirection.ASC);
-            assertEquals(orderBy + "x ASC, a // c DESC, b ASC",
-                    assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Criteria.builder().orderBy(orders).build()))
-                            .getMessage());
-            assertEquals(groupBy + "a // c, b", assertThrows(IllegalArgumentException.class,
-                    () -> h2.select("id").from("t").append(Criteria.builder().groupBy("a // c", "b").having("count(*) > 1").build())).getMessage());
-            assertEquals(groupBy + "x DESC, a // c DESC", assertThrows(IllegalArgumentException.class,
-                    () -> h2.select("id").from("t").append(Filters.groupBy(List.of("x", "a // c"), SortDirection.DESC))).getMessage());
-            assertEquals(groupBy + "a // c DESC",
-                    assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.groupBy("a // c", SortDirection.DESC)))
-                            .getMessage());
-            // Like orderBy(String), every "//" comment is rejected: one ended inside the key, one in the last key, a raw clause.
-            assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").orderBy("a // c\n", SortDirection.DESC));
-            assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.orderBy("a // c\n", SortDirection.DESC)));
-            assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.orderBy("x", "a // c")));
-            assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("t").append(Filters.orderBy(Filters.expr("a DESC // newest"))));
-            // A Criteria in a structured sub-query, and in a DELETE statement.
-            assertThrows(IllegalArgumentException.class, () -> h2.select("id")
-                    .from("t")
-                    .where(Filters.in("id", Filters.subQuery("u", List.of("id"), Criteria.builder().where(Filters.eq("k", 1)).orderBy("a // c").build())))
-                    .build());
-
-            // The rejection is rolled back: no clause slot, select modifier or statement prefix is left behind.
-            final SqlBuilder select = h2.select("id").from("t").where(Filters.eq("x", 1));
-            assertThrows(IllegalArgumentException.class,
-                    () -> select.append(Criteria.builder().distinctOn("a // c").groupBy("g").orderBy("a // c", SortDirection.DESC).build()));
-            assertThrows(IllegalArgumentException.class, () -> select.append(Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC)));
-            assertEquals("SELECT DISTINCT ON (a // c\n) id FROM t WHERE x = ? GROUP BY g ORDER BY a DESC",
-                    select.append(Criteria.builder().distinctOn("a // c").groupBy("g").orderBy("a", SortDirection.DESC).build()).build().query());
-            final SqlBuilder delete = h2.deleteFrom("t");
-            assertThrows(IllegalArgumentException.class, () -> delete.append(Criteria.builder().where(Filters.eq("id", 1)).orderBy("a // c").build()));
-            assertEquals("DELETE FROM t WHERE id = ?", delete.where(Filters.eq("id", 1)).build().query());
-
-            // Not rejected on H2: "--" and block comments, which the tokenizer drops, and "//" in quoted text, a $$ string or
-            // another comment.
-            assertEquals("SELECT id FROM t ORDER BY a DESC, b ASC",
-                    h2.select("id").from("t").append(Filters.orderBy("a -- c", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
-            assertEquals("SELECT id FROM t ORDER BY a DESC, b ASC",
-                    h2.select("id").from("t").append(Filters.orderBy("a /* // */", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
-            assertEquals("SELECT id FROM t ORDER BY a DESC, b ASC",
-                    h2.select("id").from("t").append(Filters.orderBy("a -- c // d", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
-            assertEquals("SELECT id FROM t GROUP BY 'a//b', b HAVING count(*) > 1",
-                    h2.select("id").from("t").append(Criteria.builder().groupBy("'a//b'", "b").having("count(*) > 1").build()).build().query());
-            assertTrue(h2.select("id")
-                    .from("t")
-                    .append(Filters.orderBy("$$//$$", SortDirection.DESC))
-                    .build()
-                    .query()
-                    .startsWith("SELECT id FROM t ORDER BY $$//$$ DESC"));
-
-            // Other dialects read "//" as an operator: byte-identical output.
-            for (final Dsl other : List.of(PSC, lexDialect(PSC, "PostgreSQL"))) {
-                assertEquals("SELECT id FROM t ORDER BY a // c DESC, b ASC",
-                        other.select("id").from("t").append(Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
-                assertEquals("SELECT id FROM t ORDER BY a // c DESC LIMIT 3",
-                        other.select("id").from("t").append(Criteria.builder().orderBy("a // c", SortDirection.DESC).limit(3).build()).build().query());
-                assertEquals("SELECT id FROM t GROUP BY a // c, b HAVING count(*) > 1",
-                        other.select("id").from("t").append(Criteria.builder().groupBy("a // c", "b").having("count(*) > 1").build()).build().query());
-                assertEquals("SELECT id FROM t GROUP BY a // c DESC",
-                        other.select("id").from("t").append(Filters.groupBy("a // c", SortDirection.DESC)).build().query());
-                assertEquals("SELECT id FROM t ORDER BY a DESC, b ASC",
-                        other.select("id").from("t").append(Filters.orderBy("a -- c", SortDirection.DESC, "b", SortDirection.ASC)).build().query());
-            }
-        }
-
-        // Regression: the UPDATE/DELETE/INSERT target table name was appended raw, so a trailing line comment commented out the
-        // SET list, the WHERE clause ("DELETE FROM t -- x WHERE id = 2" deleted every row) or the column list. It is now ended
-        // with a line feed under the dialect's own comment rules, like from(String).
-        @Test
-        void testTargetTableNameEndingInLineCommentIsTerminated() {
-            assertEquals("DELETE FROM t -- x\n WHERE id = 2", SCSB.deleteFrom("t -- x").where(Filters.eq("id", 2)).build().query());
-            assertEquals("UPDATE t -- x\n SET a = 1 WHERE id = 2", SCSB.update("t -- x").set("a", 1).where(Filters.eq("id", 2)).build().query());
-            assertEquals("INSERT INTO t -- x\n (a) VALUES (?)", PSC.insert("a").into("t -- x").build().query());
-            assertEquals("INSERT INTO t -- x\n (a) VALUES (?)", PSC.insert("a").into("t -- x", Account.class).build().query());
-            // INSERT ... SELECT, with a column list and with "*", and the (String, Class) forms of UPDATE/DELETE.
-            assertEquals("INSERT INTO t2 -- x\n (a) SELECT a FROM t WHERE id = ?",
-                    PSC.select("a").into("t2 -- x").from("t").where(Filters.eq("id", 1)).build().query());
-            assertEquals("INSERT INTO t2 -- x\n SELECT * FROM t", PSC.select("*").into("t2 -- x").from("t").build().query());
-            assertEquals("DELETE FROM account -- x\n WHERE first_name = 'a'",
-                    SCSB.deleteFrom("account -- x", Account.class).where(Filters.eq("firstName", "a")).build().query());
-            assertEquals("UPDATE account -- x\n SET first_name = 'a'", SCSB.update("account -- x", Account.class).set("firstName", "a").build().query());
-
-            final Dsl mysql = lexDialect(SCSB, "MySQL");
-            assertEquals("DELETE FROM t # x\n WHERE id = 2", mysql.deleteFrom("t # x").where(Filters.eq("id", 2)).build().query());
-            assertEquals("UPDATE t # x\n SET a = 1 WHERE id = 2", mysql.update("t # x").set("a", 1).where(Filters.eq("id", 2)).build().query());
-            assertEquals("INSERT INTO t # x\n (a) VALUES (?)", mysql.insert("a").into("t # x").build().query());
-
-            final Dsl h2 = lexDialect(SCSB, "H2");
-            assertEquals("DELETE FROM t // x\n WHERE id = 2", h2.deleteFrom("t // x").where(Filters.eq("id", 2)).build().query());
-            assertEquals("UPDATE t // x\n SET a = 1 WHERE id = 2", h2.update("t // x").set("a", 1).where(Filters.eq("id", 2)).build().query());
-            assertEquals("INSERT INTO t // x\n (a) VALUES (?)", h2.insert("a").into("t // x").build().query());
-
-            // Negative controls: "//" is an operator outside H2, and plain or terminated names render as before.
-            final Dsl pg = lexDialect(SCSB, "PostgreSQL");
-            assertEquals("DELETE FROM t // x WHERE id = 2", pg.deleteFrom("t // x").where(Filters.eq("id", 2)).build().query());
-            assertEquals("UPDATE t // x SET a = 1 WHERE id = 2", pg.update("t // x").set("a", 1).where(Filters.eq("id", 2)).build().query());
-            assertEquals("INSERT INTO t // x (a) VALUES (?)", pg.insert("a").into("t // x").build().query());
-            assertEquals("DELETE FROM t WHERE id = 2", SCSB.deleteFrom("t").where(Filters.eq("id", 2)).build().query());
-            assertEquals("DELETE FROM t /* x */ WHERE id = 2", SCSB.deleteFrom("t /* x */").where(Filters.eq("id", 2)).build().query());
-            assertEquals("DELETE FROM #tmp WHERE id = 2",
-                    lexDialect(SCSB, "Microsoft SQL Server").deleteFrom("#tmp").where(Filters.eq("id", 2)).build().query());
-            // "#tmp": a temporary table without product info (unchanged), a comment on MySQL (the line feed is harmless there).
-            assertEquals("DELETE FROM #tmp WHERE id = 2", SCSB.deleteFrom("#tmp").where(Filters.eq("id", 2)).build().query());
-            assertEquals("DELETE FROM #tmp\n WHERE id = 2", mysql.deleteFrom("#tmp").where(Filters.eq("id", 2)).build().query());
-        }
-
-        // Regression: with an explicit MySQL dialect the comment guard still exempted ##, #>, #- and ?#, which MySQL reads as comments.
-        @Test
-        void testCommentGuardTreatsEveryHashAsCommentUnderMySql() {
-            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
-
-            assertThrows(IllegalArgumentException.class, () -> mysql.update("account").set("status = 1 ## reset").where("status = 0"));
-            assertThrows(IllegalArgumentException.class, () -> mysql.select("a #> b").from("t"));
-            assertThrows(IllegalArgumentException.class, () -> mysql.select("a #-b").from("t"));
-            assertThrows(IllegalArgumentException.class, () -> mysql.select("a ?# b").from("t"));
-            assertThrows(IllegalArgumentException.class, () -> mysql.select("a#>>b").from("t"));
-
-            // A MyBatis marker is still a data token, and PostgreSQL keeps its hash operators.
-            assertEquals("UPDATE account SET status = #{status} WHERE status = 0",
-                    mysql.update("account").set("status = #{status}").where("status = 0").build().query());
-            final Dsl pg = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
-            assertEquals("SELECT a ## b FROM t", pg.select("a ## b").from("t").build().query());
-        }
-
-        @Test
-        void testCommentTokenAfterBackslashEscapedQuoteInsideSingleQuotedLiteralIsRejected() {
-            // Inside a single-quoted string literal a backslash DOES escape the following quote (\'), so the next
-            // quote closes the string and a trailing comment token (-- or /* */) must be rejected.
-            // Regression: the scanner previously misread "\''" as a doubled-quote ('') escape and stayed "inside"
-            // the string, hiding the trailing comment token from the guard.
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("note = '\\'' -- x").from("docs").build().query());
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("note = '\\'' /* x */").from("docs").build().query());
-
-            // The backslash-escaped-quote literal on its own (no trailing comment) is still accepted.
-            final String okSql = PSC.select("note = '\\''").from("docs").build().query();
-            assertNotNull(okSql);
-        }
-
-        @Test
-        void testCommentTokenAfterBackslashTerminatedQuotedIdentifierIsRejected() {
-            // A backslash before the closing quote of a double-quoted or backtick-quoted identifier does NOT escape
-            // that quote (backslash escaping applies only inside single-quoted string literals), so the closing quote
-            // terminates the identifier and the trailing "--" is a real SQL comment token that must be rejected.
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("orders").using("\"a\\\" -- x"));
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("users").join("orders").using("`a\\` -- x"));
-
-            // A comment-like token that is genuinely inside a quoted identifier is still allowed.
-            final String sql = PSC.select("*").from("users").join("orders").using("\"a--b\"").build().query();
-            assertTrue(sql.contains("a--b"));
-        }
-
-        @Test
-        void testCommentTokensInsideSqlServerBracketIdentifierAreAllowed() {
-            assertEquals("SELECT [a--b] FROM records", Dsl.PSB.select("[a--b]").from("records").build().query());
-            assertEquals("SELECT [a]]--b] FROM records", Dsl.PSB.select("[a]]--b]").from("records").build().query());
-        }
-
-        @Test
-        void testCompactCheckpointsCopyValuesAndRestoreNestedMutations() {
-            final SqlBuilder builder = NSC.update("users").set("id", 1);
-            final String originalSql = builder._sb.toString();
-            builder._aliasPropColumnNameMap = new java.util.HashMap<>();
-            builder._aliasPropColumnNameMap.put("u", Collections.emptyMap());
-            builder._namedParameterNameOccurrences.put(null, null);
-            // A snapshot of live Map.Entry objects would follow these in-place value changes.
-            // Nested failures must restore their own starting state before the outer rollback.
-            assertThrows(IllegalStateException.class, () -> builder.mutateAtomically(() -> {
-                builder._parameters.set(0, 9);
-                builder._namedParameterNameOccurrences.put("id", 9);
-                builder._namedParameterNameOccurrences.put(null, 7);
-                builder._renderedNamedParameterTokens.put("id", "changed");
-                builder._generatedNamedParameterNames.add("id_9");
-                builder.calledOpSet.add("temporary");
-                // The protected entry point restores text rewritten before the start length, not only appended text.
-                builder._sb.replace(0, 6, "BROKEN");
-                builder._aliasPropColumnNameMap.clear();
-                assertThrows(IllegalArgumentException.class, () -> builder.mutateAtomically(() -> {
-                    builder._parameters.clear();
-                    builder._namedParameterNameOccurrences.put("id", 10);
-                    builder._renderedNamedParameterTokens.clear();
-                    builder._generatedNamedParameterNames.clear();
-                    builder.calledOpSet.clear();
-                    throw new IllegalArgumentException("inner");
-                }));
-                assertEquals(Integer.valueOf(9), builder._namedParameterNameOccurrences.get("id"));
-                assertEquals(List.of(9), builder._parameters);
-                assertEquals("changed", builder._renderedNamedParameterTokens.get("id"));
-                throw new IllegalStateException("outer");
-            }));
-            assertEquals(originalSql, builder._sb.toString());
-            assertEquals(Collections.singletonMap("u", Collections.emptyMap()), builder._aliasPropColumnNameMap);
-            assertEquals(List.of(1), builder._parameters);
-            assertEquals(Integer.valueOf(1), builder._namedParameterNameOccurrences.get("id"));
-            assertTrue(builder._namedParameterNameOccurrences.containsKey(null));
-            assertNull(builder._namedParameterNameOccurrences.get(null));
-            // The default ":id" token is not stored (absence means the default form).
-            assertNull(builder._renderedNamedParameterTokens.get("id"));
-            assertEquals(Set.of("id"), builder._generatedNamedParameterNames);
-            assertTrue(builder.calledOpSet.isEmpty());
-            builder._namedParameterNameOccurrences.remove(null);
-            assertEquals("UPDATE users SET id = :id, id = :id_2", builder.set("id", 2).build().query());
-        }
-
-        @Test
-        void testComposedFragmentsProtectStandardBackslashLiteralBoundaries() {
-            assertEquals("SELECT * FROM users CROSS JOIN (SELECT 'a\\') a -- tail\n WHERE id = ?",
-                    PSC.select("*").from("users").crossJoin("(SELECT 'a\\') a -- tail").where(Filters.eq("id", 1)).build().query());
-            assertEquals("SELECT * FROM users CROSS JOIN (SELECT E'a\\' -- quoted') a WHERE id = ?",
-                    PSC.select("*").from("users").crossJoin("(SELECT E'a\\' -- quoted') a").where(Filters.eq("id", 1)).build().query());
-
-            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
-            assertEquals("SELECT * FROM users CROSS JOIN (SELECT 'a\\' -- quoted') a WHERE id = ?",
-                    mysql.select("*").from("users").crossJoin("(SELECT 'a\\' -- quoted') a").where(Filters.eq("id", 1)).build().query());
-        }
-
-        @Test
-        void testComposedQueriesRejectTerminatorsAfterStandardBackslashLiterals() {
-            final SqlBuilder parent = PSC.select("id").from("users");
-            assertThrows(IllegalArgumentException.class, () -> parent.union("SELECT 'a\\';"));
-            assertEquals("SELECT id FROM users", parent.build().query());
-
-            final SqlBuilder snapshot = PSC.select("id").from("users").append("WHERE value = 'a\\';");
-            assertThrows(IllegalArgumentException.class, snapshot::toSubQuery);
-        }
-
-        @Test
-        void testDoubleHashNotTreatedAsSqlCommentInExpressions() {
-            // ## is a whitelisted two-char token; the second # must not be re-examined as lone #
-            String sql = PSC.select("*").from("users").where(Filters.expr("status = '##ACTIVE##'")).build().query();
-            assertNotNull(sql);
-            assertTrue(sql.contains("##ACTIVE##"), "## inside value must not be rejected as SQL comment");
-        }
-
-        // Regression: the tokenizer reads \' as an escaped quote, so after a standard literal such as 'C:\' every quote boundary
-        // was off by one: a later string was converted as an identifier, and "-- n/a" inside a later string was stripped
-        // as a comment, truncating the WHERE clause.
-        @Test
-        void testEscapeDependentQuoteInRawExpressionIsEmittedVerbatim() {
-            final String noteExpr = SqlExpression.and(SqlExpression.eq("path", "C:\\"), SqlExpression.eq("note", "-- n/a"));
-
-            // The verbatim text ends inside a line comment under the backslash reading, so it is terminated before ORDER BY.
-            assertEquals("SELECT id FROM t WHERE (path = 'C:\\') AND (note = '-- n/a')\n ORDER BY id",
-                    PSC.select("id").from("t").where(Filters.expr(noteExpr)).orderBy("id").build().query());
-
-            final Dsl postgres = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
-            assertEquals("SELECT id FROM t WHERE (path = 'C:\\') AND (note = '-- n/a')\n ORDER BY id",
-                    postgres.select("id").from("t").where(Filters.expr(noteExpr)).orderBy("id").build().query());
-
-            final String likeExpr = SqlExpression.and(SqlExpression.like("fileName", "%\\"), SqlExpression.eq("ownerName", "John Smith"));
-            final String built = PSC.select("id").from("t").where(Filters.expr(likeExpr)).build().query();
-            assertEquals("SELECT id FROM t WHERE (file_name LIKE '%\\') AND (ownerName = 'John Smith')", built);
-            assertEquals(Filters.expr(likeExpr).toSql(NamingPolicy.SNAKE_CASE), built.substring(built.indexOf("WHERE ") + 6));
-
-            // MySQL always reads \' as an escape, which is how the tokenizer reads it, so conversion continues there.
-            final Dsl mysql = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build());
-            assertEquals("SELECT id FROM t WHERE a = 'It\\'s' AND first_name = 'x'",
-                    mysql.select("id").from("t").where(Filters.expr("a = 'It\\'s' AND firstName = 'x'")).build().query());
-            assertEquals("SELECT id FROM t WHERE a = 'It\\'s' AND firstName = 'x'",
-                    PSC.select("id").from("t").where(Filters.expr("a = 'It\\'s' AND firstName = 'x'")).build().query());
         }
 
         @Test
@@ -5294,6 +4980,82 @@ public class AbstractQueryBuilderTest extends TestBase {
                     AbstractQueryBuilder.class.getDeclaredMethod("set", String.class, Object.class, String.class, Object.class, String.class, Object.class));
         }
 
+        // Only the exact default token ":" + name is left out of _renderedNamedParameterTokens. Every other form is
+        // recorded, including a same-length one that differs after the colon, which a set-operation rename relies on.
+        @Test
+        void testRenderedNamedParameterTokensRecordEveryNonDefaultForm() {
+            final java.util.function.Function<BiConsumer<StringBuilder, String>, Dsl> withHandler = handler -> Dsl
+                    .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler(handler).build());
+            final Map<String, BiConsumer<StringBuilder, String>> handlers = new LinkedHashMap<>(); // the token rendered for "id"
+            handlers.put(":id", (sb, name) -> sb.append(':').append(name));
+            handlers.put(":id ", (sb, name) -> sb.append(':').append(name).append(' '));
+            handlers.put("::id", (sb, name) -> sb.append("::").append(name));
+            handlers.put(":i", (sb, name) -> sb.append(':').append(name, 0, name.length() - 1));
+            handlers.put(":iX", (sb, name) -> sb.append(':').append(name, 0, name.length() - 1).append('X'));
+            handlers.put(":ID", (sb, name) -> sb.append(':').append(name.toUpperCase()));
+            handlers.put("${id}", (sb, name) -> sb.append("${").append(name).append('}'));
+
+            handlers.forEach((token, handler) -> {
+                final SqlBuilder builder = withHandler.apply(handler).select("id").from("a").where(Filters.eq("id", 1));
+                assertEquals(token.equals(":id") ? Map.of() : Map.of("id", token), builder._renderedNamedParameterTokens, token);
+                assertEquals("SELECT id FROM a WHERE id = " + token, builder.build().query());
+            });
+
+            // Were ":ID" taken for the default form, the child's renamed placeholder would stay ":ID" next to the parent's.
+            final Dsl upper = withHandler.apply(handlers.get(":ID"));
+            final SqlBuilder compound = upper.select("id").from("a").where(Filters.eq("id", 1)).union(upper.select("id").from("b").where(Filters.eq("id", 2)));
+            assertEquals(Map.of("id", ":ID", "id_2", ":ID_2"), compound._renderedNamedParameterTokens);
+            final SP sp = compound.build();
+            assertEquals("SELECT id FROM a WHERE id = :ID UNION SELECT id FROM b WHERE id = :ID_2", sp.query());
+            assertEquals(List.of(1, 2), sp.parameters());
+        }
+
+        // Only tokens that differ from the default ":name" are recorded, so a batch INSERT no longer retains one
+        // redundant String and map node per placeholder; the set-operation rewrite reads absent entries as ":name".
+        @Test
+        void testRenderedNamedParameterTokensStoreOnlyCustomForms() {
+            final List<Map<String, Object>> rows = new ArrayList<>();
+
+            for (int i = 0; i < 3; i++) {
+                final Map<String, Object> row = new LinkedHashMap<>();
+                row.put("id", i);
+                row.put("name", "n" + i);
+                rows.add(row);
+            }
+
+            final SqlBuilder named = NSC.batchInsert(rows).into("t");
+            assertEquals("INSERT INTO t (id, name) VALUES (:id_0, :name_0), (:id_1, :name_1), (:id_2, :name_2)", named.build().query());
+            assertEquals(Set.of("id_0", "name_0", "id_1", "name_1", "id_2", "name_2"), named._generatedNamedParameterNames);
+            assertTrue(named._renderedNamedParameterTokens.isEmpty());
+
+            final Dsl custom = Dsl
+                    .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
+            final SqlBuilder customNamed = custom.batchInsert(rows).into("t");
+            assertEquals("INSERT INTO t (id, name) VALUES (${id_0}, ${name_0}), (${id_1}, ${name_1}), (${id_2}, ${name_2})", customNamed.build().query());
+            assertEquals(Map.of("id_0", "${id_0}", "name_0", "${name_0}", "id_1", "${id_1}", "name_1", "${name_1}", "id_2", "${id_2}", "name_2", "${name_2}"),
+                    customNamed._renderedNamedParameterTokens);
+
+            // A handler that renders the default form for some names only records the others.
+            final Dsl mixed = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+                if (name.startsWith("id")) {
+                    sb.append(':').append(name);
+                } else {
+                    sb.append("${").append(name).append('}');
+                }
+            }).build());
+            final SqlBuilder mixedNamed = mixed.batchInsert(rows).into("t");
+            assertEquals("INSERT INTO t (id, name) VALUES (:id_0, ${name_0}), (:id_1, ${name_1}), (:id_2, ${name_2})", mixedNamed.build().query());
+            assertEquals(Map.of("name_0", "${name_0}", "name_1", "${name_1}", "name_2", "${name_2}"), mixedNamed._renderedNamedParameterTokens);
+
+            final SP compound = NSC.select("id")
+                    .from("users")
+                    .where(Filters.eq("id", 1))
+                    .union(NSC.select("id").from("archive").where(Filters.eq("id", 3)))
+                    .build();
+            assertEquals("SELECT id FROM users WHERE id = :id UNION SELECT id FROM archive WHERE id = :id_2", compound.query());
+            assertEquals(List.of(1, 3), compound.parameters());
+        }
+
         // Same suffix high-water mark across repeated nesting, each level promoting another suffix.
         @Test
         @SuppressWarnings("deprecation")
@@ -5312,6 +5074,203 @@ public class AbstractQueryBuilderTest extends TestBase {
                     assertDistinctBindings(new SP(snapshot.rawSql(), ImmutableList.copyOf(snapshot.parameters())), values);
                 }
             }
+        }
+
+        // The set-operation rename and the raw-sub-query rewrite follow the same storage rule as appendNamedParameter: a
+        // default ":name" token is never stored, and a custom token is stored under the final name. A renamed custom token
+        // that is not recorded makes a later composition rename the wrong text and bind two values to one placeholder.
+        @Test
+        void testSetOperationAndRawSubQueryRenamesStoreOnlyNonDefaultTokens() {
+            final SqlBuilder defaultUnion = NSC.select("id").from("a").where(Filters.eq("id", 1)).union(NSC.select("id").from("b").where(Filters.eq("id", 2)));
+            assertTrue(defaultUnion._renderedNamedParameterTokens.isEmpty());
+            assertEquals(Set.of("id", "id_2"), defaultUnion._generatedNamedParameterNames);
+            assertEquals("SELECT id FROM a WHERE id = :id UNION SELECT id FROM b WHERE id = :id_2", defaultUnion.build().query());
+
+            final SqlBuilder defaultRaw = NSC.select("id").from("a").where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE p = ?", List.of(9))));
+            assertTrue(defaultRaw._renderedNamedParameterTokens.isEmpty());
+            final SP defaultRawSp = defaultRaw.build();
+            assertEquals("SELECT id FROM a WHERE id IN (SELECT x FROM y WHERE p = :param)", defaultRawSp.query());
+            assertEquals(List.of(9), defaultRawSp.parameters());
+
+            final Dsl custom = Dsl
+                    .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("${").append(name).append('}')).build());
+            final SqlBuilder customRaw = custom.select("id").from("a").where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE p = ?", List.of(9))));
+            assertEquals(Map.of("param", "${param}"), customRaw._renderedNamedParameterTokens);
+            assertEquals("SELECT id FROM a WHERE id IN (SELECT x FROM y WHERE p = ${param})", customRaw.build().query());
+
+            final SqlBuilder parent = custom.select("id").from("a").where(Filters.eq("id", 1)).union(custom.select("id").from("b").where(Filters.eq("id", 2)));
+            assertEquals(Map.of("id", "${id}", "id_2", "${id_2}"), parent._renderedNamedParameterTokens);
+            final SqlBuilder grand = custom.select("id")
+                    .from("g")
+                    .where(Filters.and(Filters.eq("id", 0), Filters.eq("id", 0)))
+                    .union(custom.select("id").from(parent, "p"));
+            assertEquals(Map.of("id", "${id}", "id_2", "${id_2}", "id_3", "${id_3}", "id_4", "${id_4}"), grand._renderedNamedParameterTokens);
+            final SP grandSp = grand.build();
+            assertEquals("SELECT id FROM g WHERE (id = ${id}) AND (id = ${id_2}) UNION SELECT id FROM "
+                    + "(SELECT id FROM a WHERE id = ${id_3} UNION SELECT id FROM b WHERE id = ${id_4}) p", grandSp.query());
+            assertEquals(List.of(0, 0, 1, 2), grandSp.parameters());
+
+            // A handler whose form depends on the name: a rename turns a default token into a custom one, or the reverse.
+            final Dsl suffixedCustom = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+                if (name.matches(".*_[0-9]+")) {
+                    sb.append("${").append(name).append('}');
+                } else {
+                    sb.append(':').append(name);
+                }
+            }).build());
+            final SqlBuilder suffixedParent = suffixedCustom.select("id")
+                    .from("a")
+                    .where(Filters.eq("id", 1))
+                    .union(suffixedCustom.select("id").from("b").where(Filters.eq("id", 2)));
+            assertEquals(Map.of("id_2", "${id_2}"), suffixedParent._renderedNamedParameterTokens);
+            final SqlBuilder suffixedGrand = suffixedCustom.select("id")
+                    .from("g")
+                    .where(Filters.eq("id", 0))
+                    .union(suffixedCustom.select("id").from(suffixedParent, "p"));
+            assertEquals(Map.of("id_2", "${id_2}", "id_3", "${id_3}"), suffixedGrand._renderedNamedParameterTokens);
+            final SP suffixedSp = suffixedGrand.build();
+            assertEquals(
+                    "SELECT id FROM g WHERE id = :id UNION SELECT id FROM (SELECT id FROM a WHERE id = ${id_2} UNION SELECT id FROM b WHERE id = ${id_3}) p",
+                    suffixedSp.query());
+            assertEquals(List.of(0, 1, 2), suffixedSp.parameters());
+
+            final Dsl unsuffixedCustom = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+                if (name.matches(".*_[0-9]+")) {
+                    sb.append(':').append(name);
+                } else {
+                    sb.append("${").append(name).append('}');
+                }
+            }).build());
+            final SqlBuilder unsuffixedParent = unsuffixedCustom.select("id")
+                    .from("a")
+                    .where(Filters.eq("id", 1))
+                    .union(unsuffixedCustom.select("id").from("b").where(Filters.eq("id", 2)));
+            assertEquals(Map.of("id", "${id}"), unsuffixedParent._renderedNamedParameterTokens);
+            final SqlBuilder unsuffixedGrand = unsuffixedCustom.select("id")
+                    .from("g")
+                    .where(Filters.eq("id", 0))
+                    .union(unsuffixedCustom.select("id").from(unsuffixedParent, "p"));
+            assertEquals(Map.of("id", "${id}"), unsuffixedGrand._renderedNamedParameterTokens);
+            final SP unsuffixedSp = unsuffixedGrand.build();
+            assertEquals("SELECT id FROM g WHERE id = ${id} UNION SELECT id FROM (SELECT id FROM a WHERE id = :id_2 UNION SELECT id FROM b WHERE id = :id_3) p",
+                    unsuffixedSp.query());
+            assertEquals(List.of(0, 1, 2), unsuffixedSp.parameters());
+        }
+
+        // The library's own clause mutations undo a failure by truncating the buffer (the append-only invariant of _sb). An
+        // overridden hook that shortens the buffer breaks that invariant: the lost text cannot be restored, which is reported
+        // as a suppressed IllegalStateException instead of padding the SQL with NUL characters.
+        @Test
+        void testShortenedBufferInAppendOnlyMutationIsReportedNotPadded() {
+            final SqlBuilder builder = new SqlBuilder(PSC.sqlDialect()) {
+                @Override
+                protected void appendColumnName(final String propName) {
+                    if ("shrink".equals(propName)) {
+                        _sb.setLength(3);
+                        throw new IllegalArgumentException("hook failed");
+                    }
+
+                    super.appendColumnName(propName);
+                }
+            };
+            builder._op = com.landawn.abacus.util.OperationType.QUERY;
+            builder._propOrColumnNames = List.of("id");
+            builder.from("t");
+            assertEquals("SELECT id FROM t", builder._sb.toString());
+
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.eq("shrink", 1)));
+            assertEquals("hook failed", e.getMessage());
+            assertEquals(1, e.getSuppressed().length);
+            assertTrue(e.getSuppressed()[0] instanceof IllegalStateException, String.valueOf(e.getSuppressed()[0]));
+            assertTrue(e.getSuppressed()[0].getMessage().contains("shortened from 16 to 3"), e.getSuppressed()[0].getMessage());
+            assertEquals("SEL", builder._sb.toString());
+            assertTrue(builder._sb.chars().noneMatch(ch -> ch == 0));
+
+            // The protected mutateAtomically(Runnable) restores the whole buffer, so a shrink there is undone exactly.
+            final SqlBuilder protectedBuilder = PSC.select("id").from("t");
+            final IllegalStateException failure = assertThrows(IllegalStateException.class, () -> protectedBuilder.mutateAtomically(() -> {
+                protectedBuilder._sb.setLength(3);
+                throw new IllegalStateException("mutation failed");
+            }));
+            assertEquals(0, failure.getSuppressed().length);
+            assertEquals("SELECT id FROM t WHERE id = ?", protectedBuilder.where(Filters.eq("id", 1)).build().query());
+        }
+
+        // Regression: every checkpoint level attached its own "Cannot restore" IllegalStateException, so nested library
+        // checkpoints reported the same failure twice, and a truncating checkpoint nested in a full-copy one claimed the text
+        // was lost although the enclosing checkpoint restored it exactly. Only the outermost checkpoint reports, and only if
+        // the text is really lost.
+        @Test
+        void testShortenedBufferIsReportedOnceAndOnlyWhenNotRestored() {
+            // from(Class, Collection) runs from(Collection) inside its own checkpoint: two nested truncating checkpoints.
+            final SqlBuilder nested = new SqlBuilder(PSC.sqlDialect()) {
+                @Override
+                protected void appendColumnName(final Class<?> entityClass, final com.landawn.abacus.parser.ParserUtil.BeanInfo entityInfo,
+                        final com.landawn.abacus.util.ImmutableMap<String, QueryUtil.ColumnInfo> propColumnNameMap, final String tableAlias,
+                        final String propName, final String propAlias, final boolean withClassAlias, final String classAlias, final boolean isForSelect,
+                        final boolean quotePropAlias) {
+                    if ("shrink".equals(propName)) {
+                        _sb.setLength(3);
+                        throw new IllegalArgumentException("hook failed");
+                    }
+
+                    super.appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName, propAlias, withClassAlias, classAlias, isForSelect,
+                            quotePropAlias);
+                }
+            };
+            nested._op = com.landawn.abacus.util.OperationType.QUERY;
+            nested._propOrColumnNames = List.of("id");
+            nested.from("t");
+            nested.unionSelect(List.of("id", "shrink"));
+            assertEquals("SELECT id FROM t UNION ", nested._sb.toString());
+
+            final IllegalArgumentException twice = assertThrows(IllegalArgumentException.class, () -> nested.from(Account.class, List.of("account")));
+            assertEquals("hook failed", twice.getMessage());
+            assertEquals(1, twice.getSuppressed().length);
+            assertTrue(twice.getSuppressed()[0].getMessage().contains("shortened from 23 to 3"), twice.getSuppressed()[0].getMessage());
+            assertEquals("SEL", nested._sb.toString());
+
+            // A library clause wrapped in the protected full-copy mutateAtomically(Runnable): the enclosing checkpoint restores
+            // the text exactly, so nothing is reported.
+            final SqlBuilder outer = new SqlBuilder(PSC.sqlDialect()) {
+                @Override
+                protected void appendColumnName(final String propName) {
+                    if ("shrink".equals(propName)) {
+                        _sb.setLength(3);
+                        throw new IllegalArgumentException("hook failed");
+                    }
+
+                    super.appendColumnName(propName);
+                }
+            };
+            outer._op = com.landawn.abacus.util.OperationType.QUERY;
+            outer._propOrColumnNames = List.of("id");
+            outer.from("t");
+
+            final IllegalArgumentException restored = assertThrows(IllegalArgumentException.class,
+                    () -> outer.mutateAtomically(() -> outer.where(Filters.eq("shrink", 1))));
+            assertEquals("hook failed", restored.getMessage());
+            assertEquals(0, restored.getSuppressed().length);
+            assertEquals("SELECT id FROM t", outer._sb.toString());
+            assertEquals("SELECT id FROM t WHERE id = ?", outer.where(Filters.eq("id", 1)).build().query());
+
+            // The nesting count is balanced after a failure: the same clause run afterwards at top level reports, exactly once.
+            final SqlBuilder again = new SqlBuilder(PSC.sqlDialect()) {
+                @Override
+                protected void appendColumnName(final String propName) {
+                    if ("shrink".equals(propName)) {
+                        _sb.setLength(3);
+                        throw new IllegalArgumentException("hook failed");
+                    }
+
+                    super.appendColumnName(propName);
+                }
+            };
+            again._op = com.landawn.abacus.util.OperationType.QUERY;
+            again._propOrColumnNames = List.of("id");
+            again.from("t");
+            assertThrows(IllegalArgumentException.class, () -> again.mutateAtomically(() -> again.where(Filters.eq("shrink", 1))));
+            assertEquals(1, assertThrows(IllegalArgumentException.class, () -> again.where(Filters.eq("shrink", 1))).getSuppressed().length);
         }
 
         @Test
@@ -5419,6 +5378,47 @@ public class AbstractQueryBuilderTest extends TestBase {
             final SqlBuilder joinedWithCondition = PSC.select("u.id").from("users u").join("accounts a");
             assertThrows(IllegalArgumentException.class, () -> joinedWithCondition.on(unsupported));
             assertEquals("SELECT u.id FROM users u JOIN accounts a ON u.id = a.id", joinedWithCondition.on("u.id = a.id").build().query());
+        }
+
+        // Regression: the UPDATE/DELETE/INSERT target table name was appended raw, so a trailing line comment commented out the
+        // SET list, the WHERE clause ("DELETE FROM t -- x WHERE id = 2" deleted every row) or the column list. It is now ended
+        // with a line feed under the dialect's own comment rules, like from(String).
+        @Test
+        void testTargetTableNameEndingInLineCommentIsTerminated() {
+            assertEquals("DELETE FROM t -- x\n WHERE id = 2", SCSB.deleteFrom("t -- x").where(Filters.eq("id", 2)).build().query());
+            assertEquals("UPDATE t -- x\n SET a = 1 WHERE id = 2", SCSB.update("t -- x").set("a", 1).where(Filters.eq("id", 2)).build().query());
+            assertEquals("INSERT INTO t -- x\n (a) VALUES (?)", PSC.insert("a").into("t -- x").build().query());
+            assertEquals("INSERT INTO t -- x\n (a) VALUES (?)", PSC.insert("a").into("t -- x", Account.class).build().query());
+            // INSERT ... SELECT, with a column list and with "*", and the (String, Class) forms of UPDATE/DELETE.
+            assertEquals("INSERT INTO t2 -- x\n (a) SELECT a FROM t WHERE id = ?",
+                    PSC.select("a").into("t2 -- x").from("t").where(Filters.eq("id", 1)).build().query());
+            assertEquals("INSERT INTO t2 -- x\n SELECT * FROM t", PSC.select("*").into("t2 -- x").from("t").build().query());
+            assertEquals("DELETE FROM account -- x\n WHERE first_name = 'a'",
+                    SCSB.deleteFrom("account -- x", Account.class).where(Filters.eq("firstName", "a")).build().query());
+            assertEquals("UPDATE account -- x\n SET first_name = 'a'", SCSB.update("account -- x", Account.class).set("firstName", "a").build().query());
+
+            final Dsl mysql = lexDialect(SCSB, "MySQL");
+            assertEquals("DELETE FROM t # x\n WHERE id = 2", mysql.deleteFrom("t # x").where(Filters.eq("id", 2)).build().query());
+            assertEquals("UPDATE t # x\n SET a = 1 WHERE id = 2", mysql.update("t # x").set("a", 1).where(Filters.eq("id", 2)).build().query());
+            assertEquals("INSERT INTO t # x\n (a) VALUES (?)", mysql.insert("a").into("t # x").build().query());
+
+            final Dsl h2 = lexDialect(SCSB, "H2");
+            assertEquals("DELETE FROM t // x\n WHERE id = 2", h2.deleteFrom("t // x").where(Filters.eq("id", 2)).build().query());
+            assertEquals("UPDATE t // x\n SET a = 1 WHERE id = 2", h2.update("t // x").set("a", 1).where(Filters.eq("id", 2)).build().query());
+            assertEquals("INSERT INTO t // x\n (a) VALUES (?)", h2.insert("a").into("t // x").build().query());
+
+            // Negative controls: "//" is an operator outside H2, and plain or terminated names render as before.
+            final Dsl pg = lexDialect(SCSB, "PostgreSQL");
+            assertEquals("DELETE FROM t // x WHERE id = 2", pg.deleteFrom("t // x").where(Filters.eq("id", 2)).build().query());
+            assertEquals("UPDATE t // x SET a = 1 WHERE id = 2", pg.update("t // x").set("a", 1).where(Filters.eq("id", 2)).build().query());
+            assertEquals("INSERT INTO t // x (a) VALUES (?)", pg.insert("a").into("t // x").build().query());
+            assertEquals("DELETE FROM t WHERE id = 2", SCSB.deleteFrom("t").where(Filters.eq("id", 2)).build().query());
+            assertEquals("DELETE FROM t /* x */ WHERE id = 2", SCSB.deleteFrom("t /* x */").where(Filters.eq("id", 2)).build().query());
+            assertEquals("DELETE FROM #tmp WHERE id = 2",
+                    lexDialect(SCSB, "Microsoft SQL Server").deleteFrom("#tmp").where(Filters.eq("id", 2)).build().query());
+            // "#tmp": a temporary table without product info (unchanged), a comment on MySQL (the line feed is harmless there).
+            assertEquals("DELETE FROM #tmp WHERE id = 2", SCSB.deleteFrom("#tmp").where(Filters.eq("id", 2)).build().query());
+            assertEquals("DELETE FROM #tmp\n WHERE id = 2", mysql.deleteFrom("#tmp").where(Filters.eq("id", 2)).build().query());
         }
 
         @Test
@@ -5594,126 +5594,6 @@ public class AbstractQueryBuilderTest extends TestBase {
             final SqlBuilder compound = PSC.select("id").from("users").append(new Union(Filters.subQuery("SELECT id FROM archived_users")));
             assertThrows(IllegalStateException.class, () -> compound.where(Filters.eq("active", true)));
             assertEquals("SELECT id FROM users UNION SELECT id FROM archived_users", compound.build().query());
-        }
-
-        // Regression: an INTO item of a structured set-operation operand was accepted. These items are now caught by the toSql
-        // pre-check (SubQuery.toSql renders them verbatim); testSetOperationOperandOnlyTheEmittedTextRevealsIsRejected covers the
-        // items only the emitted-text check catches.
-        @Test
-        void testStructuredSetOperationOperandIsValidatedAsEmitted() {
-            final List<String> unsafeItems = List.of("first_name into outfile '/tmp/#f'", "first_name into dumpfile '/tmp/--x'", "'#' into @v",
-                    "first_name into outfile '/tmp/f'");
-
-            for (final Dsl dsl : new Dsl[] { PSC, PLC }) {
-                for (final String item : unsafeItems) {
-                    final SubQuery operand = new SubQuery("user_account", List.of(item), null);
-                    final List<Condition> forms = List.of(Filters.union(operand), Filters.unionAll(operand), Filters.intersect(operand),
-                            Filters.except(operand), Filters.minus(operand), Criteria.builder().union(operand).build(),
-                            Criteria.builder().unionAll(operand).build(), Criteria.builder().where(Filters.eq("id", 1)).except(operand).build(),
-                            Criteria.builder().distinct().union(operand).build());
-
-                    for (final Condition form : forms) {
-                        final SqlBuilder builder = dsl.select("id").from("t");
-                        assertThrows(IllegalArgumentException.class, () -> builder.append(form), item + " / " + form);
-                        assertThrows(IllegalArgumentException.class, () -> builder.appendIf(true, form), item + " / " + form);
-                        // Rolled back completely: the builder stays usable.
-                        assertEquals("SELECT id FROM t", builder._sb.toString());
-                        assertTrue(builder._parameters.isEmpty());
-                        assertEquals("SELECT id FROM t WHERE id = ?", builder.where(Filters.eq("id", 2)).build().query());
-                    }
-                }
-            }
-
-            // Harmless structured operands, including comment characters inside literals, render as before.
-            final SubQuery harmless = new SubQuery("user_account", List.of("firstName", "'Item #1' AS s", "CONCAT(firstName, ' -- ', lastName) AS x"),
-                    Filters.eq("id", 1));
-            final String pscExpected = "SELECT id FROM t UNION SELECT first_name AS \"firstName\", 'Item #1' AS s, CONCAT(first_name, ' -- ', last_name) AS x"
-                    + " FROM user_account WHERE id = ?";
-            final String plcExpected = "SELECT id FROM t UNION SELECT firstName, 'Item #1' AS s, CONCAT(firstName, ' -- ', lastName) AS x FROM user_account WHERE id = ?";
-
-            for (final Condition form : List.of(Filters.union(harmless), Criteria.builder().union(harmless).build())) {
-                final SP psc = PSC.select("id").from("t").append(form).build();
-                assertEquals(pscExpected, psc.query());
-                assertEquals(List.of(1), psc.parameters());
-                assertEquals(plcExpected, PLC.select("id").from("t").append(form).build().query());
-            }
-        }
-
-        // The toSql pre-check reads these items as one converted identifier ("##g.a_into_evil"), while the child builder emits
-        // "##g.a into evil AS ..." (on SQL Server "#t.a into evil"), a real SELECT ... INTO: only the check of the emitted
-        // operand rejects them, and the rejection is rolled back completely (select modifier and named-parameter state included).
-        @Test
-        void testSetOperationOperandOnlyTheEmittedTextRevealsIsRejected() {
-            final Dsl mssql = lexDialect(PSC, "Microsoft SQL Server");
-            final Object[][] postCheckOnly = { { PSC, "##g.a into evil" }, { NSC, "##g.a into evil" }, { PLC, "##g.a into evil" }, { mssql, "#t.a into evil" },
-                    { mssql, "#a into outfile '/x'" } };
-
-            for (final Object[] c : postCheckOnly) {
-                final Dsl dsl = (Dsl) c[0];
-                final String item = (String) c[1];
-                final SubQuery operand = new SubQuery("user_account", List.of(item), null);
-                assertFalse(operand.toSql(NamingPolicy.SNAKE_CASE).contains(" into "), operand.toSql(NamingPolicy.SNAKE_CASE));
-
-                for (final Condition form : List.of(Filters.union(operand), Criteria.builder().union(operand).build(),
-                        Criteria.builder().distinct().where(Filters.eq("id", 1)).unionAll(operand).build())) {
-                    final SqlBuilder builder = dsl.select("id").from("t");
-                    final String before = builder._sb.toString();
-                    final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> builder.append(form), item + " / " + form);
-                    // Judged on the emitted text, not on toSql's "..._into_evil".
-                    assertTrue(e.getMessage().contains(" into "), e.getMessage());
-                    assertEquals(before, builder._sb.toString());
-                    assertNull(builder._selectModifier);
-                    assertTrue(builder._parameters.isEmpty());
-                    assertEquals(dsl.select("id").from("t").where(Filters.eq("id", 2)).build().query(), builder.where(Filters.eq("id", 2)).build().query());
-                }
-            }
-        }
-
-        // Regression: a raw operand with bindings had its "?"s inlined as literals under RAW_SQL, but only the raw text was
-        // validated. Outside MySQL the gate reads the emitted literals under both string-escape conventions, as it does for
-        // union(String), so "'\''; DELETE FROM t; -- '" (a terminator under the backslash reading) is now rejected the same way.
-        @Test
-        void testRawSetOperationOperandWithInlinedBindingsIsValidatedAsEmitted() {
-            final String backslash = String.valueOf((char) 92);
-            final String value = backslash + "'; DELETE FROM t; -- ";
-            final String emittedOperand = "SELECT x FROM y WHERE p = '" + backslash + "''; DELETE FROM t; -- '";
-
-            for (final String product : List.of("PostgreSQL", "Oracle", "H2", "Microsoft SQL Server", "SQLite")) {
-                final Dsl raw = lexDialect(SCSB, product);
-                final SubQuery operand = Filters.subQuery("SELECT x FROM y WHERE p = ?", List.of(value));
-
-                for (final Condition form : List.of(Filters.union(operand), Criteria.builder().union(operand).build(),
-                        Criteria.builder().distinct().unionAll(operand).build())) {
-                    final SqlBuilder builder = raw.select("id").from("t");
-                    assertThrows(IllegalArgumentException.class, () -> builder.append(form), product + " / " + form);
-                    assertEquals("SELECT id FROM t", builder._sb.toString());
-                    assertNull(builder._selectModifier);
-                }
-
-                // Same verdict as the string spelling of the emitted operand.
-                assertThrows(IllegalArgumentException.class, () -> raw.select("id").from("t").union(emittedOperand));
-            }
-
-            // With placeholders kept, nothing is inlined, so the bound value cannot change the statement.
-            final SP bound = PSC.select("id").from("t").append(Filters.union(Filters.subQuery("SELECT x FROM y WHERE p = ?", List.of(value)))).build();
-            assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = ?", bound.query());
-            assertEquals(List.of(value), bound.parameters());
-
-            // A harmless raw operand with bindings is accepted under every SQL policy, its literals included.
-            final SubQuery harmless = Filters.subQuery("SELECT x FROM y WHERE p = ? AND q = ?", List.of("a;b -- c /* d", 7));
-            assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = ? AND q = ?",
-                    PSC.select("id").from("t").append(Filters.union(harmless)).build().query());
-            assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = :param AND q = :param_2",
-                    NSC.select("id").from("t").append(Filters.union(harmless)).build().query());
-            assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = #{param} AND q = #{param_2}",
-                    MSC.select("id").from("t").append(Criteria.builder().union(harmless).build()).build().query());
-
-            for (final Dsl raw : List.of(SCSB, lexDialect(SCSB, "PostgreSQL"), lexDialect(SCSB, "MySQL"), lexDialect(SCSB, "Microsoft SQL Server"))) {
-                assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = 'a;b -- c /* d' AND q = 7",
-                        raw.select("id").from("t").append(Filters.union(harmless)).build().query());
-                assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = 'a;b -- c /* d' AND q = 7",
-                        raw.select("id").from("t").append(Criteria.builder().union(harmless).build()).build().query());
-            }
         }
 
         // Covers the single-pass child-placeholder rename (planned renames applied at once): many colliding names next to
@@ -6230,6 +6110,53 @@ public class AbstractQueryBuilderTest extends TestBase {
             }
         }
 
+        // Regression: a raw operand with bindings had its "?"s inlined as literals under RAW_SQL, but only the raw text was
+        // validated. Outside MySQL the gate reads the emitted literals under both string-escape conventions, as it does for
+        // union(String), so "'\''; DELETE FROM t; -- '" (a terminator under the backslash reading) is now rejected the same way.
+        @Test
+        void testRawSetOperationOperandWithInlinedBindingsIsValidatedAsEmitted() {
+            final String backslash = String.valueOf((char) 92);
+            final String value = backslash + "'; DELETE FROM t; -- ";
+            final String emittedOperand = "SELECT x FROM y WHERE p = '" + backslash + "''; DELETE FROM t; -- '";
+
+            for (final String product : List.of("PostgreSQL", "Oracle", "H2", "Microsoft SQL Server", "SQLite")) {
+                final Dsl raw = lexDialect(SCSB, product);
+                final SubQuery operand = Filters.subQuery("SELECT x FROM y WHERE p = ?", List.of(value));
+
+                for (final Condition form : List.of(Filters.union(operand), Criteria.builder().union(operand).build(),
+                        Criteria.builder().distinct().unionAll(operand).build())) {
+                    final SqlBuilder builder = raw.select("id").from("t");
+                    assertThrows(IllegalArgumentException.class, () -> builder.append(form), product + " / " + form);
+                    assertEquals("SELECT id FROM t", builder._sb.toString());
+                    assertNull(builder._selectModifier);
+                }
+
+                // Same verdict as the string spelling of the emitted operand.
+                assertThrows(IllegalArgumentException.class, () -> raw.select("id").from("t").union(emittedOperand));
+            }
+
+            // With placeholders kept, nothing is inlined, so the bound value cannot change the statement.
+            final SP bound = PSC.select("id").from("t").append(Filters.union(Filters.subQuery("SELECT x FROM y WHERE p = ?", List.of(value)))).build();
+            assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = ?", bound.query());
+            assertEquals(List.of(value), bound.parameters());
+
+            // A harmless raw operand with bindings is accepted under every SQL policy, its literals included.
+            final SubQuery harmless = Filters.subQuery("SELECT x FROM y WHERE p = ? AND q = ?", List.of("a;b -- c /* d", 7));
+            assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = ? AND q = ?",
+                    PSC.select("id").from("t").append(Filters.union(harmless)).build().query());
+            assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = :param AND q = :param_2",
+                    NSC.select("id").from("t").append(Filters.union(harmless)).build().query());
+            assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = #{param} AND q = #{param_2}",
+                    MSC.select("id").from("t").append(Criteria.builder().union(harmless).build()).build().query());
+
+            for (final Dsl raw : List.of(SCSB, lexDialect(SCSB, "PostgreSQL"), lexDialect(SCSB, "MySQL"), lexDialect(SCSB, "Microsoft SQL Server"))) {
+                assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = 'a;b -- c /* d' AND q = 7",
+                        raw.select("id").from("t").append(Filters.union(harmless)).build().query());
+                assertEquals("SELECT id FROM t UNION SELECT x FROM y WHERE p = 'a;b -- c /* d' AND q = 7",
+                        raw.select("id").from("t").append(Criteria.builder().union(harmless).build()).build().query());
+            }
+        }
+
         @Test
         void testRawSqlInlinedNegativeBindingAfterMinusDoesNotFormLineComment() {
             final String sql = SCSB.select("id")
@@ -6331,6 +6258,36 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals(Arrays.asList(1, "OPEN", 2), sp.parameters());
         }
 
+        // The toSql pre-check reads these items as one converted identifier ("##g.a_into_evil"), while the child builder emits
+        // "##g.a into evil AS ..." (on SQL Server "#t.a into evil"), a real SELECT ... INTO: only the check of the emitted
+        // operand rejects them, and the rejection is rolled back completely (select modifier and named-parameter state included).
+        @Test
+        void testSetOperationOperandOnlyTheEmittedTextRevealsIsRejected() {
+            final Dsl mssql = lexDialect(PSC, "Microsoft SQL Server");
+            final Object[][] postCheckOnly = { { PSC, "##g.a into evil" }, { NSC, "##g.a into evil" }, { PLC, "##g.a into evil" }, { mssql, "#t.a into evil" },
+                    { mssql, "#a into outfile '/x'" } };
+
+            for (final Object[] c : postCheckOnly) {
+                final Dsl dsl = (Dsl) c[0];
+                final String item = (String) c[1];
+                final SubQuery operand = new SubQuery("user_account", List.of(item), null);
+                assertFalse(operand.toSql(NamingPolicy.SNAKE_CASE).contains(" into "), operand.toSql(NamingPolicy.SNAKE_CASE));
+
+                for (final Condition form : List.of(Filters.union(operand), Criteria.builder().union(operand).build(),
+                        Criteria.builder().distinct().where(Filters.eq("id", 1)).unionAll(operand).build())) {
+                    final SqlBuilder builder = dsl.select("id").from("t");
+                    final String before = builder._sb.toString();
+                    final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> builder.append(form), item + " / " + form);
+                    // Judged on the emitted text, not on toSql's "..._into_evil".
+                    assertTrue(e.getMessage().contains(" into "), e.getMessage());
+                    assertEquals(before, builder._sb.toString());
+                    assertNull(builder._selectModifier);
+                    assertTrue(builder._parameters.isEmpty());
+                    assertEquals(dsl.select("id").from("t").where(Filters.eq("id", 2)).build().query(), builder.where(Filters.eq("id", 2)).build().query());
+                }
+            }
+        }
+
         @Test
         void testSetOperationRejectsStatementTerminatorsWithoutChangingParent() {
             for (final String query : new String[] { "SELECT id FROM archived_users;", "SELECT id FROM archived_users; SELECT id FROM another_table",
@@ -6385,6 +6342,49 @@ public class AbstractQueryBuilderTest extends TestBase {
         void testSetWithEntityObjectNullThrowsIllegalArgumentException() {
             assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) null));
             assertThrows(IllegalArgumentException.class, () -> PSC.update("account").set((Object) null, null));
+        }
+
+        // Regression: an INTO item of a structured set-operation operand was accepted. These items are now caught by the toSql
+        // pre-check (SubQuery.toSql renders them verbatim); testSetOperationOperandOnlyTheEmittedTextRevealsIsRejected covers the
+        // items only the emitted-text check catches.
+        @Test
+        void testStructuredSetOperationOperandIsValidatedAsEmitted() {
+            final List<String> unsafeItems = List.of("first_name into outfile '/tmp/#f'", "first_name into dumpfile '/tmp/--x'", "'#' into @v",
+                    "first_name into outfile '/tmp/f'");
+
+            for (final Dsl dsl : new Dsl[] { PSC, PLC }) {
+                for (final String item : unsafeItems) {
+                    final SubQuery operand = new SubQuery("user_account", List.of(item), null);
+                    final List<Condition> forms = List.of(Filters.union(operand), Filters.unionAll(operand), Filters.intersect(operand),
+                            Filters.except(operand), Filters.minus(operand), Criteria.builder().union(operand).build(),
+                            Criteria.builder().unionAll(operand).build(), Criteria.builder().where(Filters.eq("id", 1)).except(operand).build(),
+                            Criteria.builder().distinct().union(operand).build());
+
+                    for (final Condition form : forms) {
+                        final SqlBuilder builder = dsl.select("id").from("t");
+                        assertThrows(IllegalArgumentException.class, () -> builder.append(form), item + " / " + form);
+                        assertThrows(IllegalArgumentException.class, () -> builder.appendIf(true, form), item + " / " + form);
+                        // Rolled back completely: the builder stays usable.
+                        assertEquals("SELECT id FROM t", builder._sb.toString());
+                        assertTrue(builder._parameters.isEmpty());
+                        assertEquals("SELECT id FROM t WHERE id = ?", builder.where(Filters.eq("id", 2)).build().query());
+                    }
+                }
+            }
+
+            // Harmless structured operands, including comment characters inside literals, render as before.
+            final SubQuery harmless = new SubQuery("user_account", List.of("firstName", "'Item #1' AS s", "CONCAT(firstName, ' -- ', lastName) AS x"),
+                    Filters.eq("id", 1));
+            final String pscExpected = "SELECT id FROM t UNION SELECT first_name AS \"firstName\", 'Item #1' AS s, CONCAT(first_name, ' -- ', last_name) AS x"
+                    + " FROM user_account WHERE id = ?";
+            final String plcExpected = "SELECT id FROM t UNION SELECT firstName, 'Item #1' AS s, CONCAT(firstName, ' -- ', lastName) AS x FROM user_account WHERE id = ?";
+
+            for (final Condition form : List.of(Filters.union(harmless), Criteria.builder().union(harmless).build())) {
+                final SP psc = PSC.select("id").from("t").append(form).build();
+                assertEquals(pscExpected, psc.query());
+                assertEquals(List.of(1), psc.parameters());
+                assertEquals(plcExpected, PLC.select("id").from("t").append(form).build().query());
+            }
         }
 
         @Test
@@ -6728,116 +6728,6 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertClosedFirst(builder -> builder.accept((Throwables.BiConsumer<String, java.util.List<Object>, RuntimeException>) null));
         }
 
-        // Regression: an unterminated "/*" in table text, a select modifier, a derived-table alias or an appended fragment
-        // commented out every later clause (SQLite reads it to the end of input, silently dropping the WHERE). Each entry
-        // point now rejects it, as join(String) does.
-        @Test
-        void testUnterminatedBlockCommentInRawTextIsRejected() {
-            final Condition idEq = Filters.eq("id", 1);
-
-            assertEquals("expr must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("t /* x")).getMessage());
-            assertEquals("expr must not contain an unterminated block comment: a JOIN t ON a.id = t.id /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a JOIN t ON a.id = t.id /* x")).getMessage());
-            assertEquals("tableNames[1] must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a", "t /* x")).getMessage());
-            // Each table reference is checked on its own, so a comment cannot span two of them.
-            assertEquals("tableNames[0] must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(List.of("t /* x", "y */ u"))).getMessage());
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("t /* x", Account.class));
-            assertThrows(IllegalArgumentException.class, () -> PSC.selectCountFrom("t /* x"));
-            assertEquals("tableName must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.update("t /* x").set("a", 1)).getMessage());
-            assertEquals("tableName must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom("t /* x").where(idEq)).getMessage());
-            assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom("t /* x").build());
-            assertEquals("tableName must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into("t /* x")).getMessage());
-            assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into("t /* x", Account.class));
-            assertEquals("tableName must not contain an unterminated block comment: t2 /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("a").into("t2 /* x")).getMessage());
-            // An entity's @Table name is not seen by Dsl's eager table-name check: the backstop at UPDATE/DELETE statement
-            // initialization rejects it.
-            final String openEntityTable = "tableName must not contain an unterminated block comment: open_comment_table /* x";
-            assertEquals(openEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom(OpenCommentTableEntity.class).where(idEq)).getMessage());
-            assertEquals(openEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom(OpenCommentTableEntity.class).build()).getMessage());
-            assertEquals(openEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.update(OpenCommentTableEntity.class).where(idEq)).getMessage());
-            // The entity join overloads emit the same @Table names: an open block comment is rejected before anything is
-            // written, and so is a trailing line comment, which would swallow the alias or the clauses after the join.
-            assertEquals(openEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").join(OpenCommentTableEntity.class)).getMessage());
-            assertEquals(openEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").leftJoin(OpenCommentTableEntity.class, "o")).getMessage());
-            assertEquals(openEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").crossJoin(OpenCommentTableEntity.class)).getMessage());
-            assertEquals(openEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").naturalJoin(OpenCommentTableEntity.class, "o")).getMessage());
-            final SqlBuilder rejectedJoin = PSC.select("id").from("t");
-            assertThrows(IllegalArgumentException.class, () -> rejectedJoin.innerJoin(OpenCommentTableEntity.class, "o"));
-            assertEquals("SELECT id FROM t", rejectedJoin.build().query());
-            final String lineEntityTable = "tableName must not end inside a line comment: line_comment_table -- x";
-            assertEquals(lineEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> SCSB.select("id").from("t").crossJoin(LineCommentTableEntity.class, "o")).getMessage());
-            assertEquals(lineEntityTable,
-                    assertThrows(IllegalArgumentException.class, () -> SCSB.select("id").from("t").join(LineCommentTableEntity.class, "o")).getMessage());
-            assertEquals("selectModifier must not contain an unterminated block comment: TOP 1 /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").selectModifier("TOP 1 /* x")).getMessage());
-            assertEquals("alias must not contain an unterminated block comment: s /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from(PSC.select("id").from("t"), "s /* x")).getMessage());
-            assertEquals("expr must not contain an unterminated block comment: /* x",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").append("/* x")).getMessage());
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").appendIf(true, "/* x"));
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").appendIfOrElse(false, "/* x */", "/* x"));
-
-            // An input that is also invalid elsewhere keeps the earlier message (the staged columns were supplied first).
-            assertEquals("SQL comment token is not allowed in SQL expression: a -- b",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.select("a -- b").from("t /* x")).getMessage());
-            assertEquals("SQL comment token is not allowed in column expression: a -- b",
-                    assertThrows(IllegalArgumentException.class, () -> PSC.insert("a -- b").into("t /* x")).getMessage());
-
-            // A rejection leaves the builder (and a derived-table child) reusable.
-            final SqlBuilder select = PSC.select("id");
-            assertThrows(IllegalArgumentException.class, () -> select.from("t /* x"));
-            assertEquals("SELECT id FROM t WHERE id = ?", select.from("t").where(idEq).build().query());
-            final SqlBuilder insert = PSC.insert("a");
-            assertThrows(IllegalArgumentException.class, () -> insert.into("t /* x"));
-            assertEquals("INSERT INTO t (a) VALUES (?)", insert.into("t").build().query());
-            final SqlBuilder child = PSC.select("id").from("t");
-            assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from(child, "s /* x"));
-            assertEquals("SELECT id FROM t", child.build().query());
-            // A rejected append(String) also undoes the statement prefix it rendered first: after update(Class) that prefix
-            // includes the staged SET list, which a following set(...) would not render.
-            final SqlBuilder update = PSC.update(Account.class);
-            assertThrows(IllegalArgumentException.class, () -> update.append("/* x"));
-            assertEquals("", update._sb.toString());
-            assertEquals(PSC.update(Account.class).set("firstName", "x").where(idEq).build().query(), update.set("firstName", "x").where(idEq).build().query());
-            final SqlBuilder delete = PSC.deleteFrom("t");
-            assertThrows(IllegalArgumentException.class, () -> delete.append("/* x"));
-            assertEquals("", delete._sb.toString());
-            assertEquals("DELETE FROM t WHERE id = ?", delete.where(idEq).build().query());
-            // A statement init rejects keeps init's message.
-            assertEquals("set() must be called to specify the columns to update before building an UPDATE statement",
-                    assertThrows(IllegalStateException.class, () -> PSC.update("t").append("/* x")).getMessage());
-            assertThrows(IllegalStateException.class, () -> PSC.select("id").append("/* x"));
-
-            // Terminated comments, a quoted "/*" and a "/*" inside a line comment are accepted unchanged.
-            assertEquals("SELECT * FROM t /* x */ u WHERE id = ?", PSC.select("*").from("t /* x */ u").where(idEq).build().query());
-            assertEquals("SELECT * FROM t /* x */, u WHERE id = ?", PSC.select("*").from(List.of("t /* x */", "u")).where(idEq).build().query());
-            assertEquals("SELECT * FROM \"t/*\" WHERE id = ?", PSC.select("*").from("\"t/*\"").where(idEq).build().query());
-            assertEquals("SELECT * FROM t -- /* x\n WHERE id = ?", PSC.select("*").from("t -- /* x").where(idEq).build().query());
-            assertEquals("SELECT count(*) FROM t /* x */ WHERE id = ?", PSC.selectCountFrom("t /* x */").where(idEq).build().query());
-            assertEquals("UPDATE t /* x */ SET a = ? WHERE id = ?", PSC.update("t /* x */").set("a", 1).where(idEq).build().query());
-            assertEquals("DELETE FROM t /* x */ WHERE id = ?", PSC.deleteFrom("t /* x */").where(idEq).build().query());
-            assertEquals("INSERT INTO t /* x */ (a) VALUES (?)", PSC.insert("a").into("t /* x */").build().query());
-            assertEquals("SELECT TOP 1 /* x */ id FROM t", PSC.select("id").selectModifier("TOP 1 /* x */").from("t").build().query());
-            assertEquals("SELECT id FROM (SELECT id FROM t) s /* x */ WHERE id = ?",
-                    PSC.select("id").from(PSC.select("id").from("t"), "s /* x */").where(idEq).build().query());
-            assertEquals("SELECT id FROM t /* x */ WHERE id = ?", PSC.select("id").from("t").append("/* x */").where(idEq).build().query());
-        }
-
         // Regression: an entity's @Table name ending in a line comment let the comment swallow the alias ("FROM line_comment_table -- x o"),
         // and ending that comment with a line feed before the alias instead could leave the alias as the table (MySQL read "FROM #tmp",
         // line feed, "h" as "FROM h"). Such a name is now rejected by every entity FROM/JOIN path, leaving the builder unchanged; ordinary
@@ -7054,6 +6944,116 @@ public class AbstractQueryBuilderTest extends TestBase {
             builder.appendIf(false, (Condition) null).appendIf(false, (String) null);
             builder.appendIfOrElse(true, "WHERE id = 1", (String) null);
             assertEquals("SELECT id FROM account WHERE id = 1", builder.build().query());
+        }
+
+        // Regression: an unterminated "/*" in table text, a select modifier, a derived-table alias or an appended fragment
+        // commented out every later clause (SQLite reads it to the end of input, silently dropping the WHERE). Each entry
+        // point now rejects it, as join(String) does.
+        @Test
+        void testUnterminatedBlockCommentInRawTextIsRejected() {
+            final Condition idEq = Filters.eq("id", 1);
+
+            assertEquals("expr must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("t /* x")).getMessage());
+            assertEquals("expr must not contain an unterminated block comment: a JOIN t ON a.id = t.id /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a JOIN t ON a.id = t.id /* x")).getMessage());
+            assertEquals("tableNames[1] must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("a", "t /* x")).getMessage());
+            // Each table reference is checked on its own, so a comment cannot span two of them.
+            assertEquals("tableNames[0] must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(List.of("t /* x", "y */ u"))).getMessage());
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from("t /* x", Account.class));
+            assertThrows(IllegalArgumentException.class, () -> PSC.selectCountFrom("t /* x"));
+            assertEquals("tableName must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.update("t /* x").set("a", 1)).getMessage());
+            assertEquals("tableName must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom("t /* x").where(idEq)).getMessage());
+            assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom("t /* x").build());
+            assertEquals("tableName must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into("t /* x")).getMessage());
+            assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into("t /* x", Account.class));
+            assertEquals("tableName must not contain an unterminated block comment: t2 /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("a").into("t2 /* x")).getMessage());
+            // An entity's @Table name is not seen by Dsl's eager table-name check: the backstop at UPDATE/DELETE statement
+            // initialization rejects it.
+            final String openEntityTable = "tableName must not contain an unterminated block comment: open_comment_table /* x";
+            assertEquals(openEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom(OpenCommentTableEntity.class).where(idEq)).getMessage());
+            assertEquals(openEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom(OpenCommentTableEntity.class).build()).getMessage());
+            assertEquals(openEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.update(OpenCommentTableEntity.class).where(idEq)).getMessage());
+            // The entity join overloads emit the same @Table names: an open block comment is rejected before anything is
+            // written, and so is a trailing line comment, which would swallow the alias or the clauses after the join.
+            assertEquals(openEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").join(OpenCommentTableEntity.class)).getMessage());
+            assertEquals(openEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").leftJoin(OpenCommentTableEntity.class, "o")).getMessage());
+            assertEquals(openEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").crossJoin(OpenCommentTableEntity.class)).getMessage());
+            assertEquals(openEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").naturalJoin(OpenCommentTableEntity.class, "o")).getMessage());
+            final SqlBuilder rejectedJoin = PSC.select("id").from("t");
+            assertThrows(IllegalArgumentException.class, () -> rejectedJoin.innerJoin(OpenCommentTableEntity.class, "o"));
+            assertEquals("SELECT id FROM t", rejectedJoin.build().query());
+            final String lineEntityTable = "tableName must not end inside a line comment: line_comment_table -- x";
+            assertEquals(lineEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> SCSB.select("id").from("t").crossJoin(LineCommentTableEntity.class, "o")).getMessage());
+            assertEquals(lineEntityTable,
+                    assertThrows(IllegalArgumentException.class, () -> SCSB.select("id").from("t").join(LineCommentTableEntity.class, "o")).getMessage());
+            assertEquals("selectModifier must not contain an unterminated block comment: TOP 1 /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").selectModifier("TOP 1 /* x")).getMessage());
+            assertEquals("alias must not contain an unterminated block comment: s /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from(PSC.select("id").from("t"), "s /* x")).getMessage());
+            assertEquals("expr must not contain an unterminated block comment: /* x",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").append("/* x")).getMessage());
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").appendIf(true, "/* x"));
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("t").appendIfOrElse(false, "/* x */", "/* x"));
+
+            // An input that is also invalid elsewhere keeps the earlier message (the staged columns were supplied first).
+            assertEquals("SQL comment token is not allowed in SQL expression: a -- b",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.select("a -- b").from("t /* x")).getMessage());
+            assertEquals("SQL comment token is not allowed in column expression: a -- b",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.insert("a -- b").into("t /* x")).getMessage());
+
+            // A rejection leaves the builder (and a derived-table child) reusable.
+            final SqlBuilder select = PSC.select("id");
+            assertThrows(IllegalArgumentException.class, () -> select.from("t /* x"));
+            assertEquals("SELECT id FROM t WHERE id = ?", select.from("t").where(idEq).build().query());
+            final SqlBuilder insert = PSC.insert("a");
+            assertThrows(IllegalArgumentException.class, () -> insert.into("t /* x"));
+            assertEquals("INSERT INTO t (a) VALUES (?)", insert.into("t").build().query());
+            final SqlBuilder child = PSC.select("id").from("t");
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from(child, "s /* x"));
+            assertEquals("SELECT id FROM t", child.build().query());
+            // A rejected append(String) also undoes the statement prefix it rendered first: after update(Class) that prefix
+            // includes the staged SET list, which a following set(...) would not render.
+            final SqlBuilder update = PSC.update(Account.class);
+            assertThrows(IllegalArgumentException.class, () -> update.append("/* x"));
+            assertEquals("", update._sb.toString());
+            assertEquals(PSC.update(Account.class).set("firstName", "x").where(idEq).build().query(), update.set("firstName", "x").where(idEq).build().query());
+            final SqlBuilder delete = PSC.deleteFrom("t");
+            assertThrows(IllegalArgumentException.class, () -> delete.append("/* x"));
+            assertEquals("", delete._sb.toString());
+            assertEquals("DELETE FROM t WHERE id = ?", delete.where(idEq).build().query());
+            // A statement init rejects keeps init's message.
+            assertEquals("set() must be called to specify the columns to update before building an UPDATE statement",
+                    assertThrows(IllegalStateException.class, () -> PSC.update("t").append("/* x")).getMessage());
+            assertThrows(IllegalStateException.class, () -> PSC.select("id").append("/* x"));
+
+            // Terminated comments, a quoted "/*" and a "/*" inside a line comment are accepted unchanged.
+            assertEquals("SELECT * FROM t /* x */ u WHERE id = ?", PSC.select("*").from("t /* x */ u").where(idEq).build().query());
+            assertEquals("SELECT * FROM t /* x */, u WHERE id = ?", PSC.select("*").from(List.of("t /* x */", "u")).where(idEq).build().query());
+            assertEquals("SELECT * FROM \"t/*\" WHERE id = ?", PSC.select("*").from("\"t/*\"").where(idEq).build().query());
+            assertEquals("SELECT * FROM t -- /* x\n WHERE id = ?", PSC.select("*").from("t -- /* x").where(idEq).build().query());
+            assertEquals("SELECT count(*) FROM t /* x */ WHERE id = ?", PSC.selectCountFrom("t /* x */").where(idEq).build().query());
+            assertEquals("UPDATE t /* x */ SET a = ? WHERE id = ?", PSC.update("t /* x */").set("a", 1).where(idEq).build().query());
+            assertEquals("DELETE FROM t /* x */ WHERE id = ?", PSC.deleteFrom("t /* x */").where(idEq).build().query());
+            assertEquals("INSERT INTO t /* x */ (a) VALUES (?)", PSC.insert("a").into("t /* x */").build().query());
+            assertEquals("SELECT TOP 1 /* x */ id FROM t", PSC.select("id").selectModifier("TOP 1 /* x */").from("t").build().query());
+            assertEquals("SELECT id FROM (SELECT id FROM t) s /* x */ WHERE id = ?",
+                    PSC.select("id").from(PSC.select("id").from("t"), "s /* x */").where(idEq).build().query());
+            assertEquals("SELECT id FROM t /* x */ WHERE id = ?", PSC.select("id").from("t").append("/* x */").where(idEq).build().query());
         }
 
         private static void assertClosedFirst(final Consumer<SqlBuilder> operation) {

@@ -129,13 +129,6 @@ public class IntersectTest extends TestBase {
     }
 
     @Test
-    void testGetOperator() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Intersect intersect = new Intersect(subQuery);
-        assertEquals(Operator.INTERSECT, intersect.operator());
-    }
-
-    @Test
     void testHashCode() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");

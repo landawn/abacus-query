@@ -118,13 +118,6 @@ public class MinusTest extends TestBase {
     }
 
     @Test
-    void testGetOperator() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Minus minus = new Minus(subQuery);
-        assertEquals(Operator.MINUS, minus.operator());
-    }
-
-    @Test
     void testHashCode() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");

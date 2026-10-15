@@ -8940,6 +8940,29 @@ public class DslTest extends TestBase {
             assertTrue(assertThrows(IllegalArgumentException.class, () -> Dsl.forDialect(null)).getMessage().contains(cs.sqlDialect));
         }
 
+        // renderCondition documents the H2 rejection of a "//" line comment in a condition-layer GROUP BY / ORDER BY expression,
+        // reached directly, through a Criteria, and through a structured sub-query; other dialects render the same conditions.
+        @Test
+        void testRenderConditionRejectsH2DoubleSlashSortKey() {
+            final Dsl h2 = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("H2")).build());
+            final Dsl postgres = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+            final Condition orderBy = Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC);
+            final Condition criteria = com.landawn.abacus.query.condition.Criteria.builder().where(Filters.eq("x", 1)).groupBy("g // c").build();
+            final Condition subQuery = Filters.in("id",
+                    Filters.subQuery("u", List.of("id"), com.landawn.abacus.query.condition.Criteria.builder().orderBy("a // c").build()));
+
+            assertEquals("SQL comment token is not allowed in ORDER BY expression: a // c DESC, b ASC",
+                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(orderBy)).getMessage());
+            assertEquals("SQL comment token is not allowed in GROUP BY expression: g // c",
+                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(criteria, null)).getMessage());
+            assertEquals("SQL comment token is not allowed in ORDER BY expression: a // c",
+                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(subQuery)).getMessage());
+
+            assertEquals("ORDER BY a // c DESC, b ASC", postgres.renderCondition(orderBy).build().query());
+            assertEquals("WHERE x = ? GROUP BY g // c", postgres.renderCondition(criteria, null).build().query());
+            assertEquals("id IN (SELECT id FROM u ORDER BY a // c)", postgres.renderCondition(subQuery).build().query());
+        }
+
         // The UPDATE/DELETE target table name is rejected by the factory call itself, before any clause is staged, so an
         // open block comment cannot swallow the SET/WHERE clauses rendered after it.
         @Test
@@ -8967,29 +8990,6 @@ public class DslTest extends TestBase {
             assertEquals("UPDATE t /* x */ SET a = ?", PSC.update("t /* x */").set("a").build().query());
             assertEquals("DELETE FROM \"t/*x\"", PSC.deleteFrom("\"t/*x\"").build().query());
             assertEquals("DELETE FROM t", PSC.deleteFrom("t", com.landawn.abacus.query.entity.Account.class).build().query());
-        }
-
-        // renderCondition documents the H2 rejection of a "//" line comment in a condition-layer GROUP BY / ORDER BY expression,
-        // reached directly, through a Criteria, and through a structured sub-query; other dialects render the same conditions.
-        @Test
-        void testRenderConditionRejectsH2DoubleSlashSortKey() {
-            final Dsl h2 = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("H2")).build());
-            final Dsl postgres = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
-            final Condition orderBy = Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC);
-            final Condition criteria = com.landawn.abacus.query.condition.Criteria.builder().where(Filters.eq("x", 1)).groupBy("g // c").build();
-            final Condition subQuery = Filters.in("id",
-                    Filters.subQuery("u", List.of("id"), com.landawn.abacus.query.condition.Criteria.builder().orderBy("a // c").build()));
-
-            assertEquals("SQL comment token is not allowed in ORDER BY expression: a // c DESC, b ASC",
-                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(orderBy)).getMessage());
-            assertEquals("SQL comment token is not allowed in GROUP BY expression: g // c",
-                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(criteria, null)).getMessage());
-            assertEquals("SQL comment token is not allowed in ORDER BY expression: a // c",
-                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(subQuery)).getMessage());
-
-            assertEquals("ORDER BY a // c DESC, b ASC", postgres.renderCondition(orderBy).build().query());
-            assertEquals("WHERE x = ? GROUP BY g // c", postgres.renderCondition(criteria, null).build().query());
-            assertEquals("id IN (SELECT id FROM u ORDER BY a // c)", postgres.renderCondition(subQuery).build().query());
         }
     }
 

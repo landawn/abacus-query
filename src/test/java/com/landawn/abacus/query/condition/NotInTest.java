@@ -326,6 +326,24 @@ public class NotInTest extends TestBase {
         assertEquals("archived", params.get(1));
     }
 
+    // Characterisation (R16-01/R16-02): positional rejection messages are unchanged and an all-scalar NOT IN
+    // list exposes its membership values as the memoized, unmodifiable parameter list.
+    @Test
+    void testPositionalRejectionMessagesAndScalarParameterReuse() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new NotIn("id", Arrays.asList(1, null)));
+        assertEquals("values must not contain null elements; null found at index 1", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new NotIn("id", Arrays.asList(Filters.eq("a", 1), 2)));
+        assertTrue(ex.getMessage().startsWith("values[0] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+
+        final NotIn condition = new NotIn("id", Arrays.asList(1, 2, 3));
+        assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
+        assertEquals(condition.values(), condition.parameters());
+        assertTrue(condition.parameters() == condition.parameters());
+        assertThrows(UnsupportedOperationException.class, () -> condition.parameters().add(4));
+        assertEquals("id NOT IN (1, 2, 3)", condition.toString());
+    }
+
     @Test
     void testRowValueConstructor_AllowsSinglePropName() {
         NotIn condition = new NotIn(Arrays.asList("a"), Arrays.asList(Arrays.asList(1), Arrays.asList(2)));
@@ -432,23 +450,5 @@ public class NotInTest extends TestBase {
         assertTrue(notIn.values().contains("two"));
         assertTrue(notIn.values().contains(3.0));
         assertTrue(notIn.values().contains(true));
-    }
-
-    // Characterisation (R16-01/R16-02): positional rejection messages are unchanged and an all-scalar NOT IN
-    // list exposes its membership values as the memoized, unmodifiable parameter list.
-    @Test
-    void testPositionalRejectionMessagesAndScalarParameterReuse() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new NotIn("id", Arrays.asList(1, null)));
-        assertEquals("values must not contain null elements; null found at index 1", ex.getMessage());
-
-        ex = assertThrows(IllegalArgumentException.class, () -> new NotIn("id", Arrays.asList(Filters.eq("a", 1), 2)));
-        assertTrue(ex.getMessage().startsWith("values[0] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
-
-        final NotIn condition = new NotIn("id", Arrays.asList(1, 2, 3));
-        assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
-        assertEquals(condition.values(), condition.parameters());
-        assertTrue(condition.parameters() == condition.parameters());
-        assertThrows(UnsupportedOperationException.class, () -> condition.parameters().add(4));
-        assertEquals("id NOT IN (1, 2, 3)", condition.toString());
     }
 }

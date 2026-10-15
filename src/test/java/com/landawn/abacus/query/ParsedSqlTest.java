@@ -84,6 +84,247 @@ public class ParsedSqlTest extends TestBase {
             assertEquals(3, second.parameterCount());
         }
 
+        // Characterisation: cache hits are served from a lock-free mirror in front of the pool; every thread must still see the one pooled instance.
+        @Test
+        void testParse_cachedInstanceIsSharedAcrossThreads() throws Exception {
+            final String[] sqls = new String[8];
+            final ParsedSql[] expected = new ParsedSql[sqls.length];
+
+            for (int i = 0; i < sqls.length; i++) {
+                sqls[i] = "SELECT * FROM shared_cache_t WHERE id = :id AND k = " + i + " AND x IN (:xs)";
+                expected[i] = ParsedSql.parse(sqls[i]);
+            }
+
+            final int threads = 8;
+            final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(threads);
+            final java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
+            final List<java.util.concurrent.Future<Boolean>> results = new ArrayList<>();
+
+            try {
+                for (int t = 0; t < threads; t++) {
+                    final int offset = t;
+                    results.add(executor.submit(() -> {
+                        start.await();
+
+                        for (int i = 0; i < 20_000; i++) {
+                            final int k = (i + offset) % sqls.length;
+
+                            if (ParsedSql.parse(sqls[k]) != expected[k]) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }));
+                }
+
+                start.countDown();
+
+                for (final java.util.concurrent.Future<Boolean> result : results) {
+                    assertTrue(result.get(60, java.util.concurrent.TimeUnit.SECONDS), "every thread must get the cached instance");
+                }
+            } finally {
+                executor.shutdownNow();
+            }
+
+            assertEquals(List.of("id", "xs"), expected[0].namedParameters());
+            assertEquals("SELECT * FROM shared_cache_t WHERE id = ? AND k = 0 AND x IN (?)", expected[0].parameterizedSql());
+        }
+
+        // Once the cache is closed (JVM shutdown), its front keeps serving the entries already mirrored, while new SQL is parsed uncached and not mirrored.
+        @Test
+        void testParse_cacheFrontAfterCacheClosedServesExistingEntriesOnly() {
+            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(16, 60_000);
+            final java.util.concurrent.ConcurrentMap<String, ParsedSql> front = new java.util.concurrent.ConcurrentHashMap<>();
+            final String cachedSql = "SELECT * FROM front_closed_t WHERE id = :id";
+            final ParsedSql cached;
+
+            try {
+                cached = ParsedSql.parse(cachedSql, cache, front);
+                assertSame(cached, front.get(cachedSql));
+            } finally {
+                cache.close();
+            }
+
+            assertTrue(cache.isClosed());
+            assertSame(cached, ParsedSql.parse(cachedSql, cache, front));
+
+            final String newSql = "SELECT * FROM front_closed_t WHERE name = :name";
+            final ParsedSql first = ParsedSql.parse(newSql, cache, front);
+            assertEquals(List.of("name"), first.namedParameters());
+            assertNotSame(first, ParsedSql.parse(newSql, cache, front));
+            assertEquals(first, ParsedSql.parse(newSql, cache, front));
+            assertNull(front.get(newSql));
+            assertEquals(1, front.size());
+        }
+
+        // The lock-free mirror only holds instances the pool admitted and is bounded by the pool's capacity (cleared wholesale when full).
+        @Test
+        void testParse_cacheFrontNeverExceedsPoolCapacity() throws Exception {
+            final int capacity = 32;
+            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(capacity, 60_000);
+            final java.util.concurrent.ConcurrentMap<String, ParsedSql> front = new java.util.concurrent.ConcurrentHashMap<>();
+
+            try {
+                assertEquals(capacity, cache.capacity());
+
+                // Mirrored after a successful pool insertion, and again after a pool hit once the mirror was dropped.
+                final String sql = "SELECT * FROM front_t WHERE id = :id";
+                final ParsedSql first = ParsedSql.parse(sql, cache, front);
+                assertSame(first, front.get(sql));
+                assertSame(first, ParsedSql.parse(sql, cache, front));
+                front.clear();
+                assertSame(first, ParsedSql.parse(sql, cache, front));
+                assertSame(first, front.get(sql));
+
+                // Oversized SQL is neither pooled nor mirrored.
+                final String oversized = "SELECT * FROM front_t WHERE name = '" + Strings.repeat('x', ParsedSql.MAX_CACHEABLE_SQL_LENGTH) + "'";
+                assertNotSame(ParsedSql.parse(oversized, cache, front), ParsedSql.parse(oversized, cache, front));
+                assertNull(front.get(oversized));
+                assertEquals(1, cache.size());
+
+                int maxSize = 0;
+
+                for (int i = 0; i < capacity + 500; i++) {
+                    final String distinct = "SELECT * FROM front_t WHERE id = ? AND k = " + i;
+                    final ParsedSql parsed = ParsedSql.parse(distinct, cache, front);
+                    assertSame(parsed, front.get(distinct));
+                    assertSame(parsed, ParsedSql.parse(distinct, cache, front));
+                    maxSize = Math.max(maxSize, front.size());
+                    assertTrue(front.size() <= capacity, "front size " + front.size() + " after statement " + i);
+                    assertTrue(cache.size() <= capacity, "pool size " + cache.size() + " after statement " + i);
+                }
+
+                assertEquals(capacity, maxSize, "the mirror fills up to the pool capacity before being dropped");
+            } finally {
+                cache.close();
+            }
+
+            // The public entry point's mirror of the shared pool obeys the same bound.
+            final java.lang.reflect.Field frontField = ParsedSql.class.getDeclaredField("poolFront");
+            frontField.setAccessible(true);
+            final java.util.Map<?, ?> poolFront = (java.util.Map<?, ?>) frontField.get(null);
+            final java.lang.reflect.Field poolField = ParsedSql.class.getDeclaredField("pool");
+            poolField.setAccessible(true);
+            final KeyedObjectPool<?, ?> pool = (KeyedObjectPool<?, ?>) poolField.get(null);
+            assertNotNull(pool);
+
+            for (int i = 0; i < pool.capacity() + 500; i++) {
+                ParsedSql.parse("SELECT * FROM front_bound_t WHERE id = ? AND k = " + i);
+                assertTrue(poolFront.size() <= pool.capacity(), "shared front size " + poolFront.size() + " after statement " + i);
+            }
+
+            final String fresh = "SELECT * FROM front_bound_t WHERE id = ? AND fresh = 1";
+            final ParsedSql cached = ParsedSql.parse(fresh);
+            assertSame(cached, poolFront.get(fresh));
+            assertSame(cached, ParsedSql.parse(fresh));
+        }
+
+        // The front is keyed by the pool's own key instance (the entry's originalSql()) rather than retaining an equal copy passed by the caller.
+        @Test
+        void testParse_cacheFrontReusesPooledKeyInstance() {
+            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(16, 60_000);
+            final java.util.concurrent.ConcurrentMap<String, ParsedSql> front = new java.util.concurrent.ConcurrentHashMap<>();
+
+            try {
+                final String sql = "SELECT * FROM front_key_t WHERE id = :id";
+                final String inserted = new String(sql.toCharArray());
+                final ParsedSql first = ParsedSql.parse(inserted, cache, front);
+                assertSame(inserted, first.originalSql());
+                assertSame(inserted, front.keySet().iterator().next());
+
+                // Refilled from a pool hit with a fresh, equal String: keyed by the pooled instance, not by the lookup copy.
+                front.clear();
+                final String lookup = new String(sql.toCharArray());
+                assertSame(first, ParsedSql.parse(lookup, cache, front));
+                assertEquals(1, front.size());
+                final String key = front.keySet().iterator().next();
+                assertSame(first.originalSql(), key);
+                assertNotSame(lookup, key);
+                assertSame(first, ParsedSql.parse(new String(sql.toCharArray()), cache, front));
+
+                // A padded variant's originalSql() is trimmed, so its entry keeps the padded String it is looked up by.
+                final String padded = "  " + sql + " ";
+                final ParsedSql paddedParsed = ParsedSql.parse(padded, cache, front);
+                front.clear();
+                final String paddedLookup = new String(padded.toCharArray());
+                assertSame(paddedParsed, ParsedSql.parse(paddedLookup, cache, front));
+                assertSame(paddedLookup, front.keySet().iterator().next());
+                assertSame(paddedParsed, ParsedSql.parse(new String(padded.toCharArray()), cache, front));
+            } finally {
+                cache.close();
+            }
+        }
+
+        // A put the pool rejects (full, auto-balancing off, so put returns false) leaves the statement uncached, and therefore unmirrored.
+        @Test
+        void testParse_cacheFrontSkipsStatementsThePoolRejects() {
+            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(1, 60_000, null, false, 0.2f);
+            final java.util.concurrent.ConcurrentMap<String, ParsedSql> front = new java.util.concurrent.ConcurrentHashMap<>();
+
+            try {
+                final String admittedSql = "SELECT * FROM front_reject_t WHERE id = :id";
+                final ParsedSql admitted = ParsedSql.parse(admittedSql, cache, front);
+                assertSame(admitted, front.get(admittedSql));
+                assertEquals(1, cache.size());
+
+                final String rejectedSql = "SELECT * FROM front_reject_t WHERE name = :name";
+                final ParsedSql rejected = ParsedSql.parse(rejectedSql, cache, front);
+                assertEquals(List.of("name"), rejected.namedParameters());
+                assertNull(cache.get(rejectedSql));
+                assertNull(front.get(rejectedSql));
+                assertNotSame(rejected, ParsedSql.parse(rejectedSql, cache, front));
+                assertEquals(rejected, ParsedSql.parse(rejectedSql, cache, front));
+                assertNull(front.get(rejectedSql));
+                assertEquals(1, front.size());
+                assertSame(admitted, ParsedSql.parse(admittedSql, cache, front));
+            } finally {
+                cache.close();
+            }
+        }
+
+        // The cache-length gate measures the SQL as given: surrounding whitespace counts, so no cached key exceeds the limit.
+        @Test
+        void testParse_cacheLengthGateCountsSurroundingWhitespace() {
+            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(16, 60_000);
+
+            try {
+                final String prefix = "SELECT * FROM t WHERE id = :id AND name = '";
+                final String suffix = "'";
+                final int fill = ParsedSql.MAX_CACHEABLE_SQL_LENGTH - prefix.length() - suffix.length();
+                final String atLimit = prefix + Strings.repeat('x', fill) + suffix;
+                assertEquals(ParsedSql.MAX_CACHEABLE_SQL_LENGTH, atLimit.length());
+
+                // Exactly at the limit: cached.
+                final ParsedSql first = ParsedSql.parse(atLimit, cache);
+                assertSame(first, ParsedSql.parse(atLimit, cache));
+                assertEquals(List.of("id"), first.namedParameters());
+                assertEquals(1, cache.size());
+
+                // One whitespace character over the limit: parsed fresh each time, never stored.
+                for (final String padded : List.of(atLimit + " ", " " + atLimit, "\n" + atLimit)) {
+                    assertEquals(ParsedSql.MAX_CACHEABLE_SQL_LENGTH + 1, padded.length());
+                    final ParsedSql parsed = ParsedSql.parse(padded, cache);
+                    assertNotSame(parsed, ParsedSql.parse(padded, cache));
+                    assertEquals(atLimit, parsed.originalSql());
+                    assertNull(cache.get(padded));
+                }
+
+                assertEquals(1, cache.size());
+
+                // Below the limit, whitespace variants are separate (equal-valued) entries.
+                final String shortSql = "SELECT 1 FROM t WHERE id = :id";
+                final ParsedSql plain = ParsedSql.parse(shortSql, cache);
+                final ParsedSql padded = ParsedSql.parse(shortSql + " ", cache);
+                assertNotSame(plain, padded);
+                assertEquals(plain, padded);
+                assertSame(padded, ParsedSql.parse(shortSql + " ", cache));
+                assertEquals(3, cache.size());
+            } finally {
+                cache.close();
+            }
+        }
+
         // Regression: when the first use of ParsedSql happened inside a JVM shutdown hook, creating the cache threw and class init failed for good.
         @Test
         void testParse_cacheThatCouldNotBeCreatedIsPermanentMiss() {
@@ -204,247 +445,6 @@ public class ParsedSqlTest extends TestBase {
             assertEquals(canonical.parameterizedSql(), padded.parameterizedSql());
             assertSame(canonical, ParsedSql.parse("SELECT * FROM canonical_cache_test"));
             assertSame(padded, ParsedSql.parse("  SELECT * FROM canonical_cache_test  "));
-        }
-
-        // Characterisation: cache hits are served from a lock-free mirror in front of the pool; every thread must still see the one pooled instance.
-        @Test
-        void testParse_cachedInstanceIsSharedAcrossThreads() throws Exception {
-            final String[] sqls = new String[8];
-            final ParsedSql[] expected = new ParsedSql[sqls.length];
-
-            for (int i = 0; i < sqls.length; i++) {
-                sqls[i] = "SELECT * FROM shared_cache_t WHERE id = :id AND k = " + i + " AND x IN (:xs)";
-                expected[i] = ParsedSql.parse(sqls[i]);
-            }
-
-            final int threads = 8;
-            final java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(threads);
-            final java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
-            final List<java.util.concurrent.Future<Boolean>> results = new ArrayList<>();
-
-            try {
-                for (int t = 0; t < threads; t++) {
-                    final int offset = t;
-                    results.add(executor.submit(() -> {
-                        start.await();
-
-                        for (int i = 0; i < 20_000; i++) {
-                            final int k = (i + offset) % sqls.length;
-
-                            if (ParsedSql.parse(sqls[k]) != expected[k]) {
-                                return false;
-                            }
-                        }
-
-                        return true;
-                    }));
-                }
-
-                start.countDown();
-
-                for (final java.util.concurrent.Future<Boolean> result : results) {
-                    assertTrue(result.get(60, java.util.concurrent.TimeUnit.SECONDS), "every thread must get the cached instance");
-                }
-            } finally {
-                executor.shutdownNow();
-            }
-
-            assertEquals(List.of("id", "xs"), expected[0].namedParameters());
-            assertEquals("SELECT * FROM shared_cache_t WHERE id = ? AND k = 0 AND x IN (?)", expected[0].parameterizedSql());
-        }
-
-        // The lock-free mirror only holds instances the pool admitted and is bounded by the pool's capacity (cleared wholesale when full).
-        @Test
-        void testParse_cacheFrontNeverExceedsPoolCapacity() throws Exception {
-            final int capacity = 32;
-            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(capacity, 60_000);
-            final java.util.concurrent.ConcurrentMap<String, ParsedSql> front = new java.util.concurrent.ConcurrentHashMap<>();
-
-            try {
-                assertEquals(capacity, cache.capacity());
-
-                // Mirrored after a successful pool insertion, and again after a pool hit once the mirror was dropped.
-                final String sql = "SELECT * FROM front_t WHERE id = :id";
-                final ParsedSql first = ParsedSql.parse(sql, cache, front);
-                assertSame(first, front.get(sql));
-                assertSame(first, ParsedSql.parse(sql, cache, front));
-                front.clear();
-                assertSame(first, ParsedSql.parse(sql, cache, front));
-                assertSame(first, front.get(sql));
-
-                // Oversized SQL is neither pooled nor mirrored.
-                final String oversized = "SELECT * FROM front_t WHERE name = '" + Strings.repeat('x', ParsedSql.MAX_CACHEABLE_SQL_LENGTH) + "'";
-                assertNotSame(ParsedSql.parse(oversized, cache, front), ParsedSql.parse(oversized, cache, front));
-                assertNull(front.get(oversized));
-                assertEquals(1, cache.size());
-
-                int maxSize = 0;
-
-                for (int i = 0; i < capacity + 500; i++) {
-                    final String distinct = "SELECT * FROM front_t WHERE id = ? AND k = " + i;
-                    final ParsedSql parsed = ParsedSql.parse(distinct, cache, front);
-                    assertSame(parsed, front.get(distinct));
-                    assertSame(parsed, ParsedSql.parse(distinct, cache, front));
-                    maxSize = Math.max(maxSize, front.size());
-                    assertTrue(front.size() <= capacity, "front size " + front.size() + " after statement " + i);
-                    assertTrue(cache.size() <= capacity, "pool size " + cache.size() + " after statement " + i);
-                }
-
-                assertEquals(capacity, maxSize, "the mirror fills up to the pool capacity before being dropped");
-            } finally {
-                cache.close();
-            }
-
-            // The public entry point's mirror of the shared pool obeys the same bound.
-            final java.lang.reflect.Field frontField = ParsedSql.class.getDeclaredField("poolFront");
-            frontField.setAccessible(true);
-            final java.util.Map<?, ?> poolFront = (java.util.Map<?, ?>) frontField.get(null);
-            final java.lang.reflect.Field poolField = ParsedSql.class.getDeclaredField("pool");
-            poolField.setAccessible(true);
-            final KeyedObjectPool<?, ?> pool = (KeyedObjectPool<?, ?>) poolField.get(null);
-            assertNotNull(pool);
-
-            for (int i = 0; i < pool.capacity() + 500; i++) {
-                ParsedSql.parse("SELECT * FROM front_bound_t WHERE id = ? AND k = " + i);
-                assertTrue(poolFront.size() <= pool.capacity(), "shared front size " + poolFront.size() + " after statement " + i);
-            }
-
-            final String fresh = "SELECT * FROM front_bound_t WHERE id = ? AND fresh = 1";
-            final ParsedSql cached = ParsedSql.parse(fresh);
-            assertSame(cached, poolFront.get(fresh));
-            assertSame(cached, ParsedSql.parse(fresh));
-        }
-
-        // The cache-length gate measures the SQL as given: surrounding whitespace counts, so no cached key exceeds the limit.
-        @Test
-        void testParse_cacheLengthGateCountsSurroundingWhitespace() {
-            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(16, 60_000);
-
-            try {
-                final String prefix = "SELECT * FROM t WHERE id = :id AND name = '";
-                final String suffix = "'";
-                final int fill = ParsedSql.MAX_CACHEABLE_SQL_LENGTH - prefix.length() - suffix.length();
-                final String atLimit = prefix + Strings.repeat('x', fill) + suffix;
-                assertEquals(ParsedSql.MAX_CACHEABLE_SQL_LENGTH, atLimit.length());
-
-                // Exactly at the limit: cached.
-                final ParsedSql first = ParsedSql.parse(atLimit, cache);
-                assertSame(first, ParsedSql.parse(atLimit, cache));
-                assertEquals(List.of("id"), first.namedParameters());
-                assertEquals(1, cache.size());
-
-                // One whitespace character over the limit: parsed fresh each time, never stored.
-                for (final String padded : List.of(atLimit + " ", " " + atLimit, "\n" + atLimit)) {
-                    assertEquals(ParsedSql.MAX_CACHEABLE_SQL_LENGTH + 1, padded.length());
-                    final ParsedSql parsed = ParsedSql.parse(padded, cache);
-                    assertNotSame(parsed, ParsedSql.parse(padded, cache));
-                    assertEquals(atLimit, parsed.originalSql());
-                    assertNull(cache.get(padded));
-                }
-
-                assertEquals(1, cache.size());
-
-                // Below the limit, whitespace variants are separate (equal-valued) entries.
-                final String shortSql = "SELECT 1 FROM t WHERE id = :id";
-                final ParsedSql plain = ParsedSql.parse(shortSql, cache);
-                final ParsedSql padded = ParsedSql.parse(shortSql + " ", cache);
-                assertNotSame(plain, padded);
-                assertEquals(plain, padded);
-                assertSame(padded, ParsedSql.parse(shortSql + " ", cache));
-                assertEquals(3, cache.size());
-            } finally {
-                cache.close();
-            }
-        }
-
-        // Once the cache is closed (JVM shutdown), its front keeps serving the entries already mirrored, while new SQL is parsed uncached and not mirrored.
-        @Test
-        void testParse_cacheFrontAfterCacheClosedServesExistingEntriesOnly() {
-            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(16, 60_000);
-            final java.util.concurrent.ConcurrentMap<String, ParsedSql> front = new java.util.concurrent.ConcurrentHashMap<>();
-            final String cachedSql = "SELECT * FROM front_closed_t WHERE id = :id";
-            final ParsedSql cached;
-
-            try {
-                cached = ParsedSql.parse(cachedSql, cache, front);
-                assertSame(cached, front.get(cachedSql));
-            } finally {
-                cache.close();
-            }
-
-            assertTrue(cache.isClosed());
-            assertSame(cached, ParsedSql.parse(cachedSql, cache, front));
-
-            final String newSql = "SELECT * FROM front_closed_t WHERE name = :name";
-            final ParsedSql first = ParsedSql.parse(newSql, cache, front);
-            assertEquals(List.of("name"), first.namedParameters());
-            assertNotSame(first, ParsedSql.parse(newSql, cache, front));
-            assertEquals(first, ParsedSql.parse(newSql, cache, front));
-            assertNull(front.get(newSql));
-            assertEquals(1, front.size());
-        }
-
-        // A put the pool rejects (full, auto-balancing off, so put returns false) leaves the statement uncached, and therefore unmirrored.
-        @Test
-        void testParse_cacheFrontSkipsStatementsThePoolRejects() {
-            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(1, 60_000, null, false, 0.2f);
-            final java.util.concurrent.ConcurrentMap<String, ParsedSql> front = new java.util.concurrent.ConcurrentHashMap<>();
-
-            try {
-                final String admittedSql = "SELECT * FROM front_reject_t WHERE id = :id";
-                final ParsedSql admitted = ParsedSql.parse(admittedSql, cache, front);
-                assertSame(admitted, front.get(admittedSql));
-                assertEquals(1, cache.size());
-
-                final String rejectedSql = "SELECT * FROM front_reject_t WHERE name = :name";
-                final ParsedSql rejected = ParsedSql.parse(rejectedSql, cache, front);
-                assertEquals(List.of("name"), rejected.namedParameters());
-                assertNull(cache.get(rejectedSql));
-                assertNull(front.get(rejectedSql));
-                assertNotSame(rejected, ParsedSql.parse(rejectedSql, cache, front));
-                assertEquals(rejected, ParsedSql.parse(rejectedSql, cache, front));
-                assertNull(front.get(rejectedSql));
-                assertEquals(1, front.size());
-                assertSame(admitted, ParsedSql.parse(admittedSql, cache, front));
-            } finally {
-                cache.close();
-            }
-        }
-
-        // The front is keyed by the pool's own key instance (the entry's originalSql()) rather than retaining an equal copy passed by the caller.
-        @Test
-        void testParse_cacheFrontReusesPooledKeyInstance() {
-            final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache = PoolFactory.createKeyedObjectPool(16, 60_000);
-            final java.util.concurrent.ConcurrentMap<String, ParsedSql> front = new java.util.concurrent.ConcurrentHashMap<>();
-
-            try {
-                final String sql = "SELECT * FROM front_key_t WHERE id = :id";
-                final String inserted = new String(sql.toCharArray());
-                final ParsedSql first = ParsedSql.parse(inserted, cache, front);
-                assertSame(inserted, first.originalSql());
-                assertSame(inserted, front.keySet().iterator().next());
-
-                // Refilled from a pool hit with a fresh, equal String: keyed by the pooled instance, not by the lookup copy.
-                front.clear();
-                final String lookup = new String(sql.toCharArray());
-                assertSame(first, ParsedSql.parse(lookup, cache, front));
-                assertEquals(1, front.size());
-                final String key = front.keySet().iterator().next();
-                assertSame(first.originalSql(), key);
-                assertNotSame(lookup, key);
-                assertSame(first, ParsedSql.parse(new String(sql.toCharArray()), cache, front));
-
-                // A padded variant's originalSql() is trimmed, so its entry keeps the padded String it is looked up by.
-                final String padded = "  " + sql + " ";
-                final ParsedSql paddedParsed = ParsedSql.parse(padded, cache, front);
-                front.clear();
-                final String paddedLookup = new String(padded.toCharArray());
-                assertSame(paddedParsed, ParsedSql.parse(paddedLookup, cache, front));
-                assertSame(paddedLookup, front.keySet().iterator().next());
-                assertSame(paddedParsed, ParsedSql.parse(new String(padded.toCharArray()), cache, front));
-            } finally {
-                cache.close();
-            }
         }
     }
 
@@ -3033,12 +3033,100 @@ public class ParsedSqlTest extends TestBase {
 
     @Nested
     class SqlNormalization {
+        // Regression: a block comment that opens on a "//" line and closes on a later line mid-statement was dropped,
+        // losing the lines H2 reads as SQL in between ("AND id = :id" below) while the kept line break let the rest run.
+        @Test
+        void testParse_blockCommentOpenedOnDoubleSlashLineIsKeptAsWritten() {
+            // The gap is now kept as written, so H2 reads exactly the source there and the unconverted ":id" fails loudly.
+            ParsedSql parsed = ParsedSql.parse("DELETE FROM t WHERE tenant_id = :t\n// AND s = 'x' /* f\nAND id = :id\n// */\nAND x = :x");
+            assertEquals("DELETE FROM t WHERE tenant_id = ? // AND s = 'x' /* f\nAND id = :id\n// */\nAND x = ?", parsed.parameterizedSql());
+            assertEquals(List.of("t", "x"), parsed.namedParameters());
+            assertEquals(2, parsed.parameterCount());
+            assertEquals("DELETE FROM t WHERE tenant_id = 7 // AND s = 'x' /* f\nAND id = 1\n// */\nAND x = 0",
+                    ParsedSql.parse("DELETE FROM t WHERE tenant_id = 7\n// AND s = 'x' /* f\nAND id = 1\n// */\nAND x = 0").parameterizedSql());
+            parsed = ParsedSql.parse("UPDATE t SET a = :a WHERE tenant_id = :t // scope /* old\nAND id = :id -- */\nAND x = :x");
+            assertEquals("UPDATE t SET a = ? WHERE tenant_id = ? // scope /* old\nAND id = :id -- */\nAND x = ?", parsed.parameterizedSql());
+            assertEquals(List.of("a", "t", "x"), parsed.namedParameters());
+            // The kept gap leaves the line state set: a "//" on the comment's last line still keeps the next line break.
+            assertEquals("SELECT a FROM t WHERE x = ? // c /* d\n// e */ y\nAND z = 2",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c /* d\n// e */ y\nAND z = 2").parameterizedSql());
+            // Controls: a comment that closes on the "//" line, or opens on a later line (a real comment on H2 too), and a
+            // "/*" inside a "--" comment that the line break ends, still leave one line break.
+            assertEquals("SELECT a FROM t WHERE x = ? // c\nAND y = 2",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c /* d */\nAND y = 2").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = ? // c\nAND y = 2",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c\n/* d\n*/ AND y = 2").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = ? // c\nAND y = 2",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c -- /* d\nAND y = 2").parameterizedSql());
+            // Without "//" such a comment is dropped as before.
+            assertEquals("SELECT a FROM t WHERE x = ? AND z = 2",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = :a /* d\nAND y = :y */\nAND z = 2").parameterizedSql());
+        }
+
         @Test
         void testParse_CommentOnlySqlHasNoOperationPrefix() {
             ParsedSql parsed = ParsedSql.parse("/* comment only */");
 
             assertEquals("/* comment only */", parsed.parameterizedSql());
             assertEquals(0, parsed.parameterCount());
+        }
+
+        // The line-break rule for "//" must leave every other statement byte-identical to the collapsed form.
+        @Test
+        void testParse_doubleSlashOnlyInQuotesOrCommentsOrAbsentKeepsCollapsedForm() {
+            // Inside a string literal or quoted identifier "//" is data, on H2 as everywhere else.
+            assertEquals("SELECT a FROM t WHERE x = 'http://h/p' AND y = ?",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = 'http://h/p'\nAND y = :a").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = E'a//b' AND y = ?", ParsedSql.parse("SELECT a FROM t WHERE x = E'a//b'\nAND y = :a").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = N'a//b' AND y = ?", ParsedSql.parse("SELECT a FROM t WHERE x = N'a//b'\nAND y = :a").parameterizedSql());
+            assertEquals("SELECT \"a//b\" FROM t WHERE y = ?", ParsedSql.parse("SELECT \"a//b\"\nFROM t\nWHERE y = :a").parameterizedSql());
+            assertEquals("SELECT `a//b` FROM t WHERE y = ?", ParsedSql.parse("SELECT `a//b`\nFROM t\nWHERE y = :a").parameterizedSql());
+
+            // In a comment the tokenizer drops, or in a block comment kept as a token.
+            assertEquals("SELECT a FROM t WHERE x = ? AND y = 2",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = :a -- see http://h\nAND y = 2").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = ? AND y = 2", ParsedSql.parse("SELECT a FROM t WHERE x = :a /* http://h */\nAND y = 2").parameterizedSql());
+            assertEquals("SELECT a FROM t /* http://h */ WHERE x = ?",
+                    ParsedSql.parse("-- Keep comments\nSELECT a FROM t /* http://h */\nWHERE x = ?").parameterizedSql());
+
+            // Without "//": a single '/' and "/ /" are division, and a "//" on one line only does not touch later lines.
+            assertEquals("SELECT a / 2 FROM t WHERE x = ? AND y = 2", ParsedSql.parse("SELECT a / 2\nFROM t\nWHERE x = :a\nAND y = 2").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = 4 / /2 AND y = ?", ParsedSql.parse("SELECT a FROM t WHERE x = 4 / /2\nAND y = :a").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = 'a//b' AND y = ? AND z = 3",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = 'a//b'\nAND y = :a\nAND z = 3").parameterizedSql());
+
+            // A trailing "//" comment is stripped of its trailing whitespace as before.
+            assertEquals("SELECT a FROM t WHERE x = ? // c", ParsedSql.parse("SELECT a FROM t WHERE x = :a // c\n;").parameterizedSql());
+
+            // Without "//" on its line an unterminated "/*" is dropped with the rest, as before.
+            assertEquals("SELECT a FROM t WHERE x = ?", ParsedSql.parse("SELECT a FROM t WHERE x = :a /* b\nAND y = 2").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = ? // c\nAND y = 2",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c\nAND y = 2 /* d\nAND z = 3").parameterizedSql());
+        }
+
+        // End to end: the NAMED_SQL / IBATIS_SQL output of an H2 builder, converted to JDBC by ParsedSql, keeps the line break
+        // that the builder put after the "//" comment.
+        @Test
+        void testParse_h2BuilderOutputKeepsLineBreakAfterDoubleSlashComment() {
+            for (final Dsl base : new Dsl[] { Dsl.NSC, Dsl.MSC }) {
+                final Dsl h2 = Dsl.forDialect(base.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("H2")).build());
+
+                final AbstractQueryBuilder.SP update = h2.update("t").set("a", 1).where(Filters.expr("tenant_id = 7 // scope\nAND id = 42")).build();
+                ParsedSql parsed = ParsedSql.parse(update.query());
+                assertEquals("UPDATE t SET a = ? WHERE tenant_id = 7 // scope\nAND id = 42", parsed.parameterizedSql(), update.query());
+                assertEquals(List.of("a"), parsed.namedParameters());
+                assertEquals(update.parameters().size(), parsed.parameterCount());
+
+                final AbstractQueryBuilder.SP delete = h2.deleteFrom("t // x").where(Filters.eq("id", 2)).build();
+                parsed = ParsedSql.parse(delete.query());
+                assertEquals("DELETE FROM t // x\nWHERE id = ?", parsed.parameterizedSql(), delete.query());
+                assertEquals(List.of("id"), parsed.namedParameters());
+
+                // Nothing to convert: the "/*" inside the "//" comment no longer drops the next line.
+                final AbstractQueryBuilder.SP raw = h2.deleteFrom("t").where(Filters.expr("x = 1 // a /* b\nAND y = 2")).build();
+                assertTrue(raw.query().endsWith("x = 1 // a /* b\nAND y = 2"), raw.query());
+                assertEquals(raw.query(), ParsedSql.parse(raw.query()).parameterizedSql());
+            }
         }
 
         // Regression: rebuilding from tokens collapsed the line break between adjacent string literals, which PostgreSQL then rejects.
@@ -3169,94 +3257,6 @@ public class ParsedSqlTest extends TestBase {
 
             // Unrecognized statements are not rebuilt, so their line breaks were never collapsed.
             assertEquals("SET x = 1 // c\nAND y", ParsedSql.parse("SET x = 1 // c\nAND y").parameterizedSql());
-        }
-
-        // Regression: a block comment that opens on a "//" line and closes on a later line mid-statement was dropped,
-        // losing the lines H2 reads as SQL in between ("AND id = :id" below) while the kept line break let the rest run.
-        @Test
-        void testParse_blockCommentOpenedOnDoubleSlashLineIsKeptAsWritten() {
-            // The gap is now kept as written, so H2 reads exactly the source there and the unconverted ":id" fails loudly.
-            ParsedSql parsed = ParsedSql.parse("DELETE FROM t WHERE tenant_id = :t\n// AND s = 'x' /* f\nAND id = :id\n// */\nAND x = :x");
-            assertEquals("DELETE FROM t WHERE tenant_id = ? // AND s = 'x' /* f\nAND id = :id\n// */\nAND x = ?", parsed.parameterizedSql());
-            assertEquals(List.of("t", "x"), parsed.namedParameters());
-            assertEquals(2, parsed.parameterCount());
-            assertEquals("DELETE FROM t WHERE tenant_id = 7 // AND s = 'x' /* f\nAND id = 1\n// */\nAND x = 0",
-                    ParsedSql.parse("DELETE FROM t WHERE tenant_id = 7\n// AND s = 'x' /* f\nAND id = 1\n// */\nAND x = 0").parameterizedSql());
-            parsed = ParsedSql.parse("UPDATE t SET a = :a WHERE tenant_id = :t // scope /* old\nAND id = :id -- */\nAND x = :x");
-            assertEquals("UPDATE t SET a = ? WHERE tenant_id = ? // scope /* old\nAND id = :id -- */\nAND x = ?", parsed.parameterizedSql());
-            assertEquals(List.of("a", "t", "x"), parsed.namedParameters());
-            // The kept gap leaves the line state set: a "//" on the comment's last line still keeps the next line break.
-            assertEquals("SELECT a FROM t WHERE x = ? // c /* d\n// e */ y\nAND z = 2",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c /* d\n// e */ y\nAND z = 2").parameterizedSql());
-            // Controls: a comment that closes on the "//" line, or opens on a later line (a real comment on H2 too), and a
-            // "/*" inside a "--" comment that the line break ends, still leave one line break.
-            assertEquals("SELECT a FROM t WHERE x = ? // c\nAND y = 2",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c /* d */\nAND y = 2").parameterizedSql());
-            assertEquals("SELECT a FROM t WHERE x = ? // c\nAND y = 2",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c\n/* d\n*/ AND y = 2").parameterizedSql());
-            assertEquals("SELECT a FROM t WHERE x = ? // c\nAND y = 2",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c -- /* d\nAND y = 2").parameterizedSql());
-            // Without "//" such a comment is dropped as before.
-            assertEquals("SELECT a FROM t WHERE x = ? AND z = 2",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = :a /* d\nAND y = :y */\nAND z = 2").parameterizedSql());
-        }
-
-        // The line-break rule for "//" must leave every other statement byte-identical to the collapsed form.
-        @Test
-        void testParse_doubleSlashOnlyInQuotesOrCommentsOrAbsentKeepsCollapsedForm() {
-            // Inside a string literal or quoted identifier "//" is data, on H2 as everywhere else.
-            assertEquals("SELECT a FROM t WHERE x = 'http://h/p' AND y = ?",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = 'http://h/p'\nAND y = :a").parameterizedSql());
-            assertEquals("SELECT a FROM t WHERE x = E'a//b' AND y = ?", ParsedSql.parse("SELECT a FROM t WHERE x = E'a//b'\nAND y = :a").parameterizedSql());
-            assertEquals("SELECT a FROM t WHERE x = N'a//b' AND y = ?", ParsedSql.parse("SELECT a FROM t WHERE x = N'a//b'\nAND y = :a").parameterizedSql());
-            assertEquals("SELECT \"a//b\" FROM t WHERE y = ?", ParsedSql.parse("SELECT \"a//b\"\nFROM t\nWHERE y = :a").parameterizedSql());
-            assertEquals("SELECT `a//b` FROM t WHERE y = ?", ParsedSql.parse("SELECT `a//b`\nFROM t\nWHERE y = :a").parameterizedSql());
-
-            // In a comment the tokenizer drops, or in a block comment kept as a token.
-            assertEquals("SELECT a FROM t WHERE x = ? AND y = 2",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = :a -- see http://h\nAND y = 2").parameterizedSql());
-            assertEquals("SELECT a FROM t WHERE x = ? AND y = 2", ParsedSql.parse("SELECT a FROM t WHERE x = :a /* http://h */\nAND y = 2").parameterizedSql());
-            assertEquals("SELECT a FROM t /* http://h */ WHERE x = ?",
-                    ParsedSql.parse("-- Keep comments\nSELECT a FROM t /* http://h */\nWHERE x = ?").parameterizedSql());
-
-            // Without "//": a single '/' and "/ /" are division, and a "//" on one line only does not touch later lines.
-            assertEquals("SELECT a / 2 FROM t WHERE x = ? AND y = 2", ParsedSql.parse("SELECT a / 2\nFROM t\nWHERE x = :a\nAND y = 2").parameterizedSql());
-            assertEquals("SELECT a FROM t WHERE x = 4 / /2 AND y = ?", ParsedSql.parse("SELECT a FROM t WHERE x = 4 / /2\nAND y = :a").parameterizedSql());
-            assertEquals("SELECT a FROM t WHERE x = 'a//b' AND y = ? AND z = 3",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = 'a//b'\nAND y = :a\nAND z = 3").parameterizedSql());
-
-            // A trailing "//" comment is stripped of its trailing whitespace as before.
-            assertEquals("SELECT a FROM t WHERE x = ? // c", ParsedSql.parse("SELECT a FROM t WHERE x = :a // c\n;").parameterizedSql());
-
-            // Without "//" on its line an unterminated "/*" is dropped with the rest, as before.
-            assertEquals("SELECT a FROM t WHERE x = ?", ParsedSql.parse("SELECT a FROM t WHERE x = :a /* b\nAND y = 2").parameterizedSql());
-            assertEquals("SELECT a FROM t WHERE x = ? // c\nAND y = 2",
-                    ParsedSql.parse("SELECT a FROM t WHERE x = :a // c\nAND y = 2 /* d\nAND z = 3").parameterizedSql());
-        }
-
-        // End to end: the NAMED_SQL / IBATIS_SQL output of an H2 builder, converted to JDBC by ParsedSql, keeps the line break
-        // that the builder put after the "//" comment.
-        @Test
-        void testParse_h2BuilderOutputKeepsLineBreakAfterDoubleSlashComment() {
-            for (final Dsl base : new Dsl[] { Dsl.NSC, Dsl.MSC }) {
-                final Dsl h2 = Dsl.forDialect(base.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("H2")).build());
-
-                final AbstractQueryBuilder.SP update = h2.update("t").set("a", 1).where(Filters.expr("tenant_id = 7 // scope\nAND id = 42")).build();
-                ParsedSql parsed = ParsedSql.parse(update.query());
-                assertEquals("UPDATE t SET a = ? WHERE tenant_id = 7 // scope\nAND id = 42", parsed.parameterizedSql(), update.query());
-                assertEquals(List.of("a"), parsed.namedParameters());
-                assertEquals(update.parameters().size(), parsed.parameterCount());
-
-                final AbstractQueryBuilder.SP delete = h2.deleteFrom("t // x").where(Filters.eq("id", 2)).build();
-                parsed = ParsedSql.parse(delete.query());
-                assertEquals("DELETE FROM t // x\nWHERE id = ?", parsed.parameterizedSql(), delete.query());
-                assertEquals(List.of("id"), parsed.namedParameters());
-
-                // Nothing to convert: the "/*" inside the "//" comment no longer drops the next line.
-                final AbstractQueryBuilder.SP raw = h2.deleteFrom("t").where(Filters.expr("x = 1 // a /* b\nAND y = 2")).build();
-                assertTrue(raw.query().endsWith("x = 1 // a /* b\nAND y = 2"), raw.query());
-                assertEquals(raw.query(), ParsedSql.parse(raw.query()).parameterizedSql());
-            }
         }
 
         @Test

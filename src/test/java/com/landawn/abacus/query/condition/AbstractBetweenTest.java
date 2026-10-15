@@ -40,7 +40,7 @@ public class AbstractBetweenTest extends TestBase {
     }
 
     @Test
-    void testDefaultConstructor_EmptyState_Batch2() {
+    void testDefaultConstructor_EmptyState() {
         final EmptyAbstractBetween left = new EmptyAbstractBetween();
         final EmptyAbstractBetween right = new EmptyAbstractBetween();
 
@@ -290,7 +290,7 @@ public class AbstractBetweenTest extends TestBase {
      * quoted SQL date literals, not Java's {@code Date.toString()} form.
      */
     @Test
-    void testToString_DateBoundsAreQuoted_Pass3() {
+    void testToString_DateBoundsAreQuoted() {
         final TestAbstractBetween condition = new TestAbstractBetween("orderDate", new java.util.Date(0L), new java.util.Date(86400000L));
         final String sql = condition.toSql(NamingPolicy.NO_CHANGE);
         assertTrue(sql.contains("'"), "Date bounds must be quoted, got: " + sql);
@@ -303,7 +303,7 @@ public class AbstractBetweenTest extends TestBase {
      * silently emitted as bare {@code NaN} / {@code Infinity} tokens.
      */
     @Test
-    void testToString_NaNBoundIsRejected_Pass3() {
+    void testToString_NaNBoundIsRejected() {
         final TestAbstractBetween condition = new TestAbstractBetween("v", Double.NaN, 100.0);
         assertThrows(IllegalArgumentException.class, () -> condition.toSql(NamingPolicy.NO_CHANGE));
     }
@@ -320,7 +320,7 @@ public class AbstractBetweenTest extends TestBase {
     }
 
     @Test
-    void testToString_WithSubQueryBounds_Batch2() {
+    void testToString_WithSubQueryBounds() {
         final TestAbstractBetween condition = new TestAbstractBetween("score", Filters.subQuery("SELECT MIN(score) FROM results"),
                 Filters.subQuery("SELECT MAX(score) FROM results"));
 

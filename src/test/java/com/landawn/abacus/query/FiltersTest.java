@@ -76,3293 +76,3326 @@ import com.landawn.abacus.util.EntityId;
 
 public class FiltersTest extends TestBase {
 
-    @Test
-    void test2ndPass_andEmptyArray_buildsEmptyAndJunction() {
-        And empty = Filters.and(new Condition[0]);
-        assertNotNull(empty);
-        assertEquals("1 = 1", empty.toString());
-    }
-
-    @Test
-    void test2ndPass_betweenParameterized_renderedWithTwoPlaceholders() {
-        Between b = Filters.between("col");
-        // Should produce "col BETWEEN ? AND ?" (both placeholders are QME Expressions)
-        String s = b.toString();
-        assertTrue(s.contains("BETWEEN ? AND ?"), "Expected 'BETWEEN ? AND ?' but got: " + s);
-    }
-
-    @Test
-    void test2ndPass_betweenWithMinGreaterThanMax_rendersAsIs() {
-        // No swapping; documented behavior: rendered as-is, even when min > max.
-        Between b = Filters.between("col", 100, 1);
-        String s = b.toString();
-        assertTrue(s.contains("100"));
-        assertTrue(s.contains("1"));
-        // min is rendered before max regardless of value order
-        assertTrue(s.indexOf("100") < s.indexOf(" AND "));
-    }
-
-    @Test
-    void test2ndPass_equalWithNull_rendersIsNull() {
-        // CRITICAL: equal(prop, null) MUST render as "prop IS NULL", not "prop = NULL"
-        // (otherwise the condition is never true in SQL three-valued logic)
-        Equal eq = Filters.equal("col", null);
-        assertTrue(eq.toString().contains("IS NULL"), "equal(c, null) should render as IS NULL but was: " + eq.toString());
-        assertFalse(eq.toString().contains("= NULL"));
-    }
-
-    @Test
-    void test2ndPass_geAndLe_usesGeAndLe() {
-        And c = Filters.geAndLe("score", 0, 100);
-        assertEquals(2, c.conditions().size());
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.conditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, c.conditions().get(1).operator());
-    }
-
-    @Test
-    void test2ndPass_geAndLt_usesGeAndLt() {
-        And c = Filters.geAndLt("price", 100, 500);
-        assertEquals(2, c.conditions().size());
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.conditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN, c.conditions().get(1).operator());
-    }
-
-    @Test
-    void test2ndPass_gtAndLe_usesGtAndLe() {
-        And c = Filters.gtAndLe("temp", -10, 40);
-        assertEquals(2, c.conditions().size());
-        assertEquals(Operator.GREATER_THAN, c.conditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, c.conditions().get(1).operator());
-    }
-
-    // --- 2nd-pass review verification tests ---
-    // These confirm that operator-pair factory methods do NOT have copy/paste inversions,
-    // that LIKE wildcards are placed on the correct side, and that null-value handling is correct.
-
-    @Test
-    void test2ndPass_gtAndLt_usesGtAndLt() {
-        And c = Filters.gtAndLt("age", 18, 65);
-        assertEquals(2, c.conditions().size());
-        assertEquals(Operator.GREATER_THAN, c.conditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN, c.conditions().get(1).operator());
-    }
-
-    @Test
-    void test2ndPass_inPrimitiveArrays_correctBoxing() {
-        // int[]
-        In intIn = Filters.in("col", new int[] { 1, 2, 3 });
-        assertEquals(3, intIn.values().size());
-        assertEquals(Integer.valueOf(1), intIn.values().iterator().next());
-
-        // long[]
-        In longIn = Filters.in("col", new long[] { 10L, 20L });
-        assertEquals(2, longIn.values().size());
-        assertEquals(Long.valueOf(10L), longIn.values().iterator().next());
-
-        // double[]
-        In dblIn = Filters.in("col", new double[] { 1.5, 2.5 });
-        assertEquals(2, dblIn.values().size());
-        assertEquals(Double.valueOf(1.5), dblIn.values().iterator().next());
-    }
-
-    @Test
-    void test2ndPass_likeWildcards_placement() {
-        // contains: %v% on both sides
-        assertEquals("%foo%", Filters.contains("c", "foo").propValue());
-        // notContains: %v% on both sides
-        assertEquals("%foo%", Filters.notContains("c", "foo").propValue());
-        // startsWith: v%
-        assertEquals("foo%", Filters.startsWith("c", "foo").propValue());
-        // notStartsWith: v%
-        assertEquals("foo%", Filters.notStartsWith("c", "foo").propValue());
-        // endsWith: %v
-        assertEquals("%foo", Filters.endsWith("c", "foo").propValue());
-        // notEndsWith: %v
-        assertEquals("%foo", Filters.notEndsWith("c", "foo").propValue());
-    }
-
-    @Test
-    void test2ndPass_notEqualWithNull_rendersIsNotNull() {
-        // CRITICAL: notEqual(prop, null) MUST render as "prop IS NOT NULL"
-        NotEqual ne = Filters.notEqual("col", null);
-        assertTrue(ne.toString().contains("IS NOT NULL"), "notEqual(c, null) should render as IS NOT NULL but was: " + ne.toString());
-    }
-
-    @Test
-    void test2ndPass_notInPrimitiveArrays_correctBoxing() {
-        NotIn intNi = Filters.notIn("col", new int[] { 1, 2 });
-        assertEquals(2, intNi.values().size());
-
-        NotIn longNi = Filters.notIn("col", new long[] { 1L, 2L });
-        assertEquals(2, longNi.values().size());
-
-        NotIn dblNi = Filters.notIn("col", new double[] { 1.0, 2.0 });
-        assertEquals(2, dblNi.values().size());
-    }
-
-    @Test
-    void test2ndPass_notWithNull_throwsIAE() {
-        // Not(null) should throw because Junction rejects null conditions.
-        assertThrows(IllegalArgumentException.class, () -> Filters.not(null));
-    }
-
-    @Test
-    void test2ndPass_orEmptyArray_buildsEmptyOrJunction() {
-        // Verify or() with empty array doesn't NPE; an empty OR renders its Boolean identity.
-        Or empty = Filters.or(new Condition[0]);
-        assertNotNull(empty);
-        assertEquals("1 = 0", empty.toString());
-    }
-
-    @Test
-    void test2ndPass_parameterized_gtAndLt_geAndLt_geAndLe_gtAndLe_useCorrectOperators() {
-        assertEquals(Operator.GREATER_THAN, Filters.gtAndLt("c").conditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN, Filters.gtAndLt("c").conditions().get(1).operator());
-
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLt("c").conditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN, Filters.geAndLt("c").conditions().get(1).operator());
-
-        assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLe("c").conditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.geAndLe("c").conditions().get(1).operator());
-
-        assertEquals(Operator.GREATER_THAN, Filters.gtAndLe("c").conditions().get(0).operator());
-        assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.gtAndLe("c").conditions().get(1).operator());
-    }
-
-    @Test
-    void testAll() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
-        com.landawn.abacus.query.condition.All all = Filters.all(subQuery);
-        assertNotNull(all);
-    }
-
-    @Test
-    void testAllEqual_EntitySingleSelectedProperty() {
-        com.landawn.abacus.query.entity.Account account = new com.landawn.abacus.query.entity.Account();
-        account.setFirstName("John");
-
-        And condition = Filters.allEqual(account, Arrays.asList("firstName"));
-
-        assertEquals(1, condition.conditions().size());
-    }
-
-    @Test
-    void testAllEqual_EntityTwoSelectedProperties() {
-        com.landawn.abacus.query.entity.Account account = new com.landawn.abacus.query.entity.Account();
-        account.setFirstName("John");
-        account.setLastName("Doe");
-
-        And condition = Filters.allEqual(account, Arrays.asList("firstName", "lastName"));
-
-        assertEquals(2, condition.conditions().size());
-    }
-
-    @Test
-    void testAllEqualEntity() {
-        Account account = new Account();
-        And and = Filters.allEqual(account);
-        assertNotNull(and);
-    }
-
-    // Verify entity overloads honor the explicitly selected property subset.
-    @Test
-    void testAllEqualEntityWithSelectProps() {
-        Account account = new Account().setId(9L).setLastName("Doe").setStatus(5);
-
-        And and = Filters.allEqual(account, Arrays.asList("id", "lastName"));
-
-        assertEquals(2, and.conditions().size());
-        assertEquals("id", ((Equal) and.conditions().get(0)).propName());
-        assertEquals(Long.valueOf(9L), ((Equal) and.conditions().get(0)).propValue());
-        assertEquals("lastName", ((Equal) and.conditions().get(1)).propName());
-        assertEquals("Doe", ((Equal) and.conditions().get(1)).propValue());
-    }
-
-    @Test
-    void testAllEqualEntityWithSelectProps_EmptySelectPropNames() {
-        Account account = new Account().setId(9L);
-
-        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList()));
-    }
-
-    @Test
-    void testAllEqualEntityWithSelectProps_ThreeSelectProps() {
-        final Account account = new Account().setId(23L).setFirstName("Jane").setLastName("Doe");
-
-        final And condition = Filters.allEqual(account, Arrays.asList("id", "firstName", "lastName"));
-
-        assertEquals(3, condition.conditions().size());
-        assertEquals("id", ((Equal) condition.conditions().get(0)).propName());
-        assertEquals("lastName", ((Equal) condition.conditions().get(2)).propName());
-    }
-
-    @Test
-    void testAllEqualEntityWithSelectPropsRejectsNullEntity() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(null, Arrays.asList("id")));
-    }
-
-    @Test
-    void testAllEqualMap() {
-        Map<String, Object> props = new HashMap<>();
-        props.put("status", "active");
-        props.put("verified", true);
-
-        And and = Filters.allEqual(props);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testAllEqualMap_SingleEntry() {
-        final Map<String, Object> props = new LinkedHashMap<>();
-        props.put("status", "ACTIVE");
-
-        final And condition = Filters.allEqual(props);
-
-        assertEquals(1, condition.conditions().size());
-        assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
-    }
-
-    @Test
-    void testAllEqualMap_ThreeEntries() {
-        final Map<String, Object> props = new LinkedHashMap<>();
-        props.put("status", "ACTIVE");
-        props.put("type", "PREMIUM");
-        props.put("verified", true);
-
-        final And condition = Filters.allEqual(props);
-
-        assertEquals(3, condition.conditions().size());
-        assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
-        assertEquals("verified", ((Equal) condition.conditions().get(2)).propName());
-    }
-
-    @Test
-    void testAllEqualThreeProps() {
-        And and = Filters.allEqual("name", "John", "age", 30, "status", "active");
-        assertNotNull(and);
-        assertEquals(3, and.conditions().size());
-    }
-
-    @Test
-    void testAllEqualTwoProps() {
-        And and = Filters.allEqual("status", "active", "verified", true);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testAllEqualWithMap() {
-        Map<String, Object> props = new HashMap<>();
-        props.put("name", "John");
-        props.put("age", 25);
-
-        And and = Filters.allEqual(props);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testAllEqualWithThreeProperties() {
-        And and = Filters.allEqual("name", "John", "age", 25, "status", "active");
-        assertNotNull(and);
-        assertEquals(3, and.conditions().size());
-    }
-
-    @Test
-    void testAllEqualWithTwoProperties() {
-        And and = Filters.allEqual("name", "John", "age", 25);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testAlwaysFalse() {
-        SqlExpression expr = Filters.alwaysFalse();
-        assertNotNull(expr);
-    }
-
-    @Test
-    void testAlwaysTrue() {
-        SqlExpression expr = Filters.alwaysTrue();
-        assertNotNull(expr);
-    }
-
-    @Test
-    void testAlwaysTrueAndAlwaysFalseReturnDistinctExpressions() {
-        // Both accessors must work and return non-null, distinct objects
-        var t = Filters.alwaysTrue();
-        var f = Filters.alwaysFalse();
-        assertNotNull(t);
-        assertNotNull(f);
-        assertNotSame(t, f, "alwaysTrue and alwaysFalse must be distinct instances");
-        // Semantics: alwaysTrue uses '<', alwaysFalse uses '>'
-        assertTrue(t.toString().contains("<"), "alwaysTrue expression should contain '<'");
-        assertTrue(f.toString().contains(">"), "alwaysFalse expression should contain '>'");
-    }
-
-    @Test
-    void testAnd() {
-        // Test with array of conditions
-        Condition cond1 = Filters.gt("age", 18);
-        Condition cond2 = Filters.lt("age", 65);
-        And and1 = Filters.and(cond1, cond2);
-        assertNotNull(and1);
-        assertEquals(2, and1.conditions().size());
-
-        // Test with collection of conditions
-        List<Condition> conditions = Arrays.asList(cond1, cond2);
-        And and2 = Filters.and(conditions);
-        assertNotNull(and2);
-        assertEquals(2, and2.conditions().size());
-    }
-
-    @Test
-    void testAndCollection() {
-        Condition cond1 = Filters.equal("verified", true);
-        Condition cond2 = Filters.notEqual("status", "deleted");
-        And and = Filters.and(Arrays.asList(cond1, cond2));
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testAndVarargs() {
-        Condition cond1 = Filters.equal("status", "active");
-        Condition cond2 = Filters.greaterThan("age", 18);
-        And and = Filters.and(cond1, cond2);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testAny() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
-        com.landawn.abacus.query.condition.Any any = Filters.any(subQuery);
-        assertNotNull(any);
-    }
-
-    @Test
-    void testAnyEqualEntity() {
-        Account account = new Account();
-        Or or = Filters.anyEqual(account);
-        assertNotNull(or);
-    }
-
-    // Verify entity overloads honor the explicitly selected property subset.
-    @Test
-    void testAnyEqualEntityWithSelectProps() {
-        Account account = new Account().setId(7L).setFirstName("Jane").setStatus(3);
-
-        Or or = Filters.anyEqual(account, Arrays.asList("id", "firstName"));
-
-        assertEquals(2, or.conditions().size());
-        assertEquals("id", ((Equal) or.conditions().get(0)).propName());
-        assertEquals(Long.valueOf(7L), ((Equal) or.conditions().get(0)).propValue());
-        assertEquals("firstName", ((Equal) or.conditions().get(1)).propName());
-        assertEquals("Jane", ((Equal) or.conditions().get(1)).propValue());
-    }
-
-    @Test
-    void testAnyEqualEntityWithSelectProps_EmptySelectPropNames() {
-        Account account = new Account().setId(7L);
-
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(account, Arrays.asList()));
-    }
-
-    @Test
-    void testAnyEqualEntityWithSelectProps_SingleSelectProp() {
-        final Account account = new Account().setId(17L).setFirstName("Jane");
-
-        final Or condition = Filters.anyEqual(account, Arrays.asList("id"));
-
-        assertEquals(1, condition.conditions().size());
-        assertEquals(Long.valueOf(17L), ((Equal) condition.conditions().get(0)).propValue());
-    }
-
-    @Test
-    void testAnyEqualEntityWithSelectPropsRejectsNullEntity() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(null, Arrays.asList("id")));
-    }
-
-    @Test
-    void testAnyEqualMap() {
-        Map<String, Object> props = new HashMap<>();
-        props.put("name", "John");
-        props.put("age", 30);
-
-        Or or = Filters.anyEqual(props);
-        assertNotNull(or);
-        assertEquals(2, or.conditions().size());
-    }
-
-    // Exercise the size-specific overload branches for map/entity conversion helpers.
-    @Test
-    void testAnyEqualMap_SingleEntry() {
-        final Map<String, Object> props = new LinkedHashMap<>();
-        props.put("status", "ACTIVE");
-
-        final Or condition = Filters.anyEqual(props);
-
-        assertEquals(1, condition.conditions().size());
-        assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
-    }
-
-    @Test
-    void testAnyEqualMap_ThreeEntries() {
-        final Map<String, Object> props = new LinkedHashMap<>();
-        props.put("status", "ACTIVE");
-        props.put("type", "PREMIUM");
-        props.put("verified", true);
-
-        final Or condition = Filters.anyEqual(props);
-
-        assertEquals(3, condition.conditions().size());
-        assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
-        assertEquals("verified", ((Equal) condition.conditions().get(2)).propName());
-    }
-
-    @Test
-    void testAnyEqualThreeProps() {
-        Or or = Filters.anyEqual("name", "John", "age", 30, "status", "active");
-        assertNotNull(or);
-        assertEquals(3, or.conditions().size());
-    }
-
-    @Test
-    void testAnyEqualTwoProps() {
-        Or or = Filters.anyEqual("name", "John", "age", 30);
-        assertNotNull(or);
-        assertEquals(2, or.conditions().size());
-    }
-
-    @Test
-    void testAnyEqualWithArray() {
-        Or or = Filters.anyEqual("status", "active", "pending", "approved");
-        assertNotNull(or);
-        assertEquals(2, or.conditions().size());
-    }
-
-    @Test
-    void testAnyEqualWithMap() {
-        Map<String, Object> props = new HashMap<>();
-        props.put("name", "John");
-        props.put("age", 25);
-        props.put("status", "active");
-
-        Or or = Filters.anyEqual(props);
-        assertNotNull(or);
-        assertEquals(3, or.conditions().size());
-    }
-
-    @Test
-    void testAnyEqualWithThreeProperties() {
-        Or or = Filters.anyEqual("name", "John", "age", 25, "status", "active");
-        assertNotNull(or);
-        assertEquals(3, or.conditions().size());
-    }
-
-    @Test
-    void testAnyEqualWithTwoProperties() {
-        Or or = Filters.anyEqual("name", "John", "age", 25);
-        assertNotNull(or);
-        assertEquals(2, or.conditions().size());
-    }
-
-    @Test
-    void testAnyOfAllEqual_AllNullEntities() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(null, null)));
-    }
-
-    @Test
-    void testAnyOfAllEqualEntities() {
-        Account account1 = new Account();
-        Account account2 = new Account();
-
-        Or or = Filters.anyOfAllEqual(Arrays.asList(account1, account2));
-        assertNotNull(or);
-    }
-
-    @Test
-    void testAnyOfAllEqualEntitiesWithSelectPropNames() {
-        Account account1 = new Account();
-        Account account2 = new Account();
-
-        Or or = Filters.anyOfAllEqual(Arrays.asList(account1, account2), Arrays.asList("id", "firstName"));
-        assertNotNull(or);
-    }
-
-    @Test
-    void testAnyOfAllEqualJavadocRenderingIncludesNestedJunctionParentheses() {
-        final Map<String, Object> activePremium = new LinkedHashMap<>();
-        activePremium.put("status", "active");
-        activePremium.put("type", "premium");
-        final Map<String, Object> verifiedTrial = new LinkedHashMap<>();
-        verifiedTrial.put("status", "trial");
-        verifiedTrial.put("verified", true);
-
-        assertEquals("((((status = 'active') AND (type = 'premium'))) OR (((status = 'trial') AND (verified = true))))",
-                Filters.anyOfAllEqual(Arrays.asList(activePremium, verifiedTrial)).toString());
-
-        final Account john = new Account().setFirstName("John").setStatus(1);
-        final Account jane = new Account().setFirstName("Jane").setStatus(2);
-        assertEquals("((((firstName = 'John') AND (status = 1))) OR (((firstName = 'Jane') AND (status = 2))))",
-                Filters.anyOfAllEqual(Arrays.asList(john, jane), Arrays.asList("firstName", "status")).toString());
-    }
-
-    @Test
-    void testAnyOfAllEqualMapList() {
-        Map<String, Object> props1 = new HashMap<>();
-        props1.put("status", "active");
-        props1.put("type", "A");
-
-        Map<String, Object> props2 = new HashMap<>();
-        props2.put("status", "pending");
-        props2.put("type", "B");
-
-        Or or = Filters.anyOfAllEqual(Arrays.asList(props1, props2));
-        assertNotNull(or);
-    }
-
-    @Test
-    void testAnyOfAllEqualMapSet() {
-        Map<String, Object> props1 = new LinkedHashMap<>();
-        props1.put("status", "active");
-        props1.put("type", "A");
-
-        Map<String, Object> props2 = new LinkedHashMap<>();
-        props2.put("status", "pending");
-        props2.put("type", "B");
-
-        LinkedHashSet<Map<String, Object>> propsSet = new LinkedHashSet<>(Arrays.asList(props1, props2));
-
-        Or or = Filters.anyOfAllEqual(propsSet);
-
-        assertEquals(2, or.conditions().size());
-        assertTrue(or.parameters().containsAll(Arrays.asList("active", "A", "pending", "B")));
-    }
-
-    @Test
-    void testAnyOfAllEqualRejectsMixedEntitiesAndMapsInEitherOrder() {
-        final Account account = new Account().setId(3L);
-        final Map<String, Object> props = new LinkedHashMap<>();
-        props.put("id", 4L);
-
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(props, account)));
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account, props)));
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account, props), Arrays.asList("id")));
-    }
-
-    @Test
-    void testAnyOfAllEqualWithSelectProps_NullEntityIgnored() {
-        final Account account = new Account().setId(29L).setFirstName("Alex");
-
-        final Or condition = Filters.anyOfAllEqual(Arrays.asList(null, account, null), Arrays.asList("id", "firstName"));
-
-        assertEquals(1, condition.conditions().size());
-        assertEquals(2, condition.parameters().size());
-    }
-
-    @Test
-    void testBeanEqualityOverloadsDirectMapCallersToMapOverloads() {
-        final Map<String, Object> props = new LinkedHashMap<>();
-        props.put("id", 4L);
-
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual((Object) props));
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(props, Arrays.asList("id")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual((Object) props));
-        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(props, Arrays.asList("id")));
-    }
-
-    @Test
-    void testBetween() {
-        Between between = Filters.between("age", 18, 65);
-        assertNotNull(between);
-        assertEquals("age", between.propName());
-        assertEquals(Integer.valueOf(18), between.minValue());
-        assertEquals(Integer.valueOf(65), between.maxValue());
-    }
-
-    @Test
-    void testBetweenWithoutValues() {
-        Between between = Filters.between("age");
-        assertNotNull(between);
-    }
-
-    @Test
-    void testBinary() {
-        Binary binary = Filters.binary("age", Operator.GREATER_THAN, 18);
-        assertNotNull(binary);
-        assertEquals("age", binary.propName());
-        assertEquals(Operator.GREATER_THAN, binary.operator());
-    }
-
-    @Test
-    void testBinaryParameterized() {
-        Binary binary = Filters.binary("price", Operator.GREATER_THAN);
-        assertNotNull(binary);
-        assertEquals("price", binary.propName());
-        assertEquals(Operator.GREATER_THAN, binary.operator());
-        assertSame(Filters.QME, binary.propValue());
-        // Renders identically to the dedicated parameterized factory for the same operator.
-        assertEquals(Filters.greaterThan("price").toString(), binary.toString());
-    }
-
-    @Test
-    void testBinaryParameterizedInvalidArgsThrow() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("", Operator.GREATER_THAN));
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("price", Operator.WHERE));
-    }
-
-    @Test
-    void testBinaryPlaceholder_rejectsIsAndIsNot() {
-        // 'propName IS ?' is not valid SQL, so the scalar-placeholder overload rejects IS/IS_NOT like IN/NOT_IN
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IS));
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IS_NOT));
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IN));
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.NOT_IN));
-        assertEquals("price > ?", Filters.binary("price", Operator.GREATER_THAN).toString());
-
-        // the guard is deliberately limited to this overload: the 3-arg form lets the caller own the rendered
-        // SQL through an explicit SqlExpression right-hand side, so 'x IS ?' stays constructible there
-        assertEquals("x IS ?", Filters.binary("x", Operator.IS, Filters.QME).toString());
-        assertEquals("x IS NOT ?", Filters.binary("x", Operator.IS_NOT, Filters.QME).toString());
-        assertEquals("x IS ?", Filters.is("x", Filters.QME).toString());
-    }
-
-    @Test
-    void testBinaryRejectsMembershipOperators() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("status", Operator.IN));
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("status", Operator.NOT_IN));
-    }
-
-    @Test
-    void testBinaryWithMembershipOperatorAndValues() {
-        Binary in = Filters.binary("status", Operator.IN, Arrays.asList("NEW", "OPEN"));
-        assertEquals(Operator.IN, in.operator());
-        assertEquals(Arrays.asList("NEW", "OPEN"), in.parameters());
-
-        Binary notIn = Filters.binary("status", Operator.NOT_IN, new String[] { "CLOSED", "DELETED" });
-        assertEquals(Operator.NOT_IN, notIn.operator());
-        assertEquals(Arrays.asList("CLOSED", "DELETED"), notIn.parameters());
-    }
-
-    @Test
-    void testBlankSqlExpressionRejectedAsValueOperand() {
-        // D-G: `a = ` is not a usable predicate
-        assertThrows(IllegalArgumentException.class, () -> Filters.equal("a", Filters.expr("")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.gt("a", Filters.expr("  ")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.like("a", Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.between("a", Filters.expr(""), 5));
-        assertThrows(IllegalArgumentException.class, () -> Filters.in("a", Filters.expr(""), 1));
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("a", Operator.EQUAL, Filters.expr(" ")));
-
-        // a non-blank expression is still accepted verbatim
-        assertEquals("a = now()", Filters.equal("a", Filters.expr("now()")).toString());
-    }
-
-    @Test
-    void testCB() {
-        // Test where with condition
-        Condition condition = Filters.eq("status", "active");
-        Criteria criteria1 = Criteria.builder().where(condition).build();
-        assertNotNull(criteria1);
-
-        // Test where with string
-        Criteria criteria2 = Criteria.builder().where("age > 18").build();
-        assertNotNull(criteria2);
-
-        // Test groupBy with condition
-        Criteria criteria3 = Criteria.builder().groupBy(condition).build();
-        assertNotNull(criteria3);
-
-        // Test groupBy with varargs
-        Criteria criteria4 = Criteria.builder().groupBy("dept", "team").build();
-        assertNotNull(criteria4);
-
-        // Test groupBy with property and direction
-        Criteria criteria5 = Criteria.builder().groupBy("salary", SortDirection.DESC).build();
-        assertNotNull(criteria5);
-
-        // Test groupBy with collection
-        List<String> props = Arrays.asList("year", "month");
-        Criteria criteria6 = Criteria.builder().groupBy(props).build();
-        assertNotNull(criteria6);
-
-        // Test groupBy with collection and direction
-        Criteria criteria7 = Criteria.builder().groupBy(props, SortDirection.DESC).build();
-        assertNotNull(criteria7);
-
-        // Test groupBy with map
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("priority", SortDirection.DESC);
-        orders.put("date", SortDirection.ASC);
-        Criteria criteria8 = Criteria.builder().groupBy(orders).build();
-        assertNotNull(criteria8);
-
-        // Test having with condition
-        Criteria criteria9 = Criteria.builder().having(condition).build();
-        assertNotNull(criteria9);
-
-        // Test having with string
-        Criteria criteria10 = Criteria.builder().having("COUNT(*) > 5").build();
-        assertNotNull(criteria10);
-
-        // Test orderByAsc with varargs
-        Criteria criteria11 = Criteria.builder().orderByAsc("firstName", "lastName").build();
-        assertNotNull(criteria11);
-
-        // Test orderByAsc with collection
-        Criteria criteria12 = Criteria.builder().orderByAsc(props).build();
-        assertNotNull(criteria12);
-
-        // Test orderByDesc with varargs
-        Criteria criteria13 = Criteria.builder().orderByDesc("createdAt", "id").build();
-        assertNotNull(criteria13);
-
-        // Test orderByDesc with collection
-        Criteria criteria14 = Criteria.builder().orderByDesc(props).build();
-        assertNotNull(criteria14);
-
-        // Test orderBy with condition
-        Criteria criteria15 = Criteria.builder().orderBy(condition).build();
-        assertNotNull(criteria15);
-
-        // Test orderBy with varargs
-        Criteria criteria16 = Criteria.builder().orderBy("name", "age").build();
-        assertNotNull(criteria16);
-
-        // Test orderBy with property and direction
-        Criteria criteria17 = Criteria.builder().orderBy("salary", SortDirection.DESC).build();
-        assertNotNull(criteria17);
-
-        // Test orderBy with collection
-        Criteria criteria18 = Criteria.builder().orderBy(props).build();
-        assertNotNull(criteria18);
-
-        // Test orderBy with collection and direction
-        Criteria criteria19 = Criteria.builder().orderBy(props, SortDirection.DESC).build();
-        assertNotNull(criteria19);
-
-        // Test orderBy with map
-        Criteria criteria20 = Criteria.builder().orderBy(orders).build();
-        assertNotNull(criteria20);
-
-        // Test limit with Limit condition
-        Limit limitCond = Filters.limit(10);
-        Criteria criteria21 = Criteria.builder().limit(limitCond).build();
-        assertNotNull(criteria21);
-
-        // Test limit with count
-        Criteria criteria22 = Criteria.builder().limit(20).build();
-        assertNotNull(criteria22);
-
-        // Test limit with offset and count
-        Criteria criteria23 = Criteria.builder().limit(30, 10).build();
-        assertNotNull(criteria23);
-
-        // Test limit with expression
-        Criteria criteria24 = Criteria.builder().limit("50 OFFSET 100").build();
-        assertNotNull(criteria24);
-    }
-
-    @Test
-    void testCBGroupBy() {
-        Criteria criteria = Criteria.builder().groupBy("department").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testCBHaving() {
-        Criteria criteria = Criteria.builder().having(Filters.expr("COUNT(*) > 5")).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testCBLimit() {
-        Criteria criteria = Criteria.builder().limit(10).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testCBOrderBy() {
-        Criteria criteria = Criteria.builder().orderBy("name").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testCBWhere() {
-        Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testCBWhereString() {
-        Criteria criteria = Criteria.builder().where("status = 'active'").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testComplexConditionChaining() {
-        Condition condition = Filters.and(Filters.equal("status", "active"), Filters.greaterThan("age", 18),
-                Filters.or(Filters.equal("role", "admin"), Filters.equal("role", "moderator")));
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testConstants() {
-        assertNotNull(SortDirection.ASC);
-        assertEquals(SortDirection.ASC, SortDirection.ASC);
-
-        assertNotNull(SortDirection.DESC);
-        assertEquals(SortDirection.DESC, SortDirection.DESC);
-
-        assertNotNull(Filters.QME);
-    }
-
-    @Test
-    void testContains() {
-        Like contains = Filters.contains("description", "keyword");
-        assertNotNull(contains);
-    }
-
-    // --- Bug fixes: wildcard methods must reject null propValue (previously silently produced "%null%") ---
-
-    @Test
-    void testContains_NullPropValue_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.contains("name", null));
-    }
-
-    @Test
-    void testCrossJoin() {
-        // Test with entity name only
-        CrossJoin crossJoin1 = Filters.crossJoin("products");
-        assertNotNull(crossJoin1);
-
-        // Test with a collection of entities
-        List<String> entities = Arrays.asList("products", "categories");
-        CrossJoin crossJoin3 = Filters.crossJoin(entities);
-        assertNotNull(crossJoin3);
-    }
-
-    @Test
-    void testCrossJoinEntities() {
-        com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin(Arrays.asList("orders", "payments"));
-        assertEquals(2, crossJoin.joinEntities().size());
-    }
-
-    @Test
-    void testCrossJoinEntity() {
-        com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin("orders");
-        assertNotNull(crossJoin);
-    }
-
-    // ---- fix-round 2026-09-19 regression tests ----
-
-    @Test
-    void testEmptyJunctionsComposeAsBooleanIdentityPredicates() {
-        // D-C: an initialized empty AND/OR is a complete predicate and may be nested, negated, or used in a clause
-        assertEquals("((1 = 1) OR (1 = 0))", Filters.or(Filters.and(), Filters.or()).toString());
-        assertEquals("((1 = 1))", Filters.and(Filters.and()).toString());
-        assertEquals("NOT (1 = 1)", Filters.not(Filters.and()).toString());
-        assertEquals("WHERE 1 = 1", Filters.where(Filters.and()).toString());
-        assertEquals("HAVING 1 = 0", Filters.having(Filters.or()).toString());
-        assertEquals("((id = 1) AND (1 = 1))", Filters.eq("id", 1).and(Filters.and()).toString());
-        assertEquals("SELECT id FROM users WHERE 1 = 0", Filters.subQuery("users", Arrays.asList("id"), Filters.or()).toString());
-        assertEquals("ON 1 = 1", Filters.on(Filters.and()).toString());
-        assertEquals("JOIN orders ON 1 = 1", Filters.join("orders", Filters.and()).toString());
-
-        // a blank SqlExpression is still an empty predicate and is still rejected
-        assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.expr("  ")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.not(Filters.expr("")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.where(Filters.expr(" ")));
-    }
-
-    @Test
-    void testEndsWith() {
-        Like endsWith = Filters.endsWith("email", "@example.com");
-        assertNotNull(endsWith);
-    }
-
-    @Test
-    void testEndsWith_NullPropValue_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.endsWith("name", null));
-    }
-
-    @Test
-    void testEntityEqualFactoriesRejectNullPropertyNameWithIllegalArgumentException() {
-        // D6: a null name is an IllegalArgumentException, not a NullPointerException
-        Account account = new Account().setId(7L).setFirstName("Jane");
-        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList((String) null)));
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(account, Arrays.asList("id", null)));
-        assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account), Arrays.asList((String) null)));
-        assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList("nonexistent")));
-    }
-
-    @Test
-    void testEntityEqualityFactoriesConsumePropertyNamesInOnePass() {
-        final Account account = new Account().setId(7L).setFirstName("Ada").setLastName("Lovelace");
-        final Or any = Filters.anyEqual(account, collectionWithUnstableSize("id", "firstName", "lastName"));
-        final And all = Filters.allEqual(account, collectionWithUnstableSize("id", "firstName", "lastName"));
-
-        assertEquals(3, any.conditions().size());
-        assertEquals(3, all.conditions().size());
-        assertEquals(Arrays.asList(7L, "Ada", "Lovelace"), any.parameters());
-        assertEquals(Arrays.asList(7L, "Ada", "Lovelace"), all.parameters());
-    }
-
-    @Test
-    void testEntityWithoutSelectablePropertyIsRejectedWithPointedMessage() {
-        for (final java.util.function.Supplier<Object> call : java.util.List.<java.util.function.Supplier<Object>> of(
-                () -> Filters.allEqual(new NoSelectableProperty()), () -> Filters.anyEqual(new NoSelectableProperty()),
-                () -> Filters.anyOfAllEqual(java.util.List.of(new NoSelectableProperty())))) {
-            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, call::get);
-            assertTrue(e.getMessage().contains("declares no selectable property"), e.getMessage());
+    @Nested
+    class Clauses {
+        @Test
+        void testCB() {
+            // Test where with condition
+            Condition condition = Filters.eq("status", "active");
+            Criteria criteria1 = Criteria.builder().where(condition).build();
+            assertNotNull(criteria1);
+
+            // Test where with string
+            Criteria criteria2 = Criteria.builder().where("age > 18").build();
+            assertNotNull(criteria2);
+
+            // Test groupBy with condition
+            Criteria criteria3 = Criteria.builder().groupBy(condition).build();
+            assertNotNull(criteria3);
+
+            // Test groupBy with varargs
+            Criteria criteria4 = Criteria.builder().groupBy("dept", "team").build();
+            assertNotNull(criteria4);
+
+            // Test groupBy with property and direction
+            Criteria criteria5 = Criteria.builder().groupBy("salary", SortDirection.DESC).build();
+            assertNotNull(criteria5);
+
+            // Test groupBy with collection
+            List<String> props = Arrays.asList("year", "month");
+            Criteria criteria6 = Criteria.builder().groupBy(props).build();
+            assertNotNull(criteria6);
+
+            // Test groupBy with collection and direction
+            Criteria criteria7 = Criteria.builder().groupBy(props, SortDirection.DESC).build();
+            assertNotNull(criteria7);
+
+            // Test groupBy with map
+            Map<String, SortDirection> orders = new LinkedHashMap<>();
+            orders.put("priority", SortDirection.DESC);
+            orders.put("date", SortDirection.ASC);
+            Criteria criteria8 = Criteria.builder().groupBy(orders).build();
+            assertNotNull(criteria8);
+
+            // Test having with condition
+            Criteria criteria9 = Criteria.builder().having(condition).build();
+            assertNotNull(criteria9);
+
+            // Test having with string
+            Criteria criteria10 = Criteria.builder().having("COUNT(*) > 5").build();
+            assertNotNull(criteria10);
+
+            // Test orderByAsc with varargs
+            Criteria criteria11 = Criteria.builder().orderByAsc("firstName", "lastName").build();
+            assertNotNull(criteria11);
+
+            // Test orderByAsc with collection
+            Criteria criteria12 = Criteria.builder().orderByAsc(props).build();
+            assertNotNull(criteria12);
+
+            // Test orderByDesc with varargs
+            Criteria criteria13 = Criteria.builder().orderByDesc("createdAt", "id").build();
+            assertNotNull(criteria13);
+
+            // Test orderByDesc with collection
+            Criteria criteria14 = Criteria.builder().orderByDesc(props).build();
+            assertNotNull(criteria14);
+
+            // Test orderBy with condition
+            Criteria criteria15 = Criteria.builder().orderBy(condition).build();
+            assertNotNull(criteria15);
+
+            // Test orderBy with varargs
+            Criteria criteria16 = Criteria.builder().orderBy("name", "age").build();
+            assertNotNull(criteria16);
+
+            // Test orderBy with property and direction
+            Criteria criteria17 = Criteria.builder().orderBy("salary", SortDirection.DESC).build();
+            assertNotNull(criteria17);
+
+            // Test orderBy with collection
+            Criteria criteria18 = Criteria.builder().orderBy(props).build();
+            assertNotNull(criteria18);
+
+            // Test orderBy with collection and direction
+            Criteria criteria19 = Criteria.builder().orderBy(props, SortDirection.DESC).build();
+            assertNotNull(criteria19);
+
+            // Test orderBy with map
+            Criteria criteria20 = Criteria.builder().orderBy(orders).build();
+            assertNotNull(criteria20);
+
+            // Test limit with Limit condition
+            Limit limitCond = Filters.limit(10);
+            Criteria criteria21 = Criteria.builder().limit(limitCond).build();
+            assertNotNull(criteria21);
+
+            // Test limit with count
+            Criteria criteria22 = Criteria.builder().limit(20).build();
+            assertNotNull(criteria22);
+
+            // Test limit with offset and count
+            Criteria criteria23 = Criteria.builder().limit(30, 10).build();
+            assertNotNull(criteria23);
+
+            // Test limit with expression
+            Criteria criteria24 = Criteria.builder().limit("50 OFFSET 100").build();
+            assertNotNull(criteria24);
+        }
+
+        @Test
+        void testCBGroupBy() {
+            Criteria criteria = Criteria.builder().groupBy("department").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testCBHaving() {
+            Criteria criteria = Criteria.builder().having(Filters.expr("COUNT(*) > 5")).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testCBLimit() {
+            Criteria criteria = Criteria.builder().limit(10).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testCBOrderBy() {
+            Criteria criteria = Criteria.builder().orderBy("name").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testCBWhere() {
+            Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testCBWhereString() {
+            Criteria criteria = Criteria.builder().where("status = 'active'").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testFilters_groupBy() {
+            GroupBy groupBy = Filters.groupBy("department");
+            assertNotNull(groupBy);
+        }
+
+        @Test
+        void testFilters_limit() {
+            Limit limit = Filters.limit(10);
+            assertNotNull(limit);
+        }
+
+        @Test
+        void testFilters_limitWithOffset() {
+            Limit limit = Filters.limit(10, 20);
+            assertNotNull(limit);
+        }
+
+        @Test
+        void testFilters_orderBy() {
+            OrderBy orderBy = Filters.orderBy("name");
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testGroupBy() {
+            // Test with varargs
+            GroupBy gb1 = Filters.groupBy("department", "team");
+            assertNotNull(gb1);
+
+            // Test with collection
+            List<String> props = Arrays.asList("category", "subcategory");
+            GroupBy gb2 = Filters.groupBy(props);
+            assertNotNull(gb2);
+
+            // Test with collection and direction
+            GroupBy gb3 = Filters.groupBy(props, SortDirection.DESC);
+            assertNotNull(gb3);
+
+            // Test with single property and direction
+            GroupBy gb4 = Filters.groupBy("name", SortDirection.ASC);
+            assertNotNull(gb4);
+
+            // Test with map
+            Map<String, SortDirection> orders = new LinkedHashMap<>();
+            orders.put("year", SortDirection.DESC);
+            orders.put("month", SortDirection.ASC);
+            GroupBy gb5 = Filters.groupBy(orders);
+            assertNotNull(gb5);
+
+            // Test with condition
+            Condition condition = Filters.expr("department");
+            GroupBy gb6 = Filters.groupBy(condition);
+            assertNotNull(gb6);
+        }
+
+        @Test
+        void testGroupByAsc() {
+            GroupBy groupBy = Filters.groupByAsc("department", "year");
+            assertNotNull(groupBy);
+            assertEquals(Operator.GROUP_BY, groupBy.operator());
+        }
+
+        @Test
+        void testGroupByAscCollection() {
+            GroupBy collForm = Filters.groupByAsc(Arrays.asList("department", "year"));
+            GroupBy varargForm = Filters.groupByAsc("department", "year");
+            assertNotNull(collForm);
+            assertEquals(Operator.GROUP_BY, collForm.operator());
+            assertEquals(varargForm.toString(), collForm.toString(), "groupByAsc(Collection) must match groupByAsc(String...)");
+        }
+
+        @Test
+        void testGroupByAscSingleColumn() {
+            GroupBy groupBy = Filters.groupByAsc("department");
+            assertNotNull(groupBy);
+            assertEquals(Operator.GROUP_BY, groupBy.operator());
+            assertTrue(groupBy.toString().contains("department ASC"), groupBy.toString());
+        }
+
+        @Test
+        void testGroupByCollection() {
+            GroupBy groupBy = Filters.groupBy(Arrays.asList("region", "category"));
+            assertNotNull(groupBy);
+        }
+
+        @Test
+        void testGroupByDesc() {
+            GroupBy groupBy = Filters.groupByDesc("sales", "region");
+            assertNotNull(groupBy);
+            assertEquals(Operator.GROUP_BY, groupBy.operator());
+        }
+
+        @Test
+        void testGroupByDescCollection() {
+            GroupBy collForm = Filters.groupByDesc(Arrays.asList("sales", "region"));
+            GroupBy varargForm = Filters.groupByDesc("sales", "region");
+            assertNotNull(collForm);
+            assertEquals(Operator.GROUP_BY, collForm.operator());
+            assertEquals(varargForm.toString(), collForm.toString(), "groupByDesc(Collection) must match groupByDesc(String...)");
+        }
+
+        @Test
+        void testGroupByDescSingleColumn() {
+            GroupBy groupBy = Filters.groupByDesc("sales");
+            assertNotNull(groupBy);
+            assertEquals(Operator.GROUP_BY, groupBy.operator());
+            assertTrue(groupBy.toString().contains("sales DESC"), groupBy.toString());
+        }
+
+        @Test
+        void testGroupByMap() {
+            Map<String, SortDirection> orders = new HashMap<>();
+            orders.put("category", SortDirection.ASC);
+            orders.put("priority", SortDirection.DESC);
+
+            GroupBy groupBy = Filters.groupBy(orders);
+            assertNotNull(groupBy);
+        }
+
+        @Test
+        void testGroupByMultiplePropertiesWithDirections() {
+            // Test with 2 properties
+            GroupBy gb1 = Filters.groupBy("prop1", SortDirection.ASC, "prop2", SortDirection.DESC);
+            assertNotNull(gb1);
+
+            // Test with 3 properties
+            GroupBy gb2 = Filters.groupBy("prop1", SortDirection.ASC, "prop2", SortDirection.DESC, "prop3", SortDirection.ASC);
+            assertNotNull(gb2);
+        }
+
+        @Test
+        void testGroupByOneColumn() {
+            GroupBy groupBy = Filters.groupBy("department", SortDirection.ASC);
+            assertNotNull(groupBy);
+        }
+
+        @Test
+        void testGroupByThreeColumns() {
+            GroupBy groupBy = Filters.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC, "day", SortDirection.DESC);
+            assertNotNull(groupBy);
+        }
+
+        @Test
+        void testGroupByTwoColumns() {
+            GroupBy groupBy = Filters.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
+            assertNotNull(groupBy);
+            assertEquals("GROUP BY year DESC, month ASC", groupBy.toString());
+        }
+
+        @Test
+        void testGroupByVarargs() {
+            GroupBy groupBy = Filters.groupBy("department", "year");
+            assertNotNull(groupBy);
+        }
+
+        @Test
+        void testGroupByWithDirection() {
+            GroupBy groupBy = Filters.groupBy(Arrays.asList("year", "month"), SortDirection.DESC);
+            assertNotNull(groupBy);
+        }
+
+        @Test
+        void testHaving() {
+            // Test with condition
+            Condition condition = Filters.gt("COUNT(*)", 5);
+            Having having1 = Filters.having(condition);
+            assertNotNull(having1);
+            assertEquals(condition, having1.condition());
+
+            // Test with string
+            Having having2 = Filters.having("COUNT(*) > 10");
+            assertNotNull(having2);
+            assertNotNull(having2.condition());
+        }
+
+        @Test
+        void testHavingCondition() {
+            Condition condition = Filters.expr("COUNT(*) > 5");
+            com.landawn.abacus.query.condition.Having having = Filters.having(condition);
+            assertNotNull(having);
+        }
+
+        @Test
+        void testHavingString_EmptyExpr_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.having(""));
+        }
+
+        @Test
+        void testHavingString_NonEmptyExpr_StillWorks() {
+            Having h = Filters.having("SUM(amount) > 1000");
+            assertNotNull(h);
+            assertTrue(h.toString().contains("SUM(amount) > 1000"));
+        }
+
+        // --- Bug fix: having(String) must reject null/empty (matching where(String) contract) ---
+
+        @Test
+        void testHavingString_NullExpr_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.having((String) null));
+        }
+
+        @Test
+        void testLimit() {
+            // Test with count only
+            Limit limit1 = Filters.limit(10);
+            assertNotNull(limit1);
+            assertEquals(10, limit1.count());
+
+            // Test with offset and count
+            Limit limit2 = Filters.limit(50, 20);
+            assertNotNull(limit2);
+            assertEquals(20, limit2.offset());
+            assertEquals(50, limit2.count());
+
+            // Test with expression
+            Limit limit3 = Filters.limit("10 OFFSET 5");
+            assertNotNull(limit3);
+        }
+
+        @Test
+        void testLimit_002() {
+            String literal = "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY";
+
+            Limit limit = Filters.limit(literal);
+
+            // The SQL:2008 FETCH form is parsed into concrete count/offset while its literal is retained.
+            assertEquals(literal, limit.expression());
+            assertEquals(20, limit.count());
+            assertEquals(5, limit.offset());
+        }
+
+        @Test
+        void testLimitExpr() {
+            com.landawn.abacus.query.condition.Limit limit = Filters.limit("10 OFFSET 20");
+            assertNotNull(limit);
+        }
+
+        @Test
+        void testLimitInt() {
+            com.landawn.abacus.query.condition.Limit limit = Filters.limit(10);
+            assertNotNull(limit);
+        }
+
+        @Test
+        void testLimitWithOffset() {
+            com.landawn.abacus.query.condition.Limit limit = Filters.limit(20, 10);
+            assertNotNull(limit);
+        }
+
+        @Test
+        void testOrderBy() {
+            // Test with varargs
+            OrderBy ob1 = Filters.orderBy("name", "age");
+            assertNotNull(ob1);
+
+            // Test orderByAsc with varargs
+            OrderBy ob2 = Filters.orderByAsc("firstName", "lastName");
+            assertNotNull(ob2);
+
+            // Test orderByAsc with collection
+            List<String> props = Arrays.asList("category", "price");
+            OrderBy ob3 = Filters.orderByAsc(props);
+            assertNotNull(ob3);
+
+            // Test orderByDesc with varargs
+            OrderBy ob4 = Filters.orderByDesc("createdAt", "id");
+            assertNotNull(ob4);
+
+            // Test orderByDesc with collection
+            OrderBy ob5 = Filters.orderByDesc(props);
+            assertNotNull(ob5);
+
+            // Test with collection
+            OrderBy ob6 = Filters.orderBy(props);
+            assertNotNull(ob6);
+
+            // Test with collection and direction
+            OrderBy ob7 = Filters.orderBy(props, SortDirection.DESC);
+            assertNotNull(ob7);
+
+            // Test with single property and direction
+            OrderBy ob8 = Filters.orderBy("salary", SortDirection.DESC);
+            assertNotNull(ob8);
+
+            // Test with map
+            Map<String, SortDirection> orders = new LinkedHashMap<>();
+            orders.put("priority", SortDirection.DESC);
+            orders.put("date", SortDirection.ASC);
+            OrderBy ob9 = Filters.orderBy(orders);
+            assertNotNull(ob9);
+
+            // Test with condition
+            Condition condition = Filters.expr("name ASC");
+            OrderBy ob10 = Filters.orderBy(condition);
+            assertNotNull(ob10);
+        }
+
+        @Test
+        void testOrderByAscDescSingleColumn() {
+            OrderBy asc = Filters.orderByAsc("created_date");
+            assertNotNull(asc);
+            assertEquals(Operator.ORDER_BY, asc.operator());
+            assertTrue(asc.toString().contains("created_date ASC"), asc.toString());
+
+            OrderBy desc = Filters.orderByDesc("score");
+            assertNotNull(desc);
+            assertEquals(Operator.ORDER_BY, desc.operator());
+            assertTrue(desc.toString().contains("score DESC"), desc.toString());
+        }
+
+        @Test
+        void testOrderByCollection() {
+            com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(Arrays.asList("name", "age"));
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByCondition() {
+            Condition condition = Filters.expr("name ASC");
+            com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(condition);
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByMap() {
+            Map<String, SortDirection> orders = new HashMap<>();
+            orders.put("name", SortDirection.ASC);
+            orders.put("age", SortDirection.DESC);
+
+            com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(orders);
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByMultiplePropertiesWithDirections() {
+            // Test with 2 properties
+            OrderBy ob1 = Filters.orderBy("prop1", SortDirection.ASC, "prop2", SortDirection.DESC);
+            assertNotNull(ob1);
+
+            // Test with 3 properties
+            OrderBy ob2 = Filters.orderBy("prop1", SortDirection.ASC, "prop2", SortDirection.DESC, "prop3", SortDirection.ASC);
+            assertNotNull(ob2);
+        }
+
+        @Test
+        void testOrderByOneColumn() {
+            com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC);
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByThreeColumns() {
+            com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC, "email",
+                    SortDirection.ASC);
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByTwoColumns() {
+            com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("year", SortDirection.DESC, "month", SortDirection.ASC);
+            assertNotNull(orderBy);
+            assertEquals("ORDER BY year DESC, month ASC", orderBy.toString());
+        }
+
+        @Test
+        void testOrderByVarargs() {
+            com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", "age");
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByWithDirection() {
+            com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(Arrays.asList("name", "age"), SortDirection.DESC);
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testWhere() {
+            // Test with condition
+            Condition condition = Filters.eq("status", "active");
+            Where where1 = Filters.where(condition);
+            assertNotNull(where1);
+            assertEquals(condition, where1.condition());
+
+            // Test with string
+            Where where2 = Filters.where("age > 18");
+            assertNotNull(where2);
+            assertNotNull(where2.condition());
+        }
+
+        @Test
+        void testWhereAndHavingStringRejectBlankExpression() {
+            // where(String)/having(String) use checkArgNotBlank: whitespace-only expressions are rejected up front,
+            // with a message that names the blank rejection (same contract as Criteria.Builder.where(String)/having(String)).
+            final IllegalArgumentException whereEx = assertThrows(IllegalArgumentException.class, () -> Filters.where("  "));
+            assertTrue(whereEx.getMessage().toLowerCase().contains("blank"), whereEx.getMessage());
+
+            final IllegalArgumentException havingEx = assertThrows(IllegalArgumentException.class, () -> Filters.having("  "));
+            assertTrue(havingEx.getMessage().toLowerCase().contains("blank"), havingEx.getMessage());
+
+            // Tabs/newlines count as blank too.
+            assertThrows(IllegalArgumentException.class, () -> Filters.where("\t\n"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.having("\t\n"));
+        }
+
+        @Test
+        void testWhereCondition() {
+            Condition condition = Filters.equal("status", "active");
+            Where where = Filters.where(condition);
+            assertNotNull(where);
+            assertEquals(Operator.WHERE, where.operator());
+        }
+
+        @Test
+        void testWhereString() {
+            Where where = Filters.where("status = 'active'");
+            assertNotNull(where);
+        }
+
+        @Test
+        void testWhereString_rejectsClauseLeadingLiteral() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.where("ORDER BY a"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.where("WHERE a = 1"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.where("LEFT OUTER JOIN t"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.where("UNION SELECT 1"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.where("ON a.id = b.id"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.where("USING (id)"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.having("ORDER BY a"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.on("ORDER BY a"));
+            // only the SQL spelling counts: an identifier that merely starts with a keyword is accepted
+            assertEquals("WHERE where_flag = 1", Filters.where("where_flag = 1").toString());
+            assertEquals("HAVING having_flag = 1", Filters.having("having_flag = 1").toString());
+            assertEquals("ON on_flag = 1", Filters.on("on_flag = 1").toString());
         }
     }
 
-    @Test
-    void testEq() {
-        Equal equal = Filters.eq("age", 30);
-        assertNotNull(equal);
-        assertEquals("age", equal.propName());
-        assertEquals(30, (Integer) equal.propValue());
-    }
-
-    @Test
-    void testEqual() {
-        Equal equal = Filters.equal("name", "John");
-        assertNotNull(equal);
-        assertEquals("name", equal.propName());
-        assertEquals("John", equal.propValue());
-    }
-
-    @Test
-    void testEqualityFactoriesConsumeLiveMapInOnePass() {
-        final Or any = Filters.anyEqual(mapWithUnstableSize());
-        final And all = Filters.allEqual(mapWithUnstableSize());
-
-        assertEquals(3, any.conditions().size());
-        assertEquals(3, all.conditions().size());
-        assertEquals(Arrays.asList(1, 2, 3), any.parameters());
-        assertEquals(Arrays.asList(1, 2, 3), all.parameters());
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    @Test
-    void testEqualityFactoriesRejectRawMapsWithNonStringKeysConsistently() {
-        final Map rawMap = new LinkedHashMap();
-        rawMap.put(1, "value");
-
-        final IllegalArgumentException anyFailure = assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(rawMap));
-        final IllegalArgumentException allFailure = assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(rawMap));
-
-        assertTrue(anyFailure.getMessage().contains("String"));
-        assertTrue(allFailure.getMessage().contains("String"));
-    }
-
-    @Test
-    void testEqualWithoutValue() {
-        Equal equal = Filters.equal("name");
-        assertNotNull(equal);
-        assertEquals("name", equal.propName());
-    }
-
-    @Test
-    void testEqWithoutValue() {
-        Equal equal = Filters.eq("status");
-        assertNotNull(equal);
-    }
-
-    @Test
-    void testExcept() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM blocked_users");
-        com.landawn.abacus.query.condition.Except except = Filters.except(subQuery);
-        assertNotNull(except);
-    }
-
-    @Test
-    void testExists() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
-        com.landawn.abacus.query.condition.Exists exists = Filters.exists(subQuery);
-        assertNotNull(exists);
-    }
-
-    @Test
-    void testExpr() {
-        SqlExpression expr = Filters.expr("age > 18");
-        assertNotNull(expr);
-    }
-
-    @Test
-    void testExpr_createsIndependentEqualInstances() {
-        final SqlExpression first = Filters.expr("a");
-        final SqlExpression second = Filters.expr("a");
-        assertNotSame(first, second);
-        assertEquals(first, second);
-    }
-
-    @Test
-    void testFilters_allEqual_map() {
-        Map<String, Object> props = new LinkedHashMap<>();
-        props.put("status", "active");
-        props.put("type", "premium");
-        And condition = Filters.allEqual(props);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_allEqual_threeProps() {
-        And condition = Filters.allEqual("status", "active", "type", "premium", "verified", true);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_allEqual_twoProps() {
-        And condition = Filters.allEqual("status", "active", "type", "premium");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_alwaysTrue() {
-        Condition condition = Filters.alwaysTrue();
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_and() {
-        And condition = Filters.and(Filters.eq("department", "Engineering"), Filters.or(Filters.gt("salary", 75000), Filters.eq("level", "Senior")),
-                Filters.isNotNull("manager_id"));
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_anyEqual_map() {
-        Map<String, Object> props = new LinkedHashMap<>();
-        props.put("name", "John");
-        props.put("email", "john@example.com");
-        Or condition = Filters.anyEqual(props);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_anyEqual_threeProps() {
-        Or condition = Filters.anyEqual("status", "active", "type", "premium", "verified", true);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_anyEqual_twoProps() {
-        Or condition = Filters.anyEqual("name", "John", "email", "john@example.com");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_between() {
-        Between condition = Filters.between("price", 100.0, 500.0);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_binary() {
-        Binary condition = Filters.binary("price", Operator.GREATER_THAN, 100);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_contains() {
-        Like condition = Filters.contains("name", "John");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_crossJoin() {
-        CrossJoin crossJoin = Filters.crossJoin("products");
-        assertNotNull(crossJoin);
-    }
-
-    @Test
-    void testFilters_endsWith() {
-        Like condition = Filters.endsWith("email", "@company.com");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_eq() {
-        Equal condition = Filters.eq("status", "active");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_eqParameterized() {
-        Equal condition = Filters.eq("email");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_equal() {
-        Equal condition = Filters.equal("username", "john_doe");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_equalParameterized() {
-        Equal condition = Filters.equal("user_id");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_exists() {
-        SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = customers.id AND status = 'COMPLETED'");
-        Exists hasOrders = Filters.exists(subQuery);
-        assertNotNull(hasOrders);
-    }
-
-    @Test
-    void testFilters_expr() {
-        SqlExpression expr = Filters.expr("UPPER(name) = 'JOHN'");
-        assertNotNull(expr);
-        assertEquals("UPPER(name) = 'JOHN'", expr.literal());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testFilters_fullJoin() {
-        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("orders ON users.id = orders.user_id"));
-        assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"));
-
-        FullJoin fullJoin = Filters.fullJoin("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("FULL JOIN orders ON users.id = orders.user_id", fullJoin.toString());
-    }
-
-    @Test
-    void testFilters_ge() {
-        GreaterThanOrEqual condition = Filters.ge("age", 18);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_geAndLe() {
-        And condition = Filters.geAndLe("date", "2023-01-01", "2023-12-31");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_geAndLt() {
-        And condition = Filters.geAndLt("price", 100, 500);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_greaterThan() {
-        GreaterThan condition = Filters.greaterThan("age", 18);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_greaterThanOrEqual() {
-        GreaterThanOrEqual condition = Filters.greaterThanOrEqual("score", 60);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_groupBy() {
-        GroupBy groupBy = Filters.groupBy("department");
-        assertNotNull(groupBy);
-    }
-
-    @Test
-    void testFilters_gt() {
-        GreaterThan condition = Filters.gt("price", 100);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_gtAndLe() {
-        And condition = Filters.gtAndLe("score", 0, 100);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_gtAndLt() {
-        And condition = Filters.gtAndLt("age", 18, 65);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_gtAndLt_parameterized() {
-        And condition = Filters.gtAndLt("price");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_in() {
-        In condition = Filters.in("status", Arrays.asList("PENDING", "APPROVED", "ACTIVE"));
-        assertNotNull(condition);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testFilters_innerJoin() {
-        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("orders ON users.id = orders.user_id"));
-        assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"));
-
-        InnerJoin innerJoin = Filters.innerJoin("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("INNER JOIN orders ON users.id = orders.user_id", innerJoin.toString());
-    }
-
-    @Test
-    void testFilters_inSubQuery() {
-        SubQuery subQuery = Filters.subQuery("SELECT user_id FROM active_users");
-        InSubQuery condition = Filters.in("id", subQuery);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_isNotNull() {
-        IsNotNull condition = Filters.isNotNull("required_field");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_isNull() {
-        IsNull condition = Filters.isNull("optional_field");
-        assertNotNull(condition);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testFilters_join() {
-        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.join("orders ON users.id = orders.user_id"));
-        assertTrue(ex.getMessage().contains("JOIN requires a non-null ON/USING predicate"));
-
-        Join join = Filters.join("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("JOIN orders ON users.id = orders.user_id", join.toString());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testFilters_leftJoin() {
-        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders ON users.id = orders.user_id"));
-        assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"));
-
-        LeftJoin leftJoin = Filters.leftJoin("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin.toString());
-    }
-
-    @Test
-    void testFilters_lessThan() {
-        LessThan condition = Filters.lt("price", 1000);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_lessThanOrEqual() {
-        LessThanOrEqual condition = Filters.le("age", 65);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_like() {
-        Like condition = Filters.like("email", "%@company.com");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_limit() {
-        Limit limit = Filters.limit(10);
-        assertNotNull(limit);
-    }
-
-    @Test
-    void testFilters_limitWithOffset() {
-        Limit limit = Filters.limit(10, 20);
-        assertNotNull(limit);
-    }
-
-    @Test
-    void testFilters_namedProperty() {
-        NamedProperty prop = Filters.namedProperty("user_name");
-        assertNotNull(prop);
-        assertEquals("user_name", prop.propName());
-    }
-
-    @Test
-    void testFilters_naturalJoin() {
-        NaturalJoin naturalJoin = Filters.naturalJoin("department");
-        assertNotNull(naturalJoin);
-    }
-
-    @Test
-    void testFilters_ne() {
-        NotEqual condition = Filters.ne("status", "inactive");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_not() {
-        Like likeCondition = Filters.like("name", "%test%");
-        Not notLike = Filters.not(likeCondition);
-        assertNotNull(notLike);
-
-        Not notIn = Filters.not(Filters.in("status", Arrays.asList("inactive", "deleted")));
-        assertNotNull(notIn);
-
-        Not notBetween = Filters.not(Filters.between("age", 18, 65));
-        assertNotNull(notBetween);
-
-        Not complexNot = Filters.not(Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.like("email", "%@company.com")));
-        assertNotNull(complexNot);
-    }
-
-    @Test
-    void testFilters_notBetween() {
-        NotBetween condition = Filters.notBetween("age", 0, 17);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_notEqual() {
-        NotEqual condition = Filters.notEqual("status", "deleted");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_notIn() {
-        NotIn condition = Filters.notIn("status", Arrays.asList("deleted", "banned"));
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_notInSubQuery() {
-        SubQuery subQuery = Filters.subQuery("SELECT user_id FROM blocked_users");
-        NotInSubQuery condition = Filters.notIn("id", subQuery);
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_notLike() {
-        NotLike condition = Filters.notLike("name", "%test%");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_or() {
-        Or condition = Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending"));
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_orderBy() {
-        OrderBy orderBy = Filters.orderBy("name");
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testFilters_rightJoin() {
-        // an ON clause embedded in the entity string no longer bypasses the predicate requirement
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("orders ON users.id = orders.user_id"));
-        assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"));
-
-        RightJoin rightJoin = Filters.rightJoin("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("RIGHT JOIN orders ON users.id = orders.user_id", rightJoin.toString());
-    }
-
-    @Test
-    void testFilters_startsWith() {
-        Like condition = Filters.startsWith("name", "John");
-        assertNotNull(condition);
-    }
-
-    @Test
-    void testFilters_subQuery() {
-        SubQuery sq = Filters.subQuery("SELECT COUNT(*) FROM orders WHERE user_id = users.id");
-        assertNotNull(sq);
-    }
-
-    @Test
-    void testFiltersIsFinal() {
-        assertTrue(java.lang.reflect.Modifier.isFinal(Filters.class.getModifiers()));
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testFullJoin() {
-        // Entity name only: a qualified FULL JOIN requires an ON/USING predicate
-        assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("employees"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("employees", (Condition) null));
-
-        // Test with entity name and condition
-        Condition condition = Filters.on("employees.id", "managers.employee_id");
-        FullJoin fullJoin2 = Filters.fullJoin("managers", condition);
-        assertEquals("FULL JOIN managers ON employees.id = managers.employee_id", fullJoin2.toString());
-
-        // Test with collection of entities and condition
-        List<String> entities = Arrays.asList("employees", "departments");
-        FullJoin fullJoin3 = Filters.fullJoin(entities, condition);
-        assertEquals("FULL JOIN (employees CROSS JOIN departments) ON employees.id = managers.employee_id", fullJoin3.toString());
-    }
-
-    @Test
-    void testFullJoinEntitiesWithCondition() {
-        Condition condition = Filters.expr("id = user_id");
-        com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin(Arrays.asList("orders", "payments"), condition);
-        assertNotNull(fullJoin);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testFullJoinEntity() {
-        // a qualified FULL JOIN needs an ON/USING predicate: the single-arg factory always throws
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("orders"));
-        assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"));
-
-        // the two-arg form is the supported way to build it
-        com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("FULL JOIN orders ON users.id = orders.user_id", fullJoin.toString());
-    }
-
-    @Test
-    void testFullJoinEntityWithCondition() {
-        Condition condition = Filters.expr("users.id = orders.user_id");
-        com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin("orders", condition);
-        assertNotNull(fullJoin);
-    }
-
-    @Test
-    void testGe() {
-        GreaterThanOrEqual ge = Filters.ge("score", 80);
-        assertNotNull(ge);
-    }
-
-    @Test
-    void testGeAndLe() {
-        And and = Filters.geAndLe("age", 18, 65);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testGeAndLeWithoutValues() {
-        And and = Filters.geAndLe("score");
-        assertNotNull(and);
-    }
-
-    @Test
-    void testGeAndLt() {
-        And and = Filters.geAndLt("age", 18, 65);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testGeAndLtWithoutValues() {
-        And and = Filters.geAndLt("price");
-        assertNotNull(and);
-    }
-
-    @Test
-    void testGreaterThan() {
-        GreaterThan gt = Filters.greaterThan("age", 18);
-        assertNotNull(gt);
-        assertEquals("age", gt.propName());
-        assertEquals(Integer.valueOf(18), gt.propValue());
-    }
-
-    @Test
-    void testGreaterThanOrEqual() {
-        GreaterThanOrEqual ge = Filters.greaterThanOrEqual("age", 21);
-        assertNotNull(ge);
-        assertEquals("age", ge.propName());
-    }
-
-    @Test
-    void testGreaterThanOrEqualWithoutValue() {
-        GreaterThanOrEqual ge = Filters.greaterThanOrEqual("count");
-        assertNotNull(ge);
-    }
-
-    @Test
-    void testGreaterThanWithoutValue() {
-        GreaterThan gt = Filters.greaterThan("value");
-        assertNotNull(gt);
-    }
-
-    @Test
-    void testGroupBy() {
-        // Test with varargs
-        GroupBy gb1 = Filters.groupBy("department", "team");
-        assertNotNull(gb1);
-
-        // Test with collection
-        List<String> props = Arrays.asList("category", "subcategory");
-        GroupBy gb2 = Filters.groupBy(props);
-        assertNotNull(gb2);
-
-        // Test with collection and direction
-        GroupBy gb3 = Filters.groupBy(props, SortDirection.DESC);
-        assertNotNull(gb3);
-
-        // Test with single property and direction
-        GroupBy gb4 = Filters.groupBy("name", SortDirection.ASC);
-        assertNotNull(gb4);
-
-        // Test with map
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("year", SortDirection.DESC);
-        orders.put("month", SortDirection.ASC);
-        GroupBy gb5 = Filters.groupBy(orders);
-        assertNotNull(gb5);
-
-        // Test with condition
-        Condition condition = Filters.expr("department");
-        GroupBy gb6 = Filters.groupBy(condition);
-        assertNotNull(gb6);
-    }
-
-    @Test
-    void testGroupByAsc() {
-        GroupBy groupBy = Filters.groupByAsc("department", "year");
-        assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-    }
-
-    @Test
-    void testGroupByAscCollection() {
-        GroupBy collForm = Filters.groupByAsc(Arrays.asList("department", "year"));
-        GroupBy varargForm = Filters.groupByAsc("department", "year");
-        assertNotNull(collForm);
-        assertEquals(Operator.GROUP_BY, collForm.operator());
-        assertEquals(varargForm.toString(), collForm.toString(), "groupByAsc(Collection) must match groupByAsc(String...)");
-    }
-
-    @Test
-    void testGroupByAscSingleColumn() {
-        GroupBy groupBy = Filters.groupByAsc("department");
-        assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-        assertTrue(groupBy.toString().contains("department ASC"), groupBy.toString());
-    }
-
-    @Test
-    void testGroupByCollection() {
-        GroupBy groupBy = Filters.groupBy(Arrays.asList("region", "category"));
-        assertNotNull(groupBy);
-    }
-
-    @Test
-    void testGroupByDesc() {
-        GroupBy groupBy = Filters.groupByDesc("sales", "region");
-        assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-    }
-
-    @Test
-    void testGroupByDescCollection() {
-        GroupBy collForm = Filters.groupByDesc(Arrays.asList("sales", "region"));
-        GroupBy varargForm = Filters.groupByDesc("sales", "region");
-        assertNotNull(collForm);
-        assertEquals(Operator.GROUP_BY, collForm.operator());
-        assertEquals(varargForm.toString(), collForm.toString(), "groupByDesc(Collection) must match groupByDesc(String...)");
-    }
-
-    @Test
-    void testGroupByDescSingleColumn() {
-        GroupBy groupBy = Filters.groupByDesc("sales");
-        assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-        assertTrue(groupBy.toString().contains("sales DESC"), groupBy.toString());
-    }
-
-    @Test
-    void testGroupByMap() {
-        Map<String, SortDirection> orders = new HashMap<>();
-        orders.put("category", SortDirection.ASC);
-        orders.put("priority", SortDirection.DESC);
-
-        GroupBy groupBy = Filters.groupBy(orders);
-        assertNotNull(groupBy);
-    }
-
-    @Test
-    void testGroupByMultiplePropertiesWithDirections() {
-        // Test with 2 properties
-        GroupBy gb1 = Filters.groupBy("prop1", SortDirection.ASC, "prop2", SortDirection.DESC);
-        assertNotNull(gb1);
-
-        // Test with 3 properties
-        GroupBy gb2 = Filters.groupBy("prop1", SortDirection.ASC, "prop2", SortDirection.DESC, "prop3", SortDirection.ASC);
-        assertNotNull(gb2);
-    }
-
-    @Test
-    void testGroupByOneColumn() {
-        GroupBy groupBy = Filters.groupBy("department", SortDirection.ASC);
-        assertNotNull(groupBy);
-    }
-
-    @Test
-    void testGroupByThreeColumns() {
-        GroupBy groupBy = Filters.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC, "day", SortDirection.DESC);
-        assertNotNull(groupBy);
-    }
-
-    @Test
-    void testGroupByTwoColumns() {
-        GroupBy groupBy = Filters.groupBy("year", SortDirection.DESC, "month", SortDirection.ASC);
-        assertNotNull(groupBy);
-        assertEquals("GROUP BY year DESC, month ASC", groupBy.toString());
-    }
-
-    @Test
-    void testGroupByVarargs() {
-        GroupBy groupBy = Filters.groupBy("department", "year");
-        assertNotNull(groupBy);
-    }
-
-    @Test
-    void testGroupByWithDirection() {
-        GroupBy groupBy = Filters.groupBy(Arrays.asList("year", "month"), SortDirection.DESC);
-        assertNotNull(groupBy);
-    }
-
-    @Test
-    void testGt() {
-        GreaterThan gt = Filters.gt("score", 90);
-        assertNotNull(gt);
-        assertEquals("score", gt.propName());
-    }
-
-    @Test
-    void testGtAndLe() {
-        And and = Filters.gtAndLe("age", 18, 65);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testGtAndLeWithoutValues() {
-        And and = Filters.gtAndLe("rating");
-        assertNotNull(and);
-    }
-
-    @Test
-    void testGtAndLt() {
-        And and = Filters.gtAndLt("age", 18, 65);
-        assertNotNull(and);
-        assertEquals(2, and.conditions().size());
-    }
-
-    @Test
-    void testGtAndLtWithoutValues() {
-        And and = Filters.gtAndLt("age");
-        assertNotNull(and);
-    }
-
-    @Test
-    void testHaving() {
-        // Test with condition
-        Condition condition = Filters.gt("COUNT(*)", 5);
-        Having having1 = Filters.having(condition);
-        assertNotNull(having1);
-        assertEquals(condition, having1.condition());
-
-        // Test with string
-        Having having2 = Filters.having("COUNT(*) > 10");
-        assertNotNull(having2);
-        assertNotNull(having2.condition());
-    }
-
-    @Test
-    void testHavingCondition() {
-        Condition condition = Filters.expr("COUNT(*) > 5");
-        com.landawn.abacus.query.condition.Having having = Filters.having(condition);
-        assertNotNull(having);
-    }
-
-    @Test
-    void testHavingString_EmptyExpr_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.having(""));
-    }
-
-    @Test
-    void testHavingString_NonEmptyExpr_StillWorks() {
-        Having h = Filters.having("SUM(amount) > 1000");
-        assertNotNull(h);
-        assertTrue(h.toString().contains("SUM(amount) > 1000"));
-    }
-
-    // --- Bug fix: having(String) must reject null/empty (matching where(String) contract) ---
-
-    @Test
-    void testHavingString_NullExpr_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.having((String) null));
-    }
-
-    @Test
-    void testId2Cond() {
-        final EntityId entityId = EntityId.of("userId", 1, "orderId", 100);
-
-        final And condition = Filters.id2Cond(entityId);
-
-        assertEquals(Operator.AND, condition.operator());
-        assertEquals(2, condition.conditions().size());
-        assertEquals(2, condition.parameters().size());
-        assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100)));
-    }
-
-    @Test
-    void testId2Cond_Collection() {
-        final List<EntityId> entityIds = Arrays.asList(EntityId.of("userId", 1, "orderId", 100), EntityId.of("userId", 2, "orderId", 200));
-
-        final Or condition = Filters.id2Cond(entityIds);
-
-        assertEquals(Operator.OR, condition.operator());
-        assertEquals(2, condition.conditions().size());
-        assertEquals(4, condition.parameters().size());
-        assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100, 2, 200)));
-    }
-
-    @Test
-    void testId2Cond_CollectionEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond(Arrays.<EntityId> asList()));
-    }
-
-    @Test
-    void testId2Cond_NullEntityId() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond((EntityId) null));
-    }
-
-    @Test
-    void testId2Cond_SingleProperty() {
-        final EntityId entityId = EntityId.of("userId", 1);
-
-        final And condition = Filters.id2Cond(entityId);
-
-        assertEquals(1, condition.conditions().size());
-        assertEquals(Arrays.asList(1), condition.parameters());
-    }
-
-    @Test
-    void testId2Cond_ThreeProperties() {
-        final EntityId entityId = EntityId.of("tenantId", 1, "userId", 2, "orderId", 3);
-
-        final And condition = Filters.id2Cond(entityId);
-
-        assertEquals(3, condition.conditions().size());
-        assertTrue(condition.parameters().containsAll(Arrays.asList(1, 2, 3)));
-    }
-
-    @Test
-    void testIdCollectionFactoryConsumesInputInOnePass() {
-        final Collection<EntityId> entityIds = collectionWithUnstableSize(EntityId.of("id", 1), EntityId.of("id", 2));
-
-        final Or condition = Filters.idToCond(entityIds);
-
-        assertEquals(2, condition.conditions().size());
-        assertEquals(Arrays.asList(1, 2), condition.parameters());
-    }
-
-    @Test
-    void testIdToCond() {
-        final EntityId entityId = EntityId.of("userId", 1, "orderId", 100);
-
-        final And condition = Filters.idToCond(entityId);
-
-        assertEquals(Operator.AND, condition.operator());
-        assertEquals(2, condition.conditions().size());
-        assertEquals(2, condition.parameters().size());
-        assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100)));
-    }
-
-    @Test
-    void testIdToCond_Collection() {
-        final List<EntityId> entityIds = Arrays.asList(EntityId.of("userId", 1, "orderId", 100), EntityId.of("userId", 2, "orderId", 200));
-
-        final Or condition = Filters.idToCond(entityIds);
-
-        assertEquals(Operator.OR, condition.operator());
-        assertEquals(2, condition.conditions().size());
-        assertEquals(4, condition.parameters().size());
-        assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100, 2, 200)));
-    }
-
-    @Test
-    void testIdToCond_CollectionEmpty() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.idToCond(Arrays.<EntityId> asList()));
-    }
-
-    @Test
-    void testIdToCond_NullEntityId() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.idToCond((EntityId) null));
-    }
-
-    @Test
-    void testIdToCond_SingleProperty() {
-        final EntityId entityId = EntityId.of("userId", 1);
-
-        final And condition = Filters.idToCond(entityId);
-
-        assertEquals(1, condition.conditions().size());
-        assertEquals(Arrays.asList(1), condition.parameters());
-    }
-
-    @Test
-    void testIn() {
-        // Test with int array
-        In in1 = Filters.in("age", new int[] { 18, 21, 25 });
-        assertNotNull(in1);
-        assertEquals("age", in1.propName());
-
-        // Test with long array
-        In in2 = Filters.in("id", new long[] { 1L, 2L, 3L });
-        assertNotNull(in2);
-
-        // Test with double array
-        In in3 = Filters.in("price", new double[] { 9.99, 19.99, 29.99 });
-        assertNotNull(in3);
-
-        // Test with object array
-        In in4 = Filters.in("status", new Object[] { "active", "pending", "approved" });
-        assertNotNull(in4);
-
-        // Test with collection
-        List<String> values = Arrays.asList("red", "green", "blue");
-        In in5 = Filters.in("color", values);
-        assertNotNull(in5);
-    }
-
-    @Test
-    void testIn_blankSqlExpressionElementRejected() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.in("category", Arrays.asList("a", Filters.expr(" "))));
-        assertThrows(IllegalArgumentException.class, () -> Filters.notIn("category", Arrays.asList("a", Filters.expr(" "))));
-        assertThrows(IllegalArgumentException.class, () -> Filters.in("category", "a", Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.notIn("category", "a", Filters.expr(" ")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.in(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
-        assertThrows(IllegalArgumentException.class, () -> Filters.notIn(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
-    }
-
-    @Test
-    void testInBooleanArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("active", new boolean[] { true, false });
-        assertNotNull(in);
-        assertEquals(2, in.parameters().size());
-    }
-
-    @Test
-    void testInByteArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("flag", new byte[] { 0, 1, 2 });
-        assertNotNull(in);
-        assertEquals(3, in.parameters().size());
-    }
-
-    @Test
-    void testInCharArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("grade", new char[] { 'A', 'B', 'C' });
-        assertNotNull(in);
-        assertEquals(3, in.parameters().size());
-    }
-
-    @Test
-    void testInCollection() {
-        com.landawn.abacus.query.condition.In in = Filters.in("id", Arrays.asList(1, 2, 3));
-        assertNotNull(in);
-    }
-
-    @Test
-    void testInCollectionForAge() {
-        List<Integer> ages = Arrays.asList(20, 30, 40);
-        In in = Filters.in("age", ages);
-        assertNotNull(in);
-        assertFalse(in.values().isEmpty());
-    }
-
-    @Test
-    void testInDoubleArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("score", new double[] { 1.5, 2.5, 3.5 });
-        assertNotNull(in);
-    }
-
-    @Test
-    void testInFloatArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("ratio", new float[] { 0.25f, 0.5f, 0.75f });
-        assertNotNull(in);
-        assertEquals(3, in.parameters().size());
-    }
-
-    @Test
-    void testInIntArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("id", new int[] { 1, 2, 3 });
-        assertNotNull(in);
-    }
-
-    @Test
-    void testInLongArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("id", new long[] { 1L, 2L, 3L });
-        assertNotNull(in);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testInnerJoin() {
-        // Entity name only: a qualified INNER JOIN requires an ON/USING predicate
-        assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("roles"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("roles", (Condition) null));
-
-        // Test with entity name and condition
-        Condition condition = Filters.on("users.role_id", "roles.id");
-        InnerJoin innerJoin2 = Filters.innerJoin("roles", condition);
-        assertEquals("INNER JOIN roles ON users.role_id = roles.id", innerJoin2.toString());
-
-        // Test with collection of entities and condition
-        List<String> entities = Arrays.asList("users", "user_roles");
-        InnerJoin innerJoin3 = Filters.innerJoin(entities, condition);
-        assertEquals("INNER JOIN (users CROSS JOIN user_roles) ON users.role_id = roles.id", innerJoin3.toString());
-    }
-
-    @Test
-    void testInnerJoinEntitiesWithCondition() {
-        Condition condition = Filters.expr("id = user_id");
-        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin(Arrays.asList("orders", "payments"), condition);
-        assertNotNull(innerJoin);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testInnerJoinEntity() {
-        // a qualified INNER JOIN needs an ON/USING predicate: the single-arg factory always throws
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("orders"));
-        assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"));
-
-        // the two-arg form is the supported way to build it
-        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("INNER JOIN orders ON users.id = orders.user_id", innerJoin.toString());
-    }
-
-    @Test
-    void testInnerJoinEntityWithCondition() {
-        Condition condition = Filters.expr("users.id = orders.user_id");
-        com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders", condition);
-        assertNotNull(innerJoin);
-    }
-
-    @Test
-    void testInObjectArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("status", new Object[] { "active", "pending" });
-        assertNotNull(in);
-    }
-
-    @Test
-    void testInObjectArrayNullDelegatesToValidation() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.in("status", (Object[]) null));
-    }
-
-    @Test
-    void testInShortArray() {
-        com.landawn.abacus.query.condition.In in = Filters.in("level", new short[] { 1, 2, 3 });
-        assertNotNull(in);
-        assertEquals(3, in.parameters().size());
-    }
-
-    @Test
-    void testInSubQuery() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
-        com.landawn.abacus.query.condition.InSubQuery inSubQuery = Filters.in("user_id", subQuery);
-        assertNotNull(inSubQuery);
-    }
-
-    @Test
-    void testInSubQueryMultipleProps() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id, name FROM users");
-        com.landawn.abacus.query.condition.InSubQuery inSubQuery = Filters.in(Arrays.asList("id", "name"), subQuery);
-        assertNotNull(inSubQuery);
-    }
-
-    @Test
-    void testIntersect() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM premium_users");
-        com.landawn.abacus.query.condition.Intersect intersect = Filters.intersect(subQuery);
-        assertNotNull(intersect);
-    }
-
-    @Test
-    void testInWithObjectTypedCollectionOrArrayUnpacksValues() {
-        // Regression: a collection/array statically typed Object selected in(String, Object...) and became ONE IN value
-        // ("id IN (?)" bound to the whole list), unlike binary(prop, IN, value).
-        final Object ids = Arrays.asList(1, 2);
-        assertEquals("id IN (1, 2)", Filters.in("id", ids).toString());
-        assertEquals("id IN (1, 2)", Filters.in("id", (Object) new int[] { 1, 2 }).toString());
-        assertEquals("id IN (1, 2)", Filters.in("id", (Object) new Integer[] { 1, 2 }).toString());
-        assertEquals("id NOT IN (1, 2)", Filters.notIn("id", ids).toString());
-        assertEquals("id IN (1, 2)", Filters.namedProperty("id").in(ids).toString());
-
-        final AbstractQueryBuilder.SP sp = Dsl.PSC.select("id").from("account").where(Filters.in("id", ids)).build();
-        assertEquals("SELECT id FROM account WHERE id IN (?, ?)", sp.query());
-        assertEquals(Arrays.asList(1, 2), sp.parameters());
-
-        // Several values, and a lone byte[] (a binary value), are unchanged.
-        assertEquals(2, Filters.in("id", ids, ids).values().size());
-        assertEquals(1, Filters.in("hash", (Object) new byte[] { 1, 2 }).values().size());
-    }
-
-    @Test
-    void testInWithObjectTypedLoneCollectionOrArrayEdgeCases() {
-        // Covers the remaining scenarios of the lone Object-typed collection/array unpacking in in/notIn(String, Object...).
-        assertEquals("id NOT IN (1, 2)", Filters.notIn("id", (Object) new long[] { 1L, 2L }).toString());
-        assertEquals("g IN ('a', 'b')", Filters.in("g", (Object) new char[] { 'a', 'b' }).toString());
-        assertEquals("g IN (true, false)", Filters.in("g", (Object) new boolean[] { true, false }).toString());
-        assertEquals("id IN (3, 1)", Filters.in("id", (Object) new LinkedHashSet<>(Arrays.asList(3, 1))).toString());
-
-        // A lone empty collection/array is an empty value list (previously the single value '[]'); a lone list holding null is rejected.
-        assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) new java.util.ArrayList<>()));
-        assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) new int[0]));
-        assertThrows(IllegalArgumentException.class, () -> Filters.notIn("id", (Object) new java.util.ArrayList<>()));
-        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) Arrays.asList(1, null)));
-        assertTrue(ex.getMessage().contains("null"), ex.getMessage());
-
-        // Unchanged: a lone SubQuery, Map or byte[] stays one value, and a multi-row Object[][] keeps one value per row
-        // (only a one-row varargs array is unpacked).
-        assertEquals("id IN ((SELECT id FROM t))", Filters.in("id", (Object) Filters.subQuery("SELECT id FROM t")).toString());
-        final Map<String, Integer> map = new HashMap<>();
-        map.put("k", 1);
-        assertEquals(Arrays.asList(map), Filters.in("id", (Object) map).values());
-        assertEquals(1, Filters.in("hash", (Object) new byte[] { 1, 2 }).values().size());
-        // The casts make each call's meaning compiler-independent: an uncast Object[][] argument is an "inexact" varargs
-        // argument, which javac passes as the varargs array itself but the Eclipse compiler (ECJ) wraps in a new Object[1].
-        assertEquals("id IN ('[1, 2]', '[3, 4]')", Filters.in("id", (Object[]) new Object[][] { { 1, 2 }, { 3, 4 } }).toString());
-        assertEquals("id IN (1, 2)", Filters.in("id", (Object[]) new Object[][] { { 1, 2 } }).toString());
-        // As ONE varargs element, a lone 2-D array is unpacked one level only: its single row stays one value.
-        assertEquals("id IN ('[1, 2]')", Filters.in("id", (Object) new Object[][] { { 1, 2 } }).toString());
-
-        // Every SQL policy sees the unpacked values.
-        final AbstractQueryBuilder.SP sp = Dsl.NSC.select("id").from("t").where(Filters.notIn("id", (Object) new int[] { 1, 2 })).build();
-        assertEquals("SELECT id FROM t WHERE id NOT IN (:id1, :id2)", sp.query());
-        assertEquals(Arrays.asList(1, 2), sp.parameters());
-        assertEquals("SELECT id FROM t WHERE id IN ('a', 'b')",
-                Dsl.SCSB.select("id").from("t").where(Filters.in("id", (Object) Arrays.asList("a", "b"))).build().query());
-
-        // The condition snapshots the lone collection: later mutation does not change it.
-        final List<Integer> ids = new java.util.ArrayList<>(Arrays.asList(1, 2));
-        final In in = Filters.in("id", (Object) ids);
-        ids.add(3);
-        ids.set(0, 9);
-        assertEquals("id IN (1, 2)", in.toString());
-        assertEquals(Arrays.asList(1, 2), in.values());
-    }
-
-    @Test
-    void testIs() {
-        // IS accepts only null, a Boolean, or an SqlExpression right-hand value
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.is("status", "active"));
-        assertTrue(ex.getMessage().contains("IS requires null, a Boolean, or an explicit SqlExpression"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.is("status", 1));
-        assertThrows(IllegalArgumentException.class, () -> Filters.is("status", Filters.subQuery("SELECT 1")));
-
-        // a Boolean is normalized to the TRUE/FALSE keyword, never a bind parameter
-        Is isTrue = Filters.is("x", true);
-        assertEquals("x IS TRUE", isTrue.toString());
-        assertTrue(isTrue.parameters().isEmpty());
-        assertEquals(Filters.isTrue("x"), isTrue);
-        assertEquals("x IS FALSE", Filters.is("x", false).toString());
-        assertEquals(Filters.isFalse("x"), Filters.is("x", false));
-
-        assertEquals("x IS NULL", Filters.is("x", null).toString());
-        assertEquals("x IS UNKNOWN", Filters.is("x", Filters.expr("UNKNOWN")).toString());
-    }
-
-    @Test
-    void testIsEmpty() {
-        Or isEmpty = Filters.isNullOrEmpty("description");
-        assertNotNull(isEmpty);
-    }
-
-    @Test
-    void testIsFalse() {
-        Is isFalse = Filters.isFalse("active");
-        assertNotNull(isFalse);
-        assertEquals(Operator.IS, isFalse.operator());
-        assertEquals("active IS FALSE", isFalse.toString());
-    }
-
-    @Test
-    void testIsInfinite() {
-        IsInfinite isInfinite = Filters.isInfinite("value");
-        assertNotNull(isInfinite);
-    }
-
-    @Test
-    void testIsNaN() {
-        IsNaN isNaN = Filters.isNaN("value");
-        assertNotNull(isNaN);
-    }
-
-    @Test
-    void testIsNot() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.isNot("status", "deleted"));
-        assertTrue(ex.getMessage().contains("IS NOT requires null, a Boolean, or an explicit SqlExpression"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.isNot("status", 1));
-
-        IsNot isNotFalse = Filters.isNot("x", false);
-        assertEquals("x IS NOT FALSE", isNotFalse.toString());
-        assertTrue(isNotFalse.parameters().isEmpty());
-        assertEquals("x IS NOT TRUE", Filters.isNot("x", true).toString());
-        assertEquals("x IS NOT NULL", Filters.isNot("x", null).toString());
-        assertEquals("x IS NOT UNKNOWN", Filters.isNot("x", Filters.expr("UNKNOWN")).toString());
-    }
-
-    @Test
-    void testIsNotInfinite() {
-        IsNotInfinite isNotInfinite = Filters.isNotInfinite("value");
-        assertNotNull(isNotInfinite);
-    }
-
-    @Test
-    void testIsNotNaN() {
-        IsNotNaN isNotNaN = Filters.isNotNaN("value");
-        assertNotNull(isNotNaN);
-    }
-
-    @Test
-    void testIsNotNull() {
-        IsNotNull isNotNull = Filters.isNotNull("email");
-        assertNotNull(isNotNull);
-        assertEquals("email", isNotNull.propName());
-    }
-
-    @Test
-    void testIsNotNullAndNotEmpty() {
-        final And condition = Filters.isNotNullAndNotEmpty("email");
-
-        assertEquals(Operator.AND, condition.operator());
-        assertEquals(2, condition.conditions().size());
-        assertTrue(condition.toString().contains("IS NOT NULL"));
-        assertTrue(condition.toString().contains("!= ''"));
-    }
-
-    @Test
-    void testIsNotNullAndNotZero() {
-        final And condition = Filters.isNotNullAndNotZero("quantity");
-
-        assertEquals(Operator.AND, condition.operator());
-        assertEquals(2, condition.conditions().size());
-        assertTrue(condition.toString().contains("IS NOT NULL"));
-        assertTrue(condition.toString().contains("!= 0"));
-    }
-
-    @Test
-    void testIsNull() {
-        IsNull isNull = Filters.isNull("deletedAt");
-        assertNotNull(isNull);
-        assertEquals("deletedAt", isNull.propName());
-    }
-
-    @Test
-    void testIsNullOrZero() {
-        Or isNullOrZero = Filters.isNullOrZero("count");
-        assertNotNull(isNullOrZero);
-    }
-
-    @Test
-    void testIsTrue() {
-        Is isTrue = Filters.isTrue("active");
-        assertNotNull(isTrue);
-        assertEquals(Operator.IS, isTrue.operator());
-        assertEquals("active IS TRUE", isTrue.toString());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testJoin() {
-        // Entity name only: a qualified JOIN requires an ON/USING predicate
-        assertThrows(IllegalArgumentException.class, () -> Filters.join("users"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.join("users", (Condition) null));
-
-        // Test with entity name and condition
-        Condition condition = Filters.on("users.id", "orders.user_id");
-        Join join2 = Filters.join("users", condition);
-        assertEquals("JOIN users ON users.id = orders.user_id", join2.toString());
-
-        // Test with collection of entities and condition
-        List<String> entities = Arrays.asList("users", "roles");
-        Join join3 = Filters.join(entities, condition);
-        assertEquals("JOIN (users CROSS JOIN roles) ON users.id = orders.user_id", join3.toString());
-    }
-
-    @Test
-    void testJoinEntitiesWithCondition() {
-        Condition condition = Filters.expr("id = user_id");
-        com.landawn.abacus.query.condition.Join join = Filters.join(Arrays.asList("orders", "payments"), condition);
-        assertNotNull(join);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testJoinEntity() {
-        // a qualified JOIN needs an ON/USING predicate: the single-arg factory always throws
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.join("orders"));
-        assertTrue(ex.getMessage().contains("JOIN requires a non-null ON/USING predicate"));
-
-        // the two-arg form is the supported way to build it
-        com.landawn.abacus.query.condition.Join join = Filters.join("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("JOIN orders ON users.id = orders.user_id", join.toString());
-    }
-
-    @Test
-    void testJoinEntityWithCondition() {
-        Condition condition = Filters.expr("users.id = orders.user_id");
-        com.landawn.abacus.query.condition.Join join = Filters.join("orders", condition);
-        assertNotNull(join);
-    }
-
-    @Test
-    void testJunction() {
-        Condition cond1 = Filters.equal("name", "John");
-        Condition cond2 = Filters.equal("age", 30);
-        Junction junction = Filters.junction(Operator.OR, cond1, cond2);
-        assertNotNull(junction);
-    }
-
-    @Test
-    void testJunctionRejectsNonComposableOperator() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.junction(Operator.WHERE, Filters.eq("a", 1)));
-        assertThrows(IllegalArgumentException.class, () -> Filters.junction(Operator.WHERE, Arrays.asList(Filters.eq("a", 1))));
-    }
-
-    @Test
-    void testLe() {
-        LessThanOrEqual le = Filters.le("price", 1000);
-        assertNotNull(le);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testLeftJoin() {
-        // Entity name only: a qualified LEFT JOIN requires an ON/USING predicate
-        assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders", (Condition) null));
-
-        // Test with entity name and condition
-        Condition condition = Filters.on("users.id", "orders.user_id");
-        LeftJoin leftJoin2 = Filters.leftJoin("orders", condition);
-        assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin2.toString());
-
-        // Test with collection of entities and condition
-        List<String> entities = Arrays.asList("orders", "order_items");
-        LeftJoin leftJoin3 = Filters.leftJoin(entities, condition);
-        assertEquals("LEFT JOIN (orders CROSS JOIN order_items) ON users.id = orders.user_id", leftJoin3.toString());
-    }
-
-    @Test
-    void testLeftJoinEntitiesWithCondition() {
-        Condition condition = Filters.expr("id = user_id");
-        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin(Arrays.asList("orders", "payments"), condition);
-        assertNotNull(leftJoin);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testLeftJoinEntity() {
-        // a qualified LEFT JOIN needs an ON/USING predicate: the single-arg factory always throws
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders"));
-        assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"));
-
-        // the two-arg form is the supported way to build it
-        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin.toString());
-    }
-
-    @Test
-    void testLeftJoinEntityWithCondition() {
-        Condition condition = Filters.expr("users.id = orders.user_id");
-        com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("orders", condition);
-        assertNotNull(leftJoin);
-    }
-
-    @Test
-    void testLessThan() {
-        LessThan lt = Filters.lessThan("age", 65);
-        assertNotNull(lt);
-        assertEquals("age", lt.propName());
-    }
-
-    @Test
-    void testLessThanOrEqual() {
-        LessThanOrEqual le = Filters.lessThanOrEqual("age", 60);
-        assertNotNull(le);
-        assertEquals("age", le.propName());
-    }
-
-    @Test
-    void testLessThanOrEqualWithoutValue() {
-        LessThanOrEqual le = Filters.lessThanOrEqual("maximum");
-        assertNotNull(le);
-    }
-
-    @Test
-    void testLessThanWithoutValue() {
-        LessThan lt = Filters.lessThan("limit");
-        assertNotNull(lt);
-    }
-
-    @Test
-    void testLike() {
-        Like like = Filters.like("name", "%John%");
-        assertNotNull(like);
-        assertEquals("name", like.propName());
-    }
-
-    @Test
-    void testLikeObjectOperandsAndVarargsIn() {
-        SubQuery subQuery = Filters.subQuery("SELECT pattern FROM patterns");
-        assertEquals(subQuery, Filters.like("name", subQuery).propValue());
-        SqlExpression expression = Filters.expr("LOWER(pattern)");
-        assertEquals(expression, Filters.notLike("name", expression).propValue());
-        assertEquals(Arrays.asList("NEW", "OPEN"), Filters.in("status", "NEW", "OPEN").parameters());
-        assertEquals(Arrays.asList("CLOSED", "DELETED"), Filters.notIn("status", "CLOSED", "DELETED").parameters());
-    }
-
-    @Test
-    void testLikeWithoutValue() {
-        Like like = Filters.like("name");
-        assertNotNull(like);
-    }
-
-    @Test
-    void testLimit() {
-        // Test with count only
-        Limit limit1 = Filters.limit(10);
-        assertNotNull(limit1);
-        assertEquals(10, limit1.count());
-
-        // Test with offset and count
-        Limit limit2 = Filters.limit(50, 20);
-        assertNotNull(limit2);
-        assertEquals(20, limit2.offset());
-        assertEquals(50, limit2.count());
-
-        // Test with expression
-        Limit limit3 = Filters.limit("10 OFFSET 5");
-        assertNotNull(limit3);
-    }
-
-    @Test
-    void testLimit_002() {
-        String literal = "OFFSET 5 ROWS FETCH NEXT 20 ROWS ONLY";
-
-        Limit limit = Filters.limit(literal);
-
-        // The SQL:2008 FETCH form is parsed into concrete count/offset while its literal is retained.
-        assertEquals(literal, limit.expression());
-        assertEquals(20, limit.count());
-        assertEquals(5, limit.offset());
-    }
-
-    @Test
-    void testLimitExpr() {
-        com.landawn.abacus.query.condition.Limit limit = Filters.limit("10 OFFSET 20");
-        assertNotNull(limit);
-    }
-
-    @Test
-    void testLimitInt() {
-        com.landawn.abacus.query.condition.Limit limit = Filters.limit(10);
-        assertNotNull(limit);
-    }
-
-    @Test
-    void testLimitWithOffset() {
-        com.landawn.abacus.query.condition.Limit limit = Filters.limit(20, 10);
-        assertNotNull(limit);
-    }
-
-    @Test
-    void testLt() {
-        LessThan lt = Filters.lt("temperature", 100);
-        assertNotNull(lt);
-    }
-
-    @Test
-    void testMinus() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM inactive_users");
-        com.landawn.abacus.query.condition.Minus minus = Filters.minus(subQuery);
-        assertNotNull(minus);
-    }
-
-    @Test
-    void testNamedProperty() {
-        NamedProperty prop = Filters.namedProperty("userName");
-        assertNotNull(prop);
-        assertEquals("userName", prop.propName());
-    }
-
-    @Test
-    void testNaturalJoin() {
-        // Test with entity name only
-        NaturalJoin naturalJoin1 = Filters.naturalJoin("departments");
-        assertNotNull(naturalJoin1);
-
-        // Test with a collection of entities
-        List<String> entities = Arrays.asList("employees", "departments");
-        NaturalJoin naturalJoin3 = Filters.naturalJoin(entities);
-        assertNotNull(naturalJoin3);
-    }
-
-    @Test
-    void testNaturalJoinEntities() {
-        com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin(Arrays.asList("orders", "payments"));
-        assertEquals(2, naturalJoin.joinEntities().size());
-    }
-
-    @Test
-    void testNaturalJoinEntity() {
-        com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin("orders");
-        assertNotNull(naturalJoin);
-    }
-
-    @Test
-    void testNe() {
-        NotEqual ne = Filters.ne("status", "inactive");
-        assertNotNull(ne);
-        assertEquals("status", ne.propName());
-    }
-
-    @Test
-    void testNePlaceholderAndCollectionJunctionRenderOrderedBindings() {
-        final Junction junction = Filters.junction(Operator.AND, List.of(Filters.ne("status"), Filters.eq("id", 7)));
-        final AbstractQueryBuilder.SP result = Dsl.PSC.renderCondition(junction).build();
-        assertEquals("(status != ?) AND (id = ?)", result.query());
-        assertEquals(List.of(7), result.parameters());
-    }
-
-    @Test
-    void testNot() {
-        Condition condition = Filters.equal("name", "John");
-        Not notCondition = Filters.not(condition);
-        assertNotNull(notCondition);
-        assertEquals(Operator.NOT, notCondition.operator());
-    }
-
-    // Removed: testBt() - bt() methods have been removed. Use between() instead.
-
-    @Test
-    void testNotBetween() {
-        NotBetween notBetween = Filters.notBetween("age", 0, 17);
-        assertNotNull(notBetween);
-        assertEquals("age", notBetween.propName());
-    }
-
-    @Test
-    void testNotBetweenWithoutValues() {
-        NotBetween notBetween = Filters.notBetween("price");
-        assertNotNull(notBetween);
-    }
-
-    @Test
-    void testNotContains() {
-        NotLike notContains = Filters.notContains("description", "spam");
-        assertNotNull(notContains);
-    }
-
-    @Test
-    void testNotContains_NullPropValue_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.notContains("name", null));
-    }
-
-    @Test
-    void testNotEndsWith() {
-        NotLike notEndsWith = Filters.notEndsWith("email", "@spam.com");
-        assertNotNull(notEndsWith);
-    }
-
-    @Test
-    void testNotEndsWith_NullPropValue_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.notEndsWith("name", null));
-    }
-
-    @Test
-    void testNotEqual() {
-        NotEqual notEqual = Filters.notEqual("status", "deleted");
-        assertNotNull(notEqual);
-        assertEquals("status", notEqual.propName());
-        assertEquals("deleted", notEqual.propValue());
-    }
-
-    @Test
-    void testNotEqualWithoutValue() {
-        NotEqual ne = Filters.notEqual("status");
-        assertNotNull(ne);
-    }
-
-    @Test
-    void testNotExists() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
-        com.landawn.abacus.query.condition.NotExists notExists = Filters.notExists(subQuery);
-        assertNotNull(notExists);
-    }
-
-    @Test
-    void testNotIn() {
-        // Test with int array
-        NotIn notIn1 = Filters.notIn("status", new int[] { 0, -1 });
-        assertNotNull(notIn1);
-
-        // Test with long array
-        NotIn notIn2 = Filters.notIn("excludeId", new long[] { 110L, 120L });
-        assertNotNull(notIn2);
-
-        // Test with double array
-        NotIn notIn3 = Filters.notIn("discount", new double[] { 0.0, 100.0 });
-        assertNotNull(notIn3);
-
-        // Test with object array
-        NotIn notIn4 = Filters.notIn("type", new Object[] { "guest", "bot" });
-        assertNotNull(notIn4);
-
-        // Test with collection
-        List<String> values = Arrays.asList("spam", "deleted", "hidden");
-        NotIn notIn5 = Filters.notIn("status", values);
-        assertNotNull(notIn5);
-    }
-
-    @Test
-    void testNotInBooleanArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("active", new boolean[] { false });
-        assertNotNull(notIn);
-        assertEquals(1, notIn.parameters().size());
-    }
-
-    @Test
-    void testNotInByteArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("flag", new byte[] { 0, 1 });
-        assertNotNull(notIn);
-        assertEquals(2, notIn.parameters().size());
-    }
-
-    @Test
-    void testNotInCharArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("grade", new char[] { 'D', 'F' });
-        assertNotNull(notIn);
-        assertEquals(2, notIn.parameters().size());
-    }
-
-    @Test
-    void testNotInCollection() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", Arrays.asList(1, 2, 3));
-        assertNotNull(notIn);
-    }
-
-    @Test
-    void testNotInDoubleArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("score", new double[] { 1.5, 2.5, 3.5 });
-        assertNotNull(notIn);
-    }
-
-    @Test
-    void testNotInFloatArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("ratio", new float[] { 0.0f, 1.0f });
-        assertNotNull(notIn);
-        assertEquals(2, notIn.parameters().size());
-    }
-
-    @Test
-    void testNotInIntArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", new int[] { 1, 2, 3 });
-        assertNotNull(notIn);
-    }
-
-    @Test
-    void testNotInLongArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", new long[] { 1L, 2L, 3L });
-        assertNotNull(notIn);
-    }
-
-    @Test
-    void testNotInObjectArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("status", new Object[] { "deleted", "archived" });
-        assertNotNull(notIn);
-    }
-
-    @Test
-    void testNotInObjectArrayNullDelegatesToValidation() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.notIn("status", (Object[]) null));
-    }
-
-    @Test
-    void testNotInShortArray() {
-        com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("level", new short[] { 0, 9 });
-        assertNotNull(notIn);
-        assertEquals(2, notIn.parameters().size());
-    }
-
-    @Test
-    void testNotInSubQuery() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id FROM blocked_users");
-        com.landawn.abacus.query.condition.NotInSubQuery notInSubQuery = Filters.notIn("user_id", subQuery);
-        assertNotNull(notInSubQuery);
-    }
-
-    @Test
-    void testNotInSubQueryMultipleProps() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id, name FROM blocked");
-        com.landawn.abacus.query.condition.NotInSubQuery notInSubQuery = Filters.notIn(Arrays.asList("id", "name"), subQuery);
-        assertNotNull(notInSubQuery);
-    }
-
-    @Test
-    void testNotLike() {
-        NotLike notLike = Filters.notLike("name", "%test%");
-        assertNotNull(notLike);
-    }
-
-    @Test
-    void testNotLikeWithoutValue() {
-        NotLike notLike = Filters.notLike("email");
-        assertNotNull(notLike);
-    }
-
-    @Test
-    void testNotStartsWith() {
-        NotLike notStartsWith = Filters.notStartsWith("name", "Test");
-        assertNotNull(notStartsWith);
-    }
-
-    @Test
-    void testNotStartsWith_NullPropValue_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.notStartsWith("name", null));
-    }
-
-    @Test
-    void testNullValueOperandRejectedByOrderingAndLikeFactories() {
-        // D1 / D3 / D4: null is only meaningful for =, !=, IS and IS NOT
-        assertEquals("a IS NULL", Filters.equal("a", null).toString());
-        assertEquals("a IS NOT NULL", Filters.notEqual("a", null).toString());
-        assertEquals("a IS NULL", Filters.binary("a", Operator.EQUAL, null).toString());
-
-        assertThrows(IllegalArgumentException.class, () -> Filters.greaterThan("age", null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.gt("age", null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.greaterThanOrEqual("age", null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.ge("age", null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.lessThan("age", null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.lt("age", null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.lessThanOrEqual("age", null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.le("age", null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.like("email", (String) null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.like("email", (Object) null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.notLike("email", (String) null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.notLike("email", (Object) null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.gtAndLt("age", null, 5));
-        assertThrows(IllegalArgumentException.class, () -> Filters.geAndLt("age", 1, null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.geAndLe("age", null, 5));
-        assertThrows(IllegalArgumentException.class, () -> Filters.gtAndLe("age", 1, null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.between("age", null, 5));
-        assertThrows(IllegalArgumentException.class, () -> Filters.notBetween("age", 1, null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.binary("age", Operator.GREATER_THAN, null));
-
-        // D7: an ordinary predicate is not a value operand either
-        assertThrows(IllegalArgumentException.class, () -> Filters.equal("a", Filters.equal("b", 1)));
-        assertThrows(IllegalArgumentException.class, () -> Filters.gt("a", Filters.isNull("b")));
-        assertThrows(IllegalArgumentException.class, () -> Filters.like("a", Filters.any(Filters.subQuery("SELECT 1"))));
-        assertThrows(IllegalArgumentException.class, () -> Filters.in("x", Filters.equal("a", 1)));
-    }
-
-    @Test
-    void testOn() {
-        // Test with condition
-        Condition condition = Filters.eq("a.id", "b.a_id");
-        On on1 = Filters.on(condition);
-        assertNotNull(on1);
-        assertEquals(condition, on1.condition());
-
-        // Test with string
-        On on2 = Filters.on("a.id = b.a_id");
-        assertNotNull(on2);
-        assertNotNull(on2.condition());
-
-        // Test with two property names
-        On on3 = Filters.on("userId", "user.id");
-        assertNotNull(on3);
-
-        // Test with map
-        Map<String, String> propMap = new HashMap<>();
-        propMap.put("orderId", "order.id");
-        propMap.put("productId", "product.id");
-        On on4 = Filters.on(propMap);
-        assertNotNull(on4);
-    }
-
-    @Test
-    void testOn_stringExpr_blankRejectedUpFront() {
-        final String expectedMessage = assertThrows(IllegalArgumentException.class, () -> Filters.where("  ")).getMessage();
-        final String actualMessage = assertThrows(IllegalArgumentException.class, () -> Filters.on("  ")).getMessage();
-        assertEquals(expectedMessage, actualMessage);
-        assertThrows(IllegalArgumentException.class, () -> Filters.on((String) null));
-        assertThrows(IllegalArgumentException.class, () -> Filters.on(""));
-    }
-
-    @Test
-    void testOnCondition() {
-        Condition condition = Filters.expr("users.id = orders.user_id");
-        com.landawn.abacus.query.condition.On on = Filters.on(condition);
-        assertNotNull(on);
-    }
-
-    @Test
-    void testOnMap() {
-        Map<String, String> propNamePair = new HashMap<>();
-        propNamePair.put("id", "user_id");
-
-        com.landawn.abacus.query.condition.On on = Filters.on(propNamePair);
-        assertNotNull(on);
-    }
-
-    @Test
-    void testOnPropNames() {
-        com.landawn.abacus.query.condition.On on = Filters.on("id", "user_id");
-        assertNotNull(on);
-    }
-
-    @Test
-    void testOnString() {
-        com.landawn.abacus.query.condition.On on = Filters.on("users.id = orders.user_id");
-        assertNotNull(on);
-    }
-
-    @Test
-    void testOnString_EmptyExpr_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.on(""));
-    }
-
-    @Test
-    void testOnString_NonEmptyExpr_StillWorks() {
-        On on = Filters.on("users.id = orders.user_id");
-        assertNotNull(on);
-        assertTrue(on.toString().contains("users.id = orders.user_id"));
-    }
-
-    // --- Guard: on(String) must reject null/empty (matching where(String)/having(String) contract) ---
-
-    @Test
-    void testOnString_NullExpr_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.on((String) null));
-    }
-
-    @Test
-    void testOr() {
-        // Test with array of conditions
-        Condition cond1 = Filters.eq("status", "active");
-        Condition cond2 = Filters.eq("status", "pending");
-        Or or1 = Filters.or(cond1, cond2);
-        assertNotNull(or1);
-        assertEquals(2, or1.conditions().size());
-
-        // Test with collection of conditions
-        List<Condition> conditions = Arrays.asList(cond1, cond2);
-        Or or2 = Filters.or(conditions);
-        assertNotNull(or2);
-        assertEquals(2, or2.conditions().size());
-    }
-
-    @Test
-    void testOrCollection() {
-        Condition cond1 = Filters.equal("status", "active");
-        Condition cond2 = Filters.equal("status", "pending");
-        Or or = Filters.or(Arrays.asList(cond1, cond2));
-        assertNotNull(or);
-        assertEquals(2, or.conditions().size());
-    }
-
-    @Test
-    void testOrderBy() {
-        // Test with varargs
-        OrderBy ob1 = Filters.orderBy("name", "age");
-        assertNotNull(ob1);
-
-        // Test orderByAsc with varargs
-        OrderBy ob2 = Filters.orderByAsc("firstName", "lastName");
-        assertNotNull(ob2);
-
-        // Test orderByAsc with collection
-        List<String> props = Arrays.asList("category", "price");
-        OrderBy ob3 = Filters.orderByAsc(props);
-        assertNotNull(ob3);
-
-        // Test orderByDesc with varargs
-        OrderBy ob4 = Filters.orderByDesc("createdAt", "id");
-        assertNotNull(ob4);
-
-        // Test orderByDesc with collection
-        OrderBy ob5 = Filters.orderByDesc(props);
-        assertNotNull(ob5);
-
-        // Test with collection
-        OrderBy ob6 = Filters.orderBy(props);
-        assertNotNull(ob6);
-
-        // Test with collection and direction
-        OrderBy ob7 = Filters.orderBy(props, SortDirection.DESC);
-        assertNotNull(ob7);
-
-        // Test with single property and direction
-        OrderBy ob8 = Filters.orderBy("salary", SortDirection.DESC);
-        assertNotNull(ob8);
-
-        // Test with map
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("priority", SortDirection.DESC);
-        orders.put("date", SortDirection.ASC);
-        OrderBy ob9 = Filters.orderBy(orders);
-        assertNotNull(ob9);
-
-        // Test with condition
-        Condition condition = Filters.expr("name ASC");
-        OrderBy ob10 = Filters.orderBy(condition);
-        assertNotNull(ob10);
-    }
-
-    @Test
-    void testOrderByAscDescSingleColumn() {
-        OrderBy asc = Filters.orderByAsc("created_date");
-        assertNotNull(asc);
-        assertEquals(Operator.ORDER_BY, asc.operator());
-        assertTrue(asc.toString().contains("created_date ASC"), asc.toString());
-
-        OrderBy desc = Filters.orderByDesc("score");
-        assertNotNull(desc);
-        assertEquals(Operator.ORDER_BY, desc.operator());
-        assertTrue(desc.toString().contains("score DESC"), desc.toString());
-    }
-
-    @Test
-    void testOrderByCollection() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(Arrays.asList("name", "age"));
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByCondition() {
-        Condition condition = Filters.expr("name ASC");
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(condition);
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByMap() {
-        Map<String, SortDirection> orders = new HashMap<>();
-        orders.put("name", SortDirection.ASC);
-        orders.put("age", SortDirection.DESC);
-
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(orders);
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByMultiplePropertiesWithDirections() {
-        // Test with 2 properties
-        OrderBy ob1 = Filters.orderBy("prop1", SortDirection.ASC, "prop2", SortDirection.DESC);
-        assertNotNull(ob1);
-
-        // Test with 3 properties
-        OrderBy ob2 = Filters.orderBy("prop1", SortDirection.ASC, "prop2", SortDirection.DESC, "prop3", SortDirection.ASC);
-        assertNotNull(ob2);
-    }
-
-    @Test
-    void testOrderByOneColumn() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC);
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByThreeColumns() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", SortDirection.ASC, "age", SortDirection.DESC, "email", SortDirection.ASC);
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByTwoColumns() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("year", SortDirection.DESC, "month", SortDirection.ASC);
-        assertNotNull(orderBy);
-        assertEquals("ORDER BY year DESC, month ASC", orderBy.toString());
-    }
-
-    @Test
-    void testOrderByVarargs() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy("name", "age");
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByWithDirection() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = Filters.orderBy(Arrays.asList("name", "age"), SortDirection.DESC);
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrVarargs() {
-        Condition cond1 = Filters.equal("name", "John");
-        Condition cond2 = Filters.equal("name", "Jane");
-        Or or = Filters.or(cond1, cond2);
-        assertNotNull(or);
-        assertEquals(2, or.conditions().size());
-    }
-
-    @Test
-    void testPairOverloadsRejectDuplicatePropertyNames() {
-        // D-L: a repeated name used to collapse silently into one entry with the last direction winning
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "a", SortDirection.DESC));
-        assertTrue(ex.getMessage().contains("Duplicate property name: a"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC));
-        assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "b", SortDirection.DESC));
-        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("a", SortDirection.ASC, "a", SortDirection.DESC));
-        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC));
-        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("b", SortDirection.ASC, "a", SortDirection.ASC, "b", SortDirection.DESC));
-
-        // null names are still reported by the clause constructor, not as duplicates
-        assertThrows(IllegalArgumentException.class, () -> Filters.orderBy(null, SortDirection.ASC, null, SortDirection.DESC));
-
-        // distinct names keep working
-        assertEquals("GROUP BY a ASC, b DESC", Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.DESC).toString());
-        assertEquals("ORDER BY a ASC, b DESC, c ASC", Filters.orderBy("a", SortDirection.ASC, "b", SortDirection.DESC, "c", SortDirection.ASC).toString());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testRightJoin() {
-        // Entity name only: a qualified RIGHT JOIN requires an ON/USING predicate
-        assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("departments"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("departments", (Condition) null));
-
-        // Test with entity name and condition
-        Condition condition = Filters.on("employees.dept_id", "departments.id");
-        RightJoin rightJoin2 = Filters.rightJoin("departments", condition);
-        assertEquals("RIGHT JOIN departments ON employees.dept_id = departments.id", rightJoin2.toString());
-
-        // Test with collection of entities and condition
-        List<String> entities = Arrays.asList("departments", "locations");
-        RightJoin rightJoin3 = Filters.rightJoin(entities, condition);
-        assertEquals("RIGHT JOIN (departments CROSS JOIN locations) ON employees.dept_id = departments.id", rightJoin3.toString());
-    }
-
-    @Test
-    void testRightJoinEntitiesWithCondition() {
-        Condition condition = Filters.expr("id = user_id");
-        com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin(Arrays.asList("orders", "payments"), condition);
-        assertNotNull(rightJoin);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testRightJoinEntity() {
-        // a qualified RIGHT JOIN needs an ON/USING predicate: the single-arg factory always throws
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("orders"));
-        assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"));
-
-        // the two-arg form is the supported way to build it
-        com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin("orders", Filters.on("users.id", "orders.user_id"));
-        assertEquals("RIGHT JOIN orders ON users.id = orders.user_id", rightJoin.toString());
-    }
-
-    @Test
-    void testRightJoinEntityWithCondition() {
-        Condition condition = Filters.expr("users.id = orders.user_id");
-        com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin("orders", condition);
-        assertNotNull(rightJoin);
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testSingleArgQualifiedJoinFactoriesAlwaysThrow() {
-        // D-E: the deprecated single-arg factories cannot succeed; CROSS/NATURAL joins remain condition-less
-        for (final String entity : new String[] { "orders", "orders o", "orders ON a.id = o.id" }) {
-            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.join(entity)).getMessage()
-                    .contains("JOIN requires a non-null ON/USING predicate"));
-            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin(entity)).getMessage()
-                    .contains("INNER JOIN requires a non-null ON/USING predicate"));
-            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin(entity)).getMessage()
-                    .contains("LEFT JOIN requires a non-null ON/USING predicate"));
-            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(entity)).getMessage()
-                    .contains("RIGHT JOIN requires a non-null ON/USING predicate"));
-            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin(entity)).getMessage()
-                    .contains("FULL JOIN requires a non-null ON/USING predicate"));
+    @Nested
+    class Comparisons {
+        @Test
+        void testBeanEqualityOverloadsDirectMapCallersToMapOverloads() {
+            final Map<String, Object> props = new LinkedHashMap<>();
+            props.put("id", 4L);
+
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual((Object) props));
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(props, Arrays.asList("id")));
+            assertThrows(IllegalArgumentException.class, () -> Filters.allEqual((Object) props));
+            assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(props, Arrays.asList("id")));
         }
 
-        assertEquals("CROSS JOIN orders", Filters.crossJoin("orders").toString());
-        assertEquals("NATURAL JOIN orders", Filters.naturalJoin("orders").toString());
+        @Test
+        void testBinary() {
+            Binary binary = Filters.binary("age", Operator.GREATER_THAN, 18);
+            assertNotNull(binary);
+            assertEquals("age", binary.propName());
+            assertEquals(Operator.GREATER_THAN, binary.operator());
+        }
 
-        // multi-entity joins render a CROSS JOIN tree, not a comma list
-        assertEquals("CROSS JOIN (colors CROSS JOIN sizes)", Filters.crossJoin(Arrays.asList("colors", "sizes")).toString());
-        assertEquals("NATURAL JOIN (employees CROSS JOIN departments)", Filters.naturalJoin(Arrays.asList("employees", "departments")).toString());
-        assertEquals("JOIN (orders CROSS JOIN products) ON orders.product_id = products.id",
-                Filters.join(Arrays.asList("orders", "products"), Filters.on("orders.product_id", "products.id")).toString());
+        @Test
+        void testBinaryParameterized() {
+            Binary binary = Filters.binary("price", Operator.GREATER_THAN);
+            assertNotNull(binary);
+            assertEquals("price", binary.propName());
+            assertEquals(Operator.GREATER_THAN, binary.operator());
+            assertSame(Filters.QME, binary.propValue());
+            // Renders identically to the dedicated parameterized factory for the same operator.
+            assertEquals(Filters.greaterThan("price").toString(), binary.toString());
+        }
+
+        @Test
+        void testBinaryParameterizedInvalidArgsThrow() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("", Operator.GREATER_THAN));
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("price", Operator.WHERE));
+        }
+
+        @Test
+        void testBinaryPlaceholder_rejectsIsAndIsNot() {
+            // 'propName IS ?' is not valid SQL, so the scalar-placeholder overload rejects IS/IS_NOT like IN/NOT_IN
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IS));
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IS_NOT));
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.IN));
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("x", Operator.NOT_IN));
+            assertEquals("price > ?", Filters.binary("price", Operator.GREATER_THAN).toString());
+
+            // the guard is deliberately limited to this overload: the 3-arg form lets the caller own the rendered
+            // SQL through an explicit SqlExpression right-hand side, so 'x IS ?' stays constructible there
+            assertEquals("x IS ?", Filters.binary("x", Operator.IS, Filters.QME).toString());
+            assertEquals("x IS NOT ?", Filters.binary("x", Operator.IS_NOT, Filters.QME).toString());
+            assertEquals("x IS ?", Filters.is("x", Filters.QME).toString());
+        }
+
+        @Test
+        void testBinaryRejectsMembershipOperators() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("status", Operator.IN));
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("status", Operator.NOT_IN));
+        }
+
+        @Test
+        void testBinaryWithMembershipOperatorAndValues() {
+            Binary in = Filters.binary("status", Operator.IN, Arrays.asList("NEW", "OPEN"));
+            assertEquals(Operator.IN, in.operator());
+            assertEquals(Arrays.asList("NEW", "OPEN"), in.parameters());
+
+            Binary notIn = Filters.binary("status", Operator.NOT_IN, new String[] { "CLOSED", "DELETED" });
+            assertEquals(Operator.NOT_IN, notIn.operator());
+            assertEquals(Arrays.asList("CLOSED", "DELETED"), notIn.parameters());
+        }
+
+        @Test
+        void testBlankSqlExpressionRejectedAsValueOperand() {
+            // D-G: `a = ` is not a usable predicate
+            assertThrows(IllegalArgumentException.class, () -> Filters.equal("a", Filters.expr("")));
+            assertThrows(IllegalArgumentException.class, () -> Filters.gt("a", Filters.expr("  ")));
+            assertThrows(IllegalArgumentException.class, () -> Filters.like("a", Filters.expr(" ")));
+            assertThrows(IllegalArgumentException.class, () -> Filters.between("a", Filters.expr(""), 5));
+            assertThrows(IllegalArgumentException.class, () -> Filters.in("a", Filters.expr(""), 1));
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("a", Operator.EQUAL, Filters.expr(" ")));
+
+            // a non-blank expression is still accepted verbatim
+            assertEquals("a = now()", Filters.equal("a", Filters.expr("now()")).toString());
+        }
+
+        @Test
+        void testEq() {
+            Equal equal = Filters.eq("age", 30);
+            assertNotNull(equal);
+            assertEquals("age", equal.propName());
+            assertEquals(30, (Integer) equal.propValue());
+        }
+
+        @Test
+        void testEqual() {
+            Equal equal = Filters.equal("name", "John");
+            assertNotNull(equal);
+            assertEquals("name", equal.propName());
+            assertEquals("John", equal.propValue());
+        }
+
+        @Test
+        void testEqualWithNull_rendersIsNull() {
+            // CRITICAL: equal(prop, null) MUST render as "prop IS NULL", not "prop = NULL"
+            // (otherwise the condition is never true in SQL three-valued logic)
+            Equal eq = Filters.equal("col", null);
+            assertTrue(eq.toString().contains("IS NULL"), "equal(c, null) should render as IS NULL but was: " + eq.toString());
+            assertFalse(eq.toString().contains("= NULL"));
+        }
+
+        @Test
+        void testEqualWithoutValue() {
+            Equal equal = Filters.equal("name");
+            assertNotNull(equal);
+            assertEquals("name", equal.propName());
+        }
+
+        @Test
+        void testEqWithoutValue() {
+            Equal equal = Filters.eq("status");
+            assertNotNull(equal);
+        }
+
+        @Test
+        void testFilters_binary() {
+            Binary condition = Filters.binary("price", Operator.GREATER_THAN, 100);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_eq() {
+            Equal condition = Filters.eq("status", "active");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_eqParameterized() {
+            Equal condition = Filters.eq("email");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_equal() {
+            Equal condition = Filters.equal("username", "john_doe");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_equalParameterized() {
+            Equal condition = Filters.equal("user_id");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_ge() {
+            GreaterThanOrEqual condition = Filters.ge("age", 18);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_greaterThan() {
+            GreaterThan condition = Filters.greaterThan("age", 18);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_greaterThanOrEqual() {
+            GreaterThanOrEqual condition = Filters.greaterThanOrEqual("score", 60);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_gt() {
+            GreaterThan condition = Filters.gt("price", 100);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_isNotNull() {
+            IsNotNull condition = Filters.isNotNull("required_field");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_isNull() {
+            IsNull condition = Filters.isNull("optional_field");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_lessThan() {
+            LessThan condition = Filters.lt("price", 1000);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_lessThanOrEqual() {
+            LessThanOrEqual condition = Filters.le("age", 65);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_ne() {
+            NotEqual condition = Filters.ne("status", "inactive");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_notEqual() {
+            NotEqual condition = Filters.notEqual("status", "deleted");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testGe() {
+            GreaterThanOrEqual ge = Filters.ge("score", 80);
+            assertNotNull(ge);
+        }
+
+        @Test
+        void testGreaterThan() {
+            GreaterThan gt = Filters.greaterThan("age", 18);
+            assertNotNull(gt);
+            assertEquals("age", gt.propName());
+            assertEquals(Integer.valueOf(18), gt.propValue());
+        }
+
+        @Test
+        void testGreaterThanOrEqual() {
+            GreaterThanOrEqual ge = Filters.greaterThanOrEqual("age", 21);
+            assertNotNull(ge);
+            assertEquals("age", ge.propName());
+        }
+
+        @Test
+        void testGreaterThanOrEqualWithoutValue() {
+            GreaterThanOrEqual ge = Filters.greaterThanOrEqual("count");
+            assertNotNull(ge);
+        }
+
+        @Test
+        void testGreaterThanWithoutValue() {
+            GreaterThan gt = Filters.greaterThan("value");
+            assertNotNull(gt);
+        }
+
+        @Test
+        void testGt() {
+            GreaterThan gt = Filters.gt("score", 90);
+            assertNotNull(gt);
+            assertEquals("score", gt.propName());
+        }
+
+        @Test
+        void testIs() {
+            // IS accepts only null, a Boolean, or an SqlExpression right-hand value
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.is("status", "active"));
+            assertTrue(ex.getMessage().contains("IS requires null, a Boolean, or an explicit SqlExpression"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.is("status", 1));
+            assertThrows(IllegalArgumentException.class, () -> Filters.is("status", Filters.subQuery("SELECT 1")));
+
+            // a Boolean is normalized to the TRUE/FALSE keyword, never a bind parameter
+            Is isTrue = Filters.is("x", true);
+            assertEquals("x IS TRUE", isTrue.toString());
+            assertTrue(isTrue.parameters().isEmpty());
+            assertEquals(Filters.isTrue("x"), isTrue);
+            assertEquals("x IS FALSE", Filters.is("x", false).toString());
+            assertEquals(Filters.isFalse("x"), Filters.is("x", false));
+
+            assertEquals("x IS NULL", Filters.is("x", null).toString());
+            assertEquals("x IS UNKNOWN", Filters.is("x", Filters.expr("UNKNOWN")).toString());
+        }
+
+        @Test
+        void testIsEmpty() {
+            Or isEmpty = Filters.isNullOrEmpty("description");
+            assertNotNull(isEmpty);
+        }
+
+        @Test
+        void testIsFalse() {
+            Is isFalse = Filters.isFalse("active");
+            assertNotNull(isFalse);
+            assertEquals(Operator.IS, isFalse.operator());
+            assertEquals("active IS FALSE", isFalse.toString());
+        }
+
+        @Test
+        void testIsInfinite() {
+            IsInfinite isInfinite = Filters.isInfinite("value");
+            assertNotNull(isInfinite);
+        }
+
+        @Test
+        void testIsNaN() {
+            IsNaN isNaN = Filters.isNaN("value");
+            assertNotNull(isNaN);
+        }
+
+        @Test
+        void testIsNot() {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.isNot("status", "deleted"));
+            assertTrue(ex.getMessage().contains("IS NOT requires null, a Boolean, or an explicit SqlExpression"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.isNot("status", 1));
+
+            IsNot isNotFalse = Filters.isNot("x", false);
+            assertEquals("x IS NOT FALSE", isNotFalse.toString());
+            assertTrue(isNotFalse.parameters().isEmpty());
+            assertEquals("x IS NOT TRUE", Filters.isNot("x", true).toString());
+            assertEquals("x IS NOT NULL", Filters.isNot("x", null).toString());
+            assertEquals("x IS NOT UNKNOWN", Filters.isNot("x", Filters.expr("UNKNOWN")).toString());
+        }
+
+        @Test
+        void testIsNotInfinite() {
+            IsNotInfinite isNotInfinite = Filters.isNotInfinite("value");
+            assertNotNull(isNotInfinite);
+        }
+
+        @Test
+        void testIsNotNaN() {
+            IsNotNaN isNotNaN = Filters.isNotNaN("value");
+            assertNotNull(isNotNaN);
+        }
+
+        @Test
+        void testIsNotNull() {
+            IsNotNull isNotNull = Filters.isNotNull("email");
+            assertNotNull(isNotNull);
+            assertEquals("email", isNotNull.propName());
+        }
+
+        @Test
+        void testIsNotNullAndNotEmpty() {
+            final And condition = Filters.isNotNullAndNotEmpty("email");
+
+            assertEquals(Operator.AND, condition.operator());
+            assertEquals(2, condition.conditions().size());
+            assertTrue(condition.toString().contains("IS NOT NULL"));
+            assertTrue(condition.toString().contains("!= ''"));
+        }
+
+        @Test
+        void testIsNotNullAndNotZero() {
+            final And condition = Filters.isNotNullAndNotZero("quantity");
+
+            assertEquals(Operator.AND, condition.operator());
+            assertEquals(2, condition.conditions().size());
+            assertTrue(condition.toString().contains("IS NOT NULL"));
+            assertTrue(condition.toString().contains("!= 0"));
+        }
+
+        @Test
+        void testIsNull() {
+            IsNull isNull = Filters.isNull("deletedAt");
+            assertNotNull(isNull);
+            assertEquals("deletedAt", isNull.propName());
+        }
+
+        @Test
+        void testIsNullOrZero() {
+            Or isNullOrZero = Filters.isNullOrZero("count");
+            assertNotNull(isNullOrZero);
+        }
+
+        @Test
+        void testIsTrue() {
+            Is isTrue = Filters.isTrue("active");
+            assertNotNull(isTrue);
+            assertEquals(Operator.IS, isTrue.operator());
+            assertEquals("active IS TRUE", isTrue.toString());
+        }
+
+        @Test
+        void testLe() {
+            LessThanOrEqual le = Filters.le("price", 1000);
+            assertNotNull(le);
+        }
+
+        @Test
+        void testLessThan() {
+            LessThan lt = Filters.lessThan("age", 65);
+            assertNotNull(lt);
+            assertEquals("age", lt.propName());
+        }
+
+        @Test
+        void testLessThanOrEqual() {
+            LessThanOrEqual le = Filters.lessThanOrEqual("age", 60);
+            assertNotNull(le);
+            assertEquals("age", le.propName());
+        }
+
+        @Test
+        void testLessThanOrEqualWithoutValue() {
+            LessThanOrEqual le = Filters.lessThanOrEqual("maximum");
+            assertNotNull(le);
+        }
+
+        @Test
+        void testLessThanWithoutValue() {
+            LessThan lt = Filters.lessThan("limit");
+            assertNotNull(lt);
+        }
+
+        @Test
+        void testLt() {
+            LessThan lt = Filters.lt("temperature", 100);
+            assertNotNull(lt);
+        }
+
+        @Test
+        void testNe() {
+            NotEqual ne = Filters.ne("status", "inactive");
+            assertNotNull(ne);
+            assertEquals("status", ne.propName());
+        }
+
+        @Test
+        void testNePlaceholderAndCollectionJunctionRenderOrderedBindings() {
+            final Junction junction = Filters.junction(Operator.AND, List.of(Filters.ne("status"), Filters.eq("id", 7)));
+            final AbstractQueryBuilder.SP result = Dsl.PSC.renderCondition(junction).build();
+            assertEquals("(status != ?) AND (id = ?)", result.query());
+            assertEquals(List.of(7), result.parameters());
+        }
+
+        @Test
+        void testNotEqual() {
+            NotEqual notEqual = Filters.notEqual("status", "deleted");
+            assertNotNull(notEqual);
+            assertEquals("status", notEqual.propName());
+            assertEquals("deleted", notEqual.propValue());
+        }
+
+        @Test
+        void testNotEqualWithNull_rendersIsNotNull() {
+            // CRITICAL: notEqual(prop, null) MUST render as "prop IS NOT NULL"
+            NotEqual ne = Filters.notEqual("col", null);
+            assertTrue(ne.toString().contains("IS NOT NULL"), "notEqual(c, null) should render as IS NOT NULL but was: " + ne.toString());
+        }
+
+        @Test
+        void testNotEqualWithoutValue() {
+            NotEqual ne = Filters.notEqual("status");
+            assertNotNull(ne);
+        }
     }
 
-    @Test
-    void testSinglePropertyEntitySubqueryKeepsProjectionAndPredicate() {
-        final SubQuery subQuery = Filters.subQuery(Account.class, "id", Filters.eq("status", 7));
-        assertEquals(Account.class, subQuery.entityClass());
-        assertEquals(List.of("id"), subQuery.selectPropNames());
-        assertEquals(List.of(7), subQuery.parameters());
+    @Nested
+    class Composition {
+        @Test
+        void testAnd() {
+            // Test with array of conditions
+            Condition cond1 = Filters.gt("age", 18);
+            Condition cond2 = Filters.lt("age", 65);
+            And and1 = Filters.and(cond1, cond2);
+            assertNotNull(and1);
+            assertEquals(2, and1.conditions().size());
+
+            // Test with collection of conditions
+            List<Condition> conditions = Arrays.asList(cond1, cond2);
+            And and2 = Filters.and(conditions);
+            assertNotNull(and2);
+            assertEquals(2, and2.conditions().size());
+        }
+
+        @Test
+        void testAndCollection() {
+            Condition cond1 = Filters.equal("verified", true);
+            Condition cond2 = Filters.notEqual("status", "deleted");
+            And and = Filters.and(Arrays.asList(cond1, cond2));
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testAndEmptyArray_buildsEmptyAndJunction() {
+            And empty = Filters.and(new Condition[0]);
+            assertNotNull(empty);
+            assertEquals("1 = 1", empty.toString());
+        }
+
+        @Test
+        void testAndVarargs() {
+            Condition cond1 = Filters.equal("status", "active");
+            Condition cond2 = Filters.greaterThan("age", 18);
+            And and = Filters.and(cond1, cond2);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testComplexConditionChaining() {
+            Condition condition = Filters.and(Filters.equal("status", "active"), Filters.greaterThan("age", 18),
+                    Filters.or(Filters.equal("role", "admin"), Filters.equal("role", "moderator")));
+            assertNotNull(condition);
+        }
+
+        // ---- fix-round 2026-09-19 regression tests ----
+
+        @Test
+        void testEmptyJunctionsComposeAsBooleanIdentityPredicates() {
+            // D-C: an initialized empty AND/OR is a complete predicate and may be nested, negated, or used in a clause
+            assertEquals("((1 = 1) OR (1 = 0))", Filters.or(Filters.and(), Filters.or()).toString());
+            assertEquals("((1 = 1))", Filters.and(Filters.and()).toString());
+            assertEquals("NOT (1 = 1)", Filters.not(Filters.and()).toString());
+            assertEquals("WHERE 1 = 1", Filters.where(Filters.and()).toString());
+            assertEquals("HAVING 1 = 0", Filters.having(Filters.or()).toString());
+            assertEquals("((id = 1) AND (1 = 1))", Filters.eq("id", 1).and(Filters.and()).toString());
+            assertEquals("SELECT id FROM users WHERE 1 = 0", Filters.subQuery("users", Arrays.asList("id"), Filters.or()).toString());
+            assertEquals("ON 1 = 1", Filters.on(Filters.and()).toString());
+            assertEquals("JOIN orders ON 1 = 1", Filters.join("orders", Filters.and()).toString());
+
+            // a blank SqlExpression is still an empty predicate and is still rejected
+            assertThrows(IllegalArgumentException.class, () -> Filters.and(Filters.expr("  ")));
+            assertThrows(IllegalArgumentException.class, () -> Filters.not(Filters.expr("")));
+            assertThrows(IllegalArgumentException.class, () -> Filters.where(Filters.expr(" ")));
+        }
+
+        @Test
+        void testFilters_and() {
+            And condition = Filters.and(Filters.eq("department", "Engineering"), Filters.or(Filters.gt("salary", 75000), Filters.eq("level", "Senior")),
+                    Filters.isNotNull("manager_id"));
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_not() {
+            Like likeCondition = Filters.like("name", "%test%");
+            Not notLike = Filters.not(likeCondition);
+            assertNotNull(notLike);
+
+            Not notIn = Filters.not(Filters.in("status", Arrays.asList("inactive", "deleted")));
+            assertNotNull(notIn);
+
+            Not notBetween = Filters.not(Filters.between("age", 18, 65));
+            assertNotNull(notBetween);
+
+            Not complexNot = Filters.not(Filters.and(Filters.eq("status", "active"), Filters.gt("age", 18), Filters.like("email", "%@company.com")));
+            assertNotNull(complexNot);
+        }
+
+        @Test
+        void testFilters_or() {
+            Or condition = Filters.or(Filters.eq("status", "active"), Filters.eq("status", "pending"));
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testJunction() {
+            Condition cond1 = Filters.equal("name", "John");
+            Condition cond2 = Filters.equal("age", 30);
+            Junction junction = Filters.junction(Operator.OR, cond1, cond2);
+            assertNotNull(junction);
+        }
+
+        @Test
+        void testJunctionRejectsNonComposableOperator() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.junction(Operator.WHERE, Filters.eq("a", 1)));
+            assertThrows(IllegalArgumentException.class, () -> Filters.junction(Operator.WHERE, Arrays.asList(Filters.eq("a", 1))));
+        }
+
+        @Test
+        void testNot() {
+            Condition condition = Filters.equal("name", "John");
+            Not notCondition = Filters.not(condition);
+            assertNotNull(notCondition);
+            assertEquals(Operator.NOT, notCondition.operator());
+        }
+
+        @Test
+        void testNotWithNull_throwsIAE() {
+            // Not(null) should throw because Junction rejects null conditions.
+            assertThrows(IllegalArgumentException.class, () -> Filters.not(null));
+        }
+
+        @Test
+        void testOr() {
+            // Test with array of conditions
+            Condition cond1 = Filters.eq("status", "active");
+            Condition cond2 = Filters.eq("status", "pending");
+            Or or1 = Filters.or(cond1, cond2);
+            assertNotNull(or1);
+            assertEquals(2, or1.conditions().size());
+
+            // Test with collection of conditions
+            List<Condition> conditions = Arrays.asList(cond1, cond2);
+            Or or2 = Filters.or(conditions);
+            assertNotNull(or2);
+            assertEquals(2, or2.conditions().size());
+        }
+
+        @Test
+        void testOrCollection() {
+            Condition cond1 = Filters.equal("status", "active");
+            Condition cond2 = Filters.equal("status", "pending");
+            Or or = Filters.or(Arrays.asList(cond1, cond2));
+            assertNotNull(or);
+            assertEquals(2, or.conditions().size());
+        }
+
+        @Test
+        void testOrEmptyArray_buildsEmptyOrJunction() {
+            // Verify or() with empty array doesn't NPE; an empty OR renders its Boolean identity.
+            Or empty = Filters.or(new Condition[0]);
+            assertNotNull(empty);
+            assertEquals("1 = 0", empty.toString());
+        }
+
+        @Test
+        void testOrVarargs() {
+            Condition cond1 = Filters.equal("name", "John");
+            Condition cond2 = Filters.equal("name", "Jane");
+            Or or = Filters.or(cond1, cond2);
+            assertNotNull(or);
+            assertEquals(2, or.conditions().size());
+        }
     }
 
-    @Test
-    void testSome() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
-        com.landawn.abacus.query.condition.Some some = Filters.some(subQuery);
-        assertNotNull(some);
+    @Nested
+    class EntityAndMapEquality {
+        @Test
+        void testAllEqual_EntitySingleSelectedProperty() {
+            com.landawn.abacus.query.entity.Account account = new com.landawn.abacus.query.entity.Account();
+            account.setFirstName("John");
+
+            And condition = Filters.allEqual(account, Arrays.asList("firstName"));
+
+            assertEquals(1, condition.conditions().size());
+        }
+
+        @Test
+        void testAllEqual_EntityTwoSelectedProperties() {
+            com.landawn.abacus.query.entity.Account account = new com.landawn.abacus.query.entity.Account();
+            account.setFirstName("John");
+            account.setLastName("Doe");
+
+            And condition = Filters.allEqual(account, Arrays.asList("firstName", "lastName"));
+
+            assertEquals(2, condition.conditions().size());
+        }
+
+        @Test
+        void testAllEqualEntity() {
+            Account account = new Account();
+            And and = Filters.allEqual(account);
+            assertNotNull(and);
+        }
+
+        // Verify entity overloads honor the explicitly selected property subset.
+        @Test
+        void testAllEqualEntityWithSelectProps() {
+            Account account = new Account().setId(9L).setLastName("Doe").setStatus(5);
+
+            And and = Filters.allEqual(account, Arrays.asList("id", "lastName"));
+
+            assertEquals(2, and.conditions().size());
+            assertEquals("id", ((Equal) and.conditions().get(0)).propName());
+            assertEquals(Long.valueOf(9L), ((Equal) and.conditions().get(0)).propValue());
+            assertEquals("lastName", ((Equal) and.conditions().get(1)).propName());
+            assertEquals("Doe", ((Equal) and.conditions().get(1)).propValue());
+        }
+
+        @Test
+        void testAllEqualEntityWithSelectProps_EmptySelectPropNames() {
+            Account account = new Account().setId(9L);
+
+            assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList()));
+        }
+
+        @Test
+        void testAllEqualEntityWithSelectProps_ThreeSelectProps() {
+            final Account account = new Account().setId(23L).setFirstName("Jane").setLastName("Doe");
+
+            final And condition = Filters.allEqual(account, Arrays.asList("id", "firstName", "lastName"));
+
+            assertEquals(3, condition.conditions().size());
+            assertEquals("id", ((Equal) condition.conditions().get(0)).propName());
+            assertEquals("lastName", ((Equal) condition.conditions().get(2)).propName());
+        }
+
+        @Test
+        void testAllEqualEntityWithSelectPropsRejectsNullEntity() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(null, Arrays.asList("id")));
+        }
+
+        @Test
+        void testAllEqualMap() {
+            Map<String, Object> props = new HashMap<>();
+            props.put("status", "active");
+            props.put("verified", true);
+
+            And and = Filters.allEqual(props);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testAllEqualMap_SingleEntry() {
+            final Map<String, Object> props = new LinkedHashMap<>();
+            props.put("status", "ACTIVE");
+
+            final And condition = Filters.allEqual(props);
+
+            assertEquals(1, condition.conditions().size());
+            assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
+        }
+
+        @Test
+        void testAllEqualMap_ThreeEntries() {
+            final Map<String, Object> props = new LinkedHashMap<>();
+            props.put("status", "ACTIVE");
+            props.put("type", "PREMIUM");
+            props.put("verified", true);
+
+            final And condition = Filters.allEqual(props);
+
+            assertEquals(3, condition.conditions().size());
+            assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
+            assertEquals("verified", ((Equal) condition.conditions().get(2)).propName());
+        }
+
+        @Test
+        void testAllEqualThreeProps() {
+            And and = Filters.allEqual("name", "John", "age", 30, "status", "active");
+            assertNotNull(and);
+            assertEquals(3, and.conditions().size());
+        }
+
+        @Test
+        void testAllEqualTwoProps() {
+            And and = Filters.allEqual("status", "active", "verified", true);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testAllEqualWithMap() {
+            Map<String, Object> props = new HashMap<>();
+            props.put("name", "John");
+            props.put("age", 25);
+
+            And and = Filters.allEqual(props);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testAllEqualWithThreeProperties() {
+            And and = Filters.allEqual("name", "John", "age", 25, "status", "active");
+            assertNotNull(and);
+            assertEquals(3, and.conditions().size());
+        }
+
+        @Test
+        void testAllEqualWithTwoProperties() {
+            And and = Filters.allEqual("name", "John", "age", 25);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testAnyEqualEntity() {
+            Account account = new Account();
+            Or or = Filters.anyEqual(account);
+            assertNotNull(or);
+        }
+
+        // Verify entity overloads honor the explicitly selected property subset.
+        @Test
+        void testAnyEqualEntityWithSelectProps() {
+            Account account = new Account().setId(7L).setFirstName("Jane").setStatus(3);
+
+            Or or = Filters.anyEqual(account, Arrays.asList("id", "firstName"));
+
+            assertEquals(2, or.conditions().size());
+            assertEquals("id", ((Equal) or.conditions().get(0)).propName());
+            assertEquals(Long.valueOf(7L), ((Equal) or.conditions().get(0)).propValue());
+            assertEquals("firstName", ((Equal) or.conditions().get(1)).propName());
+            assertEquals("Jane", ((Equal) or.conditions().get(1)).propValue());
+        }
+
+        @Test
+        void testAnyEqualEntityWithSelectProps_EmptySelectPropNames() {
+            Account account = new Account().setId(7L);
+
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(account, Arrays.asList()));
+        }
+
+        @Test
+        void testAnyEqualEntityWithSelectProps_SingleSelectProp() {
+            final Account account = new Account().setId(17L).setFirstName("Jane");
+
+            final Or condition = Filters.anyEqual(account, Arrays.asList("id"));
+
+            assertEquals(1, condition.conditions().size());
+            assertEquals(Long.valueOf(17L), ((Equal) condition.conditions().get(0)).propValue());
+        }
+
+        @Test
+        void testAnyEqualEntityWithSelectPropsRejectsNullEntity() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(null, Arrays.asList("id")));
+        }
+
+        @Test
+        void testAnyEqualMap() {
+            Map<String, Object> props = new HashMap<>();
+            props.put("name", "John");
+            props.put("age", 30);
+
+            Or or = Filters.anyEqual(props);
+            assertNotNull(or);
+            assertEquals(2, or.conditions().size());
+        }
+
+        // Exercise the size-specific overload branches for map/entity conversion helpers.
+        @Test
+        void testAnyEqualMap_SingleEntry() {
+            final Map<String, Object> props = new LinkedHashMap<>();
+            props.put("status", "ACTIVE");
+
+            final Or condition = Filters.anyEqual(props);
+
+            assertEquals(1, condition.conditions().size());
+            assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
+        }
+
+        @Test
+        void testAnyEqualMap_ThreeEntries() {
+            final Map<String, Object> props = new LinkedHashMap<>();
+            props.put("status", "ACTIVE");
+            props.put("type", "PREMIUM");
+            props.put("verified", true);
+
+            final Or condition = Filters.anyEqual(props);
+
+            assertEquals(3, condition.conditions().size());
+            assertEquals("status", ((Equal) condition.conditions().get(0)).propName());
+            assertEquals("verified", ((Equal) condition.conditions().get(2)).propName());
+        }
+
+        @Test
+        void testAnyEqualThreeProps() {
+            Or or = Filters.anyEqual("name", "John", "age", 30, "status", "active");
+            assertNotNull(or);
+            assertEquals(3, or.conditions().size());
+        }
+
+        @Test
+        void testAnyEqualTwoProps() {
+            Or or = Filters.anyEqual("name", "John", "age", 30);
+            assertNotNull(or);
+            assertEquals(2, or.conditions().size());
+        }
+
+        @Test
+        void testAnyEqualWithArray() {
+            Or or = Filters.anyEqual("status", "active", "pending", "approved");
+            assertNotNull(or);
+            assertEquals(2, or.conditions().size());
+        }
+
+        @Test
+        void testAnyEqualWithMap() {
+            Map<String, Object> props = new HashMap<>();
+            props.put("name", "John");
+            props.put("age", 25);
+            props.put("status", "active");
+
+            Or or = Filters.anyEqual(props);
+            assertNotNull(or);
+            assertEquals(3, or.conditions().size());
+        }
+
+        @Test
+        void testAnyEqualWithThreeProperties() {
+            Or or = Filters.anyEqual("name", "John", "age", 25, "status", "active");
+            assertNotNull(or);
+            assertEquals(3, or.conditions().size());
+        }
+
+        @Test
+        void testAnyEqualWithTwoProperties() {
+            Or or = Filters.anyEqual("name", "John", "age", 25);
+            assertNotNull(or);
+            assertEquals(2, or.conditions().size());
+        }
+
+        @Test
+        void testAnyOfAllEqual_AllNullEntities() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(null, null)));
+        }
+
+        @Test
+        void testAnyOfAllEqualEntities() {
+            Account account1 = new Account();
+            Account account2 = new Account();
+
+            Or or = Filters.anyOfAllEqual(Arrays.asList(account1, account2));
+            assertNotNull(or);
+        }
+
+        @Test
+        void testAnyOfAllEqualEntitiesWithSelectPropNames() {
+            Account account1 = new Account();
+            Account account2 = new Account();
+
+            Or or = Filters.anyOfAllEqual(Arrays.asList(account1, account2), Arrays.asList("id", "firstName"));
+            assertNotNull(or);
+        }
+
+        @Test
+        void testAnyOfAllEqualJavadocRenderingIncludesNestedJunctionParentheses() {
+            final Map<String, Object> activePremium = new LinkedHashMap<>();
+            activePremium.put("status", "active");
+            activePremium.put("type", "premium");
+            final Map<String, Object> verifiedTrial = new LinkedHashMap<>();
+            verifiedTrial.put("status", "trial");
+            verifiedTrial.put("verified", true);
+
+            assertEquals("((((status = 'active') AND (type = 'premium'))) OR (((status = 'trial') AND (verified = true))))",
+                    Filters.anyOfAllEqual(Arrays.asList(activePremium, verifiedTrial)).toString());
+
+            final Account john = new Account().setFirstName("John").setStatus(1);
+            final Account jane = new Account().setFirstName("Jane").setStatus(2);
+            assertEquals("((((firstName = 'John') AND (status = 1))) OR (((firstName = 'Jane') AND (status = 2))))",
+                    Filters.anyOfAllEqual(Arrays.asList(john, jane), Arrays.asList("firstName", "status")).toString());
+        }
+
+        @Test
+        void testAnyOfAllEqualMapList() {
+            Map<String, Object> props1 = new HashMap<>();
+            props1.put("status", "active");
+            props1.put("type", "A");
+
+            Map<String, Object> props2 = new HashMap<>();
+            props2.put("status", "pending");
+            props2.put("type", "B");
+
+            Or or = Filters.anyOfAllEqual(Arrays.asList(props1, props2));
+            assertNotNull(or);
+        }
+
+        @Test
+        void testAnyOfAllEqualMapSet() {
+            Map<String, Object> props1 = new LinkedHashMap<>();
+            props1.put("status", "active");
+            props1.put("type", "A");
+
+            Map<String, Object> props2 = new LinkedHashMap<>();
+            props2.put("status", "pending");
+            props2.put("type", "B");
+
+            LinkedHashSet<Map<String, Object>> propsSet = new LinkedHashSet<>(Arrays.asList(props1, props2));
+
+            Or or = Filters.anyOfAllEqual(propsSet);
+
+            assertEquals(2, or.conditions().size());
+            assertTrue(or.parameters().containsAll(Arrays.asList("active", "A", "pending", "B")));
+        }
+
+        @Test
+        void testAnyOfAllEqualRejectsMixedEntitiesAndMapsInEitherOrder() {
+            final Account account = new Account().setId(3L);
+            final Map<String, Object> props = new LinkedHashMap<>();
+            props.put("id", 4L);
+
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(props, account)));
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account, props)));
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account, props), Arrays.asList("id")));
+        }
+
+        @Test
+        void testAnyOfAllEqualWithSelectProps_NullEntityIgnored() {
+            final Account account = new Account().setId(29L).setFirstName("Alex");
+
+            final Or condition = Filters.anyOfAllEqual(Arrays.asList(null, account, null), Arrays.asList("id", "firstName"));
+
+            assertEquals(1, condition.conditions().size());
+            assertEquals(2, condition.parameters().size());
+        }
+
+        @Test
+        void testEntityEqualFactoriesRejectNullPropertyNameWithIllegalArgumentException() {
+            // D6: a null name is an IllegalArgumentException, not a NullPointerException
+            Account account = new Account().setId(7L).setFirstName("Jane");
+            assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList((String) null)));
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(account, Arrays.asList("id", null)));
+            assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(account), Arrays.asList((String) null)));
+            assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(account, Arrays.asList("nonexistent")));
+        }
+
+        @Test
+        void testEntityEqualityFactoriesConsumePropertyNamesInOnePass() {
+            final Account account = new Account().setId(7L).setFirstName("Ada").setLastName("Lovelace");
+            final Or any = Filters.anyEqual(account, collectionWithUnstableSize("id", "firstName", "lastName"));
+            final And all = Filters.allEqual(account, collectionWithUnstableSize("id", "firstName", "lastName"));
+
+            assertEquals(3, any.conditions().size());
+            assertEquals(3, all.conditions().size());
+            assertEquals(Arrays.asList(7L, "Ada", "Lovelace"), any.parameters());
+            assertEquals(Arrays.asList(7L, "Ada", "Lovelace"), all.parameters());
+        }
+
+        @Test
+        void testEntityWithoutSelectablePropertyIsRejectedWithPointedMessage() {
+            for (final java.util.function.Supplier<Object> call : java.util.List.<java.util.function.Supplier<Object>> of(
+                    () -> Filters.allEqual(new NoSelectableProperty()), () -> Filters.anyEqual(new NoSelectableProperty()),
+                    () -> Filters.anyOfAllEqual(java.util.List.of(new NoSelectableProperty())))) {
+                final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, call::get);
+                assertTrue(e.getMessage().contains("declares no selectable property"), e.getMessage());
+            }
+        }
+
+        @Test
+        void testEqualityFactoriesConsumeLiveMapInOnePass() {
+            final Or any = Filters.anyEqual(mapWithUnstableSize());
+            final And all = Filters.allEqual(mapWithUnstableSize());
+
+            assertEquals(3, any.conditions().size());
+            assertEquals(3, all.conditions().size());
+            assertEquals(Arrays.asList(1, 2, 3), any.parameters());
+            assertEquals(Arrays.asList(1, 2, 3), all.parameters());
+        }
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Test
+        void testEqualityFactoriesRejectRawMapsWithNonStringKeysConsistently() {
+            final Map rawMap = new LinkedHashMap();
+            rawMap.put(1, "value");
+
+            final IllegalArgumentException anyFailure = assertThrows(IllegalArgumentException.class, () -> Filters.anyEqual(rawMap));
+            final IllegalArgumentException allFailure = assertThrows(IllegalArgumentException.class, () -> Filters.allEqual(rawMap));
+
+            assertTrue(anyFailure.getMessage().contains("String"));
+            assertTrue(allFailure.getMessage().contains("String"));
+        }
+
+        @Test
+        void testFilters_allEqual_map() {
+            Map<String, Object> props = new LinkedHashMap<>();
+            props.put("status", "active");
+            props.put("type", "premium");
+            And condition = Filters.allEqual(props);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_allEqual_threeProps() {
+            And condition = Filters.allEqual("status", "active", "type", "premium", "verified", true);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_allEqual_twoProps() {
+            And condition = Filters.allEqual("status", "active", "type", "premium");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_anyEqual_map() {
+            Map<String, Object> props = new LinkedHashMap<>();
+            props.put("name", "John");
+            props.put("email", "john@example.com");
+            Or condition = Filters.anyEqual(props);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_anyEqual_threeProps() {
+            Or condition = Filters.anyEqual("status", "active", "type", "premium", "verified", true);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_anyEqual_twoProps() {
+            Or condition = Filters.anyEqual("name", "John", "email", "john@example.com");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testId2Cond() {
+            final EntityId entityId = EntityId.of("userId", 1, "orderId", 100);
+
+            final And condition = Filters.id2Cond(entityId);
+
+            assertEquals(Operator.AND, condition.operator());
+            assertEquals(2, condition.conditions().size());
+            assertEquals(2, condition.parameters().size());
+            assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100)));
+        }
+
+        @Test
+        void testId2Cond_Collection() {
+            final List<EntityId> entityIds = Arrays.asList(EntityId.of("userId", 1, "orderId", 100), EntityId.of("userId", 2, "orderId", 200));
+
+            final Or condition = Filters.id2Cond(entityIds);
+
+            assertEquals(Operator.OR, condition.operator());
+            assertEquals(2, condition.conditions().size());
+            assertEquals(4, condition.parameters().size());
+            assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100, 2, 200)));
+        }
+
+        @Test
+        void testId2Cond_CollectionEmpty() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond(Arrays.<EntityId> asList()));
+        }
+
+        @Test
+        void testId2Cond_NullEntityId() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.id2Cond((EntityId) null));
+        }
+
+        @Test
+        void testId2Cond_SingleProperty() {
+            final EntityId entityId = EntityId.of("userId", 1);
+
+            final And condition = Filters.id2Cond(entityId);
+
+            assertEquals(1, condition.conditions().size());
+            assertEquals(Arrays.asList(1), condition.parameters());
+        }
+
+        @Test
+        void testId2Cond_ThreeProperties() {
+            final EntityId entityId = EntityId.of("tenantId", 1, "userId", 2, "orderId", 3);
+
+            final And condition = Filters.id2Cond(entityId);
+
+            assertEquals(3, condition.conditions().size());
+            assertTrue(condition.parameters().containsAll(Arrays.asList(1, 2, 3)));
+        }
+
+        @Test
+        void testIdCollectionFactoryConsumesInputInOnePass() {
+            final Collection<EntityId> entityIds = collectionWithUnstableSize(EntityId.of("id", 1), EntityId.of("id", 2));
+
+            final Or condition = Filters.idToCond(entityIds);
+
+            assertEquals(2, condition.conditions().size());
+            assertEquals(Arrays.asList(1, 2), condition.parameters());
+        }
+
+        @Test
+        void testIdToCond() {
+            final EntityId entityId = EntityId.of("userId", 1, "orderId", 100);
+
+            final And condition = Filters.idToCond(entityId);
+
+            assertEquals(Operator.AND, condition.operator());
+            assertEquals(2, condition.conditions().size());
+            assertEquals(2, condition.parameters().size());
+            assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100)));
+        }
+
+        @Test
+        void testIdToCond_Collection() {
+            final List<EntityId> entityIds = Arrays.asList(EntityId.of("userId", 1, "orderId", 100), EntityId.of("userId", 2, "orderId", 200));
+
+            final Or condition = Filters.idToCond(entityIds);
+
+            assertEquals(Operator.OR, condition.operator());
+            assertEquals(2, condition.conditions().size());
+            assertEquals(4, condition.parameters().size());
+            assertTrue(condition.parameters().containsAll(Arrays.asList(1, 100, 2, 200)));
+        }
+
+        @Test
+        void testIdToCond_CollectionEmpty() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.idToCond(Arrays.<EntityId> asList()));
+        }
+
+        @Test
+        void testIdToCond_NullEntityId() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.idToCond((EntityId) null));
+        }
+
+        @Test
+        void testIdToCond_SingleProperty() {
+            final EntityId entityId = EntityId.of("userId", 1);
+
+            final And condition = Filters.idToCond(entityId);
+
+            assertEquals(1, condition.conditions().size());
+            assertEquals(Arrays.asList(1), condition.parameters());
+        }
+
+        @Test
+        void testPairOverloadsRejectDuplicatePropertyNames() {
+            // D-L: a repeated name used to collapse silently into one entry with the last direction winning
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "a", SortDirection.DESC));
+            assertTrue(ex.getMessage().contains("Duplicate property name: a"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC));
+            assertThrows(IllegalArgumentException.class, () -> Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "b", SortDirection.DESC));
+            assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("a", SortDirection.ASC, "a", SortDirection.DESC));
+            assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC));
+            assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("b", SortDirection.ASC, "a", SortDirection.ASC, "b", SortDirection.DESC));
+
+            // null names are still reported by the clause constructor, not as duplicates
+            assertThrows(IllegalArgumentException.class, () -> Filters.orderBy(null, SortDirection.ASC, null, SortDirection.DESC));
+
+            // distinct names keep working
+            assertEquals("GROUP BY a ASC, b DESC", Filters.groupBy("a", SortDirection.ASC, "b", SortDirection.DESC).toString());
+            assertEquals("ORDER BY a ASC, b DESC, c ASC", Filters.orderBy("a", SortDirection.ASC, "b", SortDirection.DESC, "c", SortDirection.ASC).toString());
+        }
     }
 
-    @Test
-    void testStartsWith() {
-        Like startsWith = Filters.startsWith("name", "John");
-        assertNotNull(startsWith);
+    @Nested
+    class ExpressionsAndConstants {
+        @Test
+        void testAlwaysFalse() {
+            SqlExpression expr = Filters.alwaysFalse();
+            assertNotNull(expr);
+        }
+
+        @Test
+        void testAlwaysTrue() {
+            SqlExpression expr = Filters.alwaysTrue();
+            assertNotNull(expr);
+        }
+
+        @Test
+        void testAlwaysTrueAndAlwaysFalseReturnDistinctExpressions() {
+            // Both accessors must work and return non-null, distinct objects
+            var t = Filters.alwaysTrue();
+            var f = Filters.alwaysFalse();
+            assertNotNull(t);
+            assertNotNull(f);
+            assertNotSame(t, f, "alwaysTrue and alwaysFalse must be distinct instances");
+            // Semantics: alwaysTrue uses '<', alwaysFalse uses '>'
+            assertTrue(t.toString().contains("<"), "alwaysTrue expression should contain '<'");
+            assertTrue(f.toString().contains(">"), "alwaysFalse expression should contain '>'");
+        }
+
+        @Test
+        void testConstants() {
+            assertNotNull(SortDirection.ASC);
+            assertEquals(SortDirection.ASC, SortDirection.ASC);
+
+            assertNotNull(SortDirection.DESC);
+            assertEquals(SortDirection.DESC, SortDirection.DESC);
+
+            assertNotNull(Filters.QME);
+        }
+
+        @Test
+        void testExpr() {
+            SqlExpression expr = Filters.expr("age > 18");
+            assertNotNull(expr);
+        }
+
+        @Test
+        void testExpr_createsIndependentEqualInstances() {
+            final SqlExpression first = Filters.expr("a");
+            final SqlExpression second = Filters.expr("a");
+            assertNotSame(first, second);
+            assertEquals(first, second);
+        }
+
+        @Test
+        void testFilters_alwaysTrue() {
+            Condition condition = Filters.alwaysTrue();
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_expr() {
+            SqlExpression expr = Filters.expr("UPPER(name) = 'JOHN'");
+            assertNotNull(expr);
+            assertEquals("UPPER(name) = 'JOHN'", expr.literal());
+        }
+
+        @Test
+        void testFilters_namedProperty() {
+            NamedProperty prop = Filters.namedProperty("user_name");
+            assertNotNull(prop);
+            assertEquals("user_name", prop.propName());
+        }
+
+        @Test
+        void testFiltersIsFinal() {
+            assertTrue(java.lang.reflect.Modifier.isFinal(Filters.class.getModifiers()));
+        }
+
+        @Test
+        void testNamedProperty() {
+            NamedProperty prop = Filters.namedProperty("userName");
+            assertNotNull(prop);
+            assertEquals("userName", prop.propName());
+        }
     }
 
-    @Test
-    void testStartsWith_NullPropValue_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.startsWith("name", null));
+    @Nested
+    class Joins {
+        @Test
+        void testCrossJoin() {
+            // Test with entity name only
+            CrossJoin crossJoin1 = Filters.crossJoin("products");
+            assertNotNull(crossJoin1);
+
+            // Test with a collection of entities
+            List<String> entities = Arrays.asList("products", "categories");
+            CrossJoin crossJoin3 = Filters.crossJoin(entities);
+            assertNotNull(crossJoin3);
+        }
+
+        @Test
+        void testCrossJoinEntities() {
+            com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin(Arrays.asList("orders", "payments"));
+            assertEquals(2, crossJoin.joinEntities().size());
+        }
+
+        @Test
+        void testCrossJoinEntity() {
+            com.landawn.abacus.query.condition.CrossJoin crossJoin = Filters.crossJoin("orders");
+            assertNotNull(crossJoin);
+        }
+
+        @Test
+        void testFilters_crossJoin() {
+            CrossJoin crossJoin = Filters.crossJoin("products");
+            assertNotNull(crossJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testFilters_fullJoin() {
+            // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("orders ON users.id = orders.user_id"));
+            assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"));
+
+            FullJoin fullJoin = Filters.fullJoin("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("FULL JOIN orders ON users.id = orders.user_id", fullJoin.toString());
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testFilters_innerJoin() {
+            // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("orders ON users.id = orders.user_id"));
+            assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"));
+
+            InnerJoin innerJoin = Filters.innerJoin("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("INNER JOIN orders ON users.id = orders.user_id", innerJoin.toString());
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testFilters_join() {
+            // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.join("orders ON users.id = orders.user_id"));
+            assertTrue(ex.getMessage().contains("JOIN requires a non-null ON/USING predicate"));
+
+            Join join = Filters.join("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("JOIN orders ON users.id = orders.user_id", join.toString());
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testFilters_leftJoin() {
+            // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders ON users.id = orders.user_id"));
+            assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"));
+
+            LeftJoin leftJoin = Filters.leftJoin("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin.toString());
+        }
+
+        @Test
+        void testFilters_naturalJoin() {
+            NaturalJoin naturalJoin = Filters.naturalJoin("department");
+            assertNotNull(naturalJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testFilters_rightJoin() {
+            // an ON clause embedded in the entity string no longer bypasses the predicate requirement
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("orders ON users.id = orders.user_id"));
+            assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"));
+
+            RightJoin rightJoin = Filters.rightJoin("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("RIGHT JOIN orders ON users.id = orders.user_id", rightJoin.toString());
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testFullJoin() {
+            // Entity name only: a qualified FULL JOIN requires an ON/USING predicate
+            assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("employees"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("employees", (Condition) null));
+
+            // Test with entity name and condition
+            Condition condition = Filters.on("employees.id", "managers.employee_id");
+            FullJoin fullJoin2 = Filters.fullJoin("managers", condition);
+            assertEquals("FULL JOIN managers ON employees.id = managers.employee_id", fullJoin2.toString());
+
+            // Test with collection of entities and condition
+            List<String> entities = Arrays.asList("employees", "departments");
+            FullJoin fullJoin3 = Filters.fullJoin(entities, condition);
+            assertEquals("FULL JOIN (employees CROSS JOIN departments) ON employees.id = managers.employee_id", fullJoin3.toString());
+        }
+
+        @Test
+        void testFullJoinEntitiesWithCondition() {
+            Condition condition = Filters.expr("id = user_id");
+            com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin(Arrays.asList("orders", "payments"), condition);
+            assertNotNull(fullJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testFullJoinEntity() {
+            // a qualified FULL JOIN needs an ON/USING predicate: the single-arg factory always throws
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin("orders"));
+            assertTrue(ex.getMessage().contains("FULL JOIN requires a non-null ON/USING predicate"));
+
+            // the two-arg form is the supported way to build it
+            com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("FULL JOIN orders ON users.id = orders.user_id", fullJoin.toString());
+        }
+
+        @Test
+        void testFullJoinEntityWithCondition() {
+            Condition condition = Filters.expr("users.id = orders.user_id");
+            com.landawn.abacus.query.condition.FullJoin fullJoin = Filters.fullJoin("orders", condition);
+            assertNotNull(fullJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testInnerJoin() {
+            // Entity name only: a qualified INNER JOIN requires an ON/USING predicate
+            assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("roles"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("roles", (Condition) null));
+
+            // Test with entity name and condition
+            Condition condition = Filters.on("users.role_id", "roles.id");
+            InnerJoin innerJoin2 = Filters.innerJoin("roles", condition);
+            assertEquals("INNER JOIN roles ON users.role_id = roles.id", innerJoin2.toString());
+
+            // Test with collection of entities and condition
+            List<String> entities = Arrays.asList("users", "user_roles");
+            InnerJoin innerJoin3 = Filters.innerJoin(entities, condition);
+            assertEquals("INNER JOIN (users CROSS JOIN user_roles) ON users.role_id = roles.id", innerJoin3.toString());
+        }
+
+        @Test
+        void testInnerJoinEntitiesWithCondition() {
+            Condition condition = Filters.expr("id = user_id");
+            com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin(Arrays.asList("orders", "payments"), condition);
+            assertNotNull(innerJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testInnerJoinEntity() {
+            // a qualified INNER JOIN needs an ON/USING predicate: the single-arg factory always throws
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin("orders"));
+            assertTrue(ex.getMessage().contains("INNER JOIN requires a non-null ON/USING predicate"));
+
+            // the two-arg form is the supported way to build it
+            com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("INNER JOIN orders ON users.id = orders.user_id", innerJoin.toString());
+        }
+
+        @Test
+        void testInnerJoinEntityWithCondition() {
+            Condition condition = Filters.expr("users.id = orders.user_id");
+            com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders", condition);
+            assertNotNull(innerJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testJoin() {
+            // Entity name only: a qualified JOIN requires an ON/USING predicate
+            assertThrows(IllegalArgumentException.class, () -> Filters.join("users"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.join("users", (Condition) null));
+
+            // Test with entity name and condition
+            Condition condition = Filters.on("users.id", "orders.user_id");
+            Join join2 = Filters.join("users", condition);
+            assertEquals("JOIN users ON users.id = orders.user_id", join2.toString());
+
+            // Test with collection of entities and condition
+            List<String> entities = Arrays.asList("users", "roles");
+            Join join3 = Filters.join(entities, condition);
+            assertEquals("JOIN (users CROSS JOIN roles) ON users.id = orders.user_id", join3.toString());
+        }
+
+        @Test
+        void testJoinEntitiesWithCondition() {
+            Condition condition = Filters.expr("id = user_id");
+            com.landawn.abacus.query.condition.Join join = Filters.join(Arrays.asList("orders", "payments"), condition);
+            assertNotNull(join);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testJoinEntity() {
+            // a qualified JOIN needs an ON/USING predicate: the single-arg factory always throws
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.join("orders"));
+            assertTrue(ex.getMessage().contains("JOIN requires a non-null ON/USING predicate"));
+
+            // the two-arg form is the supported way to build it
+            com.landawn.abacus.query.condition.Join join = Filters.join("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("JOIN orders ON users.id = orders.user_id", join.toString());
+        }
+
+        @Test
+        void testJoinEntityWithCondition() {
+            Condition condition = Filters.expr("users.id = orders.user_id");
+            com.landawn.abacus.query.condition.Join join = Filters.join("orders", condition);
+            assertNotNull(join);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testLeftJoin() {
+            // Entity name only: a qualified LEFT JOIN requires an ON/USING predicate
+            assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders", (Condition) null));
+
+            // Test with entity name and condition
+            Condition condition = Filters.on("users.id", "orders.user_id");
+            LeftJoin leftJoin2 = Filters.leftJoin("orders", condition);
+            assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin2.toString());
+
+            // Test with collection of entities and condition
+            List<String> entities = Arrays.asList("orders", "order_items");
+            LeftJoin leftJoin3 = Filters.leftJoin(entities, condition);
+            assertEquals("LEFT JOIN (orders CROSS JOIN order_items) ON users.id = orders.user_id", leftJoin3.toString());
+        }
+
+        @Test
+        void testLeftJoinEntitiesWithCondition() {
+            Condition condition = Filters.expr("id = user_id");
+            com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin(Arrays.asList("orders", "payments"), condition);
+            assertNotNull(leftJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testLeftJoinEntity() {
+            // a qualified LEFT JOIN needs an ON/USING predicate: the single-arg factory always throws
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("orders"));
+            assertTrue(ex.getMessage().contains("LEFT JOIN requires a non-null ON/USING predicate"));
+
+            // the two-arg form is the supported way to build it
+            com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("LEFT JOIN orders ON users.id = orders.user_id", leftJoin.toString());
+        }
+
+        @Test
+        void testLeftJoinEntityWithCondition() {
+            Condition condition = Filters.expr("users.id = orders.user_id");
+            com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("orders", condition);
+            assertNotNull(leftJoin);
+        }
+
+        @Test
+        void testNaturalJoin() {
+            // Test with entity name only
+            NaturalJoin naturalJoin1 = Filters.naturalJoin("departments");
+            assertNotNull(naturalJoin1);
+
+            // Test with a collection of entities
+            List<String> entities = Arrays.asList("employees", "departments");
+            NaturalJoin naturalJoin3 = Filters.naturalJoin(entities);
+            assertNotNull(naturalJoin3);
+        }
+
+        @Test
+        void testNaturalJoinEntities() {
+            com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin(Arrays.asList("orders", "payments"));
+            assertEquals(2, naturalJoin.joinEntities().size());
+        }
+
+        @Test
+        void testNaturalJoinEntity() {
+            com.landawn.abacus.query.condition.NaturalJoin naturalJoin = Filters.naturalJoin("orders");
+            assertNotNull(naturalJoin);
+        }
+
+        @Test
+        void testOn() {
+            // Test with condition
+            Condition condition = Filters.eq("a.id", "b.a_id");
+            On on1 = Filters.on(condition);
+            assertNotNull(on1);
+            assertEquals(condition, on1.condition());
+
+            // Test with string
+            On on2 = Filters.on("a.id = b.a_id");
+            assertNotNull(on2);
+            assertNotNull(on2.condition());
+
+            // Test with two property names
+            On on3 = Filters.on("userId", "user.id");
+            assertNotNull(on3);
+
+            // Test with map
+            Map<String, String> propMap = new HashMap<>();
+            propMap.put("orderId", "order.id");
+            propMap.put("productId", "product.id");
+            On on4 = Filters.on(propMap);
+            assertNotNull(on4);
+        }
+
+        @Test
+        void testOn_stringExpr_blankRejectedUpFront() {
+            final String expectedMessage = assertThrows(IllegalArgumentException.class, () -> Filters.where("  ")).getMessage();
+            final String actualMessage = assertThrows(IllegalArgumentException.class, () -> Filters.on("  ")).getMessage();
+            assertEquals(expectedMessage, actualMessage);
+            assertThrows(IllegalArgumentException.class, () -> Filters.on((String) null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.on(""));
+        }
+
+        @Test
+        void testOnCondition() {
+            Condition condition = Filters.expr("users.id = orders.user_id");
+            com.landawn.abacus.query.condition.On on = Filters.on(condition);
+            assertNotNull(on);
+        }
+
+        @Test
+        void testOnMap() {
+            Map<String, String> propNamePair = new HashMap<>();
+            propNamePair.put("id", "user_id");
+
+            com.landawn.abacus.query.condition.On on = Filters.on(propNamePair);
+            assertNotNull(on);
+        }
+
+        @Test
+        void testOnPropNames() {
+            com.landawn.abacus.query.condition.On on = Filters.on("id", "user_id");
+            assertNotNull(on);
+        }
+
+        @Test
+        void testOnString() {
+            com.landawn.abacus.query.condition.On on = Filters.on("users.id = orders.user_id");
+            assertNotNull(on);
+        }
+
+        @Test
+        void testOnString_EmptyExpr_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.on(""));
+        }
+
+        @Test
+        void testOnString_NonEmptyExpr_StillWorks() {
+            On on = Filters.on("users.id = orders.user_id");
+            assertNotNull(on);
+            assertTrue(on.toString().contains("users.id = orders.user_id"));
+        }
+
+        // --- Guard: on(String) must reject null/empty (matching where(String)/having(String) contract) ---
+
+        @Test
+        void testOnString_NullExpr_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.on((String) null));
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testRightJoin() {
+            // Entity name only: a qualified RIGHT JOIN requires an ON/USING predicate
+            assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("departments"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("departments", (Condition) null));
+
+            // Test with entity name and condition
+            Condition condition = Filters.on("employees.dept_id", "departments.id");
+            RightJoin rightJoin2 = Filters.rightJoin("departments", condition);
+            assertEquals("RIGHT JOIN departments ON employees.dept_id = departments.id", rightJoin2.toString());
+
+            // Test with collection of entities and condition
+            List<String> entities = Arrays.asList("departments", "locations");
+            RightJoin rightJoin3 = Filters.rightJoin(entities, condition);
+            assertEquals("RIGHT JOIN (departments CROSS JOIN locations) ON employees.dept_id = departments.id", rightJoin3.toString());
+        }
+
+        @Test
+        void testRightJoinEntitiesWithCondition() {
+            Condition condition = Filters.expr("id = user_id");
+            com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin(Arrays.asList("orders", "payments"), condition);
+            assertNotNull(rightJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testRightJoinEntity() {
+            // a qualified RIGHT JOIN needs an ON/USING predicate: the single-arg factory always throws
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin("orders"));
+            assertTrue(ex.getMessage().contains("RIGHT JOIN requires a non-null ON/USING predicate"));
+
+            // the two-arg form is the supported way to build it
+            com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin("orders", Filters.on("users.id", "orders.user_id"));
+            assertEquals("RIGHT JOIN orders ON users.id = orders.user_id", rightJoin.toString());
+        }
+
+        @Test
+        void testRightJoinEntityWithCondition() {
+            Condition condition = Filters.expr("users.id = orders.user_id");
+            com.landawn.abacus.query.condition.RightJoin rightJoin = Filters.rightJoin("orders", condition);
+            assertNotNull(rightJoin);
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testSingleArgQualifiedJoinFactoriesAlwaysThrow() {
+            // D-E: the deprecated single-arg factories cannot succeed; CROSS/NATURAL joins remain condition-less
+            for (final String entity : new String[] { "orders", "orders o", "orders ON a.id = o.id" }) {
+                assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.join(entity)).getMessage()
+                        .contains("JOIN requires a non-null ON/USING predicate"));
+                assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.innerJoin(entity)).getMessage()
+                        .contains("INNER JOIN requires a non-null ON/USING predicate"));
+                assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin(entity)).getMessage()
+                        .contains("LEFT JOIN requires a non-null ON/USING predicate"));
+                assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.rightJoin(entity)).getMessage()
+                        .contains("RIGHT JOIN requires a non-null ON/USING predicate"));
+                assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.fullJoin(entity)).getMessage()
+                        .contains("FULL JOIN requires a non-null ON/USING predicate"));
+            }
+
+            assertEquals("CROSS JOIN orders", Filters.crossJoin("orders").toString());
+            assertEquals("NATURAL JOIN orders", Filters.naturalJoin("orders").toString());
+
+            // multi-entity joins render a CROSS JOIN tree, not a comma list
+            assertEquals("CROSS JOIN (colors CROSS JOIN sizes)", Filters.crossJoin(Arrays.asList("colors", "sizes")).toString());
+            assertEquals("NATURAL JOIN (employees CROSS JOIN departments)", Filters.naturalJoin(Arrays.asList("employees", "departments")).toString());
+            assertEquals("JOIN (orders CROSS JOIN products) ON orders.product_id = products.id",
+                    Filters.join(Arrays.asList("orders", "products"), Filters.on("orders.product_id", "products.id")).toString());
+        }
+
+        @Test
+        void testUsing() {
+            // Test with varargs
+            Using using1 = Filters.using("id", "name");
+            assertNotNull(using1);
+
+            // Test with collection
+            List<String> columns = Arrays.asList("userId", "departmentId");
+            Using using2 = Filters.using(columns);
+            assertNotNull(using2);
+        }
+
+        @Test
+        void testUsingCollection() {
+            com.landawn.abacus.query.condition.Using using = Filters.using(Arrays.asList("id", "name"));
+            assertNotNull(using);
+        }
+
+        @Test
+        void testUsingVarargs() {
+            com.landawn.abacus.query.condition.Using using = Filters.using("id", "name");
+            assertNotNull(using);
+        }
     }
 
-    //    @Test
-    //    void testCell() {
-    //        Condition condition = Filters.eq("status", "active");
-    //        Cell cell = Filters.cell(Operator.AND, condition);
-    //        Assertions.assertNotNull(cell);
-    //        Assertions.assertEquals(Operator.AND, cell.operator());
-    //        Assertions.assertEquals(condition, cell.condition());
-    //    }
+    @Nested
+    class Membership {
+        @Test
+        void testFilters_in() {
+            In condition = Filters.in("status", Arrays.asList("PENDING", "APPROVED", "ACTIVE"));
+            assertNotNull(condition);
+        }
 
-    @Test
-    void testSubQuery() {
-        // Test with class, properties and condition
-        List<String> props = Arrays.asList("id", "name");
-        Condition condition = Filters.eq("active", true);
-        SubQuery sq1 = Filters.subQuery(String.class, props, condition);
-        assertNotNull(sq1);
+        @Test
+        void testFilters_notIn() {
+            NotIn condition = Filters.notIn("status", Arrays.asList("deleted", "banned"));
+            assertNotNull(condition);
+        }
 
-        // Test with entity name, properties and condition
-        SubQuery sq2 = Filters.subQuery("users", props, condition);
-        assertNotNull(sq2);
+        @Test
+        void testIn() {
+            // Test with int array
+            In in1 = Filters.in("age", new int[] { 18, 21, 25 });
+            assertNotNull(in1);
+            assertEquals("age", in1.propName());
 
-        // Test with entity name, properties and string condition
-        SubQuery sq3 = Filters.subQuery("users", props, "active = 1");
-        assertNotNull(sq3);
+            // Test with long array
+            In in2 = Filters.in("id", new long[] { 1L, 2L, 3L });
+            assertNotNull(in2);
 
-        // Test with entity name and sql (deprecated)
-        SubQuery sq4 = Filters.subQuery("users", "SELECT * FROM users");
-        assertNotNull(sq4);
+            // Test with double array
+            In in3 = Filters.in("price", new double[] { 9.99, 19.99, 29.99 });
+            assertNotNull(in3);
 
-        // Test with sql only
-        SubQuery sq5 = Filters.subQuery("SELECT COUNT(*) FROM orders");
-        assertNotNull(sq5);
+            // Test with object array
+            In in4 = Filters.in("status", new Object[] { "active", "pending", "approved" });
+            assertNotNull(in4);
+
+            // Test with collection
+            List<String> values = Arrays.asList("red", "green", "blue");
+            In in5 = Filters.in("color", values);
+            assertNotNull(in5);
+        }
+
+        @Test
+        void testIn_blankSqlExpressionElementRejected() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.in("category", Arrays.asList("a", Filters.expr(" "))));
+            assertThrows(IllegalArgumentException.class, () -> Filters.notIn("category", Arrays.asList("a", Filters.expr(" "))));
+            assertThrows(IllegalArgumentException.class, () -> Filters.in("category", "a", Filters.expr(" ")));
+            assertThrows(IllegalArgumentException.class, () -> Filters.notIn("category", "a", Filters.expr(" ")));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Filters.in(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Filters.notIn(Arrays.asList("first", "last"), Arrays.asList(Arrays.asList("a", Filters.expr(" ")))));
+        }
+
+        @Test
+        void testInBooleanArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("active", new boolean[] { true, false });
+            assertNotNull(in);
+            assertEquals(2, in.parameters().size());
+        }
+
+        @Test
+        void testInByteArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("flag", new byte[] { 0, 1, 2 });
+            assertNotNull(in);
+            assertEquals(3, in.parameters().size());
+        }
+
+        @Test
+        void testInCharArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("grade", new char[] { 'A', 'B', 'C' });
+            assertNotNull(in);
+            assertEquals(3, in.parameters().size());
+        }
+
+        @Test
+        void testInCollection() {
+            com.landawn.abacus.query.condition.In in = Filters.in("id", Arrays.asList(1, 2, 3));
+            assertNotNull(in);
+        }
+
+        @Test
+        void testInCollectionForAge() {
+            List<Integer> ages = Arrays.asList(20, 30, 40);
+            In in = Filters.in("age", ages);
+            assertNotNull(in);
+            assertFalse(in.values().isEmpty());
+        }
+
+        @Test
+        void testInDoubleArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("score", new double[] { 1.5, 2.5, 3.5 });
+            assertNotNull(in);
+        }
+
+        @Test
+        void testInFloatArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("ratio", new float[] { 0.25f, 0.5f, 0.75f });
+            assertNotNull(in);
+            assertEquals(3, in.parameters().size());
+        }
+
+        @Test
+        void testInIntArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("id", new int[] { 1, 2, 3 });
+            assertNotNull(in);
+        }
+
+        @Test
+        void testInLongArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("id", new long[] { 1L, 2L, 3L });
+            assertNotNull(in);
+        }
+
+        @Test
+        void testInObjectArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("status", new Object[] { "active", "pending" });
+            assertNotNull(in);
+        }
+
+        @Test
+        void testInObjectArrayNullDelegatesToValidation() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.in("status", (Object[]) null));
+        }
+
+        @Test
+        void testInPrimitiveArrays_correctBoxing() {
+            // int[]
+            In intIn = Filters.in("col", new int[] { 1, 2, 3 });
+            assertEquals(3, intIn.values().size());
+            assertEquals(Integer.valueOf(1), intIn.values().iterator().next());
+
+            // long[]
+            In longIn = Filters.in("col", new long[] { 10L, 20L });
+            assertEquals(2, longIn.values().size());
+            assertEquals(Long.valueOf(10L), longIn.values().iterator().next());
+
+            // double[]
+            In dblIn = Filters.in("col", new double[] { 1.5, 2.5 });
+            assertEquals(2, dblIn.values().size());
+            assertEquals(Double.valueOf(1.5), dblIn.values().iterator().next());
+        }
+
+        @Test
+        void testInShortArray() {
+            com.landawn.abacus.query.condition.In in = Filters.in("level", new short[] { 1, 2, 3 });
+            assertNotNull(in);
+            assertEquals(3, in.parameters().size());
+        }
+
+        @Test
+        void testInWithObjectTypedCollectionOrArrayUnpacksValues() {
+            // Regression: a collection/array statically typed Object selected in(String, Object...) and became ONE IN value
+            // ("id IN (?)" bound to the whole list), unlike binary(prop, IN, value).
+            final Object ids = Arrays.asList(1, 2);
+            assertEquals("id IN (1, 2)", Filters.in("id", ids).toString());
+            assertEquals("id IN (1, 2)", Filters.in("id", (Object) new int[] { 1, 2 }).toString());
+            assertEquals("id IN (1, 2)", Filters.in("id", (Object) new Integer[] { 1, 2 }).toString());
+            assertEquals("id NOT IN (1, 2)", Filters.notIn("id", ids).toString());
+            assertEquals("id IN (1, 2)", Filters.namedProperty("id").in(ids).toString());
+
+            final AbstractQueryBuilder.SP sp = Dsl.PSC.select("id").from("account").where(Filters.in("id", ids)).build();
+            assertEquals("SELECT id FROM account WHERE id IN (?, ?)", sp.query());
+            assertEquals(Arrays.asList(1, 2), sp.parameters());
+
+            // Several values, and a lone byte[] (a binary value), are unchanged.
+            assertEquals(2, Filters.in("id", ids, ids).values().size());
+            assertEquals(1, Filters.in("hash", (Object) new byte[] { 1, 2 }).values().size());
+        }
+
+        @Test
+        void testInWithObjectTypedLoneCollectionOrArrayEdgeCases() {
+            // Covers the remaining scenarios of the lone Object-typed collection/array unpacking in in/notIn(String, Object...).
+            assertEquals("id NOT IN (1, 2)", Filters.notIn("id", (Object) new long[] { 1L, 2L }).toString());
+            assertEquals("g IN ('a', 'b')", Filters.in("g", (Object) new char[] { 'a', 'b' }).toString());
+            assertEquals("g IN (true, false)", Filters.in("g", (Object) new boolean[] { true, false }).toString());
+            assertEquals("id IN (3, 1)", Filters.in("id", (Object) new LinkedHashSet<>(Arrays.asList(3, 1))).toString());
+
+            // A lone empty collection/array is an empty value list (previously the single value '[]'); a lone list holding null is rejected.
+            assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) new java.util.ArrayList<>()));
+            assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) new int[0]));
+            assertThrows(IllegalArgumentException.class, () -> Filters.notIn("id", (Object) new java.util.ArrayList<>()));
+            final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.in("id", (Object) Arrays.asList(1, null)));
+            assertTrue(ex.getMessage().contains("null"), ex.getMessage());
+
+            // Unchanged: a lone SubQuery, Map or byte[] stays one value, and a multi-row Object[][] keeps one value per row
+            // (only a one-row varargs array is unpacked).
+            assertEquals("id IN ((SELECT id FROM t))", Filters.in("id", (Object) Filters.subQuery("SELECT id FROM t")).toString());
+            final Map<String, Integer> map = new HashMap<>();
+            map.put("k", 1);
+            assertEquals(Arrays.asList(map), Filters.in("id", (Object) map).values());
+            assertEquals(1, Filters.in("hash", (Object) new byte[] { 1, 2 }).values().size());
+            // The casts make each call's meaning compiler-independent: an uncast Object[][] argument is an "inexact" varargs
+            // argument, which javac passes as the varargs array itself but the Eclipse compiler (ECJ) wraps in a new Object[1].
+            assertEquals("id IN ('[1, 2]', '[3, 4]')", Filters.in("id", (Object[]) new Object[][] { { 1, 2 }, { 3, 4 } }).toString());
+            assertEquals("id IN (1, 2)", Filters.in("id", (Object[]) new Object[][] { { 1, 2 } }).toString());
+            // As ONE varargs element, a lone 2-D array is unpacked one level only: its single row stays one value.
+            assertEquals("id IN ('[1, 2]')", Filters.in("id", (Object) new Object[][] { { 1, 2 } }).toString());
+
+            // Every SQL policy sees the unpacked values.
+            final AbstractQueryBuilder.SP sp = Dsl.NSC.select("id").from("t").where(Filters.notIn("id", (Object) new int[] { 1, 2 })).build();
+            assertEquals("SELECT id FROM t WHERE id NOT IN (:id1, :id2)", sp.query());
+            assertEquals(Arrays.asList(1, 2), sp.parameters());
+            assertEquals("SELECT id FROM t WHERE id IN ('a', 'b')",
+                    Dsl.SCSB.select("id").from("t").where(Filters.in("id", (Object) Arrays.asList("a", "b"))).build().query());
+
+            // The condition snapshots the lone collection: later mutation does not change it.
+            final List<Integer> ids = new java.util.ArrayList<>(Arrays.asList(1, 2));
+            final In in = Filters.in("id", (Object) ids);
+            ids.add(3);
+            ids.set(0, 9);
+            assertEquals("id IN (1, 2)", in.toString());
+            assertEquals(Arrays.asList(1, 2), in.values());
+        }
+
+        @Test
+        void testNotIn() {
+            // Test with int array
+            NotIn notIn1 = Filters.notIn("status", new int[] { 0, -1 });
+            assertNotNull(notIn1);
+
+            // Test with long array
+            NotIn notIn2 = Filters.notIn("excludeId", new long[] { 110L, 120L });
+            assertNotNull(notIn2);
+
+            // Test with double array
+            NotIn notIn3 = Filters.notIn("discount", new double[] { 0.0, 100.0 });
+            assertNotNull(notIn3);
+
+            // Test with object array
+            NotIn notIn4 = Filters.notIn("type", new Object[] { "guest", "bot" });
+            assertNotNull(notIn4);
+
+            // Test with collection
+            List<String> values = Arrays.asList("spam", "deleted", "hidden");
+            NotIn notIn5 = Filters.notIn("status", values);
+            assertNotNull(notIn5);
+        }
+
+        @Test
+        void testNotInBooleanArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("active", new boolean[] { false });
+            assertNotNull(notIn);
+            assertEquals(1, notIn.parameters().size());
+        }
+
+        @Test
+        void testNotInByteArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("flag", new byte[] { 0, 1 });
+            assertNotNull(notIn);
+            assertEquals(2, notIn.parameters().size());
+        }
+
+        @Test
+        void testNotInCharArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("grade", new char[] { 'D', 'F' });
+            assertNotNull(notIn);
+            assertEquals(2, notIn.parameters().size());
+        }
+
+        @Test
+        void testNotInCollection() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", Arrays.asList(1, 2, 3));
+            assertNotNull(notIn);
+        }
+
+        @Test
+        void testNotInDoubleArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("score", new double[] { 1.5, 2.5, 3.5 });
+            assertNotNull(notIn);
+        }
+
+        @Test
+        void testNotInFloatArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("ratio", new float[] { 0.0f, 1.0f });
+            assertNotNull(notIn);
+            assertEquals(2, notIn.parameters().size());
+        }
+
+        @Test
+        void testNotInIntArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", new int[] { 1, 2, 3 });
+            assertNotNull(notIn);
+        }
+
+        @Test
+        void testNotInLongArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("id", new long[] { 1L, 2L, 3L });
+            assertNotNull(notIn);
+        }
+
+        @Test
+        void testNotInObjectArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("status", new Object[] { "deleted", "archived" });
+            assertNotNull(notIn);
+        }
+
+        @Test
+        void testNotInObjectArrayNullDelegatesToValidation() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.notIn("status", (Object[]) null));
+        }
+
+        @Test
+        void testNotInPrimitiveArrays_correctBoxing() {
+            NotIn intNi = Filters.notIn("col", new int[] { 1, 2 });
+            assertEquals(2, intNi.values().size());
+
+            NotIn longNi = Filters.notIn("col", new long[] { 1L, 2L });
+            assertEquals(2, longNi.values().size());
+
+            NotIn dblNi = Filters.notIn("col", new double[] { 1.0, 2.0 });
+            assertEquals(2, dblNi.values().size());
+        }
+
+        @Test
+        void testNotInShortArray() {
+            com.landawn.abacus.query.condition.NotIn notIn = Filters.notIn("level", new short[] { 0, 9 });
+            assertNotNull(notIn);
+            assertEquals(2, notIn.parameters().size());
+        }
     }
 
-    @Test
-    void testSubQuery_rawExprStartingWithOnRejected() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("products", Arrays.asList("id"), "ON a = b"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("products", Arrays.asList("id"), "USING (id)"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), "ON a = b"));
-        assertEquals("SELECT id FROM products WHERE price > 10", Filters.subQuery("products", Arrays.asList("id"), "price > 10").toString());
+    @Nested
+    class Patterns {
+        @Test
+        void testContains() {
+            Like contains = Filters.contains("description", "keyword");
+            assertNotNull(contains);
+        }
+
+        // --- Bug fixes: wildcard methods must reject null propValue (previously silently produced "%null%") ---
+
+        @Test
+        void testContains_NullPropValue_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.contains("name", null));
+        }
+
+        @Test
+        void testEndsWith() {
+            Like endsWith = Filters.endsWith("email", "@example.com");
+            assertNotNull(endsWith);
+        }
+
+        @Test
+        void testEndsWith_NullPropValue_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.endsWith("name", null));
+        }
+
+        @Test
+        void testFilters_contains() {
+            Like condition = Filters.contains("name", "John");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_endsWith() {
+            Like condition = Filters.endsWith("email", "@company.com");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_like() {
+            Like condition = Filters.like("email", "%@company.com");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_notLike() {
+            NotLike condition = Filters.notLike("name", "%test%");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_startsWith() {
+            Like condition = Filters.startsWith("name", "John");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testLike() {
+            Like like = Filters.like("name", "%John%");
+            assertNotNull(like);
+            assertEquals("name", like.propName());
+        }
+
+        @Test
+        void testLikeObjectOperandsAndVarargsIn() {
+            SubQuery subQuery = Filters.subQuery("SELECT pattern FROM patterns");
+            assertEquals(subQuery, Filters.like("name", subQuery).propValue());
+            SqlExpression expression = Filters.expr("LOWER(pattern)");
+            assertEquals(expression, Filters.notLike("name", expression).propValue());
+            assertEquals(Arrays.asList("NEW", "OPEN"), Filters.in("status", "NEW", "OPEN").parameters());
+            assertEquals(Arrays.asList("CLOSED", "DELETED"), Filters.notIn("status", "CLOSED", "DELETED").parameters());
+        }
+
+        @Test
+        void testLikeWildcards_placement() {
+            // contains: %v% on both sides
+            assertEquals("%foo%", Filters.contains("c", "foo").propValue());
+            // notContains: %v% on both sides
+            assertEquals("%foo%", Filters.notContains("c", "foo").propValue());
+            // startsWith: v%
+            assertEquals("foo%", Filters.startsWith("c", "foo").propValue());
+            // notStartsWith: v%
+            assertEquals("foo%", Filters.notStartsWith("c", "foo").propValue());
+            // endsWith: %v
+            assertEquals("%foo", Filters.endsWith("c", "foo").propValue());
+            // notEndsWith: %v
+            assertEquals("%foo", Filters.notEndsWith("c", "foo").propValue());
+        }
+
+        @Test
+        void testLikeWithoutValue() {
+            Like like = Filters.like("name");
+            assertNotNull(like);
+        }
+
+        @Test
+        void testNotContains() {
+            NotLike notContains = Filters.notContains("description", "spam");
+            assertNotNull(notContains);
+        }
+
+        @Test
+        void testNotContains_NullPropValue_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.notContains("name", null));
+        }
+
+        @Test
+        void testNotEndsWith() {
+            NotLike notEndsWith = Filters.notEndsWith("email", "@spam.com");
+            assertNotNull(notEndsWith);
+        }
+
+        @Test
+        void testNotEndsWith_NullPropValue_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.notEndsWith("name", null));
+        }
+
+        @Test
+        void testNotLike() {
+            NotLike notLike = Filters.notLike("name", "%test%");
+            assertNotNull(notLike);
+        }
+
+        @Test
+        void testNotLikeWithoutValue() {
+            NotLike notLike = Filters.notLike("email");
+            assertNotNull(notLike);
+        }
+
+        @Test
+        void testNotStartsWith() {
+            NotLike notStartsWith = Filters.notStartsWith("name", "Test");
+            assertNotNull(notStartsWith);
+        }
+
+        @Test
+        void testNotStartsWith_NullPropValue_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.notStartsWith("name", null));
+        }
+
+        @Test
+        void testNullValueOperandRejectedByOrderingAndLikeFactories() {
+            // D1 / D3 / D4: null is only meaningful for =, !=, IS and IS NOT
+            assertEquals("a IS NULL", Filters.equal("a", null).toString());
+            assertEquals("a IS NOT NULL", Filters.notEqual("a", null).toString());
+            assertEquals("a IS NULL", Filters.binary("a", Operator.EQUAL, null).toString());
+
+            assertThrows(IllegalArgumentException.class, () -> Filters.greaterThan("age", null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.gt("age", null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.greaterThanOrEqual("age", null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.ge("age", null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.lessThan("age", null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.lt("age", null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.lessThanOrEqual("age", null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.le("age", null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.like("email", (String) null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.like("email", (Object) null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.notLike("email", (String) null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.notLike("email", (Object) null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.gtAndLt("age", null, 5));
+            assertThrows(IllegalArgumentException.class, () -> Filters.geAndLt("age", 1, null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.geAndLe("age", null, 5));
+            assertThrows(IllegalArgumentException.class, () -> Filters.gtAndLe("age", 1, null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.between("age", null, 5));
+            assertThrows(IllegalArgumentException.class, () -> Filters.notBetween("age", 1, null));
+            assertThrows(IllegalArgumentException.class, () -> Filters.binary("age", Operator.GREATER_THAN, null));
+
+            // D7: an ordinary predicate is not a value operand either
+            assertThrows(IllegalArgumentException.class, () -> Filters.equal("a", Filters.equal("b", 1)));
+            assertThrows(IllegalArgumentException.class, () -> Filters.gt("a", Filters.isNull("b")));
+            assertThrows(IllegalArgumentException.class, () -> Filters.like("a", Filters.any(Filters.subQuery("SELECT 1"))));
+            assertThrows(IllegalArgumentException.class, () -> Filters.in("x", Filters.equal("a", 1)));
+        }
+
+        @Test
+        void testStartsWith() {
+            Like startsWith = Filters.startsWith("name", "John");
+            assertNotNull(startsWith);
+        }
+
+        @Test
+        void testStartsWith_NullPropValue_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.startsWith("name", null));
+        }
+
+        @Test
+        void testWildcardMethods_NonNullValues_StillWork() {
+            // Regression guard: ensure happy paths still produce the expected wildcard patterns.
+            assertEquals("%java%", Filters.contains("col", "java").propValue());
+            assertEquals("%java%", Filters.notContains("col", "java").propValue());
+            assertEquals("Jo%", Filters.startsWith("col", "Jo").propValue());
+            assertEquals("TEST%", Filters.notStartsWith("col", "TEST").propValue());
+            assertEquals("%.com", Filters.endsWith("col", ".com").propValue());
+            assertEquals("%.tmp", Filters.notEndsWith("col", ".tmp").propValue());
+        }
     }
 
-    @Test
-    void testSubQueryArgumentValidationMessagesFollowParameterOrder() {
-        // Covers the validation order and exact messages of subQuery(entity, propNames, expr): entity, then propNames, then expr.
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", (Collection<String>) null, (String) null));
-        assertEquals("Property names must not be null", ex.getMessage());
+    @Nested
+    class Ranges {
+        @Test
+        void testBetween() {
+            Between between = Filters.between("age", 18, 65);
+            assertNotNull(between);
+            assertEquals("age", between.propName());
+            assertEquals(Integer.valueOf(18), between.minValue());
+            assertEquals(Integer.valueOf(65), between.maxValue());
+        }
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.<String> asList(), (String) null));
-        assertEquals("Property names must not be empty", ex.getMessage());
+        @Test
+        void testBetweenParameterized_renderedWithTwoPlaceholders() {
+            Between b = Filters.between("col");
+            // Should produce "col BETWEEN ? AND ?" (both placeholders are QME Expressions)
+            String s = b.toString();
+            assertTrue(s.contains("BETWEEN ? AND ?"), "Expected 'BETWEEN ? AND ?' but got: " + s);
+        }
 
-        // A non-null (even invalid) expr still reports the entity first.
-        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery((Class<?>) null, Arrays.asList("id"), "ON x = 1"));
-        assertEquals("Entity class must not be null", ex.getMessage());
+        @Test
+        void testBetweenWithMinGreaterThanMax_rendersAsIs() {
+            // No swapping; documented behavior: rendered as-is, even when min > max.
+            Between b = Filters.between("col", 100, 1);
+            String s = b.toString();
+            assertTrue(s.contains("100"));
+            assertTrue(s.contains("1"));
+            // min is rendered before max regardless of value order
+            assertTrue(s.indexOf("100") < s.indexOf(" AND "));
+        }
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.asList("id"), (String) null));
-        assertEquals("'expr' cannot be null", ex.getMessage());
+        @Test
+        void testBetweenWithoutValues() {
+            Between between = Filters.between("age");
+            assertNotNull(between);
+        }
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), (String) null));
-        assertEquals("'expr' cannot be null", ex.getMessage());
+        @Test
+        void testFilters_between() {
+            Between condition = Filters.between("price", 100.0, 500.0);
+            assertNotNull(condition);
+        }
 
-        // A blank expr is the documented "no filter".
-        assertEquals("SELECT id FROM t", Filters.subQuery("t", Arrays.asList("id"), "  ").toString());
+        @Test
+        void testFilters_geAndLe() {
+            And condition = Filters.geAndLe("date", "2023-01-01", "2023-12-31");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_geAndLt() {
+            And condition = Filters.geAndLt("price", 100, 500);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_gtAndLe() {
+            And condition = Filters.gtAndLe("score", 0, 100);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_gtAndLt() {
+            And condition = Filters.gtAndLt("age", 18, 65);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_gtAndLt_parameterized() {
+            And condition = Filters.gtAndLt("price");
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testFilters_notBetween() {
+            NotBetween condition = Filters.notBetween("age", 0, 17);
+            assertNotNull(condition);
+        }
+
+        @Test
+        void testGeAndLe() {
+            And and = Filters.geAndLe("age", 18, 65);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testGeAndLe_usesGeAndLe() {
+            And c = Filters.geAndLe("score", 0, 100);
+            assertEquals(2, c.conditions().size());
+            assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.conditions().get(0).operator());
+            assertEquals(Operator.LESS_THAN_OR_EQUAL, c.conditions().get(1).operator());
+        }
+
+        @Test
+        void testGeAndLeWithoutValues() {
+            And and = Filters.geAndLe("score");
+            assertNotNull(and);
+        }
+
+        @Test
+        void testGeAndLt() {
+            And and = Filters.geAndLt("age", 18, 65);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testGeAndLt_usesGeAndLt() {
+            And c = Filters.geAndLt("price", 100, 500);
+            assertEquals(2, c.conditions().size());
+            assertEquals(Operator.GREATER_THAN_OR_EQUAL, c.conditions().get(0).operator());
+            assertEquals(Operator.LESS_THAN, c.conditions().get(1).operator());
+        }
+
+        @Test
+        void testGeAndLtWithoutValues() {
+            And and = Filters.geAndLt("price");
+            assertNotNull(and);
+        }
+
+        @Test
+        void testGtAndLe() {
+            And and = Filters.gtAndLe("age", 18, 65);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        @Test
+        void testGtAndLe_usesGtAndLe() {
+            And c = Filters.gtAndLe("temp", -10, 40);
+            assertEquals(2, c.conditions().size());
+            assertEquals(Operator.GREATER_THAN, c.conditions().get(0).operator());
+            assertEquals(Operator.LESS_THAN_OR_EQUAL, c.conditions().get(1).operator());
+        }
+
+        @Test
+        void testGtAndLeWithoutValues() {
+            And and = Filters.gtAndLe("rating");
+            assertNotNull(and);
+        }
+
+        @Test
+        void testGtAndLt() {
+            And and = Filters.gtAndLt("age", 18, 65);
+            assertNotNull(and);
+            assertEquals(2, and.conditions().size());
+        }
+
+        // --- 2nd-pass review verification tests ---
+        // These confirm that operator-pair factory methods do NOT have copy/paste inversions,
+        // that LIKE wildcards are placed on the correct side, and that null-value handling is correct.
+
+        @Test
+        void testGtAndLt_usesGtAndLt() {
+            And c = Filters.gtAndLt("age", 18, 65);
+            assertEquals(2, c.conditions().size());
+            assertEquals(Operator.GREATER_THAN, c.conditions().get(0).operator());
+            assertEquals(Operator.LESS_THAN, c.conditions().get(1).operator());
+        }
+
+        @Test
+        void testGtAndLtWithoutValues() {
+            And and = Filters.gtAndLt("age");
+            assertNotNull(and);
+        }
+
+        // Removed: testBt() - bt() methods have been removed. Use between() instead.
+
+        @Test
+        void testNotBetween() {
+            NotBetween notBetween = Filters.notBetween("age", 0, 17);
+            assertNotNull(notBetween);
+            assertEquals("age", notBetween.propName());
+        }
+
+        @Test
+        void testNotBetweenWithoutValues() {
+            NotBetween notBetween = Filters.notBetween("price");
+            assertNotNull(notBetween);
+        }
+
+        @Test
+        void testParameterized_gtAndLt_geAndLt_geAndLe_gtAndLe_useCorrectOperators() {
+            assertEquals(Operator.GREATER_THAN, Filters.gtAndLt("c").conditions().get(0).operator());
+            assertEquals(Operator.LESS_THAN, Filters.gtAndLt("c").conditions().get(1).operator());
+
+            assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLt("c").conditions().get(0).operator());
+            assertEquals(Operator.LESS_THAN, Filters.geAndLt("c").conditions().get(1).operator());
+
+            assertEquals(Operator.GREATER_THAN_OR_EQUAL, Filters.geAndLe("c").conditions().get(0).operator());
+            assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.geAndLe("c").conditions().get(1).operator());
+
+            assertEquals(Operator.GREATER_THAN, Filters.gtAndLe("c").conditions().get(0).operator());
+            assertEquals(Operator.LESS_THAN_OR_EQUAL, Filters.gtAndLe("c").conditions().get(1).operator());
+        }
     }
 
-    //    @Test
-    //    void testCell() {
-    //        Condition condition = Filters.equal("status", "active");
-    //        com.landawn.abacus.query.condition.Cell cell = Filters.cell(Operator.WHERE, condition);
-    //        assertNotNull(cell);
-    //    }
+    @Nested
+    class SubqueriesAndSetOperations {
+        @Test
+        void testAll() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
+            com.landawn.abacus.query.condition.All all = Filters.all(subQuery);
+            assertNotNull(all);
+        }
 
-    @Test
-    void testSubQueryWithEntityClass() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), Filters.equal("active", true));
-        assertNotNull(subQuery);
-    }
+        @Test
+        void testAny() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
+            com.landawn.abacus.query.condition.Any any = Filters.any(subQuery);
+            assertNotNull(any);
+        }
 
-    @Test
-    void testSubQueryWithEntityClassAndStringCondition() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), "active = true");
-        assertNotNull(subQuery);
-        assertEquals(Account.class, subQuery.entityClass());
-        // Mirrors the entityName-based overload: the raw string becomes an SqlExpression condition.
-        assertEquals(Filters.subQuery("Account", Arrays.asList("id", "name"), "active = true").condition().toString(), subQuery.condition().toString());
-    }
+        @Test
+        void testExcept() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM blocked_users");
+            com.landawn.abacus.query.condition.Except except = Filters.except(subQuery);
+            assertNotNull(except);
+        }
 
-    @Test
-    void testSubQueryWithEntityName() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), Filters.equal("active", true));
-        assertNotNull(subQuery);
-    }
+        @Test
+        void testExists() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
+            com.landawn.abacus.query.condition.Exists exists = Filters.exists(subQuery);
+            assertNotNull(exists);
+        }
 
-    @Test
-    void testSubQueryWithEntityNameAndSql() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", "SELECT id FROM users WHERE active = true");
-        assertNotNull(subQuery);
-    }
+        @Test
+        void testFilters_exists() {
+            SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE customer_id = customers.id AND status = 'COMPLETED'");
+            Exists hasOrders = Filters.exists(subQuery);
+            assertNotNull(hasOrders);
+        }
 
-    @Test
-    void testSubQueryWithEntityNameAndStringCondition() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), "active = true");
-        assertNotNull(subQuery);
-    }
+        @Test
+        void testFilters_inSubQuery() {
+            SubQuery subQuery = Filters.subQuery("SELECT user_id FROM active_users");
+            InSubQuery condition = Filters.in("id", subQuery);
+            assertNotNull(condition);
+        }
 
-    @Test
-    void testSubQueryWithNullExprNamesExprAndValidatesEarlierArgumentsFirst() {
-        // Regression: expr(null) ran first and failed with "literal must not be null", naming a parameter this API lacks
-        // and hiding an invalid entityClass/entityName.
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.asList("id"), (String) null));
-        assertTrue(ex.getMessage().contains("expr"), ex.getMessage());
+        @Test
+        void testFilters_notInSubQuery() {
+            SubQuery subQuery = Filters.subQuery("SELECT user_id FROM blocked_users");
+            NotInSubQuery condition = Filters.notIn("id", subQuery);
+            assertNotNull(condition);
+        }
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), (String) null));
-        assertTrue(ex.getMessage().contains("expr"), ex.getMessage());
+        @Test
+        void testFilters_subQuery() {
+            SubQuery sq = Filters.subQuery("SELECT COUNT(*) FROM orders WHERE user_id = users.id");
+            assertNotNull(sq);
+        }
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery((Class<?>) null, Arrays.asList("id"), (String) null));
-        assertTrue(ex.getMessage().toLowerCase().contains("entity class"), ex.getMessage());
+        @Test
+        void testInSubQuery() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id FROM users WHERE active = true");
+            com.landawn.abacus.query.condition.InSubQuery inSubQuery = Filters.in("user_id", subQuery);
+            assertNotNull(inSubQuery);
+        }
 
-        ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(" ", Arrays.asList("id"), (String) null));
-        assertTrue(ex.getMessage().toLowerCase().contains("entity name"), ex.getMessage());
+        @Test
+        void testInSubQueryMultipleProps() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id, name FROM users");
+            com.landawn.abacus.query.condition.InSubQuery inSubQuery = Filters.in(Arrays.asList("id", "name"), subQuery);
+            assertNotNull(inSubQuery);
+        }
 
-        assertEquals("SELECT id FROM t", Filters.subQuery("t", Arrays.asList("id"), "").toString());
-    }
+        @Test
+        void testIntersect() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM premium_users");
+            com.landawn.abacus.query.condition.Intersect intersect = Filters.intersect(subQuery);
+            assertNotNull(intersect);
+        }
 
-    @Test
-    void testSubQueryWithSql() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM users WHERE active = true");
-        assertNotNull(subQuery);
-    }
+        @Test
+        void testMinus() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM inactive_users");
+            com.landawn.abacus.query.condition.Minus minus = Filters.minus(subQuery);
+            assertNotNull(minus);
+        }
 
-    @Test
-    void testUnion() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
-        com.landawn.abacus.query.condition.Union union = Filters.union(subQuery);
-        assertNotNull(union);
-    }
+        @Test
+        void testNotExists() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT 1 FROM orders WHERE user_id = users.id");
+            com.landawn.abacus.query.condition.NotExists notExists = Filters.notExists(subQuery);
+            assertNotNull(notExists);
+        }
 
-    @Test
-    void testUnionAll() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
-        com.landawn.abacus.query.condition.UnionAll unionAll = Filters.unionAll(subQuery);
-        assertNotNull(unionAll);
-    }
+        @Test
+        void testNotInSubQuery() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id FROM blocked_users");
+            com.landawn.abacus.query.condition.NotInSubQuery notInSubQuery = Filters.notIn("user_id", subQuery);
+            assertNotNull(notInSubQuery);
+        }
 
-    @Test
-    void testUsing() {
-        // Test with varargs
-        Using using1 = Filters.using("id", "name");
-        assertNotNull(using1);
+        @Test
+        void testNotInSubQueryMultipleProps() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT id, name FROM blocked");
+            com.landawn.abacus.query.condition.NotInSubQuery notInSubQuery = Filters.notIn(Arrays.asList("id", "name"), subQuery);
+            assertNotNull(notInSubQuery);
+        }
 
-        // Test with collection
-        List<String> columns = Arrays.asList("userId", "departmentId");
-        Using using2 = Filters.using(columns);
-        assertNotNull(using2);
-    }
+        @Test
+        void testSinglePropertyEntitySubqueryKeepsProjectionAndPredicate() {
+            final SubQuery subQuery = Filters.subQuery(Account.class, "id", Filters.eq("status", 7));
+            assertEquals(Account.class, subQuery.entityClass());
+            assertEquals(List.of("id"), subQuery.selectPropNames());
+            assertEquals(List.of(7), subQuery.parameters());
+        }
 
-    @Test
-    void testUsingCollection() {
-        com.landawn.abacus.query.condition.Using using = Filters.using(Arrays.asList("id", "name"));
-        assertNotNull(using);
-    }
+        @Test
+        void testSome() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT price FROM products");
+            com.landawn.abacus.query.condition.Some some = Filters.some(subQuery);
+            assertNotNull(some);
+        }
 
-    @Test
-    void testUsingVarargs() {
-        com.landawn.abacus.query.condition.Using using = Filters.using("id", "name");
-        assertNotNull(using);
-    }
+        //    @Test
+        //    void testCell() {
+        //        Condition condition = Filters.eq("status", "active");
+        //        Cell cell = Filters.cell(Operator.AND, condition);
+        //        Assertions.assertNotNull(cell);
+        //        Assertions.assertEquals(Operator.AND, cell.operator());
+        //        Assertions.assertEquals(condition, cell.condition());
+        //    }
 
-    @Test
-    void testWhere() {
-        // Test with condition
-        Condition condition = Filters.eq("status", "active");
-        Where where1 = Filters.where(condition);
-        assertNotNull(where1);
-        assertEquals(condition, where1.condition());
+        @Test
+        void testSubQuery() {
+            // Test with class, properties and condition
+            List<String> props = Arrays.asList("id", "name");
+            Condition condition = Filters.eq("active", true);
+            SubQuery sq1 = Filters.subQuery(String.class, props, condition);
+            assertNotNull(sq1);
 
-        // Test with string
-        Where where2 = Filters.where("age > 18");
-        assertNotNull(where2);
-        assertNotNull(where2.condition());
-    }
+            // Test with entity name, properties and condition
+            SubQuery sq2 = Filters.subQuery("users", props, condition);
+            assertNotNull(sq2);
 
-    @Test
-    void testWhereAndHavingStringRejectBlankExpression() {
-        // where(String)/having(String) use checkArgNotBlank: whitespace-only expressions are rejected up front,
-        // with a message that names the blank rejection (same contract as Criteria.Builder.where(String)/having(String)).
-        final IllegalArgumentException whereEx = assertThrows(IllegalArgumentException.class, () -> Filters.where("  "));
-        assertTrue(whereEx.getMessage().toLowerCase().contains("blank"), whereEx.getMessage());
+            // Test with entity name, properties and string condition
+            SubQuery sq3 = Filters.subQuery("users", props, "active = 1");
+            assertNotNull(sq3);
 
-        final IllegalArgumentException havingEx = assertThrows(IllegalArgumentException.class, () -> Filters.having("  "));
-        assertTrue(havingEx.getMessage().toLowerCase().contains("blank"), havingEx.getMessage());
+            // Test with entity name and sql (deprecated)
+            SubQuery sq4 = Filters.subQuery("users", "SELECT * FROM users");
+            assertNotNull(sq4);
 
-        // Tabs/newlines count as blank too.
-        assertThrows(IllegalArgumentException.class, () -> Filters.where("\t\n"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.having("\t\n"));
-    }
+            // Test with sql only
+            SubQuery sq5 = Filters.subQuery("SELECT COUNT(*) FROM orders");
+            assertNotNull(sq5);
+        }
 
-    @Test
-    void testWhereCondition() {
-        Condition condition = Filters.equal("status", "active");
-        Where where = Filters.where(condition);
-        assertNotNull(where);
-        assertEquals(Operator.WHERE, where.operator());
-    }
+        @Test
+        void testSubQuery_rawExprStartingWithOnRejected() {
+            assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("products", Arrays.asList("id"), "ON a = b"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("products", Arrays.asList("id"), "USING (id)"));
+            assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), "ON a = b"));
+            assertEquals("SELECT id FROM products WHERE price > 10", Filters.subQuery("products", Arrays.asList("id"), "price > 10").toString());
+        }
 
-    @Test
-    void testWhereString() {
-        Where where = Filters.where("status = 'active'");
-        assertNotNull(where);
-    }
+        @Test
+        void testSubQueryArgumentValidationMessagesFollowParameterOrder() {
+            // Covers the validation order and exact messages of subQuery(entity, propNames, expr): entity, then propNames, then expr.
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", (Collection<String>) null, (String) null));
+            assertEquals("Property names must not be null", ex.getMessage());
 
-    @Test
-    void testWhereString_rejectsClauseLeadingLiteral() {
-        assertThrows(IllegalArgumentException.class, () -> Filters.where("ORDER BY a"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.where("WHERE a = 1"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.where("LEFT OUTER JOIN t"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.where("UNION SELECT 1"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.where("ON a.id = b.id"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.where("USING (id)"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.having("ORDER BY a"));
-        assertThrows(IllegalArgumentException.class, () -> Filters.on("ORDER BY a"));
-        // only the SQL spelling counts: an identifier that merely starts with a keyword is accepted
-        assertEquals("WHERE where_flag = 1", Filters.where("where_flag = 1").toString());
-        assertEquals("HAVING having_flag = 1", Filters.having("having_flag = 1").toString());
-        assertEquals("ON on_flag = 1", Filters.on("on_flag = 1").toString());
-    }
+            ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.<String> asList(), (String) null));
+            assertEquals("Property names must not be empty", ex.getMessage());
 
-    @Test
-    void testWildcardMethods_NonNullValues_StillWork() {
-        // Regression guard: ensure happy paths still produce the expected wildcard patterns.
-        assertEquals("%java%", Filters.contains("col", "java").propValue());
-        assertEquals("%java%", Filters.notContains("col", "java").propValue());
-        assertEquals("Jo%", Filters.startsWith("col", "Jo").propValue());
-        assertEquals("TEST%", Filters.notStartsWith("col", "TEST").propValue());
-        assertEquals("%.com", Filters.endsWith("col", ".com").propValue());
-        assertEquals("%.tmp", Filters.notEndsWith("col", ".tmp").propValue());
+            // A non-null (even invalid) expr still reports the entity first.
+            ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery((Class<?>) null, Arrays.asList("id"), "ON x = 1"));
+            assertEquals("Entity class must not be null", ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.asList("id"), (String) null));
+            assertEquals("'expr' cannot be null", ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), (String) null));
+            assertEquals("'expr' cannot be null", ex.getMessage());
+
+            // A blank expr is the documented "no filter".
+            assertEquals("SELECT id FROM t", Filters.subQuery("t", Arrays.asList("id"), "  ").toString());
+        }
+
+        //    @Test
+        //    void testCell() {
+        //        Condition condition = Filters.equal("status", "active");
+        //        com.landawn.abacus.query.condition.Cell cell = Filters.cell(Operator.WHERE, condition);
+        //        assertNotNull(cell);
+        //    }
+
+        @Test
+        void testSubQueryWithEntityClass() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), Filters.equal("active", true));
+            assertNotNull(subQuery);
+        }
+
+        @Test
+        void testSubQueryWithEntityClassAndStringCondition() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), "active = true");
+            assertNotNull(subQuery);
+            assertEquals(Account.class, subQuery.entityClass());
+            // Mirrors the entityName-based overload: the raw string becomes an SqlExpression condition.
+            assertEquals(Filters.subQuery("Account", Arrays.asList("id", "name"), "active = true").condition().toString(), subQuery.condition().toString());
+        }
+
+        @Test
+        void testSubQueryWithEntityName() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), Filters.equal("active", true));
+            assertNotNull(subQuery);
+        }
+
+        @Test
+        void testSubQueryWithEntityNameAndSql() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", "SELECT id FROM users WHERE active = true");
+            assertNotNull(subQuery);
+        }
+
+        @Test
+        void testSubQueryWithEntityNameAndStringCondition() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("users", Arrays.asList("id", "name"), "active = true");
+            assertNotNull(subQuery);
+        }
+
+        @Test
+        void testSubQueryWithNullExprNamesExprAndValidatesEarlierArgumentsFirst() {
+            // Regression: expr(null) ran first and failed with "literal must not be null", naming a parameter this API lacks
+            // and hiding an invalid entityClass/entityName.
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("t", Arrays.asList("id"), (String) null));
+            assertTrue(ex.getMessage().contains("expr"), ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(Account.class, Arrays.asList("id"), (String) null));
+            assertTrue(ex.getMessage().contains("expr"), ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery((Class<?>) null, Arrays.asList("id"), (String) null));
+            assertTrue(ex.getMessage().toLowerCase().contains("entity class"), ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> Filters.subQuery(" ", Arrays.asList("id"), (String) null));
+            assertTrue(ex.getMessage().toLowerCase().contains("entity name"), ex.getMessage());
+
+            assertEquals("SELECT id FROM t", Filters.subQuery("t", Arrays.asList("id"), "").toString());
+        }
+
+        @Test
+        void testSubQueryWithSql() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM users WHERE active = true");
+            assertNotNull(subQuery);
+        }
+
+        @Test
+        void testUnion() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
+            com.landawn.abacus.query.condition.Union union = Filters.union(subQuery);
+            assertNotNull(union);
+        }
+
+        @Test
+        void testUnionAll() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
+            com.landawn.abacus.query.condition.UnionAll unionAll = Filters.unionAll(subQuery);
+            assertNotNull(unionAll);
+        }
     }
 
     @Nested

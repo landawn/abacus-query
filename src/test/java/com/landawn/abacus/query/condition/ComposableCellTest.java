@@ -23,7 +23,7 @@ public class ComposableCellTest extends TestBase {
     }
 
     @Test
-    void testDefaultConstructor_EmptyState_Batch2() {
+    void testDefaultConstructor_EmptyState() {
         final EmptyComposableCell left = new EmptyComposableCell();
         final EmptyComposableCell right = new EmptyComposableCell();
 

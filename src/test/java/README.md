@@ -23,6 +23,7 @@ and the optional `unit` tag.
   Source order is for navigation; tests must not rely on execution order.
 - Use package-private `test<Method><Scenario>` methods with JUnit annotations.
   Preserve descriptive regression names and comments explaining the contract.
+  Name the behavior rather than the pass or batch that introduced the test.
 - Put setup fields and lifecycle methods first, tests next, and private helpers
   and entity fixtures last. Preserve entity field order: it can affect SQL.
 - Use explicit static JUnit assertion imports. Keep expected values before
@@ -44,6 +45,12 @@ live in `QueryTestSupport`. The `entity` package contains reusable domain
 fixtures. Manual Java maintenance tools live under `scripts/java`, outside test
 compilation and discovery.
 
+`AbstractConditionTest.PropertiesAndSorting` owns the `createSortSpec` helper
+contracts; `GroupByTest` and `OrderByTest` own their clause behavior. The other
+large condition and query suites use nested groups for construction, rendering,
+parameters, validation, and their unit-specific operations. Keep static method
+sources with their parameterized tests when introducing a nested group.
+
 ## Auditing changes
 
 See [the audit tools](../../../scripts/test_audit/README.md). Generate reports
@@ -54,4 +61,7 @@ annotations, and expected behavior before removing anything.
 
 The [initial cleanup record](../../../docs/testing/test-cleanup-2026-10-12.md)
 and [second-pass record](../../../docs/testing/test-cleanup-2026-10-13.md) record
-the consolidation, removed cases, and validation for the current organization.
+the earlier consolidation. The [2026-10-15 cleanup record](../../../docs/testing/test-cleanup-2026-10-15.md)
+records the current grouping, semantic duplicate review, stronger assertions,
+and before/after verification. Run `python -B scripts/test_audit/check_test_layout.py`
+from the repository root to check naming, visibility, and ordering conventions.

@@ -327,6 +327,19 @@ public class InnerJoinTest extends TestBase {
         assertTrue(result.contains("AND"));
     }
 
+    @SuppressWarnings("deprecation")
+    @Test
+    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
+        // An open "/*" in the entity would comment out the ON predicate and everything rendered after the join.
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new InnerJoin("t /* x", ON_AB)).getMessage());
+        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new InnerJoin(List.of("t /* x"), ON_AB)).getMessage());
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new InnerJoin("t /* x")).getMessage());
+        assertEquals("INNER JOIN t /* x */ ON a.id = b.id", new InnerJoin("t /* x */", ON_AB).toString());
+    }
+
     @Test
     void testWithAlias() {
         InnerJoin join = new InnerJoin("order_details od", ON_AB);
@@ -348,18 +361,5 @@ public class InnerJoinTest extends TestBase {
                 Arrays.asList(new Equal("order_items.product_id", "p.id"), new Equal("p.active", true), new GreaterThan("p.stock", 0)));
         InnerJoin join = new InnerJoin("products p", multipleConditions);
         assertEquals(3, join.parameters().size());
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
-        // An open "/*" in the entity would comment out the ON predicate and everything rendered after the join.
-        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
-                assertThrows(IllegalArgumentException.class, () -> new InnerJoin("t /* x", ON_AB)).getMessage());
-        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
-                assertThrows(IllegalArgumentException.class, () -> new InnerJoin(List.of("t /* x"), ON_AB)).getMessage());
-        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
-                assertThrows(IllegalArgumentException.class, () -> new InnerJoin("t /* x")).getMessage());
-        assertEquals("INNER JOIN t /* x */ ON a.id = b.id", new InnerJoin("t /* x */", ON_AB).toString());
     }
 }

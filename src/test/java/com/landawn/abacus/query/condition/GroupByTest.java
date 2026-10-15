@@ -58,9 +58,8 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy(props, SortDirection.DESC);
         String result = groupBy.toString();
 
-        assertTrue(result.contains("region"));
-        assertTrue(result.contains("category"));
-        assertTrue(result.contains("DESC"));
+        assertEquals("GROUP BY region DESC, category DESC", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
@@ -117,8 +116,8 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy("name", SortDirection.ASC);
         String result = groupBy.toString();
 
-        assertTrue(result.contains("name"));
-        assertTrue(result.contains("ASC"));
+        assertEquals("GROUP BY name ASC", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
@@ -126,36 +125,36 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy("salary", SortDirection.DESC);
         String result = groupBy.toString();
 
-        assertTrue(result.contains("salary"));
-        assertTrue(result.contains("DESC"));
+        assertEquals("GROUP BY salary DESC", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
     void testConstructorWithPropNameAndDirection() {
         GroupBy groupBy = new GroupBy("sales_amount", SortDirection.DESC);
 
-        assertNotNull(groupBy);
         String result = groupBy.toString();
-        assertTrue(result.contains("sales_amount"));
-        assertTrue(result.contains("DESC"));
+
+        assertEquals("GROUP BY sales_amount DESC", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
     void testConstructorWithSingleProperty() {
         GroupBy groupBy = new GroupBy("department");
 
-        assertNotNull(groupBy);
-        assertTrue(groupBy.toString().contains("department"));
+        assertEquals("GROUP BY department", groupBy.toString());
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
     void testConstructorWithSinglePropName() {
         GroupBy groupBy = new GroupBy("category");
 
-        assertNotNull(groupBy);
         String result = groupBy.toString();
-        assertTrue(result.contains("GROUP BY"));
-        assertTrue(result.contains("category"));
+
+        assertEquals("GROUP BY category", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
@@ -302,10 +301,8 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy(Arrays.asList("col1", "col2", "col3"), SortDirection.ASC);
         String result = groupBy.toString();
 
-        assertTrue(result.contains("col1"));
-        assertTrue(result.contains("col2"));
-        assertTrue(result.contains("col3"));
-        assertTrue(result.contains("ASC"));
+        assertEquals("GROUP BY col1 ASC, col2 ASC, col3 ASC", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
@@ -342,8 +339,8 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy(orders);
         String result = groupBy.toString();
 
-        assertNotNull(result);
-        assertTrue(result.length() > 0);
+        assertEquals("GROUP BY first DESC, second ASC, third DESC", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
@@ -351,7 +348,8 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy("status");
         String result = groupBy.toString();
 
-        assertTrue(result.contains("GROUP BY") || result.contains("status"));
+        assertEquals("GROUP BY status", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
@@ -359,8 +357,8 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy("category", "region");
         String result = groupBy.toString();
 
-        assertTrue(result.contains("category"));
-        assertTrue(result.contains("region"));
+        assertEquals("GROUP BY category, region", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test
@@ -368,8 +366,8 @@ public class GroupByTest extends TestBase {
         GroupBy groupBy = new GroupBy("productCategory");
         String result = groupBy.toSql(NamingPolicy.SNAKE_CASE);
 
-        assertNotNull(result);
-        assertTrue(result.contains("product_category") || result.contains("productCategory"));
+        assertEquals("GROUP BY product_category", result);
+        assertEquals(List.of(), groupBy.parameters());
     }
 
     @Test

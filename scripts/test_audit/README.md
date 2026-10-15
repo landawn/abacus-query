@@ -12,6 +12,7 @@ python -B scripts/test_audit/find_duplicates_intra.py --exact-only --min-body-le
 python -B scripts/test_audit/find_duplicates.py --out .audit/test-audit/cross_class.json
 python -B scripts/test_audit/find_no_assertions.py --out .audit/test-audit/no_assertions.json
 python -B scripts/test_audit/map_consolidation.py --out .audit/test-audit/consolidation.json
+python -B scripts/test_audit/check_test_layout.py --out .audit/test-audit/layout.json
 ```
 
 The report commands default to the freshly generated inventory under
@@ -47,6 +48,13 @@ prefers an exact production-class name, excludes fixture-only classes, and
 documents the supported-SQL and pagination splits.
 Dependency contracts such as `SKTest` are reported separately. A missing
 name-based mapping does not establish missing runtime coverage.
+
+`check_test_layout.py` checks case-insensitive method-name ordering separately
+within each top-level or nested test class, package-private visibility, the
+`test` prefix, and obsolete pass/batch labels. It includes parameterized tests,
+ignores helpers, and returns a nonzero exit code for violations. It reads current
+sources by default; pass `--input` to check a saved inventory. This is a source
+navigation convention, not a JUnit execution-order requirement.
 
 ## Legacy merge utilities
 

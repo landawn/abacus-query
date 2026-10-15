@@ -252,9 +252,4 @@ public class IsNotNullTest extends TestBase {
         assertTrue(emailCheck.toSql(NamingPolicy.NO_CHANGE).contains("IS NOT NULL"));
     }
 
-    @Test
-    void testUseCaseScenario_ValidatedFields() {
-        IsNotNull nameCheck = new IsNotNull("customer_name");
-        assertEquals("customer_name", nameCheck.propName());
-    }
 }

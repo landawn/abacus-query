@@ -116,13 +116,6 @@ public class UnionAllTest extends TestBase {
     }
 
     @Test
-    void testGetOperator() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        UnionAll unionAll = new UnionAll(subQuery);
-        assertEquals(Operator.UNION_ALL, unionAll.operator());
-    }
-
-    @Test
     void testHashCode() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");

@@ -80,9 +80,8 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy = new OrderBy(props, SortDirection.DESC);
         String result = orderBy.toString();
 
-        assertTrue(result.contains("priority"));
-        assertTrue(result.contains("created"));
-        assertTrue(result.contains("DESC"));
+        assertEquals("ORDER BY priority DESC, created DESC", result);
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test
@@ -131,8 +130,8 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy = new OrderBy("created", SortDirection.ASC);
         String result = orderBy.toString();
 
-        assertTrue(result.contains("created"));
-        assertTrue(result.contains("ASC"));
+        assertEquals("ORDER BY created ASC", result);
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test
@@ -140,16 +139,16 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy = new OrderBy("salary", SortDirection.DESC);
         String result = orderBy.toString();
 
-        assertTrue(result.contains("salary"));
-        assertTrue(result.contains("DESC"));
+        assertEquals("ORDER BY salary DESC", result);
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test
     void testConstructorWithSingleProperty() {
         OrderBy orderBy = new OrderBy("lastName");
 
-        assertNotNull(orderBy);
-        assertTrue(orderBy.toString().contains("lastName"));
+        assertEquals("ORDER BY lastName", orderBy.toString());
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test
@@ -159,62 +158,6 @@ public class OrderByTest extends TestBase {
         assertEquals(Operator.ORDER_BY, orderBy.operator());
         String result = orderBy.toString();
         assertTrue(result.contains("country, state, city"));
-    }
-
-    @Test
-    void testCreateConditionStaticMethod() {
-        String result = AbstractCondition.createSortSpec("a", "b", "c");
-
-        assertTrue(result.contains("a"));
-        assertTrue(result.contains("b"));
-        assertTrue(result.contains("c"));
-        assertTrue(result.contains(", "));
-    }
-
-    @Test
-    void testCreateConditionWithCollectionAndDirection() {
-        List<String> props = Arrays.asList("year", "month", "day");
-        String result = AbstractCondition.createSortSpec(props, SortDirection.ASC);
-        assertEquals("year ASC, month ASC, day ASC", result);
-    }
-
-    @Test
-    void testCreateConditionWithEmptyCollection() {
-        List<String> emptyList = Arrays.asList();
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(emptyList, SortDirection.ASC));
-    }
-
-    @Test
-    void testCreateConditionWithEmptyMap() {
-        Map<String, SortDirection> emptyMap = new LinkedHashMap<>();
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(emptyMap));
-    }
-
-    @Test
-    void testCreateConditionWithEmptyVarArgs() {
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec());
-    }
-
-    @Test
-    void testCreateConditionWithMap() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("col1", SortDirection.ASC);
-        orders.put("col2", SortDirection.DESC);
-
-        String result = AbstractCondition.createSortSpec(orders);
-        assertEquals("col1 ASC, col2 DESC", result);
-    }
-
-    @Test
-    void testCreateConditionWithSinglePropertyAndDirection() {
-        String result = AbstractCondition.createSortSpec("salary", SortDirection.DESC);
-        assertEquals("salary DESC", result);
-    }
-
-    @Test
-    void testCreateConditionWithVarArgs() {
-        String result = AbstractCondition.createSortSpec("col1", "col2", "col3");
-        assertEquals("col1, col2, col3", result);
     }
 
     @Test
@@ -315,10 +258,8 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy = new OrderBy(orders);
         String result = orderBy.toString();
 
-        assertNotNull(result);
-        assertTrue(result.contains("priority"));
-        assertTrue(result.contains("created"));
-        assertTrue(result.contains("name"));
+        assertEquals("ORDER BY priority DESC, created ASC, name ASC", result);
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test
@@ -448,77 +389,12 @@ public class OrderByTest extends TestBase {
     }
 
     @Test
-    void testStaticCreateConditionRejectsBlankPropertyNames() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("   ", SortDirection.ASC);
-
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec("   "));
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec("   ", SortDirection.ASC));
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(Arrays.asList("name", "   "), SortDirection.ASC));
-        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.createSortSpec(orders));
-    }
-
-    @Test
-    void testStaticCreateConditionWithCollection() {
-        List<String> props = Arrays.asList("col1", "col2");
-        String result = AbstractCondition.createSortSpec(props, SortDirection.ASC);
-
-        assertTrue(result.contains("col1"));
-        assertTrue(result.contains("col2"));
-        assertTrue(result.contains("ASC"));
-    }
-
-    @Test
-    void testStaticCreateConditionWithDirection() {
-        String result = AbstractCondition.createSortSpec("price", SortDirection.DESC);
-
-        assertTrue(result.contains("price"));
-        assertTrue(result.contains("DESC"));
-    }
-
-    @Test
-    void testStaticCreateConditionWithEmptyMap() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        assertThrows(IllegalArgumentException.class, () -> {
-            AbstractCondition.createSortSpec(orders);
-        });
-    }
-
-    @Test
-    void testStaticCreateConditionWithMap() {
-        Map<String, SortDirection> orders = new LinkedHashMap<>();
-        orders.put("first", SortDirection.DESC);
-        orders.put("second", SortDirection.ASC);
-
-        String result = AbstractCondition.createSortSpec(orders);
-
-        assertTrue(result.contains("first"));
-        assertTrue(result.contains("second"));
-        assertTrue(result.contains("DESC"));
-        assertTrue(result.contains("ASC"));
-    }
-
-    @Test
-    void testStaticCreateConditionWithSingleProperty() {
-        String result = AbstractCondition.createSortSpec("name");
-        assertTrue(result.contains("name"));
-    }
-
-    @Test
-    void testStaticCreateConditionWithStrings() {
-        String result = AbstractCondition.createSortSpec("name", "age", "city");
-
-        assertTrue(result.contains("name"));
-        assertTrue(result.contains("age"));
-        assertTrue(result.contains("city"));
-    }
-
-    @Test
     void testToString() {
         OrderBy orderBy = new OrderBy("status");
         String result = orderBy.toString();
 
-        assertTrue(result.contains("ORDER BY") || result.contains("status"));
+        assertEquals("ORDER BY status", result);
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test
@@ -526,8 +402,8 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy = new OrderBy("name", "age");
         String result = orderBy.toString();
 
-        assertTrue(result.contains("name"));
-        assertTrue(result.contains("age"));
+        assertEquals("ORDER BY name, age", result);
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test
@@ -535,8 +411,8 @@ public class OrderByTest extends TestBase {
         OrderBy orderBy = new OrderBy("userName");
         String result = orderBy.toSql(NamingPolicy.SNAKE_CASE);
 
-        assertNotNull(result);
-        assertTrue(result.contains("user_name") || result.contains("userName"));
+        assertEquals("ORDER BY user_name", result);
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test
@@ -544,8 +420,8 @@ public class OrderByTest extends TestBase {
         SqlExpression expr = Filters.expr("CASE WHEN priority=1 THEN 0 ELSE 1 END");
         OrderBy orderBy = new OrderBy(expr);
 
-        assertNotNull(orderBy);
-        assertTrue(orderBy.toString().length() > 0);
+        assertEquals("ORDER BY CASE WHEN priority=1 THEN 0 ELSE 1 END", orderBy.toString());
+        assertEquals(List.of(), orderBy.parameters());
     }
 
     @Test

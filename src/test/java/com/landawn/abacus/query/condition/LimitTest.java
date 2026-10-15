@@ -536,6 +536,29 @@ public class LimitTest extends TestBase {
     }
 
     @Test
+    void testSubclassOverridingParametersIsHonouredInsideCriteria() {
+        // Limit's own appendParametersTo hook appends nothing; a subclass that overrides only parameters() must
+        // still be authoritative when Criteria aggregates its clauses
+        final Limit custom = new Limit(5) {
+            @Override
+            public ImmutableList<Object> parameters() {
+                return ImmutableList.of("lim");
+            }
+        };
+
+        assertEquals(List.of("lim"), custom.parameters());
+        assertEquals(List.of(), new Limit(5).parameters());
+
+        final Criteria criteria = Criteria.builder().where(Filters.eq("w", 1)).limit(custom).build();
+        assertEquals(List.of(1, "lim"), criteria.parameters());
+        assertEquals(List.of("lim"), Criteria.builder().limit(custom).build().parameters());
+        assertEquals(List.of(1, "lim"), Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
+        assertEquals(List.of(0, 1, "lim", 2),
+                Filters.and(Filters.eq("z", 0), Filters.not(Filters.exists(Filters.subQuery("t", List.of("id"), criteria))), Filters.eq("b", 2)).parameters());
+        assertEquals(List.of(1), Criteria.builder().where(Filters.eq("w", 1)).limit(new Limit(5)).build().parameters());
+    }
+
+    @Test
     void testToString_NoArgsWithCountOnly() {
         Limit limit = new Limit(15);
         String result = limit.toString();
@@ -620,28 +643,5 @@ public class LimitTest extends TestBase {
 
         assertEquals(0, limit.offset());
         assertEquals(10, limit.count());
-    }
-
-    @Test
-    void testSubclassOverridingParametersIsHonouredInsideCriteria() {
-        // Limit's own appendParametersTo hook appends nothing; a subclass that overrides only parameters() must
-        // still be authoritative when Criteria aggregates its clauses
-        final Limit custom = new Limit(5) {
-            @Override
-            public ImmutableList<Object> parameters() {
-                return ImmutableList.of("lim");
-            }
-        };
-
-        assertEquals(List.of("lim"), custom.parameters());
-        assertEquals(List.of(), new Limit(5).parameters());
-
-        final Criteria criteria = Criteria.builder().where(Filters.eq("w", 1)).limit(custom).build();
-        assertEquals(List.of(1, "lim"), criteria.parameters());
-        assertEquals(List.of("lim"), Criteria.builder().limit(custom).build().parameters());
-        assertEquals(List.of(1, "lim"), Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
-        assertEquals(List.of(0, 1, "lim", 2),
-                Filters.and(Filters.eq("z", 0), Filters.not(Filters.exists(Filters.subQuery("t", List.of("id"), criteria))), Filters.eq("b", 2)).parameters());
-        assertEquals(List.of(1), Criteria.builder().where(Filters.eq("w", 1)).limit(new Limit(5)).build().parameters());
     }
 }

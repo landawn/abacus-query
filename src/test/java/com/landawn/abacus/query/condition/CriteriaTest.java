@@ -30,1976 +30,6 @@ import com.landawn.abacus.util.NamingPolicy;
 
 public class CriteriaTest extends TestBase {
 
-    @Test
-    void testAddConditionWithNullOperatorThrowsIllegalArgumentException() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(new NullOperatorCondition()));
-
-        assertTrue(error.getMessage().contains("operator"));
-    }
-
-    @Test
-    void testAddEmptyPredicateThrows() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("   ")));
-    }
-
-    @Test
-    void testAddGroupByRoutesToGroupBy() {
-        Criteria c = Criteria.builder().add(new GroupBy("department")).build();
-
-        assertNotNull(c.groupBy());
-        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("GROUP BY department"), c.toString());
-    }
-
-    @Test
-    void testAddHavingRoutesToHaving() {
-        // Previously threw/recursed because the switch had no HAVING case (fell through to where()).
-        Criteria c = Criteria.builder().add(new Having(Filters.gt("COUNT(*)", 5))).build();
-
-        assertNotNull(c.having());
-        assertNull(c.where());
-        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("HAVING COUNT(*) > 5"), c.toString());
-    }
-
-    @Test
-    void testAddJoinRoutesToJoinAndAccumulates() {
-        Criteria c = Criteria.builder().add(new Join("orders", Filters.on("a", "b"))).add(new Join("payments", Filters.on("c", "d"))).build();
-
-        // Joins accumulate; they are not replaced.
-        assertEquals(2, c.joins().size());
-    }
-
-    @Test
-    void testAddLimitRoutesToLimit() {
-        Criteria c = Criteria.builder().add(new Limit(10)).build();
-
-        assertNotNull(c.limit());
-        assertEquals(10, c.limit().count());
-    }
-
-    @Test
-    void testAddNestedCriteriaThrows() {
-        Criteria nested = Criteria.builder().where(Filters.eq("a", 1)).build();
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(nested));
-    }
-
-    @Test
-    void testAddNullThrows() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(null));
-    }
-
-    @Test
-    void testAddOnOrUsingThrows() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("ON a.id = b.id")));
-    }
-
-    @Test
-    void testAddOrderByRoutesToOrderBy() {
-        Criteria c = Criteria.builder().add(new OrderBy("createdDate")).build();
-
-        assertNotNull(c.orderBy());
-        assertNull(c.where());
-        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY createdDate"), c.toString());
-    }
-
-    // --- Routing by operator. ---
-
-    @Test
-    void testAddPlainPredicateRoutesToWhere() {
-        Criteria c = Criteria.builder().add(Filters.equal("status", "active")).build();
-
-        assertNotNull(c.where());
-        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("WHERE status = 'active'"), c.toString());
-    }
-
-    @Test
-    void testAddQuantifiedOperandThrows() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.any(Filters.subQuery("SELECT 1"))));
-    }
-
-    // --- Replacement semantics for singleton clauses. ---
-
-    @Test
-    void testAddReplacesExistingSingletonClause() {
-        Criteria c = Criteria.builder().add(new Limit(10)).add(new Limit(20)).build();
-        assertEquals(20, c.limit().count());
-
-        Criteria c2 = Criteria.builder().add(new OrderBy("colA")).add(new OrderBy("colB")).build();
-        String sql = c2.toSql(NamingPolicy.NO_CHANGE);
-        assertTrue(sql.contains("colB"), sql);
-        assertFalse(sql.contains("colA"), sql);
-    }
-
-    // --- Chaining and validation. ---
-
-    @Test
-    void testAddReturnsBuilderForChaining() {
-        Builder builder = Criteria.builder();
-        assertTrue(builder == builder.add(Filters.equal("a", 1)));
-    }
-
-    @Test
-    void testAddSetOperationsRouteCorrectly() {
-        assertTrue(Criteria.builder().add(new Union(Filters.subQuery("SELECT 1"))).build().toString().contains("UNION"));
-        assertTrue(Criteria.builder().add(new UnionAll(Filters.subQuery("SELECT 1"))).build().toString().contains("UNION ALL"));
-        assertTrue(Criteria.builder().add(new Intersect(Filters.subQuery("SELECT 1"))).build().toString().contains("INTERSECT"));
-        assertTrue(Criteria.builder().add(new Except(Filters.subQuery("SELECT 1"))).build().toString().contains("EXCEPT"));
-        assertTrue(Criteria.builder().add(new Minus(Filters.subQuery("SELECT 1"))).build().toString().contains("MINUS"));
-    }
-
-    @Test
-    void testAddStandaloneSubQueryThrows() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.subQuery("SELECT 1")));
-    }
-
-    @Test
-    void testAddWhereClauseRoutesToWhere() {
-        Criteria c = Criteria.builder().add(new Where(Filters.eq("id", 1))).build();
-
-        assertNotNull(c.where());
-        assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("WHERE id = 1"), c.toString());
-    }
-
-    @Test
-    void testAppendParametersToRetainsExistingValuesAndClauseOrder() {
-        final List<Object> bindings = new ArrayList<>(List.of("existing"));
-        final Criteria criteria = Criteria.builder().having(Filters.gt("COUNT(*)", 2)).where(Filters.eq("id", 7)).build();
-        criteria.appendParametersTo(bindings);
-        assertEquals(List.of("existing", 7, 2), bindings);
-        Criteria.builder().build().appendParametersTo(bindings);
-        assertEquals(List.of("existing", 7, 2), bindings);
-    }
-
-    @Test
-    void testBlankSelectModifierIsCleared() {
-        Criteria criteria = Criteria.builder().distinct().selectModifier("  \t ").build();
-
-        assertNull(criteria.selectModifier());
-        assertEquals("", criteria.toSql(NamingPolicy.NO_CHANGE));
-    }
-
-    @Test
-    void testBuilderAddRejectsOperatorTypeMismatchWithActionableException() {
-        for (Operator operator : Arrays.asList(Operator.LIMIT, Operator.UNION, Operator.UNION_ALL, Operator.INTERSECT, Operator.EXCEPT, Operator.MINUS)) {
-            IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(new FakeClauseCondition(operator)));
-
-            assertTrue(error.getMessage().contains(operator.toString()), error.getMessage());
-            assertTrue(error.getMessage().contains("FakeClauseCondition"), error.getMessage());
-        }
-    }
-
-    /**
-     * Second-pass locking test: addCondition's dedup logic must replace an existing WHERE/ORDER_BY/etc.,
-     * but only those (joins and set ops accumulate).
-     */
-    @Test
-    void testBuilderDedupesSingletonClausesButAccumulatesJoinsAndSetOps() {
-        final SubQuery sub1 = new SubQuery("a", Arrays.asList("id"), null);
-        final SubQuery sub2 = new SubQuery("b", Arrays.asList("id"), null);
-        final Criteria c = Criteria.builder()
-                .where(Filters.eq("a", 1))
-                .where(Filters.eq("b", 2)) // replaces first WHERE
-                .leftJoin("t1", Filters.on("users.id", "t1.user_id"))
-                .leftJoin("t2", Filters.on("users.id", "t2.user_id")) // accumulates
-                .union(sub1)
-                .union(sub2) // accumulates
-                .orderBy("x")
-                .orderBy("y") // replaces first ORDER BY
-                .build();
-
-        // Only the last WHERE should survive
-        final String str = c.toSql(NamingPolicy.NO_CHANGE);
-        assertTrue(str.contains("b ="), "should contain second where: " + str);
-        assertFalse(str.contains("a ="), "should not contain replaced where: " + str);
-        // Both joins should be present
-        assertEquals(2, c.joins().size());
-        // Both unions should be present
-        assertEquals(2, c.setOperations().size());
-        // Only one ORDER BY (the last)
-        assertTrue(str.contains("ORDER BY y"));
-        assertFalse(str.contains("ORDER BY x"));
-    }
-
-    @Test
-    void testBuilderGroupByCollection_Empty_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(java.util.Collections.<String> emptyList()));
-    }
-
-    // --- Bug fixes: Builder.groupBy/orderBy(Collection) must reject null with IAE (previously NPE'd) ---
-
-    @Test
-    void testBuilderGroupByCollection_Null_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy((List<String>) null));
-    }
-
-    @Test
-    void testBuilderOrderByCollection_Empty_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(java.util.Collections.<String> emptyList()));
-    }
-
-    @Test
-    void testBuilderOrderByCollection_Null_ThrowsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy((List<String>) null));
-    }
-
-    @Test
-    void testBuilderRejectsClauseLikeConnectorAndEmptyWhereExpressions() {
-        // An SqlExpression whose literal starts with a clause keyword reports Operator.EMPTY (rendered
-        // as ""), so the mismatch message must describe the expression itself instead of trailing off
-        // with nothing after "but got".
-        IllegalArgumentException whereEx = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("WHERE active = true")));
-        assertTrue(whereEx.getMessage().contains("expected WHERE or non-clause condition, but got SqlExpression \"WHERE active = true\""),
-                "was: " + whereEx.getMessage());
-
-        IllegalArgumentException orderByEx = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ORDER BY x")));
-        assertTrue(orderByEx.getMessage().contains("expected WHERE or non-clause condition, but got SqlExpression \"ORDER BY x\""),
-                "was: " + orderByEx.getMessage());
-        assertFalse(orderByEx.getMessage().trim().endsWith("but got"));
-
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("WHERE active = true"));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ON users.id = orders.user_id")));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("   ")));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("   "));
-    }
-
-    @Test
-    void testBuilderRejectsCustomClauseSubclassesForTypedSingletonClauses() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(new CustomWhereClause()).build());
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(new CustomGroupByClause()).build());
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(new CustomHavingClause()).build());
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(new CustomOrderByClause()).build());
-    }
-
-    @Test
-    void testChainedOperations() {
-        Criteria criteria = Criteria.builder()
-                .where(Filters.equal("status", "active"))
-                .groupBy("department")
-                .having("COUNT(*) > 5")
-                .orderByDesc("created_date")
-                .limit(10)
-                .build();
-        assertNotNull(criteria);
-        assertNotNull(criteria.where());
-        assertNotNull(criteria.groupBy());
-        assertNotNull(criteria.having());
-        assertNotNull(criteria.orderBy());
-        assertNotNull(criteria.limit());
-    }
-
-    @Test
-    void testCheckCondition_RejectsClauseOperatorWithoutClauseType() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> invokeCheckCondition(Criteria.builder(), new FakeClauseCondition(Operator.WHERE)));
-
-        assertTrue(error.getMessage().contains("must be an instance of Clause"));
-    }
-
-    @Test
-    void testCheckCondition_RejectsJoinOperatorWithoutJoinType() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> invokeCheckCondition(Criteria.builder(), new FakeClauseCondition(Operator.JOIN)));
-
-        assertTrue(error.getMessage().contains("must be an instance of Join"));
-    }
-
-    @Test
-    void testCheckCondition_RejectsNonClauseOperator() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> invokeCheckCondition(Criteria.builder(), Filters.eq("id", 1)));
-
-        assertTrue(error.getMessage().contains("Invalid operator"));
-    }
-
-    @Test
-    void testComplexCriteria() {
-        Criteria criteria = Criteria.builder()
-                .distinct()
-                .join("orders", Filters.expr("users.id = orders.user_id"))
-                .where(Filters.and(Filters.equal("users.status", "active"), Filters.gt("orders.total", 100)))
-                .groupBy("users.department")
-                .having(Filters.gt("COUNT(*)", 5))
-                .orderBy("COUNT(*)", SortDirection.DESC)
-                .limit(10)
-                .build();
-
-        assertNotNull(criteria.selectModifier());
-        assertEquals(1, criteria.joins().size());
-        assertNotNull(criteria.where());
-        assertNotNull(criteria.groupBy());
-        assertNotNull(criteria.having());
-        assertNotNull(criteria.orderBy());
-        assertNotNull(criteria.limit());
-    }
-
-    @Test
-    void testConditionOverloads_rejectSqlExpressionStartingWithClauseKeyword() {
-        // an SqlExpression whose literal spells a clause keyword is treated as a clause condition, exactly like
-        // the String overloads document; only the predicate/grouping/ordering text is accepted
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("WHERE a = 1")));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(Filters.expr("GROUP BY a")));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(Filters.expr("HAVING count(*) > 1")));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(Filters.expr("ORDER BY a")));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("LIMIT 10")));
-
-        // an identifier that merely starts with a keyword is fine
-        assertEquals(" WHERE WHERE_X = 1", Criteria.builder().where(Filters.expr("WHERE_X = 1")).build().toSql(NamingPolicy.NO_CHANGE));
-    }
-
-    @Test
-    void testConditions() {
-        Criteria criteria = Criteria.builder().build();
-        List<Condition> conditions = criteria.conditions();
-        assertNotNull(conditions);
-    }
-
-    @Test
-    void testConditionsMultipleTypes() {
-        Criteria criteria = Criteria.builder().where(Filters.equal("name", "John")).groupBy("department").having("COUNT(*) > 5").orderBy("name").build();
-
-        List<Condition> conditions = criteria.conditions();
-        assertNotNull(conditions);
-        assertTrue(conditions.size() > 0);
-    }
-
-    @Test
-    void testConstructor() {
-        Criteria criteria = Criteria.builder().build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testCrossJoin() {
-        Criteria criteria1 = Criteria.builder().crossJoin("colors").build();
-        List<Join> joins1 = criteria1.joins();
-        assertEquals(1, joins1.size());
-        assertEquals(Operator.CROSS_JOIN, joins1.get(0).operator());
-
-        List<String> tables = Arrays.asList("sizes", "colors");
-        Criteria criteria3 = Criteria.builder().crossJoin(tables).build();
-        List<Join> joins3 = criteria3.joins();
-        assertEquals(1, joins3.size());
-        assertEquals(Operator.CROSS_JOIN, joins3.get(0).operator());
-        assertEquals(2, joins3.get(0).joinEntities().size());
-    }
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testDeprecatedPredicateFreeJoinsRejectWithoutMutatingBuilder() {
-        final List<java.util.function.Consumer<Builder>> joins = List.of(builder -> builder.join("orders"), builder -> builder.innerJoin("orders"),
-                builder -> builder.leftJoin("orders"), builder -> builder.rightJoin("orders"), builder -> builder.fullJoin("orders"));
-        for (final var join : joins) {
-            final Builder builder = Criteria.builder().where(Filters.eq("id", 7));
-            assertThrows(IllegalArgumentException.class, () -> join.accept(builder));
-            final Criteria criteria = builder.build();
-            assertEquals(" WHERE id = 7", criteria.toString());
-            assertEquals(List.of(7), criteria.parameters());
-            assertTrue(criteria.joins().isEmpty());
-        }
-    }
-
-    // --- 2026-09-19 fix round: deprecated single-arg qualified joins, duplicate pair names, blank where/having, limit(null). ---
-
-    @Test
-    @SuppressWarnings("deprecation")
-    void testDeprecatedSingleArgQualifiedJoinsAlwaysThrow() {
-        final String expectedFragment = "ON/USING predicate";
-
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("orders")).getMessage().contains(expectedFragment));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().innerJoin("orders")).getMessage().contains(expectedFragment));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin("orders")).getMessage().contains(expectedFragment));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().rightJoin("orders")).getMessage().contains(expectedFragment));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().fullJoin("orders")).getMessage().contains(expectedFragment));
-
-        // The two-argument overloads reject a null predicate the same way; the condition-less forms still work.
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("orders", (Condition) null));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin(Arrays.asList("orders", "items"), (Condition) null));
-        assertEquals(" CROSS JOIN orders", Criteria.builder().crossJoin("orders").build().toSql(NamingPolicy.NO_CHANGE));
-        assertEquals(" NATURAL JOIN orders", Criteria.builder().naturalJoin("orders").build().toSql(NamingPolicy.NO_CHANGE));
-    }
-
-    @Test
-    void testDistinct() {
-        Criteria criteria = Criteria.builder().distinct().build();
-        assertNotNull(criteria);
-        assertNotNull(criteria.selectModifier());
-    }
-
-    @Test
-    void testDistinctByIsRemoved() {
-        assertThrows(NoSuchMethodException.class, () -> Builder.class.getDeclaredMethod("distinctBy", String.class));
-    }
-
-    @Test
-    void testDistinctOn() {
-        Criteria criteria = Criteria.builder().distinctOn("name, age").build();
-
-        assertEquals("DISTINCT ON (name, age)", criteria.selectModifier());
-    }
-
-    @Test
-    void testDistinctOnBlankUsesPlainDistinct() {
-        Criteria criteria = Criteria.builder().distinctOn("   ").build();
-        assertEquals("DISTINCT", criteria.selectModifier());
-    }
-
-    @Test
-    void testDistinctOnCommentOnlyColumnsFallsBackToPlainDistinct() {
-        // Regression: a comment-only column list was not treated as blank and rendered "DISTINCT ON (-- x\n)",
-        // i.e. the invalid "DISTINCT ON ()".
-        assertEquals("DISTINCT", Criteria.builder().distinctOn("-- x").build().selectModifier());
-        assertEquals("DISTINCT", Criteria.builder().distinctOn("/* x */").build().selectModifier());
-        assertEquals("DISTINCT ON (a -- x\n)", Criteria.builder().distinctOn("a -- x").build().selectModifier());
-    }
-
-    @Test
-    void testDistinctOnEmpty() {
-        Criteria criteria = Criteria.builder().distinctOn("").build();
-        assertEquals("DISTINCT", criteria.selectModifier());
-    }
-
-    @Test
-    void testDistinctOnHashCommentsAndUnterminatedBlockCommentsMatchTheBuilder() {
-        // Regression: "#x" kept the SQL Server temp-name carve-out and rendered "DISTINCT ON (#x\n)" (the builder's
-        // distinctOn renders plain DISTINCT), and an unclosed "/*" silently became a plain DISTINCT.
-        assertEquals("DISTINCT", Criteria.builder().distinctOn("# x").build().selectModifier());
-        assertEquals("DISTINCT", Criteria.builder().distinctOn("#x").build().selectModifier());
-        assertEquals("DISTINCT", Criteria.builder().distinctOn("-- x\n/* y */").build().selectModifier());
-        assertEquals("DISTINCT ON (a # x\n)", Criteria.builder().distinctOn("a # x").build().selectModifier());
-
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().distinctOn("/* x"));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().distinctOn("a /* x"));
-
-        // End to end through a builder.
-        assertEquals("SELECT DISTINCT a FROM t",
-                com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("-- x").build()).build().query());
-        assertEquals("SELECT DISTINCT a FROM t WHERE b = ?",
-                com.landawn.abacus.query.Dsl.PSC.select("a")
-                        .from("t")
-                        .append(Criteria.builder().distinctOn("# x").where(Filters.eq("b", 1)).build())
-                        .build()
-                        .query());
-        assertEquals("SELECT DISTINCT ON (a -- x\n) a FROM t",
-                com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("a -- x").build()).build().query());
-    }
-
-    @Test
-    void testDistinctOnNull() {
-        Criteria criteria = Criteria.builder().distinctOn(null).build();
-        assertEquals("DISTINCT", criteria.selectModifier());
-    }
-
-    @Test
-    void testDistinctRow() {
-        Criteria criteria = Criteria.builder().distinctRow().build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testEmptyCriteria() {
-        Criteria criteria = Criteria.builder().build();
-        assertTrue(criteria.conditions().isEmpty());
-        assertTrue(criteria.joins().isEmpty());
-    }
-
-    @Test
-    void testEmptyCriteria_CollectionsAndEquality() {
-        Criteria left = Criteria.builder().build();
-        Criteria right = Criteria.builder().build();
-        Criteria distinct = Criteria.builder().selectModifier("DISTINCT").build();
-
-        assertTrue(left.joins().isEmpty());
-        assertTrue(left.setOperations().isEmpty());
-        assertTrue(left.findConditions(Operator.WHERE).isEmpty());
-        assertTrue(left.parameters().isEmpty());
-        assertEquals(left, right);
-        assertEquals(left.hashCode(), right.hashCode());
-        assertNotEquals(left, distinct);
-    }
-
-    @Test
-    void testEquals() {
-        Criteria c1 = Criteria.builder().distinct().where(Filters.equal("status", "active")).build();
-        Criteria c2 = Criteria.builder().distinct().where(Filters.equal("status", "active")).build();
-
-        // Test self-equality
-        assertEquals(c1, c1);
-
-        // Test equality with same content
-        assertEquals(c1, c2);
-
-        // Test inequality
-        Criteria c3 = Criteria.builder().where(Filters.equal("status", "inactive")).build();
-        assertFalse(c1.equals(c3));
-
-        // Test null
-        assertFalse(c1.equals(null));
-
-        // Test different type
-        assertFalse(c1.equals("string"));
-    }
-
-    @Test
-    void testExcept() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM blocked_users");
-        Criteria criteria = Criteria.builder().except(subQuery).build();
-        assertNotNull(criteria);
-        assertTrue(criteria.setOperations().size() > 0);
-    }
-
-    @Test
-    void testFindConditionsNullOperatorReturnsEmpty() {
-        Criteria criteria = Criteria.builder().crossJoin("orders").where(Filters.equal("status", "active")).build();
-        assertTrue(criteria.findConditions(null).isEmpty());
-    }
-
-    @Test
-    void testFullJoin() {
-        Criteria criteria1 = Criteria.builder().fullJoin("orders", Filters.on("users.id", "orders.user_id")).build();
-        List<Join> joins1 = criteria1.joins();
-        assertEquals(1, joins1.size());
-        assertEquals(Operator.FULL_JOIN, joins1.get(0).operator());
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().fullJoin("orders"));
-
-        Equal eq = Filters.eq("users.id", "orders.user_id");
-        Criteria criteria2 = Criteria.builder().fullJoin("orders", eq).build();
-        List<Join> joins2 = criteria2.joins();
-        assertEquals(1, joins2.size());
-        assertEquals(Operator.FULL_JOIN, joins2.get(0).operator());
-        assertEquals(eq, joins2.get(0).condition());
-
-        List<String> tables = Arrays.asList("orders", "order_items");
-        Criteria criteria3 = Criteria.builder().fullJoin(tables, eq).build();
-        List<Join> joins3 = criteria3.joins();
-        assertEquals(1, joins3.size());
-        assertEquals(Operator.FULL_JOIN, joins3.get(0).operator());
-        assertEquals(2, joins3.get(0).joinEntities().size());
-    }
-
-    @Test
-    void testGet() {
-        Criteria criteria = Criteria.builder()
-                .join("orders", Filters.on("a", "b"))
-                .join("products", Filters.on("c", "d"))
-                .where(Filters.eq("status", "active"))
-                .build();
-
-        List<Condition> joins = criteria.findConditions(Operator.JOIN);
-        assertEquals(2, joins.size());
-
-        List<Condition> wheres = criteria.findConditions(Operator.WHERE);
-        assertEquals(1, wheres.size());
-    }
-
-    @Test
-    void testGetAggregation() {
-        Criteria criteria = Criteria.builder().build();
-        List<Clause> aggregation = criteria.setOperations();
-        assertNotNull(aggregation);
-    }
-
-    @Test
-    void testGetByOperator() {
-        Criteria criteria = Criteria.builder().where(Filters.equal("name", "John")).build();
-        List<Condition> whereConditions = criteria.findConditions(Operator.WHERE);
-        assertNotNull(whereConditions);
-    }
-
-    @Test
-    void testGetByOperatorMultiple() {
-        // The builder replaces where when called multiple times
-        Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).where(Filters.equal("type", "premium")).build();
-
-        List<Condition> whereConditions = criteria.findConditions(Operator.WHERE);
-        assertEquals(1, whereConditions.size());
-    }
-
-    @Test
-    void testGetEmptyAggregation() {
-        Criteria criteria = Criteria.builder().build();
-        List<Clause> aggregations = criteria.setOperations();
-        assertNotNull(aggregations);
-        assertTrue(aggregations.isEmpty());
-    }
-
-    @Test
-    void testGetGroupBy() {
-        Criteria criteria = Criteria.builder().build();
-        Clause groupBy = criteria.groupBy();
-        assertNull(groupBy);
-    }
-
-    @Test
-    void testGetHaving() {
-        Criteria criteria = Criteria.builder().build();
-        Clause having = criteria.having();
-        assertNull(having);
-    }
-
-    @Test
-    void testGetJoins() {
-        Criteria criteria = Criteria.builder().build();
-        List<Join> joins = criteria.joins();
-        assertNotNull(joins);
-    }
-
-    @Test
-    void testGetJoinsMultipleTypes() {
-        Criteria criteria = Criteria.builder()
-                .join("orders", Filters.expr("id = order_id"))
-                .join(new LeftJoin("payments", Filters.expr("id = payment_id")))
-                .join(new RightJoin("products", Filters.expr("id = product_id")))
-                .build();
-
-        List<Join> joins = criteria.joins();
-        assertEquals(3, joins.size());
-    }
-
-    @Test
-    void testGetLimit() {
-        Criteria criteria = Criteria.builder().build();
-        Limit limit = criteria.limit();
-        assertNull(limit);
-    }
-
-    @Test
-    void testGetNullClauses() {
-        Criteria criteria = Criteria.builder().build();
-
-        // All clauses should be null initially
-        assertNull(criteria.where());
-        assertNull(criteria.groupBy());
-        assertNull(criteria.having());
-        assertNull(criteria.orderBy());
-        assertNull(criteria.limit());
-        assertNull(criteria.selectModifier());
-    }
-
-    @Test
-    void testGetOrderBy() {
-        Criteria criteria = Criteria.builder().build();
-        Clause orderBy = criteria.orderBy();
-        assertNull(orderBy);
-    }
-
-    /**
-     * Second-pass locking test: setOperations() returns set-op clauses in insertion order.
-     */
-    @Test
-    void testGetSetOperationsOrderedAndTyped() {
-        final SubQuery a = new SubQuery("a", Arrays.asList("id"), null);
-        final SubQuery b = new SubQuery("b", Arrays.asList("id"), null);
-        final SubQuery c = new SubQuery("c", Arrays.asList("id"), null);
-        final Criteria crit = Criteria.builder().intersect(a).union(b).except(c).build();
-
-        final List<Clause> ops = crit.setOperations();
-        assertEquals(3, ops.size());
-        assertEquals(Operator.INTERSECT, ops.get(0).operator());
-        assertEquals(Operator.UNION, ops.get(1).operator());
-        assertEquals(Operator.EXCEPT, ops.get(2).operator());
-    }
-
-    @Test
-    void testGetWhere() {
-        Criteria criteria = Criteria.builder().build();
-        Clause where = criteria.where();
-        assertNull(where);
-    }
-
-    @Test
-    void testGroupBy() {
-        Criteria criteria = Criteria.builder().groupBy("department", "location").build();
-
-        Clause groupBy = criteria.groupBy();
-        assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-    }
-
-    @Test
-    void testGroupByAsc() {
-        Criteria criteria = Criteria.builder().groupByAsc("department", "location").build();
-
-        Clause groupBy = criteria.groupBy();
-        assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-
-        criteria = Criteria.builder().groupByAsc(Arrays.asList("department", "location")).build();
-        assertNotNull(criteria.groupBy());
-    }
-
-    @Test
-    void testGroupByAscDescSingleColumn() {
-        String ascSql = Criteria.builder().groupByAsc("category").build().toString();
-        assertTrue(ascSql.contains("category ASC"), ascSql);
-
-        String descSql = Criteria.builder().groupByDesc("sales").build().toString();
-        assertTrue(descSql.contains("sales DESC"), descSql);
-    }
-
-    @Test
-    void testGroupByAscRendersAscDirection() {
-        String varargsSql = Criteria.builder().groupByAsc("region", "product_type").build().toString();
-        assertTrue(varargsSql.contains("region ASC"), varargsSql);
-        assertTrue(varargsSql.contains("product_type ASC"), varargsSql);
-
-        String collectionSql = Criteria.builder().groupByAsc(Arrays.asList("region", "product_type")).build().toString();
-        assertEquals(varargsSql, collectionSql, "groupByAsc(Collection) must match groupByAsc(String...) output");
-    }
-
-    @Test
-    void testGroupByCollection() {
-        Criteria criteria = Criteria.builder().groupBy(Arrays.asList("year", "month", "day")).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testGroupByCollectionDoesNotAppendAscDirection() {
-        List<String> cols = Arrays.asList("region", "product_type");
-        String sql = Criteria.builder().groupBy(cols).build().toString();
-        assertFalse(sql.contains("ASC"), "groupBy(Collection) must not append ASC: " + sql);
-        assertFalse(sql.contains("DESC"), "groupBy(Collection) must not append DESC: " + sql);
-        String varargsSql = Criteria.builder().groupBy("region", "product_type").build().toString();
-        assertEquals(varargsSql, sql, "groupBy(Collection) must match groupBy(String...) output");
-    }
-
-    @Test
-    void testGroupByCollectionWithDirection() {
-        Criteria criteria = Criteria.builder().groupBy(Arrays.asList("year", "month"), SortDirection.DESC).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testGroupByCondition() {
-        Condition condition = Filters.expr("department");
-        Criteria criteria = Criteria.builder().groupBy(condition).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testGroupByDesc() {
-        Criteria criteria = Criteria.builder().groupByDesc("salary", "id").build();
-
-        Clause groupBy = criteria.groupBy();
-        assertNotNull(groupBy);
-        assertEquals(Operator.GROUP_BY, groupBy.operator());
-
-        criteria = Criteria.builder().groupByDesc(Arrays.asList("salary", "id")).build();
-        assertNotNull(criteria.groupBy());
-    }
-
-    @Test
-    void testGroupByDescRendersDescDirection() {
-        String varargsSql = Criteria.builder().groupByDesc("sales", "region").build().toString();
-        assertTrue(varargsSql.contains("sales DESC"), varargsSql);
-        assertTrue(varargsSql.contains("region DESC"), varargsSql);
-
-        String collectionSql = Criteria.builder().groupByDesc(Arrays.asList("sales", "region")).build().toString();
-        assertEquals(varargsSql, collectionSql, "groupByDesc(Collection) must match groupByDesc(String...) output");
-    }
-
-    @Test
-    void testGroupByMap() {
-        Map<String, SortDirection> orders = new HashMap<>();
-        orders.put("year", SortDirection.DESC);
-        orders.put("month", SortDirection.ASC);
-        Criteria criteria = Criteria.builder().groupBy(orders).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testGroupByRejectsMismatchedClauseCondition() {
-        Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.groupBy(Filters.where(Filters.equal("status", "active"))));
-    }
-
-    @Test
-    void testGroupByThreeColumns() {
-        Criteria criteria = Criteria.builder().groupBy("year", SortDirection.DESC, "month", SortDirection.ASC, "day", SortDirection.DESC).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testGroupByTwoColumns() {
-        Criteria criteria = Criteria.builder().groupBy("year", SortDirection.DESC, "month", SortDirection.ASC).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testGroupByVarargs() {
-        Criteria criteria = Criteria.builder().groupBy("department", "year").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testGroupByWithDirection() {
-        Criteria criteria = Criteria.builder().groupBy("department", SortDirection.ASC).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testGroupByWithGroupByOperator() {
-        GroupBy groupBy = new GroupBy(Filters.expr("department"));
-        Criteria criteria = Criteria.builder().groupBy(groupBy).build();
-        assertNotNull(criteria.groupBy());
-    }
-
-    @Test
-    void testGroupByWithNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy((Condition) null));
-    }
-
-    @Test
-    void testHashCode() {
-        Criteria c1 = Criteria.builder().where(Filters.equal("status", "active")).build();
-        Criteria c2 = Criteria.builder().where(Filters.equal("status", "active")).build();
-
-        // HashCode should be consistent
-        assertEquals(c1.hashCode(), c1.hashCode());
-        assertNotNull(c2.hashCode());
-    }
-
-    @Test
-    void testHashCodeTracksMutableValueInClause() {
-        // Array values are snapshotted at construction: a later mutation of the caller's array is invisible to
-        // the condition, so equals/hashCode/toSql all keep reflecting the value as it was when the clause was built.
-        final byte[] value = { 1 };
-        final Criteria criteria = Criteria.builder().where(Filters.eq("payload", value)).build();
-        final int hashBeforeMutation = criteria.hashCode();
-
-        value[0] = 2;
-
-        final Criteria equalToSnapshot = Criteria.builder().where(Filters.eq("payload", new byte[] { 1 })).build();
-        assertEquals(equalToSnapshot, criteria);
-        assertEquals(equalToSnapshot.hashCode(), criteria.hashCode());
-        assertEquals(hashBeforeMutation, criteria.hashCode());
-        assertEquals(" WHERE payload = '[1]'", criteria.toSql(NamingPolicy.NO_CHANGE));
-
-        final Criteria mutatedValue = Criteria.builder().where(Filters.eq("payload", new byte[] { 2 })).build();
-        assertNotEquals(mutatedValue, criteria);
-    }
-
-    @Test
-    void testHaving() {
-        GreaterThan gt = Filters.gt("COUNT(*)", 5);
-        Criteria criteria = Criteria.builder().having(gt).build();
-
-        Clause having = criteria.having();
-        assertNotNull(having);
-        assertEquals(Operator.HAVING, having.operator());
-        assertEquals(gt, having.condition());
-    }
-
-    @Test
-    void testHavingCondition() {
-        Condition condition = Filters.expr("COUNT(*) > 5");
-        Criteria criteria = Criteria.builder().having(condition).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testHavingRejectsMismatchedClauseCondition() {
-        Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.having(Filters.groupBy("department")));
-    }
-
-    @Test
-    void testHavingString() {
-        Criteria criteria = Criteria.builder().having("COUNT(*) > 5").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testHavingStringWithNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having((String) null));
-    }
-
-    @Test
-    void testHavingWithHavingOperator() {
-        com.landawn.abacus.query.condition.Having having = new com.landawn.abacus.query.condition.Having(Filters.expr("COUNT(*) > 5"));
-        Criteria criteria = Criteria.builder().having(having).build();
-        assertNotNull(criteria.having());
-    }
-
-    @Test
-    void testHavingWithNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having((Condition) null));
-    }
-
-    // ---- Convenience join method tests ----
-
-    @Test
-    void testInnerJoin() {
-        // entity + ON connector overload (the entity-only overload always throws: a qualified join needs ON/USING)
-        Criteria criteria1 = Criteria.builder().innerJoin("orders", Filters.on("users.id", "orders.user_id")).build();
-        List<Join> joins1 = criteria1.joins();
-        assertEquals(1, joins1.size());
-        assertEquals(Operator.INNER_JOIN, joins1.get(0).operator());
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().innerJoin("orders"));
-
-        // entity + condition overload
-        Equal eq = Filters.eq("users.id", "orders.user_id");
-        Criteria criteria2 = Criteria.builder().innerJoin("orders", eq).build();
-        List<Join> joins2 = criteria2.joins();
-        assertEquals(1, joins2.size());
-        assertEquals(Operator.INNER_JOIN, joins2.get(0).operator());
-        assertEquals(eq, joins2.get(0).condition());
-
-        // multi-entity overload
-        List<String> tables = Arrays.asList("orders", "order_items");
-        Criteria criteria3 = Criteria.builder().innerJoin(tables, eq).build();
-        List<Join> joins3 = criteria3.joins();
-        assertEquals(1, joins3.size());
-        assertEquals(Operator.INNER_JOIN, joins3.get(0).operator());
-        assertEquals(2, joins3.get(0).joinEntities().size());
-    }
-
-    // --- Regression: the internal clause methods must not recurse through the public add(Condition). ---
-
-    @Test
-    void testInternalClauseMethodsDoNotRecurse() {
-        Criteria c = Criteria.builder()
-                .where(Filters.eq("status", "active"))
-                .groupBy("dept")
-                .having(Filters.gt("COUNT(*)", 1))
-                .orderBy("name")
-                .limit(10)
-                .union(Filters.subQuery("SELECT 1"))
-                .join("orders", Filters.on("users.id", "orders.user_id"))
-                .build();
-
-        assertNotNull(c);
-        assertNotNull(c.where());
-        assertNotNull(c.groupBy());
-        assertNotNull(c.having());
-        assertNotNull(c.orderBy());
-        assertNotNull(c.limit());
-        assertEquals(1, c.joins().size());
-    }
-
-    @Test
-    void testIntersect() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM premium_users");
-        Criteria criteria = Criteria.builder().intersect(subQuery).build();
-        assertNotNull(criteria);
-        assertTrue(criteria.setOperations().size() > 0);
-    }
-
-    @Test
-    void testJoin_nullElement_messageNamesCondition() {
-        // the null-clause message must name the public parameter ('condition'), like the other clause validators
-        final IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join((Join) null));
-        assertTrue(e1.getMessage().contains("condition"), e1.getMessage());
-
-        final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join(Arrays.asList((Join) null)));
-        assertTrue(e2.getMessage().contains("condition"), e2.getMessage());
-    }
-
-    @Test
-    void testJoinArray() {
-        Join join1 = new Join("orders", Filters.on("a", "b"));
-        Join join2 = new LeftJoin("products", Filters.on("c", "d"));
-        Criteria criteria = Criteria.builder().join(join1, join2).build();
-
-        List<Join> joins = criteria.joins();
-        assertEquals(2, joins.size());
-    }
-
-    @Test
-    void testJoinCollection() {
-        Join join1 = new LeftJoin("orders", Filters.expr("users.id = orders.user_id"));
-        Join join2 = new InnerJoin("products", Filters.expr("orders.product_id = products.id"));
-        Criteria criteria = Criteria.builder().join(Arrays.asList(join1, join2)).build();
-        assertNotNull(criteria);
-        assertEquals(2, criteria.joins().size());
-    }
-
-    @Test
-    void testJoinCollectionNull() {
-        Builder builder = Criteria.builder();
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> builder.join((java.util.Collection<Join>) null));
-        assertTrue(ex.getMessage().contains("joins"), ex.getMessage());
-    }
-
-    @Test
-    void testJoinCollectionOfEntities() {
-        Condition condition = Filters.expr("id = user_id");
-        Criteria criteria = Criteria.builder().join(Arrays.asList("orders", "payments"), condition).build();
-        assertNotNull(criteria);
-        assertEquals(1, criteria.joins().size());
-    }
-
-    @Test
-    void testJoinEntity() {
-        Criteria criteria = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
-        assertNotNull(criteria);
-        assertEquals(" JOIN orders ON users.id = orders.user_id", criteria.toSql(NamingPolicy.NO_CHANGE));
-    }
-
-    @Test
-    void testJoinEntityWithCondition() {
-        Condition condition = Filters.equal("user_id", "id");
-        Criteria criteria = Criteria.builder().join("orders", condition).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testJoinMultiple() {
-        List<String> tables = Arrays.asList("orders", "order_items");
-        Equal eq = Filters.eq("orders.id", "order_items.order_id");
-        Criteria criteria = Criteria.builder().join(tables, eq).build();
-
-        List<Join> joins = criteria.joins();
-        assertEquals(1, joins.size());
-        assertEquals(2, joins.get(0).joinEntities().size());
-    }
-
-    @Test
-    void testJoinSingle() {
-        Criteria criteria = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
-
-        List<Join> joins = criteria.joins();
-        assertEquals(1, joins.size());
-        assertEquals(Operator.JOIN, joins.get(0).operator());
-    }
-
-    @Test
-    void testJoinVarargs() {
-        Join join = new LeftJoin("orders", Filters.expr("users.id = orders.user_id"));
-        Criteria criteria = Criteria.builder().join(join).build();
-        assertNotNull(criteria);
-        assertEquals(1, criteria.joins().size());
-    }
-
-    @Test
-    void testJoinVarargsNullArray() {
-        Builder builder = Criteria.builder();
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> builder.join((Join[]) null));
-        assertTrue(ex.getMessage().contains("joins"), ex.getMessage());
-    }
-
-    @Test
-    void testJoinWithCondition() {
-        Equal eq = Filters.eq("users.id", "orders.user_id");
-        Criteria criteria = Criteria.builder().join("orders", eq).build();
-
-        List<Join> joins = criteria.joins();
-        assertEquals(1, joins.size());
-        assertEquals(eq, joins.get(0).condition());
-    }
-
-    @Test
-    void testLeftJoin() {
-        Criteria criteria1 = Criteria.builder().leftJoin("orders", Filters.on("users.id", "orders.user_id")).build();
-        List<Join> joins1 = criteria1.joins();
-        assertEquals(1, joins1.size());
-        assertEquals(Operator.LEFT_JOIN, joins1.get(0).operator());
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin("orders"));
-
-        Equal eq = Filters.eq("users.id", "orders.user_id");
-        Criteria criteria2 = Criteria.builder().leftJoin("orders", eq).build();
-        List<Join> joins2 = criteria2.joins();
-        assertEquals(1, joins2.size());
-        assertEquals(Operator.LEFT_JOIN, joins2.get(0).operator());
-        assertEquals(eq, joins2.get(0).condition());
-
-        List<String> tables = Arrays.asList("orders", "order_items");
-        Criteria criteria3 = Criteria.builder().leftJoin(tables, eq).build();
-        List<Join> joins3 = criteria3.joins();
-        assertEquals(1, joins3.size());
-        assertEquals(Operator.LEFT_JOIN, joins3.get(0).operator());
-        assertEquals(2, joins3.get(0).joinEntities().size());
-    }
-
-    @Test
-    void testLimit() {
-        Criteria criteria = Criteria.builder().limit(10).build();
-
-        Limit limit = criteria.limit();
-        assertNotNull(limit);
-        assertEquals(10, limit.count());
-    }
-
-    @Test
-    void testLimitCondition() {
-        Limit limit = new Limit(10);
-        Criteria criteria = Criteria.builder().limit(limit).build();
-        assertNotNull(criteria);
-        assertEquals(limit, criteria.limit());
-    }
-
-    @Test
-    void testLimitInt() {
-        Criteria criteria = Criteria.builder().limit(20).build();
-        assertNotNull(criteria);
-        assertNotNull(criteria.limit());
-    }
-
-    @Test
-    void testLimitNullConditionThrows() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().limit((Limit) null));
-    }
-
-    @Test
-    void testLimitNullMessageNamesLimit() {
-        final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().limit((Limit) null));
-
-        assertTrue(error.getMessage().contains("limit"), error.getMessage());
-    }
-
-    @Test
-    void testLimitString() {
-        Criteria criteria = Criteria.builder().limit("10 OFFSET 20").build();
-        assertNotNull(criteria);
-        assertNotNull(criteria.limit());
-    }
-
-    @Test
-    void testLimitWithOffset() {
-        Criteria criteria = Criteria.builder().limit(50, 10).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testMinus() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM inactive_users");
-        Criteria criteria = Criteria.builder().minus(subQuery).build();
-        assertNotNull(criteria);
-        assertTrue(criteria.setOperations().size() > 0);
-    }
-
-    @Test
-    void testMixedJoinChaining() {
-        Criteria criteria = Criteria.builder()
-                .innerJoin("orders", Filters.eq("users.id", "orders.user_id"))
-                .leftJoin("payments", Filters.eq("orders.id", "payments.order_id"))
-                .where(Filters.eq("users.status", "active"))
-                .build();
-
-        List<Join> joins = criteria.joins();
-        assertEquals(2, joins.size());
-        assertEquals(Operator.INNER_JOIN, joins.get(0).operator());
-        assertEquals(Operator.LEFT_JOIN, joins.get(1).operator());
-        assertNotNull(criteria.where());
-    }
-
-    @Test
-    void testModifierLineCommentsDoNotConsumeGeneratedSyntax() {
-        final Criteria customModifier = Criteria.builder().selectModifier("DISTINCT -- trailing comment").where(Filters.eq("active", true)).build();
-        final Criteria distinctOn = Criteria.builder().distinctOn("id -- trailing comment").where(Filters.eq("active", true)).build();
-
-        assertAll(() -> assertEquals(" DISTINCT -- trailing comment\n WHERE active = true", customModifier.toString()),
-                () -> assertEquals(" DISTINCT ON (id -- trailing comment\n) WHERE active = true", distinctOn.toString()),
-                () -> assertEquals("DISTINCT -- trailing comment", customModifier.selectModifier()),
-                () -> assertEquals(" DISTINCT -- trailing comment", Criteria.builder().selectModifier("DISTINCT -- trailing comment").build().toString()),
-                () -> assertEquals(" DISTINCT ON (\"id--suffix\")", Criteria.builder().distinctOn("\"id--suffix\"").build().toString()));
-    }
-
-    @Test
-    void testMultipleAggregations() {
-        com.landawn.abacus.query.condition.SubQuery subQuery1 = Filters.subQuery("SELECT * FROM archived");
-        com.landawn.abacus.query.condition.SubQuery subQuery2 = Filters.subQuery("SELECT * FROM deleted");
-
-        Criteria criteria = Criteria.builder().union(subQuery1).unionAll(subQuery2).build();
-
-        List<Clause> aggregations = criteria.setOperations();
-        assertEquals(2, aggregations.size());
-    }
-
-    @Test
-    void testMultipleGroupBy() {
-        Criteria criteria = Criteria.builder().groupBy("dept", SortDirection.ASC, "team", SortDirection.DESC, "member", SortDirection.ASC).build();
-
-        Clause groupBy = criteria.groupBy();
-        assertNotNull(groupBy);
-    }
-
-    @Test
-    void testMultipleJoins() {
-        Criteria criteria = Criteria.builder()
-                .join("orders", Filters.on("u.id", "orders.user_id"))
-                .join("products", Filters.on("orders.pid", "products.id"))
-                .join("categories", Filters.on("products.cid", "categories.id"))
-                .build();
-        assertEquals(3, criteria.joins().size());
-    }
-
-    @Test
-    void testMultipleOrderBy() {
-        Criteria criteria = Criteria.builder().orderBy("priority", SortDirection.DESC, "date", SortDirection.ASC, "id", SortDirection.ASC).build();
-
-        Clause orderBy = criteria.orderBy();
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testMultipleWhereConditions() {
-        Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).where(Filters.greaterThan("age", 18)).build();
-        assertNotNull(criteria.where());
-    }
-
-    @Test
-    void testNaturalJoin() {
-        Criteria criteria1 = Criteria.builder().naturalJoin("employees").build();
-        List<Join> joins1 = criteria1.joins();
-        assertEquals(1, joins1.size());
-        assertEquals(Operator.NATURAL_JOIN, joins1.get(0).operator());
-
-        List<String> tables = Arrays.asList("employees", "departments");
-        Criteria criteria3 = Criteria.builder().naturalJoin(tables).build();
-        List<Join> joins3 = criteria3.joins();
-        assertEquals(1, joins3.size());
-        assertEquals(Operator.NATURAL_JOIN, joins3.get(0).operator());
-        assertEquals(2, joins3.get(0).joinEntities().size());
-    }
-
-    @Test
-    void testNullNamingPolicyIsNormalizedBeforeRenderingClauses() {
-        final Where where = new Where(Filters.eq("firstName", "Ada")) {
-            @Override
-            public String toSql(final NamingPolicy namingPolicy) {
-                return "WHERE " + java.util.Objects.requireNonNull(namingPolicy, "namingPolicy").convert("firstName") + " = 'Ada'";
-            }
-        };
-        final Criteria criteria = Criteria.builder().where(where).build();
-
-        assertEquals(" WHERE firstName = 'Ada'", criteria.toSql(null));
-        assertEquals(" WHERE first_name = 'Ada'", criteria.toSql(NamingPolicy.SNAKE_CASE));
-    }
-
-    @Test
-    void testOrderBy() {
-        Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC).build();
-
-        Clause orderBy = criteria.orderBy();
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByAsc() {
-        Criteria criteria = Criteria.builder().orderByAsc("lastName", "firstName").build();
-
-        Clause orderBy = criteria.orderBy();
-        assertNotNull(orderBy);
-        assertEquals(Operator.ORDER_BY, orderBy.operator());
-    }
-
-    @Test
-    void testOrderByAscCollection() {
-        Criteria criteria = Criteria.builder().orderByAsc(Arrays.asList("name", "email")).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByAscDescSingleColumn() {
-        String ascSql = Criteria.builder().orderByAsc("lastName").build().toString();
-        assertTrue(ascSql.contains("lastName ASC"), ascSql);
-
-        String descSql = Criteria.builder().orderByDesc("score").build().toString();
-        assertTrue(descSql.contains("score DESC"), descSql);
-    }
-
-    @Test
-    void testOrderByAscVarargs() {
-        Criteria criteria = Criteria.builder().orderByAsc("name", "age").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByCollection() {
-        Criteria criteria = Criteria.builder().orderBy(Arrays.asList("name", "age", "email")).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByCollectionMatchesVarargs() {
-        List<String> cols = Arrays.asList("country", "state", "city");
-        String collectionSql = Criteria.builder().orderBy(cols).build().toString();
-        String varargsSql = Criteria.builder().orderBy("country", "state", "city").build().toString();
-        assertEquals(varargsSql, collectionSql, "orderBy(Collection) and orderBy(String...) must produce identical SQL");
-    }
-
-    @Test
-    void testOrderByCollectionWithDirection() {
-        Criteria criteria = Criteria.builder().orderBy(Arrays.asList("price", "rating"), SortDirection.DESC).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByCondition() {
-        Condition condition = Filters.expr("name ASC");
-        Criteria criteria = Criteria.builder().orderBy(condition).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByDesc() {
-        Criteria criteria = Criteria.builder().orderByDesc("createdDate", "id").build();
-
-        Clause orderBy = criteria.orderBy();
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByDescCollection() {
-        Criteria criteria = Criteria.builder().orderByDesc(Arrays.asList("price", "rating")).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByDescVarargs() {
-        Criteria criteria = Criteria.builder().orderByDesc("created_date", "updated_date").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByMap() {
-        Map<String, SortDirection> orders = new HashMap<>();
-        orders.put("name", SortDirection.ASC);
-        orders.put("age", SortDirection.DESC);
-        Criteria criteria = Criteria.builder().orderBy(orders).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByMultiple() {
-        Criteria criteria = Criteria.builder().orderBy("dept", SortDirection.ASC, "salary", SortDirection.DESC).build();
-
-        Clause orderBy = criteria.orderBy();
-        assertNotNull(orderBy);
-    }
-
-    @Test
-    void testOrderByRejectsMismatchedClauseCondition() {
-        Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.orderBy(Filters.where(Filters.equal("status", "active"))));
-    }
-
-    @Test
-    void testOrderByRejectsUsingCondition() {
-        Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.orderBy(Filters.using("id")));
-    }
-
-    @Test
-    void testOrderByThreeColumns() {
-        Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC, "age", SortDirection.DESC, "email", SortDirection.ASC).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByTwoColumns() {
-        Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC, "age", SortDirection.DESC).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByVarargs() {
-        Criteria criteria = Criteria.builder().orderBy("name", "age", "email").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByWithDirection() {
-        Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC).build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testOrderByWithNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy((Condition) null));
-    }
-
-    @Test
-    void testOrderByWithOrderByOperator() {
-        com.landawn.abacus.query.condition.OrderBy orderBy = new com.landawn.abacus.query.condition.OrderBy(Filters.expr("name ASC"));
-        Criteria criteria = Criteria.builder().orderBy(orderBy).build();
-        assertNotNull(criteria.orderBy());
-    }
-
-    @Test
-    void testPackageConstructorDefensivelyCopiesConditions() {
-        List<Condition> source = new ArrayList<>();
-        source.add(new Where(Filters.eq("id", 1)));
-
-        Criteria criteria = new Criteria(null, source);
-        int hashCode = criteria.hashCode();
-        source.clear();
-
-        assertEquals(1, criteria.conditions().size());
-        assertEquals(Arrays.asList(1), criteria.parameters());
-        assertEquals(hashCode, criteria.hashCode());
-        assertEquals(" WHERE id = 1", criteria.toSql(NamingPolicy.NO_CHANGE));
-    }
-
-    @Test
-    void testPackageConstructorNormalizesBlankSelectModifier() {
-        final Criteria criteria = new Criteria(" \t ", new ArrayList<>());
-
-        assertNull(criteria.selectModifier());
-        assertEquals(criteria, criteria.toBuilder().build());
-        assertEquals(criteria.hashCode(), criteria.toBuilder().build().hashCode());
-    }
-
-    @Test
-    void testPackageConstructorRejectsDuplicateSingletonClauses() {
-        Where first = new Where(Filters.eq("a", 1));
-        Where second = new Where(Filters.eq("b", 2));
-
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(first, second)));
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new Limit(10), new Limit(20))));
-    }
-
-    @Test
-    void testPackageConstructorRejectsNonClauseCondition() {
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(Filters.eq("id", 1))));
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.WHERE))));
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.JOIN))));
-    }
-
-    @Test
-    void testPackageConstructorRejectsNullConditionElement() {
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList((Condition) null)));
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new NullOperatorCondition())));
-    }
-
-    @Test
-    void testPackageConstructorRejectsUnsupportedAndWrongConcreteClauses() {
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.OFFSET))));
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.FOR_UPDATE))));
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new WrongConcreteClause(Operator.WHERE))));
-        assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new WrongConcreteClause(Operator.UNION))));
-    }
-
-    @Test
-    void testPackageConstructorValidatesTheSameSnapshotItStores() {
-        final Where valid = new Where(Filters.eq("id", 1));
-        final Condition invalid = Filters.eq("unexpected", 2);
-        final List<Condition> changing = new AbstractList<>() {
-            private int iteratorCount;
-
-            @Override
-            public Iterator<Condition> iterator() {
-                return Collections.singletonList(iteratorCount++ == 0 ? valid : invalid).iterator();
-            }
-
-            @Override
-            public Condition get(final int index) {
-                if (index != 0) {
-                    throw new IndexOutOfBoundsException(index);
-                }
-
-                return iteratorCount == 0 ? valid : invalid;
-            }
-
-            @Override
-            public int size() {
-                return 1;
-            }
-        };
-
-        final Criteria criteria = new Criteria(null, changing);
-
-        assertEquals(valid, criteria.where());
-        assertEquals(Collections.singletonList(valid), criteria.conditions());
-    }
-
-    @Test
-    void testPairOverloadsRejectDuplicatePropertyName() {
-        final String expectedFragment = "Duplicate property name";
-
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a", SortDirection.DESC, "a", SortDirection.ASC)).getMessage()
-                .contains(expectedFragment));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("a", SortDirection.DESC, "a", SortDirection.ASC)).getMessage()
-                .contains(expectedFragment));
-        assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> Criteria.builder().orderBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC)).getMessage()
-                        .contains(expectedFragment));
-        assertTrue(assertThrows(IllegalArgumentException.class,
-                () -> Criteria.builder().groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "b", SortDirection.DESC)).getMessage()
-                        .contains(expectedFragment));
-
-        // Distinct names keep working, in call order.
-        assertEquals(" ORDER BY a DESC, b ASC",
-                Criteria.builder().orderBy("a", SortDirection.DESC, "b", SortDirection.ASC).build().toSql(NamingPolicy.NO_CHANGE));
-        assertEquals(" GROUP BY a ASC, b ASC, c DESC",
-                Criteria.builder().groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "c", SortDirection.DESC).build().toSql(NamingPolicy.NO_CHANGE));
-
-        // The varargs sibling deliberately keeps repeated names.
-        assertEquals(" ORDER BY a, a", Criteria.builder().orderBy("a", "a").build().toSql(NamingPolicy.NO_CHANGE));
-    }
-
-    // testClear removed - Criteria is now immutable
-
-    @Test
-    void testParameters() {
-        Criteria criteria = Criteria.builder().where(Filters.equal("age", 30)).build();
-        List<Object> params = criteria.parameters();
-        assertNotNull(params);
-    }
-
-    @Test
-    void testParametersArrayCopyIsNotSharedAcrossCalls() {
-        // Criteria.parameters() is not memoized: each call must hand out the constituent condition's fresh defensive copy.
-        final Criteria criteria = Criteria.builder().where(Filters.eq("payload", new byte[] { 1 })).build();
-
-        final byte[] first = (byte[]) criteria.parameters().get(0);
-        first[0] = 9;
-
-        assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) criteria.parameters().get(0)));
-        assertEquals(" WHERE payload = '[1]'", criteria.toString());
-    }
-
-    @Test
-    void testParametersEmpty() {
-        Criteria criteria = Criteria.builder().build();
-        List<Object> params = criteria.parameters();
-        assertNotNull(params);
-        assertTrue(params.isEmpty());
-    }
-
-    @Test
-    void testParametersIncludesGroupByAndOrderByConditions() {
-        Criteria criteria = Criteria.builder().groupBy(Filters.equal("department", "Engineering")).orderBy(Filters.equal("priority", "HIGH")).build();
-
-        List<Object> params = criteria.parameters();
-        assertEquals(Arrays.asList("Engineering", "HIGH"), params);
-    }
-
-    /**
-     * Second-pass locking test: {@code parameters()} must collect parameters from every
-     * clause (joins, where, groupBy, having, set ops, orderBy, limit) in SQL emission order.
-     */
-    @Test
-    void testParametersOrderingAcrossAllClauses() {
-        final SubQuery sub = new SubQuery("u2", Arrays.asList("id"), Filters.eq("subParam", 100));
-        final Criteria criteria = Criteria.builder()
-                .leftJoin("orders", Filters.eq("joinP", 1))
-                .where(Filters.eq("whereP", 2))
-                .having(Filters.gt("havingP", 3))
-                .union(sub)
-                .build();
-
-        final List<Object> params = criteria.parameters();
-        // Expected order per SQL emission: join, where, groupBy, having, setOps, orderBy, limit
-        assertEquals(Arrays.asList(1, 2, 3, 100), params);
-    }
-
-    @Test
-    void testParametersWithMultipleConditions() {
-        Criteria criteria = Criteria.builder()
-                .where(Filters.equal("name", "John"))
-                .where(Filters.equal("age", 30))
-                .where(Filters.equal("status", "active"))
-                .build();
-
-        List<Object> params = criteria.parameters();
-        assertNotNull(params);
-    }
-
-    @Test
-    void testPreselect() {
-        Criteria criteria = Criteria.builder().build();
-        String selectModifier = criteria.selectModifier();
-        assertNull(selectModifier);
-    }
-
-    // testClearAll removed - Criteria is now immutable
-
-    @Test
-    void testPreselectChaining() {
-        Criteria criteria = Criteria.builder().selectModifier("DISTINCT").where(Filters.equal("status", "active")).build();
-        assertNotNull(criteria);
-        assertEquals("DISTINCT", criteria.selectModifier());
-    }
-
-    @Test
-    void testPreselectCustom() {
-        Criteria criteria = Criteria.builder().selectModifier("CUSTOM").build();
-        assertEquals("CUSTOM", criteria.selectModifier());
-    }
-
-    @Test
-    void testPreselectNull() {
-        Criteria criteria = Criteria.builder().selectModifier(null).build();
-        // Should not throw error
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testPreselectSetter() {
-        Criteria criteria = Criteria.builder().selectModifier("DISTINCT").build();
-        assertEquals("DISTINCT", criteria.selectModifier());
-    }
-
-    @Test
-    void testReplaceClause() {
-        Criteria criteria = Criteria.builder().where(Filters.eq("id", 1)).where(Filters.eq("id", 2)).build(); // Should replace the first where
-
-        Clause where = criteria.where();
-        Equal eq = (Equal) where.condition();
-        assertEquals(2, (Integer) eq.propValue());
-    }
-
-    @Test
-    void testReplaceClauses() {
-        // Build with the final (replaced) values
-        Criteria criteria = Criteria.builder()
-                .where(Filters.equal("status", "active"))
-                .groupBy("department")
-                .having("COUNT(*) > 5")
-                .orderBy("name")
-                .limit(10)
-                .where(Filters.equal("status", "inactive"))
-                .groupBy("location")
-                .having("COUNT(*) > 10")
-                .orderBy("age")
-                .limit(20)
-                .build();
-
-        // Only latest values should exist
-        assertEquals(5, criteria.conditions().size());
-    }
-
-    @Test
-    void testReplacingSingletonClauseKeepsPositionAndEquality() {
-        final Criteria c1 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build();
-        final Criteria c2 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").where(Filters.eq("a", 1)).build();
-
-        assertEquals(c1.toSql(NamingPolicy.NO_CHANGE), c2.toSql(NamingPolicy.NO_CHANGE));
-        assertEquals(c1, c2);
-        assertEquals(c1.hashCode(), c2.hashCode());
-        assertEquals(Operator.WHERE, c2.conditions().get(0).operator());
-
-        final Criteria c3 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").where(Filters.eq("a", 2)).build();
-        assertEquals(" WHERE a = 2 ORDER BY b", c3.toSql(NamingPolicy.NO_CHANGE));
-        assertEquals(Operator.WHERE, c3.conditions().get(0).operator());
-        assertEquals(2, c3.conditions().size());
-    }
-
-    @Test
-    void testRightJoin() {
-        Criteria criteria1 = Criteria.builder().rightJoin("orders", Filters.on("users.id", "orders.user_id")).build();
-        List<Join> joins1 = criteria1.joins();
-        assertEquals(1, joins1.size());
-        assertEquals(Operator.RIGHT_JOIN, joins1.get(0).operator());
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().rightJoin("orders"));
-
-        Equal eq = Filters.eq("users.id", "orders.user_id");
-        Criteria criteria2 = Criteria.builder().rightJoin("orders", eq).build();
-        List<Join> joins2 = criteria2.joins();
-        assertEquals(1, joins2.size());
-        assertEquals(Operator.RIGHT_JOIN, joins2.get(0).operator());
-        assertEquals(eq, joins2.get(0).condition());
-
-        List<String> tables = Arrays.asList("orders", "order_items");
-        Criteria criteria3 = Criteria.builder().rightJoin(tables, eq).build();
-        List<Join> joins3 = criteria3.joins();
-        assertEquals(1, joins3.size());
-        assertEquals(Operator.RIGHT_JOIN, joins3.get(0).operator());
-        assertEquals(2, joins3.get(0).joinEntities().size());
-    }
-
-    @Test
-    void testSelectModifier_stripsUnicodeWhitespaceLikeIsBlank() {
-        // the blank check uses Character.isWhitespace (Strings.isBlank), so the normalization must strip the
-        // same set: " DISTINCT " padded with U+2003 EM SPACE used to keep both pad characters
-        final String emPadded = " DISTINCT ";
-        final Criteria padded = Criteria.builder().selectModifier(emPadded).where(Filters.eq("a", 1)).build();
-        final Criteria plain = Criteria.builder().distinct().where(Filters.eq("a", 1)).build();
-
-        assertEquals("DISTINCT", padded.selectModifier());
-        assertEquals(plain, padded);
-        assertEquals(plain.hashCode(), padded.hashCode());
-        assertNull(Criteria.builder().selectModifier("  ").where(Filters.eq("a", 1)).build().selectModifier());
-    }
-
-    @Test
-    void testSelectModifier_trimsSurroundingWhitespace() {
-        final Criteria padded = Criteria.builder().selectModifier(" DISTINCT ").where(Filters.eq("a", 1)).build();
-        final Criteria plain = Criteria.builder().distinct().where(Filters.eq("a", 1)).build();
-
-        assertEquals("DISTINCT", padded.selectModifier());
-        assertEquals(plain, padded);
-        assertEquals(plain.hashCode(), padded.hashCode());
-        assertEquals(plain.toSql(NamingPolicy.NO_CHANGE), padded.toSql(NamingPolicy.NO_CHANGE));
-        assertFalse(padded.toSql(NamingPolicy.NO_CHANGE).contains("  "));
-
-        assertNull(Criteria.builder().selectModifier("   ").where(Filters.eq("a", 1)).build().selectModifier());
-    }
-
-    @Test
-    void testSetOperationLineCommentsDoNotConsumeFollowingClauses() {
-        final Criteria criteria = Criteria.builder().union(new SubQuery("SELECT id FROM archived_users -- trailing comment")).orderBy("id").build();
-
-        assertEquals(" UNION SELECT id FROM archived_users -- trailing comment\n ORDER BY id", criteria.toString());
-    }
-
-    @Test
-    void testSortKeysWithBlockCommentLeftOpenUnderAnyLexicalReadingAreRejected() {
-        // Regression: a "/*" past a quote inside a "#" comment, or after a "--" comment ended by a lone '\r', was not seen
-        // as unclosed, so the grouping/sort keys after it were silently dropped ("GROUP BY dept " without team).
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("dept # it's\n/* x", "team"));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("dept -- c\r/* x", SortDirection.DESC));
-
-        // The multi-pair overloads validate every key (checkSortEntry path).
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a /* x", SortDirection.DESC, "b", SortDirection.ASC));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("b", SortDirection.ASC, "a -- c\r/* x", SortDirection.DESC));
-
-        final Map<String, SortDirection> orders = new java.util.LinkedHashMap<>();
-        orders.put("a -- c\r/* x", SortDirection.DESC);
-        orders.put("b", SortDirection.ASC);
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(orders));
-
-        assertEquals(" ORDER BY a DESC, b ASC",
-                Criteria.builder().orderBy("a /* x */", SortDirection.DESC, "b", SortDirection.ASC).build().toSql(NamingPolicy.NO_CHANGE));
-    }
-
-    @Test
-    void testToBuilder() {
-        final Criteria original = Criteria.builder().selectModifier("DISTINCT").orderBy("name").limit(10).build();
-
-        final Criteria rebuilt = original.toBuilder().where(Filters.eq("status", "ACTIVE")).build();
-
-        assertEquals("DISTINCT", rebuilt.selectModifier());
-        assertEquals(0, original.parameters().size());
-        assertEquals(1, rebuilt.parameters().size());
-        assertTrue(original.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
-        assertFalse(original.toSql(NamingPolicy.NO_CHANGE).contains("status"));
-        assertTrue(rebuilt.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
-        assertTrue(rebuilt.toSql(NamingPolicy.NO_CHANGE).contains("status"));
-    }
-
-    /**
-     * Second-pass locking test: {@code toBuilder()} round-trip must preserve every
-     * clause kind (selectModifier, joins, where, groupBy, having, set ops, orderBy, limit)
-     * and parameter ordering.
-     */
-    @Test
-    void testToBuilderPreservesAllClauseKinds() {
-        final SubQuery sub = new SubQuery("u2", Arrays.asList("id"), Filters.eq("isAdmin", true));
-        final Criteria original = Criteria.builder()
-                .distinct()
-                .leftJoin("orders", Filters.eq("o.x", 1))
-                .innerJoin("items", Filters.eq("i.x", 2))
-                .where(Filters.eq("w", 3))
-                .groupBy("g")
-                .having(Filters.gt("c", 4))
-                .union(sub)
-                .orderBy("ord")
-                .limit(10)
-                .build();
-
-        final Criteria rebuilt = original.toBuilder().build();
-
-        // Same selectModifier, same toString, same parameter list and order.
-        assertEquals(original.selectModifier(), rebuilt.selectModifier());
-        assertEquals(original.toSql(NamingPolicy.NO_CHANGE), rebuilt.toSql(NamingPolicy.NO_CHANGE));
-        assertEquals(original.parameters(), rebuilt.parameters());
-        assertEquals(original, rebuilt);
-        assertEquals(original.hashCode(), rebuilt.hashCode());
-    }
-
-    @Test
-    void testToString() {
-        Criteria criteria = Criteria.builder()
-                .distinct()
-                .join("orders", Filters.eq("users.id", "orders.user_id"))
-                .where(Filters.eq("status", "active"))
-                .groupBy("department")
-                .having(Filters.gt("COUNT(*)", 5))
-                .orderBy("department")
-                .limit(10)
-                .build();
-
-        String result = criteria.toString();
-
-        // Verify order of clauses
-        assertTrue(result.indexOf("DISTINCT") < result.indexOf("JOIN"));
-        assertTrue(result.indexOf("JOIN") < result.indexOf("WHERE"));
-        assertTrue(result.indexOf("WHERE") < result.indexOf("GROUP BY"));
-        assertTrue(result.indexOf("GROUP BY") < result.indexOf("HAVING"));
-        assertTrue(result.indexOf("HAVING") < result.indexOf("ORDER BY"));
-        assertTrue(result.indexOf("ORDER BY") < result.indexOf("LIMIT"));
-    }
-
-    @Test
-    void testToStringEmptyCriteria() {
-        Criteria criteria = Criteria.builder().build();
-        String sql = criteria.toSql(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
-        assertNotNull(sql);
-    }
-
-    /**
-     * Rendering the same Criteria with alternating naming policies must always return the value for the
-     * requested policy. (Originally guarded the since-removed single-slot toString cache; kept because the
-     * per-policy rendering contract must hold regardless of any internal memoization.)
-     */
-    @Test
-    void testToStringReturnsValuePerNamingPolicy() {
-        Criteria criteria = Criteria.builder().where(Filters.eq("firstName", "John")).orderBy("lastName").build();
-
-        for (int i = 0; i < 100; i++) {
-            String noChange = criteria.toSql(NamingPolicy.NO_CHANGE);
-            assertTrue(noChange.contains("firstName = 'John'") && noChange.contains("lastName"), "NO_CHANGE render wrong: " + noChange);
-
-            String snake = criteria.toSql(NamingPolicy.SNAKE_CASE);
-            assertTrue(snake.contains("first_name = 'John'") && snake.contains("last_name"), "SNAKE_CASE render wrong: " + snake);
-
-            String screaming = criteria.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
-            assertTrue(screaming.contains("FIRST_NAME = 'John'") && screaming.contains("LAST_NAME"), "SCREAMING_SNAKE_CASE render wrong: " + screaming);
-        }
-    }
-
-    @Test
-    void testToStringWithNamingPolicy() {
-        Criteria criteria = Criteria.builder().distinct().where(Filters.equal("isActive", true)).orderBy("createdDate", SortDirection.DESC).build();
-
-        String sql = criteria.toSql(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
-        assertNotNull(sql);
-        assertTrue(sql.contains("DISTINCT"));
-    }
-
-    @Test
-    void testUnion() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
-        Criteria criteria = Criteria.builder().union(subQuery).build();
-        assertNotNull(criteria);
-        assertTrue(criteria.setOperations().size() > 0);
-    }
-
-    @Test
-    void testUnionAll() {
-        com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
-        Criteria criteria = Criteria.builder().unionAll(subQuery).build();
-        assertNotNull(criteria);
-        assertTrue(criteria.setOperations().size() > 0);
-    }
-
-    @Test
-    void testWhere() {
-        Equal eq = Filters.eq("status", "active");
-        Criteria criteria = Criteria.builder().where(eq).build();
-
-        Clause where = criteria.where();
-        assertNotNull(where);
-        assertEquals(Operator.WHERE, where.operator());
-        assertEquals(eq, where.condition());
-    }
-
-    @Test
-    void testWhere_RejectsNestedCriteria() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Criteria.builder().build()));
-    }
-
-    @Test
-    void testWhereAndHavingStringRejectBlankExpression() {
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("   ")).getMessage().contains("expr"));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having("   ")).getMessage().contains("expr"));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(""));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(""));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where((String) null));
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having((String) null));
-    }
-
-    @Test
-    void testWhereCondition() {
-        Condition condition = Filters.equal("name", "John");
-        Criteria criteria = Criteria.builder().where(condition).build();
-        assertNotNull(criteria);
-        assertNotNull(criteria.where());
-    }
-
-    @Test
-    void testWhereRejectsJoinCondition() {
-        Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.where(new Join("orders", Filters.on("users.id", "orders.user_id"))));
-    }
-
-    @Test
-    void testWhereRejectsMismatchedClauseCondition() {
-        Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.orderBy("name")));
-    }
-
-    @Test
-    void testWhereRejectsNestedCriteriaCondition() {
-        Builder builder = Criteria.builder();
-        Criteria nested = Criteria.builder().where(Filters.equal("status", "active")).build();
-        assertThrows(IllegalArgumentException.class, () -> builder.where(nested));
-    }
-
-    @Test
-    void testWhereRejectsOnCondition() {
-        Builder builder = Criteria.builder();
-        assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.on("users.id", "orders.user_id")));
-    }
-
-    @Test
-    void testWhereString() {
-        Criteria criteria = Criteria.builder().where("age > 18").build();
-        assertNotNull(criteria);
-    }
-
-    @Test
-    void testWhereStringWithNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where((String) null));
-    }
-
-    @Test
-    void testWhereWithNullCondition() {
-        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where((Condition) null));
-    }
-
-    @Test
-    void testWhereWithWhereCondition() {
-        Where whereCondition = Filters.where(Filters.eq("id", 1));
-        Criteria criteria = Criteria.builder().where(whereCondition).build();
-
-        Clause where = criteria.where();
-        assertNotNull(where);
-        assertEquals(whereCondition, where);
-    }
-
-    @Test
-    void testWhereWithWhereOperator() {
-        Where where = new Where(Filters.equal("status", "active"));
-        Criteria criteria = Criteria.builder().where(where).build();
-        assertNotNull(criteria.where());
-    }
-
-    @Nested
-    class Validation {
-        @Test
-        void testCriteriaChecksSortPairsInSignatureOrder() {
-            final String firstDirectionError = "SortDirection for 'firstName' must not be null";
-
-            assertEquals(firstDirectionError,
-                    assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("firstName", null, "", SortDirection.ASC)).getMessage());
-            assertEquals(firstDirectionError, assertThrows(IllegalArgumentException.class,
-                    () -> Criteria.builder().groupBy("firstName", null, "firstName", SortDirection.DESC, "thirdName", SortDirection.ASC)).getMessage());
-
-            assertEquals(" ORDER BY firstName ASC, lastName DESC",
-                    Criteria.builder().orderBy("firstName", SortDirection.ASC, "lastName", SortDirection.DESC).build().toString());
-        }
-
-        @Test
-        void testCrossAndNaturalJoinRejectUnterminatedBlockComment() {
-            // An open "/*" in a join entity would comment out every clause rendered after the join.
-            final Builder builder = Criteria.builder();
-            assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> builder.crossJoin(List.of("a", "t /* x"))).getMessage());
-            assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> builder.crossJoin("t /* x")).getMessage());
-            assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> builder.naturalJoin("t /* x")).getMessage());
-            assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
-                    assertThrows(IllegalArgumentException.class, () -> builder.naturalJoin(List.of("t /* x"))).getMessage());
-            assertThrows(IllegalArgumentException.class, () -> builder.crossJoin("t --/*"));
-
-            // The rejections left the builder unchanged; a terminated comment is kept verbatim.
-            assertEquals(" CROSS JOIN (a CROSS JOIN t /* x */) NATURAL JOIN u /* y */",
-                    builder.crossJoin(List.of("a", "t /* x */")).naturalJoin("u /* y */").build().toString());
-        }
-    }
-
     private static final class FakeClauseCondition extends AbstractCondition {
         FakeClauseCondition(final Operator operator) {
             super(operator);
@@ -2039,116 +69,9 @@ public class CriteriaTest extends TestBase {
         }
     }
 
-    private static void invokeCheckCondition(final Criteria.Builder builder, final Condition condition) {
-        try {
-            java.lang.reflect.Method method = Criteria.Builder.class.getDeclaredMethod("checkCondition", Condition.class);
-            method.setAccessible(true);
-            method.invoke(builder, condition);
-        } catch (java.lang.reflect.InvocationTargetException e) {
-            throw (RuntimeException) e.getCause();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private static final class CustomWhereClause extends Clause {
         CustomWhereClause() {
             super(Operator.WHERE, Filters.eq("id", 1));
-        }
-    }
-
-    @Test
-    void testParametersHonoursSubclassOverridingOnlyParametersWhenNested() {
-        // a subclass that overrides parameters() but not appendParametersTo(List) must be honoured inside Criteria
-        final And customAnd = new And(Filters.eq("a", 1)) {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public ImmutableList<Object> parameters() {
-                final List<Object> extended = new ArrayList<>();
-                extended.add("extra");
-                extended.addAll(super.parameters());
-                return ImmutableList.wrap(extended);
-            }
-        };
-
-        final Where customWhere = new Where(Filters.eq("w", 1)) {
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public ImmutableList<Object> parameters() {
-                return ImmutableList.of("whereExtra");
-            }
-        };
-
-        assertEquals(List.of("extra", 1), Criteria.builder().where(customAnd).build().parameters());
-        assertEquals(List.of("extra", 1, 2), Criteria.builder().where(Filters.and(customAnd, Filters.eq("b", 2))).build().parameters());
-        assertEquals(List.of("whereExtra"), Criteria.builder().where(customWhere).build().parameters());
-        assertEquals(List.of("open", "whereExtra", 3),
-                Criteria.builder()
-                        .join(Filters.innerJoin("orders o", Filters.eq("o.status", "open")))
-                        .where(customWhere)
-                        .having(Filters.gt("cnt", 3))
-                        .build()
-                        .parameters());
-
-        // and a Criteria nested in a cell is itself still walked correctly
-        final Criteria criteria = Criteria.builder().where(customAnd).having(Filters.gt("cnt", 3)).limit(10).build();
-        assertEquals(List.of("extra", 1, 3), criteria.parameters());
-        assertEquals(List.of("extra", 1, 3), Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
-
-        assertEquals(List.of("whereExtra"), customWhere.parameters());
-        final Criteria whereCriteria = Criteria.builder().where(customWhere).having(Filters.gt("cnt", 3)).build();
-        assertEquals(List.of("whereExtra", 3), whereCriteria.parameters());
-        assertEquals(List.of("whereExtra", 3), Filters.exists(Filters.subQuery("t", List.of("id"), whereCriteria)).parameters());
-        assertEquals(List.of(0, "whereExtra", 3, 2),
-                Filters.and(Filters.eq("z", 0), Filters.not(Filters.exists(Filters.subQuery("t", List.of("id"), whereCriteria))), Filters.eq("b", 2))
-                        .parameters());
-    }
-
-    @Test
-    void testHookOverrideDelegatingToParametersDoesNotRecurse() {
-        // Criteria.parameters() never calls the overridable appendParametersTo hook (both share a private helper),
-        // so the natural "keep them consistent" override out.addAll(parameters()) cannot recurse into itself
-        final List<Condition> clauses = List.of(new Where(Filters.eq("a", 1)), new Having(Filters.gt("cnt", 3)));
-        final Criteria hookOnly = new Criteria(null, clauses) {
-            @Override
-            protected void appendParametersTo(final List<Object> out) {
-                out.addAll(parameters());
-            }
-        };
-        final Criteria tagged = new Criteria(null, clauses) {
-            @Override
-            public ImmutableList<Object> parameters() {
-                final List<Object> extended = new ArrayList<>();
-                extended.add("tag");
-                extended.addAll(super.parameters());
-                return ImmutableList.wrap(extended);
-            }
-
-            @Override
-            protected void appendParametersTo(final List<Object> out) {
-                out.addAll(parameters());
-            }
-        };
-
-        assertEquals(List.of(1, 3), hookOnly.parameters());
-        assertEquals(List.of("tag", 1, 3), tagged.parameters());
-
-        for (final Criteria criteria : List.of(hookOnly, tagged)) {
-            final List<Object> expected = criteria.parameters();
-            final List<Object> out = new ArrayList<>();
-            criteria.appendParametersTo(out);
-            assertEquals(expected, out);
-            assertEquals(expected, Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
-            final List<Object> withTail = new ArrayList<>(expected);
-            withTail.add(2);
-            assertEquals(withTail, Filters.and(Filters.exists(Filters.subQuery("t", List.of("id"), criteria)), Filters.eq("b", 2)).parameters());
-            assertEquals(withTail,
-                    Criteria.builder()
-                            .where(Filters.or(Filters.in("id", Filters.subQuery("t", List.of("id"), criteria)), Filters.eq("b", 2)))
-                            .build()
-                            .parameters());
         }
     }
 
@@ -2167,6 +90,2116 @@ public class CriteriaTest extends TestBase {
     private static final class CustomOrderByClause extends Clause {
         CustomOrderByClause() {
             super(Operator.ORDER_BY, Filters.expr("name"));
+        }
+    }
+
+    @Nested
+    class AccessorsAndEquality {
+        @Test
+        void testConditions() {
+            Criteria criteria = Criteria.builder().build();
+            List<Condition> conditions = criteria.conditions();
+            assertNotNull(conditions);
+        }
+
+        @Test
+        void testConditionsMultipleTypes() {
+            Criteria criteria = Criteria.builder().where(Filters.equal("name", "John")).groupBy("department").having("COUNT(*) > 5").orderBy("name").build();
+
+            List<Condition> conditions = criteria.conditions();
+            assertNotNull(conditions);
+            assertTrue(conditions.size() > 0);
+        }
+
+        @Test
+        void testEquals() {
+            Criteria c1 = Criteria.builder().distinct().where(Filters.equal("status", "active")).build();
+            Criteria c2 = Criteria.builder().distinct().where(Filters.equal("status", "active")).build();
+
+            // Test self-equality
+            assertEquals(c1, c1);
+
+            // Test equality with same content
+            assertEquals(c1, c2);
+
+            // Test inequality
+            Criteria c3 = Criteria.builder().where(Filters.equal("status", "inactive")).build();
+            assertFalse(c1.equals(c3));
+
+            // Test null
+            assertFalse(c1.equals(null));
+
+            // Test different type
+            assertFalse(c1.equals("string"));
+        }
+
+        @Test
+        void testFindConditionsNullOperatorReturnsEmpty() {
+            Criteria criteria = Criteria.builder().crossJoin("orders").where(Filters.equal("status", "active")).build();
+            assertTrue(criteria.findConditions(null).isEmpty());
+        }
+
+        @Test
+        void testGet() {
+            Criteria criteria = Criteria.builder()
+                    .join("orders", Filters.on("a", "b"))
+                    .join("products", Filters.on("c", "d"))
+                    .where(Filters.eq("status", "active"))
+                    .build();
+
+            List<Condition> joins = criteria.findConditions(Operator.JOIN);
+            assertEquals(2, joins.size());
+
+            List<Condition> wheres = criteria.findConditions(Operator.WHERE);
+            assertEquals(1, wheres.size());
+        }
+
+        @Test
+        void testGetAggregation() {
+            Criteria criteria = Criteria.builder().build();
+            List<Clause> aggregation = criteria.setOperations();
+            assertNotNull(aggregation);
+        }
+
+        @Test
+        void testGetByOperator() {
+            Criteria criteria = Criteria.builder().where(Filters.equal("name", "John")).build();
+            List<Condition> whereConditions = criteria.findConditions(Operator.WHERE);
+            assertNotNull(whereConditions);
+        }
+
+        @Test
+        void testGetByOperatorMultiple() {
+            // The builder replaces where when called multiple times
+            Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).where(Filters.equal("type", "premium")).build();
+
+            List<Condition> whereConditions = criteria.findConditions(Operator.WHERE);
+            assertEquals(1, whereConditions.size());
+        }
+
+        @Test
+        void testGetEmptyAggregation() {
+            Criteria criteria = Criteria.builder().build();
+            List<Clause> aggregations = criteria.setOperations();
+            assertNotNull(aggregations);
+            assertTrue(aggregations.isEmpty());
+        }
+
+        @Test
+        void testGetHaving() {
+            Criteria criteria = Criteria.builder().build();
+            Clause having = criteria.having();
+            assertNull(having);
+        }
+
+        @Test
+        void testGetLimit() {
+            Criteria criteria = Criteria.builder().build();
+            Limit limit = criteria.limit();
+            assertNull(limit);
+        }
+
+        @Test
+        void testGetNullClauses() {
+            Criteria criteria = Criteria.builder().build();
+
+            // All clauses should be null initially
+            assertNull(criteria.where());
+            assertNull(criteria.groupBy());
+            assertNull(criteria.having());
+            assertNull(criteria.orderBy());
+            assertNull(criteria.limit());
+            assertNull(criteria.selectModifier());
+        }
+
+        /**
+         * Second-pass locking test: setOperations() returns set-op clauses in insertion order.
+         */
+        @Test
+        void testGetSetOperationsOrderedAndTyped() {
+            final SubQuery a = new SubQuery("a", Arrays.asList("id"), null);
+            final SubQuery b = new SubQuery("b", Arrays.asList("id"), null);
+            final SubQuery c = new SubQuery("c", Arrays.asList("id"), null);
+            final Criteria crit = Criteria.builder().intersect(a).union(b).except(c).build();
+
+            final List<Clause> ops = crit.setOperations();
+            assertEquals(3, ops.size());
+            assertEquals(Operator.INTERSECT, ops.get(0).operator());
+            assertEquals(Operator.UNION, ops.get(1).operator());
+            assertEquals(Operator.EXCEPT, ops.get(2).operator());
+        }
+
+        @Test
+        void testGetWhere() {
+            Criteria criteria = Criteria.builder().build();
+            Clause where = criteria.where();
+            assertNull(where);
+        }
+
+        @Test
+        void testHashCode() {
+            Criteria c1 = Criteria.builder().where(Filters.equal("status", "active")).build();
+            Criteria c2 = Criteria.builder().where(Filters.equal("status", "active")).build();
+
+            // HashCode should be consistent
+            assertEquals(c1.hashCode(), c1.hashCode());
+            assertNotNull(c2.hashCode());
+        }
+
+        @Test
+        void testHashCodeTracksMutableValueInClause() {
+            // Array values are snapshotted at construction: a later mutation of the caller's array is invisible to
+            // the condition, so equals/hashCode/toSql all keep reflecting the value as it was when the clause was built.
+            final byte[] value = { 1 };
+            final Criteria criteria = Criteria.builder().where(Filters.eq("payload", value)).build();
+            final int hashBeforeMutation = criteria.hashCode();
+
+            value[0] = 2;
+
+            final Criteria equalToSnapshot = Criteria.builder().where(Filters.eq("payload", new byte[] { 1 })).build();
+            assertEquals(equalToSnapshot, criteria);
+            assertEquals(equalToSnapshot.hashCode(), criteria.hashCode());
+            assertEquals(hashBeforeMutation, criteria.hashCode());
+            assertEquals(" WHERE payload = '[1]'", criteria.toSql(NamingPolicy.NO_CHANGE));
+
+            final Criteria mutatedValue = Criteria.builder().where(Filters.eq("payload", new byte[] { 2 })).build();
+            assertNotEquals(mutatedValue, criteria);
+        }
+    }
+
+    @Nested
+    class BuilderAndRouting {
+        @Test
+        void testAddConditionWithNullOperatorThrowsIllegalArgumentException() {
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(new NullOperatorCondition()));
+
+            assertTrue(error.getMessage().contains("operator"));
+        }
+
+        @Test
+        void testAddEmptyPredicateThrows() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("   ")));
+        }
+
+        @Test
+        void testAddGroupByRoutesToGroupBy() {
+            Criteria c = Criteria.builder().add(new GroupBy("department")).build();
+
+            assertNotNull(c.groupBy());
+            assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("GROUP BY department"), c.toString());
+        }
+
+        @Test
+        void testAddHavingRoutesToHaving() {
+            // Previously threw/recursed because the switch had no HAVING case (fell through to where()).
+            Criteria c = Criteria.builder().add(new Having(Filters.gt("COUNT(*)", 5))).build();
+
+            assertNotNull(c.having());
+            assertNull(c.where());
+            assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("HAVING COUNT(*) > 5"), c.toString());
+        }
+
+        @Test
+        void testAddJoinRoutesToJoinAndAccumulates() {
+            Criteria c = Criteria.builder().add(new Join("orders", Filters.on("a", "b"))).add(new Join("payments", Filters.on("c", "d"))).build();
+
+            // Joins accumulate; they are not replaced.
+            assertEquals(2, c.joins().size());
+        }
+
+        @Test
+        void testAddLimitRoutesToLimit() {
+            Criteria c = Criteria.builder().add(new Limit(10)).build();
+
+            assertNotNull(c.limit());
+            assertEquals(10, c.limit().count());
+        }
+
+        @Test
+        void testAddNestedCriteriaThrows() {
+            Criteria nested = Criteria.builder().where(Filters.eq("a", 1)).build();
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(nested));
+        }
+
+        @Test
+        void testAddNullThrows() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(null));
+        }
+
+        @Test
+        void testAddOnOrUsingThrows() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("ON a.id = b.id")));
+        }
+
+        @Test
+        void testAddOrderByRoutesToOrderBy() {
+            Criteria c = Criteria.builder().add(new OrderBy("createdDate")).build();
+
+            assertNotNull(c.orderBy());
+            assertNull(c.where());
+            assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY createdDate"), c.toString());
+        }
+
+        // --- Routing by operator. ---
+
+        @Test
+        void testAddPlainPredicateRoutesToWhere() {
+            Criteria c = Criteria.builder().add(Filters.equal("status", "active")).build();
+
+            assertNotNull(c.where());
+            assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("WHERE status = 'active'"), c.toString());
+        }
+
+        @Test
+        void testAddQuantifiedOperandThrows() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.any(Filters.subQuery("SELECT 1"))));
+        }
+
+        // --- Replacement semantics for singleton clauses. ---
+
+        @Test
+        void testAddReplacesExistingSingletonClause() {
+            Criteria c = Criteria.builder().add(new Limit(10)).add(new Limit(20)).build();
+            assertEquals(20, c.limit().count());
+
+            Criteria c2 = Criteria.builder().add(new OrderBy("colA")).add(new OrderBy("colB")).build();
+            String sql = c2.toSql(NamingPolicy.NO_CHANGE);
+            assertTrue(sql.contains("colB"), sql);
+            assertFalse(sql.contains("colA"), sql);
+        }
+
+        // --- Chaining and validation. ---
+
+        @Test
+        void testAddReturnsBuilderForChaining() {
+            Builder builder = Criteria.builder();
+            assertTrue(builder == builder.add(Filters.equal("a", 1)));
+        }
+
+        @Test
+        void testAddSetOperationsRouteCorrectly() {
+            assertTrue(Criteria.builder().add(new Union(Filters.subQuery("SELECT 1"))).build().toString().contains("UNION"));
+            assertTrue(Criteria.builder().add(new UnionAll(Filters.subQuery("SELECT 1"))).build().toString().contains("UNION ALL"));
+            assertTrue(Criteria.builder().add(new Intersect(Filters.subQuery("SELECT 1"))).build().toString().contains("INTERSECT"));
+            assertTrue(Criteria.builder().add(new Except(Filters.subQuery("SELECT 1"))).build().toString().contains("EXCEPT"));
+            assertTrue(Criteria.builder().add(new Minus(Filters.subQuery("SELECT 1"))).build().toString().contains("MINUS"));
+        }
+
+        @Test
+        void testAddStandaloneSubQueryThrows() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.subQuery("SELECT 1")));
+        }
+
+        @Test
+        void testAddWhereClauseRoutesToWhere() {
+            Criteria c = Criteria.builder().add(new Where(Filters.eq("id", 1))).build();
+
+            assertNotNull(c.where());
+            assertTrue(c.toSql(NamingPolicy.NO_CHANGE).contains("WHERE id = 1"), c.toString());
+        }
+
+        @Test
+        void testBuilderAddRejectsOperatorTypeMismatchWithActionableException() {
+            for (Operator operator : Arrays.asList(Operator.LIMIT, Operator.UNION, Operator.UNION_ALL, Operator.INTERSECT, Operator.EXCEPT, Operator.MINUS)) {
+                IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(new FakeClauseCondition(operator)));
+
+                assertTrue(error.getMessage().contains(operator.toString()), error.getMessage());
+                assertTrue(error.getMessage().contains("FakeClauseCondition"), error.getMessage());
+            }
+        }
+
+        /**
+         * Second-pass locking test: addCondition's dedup logic must replace an existing WHERE/ORDER_BY/etc.,
+         * but only those (joins and set ops accumulate).
+         */
+        @Test
+        void testBuilderDedupesSingletonClausesButAccumulatesJoinsAndSetOps() {
+            final SubQuery sub1 = new SubQuery("a", Arrays.asList("id"), null);
+            final SubQuery sub2 = new SubQuery("b", Arrays.asList("id"), null);
+            final Criteria c = Criteria.builder()
+                    .where(Filters.eq("a", 1))
+                    .where(Filters.eq("b", 2)) // replaces first WHERE
+                    .leftJoin("t1", Filters.on("users.id", "t1.user_id"))
+                    .leftJoin("t2", Filters.on("users.id", "t2.user_id")) // accumulates
+                    .union(sub1)
+                    .union(sub2) // accumulates
+                    .orderBy("x")
+                    .orderBy("y") // replaces first ORDER BY
+                    .build();
+
+            // Only the last WHERE should survive
+            final String str = c.toSql(NamingPolicy.NO_CHANGE);
+            assertTrue(str.contains("b ="), "should contain second where: " + str);
+            assertFalse(str.contains("a ="), "should not contain replaced where: " + str);
+            // Both joins should be present
+            assertEquals(2, c.joins().size());
+            // Both unions should be present
+            assertEquals(2, c.setOperations().size());
+            // Only one ORDER BY (the last)
+            assertTrue(str.contains("ORDER BY y"));
+            assertFalse(str.contains("ORDER BY x"));
+        }
+
+        @Test
+        void testBuilderGroupByCollection_Empty_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(java.util.Collections.<String> emptyList()));
+        }
+
+        // --- Bug fixes: Builder.groupBy/orderBy(Collection) must reject null with IAE (previously NPE'd) ---
+
+        @Test
+        void testBuilderGroupByCollection_Null_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy((List<String>) null));
+        }
+
+        @Test
+        void testBuilderOrderByCollection_Empty_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(java.util.Collections.<String> emptyList()));
+        }
+
+        @Test
+        void testBuilderOrderByCollection_Null_ThrowsIAE() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy((List<String>) null));
+        }
+
+        @Test
+        void testBuilderRejectsClauseLikeConnectorAndEmptyWhereExpressions() {
+            // An SqlExpression whose literal starts with a clause keyword reports Operator.EMPTY (rendered
+            // as ""), so the mismatch message must describe the expression itself instead of trailing off
+            // with nothing after "but got".
+            IllegalArgumentException whereEx = assertThrows(IllegalArgumentException.class,
+                    () -> Criteria.builder().where(Filters.expr("WHERE active = true")));
+            assertTrue(whereEx.getMessage().contains("expected WHERE or non-clause condition, but got SqlExpression \"WHERE active = true\""),
+                    "was: " + whereEx.getMessage());
+
+            IllegalArgumentException orderByEx = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ORDER BY x")));
+            assertTrue(orderByEx.getMessage().contains("expected WHERE or non-clause condition, but got SqlExpression \"ORDER BY x\""),
+                    "was: " + orderByEx.getMessage());
+            assertFalse(orderByEx.getMessage().trim().endsWith("but got"));
+
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("WHERE active = true"));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ON users.id = orders.user_id")));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("   ")));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("   "));
+        }
+
+        @Test
+        void testBuilderRejectsCustomClauseSubclassesForTypedSingletonClauses() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(new CustomWhereClause()).build());
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(new CustomGroupByClause()).build());
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(new CustomHavingClause()).build());
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(new CustomOrderByClause()).build());
+        }
+
+        @Test
+        void testCheckCondition_RejectsClauseOperatorWithoutClauseType() {
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                    () -> invokeCheckCondition(Criteria.builder(), new FakeClauseCondition(Operator.WHERE)));
+
+            assertTrue(error.getMessage().contains("must be an instance of Clause"));
+        }
+
+        @Test
+        void testCheckCondition_RejectsJoinOperatorWithoutJoinType() {
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                    () -> invokeCheckCondition(Criteria.builder(), new FakeClauseCondition(Operator.JOIN)));
+
+            assertTrue(error.getMessage().contains("must be an instance of Join"));
+        }
+
+        @Test
+        void testCheckCondition_RejectsNonClauseOperator() {
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> invokeCheckCondition(Criteria.builder(), Filters.eq("id", 1)));
+
+            assertTrue(error.getMessage().contains("Invalid operator"));
+        }
+
+        @Test
+        void testReplaceClause() {
+            Criteria criteria = Criteria.builder().where(Filters.eq("id", 1)).where(Filters.eq("id", 2)).build(); // Should replace the first where
+
+            Clause where = criteria.where();
+            Equal eq = (Equal) where.condition();
+            assertEquals(2, (Integer) eq.propValue());
+        }
+
+        @Test
+        void testReplaceClauses() {
+            // Build with the final (replaced) values
+            Criteria criteria = Criteria.builder()
+                    .where(Filters.equal("status", "active"))
+                    .groupBy("department")
+                    .having("COUNT(*) > 5")
+                    .orderBy("name")
+                    .limit(10)
+                    .where(Filters.equal("status", "inactive"))
+                    .groupBy("location")
+                    .having("COUNT(*) > 10")
+                    .orderBy("age")
+                    .limit(20)
+                    .build();
+
+            // Only latest values should exist
+            assertEquals(5, criteria.conditions().size());
+        }
+
+        @Test
+        void testReplacingSingletonClauseKeepsPositionAndEquality() {
+            final Criteria c1 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").build();
+            final Criteria c2 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").where(Filters.eq("a", 1)).build();
+
+            assertEquals(c1.toSql(NamingPolicy.NO_CHANGE), c2.toSql(NamingPolicy.NO_CHANGE));
+            assertEquals(c1, c2);
+            assertEquals(c1.hashCode(), c2.hashCode());
+            assertEquals(Operator.WHERE, c2.conditions().get(0).operator());
+
+            final Criteria c3 = Criteria.builder().where(Filters.eq("a", 1)).orderBy("b").where(Filters.eq("a", 2)).build();
+            assertEquals(" WHERE a = 2 ORDER BY b", c3.toSql(NamingPolicy.NO_CHANGE));
+            assertEquals(Operator.WHERE, c3.conditions().get(0).operator());
+            assertEquals(2, c3.conditions().size());
+        }
+
+        @Test
+        void testToBuilder() {
+            final Criteria original = Criteria.builder().selectModifier("DISTINCT").orderBy("name").limit(10).build();
+
+            final Criteria rebuilt = original.toBuilder().where(Filters.eq("status", "ACTIVE")).build();
+
+            assertEquals("DISTINCT", rebuilt.selectModifier());
+            assertEquals(0, original.parameters().size());
+            assertEquals(1, rebuilt.parameters().size());
+            assertTrue(original.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
+            assertFalse(original.toSql(NamingPolicy.NO_CHANGE).contains("status"));
+            assertTrue(rebuilt.toSql(NamingPolicy.NO_CHANGE).contains("ORDER BY"));
+            assertTrue(rebuilt.toSql(NamingPolicy.NO_CHANGE).contains("status"));
+        }
+
+        /**
+         * Second-pass locking test: {@code toBuilder()} round-trip must preserve every
+         * clause kind (selectModifier, joins, where, groupBy, having, set ops, orderBy, limit)
+         * and parameter ordering.
+         */
+        @Test
+        void testToBuilderPreservesAllClauseKinds() {
+            final SubQuery sub = new SubQuery("u2", Arrays.asList("id"), Filters.eq("isAdmin", true));
+            final Criteria original = Criteria.builder()
+                    .distinct()
+                    .leftJoin("orders", Filters.eq("o.x", 1))
+                    .innerJoin("items", Filters.eq("i.x", 2))
+                    .where(Filters.eq("w", 3))
+                    .groupBy("g")
+                    .having(Filters.gt("c", 4))
+                    .union(sub)
+                    .orderBy("ord")
+                    .limit(10)
+                    .build();
+
+            final Criteria rebuilt = original.toBuilder().build();
+
+            // Same selectModifier, same toString, same parameter list and order.
+            assertEquals(original.selectModifier(), rebuilt.selectModifier());
+            assertEquals(original.toSql(NamingPolicy.NO_CHANGE), rebuilt.toSql(NamingPolicy.NO_CHANGE));
+            assertEquals(original.parameters(), rebuilt.parameters());
+            assertEquals(original, rebuilt);
+            assertEquals(original.hashCode(), rebuilt.hashCode());
+        }
+    }
+
+    @Nested
+    class Construction {
+        @Test
+        void testConstructor() {
+            Criteria criteria = Criteria.builder().build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testEmptyCriteria() {
+            Criteria criteria = Criteria.builder().build();
+            assertTrue(criteria.conditions().isEmpty());
+            assertTrue(criteria.joins().isEmpty());
+        }
+
+        @Test
+        void testEmptyCriteria_CollectionsAndEquality() {
+            Criteria left = Criteria.builder().build();
+            Criteria right = Criteria.builder().build();
+            Criteria distinct = Criteria.builder().selectModifier("DISTINCT").build();
+
+            assertTrue(left.joins().isEmpty());
+            assertTrue(left.setOperations().isEmpty());
+            assertTrue(left.findConditions(Operator.WHERE).isEmpty());
+            assertTrue(left.parameters().isEmpty());
+            assertEquals(left, right);
+            assertEquals(left.hashCode(), right.hashCode());
+            assertNotEquals(left, distinct);
+        }
+
+        @Test
+        void testPackageConstructorDefensivelyCopiesConditions() {
+            List<Condition> source = new ArrayList<>();
+            source.add(new Where(Filters.eq("id", 1)));
+
+            Criteria criteria = new Criteria(null, source);
+            int hashCode = criteria.hashCode();
+            source.clear();
+
+            assertEquals(1, criteria.conditions().size());
+            assertEquals(Arrays.asList(1), criteria.parameters());
+            assertEquals(hashCode, criteria.hashCode());
+            assertEquals(" WHERE id = 1", criteria.toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testPackageConstructorRejectsDuplicateSingletonClauses() {
+            Where first = new Where(Filters.eq("a", 1));
+            Where second = new Where(Filters.eq("b", 2));
+
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(first, second)));
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new Limit(10), new Limit(20))));
+        }
+
+        @Test
+        void testPackageConstructorRejectsNonClauseCondition() {
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(Filters.eq("id", 1))));
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.WHERE))));
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.JOIN))));
+        }
+
+        @Test
+        void testPackageConstructorRejectsNullConditionElement() {
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList((Condition) null)));
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new NullOperatorCondition())));
+        }
+
+        @Test
+        void testPackageConstructorRejectsUnsupportedAndWrongConcreteClauses() {
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.OFFSET))));
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new FakeClauseCondition(Operator.FOR_UPDATE))));
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new WrongConcreteClause(Operator.WHERE))));
+            assertThrows(IllegalArgumentException.class, () -> new Criteria(null, Arrays.asList(new WrongConcreteClause(Operator.UNION))));
+        }
+
+        @Test
+        void testPackageConstructorValidatesTheSameSnapshotItStores() {
+            final Where valid = new Where(Filters.eq("id", 1));
+            final Condition invalid = Filters.eq("unexpected", 2);
+            final List<Condition> changing = new AbstractList<>() {
+                private int iteratorCount;
+
+                @Override
+                public Iterator<Condition> iterator() {
+                    return Collections.singletonList(iteratorCount++ == 0 ? valid : invalid).iterator();
+                }
+
+                @Override
+                public Condition get(final int index) {
+                    if (index != 0) {
+                        throw new IndexOutOfBoundsException(index);
+                    }
+
+                    return iteratorCount == 0 ? valid : invalid;
+                }
+
+                @Override
+                public int size() {
+                    return 1;
+                }
+            };
+
+            final Criteria criteria = new Criteria(null, changing);
+
+            assertEquals(valid, criteria.where());
+            assertEquals(Collections.singletonList(valid), criteria.conditions());
+        }
+    }
+
+    @Nested
+    class GroupingAndOrdering {
+        @Test
+        void testGetGroupBy() {
+            Criteria criteria = Criteria.builder().build();
+            Clause groupBy = criteria.groupBy();
+            assertNull(groupBy);
+        }
+
+        @Test
+        void testGetOrderBy() {
+            Criteria criteria = Criteria.builder().build();
+            Clause orderBy = criteria.orderBy();
+            assertNull(orderBy);
+        }
+
+        @Test
+        void testGroupBy() {
+            Criteria criteria = Criteria.builder().groupBy("department", "location").build();
+
+            Clause groupBy = criteria.groupBy();
+            assertNotNull(groupBy);
+            assertEquals(Operator.GROUP_BY, groupBy.operator());
+        }
+
+        @Test
+        void testGroupByAsc() {
+            Criteria criteria = Criteria.builder().groupByAsc("department", "location").build();
+
+            Clause groupBy = criteria.groupBy();
+            assertNotNull(groupBy);
+            assertEquals(Operator.GROUP_BY, groupBy.operator());
+
+            criteria = Criteria.builder().groupByAsc(Arrays.asList("department", "location")).build();
+            assertNotNull(criteria.groupBy());
+        }
+
+        @Test
+        void testGroupByAscDescSingleColumn() {
+            String ascSql = Criteria.builder().groupByAsc("category").build().toString();
+            assertTrue(ascSql.contains("category ASC"), ascSql);
+
+            String descSql = Criteria.builder().groupByDesc("sales").build().toString();
+            assertTrue(descSql.contains("sales DESC"), descSql);
+        }
+
+        @Test
+        void testGroupByAscRendersAscDirection() {
+            String varargsSql = Criteria.builder().groupByAsc("region", "product_type").build().toString();
+            assertTrue(varargsSql.contains("region ASC"), varargsSql);
+            assertTrue(varargsSql.contains("product_type ASC"), varargsSql);
+
+            String collectionSql = Criteria.builder().groupByAsc(Arrays.asList("region", "product_type")).build().toString();
+            assertEquals(varargsSql, collectionSql, "groupByAsc(Collection) must match groupByAsc(String...) output");
+        }
+
+        @Test
+        void testGroupByCollection() {
+            Criteria criteria = Criteria.builder().groupBy(Arrays.asList("year", "month", "day")).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testGroupByCollectionDoesNotAppendAscDirection() {
+            List<String> cols = Arrays.asList("region", "product_type");
+            String sql = Criteria.builder().groupBy(cols).build().toString();
+            assertFalse(sql.contains("ASC"), "groupBy(Collection) must not append ASC: " + sql);
+            assertFalse(sql.contains("DESC"), "groupBy(Collection) must not append DESC: " + sql);
+            String varargsSql = Criteria.builder().groupBy("region", "product_type").build().toString();
+            assertEquals(varargsSql, sql, "groupBy(Collection) must match groupBy(String...) output");
+        }
+
+        @Test
+        void testGroupByCollectionWithDirection() {
+            Criteria criteria = Criteria.builder().groupBy(Arrays.asList("year", "month"), SortDirection.DESC).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testGroupByCondition() {
+            Condition condition = Filters.expr("department");
+            Criteria criteria = Criteria.builder().groupBy(condition).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testGroupByDesc() {
+            Criteria criteria = Criteria.builder().groupByDesc("salary", "id").build();
+
+            Clause groupBy = criteria.groupBy();
+            assertNotNull(groupBy);
+            assertEquals(Operator.GROUP_BY, groupBy.operator());
+
+            criteria = Criteria.builder().groupByDesc(Arrays.asList("salary", "id")).build();
+            assertNotNull(criteria.groupBy());
+        }
+
+        @Test
+        void testGroupByDescRendersDescDirection() {
+            String varargsSql = Criteria.builder().groupByDesc("sales", "region").build().toString();
+            assertTrue(varargsSql.contains("sales DESC"), varargsSql);
+            assertTrue(varargsSql.contains("region DESC"), varargsSql);
+
+            String collectionSql = Criteria.builder().groupByDesc(Arrays.asList("sales", "region")).build().toString();
+            assertEquals(varargsSql, collectionSql, "groupByDesc(Collection) must match groupByDesc(String...) output");
+        }
+
+        @Test
+        void testGroupByMap() {
+            Map<String, SortDirection> orders = new HashMap<>();
+            orders.put("year", SortDirection.DESC);
+            orders.put("month", SortDirection.ASC);
+            Criteria criteria = Criteria.builder().groupBy(orders).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testGroupByRejectsMismatchedClauseCondition() {
+            Builder builder = Criteria.builder();
+            assertThrows(IllegalArgumentException.class, () -> builder.groupBy(Filters.where(Filters.equal("status", "active"))));
+        }
+
+        @Test
+        void testGroupByThreeColumns() {
+            Criteria criteria = Criteria.builder().groupBy("year", SortDirection.DESC, "month", SortDirection.ASC, "day", SortDirection.DESC).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testGroupByTwoColumns() {
+            Criteria criteria = Criteria.builder().groupBy("year", SortDirection.DESC, "month", SortDirection.ASC).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testGroupByVarargs() {
+            Criteria criteria = Criteria.builder().groupBy("department", "year").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testGroupByWithDirection() {
+            Criteria criteria = Criteria.builder().groupBy("department", SortDirection.ASC).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testGroupByWithGroupByOperator() {
+            GroupBy groupBy = new GroupBy(Filters.expr("department"));
+            Criteria criteria = Criteria.builder().groupBy(groupBy).build();
+            assertNotNull(criteria.groupBy());
+        }
+
+        @Test
+        void testGroupByWithNullCondition() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy((Condition) null));
+        }
+
+        @Test
+        void testMultipleGroupBy() {
+            Criteria criteria = Criteria.builder().groupBy("dept", SortDirection.ASC, "team", SortDirection.DESC, "member", SortDirection.ASC).build();
+
+            Clause groupBy = criteria.groupBy();
+            assertNotNull(groupBy);
+        }
+
+        @Test
+        void testMultipleOrderBy() {
+            Criteria criteria = Criteria.builder().orderBy("priority", SortDirection.DESC, "date", SortDirection.ASC, "id", SortDirection.ASC).build();
+
+            Clause orderBy = criteria.orderBy();
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderBy() {
+            Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC).build();
+
+            Clause orderBy = criteria.orderBy();
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByAsc() {
+            Criteria criteria = Criteria.builder().orderByAsc("lastName", "firstName").build();
+
+            Clause orderBy = criteria.orderBy();
+            assertNotNull(orderBy);
+            assertEquals(Operator.ORDER_BY, orderBy.operator());
+        }
+
+        @Test
+        void testOrderByAscCollection() {
+            Criteria criteria = Criteria.builder().orderByAsc(Arrays.asList("name", "email")).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByAscDescSingleColumn() {
+            String ascSql = Criteria.builder().orderByAsc("lastName").build().toString();
+            assertTrue(ascSql.contains("lastName ASC"), ascSql);
+
+            String descSql = Criteria.builder().orderByDesc("score").build().toString();
+            assertTrue(descSql.contains("score DESC"), descSql);
+        }
+
+        @Test
+        void testOrderByAscVarargs() {
+            Criteria criteria = Criteria.builder().orderByAsc("name", "age").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByCollection() {
+            Criteria criteria = Criteria.builder().orderBy(Arrays.asList("name", "age", "email")).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByCollectionMatchesVarargs() {
+            List<String> cols = Arrays.asList("country", "state", "city");
+            String collectionSql = Criteria.builder().orderBy(cols).build().toString();
+            String varargsSql = Criteria.builder().orderBy("country", "state", "city").build().toString();
+            assertEquals(varargsSql, collectionSql, "orderBy(Collection) and orderBy(String...) must produce identical SQL");
+        }
+
+        @Test
+        void testOrderByCollectionWithDirection() {
+            Criteria criteria = Criteria.builder().orderBy(Arrays.asList("price", "rating"), SortDirection.DESC).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByCondition() {
+            Condition condition = Filters.expr("name ASC");
+            Criteria criteria = Criteria.builder().orderBy(condition).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByDesc() {
+            Criteria criteria = Criteria.builder().orderByDesc("createdDate", "id").build();
+
+            Clause orderBy = criteria.orderBy();
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByDescCollection() {
+            Criteria criteria = Criteria.builder().orderByDesc(Arrays.asList("price", "rating")).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByDescVarargs() {
+            Criteria criteria = Criteria.builder().orderByDesc("created_date", "updated_date").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByMap() {
+            Map<String, SortDirection> orders = new HashMap<>();
+            orders.put("name", SortDirection.ASC);
+            orders.put("age", SortDirection.DESC);
+            Criteria criteria = Criteria.builder().orderBy(orders).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByMultiple() {
+            Criteria criteria = Criteria.builder().orderBy("dept", SortDirection.ASC, "salary", SortDirection.DESC).build();
+
+            Clause orderBy = criteria.orderBy();
+            assertNotNull(orderBy);
+        }
+
+        @Test
+        void testOrderByRejectsMismatchedClauseCondition() {
+            Builder builder = Criteria.builder();
+            assertThrows(IllegalArgumentException.class, () -> builder.orderBy(Filters.where(Filters.equal("status", "active"))));
+        }
+
+        @Test
+        void testOrderByRejectsUsingCondition() {
+            Builder builder = Criteria.builder();
+            assertThrows(IllegalArgumentException.class, () -> builder.orderBy(Filters.using("id")));
+        }
+
+        @Test
+        void testOrderByThreeColumns() {
+            Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC, "age", SortDirection.DESC, "email", SortDirection.ASC).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByTwoColumns() {
+            Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC, "age", SortDirection.DESC).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByVarargs() {
+            Criteria criteria = Criteria.builder().orderBy("name", "age", "email").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByWithDirection() {
+            Criteria criteria = Criteria.builder().orderBy("name", SortDirection.ASC).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testOrderByWithNullCondition() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy((Condition) null));
+        }
+
+        @Test
+        void testOrderByWithOrderByOperator() {
+            com.landawn.abacus.query.condition.OrderBy orderBy = new com.landawn.abacus.query.condition.OrderBy(Filters.expr("name ASC"));
+            Criteria criteria = Criteria.builder().orderBy(orderBy).build();
+            assertNotNull(criteria.orderBy());
+        }
+
+        @Test
+        void testPairOverloadsRejectDuplicatePropertyName() {
+            final String expectedFragment = "Duplicate property name";
+
+            assertTrue(
+                    assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a", SortDirection.DESC, "a", SortDirection.ASC)).getMessage()
+                            .contains(expectedFragment));
+            assertTrue(
+                    assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("a", SortDirection.DESC, "a", SortDirection.ASC)).getMessage()
+                            .contains(expectedFragment));
+            assertTrue(assertThrows(IllegalArgumentException.class,
+                    () -> Criteria.builder().orderBy("a", SortDirection.ASC, "b", SortDirection.ASC, "a", SortDirection.DESC)).getMessage()
+                            .contains(expectedFragment));
+            assertTrue(assertThrows(IllegalArgumentException.class,
+                    () -> Criteria.builder().groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "b", SortDirection.DESC)).getMessage()
+                            .contains(expectedFragment));
+
+            // Distinct names keep working, in call order.
+            assertEquals(" ORDER BY a DESC, b ASC",
+                    Criteria.builder().orderBy("a", SortDirection.DESC, "b", SortDirection.ASC).build().toSql(NamingPolicy.NO_CHANGE));
+            assertEquals(" GROUP BY a ASC, b ASC, c DESC",
+                    Criteria.builder().groupBy("a", SortDirection.ASC, "b", SortDirection.ASC, "c", SortDirection.DESC).build().toSql(NamingPolicy.NO_CHANGE));
+
+            // The varargs sibling deliberately keeps repeated names.
+            assertEquals(" ORDER BY a, a", Criteria.builder().orderBy("a", "a").build().toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testSortKeysWithBlockCommentLeftOpenUnderAnyLexicalReadingAreRejected() {
+            // Regression: a "/*" past a quote inside a "#" comment, or after a "--" comment ended by a lone '\r', was not seen
+            // as unclosed, so the grouping/sort keys after it were silently dropped ("GROUP BY dept " without team).
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("dept # it's\n/* x", "team"));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy("dept -- c\r/* x", SortDirection.DESC));
+
+            // The multi-pair overloads validate every key (checkSortEntry path).
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("a /* x", SortDirection.DESC, "b", SortDirection.ASC));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("b", SortDirection.ASC, "a -- c\r/* x", SortDirection.DESC));
+
+            final Map<String, SortDirection> orders = new java.util.LinkedHashMap<>();
+            orders.put("a -- c\r/* x", SortDirection.DESC);
+            orders.put("b", SortDirection.ASC);
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(orders));
+
+            assertEquals(" ORDER BY a DESC, b ASC",
+                    Criteria.builder().orderBy("a /* x */", SortDirection.DESC, "b", SortDirection.ASC).build().toSql(NamingPolicy.NO_CHANGE));
+        }
+    }
+
+    @Nested
+    class Joins {
+        @Test
+        void testCrossJoin() {
+            Criteria criteria1 = Criteria.builder().crossJoin("colors").build();
+            List<Join> joins1 = criteria1.joins();
+            assertEquals(1, joins1.size());
+            assertEquals(Operator.CROSS_JOIN, joins1.get(0).operator());
+
+            List<String> tables = Arrays.asList("sizes", "colors");
+            Criteria criteria3 = Criteria.builder().crossJoin(tables).build();
+            List<Join> joins3 = criteria3.joins();
+            assertEquals(1, joins3.size());
+            assertEquals(Operator.CROSS_JOIN, joins3.get(0).operator());
+            assertEquals(2, joins3.get(0).joinEntities().size());
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testDeprecatedPredicateFreeJoinsRejectWithoutMutatingBuilder() {
+            final List<java.util.function.Consumer<Builder>> joins = List.of(builder -> builder.join("orders"), builder -> builder.innerJoin("orders"),
+                    builder -> builder.leftJoin("orders"), builder -> builder.rightJoin("orders"), builder -> builder.fullJoin("orders"));
+            for (final var join : joins) {
+                final Builder builder = Criteria.builder().where(Filters.eq("id", 7));
+                assertThrows(IllegalArgumentException.class, () -> join.accept(builder));
+                final Criteria criteria = builder.build();
+                assertEquals(" WHERE id = 7", criteria.toString());
+                assertEquals(List.of(7), criteria.parameters());
+                assertTrue(criteria.joins().isEmpty());
+            }
+        }
+
+        // --- 2026-09-19 fix round: deprecated single-arg qualified joins, duplicate pair names, blank where/having, limit(null). ---
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testDeprecatedSingleArgQualifiedJoinsAlwaysThrow() {
+            final String expectedFragment = "ON/USING predicate";
+
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("orders")).getMessage().contains(expectedFragment));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().innerJoin("orders")).getMessage().contains(expectedFragment));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin("orders")).getMessage().contains(expectedFragment));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().rightJoin("orders")).getMessage().contains(expectedFragment));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().fullJoin("orders")).getMessage().contains(expectedFragment));
+
+            // The two-argument overloads reject a null predicate the same way; the condition-less forms still work.
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("orders", (Condition) null));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin(Arrays.asList("orders", "items"), (Condition) null));
+            assertEquals(" CROSS JOIN orders", Criteria.builder().crossJoin("orders").build().toSql(NamingPolicy.NO_CHANGE));
+            assertEquals(" NATURAL JOIN orders", Criteria.builder().naturalJoin("orders").build().toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testFullJoin() {
+            Criteria criteria1 = Criteria.builder().fullJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+            List<Join> joins1 = criteria1.joins();
+            assertEquals(1, joins1.size());
+            assertEquals(Operator.FULL_JOIN, joins1.get(0).operator());
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().fullJoin("orders"));
+
+            Equal eq = Filters.eq("users.id", "orders.user_id");
+            Criteria criteria2 = Criteria.builder().fullJoin("orders", eq).build();
+            List<Join> joins2 = criteria2.joins();
+            assertEquals(1, joins2.size());
+            assertEquals(Operator.FULL_JOIN, joins2.get(0).operator());
+            assertEquals(eq, joins2.get(0).condition());
+
+            List<String> tables = Arrays.asList("orders", "order_items");
+            Criteria criteria3 = Criteria.builder().fullJoin(tables, eq).build();
+            List<Join> joins3 = criteria3.joins();
+            assertEquals(1, joins3.size());
+            assertEquals(Operator.FULL_JOIN, joins3.get(0).operator());
+            assertEquals(2, joins3.get(0).joinEntities().size());
+        }
+
+        @Test
+        void testGetJoins() {
+            Criteria criteria = Criteria.builder().build();
+            List<Join> joins = criteria.joins();
+            assertNotNull(joins);
+        }
+
+        @Test
+        void testGetJoinsMultipleTypes() {
+            Criteria criteria = Criteria.builder()
+                    .join("orders", Filters.expr("id = order_id"))
+                    .join(new LeftJoin("payments", Filters.expr("id = payment_id")))
+                    .join(new RightJoin("products", Filters.expr("id = product_id")))
+                    .build();
+
+            List<Join> joins = criteria.joins();
+            assertEquals(3, joins.size());
+        }
+
+        // ---- Convenience join method tests ----
+
+        @Test
+        void testInnerJoin() {
+            // entity + ON connector overload (the entity-only overload always throws: a qualified join needs ON/USING)
+            Criteria criteria1 = Criteria.builder().innerJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+            List<Join> joins1 = criteria1.joins();
+            assertEquals(1, joins1.size());
+            assertEquals(Operator.INNER_JOIN, joins1.get(0).operator());
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().innerJoin("orders"));
+
+            // entity + condition overload
+            Equal eq = Filters.eq("users.id", "orders.user_id");
+            Criteria criteria2 = Criteria.builder().innerJoin("orders", eq).build();
+            List<Join> joins2 = criteria2.joins();
+            assertEquals(1, joins2.size());
+            assertEquals(Operator.INNER_JOIN, joins2.get(0).operator());
+            assertEquals(eq, joins2.get(0).condition());
+
+            // multi-entity overload
+            List<String> tables = Arrays.asList("orders", "order_items");
+            Criteria criteria3 = Criteria.builder().innerJoin(tables, eq).build();
+            List<Join> joins3 = criteria3.joins();
+            assertEquals(1, joins3.size());
+            assertEquals(Operator.INNER_JOIN, joins3.get(0).operator());
+            assertEquals(2, joins3.get(0).joinEntities().size());
+        }
+
+        @Test
+        void testJoin_nullElement_messageNamesCondition() {
+            // the null-clause message must name the public parameter ('condition'), like the other clause validators
+            final IllegalArgumentException e1 = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join((Join) null));
+            assertTrue(e1.getMessage().contains("condition"), e1.getMessage());
+
+            final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join(Arrays.asList((Join) null)));
+            assertTrue(e2.getMessage().contains("condition"), e2.getMessage());
+        }
+
+        @Test
+        void testJoinArray() {
+            Join join1 = new Join("orders", Filters.on("a", "b"));
+            Join join2 = new LeftJoin("products", Filters.on("c", "d"));
+            Criteria criteria = Criteria.builder().join(join1, join2).build();
+
+            List<Join> joins = criteria.joins();
+            assertEquals(2, joins.size());
+        }
+
+        @Test
+        void testJoinCollection() {
+            Join join1 = new LeftJoin("orders", Filters.expr("users.id = orders.user_id"));
+            Join join2 = new InnerJoin("products", Filters.expr("orders.product_id = products.id"));
+            Criteria criteria = Criteria.builder().join(Arrays.asList(join1, join2)).build();
+            assertNotNull(criteria);
+            assertEquals(2, criteria.joins().size());
+        }
+
+        @Test
+        void testJoinCollectionNull() {
+            Builder builder = Criteria.builder();
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> builder.join((java.util.Collection<Join>) null));
+            assertTrue(ex.getMessage().contains("joins"), ex.getMessage());
+        }
+
+        @Test
+        void testJoinCollectionOfEntities() {
+            Condition condition = Filters.expr("id = user_id");
+            Criteria criteria = Criteria.builder().join(Arrays.asList("orders", "payments"), condition).build();
+            assertNotNull(criteria);
+            assertEquals(1, criteria.joins().size());
+        }
+
+        @Test
+        void testJoinEntity() {
+            Criteria criteria = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
+            assertNotNull(criteria);
+            assertEquals(" JOIN orders ON users.id = orders.user_id", criteria.toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testJoinEntityWithCondition() {
+            Condition condition = Filters.equal("user_id", "id");
+            Criteria criteria = Criteria.builder().join("orders", condition).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testJoinMultiple() {
+            List<String> tables = Arrays.asList("orders", "order_items");
+            Equal eq = Filters.eq("orders.id", "order_items.order_id");
+            Criteria criteria = Criteria.builder().join(tables, eq).build();
+
+            List<Join> joins = criteria.joins();
+            assertEquals(1, joins.size());
+            assertEquals(2, joins.get(0).joinEntities().size());
+        }
+
+        @Test
+        void testJoinSingle() {
+            Criteria criteria = Criteria.builder().join("orders", Filters.on("users.id", "orders.user_id")).build();
+
+            List<Join> joins = criteria.joins();
+            assertEquals(1, joins.size());
+            assertEquals(Operator.JOIN, joins.get(0).operator());
+        }
+
+        @Test
+        void testJoinVarargs() {
+            Join join = new LeftJoin("orders", Filters.expr("users.id = orders.user_id"));
+            Criteria criteria = Criteria.builder().join(join).build();
+            assertNotNull(criteria);
+            assertEquals(1, criteria.joins().size());
+        }
+
+        @Test
+        void testJoinVarargsNullArray() {
+            Builder builder = Criteria.builder();
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> builder.join((Join[]) null));
+            assertTrue(ex.getMessage().contains("joins"), ex.getMessage());
+        }
+
+        @Test
+        void testJoinWithCondition() {
+            Equal eq = Filters.eq("users.id", "orders.user_id");
+            Criteria criteria = Criteria.builder().join("orders", eq).build();
+
+            List<Join> joins = criteria.joins();
+            assertEquals(1, joins.size());
+            assertEquals(eq, joins.get(0).condition());
+        }
+
+        @Test
+        void testLeftJoin() {
+            Criteria criteria1 = Criteria.builder().leftJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+            List<Join> joins1 = criteria1.joins();
+            assertEquals(1, joins1.size());
+            assertEquals(Operator.LEFT_JOIN, joins1.get(0).operator());
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().leftJoin("orders"));
+
+            Equal eq = Filters.eq("users.id", "orders.user_id");
+            Criteria criteria2 = Criteria.builder().leftJoin("orders", eq).build();
+            List<Join> joins2 = criteria2.joins();
+            assertEquals(1, joins2.size());
+            assertEquals(Operator.LEFT_JOIN, joins2.get(0).operator());
+            assertEquals(eq, joins2.get(0).condition());
+
+            List<String> tables = Arrays.asList("orders", "order_items");
+            Criteria criteria3 = Criteria.builder().leftJoin(tables, eq).build();
+            List<Join> joins3 = criteria3.joins();
+            assertEquals(1, joins3.size());
+            assertEquals(Operator.LEFT_JOIN, joins3.get(0).operator());
+            assertEquals(2, joins3.get(0).joinEntities().size());
+        }
+
+        @Test
+        void testMixedJoinChaining() {
+            Criteria criteria = Criteria.builder()
+                    .innerJoin("orders", Filters.eq("users.id", "orders.user_id"))
+                    .leftJoin("payments", Filters.eq("orders.id", "payments.order_id"))
+                    .where(Filters.eq("users.status", "active"))
+                    .build();
+
+            List<Join> joins = criteria.joins();
+            assertEquals(2, joins.size());
+            assertEquals(Operator.INNER_JOIN, joins.get(0).operator());
+            assertEquals(Operator.LEFT_JOIN, joins.get(1).operator());
+            assertNotNull(criteria.where());
+        }
+
+        @Test
+        void testMultipleJoins() {
+            Criteria criteria = Criteria.builder()
+                    .join("orders", Filters.on("u.id", "orders.user_id"))
+                    .join("products", Filters.on("orders.pid", "products.id"))
+                    .join("categories", Filters.on("products.cid", "categories.id"))
+                    .build();
+            assertEquals(3, criteria.joins().size());
+        }
+
+        @Test
+        void testNaturalJoin() {
+            Criteria criteria1 = Criteria.builder().naturalJoin("employees").build();
+            List<Join> joins1 = criteria1.joins();
+            assertEquals(1, joins1.size());
+            assertEquals(Operator.NATURAL_JOIN, joins1.get(0).operator());
+
+            List<String> tables = Arrays.asList("employees", "departments");
+            Criteria criteria3 = Criteria.builder().naturalJoin(tables).build();
+            List<Join> joins3 = criteria3.joins();
+            assertEquals(1, joins3.size());
+            assertEquals(Operator.NATURAL_JOIN, joins3.get(0).operator());
+            assertEquals(2, joins3.get(0).joinEntities().size());
+        }
+
+        @Test
+        void testRightJoin() {
+            Criteria criteria1 = Criteria.builder().rightJoin("orders", Filters.on("users.id", "orders.user_id")).build();
+            List<Join> joins1 = criteria1.joins();
+            assertEquals(1, joins1.size());
+            assertEquals(Operator.RIGHT_JOIN, joins1.get(0).operator());
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().rightJoin("orders"));
+
+            Equal eq = Filters.eq("users.id", "orders.user_id");
+            Criteria criteria2 = Criteria.builder().rightJoin("orders", eq).build();
+            List<Join> joins2 = criteria2.joins();
+            assertEquals(1, joins2.size());
+            assertEquals(Operator.RIGHT_JOIN, joins2.get(0).operator());
+            assertEquals(eq, joins2.get(0).condition());
+
+            List<String> tables = Arrays.asList("orders", "order_items");
+            Criteria criteria3 = Criteria.builder().rightJoin(tables, eq).build();
+            List<Join> joins3 = criteria3.joins();
+            assertEquals(1, joins3.size());
+            assertEquals(Operator.RIGHT_JOIN, joins3.get(0).operator());
+            assertEquals(2, joins3.get(0).joinEntities().size());
+        }
+
+        @Test
+        void testWhereRejectsJoinCondition() {
+            Builder builder = Criteria.builder();
+            assertThrows(IllegalArgumentException.class, () -> builder.where(new Join("orders", Filters.on("users.id", "orders.user_id"))));
+        }
+    }
+
+    @Nested
+    class PaginationAndSetOperations {
+        @Test
+        void testExcept() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM blocked_users");
+            Criteria criteria = Criteria.builder().except(subQuery).build();
+            assertNotNull(criteria);
+            assertTrue(criteria.setOperations().size() > 0);
+        }
+
+        @Test
+        void testIntersect() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM premium_users");
+            Criteria criteria = Criteria.builder().intersect(subQuery).build();
+            assertNotNull(criteria);
+            assertTrue(criteria.setOperations().size() > 0);
+        }
+
+        @Test
+        void testLimit() {
+            Criteria criteria = Criteria.builder().limit(10).build();
+
+            Limit limit = criteria.limit();
+            assertNotNull(limit);
+            assertEquals(10, limit.count());
+        }
+
+        @Test
+        void testLimitCondition() {
+            Limit limit = new Limit(10);
+            Criteria criteria = Criteria.builder().limit(limit).build();
+            assertNotNull(criteria);
+            assertEquals(limit, criteria.limit());
+        }
+
+        @Test
+        void testLimitInt() {
+            Criteria criteria = Criteria.builder().limit(20).build();
+            assertNotNull(criteria);
+            assertNotNull(criteria.limit());
+        }
+
+        @Test
+        void testLimitNullConditionThrows() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().limit((Limit) null));
+        }
+
+        @Test
+        void testLimitNullMessageNamesLimit() {
+            final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().limit((Limit) null));
+
+            assertTrue(error.getMessage().contains("limit"), error.getMessage());
+        }
+
+        @Test
+        void testLimitString() {
+            Criteria criteria = Criteria.builder().limit("10 OFFSET 20").build();
+            assertNotNull(criteria);
+            assertNotNull(criteria.limit());
+        }
+
+        @Test
+        void testLimitWithOffset() {
+            Criteria criteria = Criteria.builder().limit(50, 10).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testMinus() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM inactive_users");
+            Criteria criteria = Criteria.builder().minus(subQuery).build();
+            assertNotNull(criteria);
+            assertTrue(criteria.setOperations().size() > 0);
+        }
+
+        @Test
+        void testSetOperationLineCommentsDoNotConsumeFollowingClauses() {
+            final Criteria criteria = Criteria.builder().union(new SubQuery("SELECT id FROM archived_users -- trailing comment")).orderBy("id").build();
+
+            assertEquals(" UNION SELECT id FROM archived_users -- trailing comment\n ORDER BY id", criteria.toString());
+        }
+
+        @Test
+        void testUnion() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
+            Criteria criteria = Criteria.builder().union(subQuery).build();
+            assertNotNull(criteria);
+            assertTrue(criteria.setOperations().size() > 0);
+        }
+
+        @Test
+        void testUnionAll() {
+            com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery("SELECT * FROM archived_users");
+            Criteria criteria = Criteria.builder().unionAll(subQuery).build();
+            assertNotNull(criteria);
+            assertTrue(criteria.setOperations().size() > 0);
+        }
+    }
+
+    @Nested
+    class Parameters {
+        @Test
+        void testAppendParametersToRetainsExistingValuesAndClauseOrder() {
+            final List<Object> bindings = new ArrayList<>(List.of("existing"));
+            final Criteria criteria = Criteria.builder().having(Filters.gt("COUNT(*)", 2)).where(Filters.eq("id", 7)).build();
+            criteria.appendParametersTo(bindings);
+            assertEquals(List.of("existing", 7, 2), bindings);
+            Criteria.builder().build().appendParametersTo(bindings);
+            assertEquals(List.of("existing", 7, 2), bindings);
+        }
+
+        @Test
+        void testHookOverrideDelegatingToParametersDoesNotRecurse() {
+            // Criteria.parameters() never calls the overridable appendParametersTo hook (both share a private helper),
+            // so the natural "keep them consistent" override out.addAll(parameters()) cannot recurse into itself
+            final List<Condition> clauses = List.of(new Where(Filters.eq("a", 1)), new Having(Filters.gt("cnt", 3)));
+            final Criteria hookOnly = new Criteria(null, clauses) {
+                @Override
+                protected void appendParametersTo(final List<Object> out) {
+                    out.addAll(parameters());
+                }
+            };
+            final Criteria tagged = new Criteria(null, clauses) {
+                @Override
+                public ImmutableList<Object> parameters() {
+                    final List<Object> extended = new ArrayList<>();
+                    extended.add("tag");
+                    extended.addAll(super.parameters());
+                    return ImmutableList.wrap(extended);
+                }
+
+                @Override
+                protected void appendParametersTo(final List<Object> out) {
+                    out.addAll(parameters());
+                }
+            };
+
+            assertEquals(List.of(1, 3), hookOnly.parameters());
+            assertEquals(List.of("tag", 1, 3), tagged.parameters());
+
+            for (final Criteria criteria : List.of(hookOnly, tagged)) {
+                final List<Object> expected = criteria.parameters();
+                final List<Object> out = new ArrayList<>();
+                criteria.appendParametersTo(out);
+                assertEquals(expected, out);
+                assertEquals(expected, Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
+                final List<Object> withTail = new ArrayList<>(expected);
+                withTail.add(2);
+                assertEquals(withTail, Filters.and(Filters.exists(Filters.subQuery("t", List.of("id"), criteria)), Filters.eq("b", 2)).parameters());
+                assertEquals(withTail,
+                        Criteria.builder()
+                                .where(Filters.or(Filters.in("id", Filters.subQuery("t", List.of("id"), criteria)), Filters.eq("b", 2)))
+                                .build()
+                                .parameters());
+            }
+        }
+
+        // testClear removed - Criteria is now immutable
+
+        @Test
+        void testParameters() {
+            Criteria criteria = Criteria.builder().where(Filters.equal("age", 30)).build();
+            List<Object> params = criteria.parameters();
+            assertNotNull(params);
+        }
+
+        @Test
+        void testParametersArrayCopyIsNotSharedAcrossCalls() {
+            // Criteria.parameters() is not memoized: each call must hand out the constituent condition's fresh defensive copy.
+            final Criteria criteria = Criteria.builder().where(Filters.eq("payload", new byte[] { 1 })).build();
+
+            final byte[] first = (byte[]) criteria.parameters().get(0);
+            first[0] = 9;
+
+            assertTrue(Arrays.equals(new byte[] { 1 }, (byte[]) criteria.parameters().get(0)));
+            assertEquals(" WHERE payload = '[1]'", criteria.toString());
+        }
+
+        @Test
+        void testParametersEmpty() {
+            Criteria criteria = Criteria.builder().build();
+            List<Object> params = criteria.parameters();
+            assertNotNull(params);
+            assertTrue(params.isEmpty());
+        }
+
+        @Test
+        void testParametersHonoursSubclassOverridingOnlyParametersWhenNested() {
+            // a subclass that overrides parameters() but not appendParametersTo(List) must be honoured inside Criteria
+            final And customAnd = new And(Filters.eq("a", 1)) {
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                public ImmutableList<Object> parameters() {
+                    final List<Object> extended = new ArrayList<>();
+                    extended.add("extra");
+                    extended.addAll(super.parameters());
+                    return ImmutableList.wrap(extended);
+                }
+            };
+
+            final Where customWhere = new Where(Filters.eq("w", 1)) {
+                private static final long serialVersionUID = 1L;
+
+                @Override
+                public ImmutableList<Object> parameters() {
+                    return ImmutableList.of("whereExtra");
+                }
+            };
+
+            assertEquals(List.of("extra", 1), Criteria.builder().where(customAnd).build().parameters());
+            assertEquals(List.of("extra", 1, 2), Criteria.builder().where(Filters.and(customAnd, Filters.eq("b", 2))).build().parameters());
+            assertEquals(List.of("whereExtra"), Criteria.builder().where(customWhere).build().parameters());
+            assertEquals(List.of("open", "whereExtra", 3),
+                    Criteria.builder()
+                            .join(Filters.innerJoin("orders o", Filters.eq("o.status", "open")))
+                            .where(customWhere)
+                            .having(Filters.gt("cnt", 3))
+                            .build()
+                            .parameters());
+
+            // and a Criteria nested in a cell is itself still walked correctly
+            final Criteria criteria = Criteria.builder().where(customAnd).having(Filters.gt("cnt", 3)).limit(10).build();
+            assertEquals(List.of("extra", 1, 3), criteria.parameters());
+            assertEquals(List.of("extra", 1, 3), Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
+
+            assertEquals(List.of("whereExtra"), customWhere.parameters());
+            final Criteria whereCriteria = Criteria.builder().where(customWhere).having(Filters.gt("cnt", 3)).build();
+            assertEquals(List.of("whereExtra", 3), whereCriteria.parameters());
+            assertEquals(List.of("whereExtra", 3), Filters.exists(Filters.subQuery("t", List.of("id"), whereCriteria)).parameters());
+            assertEquals(List.of(0, "whereExtra", 3, 2),
+                    Filters.and(Filters.eq("z", 0), Filters.not(Filters.exists(Filters.subQuery("t", List.of("id"), whereCriteria))), Filters.eq("b", 2))
+                            .parameters());
+        }
+
+        @Test
+        void testParametersIncludesGroupByAndOrderByConditions() {
+            Criteria criteria = Criteria.builder().groupBy(Filters.equal("department", "Engineering")).orderBy(Filters.equal("priority", "HIGH")).build();
+
+            List<Object> params = criteria.parameters();
+            assertEquals(Arrays.asList("Engineering", "HIGH"), params);
+        }
+
+        /**
+         * Second-pass locking test: {@code parameters()} must collect parameters from every
+         * clause (joins, where, groupBy, having, set ops, orderBy, limit) in SQL emission order.
+         */
+        @Test
+        void testParametersOrderingAcrossAllClauses() {
+            final SubQuery sub = new SubQuery("u2", Arrays.asList("id"), Filters.eq("subParam", 100));
+            final Criteria criteria = Criteria.builder()
+                    .leftJoin("orders", Filters.eq("joinP", 1))
+                    .where(Filters.eq("whereP", 2))
+                    .having(Filters.gt("havingP", 3))
+                    .union(sub)
+                    .build();
+
+            final List<Object> params = criteria.parameters();
+            // Expected order per SQL emission: join, where, groupBy, having, setOps, orderBy, limit
+            assertEquals(Arrays.asList(1, 2, 3, 100), params);
+        }
+
+        @Test
+        void testParametersWithMultipleConditions() {
+            Criteria criteria = Criteria.builder()
+                    .where(Filters.equal("name", "John"))
+                    .where(Filters.equal("age", 30))
+                    .where(Filters.equal("status", "active"))
+                    .build();
+
+            List<Object> params = criteria.parameters();
+            assertNotNull(params);
+        }
+    }
+
+    @Nested
+    class Predicates {
+        @Test
+        void testConditionOverloads_rejectSqlExpressionStartingWithClauseKeyword() {
+            // an SqlExpression whose literal spells a clause keyword is treated as a clause condition, exactly like
+            // the String overloads document; only the predicate/grouping/ordering text is accepted
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("WHERE a = 1")));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().groupBy(Filters.expr("GROUP BY a")));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(Filters.expr("HAVING count(*) > 1")));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy(Filters.expr("ORDER BY a")));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(Filters.expr("LIMIT 10")));
+
+            // an identifier that merely starts with a keyword is fine
+            assertEquals(" WHERE WHERE_X = 1", Criteria.builder().where(Filters.expr("WHERE_X = 1")).build().toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testHaving() {
+            GreaterThan gt = Filters.gt("COUNT(*)", 5);
+            Criteria criteria = Criteria.builder().having(gt).build();
+
+            Clause having = criteria.having();
+            assertNotNull(having);
+            assertEquals(Operator.HAVING, having.operator());
+            assertEquals(gt, having.condition());
+        }
+
+        @Test
+        void testHavingCondition() {
+            Condition condition = Filters.expr("COUNT(*) > 5");
+            Criteria criteria = Criteria.builder().having(condition).build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testHavingRejectsMismatchedClauseCondition() {
+            Builder builder = Criteria.builder();
+            assertThrows(IllegalArgumentException.class, () -> builder.having(Filters.groupBy("department")));
+        }
+
+        @Test
+        void testHavingString() {
+            Criteria criteria = Criteria.builder().having("COUNT(*) > 5").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testHavingStringWithNullCondition() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having((String) null));
+        }
+
+        @Test
+        void testHavingWithHavingOperator() {
+            com.landawn.abacus.query.condition.Having having = new com.landawn.abacus.query.condition.Having(Filters.expr("COUNT(*) > 5"));
+            Criteria criteria = Criteria.builder().having(having).build();
+            assertNotNull(criteria.having());
+        }
+
+        @Test
+        void testHavingWithNullCondition() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having((Condition) null));
+        }
+
+        @Test
+        void testMultipleWhereConditions() {
+            Criteria criteria = Criteria.builder().where(Filters.equal("status", "active")).where(Filters.greaterThan("age", 18)).build();
+            assertNotNull(criteria.where());
+        }
+
+        @Test
+        void testWhere() {
+            Equal eq = Filters.eq("status", "active");
+            Criteria criteria = Criteria.builder().where(eq).build();
+
+            Clause where = criteria.where();
+            assertNotNull(where);
+            assertEquals(Operator.WHERE, where.operator());
+            assertEquals(eq, where.condition());
+        }
+
+        @Test
+        void testWhere_RejectsNestedCriteria() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Criteria.builder().build()));
+        }
+
+        @Test
+        void testWhereAndHavingStringRejectBlankExpression() {
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("   ")).getMessage().contains("expr"));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having("   ")).getMessage().contains("expr"));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(""));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having(""));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where((String) null));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().having((String) null));
+        }
+
+        @Test
+        void testWhereCondition() {
+            Condition condition = Filters.equal("name", "John");
+            Criteria criteria = Criteria.builder().where(condition).build();
+            assertNotNull(criteria);
+            assertNotNull(criteria.where());
+        }
+
+        @Test
+        void testWhereRejectsMismatchedClauseCondition() {
+            Builder builder = Criteria.builder();
+            assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.orderBy("name")));
+        }
+
+        @Test
+        void testWhereRejectsNestedCriteriaCondition() {
+            Builder builder = Criteria.builder();
+            Criteria nested = Criteria.builder().where(Filters.equal("status", "active")).build();
+            assertThrows(IllegalArgumentException.class, () -> builder.where(nested));
+        }
+
+        @Test
+        void testWhereRejectsOnCondition() {
+            Builder builder = Criteria.builder();
+            assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.on("users.id", "orders.user_id")));
+        }
+
+        @Test
+        void testWhereString() {
+            Criteria criteria = Criteria.builder().where("age > 18").build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testWhereStringWithNullCondition() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where((String) null));
+        }
+
+        @Test
+        void testWhereWithNullCondition() {
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where((Condition) null));
+        }
+
+        @Test
+        void testWhereWithWhereCondition() {
+            Where whereCondition = Filters.where(Filters.eq("id", 1));
+            Criteria criteria = Criteria.builder().where(whereCondition).build();
+
+            Clause where = criteria.where();
+            assertNotNull(where);
+            assertEquals(whereCondition, where);
+        }
+
+        @Test
+        void testWhereWithWhereOperator() {
+            Where where = new Where(Filters.equal("status", "active"));
+            Criteria criteria = Criteria.builder().where(where).build();
+            assertNotNull(criteria.where());
+        }
+    }
+
+    @Nested
+    class Rendering {
+        @Test
+        void testChainedOperations() {
+            Criteria criteria = Criteria.builder()
+                    .where(Filters.equal("status", "active"))
+                    .groupBy("department")
+                    .having("COUNT(*) > 5")
+                    .orderByDesc("created_date")
+                    .limit(10)
+                    .build();
+            assertNotNull(criteria);
+            assertNotNull(criteria.where());
+            assertNotNull(criteria.groupBy());
+            assertNotNull(criteria.having());
+            assertNotNull(criteria.orderBy());
+            assertNotNull(criteria.limit());
+        }
+
+        @Test
+        void testComplexCriteria() {
+            Criteria criteria = Criteria.builder()
+                    .distinct()
+                    .join("orders", Filters.expr("users.id = orders.user_id"))
+                    .where(Filters.and(Filters.equal("users.status", "active"), Filters.gt("orders.total", 100)))
+                    .groupBy("users.department")
+                    .having(Filters.gt("COUNT(*)", 5))
+                    .orderBy("COUNT(*)", SortDirection.DESC)
+                    .limit(10)
+                    .build();
+
+            assertNotNull(criteria.selectModifier());
+            assertEquals(1, criteria.joins().size());
+            assertNotNull(criteria.where());
+            assertNotNull(criteria.groupBy());
+            assertNotNull(criteria.having());
+            assertNotNull(criteria.orderBy());
+            assertNotNull(criteria.limit());
+        }
+
+        // --- Regression: the internal clause methods must not recurse through the public add(Condition). ---
+
+        @Test
+        void testInternalClauseMethodsDoNotRecurse() {
+            Criteria c = Criteria.builder()
+                    .where(Filters.eq("status", "active"))
+                    .groupBy("dept")
+                    .having(Filters.gt("COUNT(*)", 1))
+                    .orderBy("name")
+                    .limit(10)
+                    .union(Filters.subQuery("SELECT 1"))
+                    .join("orders", Filters.on("users.id", "orders.user_id"))
+                    .build();
+
+            assertNotNull(c);
+            assertNotNull(c.where());
+            assertNotNull(c.groupBy());
+            assertNotNull(c.having());
+            assertNotNull(c.orderBy());
+            assertNotNull(c.limit());
+            assertEquals(1, c.joins().size());
+        }
+
+        @Test
+        void testMultipleAggregations() {
+            com.landawn.abacus.query.condition.SubQuery subQuery1 = Filters.subQuery("SELECT * FROM archived");
+            com.landawn.abacus.query.condition.SubQuery subQuery2 = Filters.subQuery("SELECT * FROM deleted");
+
+            Criteria criteria = Criteria.builder().union(subQuery1).unionAll(subQuery2).build();
+
+            List<Clause> aggregations = criteria.setOperations();
+            assertEquals(2, aggregations.size());
+        }
+
+        @Test
+        void testNullNamingPolicyIsNormalizedBeforeRenderingClauses() {
+            final Where where = new Where(Filters.eq("firstName", "Ada")) {
+                @Override
+                public String toSql(final NamingPolicy namingPolicy) {
+                    return "WHERE " + java.util.Objects.requireNonNull(namingPolicy, "namingPolicy").convert("firstName") + " = 'Ada'";
+                }
+            };
+            final Criteria criteria = Criteria.builder().where(where).build();
+
+            assertEquals(" WHERE firstName = 'Ada'", criteria.toSql(null));
+            assertEquals(" WHERE first_name = 'Ada'", criteria.toSql(NamingPolicy.SNAKE_CASE));
+        }
+
+        @Test
+        void testToString() {
+            Criteria criteria = Criteria.builder()
+                    .distinct()
+                    .join("orders", Filters.eq("users.id", "orders.user_id"))
+                    .where(Filters.eq("status", "active"))
+                    .groupBy("department")
+                    .having(Filters.gt("COUNT(*)", 5))
+                    .orderBy("department")
+                    .limit(10)
+                    .build();
+
+            String result = criteria.toString();
+
+            // Verify order of clauses
+            assertTrue(result.indexOf("DISTINCT") < result.indexOf("JOIN"));
+            assertTrue(result.indexOf("JOIN") < result.indexOf("WHERE"));
+            assertTrue(result.indexOf("WHERE") < result.indexOf("GROUP BY"));
+            assertTrue(result.indexOf("GROUP BY") < result.indexOf("HAVING"));
+            assertTrue(result.indexOf("HAVING") < result.indexOf("ORDER BY"));
+            assertTrue(result.indexOf("ORDER BY") < result.indexOf("LIMIT"));
+        }
+
+        @Test
+        void testToStringEmptyCriteria() {
+            Criteria criteria = Criteria.builder().build();
+            String sql = criteria.toSql(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
+            assertNotNull(sql);
+        }
+
+        /**
+         * Rendering the same Criteria with alternating naming policies must always return the value for the
+         * requested policy. (Originally guarded the since-removed single-slot toString cache; kept because the
+         * per-policy rendering contract must hold regardless of any internal memoization.)
+         */
+        @Test
+        void testToStringReturnsValuePerNamingPolicy() {
+            Criteria criteria = Criteria.builder().where(Filters.eq("firstName", "John")).orderBy("lastName").build();
+
+            for (int i = 0; i < 100; i++) {
+                String noChange = criteria.toSql(NamingPolicy.NO_CHANGE);
+                assertTrue(noChange.contains("firstName = 'John'") && noChange.contains("lastName"), "NO_CHANGE render wrong: " + noChange);
+
+                String snake = criteria.toSql(NamingPolicy.SNAKE_CASE);
+                assertTrue(snake.contains("first_name = 'John'") && snake.contains("last_name"), "SNAKE_CASE render wrong: " + snake);
+
+                String screaming = criteria.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
+                assertTrue(screaming.contains("FIRST_NAME = 'John'") && screaming.contains("LAST_NAME"), "SCREAMING_SNAKE_CASE render wrong: " + screaming);
+            }
+        }
+
+        @Test
+        void testToStringWithNamingPolicy() {
+            Criteria criteria = Criteria.builder().distinct().where(Filters.equal("isActive", true)).orderBy("createdDate", SortDirection.DESC).build();
+
+            String sql = criteria.toSql(com.landawn.abacus.util.NamingPolicy.SNAKE_CASE);
+            assertNotNull(sql);
+            assertTrue(sql.contains("DISTINCT"));
+        }
+    }
+
+    @Nested
+    class SelectModifiers {
+        @Test
+        void testBlankSelectModifierIsCleared() {
+            Criteria criteria = Criteria.builder().distinct().selectModifier("  \t ").build();
+
+            assertNull(criteria.selectModifier());
+            assertEquals("", criteria.toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testDistinct() {
+            Criteria criteria = Criteria.builder().distinct().build();
+            assertNotNull(criteria);
+            assertNotNull(criteria.selectModifier());
+        }
+
+        @Test
+        void testDistinctByIsRemoved() {
+            assertThrows(NoSuchMethodException.class, () -> Builder.class.getDeclaredMethod("distinctBy", String.class));
+        }
+
+        @Test
+        void testDistinctOn() {
+            Criteria criteria = Criteria.builder().distinctOn("name, age").build();
+
+            assertEquals("DISTINCT ON (name, age)", criteria.selectModifier());
+        }
+
+        @Test
+        void testDistinctOnBlankUsesPlainDistinct() {
+            Criteria criteria = Criteria.builder().distinctOn("   ").build();
+            assertEquals("DISTINCT", criteria.selectModifier());
+        }
+
+        @Test
+        void testDistinctOnCommentOnlyColumnsFallsBackToPlainDistinct() {
+            // Regression: a comment-only column list was not treated as blank and rendered "DISTINCT ON (-- x\n)",
+            // i.e. the invalid "DISTINCT ON ()".
+            assertEquals("DISTINCT", Criteria.builder().distinctOn("-- x").build().selectModifier());
+            assertEquals("DISTINCT", Criteria.builder().distinctOn("/* x */").build().selectModifier());
+            assertEquals("DISTINCT ON (a -- x\n)", Criteria.builder().distinctOn("a -- x").build().selectModifier());
+        }
+
+        @Test
+        void testDistinctOnEmpty() {
+            Criteria criteria = Criteria.builder().distinctOn("").build();
+            assertEquals("DISTINCT", criteria.selectModifier());
+        }
+
+        @Test
+        void testDistinctOnHashCommentsAndUnterminatedBlockCommentsMatchTheBuilder() {
+            // Regression: "#x" kept the SQL Server temp-name carve-out and rendered "DISTINCT ON (#x\n)" (the builder's
+            // distinctOn renders plain DISTINCT), and an unclosed "/*" silently became a plain DISTINCT.
+            assertEquals("DISTINCT", Criteria.builder().distinctOn("# x").build().selectModifier());
+            assertEquals("DISTINCT", Criteria.builder().distinctOn("#x").build().selectModifier());
+            assertEquals("DISTINCT", Criteria.builder().distinctOn("-- x\n/* y */").build().selectModifier());
+            assertEquals("DISTINCT ON (a # x\n)", Criteria.builder().distinctOn("a # x").build().selectModifier());
+
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().distinctOn("/* x"));
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().distinctOn("a /* x"));
+
+            // End to end through a builder.
+            assertEquals("SELECT DISTINCT a FROM t",
+                    com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("-- x").build()).build().query());
+            assertEquals("SELECT DISTINCT a FROM t WHERE b = ?",
+                    com.landawn.abacus.query.Dsl.PSC.select("a")
+                            .from("t")
+                            .append(Criteria.builder().distinctOn("# x").where(Filters.eq("b", 1)).build())
+                            .build()
+                            .query());
+            assertEquals("SELECT DISTINCT ON (a -- x\n) a FROM t",
+                    com.landawn.abacus.query.Dsl.PSC.select("a").from("t").append(Criteria.builder().distinctOn("a -- x").build()).build().query());
+        }
+
+        @Test
+        void testDistinctOnNull() {
+            Criteria criteria = Criteria.builder().distinctOn(null).build();
+            assertEquals("DISTINCT", criteria.selectModifier());
+        }
+
+        @Test
+        void testDistinctRow() {
+            Criteria criteria = Criteria.builder().distinctRow().build();
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testModifierLineCommentsDoNotConsumeGeneratedSyntax() {
+            final Criteria customModifier = Criteria.builder().selectModifier("DISTINCT -- trailing comment").where(Filters.eq("active", true)).build();
+            final Criteria distinctOn = Criteria.builder().distinctOn("id -- trailing comment").where(Filters.eq("active", true)).build();
+
+            assertAll(() -> assertEquals(" DISTINCT -- trailing comment\n WHERE active = true", customModifier.toString()),
+                    () -> assertEquals(" DISTINCT ON (id -- trailing comment\n) WHERE active = true", distinctOn.toString()),
+                    () -> assertEquals("DISTINCT -- trailing comment", customModifier.selectModifier()),
+                    () -> assertEquals(" DISTINCT -- trailing comment", Criteria.builder().selectModifier("DISTINCT -- trailing comment").build().toString()),
+                    () -> assertEquals(" DISTINCT ON (\"id--suffix\")", Criteria.builder().distinctOn("\"id--suffix\"").build().toString()));
+        }
+
+        @Test
+        void testPackageConstructorNormalizesBlankSelectModifier() {
+            final Criteria criteria = new Criteria(" \t ", new ArrayList<>());
+
+            assertNull(criteria.selectModifier());
+            assertEquals(criteria, criteria.toBuilder().build());
+            assertEquals(criteria.hashCode(), criteria.toBuilder().build().hashCode());
+        }
+
+        @Test
+        void testPreselect() {
+            Criteria criteria = Criteria.builder().build();
+            String selectModifier = criteria.selectModifier();
+            assertNull(selectModifier);
+        }
+
+        // testClearAll removed - Criteria is now immutable
+
+        @Test
+        void testPreselectChaining() {
+            Criteria criteria = Criteria.builder().selectModifier("DISTINCT").where(Filters.equal("status", "active")).build();
+            assertNotNull(criteria);
+            assertEquals("DISTINCT", criteria.selectModifier());
+        }
+
+        @Test
+        void testPreselectCustom() {
+            Criteria criteria = Criteria.builder().selectModifier("CUSTOM").build();
+            assertEquals("CUSTOM", criteria.selectModifier());
+        }
+
+        @Test
+        void testPreselectNull() {
+            Criteria criteria = Criteria.builder().selectModifier(null).build();
+            // Should not throw error
+            assertNotNull(criteria);
+        }
+
+        @Test
+        void testPreselectSetter() {
+            Criteria criteria = Criteria.builder().selectModifier("DISTINCT").build();
+            assertEquals("DISTINCT", criteria.selectModifier());
+        }
+
+        @Test
+        void testSelectModifier_stripsUnicodeWhitespaceLikeIsBlank() {
+            // the blank check uses Character.isWhitespace (Strings.isBlank), so the normalization must strip the
+            // same set: " DISTINCT " padded with U+2003 EM SPACE used to keep both pad characters
+            final String emPadded = " DISTINCT ";
+            final Criteria padded = Criteria.builder().selectModifier(emPadded).where(Filters.eq("a", 1)).build();
+            final Criteria plain = Criteria.builder().distinct().where(Filters.eq("a", 1)).build();
+
+            assertEquals("DISTINCT", padded.selectModifier());
+            assertEquals(plain, padded);
+            assertEquals(plain.hashCode(), padded.hashCode());
+            assertNull(Criteria.builder().selectModifier("  ").where(Filters.eq("a", 1)).build().selectModifier());
+        }
+
+        @Test
+        void testSelectModifier_trimsSurroundingWhitespace() {
+            final Criteria padded = Criteria.builder().selectModifier(" DISTINCT ").where(Filters.eq("a", 1)).build();
+            final Criteria plain = Criteria.builder().distinct().where(Filters.eq("a", 1)).build();
+
+            assertEquals("DISTINCT", padded.selectModifier());
+            assertEquals(plain, padded);
+            assertEquals(plain.hashCode(), padded.hashCode());
+            assertEquals(plain.toSql(NamingPolicy.NO_CHANGE), padded.toSql(NamingPolicy.NO_CHANGE));
+            assertFalse(padded.toSql(NamingPolicy.NO_CHANGE).contains("  "));
+
+            assertNull(Criteria.builder().selectModifier("   ").where(Filters.eq("a", 1)).build().selectModifier());
+        }
+    }
+
+    @Nested
+    class Validation {
+        @Test
+        void testCriteriaChecksSortPairsInSignatureOrder() {
+            final String firstDirectionError = "SortDirection for 'firstName' must not be null";
+
+            assertEquals(firstDirectionError,
+                    assertThrows(IllegalArgumentException.class, () -> Criteria.builder().orderBy("firstName", null, "", SortDirection.ASC)).getMessage());
+            assertEquals(firstDirectionError, assertThrows(IllegalArgumentException.class,
+                    () -> Criteria.builder().groupBy("firstName", null, "firstName", SortDirection.DESC, "thirdName", SortDirection.ASC)).getMessage());
+
+            assertEquals(" ORDER BY firstName ASC, lastName DESC",
+                    Criteria.builder().orderBy("firstName", SortDirection.ASC, "lastName", SortDirection.DESC).build().toString());
+        }
+
+        @Test
+        void testCrossAndNaturalJoinRejectUnterminatedBlockComment() {
+            // An open "/*" in a join entity would comment out every clause rendered after the join.
+            final Builder builder = Criteria.builder();
+            assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> builder.crossJoin(List.of("a", "t /* x"))).getMessage());
+            assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> builder.crossJoin("t /* x")).getMessage());
+            assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> builder.naturalJoin("t /* x")).getMessage());
+            assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> builder.naturalJoin(List.of("t /* x"))).getMessage());
+            assertThrows(IllegalArgumentException.class, () -> builder.crossJoin("t --/*"));
+
+            // The rejections left the builder unchanged; a terminated comment is kept verbatim.
+            assertEquals(" CROSS JOIN (a CROSS JOIN t /* x */) NATURAL JOIN u /* y */",
+                    builder.crossJoin(List.of("a", "t /* x */")).naturalJoin("u /* y */").build().toString());
+        }
+    }
+
+    private static void invokeCheckCondition(final Criteria.Builder builder, final Condition condition) {
+        try {
+            java.lang.reflect.Method method = Criteria.Builder.class.getDeclaredMethod("checkCondition", Condition.class);
+            method.setAccessible(true);
+            method.invoke(builder, condition);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            throw (RuntimeException) e.getCause();
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
         }
     }
 }

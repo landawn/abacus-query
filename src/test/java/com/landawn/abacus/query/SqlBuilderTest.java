@@ -123,7 +123,7 @@ public class SqlBuilderTest extends TestBase {
          * Bug: batchInsert with all-empty Maps would produce malformed SQL: {@code INSERT INTO t () VALUES ()}.
          */
         @Test
-        void testBatchInsert_EmptyMapThrows_Pass4() {
+        void testBatchInsert_EmptyMapThrows() {
             List<Map<String, Object>> rows = Arrays.asList(new LinkedHashMap<>(), new LinkedHashMap<>());
 
             assertThrows(IllegalArgumentException.class, () -> PSC.batchInsert(rows));
@@ -133,7 +133,7 @@ public class SqlBuilderTest extends TestBase {
          * Bug: batchInsert with extra columns in a later row silently dropped them.
          */
         @Test
-        void testBatchInsert_MapsWithExtraKeyInLaterRowThrows_Pass4() {
+        void testBatchInsert_MapsWithExtraKeyInLaterRowThrows() {
             Map<String, Object> row1 = new LinkedHashMap<>();
             row1.put("firstName", "John");
             row1.put("lastName", "Doe");
@@ -152,7 +152,7 @@ public class SqlBuilderTest extends TestBase {
          * Regression: batchInsert with identical key sets still works correctly across multiple rows.
          */
         @Test
-        void testBatchInsert_MapsWithMatchingKeysProducesCorrectSql_Pass4() {
+        void testBatchInsert_MapsWithMatchingKeysProducesCorrectSql() {
             Map<String, Object> row1 = new LinkedHashMap<>();
             row1.put("firstName", "John");
             row1.put("lastName", "Doe");
@@ -180,7 +180,7 @@ public class SqlBuilderTest extends TestBase {
          * and stray NULL parameters. Now an IllegalArgumentException is thrown.
          */
         @Test
-        void testBatchInsert_MapsWithMismatchedKeysThrows_Pass4() {
+        void testBatchInsert_MapsWithMismatchedKeysThrows() {
             Map<String, Object> row1 = new LinkedHashMap<>();
             row1.put("firstName", "John");
             row1.put("lastName", "Doe");
@@ -199,7 +199,7 @@ public class SqlBuilderTest extends TestBase {
          * Bug: batchInsert with a missing column in a later row silently inserted NULL for that column.
          */
         @Test
-        void testBatchInsert_MapsWithMissingKeyInLaterRowThrows_Pass4() {
+        void testBatchInsert_MapsWithMissingKeyInLaterRowThrows() {
             Map<String, Object> row1 = new LinkedHashMap<>();
             row1.put("firstName", "John");
             row1.put("lastName", "Doe");
@@ -218,7 +218,7 @@ public class SqlBuilderTest extends TestBase {
          * (null elements are skipped).
          */
         @Test
-        void testBatchInsert_NullElementsSkippedThenValidated_Pass4() {
+        void testBatchInsert_NullElementsSkippedThenValidated() {
             Map<String, Object> row1 = new LinkedHashMap<>();
             row1.put("firstName", "John");
             row1.put("lastName", "Doe");
@@ -278,7 +278,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testBatchInsertVariants_Batch2() {
+        void testBatchInsertVariants() {
             List<Map<String, Object>> rows = batchRows();
 
             List<SP> results = Arrays.asList(Dsl.SCSB.batchInsert(rows).into("users").build(), Dsl.ACSB.batchInsert(rows).into("users").build(),
@@ -405,7 +405,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testDeleteFromTableWithEntityVariants_Batch2() {
+        void testDeleteFromTableWithEntityVariants() {
             List<SP> results = Arrays.asList(Dsl.SCSB.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
                     Dsl.ACSB.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
                     Dsl.PSB.deleteFrom("account", SqlBuilderTest.Account.class).where(Filters.eq("id", 1)).build(),
@@ -542,7 +542,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testMultiEntitySelectFromVariants_Batch2() {
+        void testMultiEntitySelectFromVariants() {
             Set<String> excludedA = Collections.singleton("lastModifiedDate");
             Set<String> excludedB = Collections.singleton("amount");
 
@@ -566,7 +566,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testMultiEntitySelectVariants_Batch2() {
+        void testMultiEntitySelectVariants() {
             Set<String> excludedA = Collections.singleton("lastModifiedDate");
             Set<String> excludedB = Collections.singleton("amount");
 
@@ -692,7 +692,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testUpdateEntityWithExcludedPropsVariants_Batch2() {
+        void testUpdateEntityWithExcludedPropsVariants() {
             Set<String> excluded = Collections.singleton("lastModifiedDate");
 
             List<SP> results = Arrays.asList(Dsl.SCSB.update(SqlBuilderTest.Account.class, excluded).set("status").where(Filters.eq("id", 1)).build(),
@@ -713,7 +713,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testUpdateTableWithEntityVariants_Batch2() {
+        void testUpdateTableWithEntityVariants() {
             List<SP> results = Arrays.asList(
                     Dsl.SCSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
                     Dsl.ACSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
@@ -910,7 +910,7 @@ public class SqlBuilderTest extends TestBase {
          * matching the left-to-right order of {@code ?} placeholders in the SQL.
          */
         @Test
-        void testParamOrder_JoinOnWithParamThenWhere_Pass4() {
+        void testParamOrder_JoinOnWithParamThenWhere() {
             com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders o",
                     Filters.expr("u.id = o.user_id").and(Filters.eq("o.status", "active")));
             Criteria crit = Criteria.builder().join(innerJoin).where(Filters.gt("u.age", 18)).build();
@@ -925,7 +925,7 @@ public class SqlBuilderTest extends TestBase {
          * Scenario 4 — Multiple JOINs with parameters, then WHERE with parameter.
          */
         @Test
-        void testParamOrder_MultipleJoinsWithParams_Pass4() {
+        void testParamOrder_MultipleJoinsWithParams() {
             com.landawn.abacus.query.condition.InnerJoin innerJoin = Filters.innerJoin("orders o",
                     Filters.expr("u.id = o.user_id").and(Filters.gt("o.amount", 100)));
             com.landawn.abacus.query.condition.LeftJoin leftJoin = Filters.leftJoin("payments p",
@@ -2955,7 +2955,7 @@ public class SqlBuilderTest extends TestBase {
          * Verifies parameters flatten in left-to-right SQL order.
          */
         @Test
-        void testParamOrder_NestedSubQueries_Pass4() {
+        void testParamOrder_NestedSubQueries() {
             SubQuery innerInnerSQ = Filters.subQuery("regions", Arrays.asList("id"), Filters.eq("continent", "EU"));
             SubQuery middleSQ = Filters.subQuery("countries", Arrays.asList("id"), Filters.in("region_id", innerInnerSQ).and(Filters.eq("active", true)));
             SP sp = PSC.select("id").from("users").where(Filters.in("country_id", middleSQ).and(Filters.gt("age", 30))).build();
@@ -2971,7 +2971,7 @@ public class SqlBuilderTest extends TestBase {
          * branches.
          */
         @Test
-        void testParamOrder_ThreeWayAndInterleaved_Pass4() {
+        void testParamOrder_ThreeWayAndInterleaved() {
             SubQuery sq = Filters.subQuery("flagged", Arrays.asList("user_id"), Filters.eq("severity", "HIGH").and(Filters.gt("count", 2)));
             SP sp = PSC.select("id").from("users").where(Filters.and(Filters.eq("status", "ACTIVE"), Filters.in("id", sq), Filters.gt("age", 21))).build();
 
@@ -2985,7 +2985,7 @@ public class SqlBuilderTest extends TestBase {
          * Scenario 5 — HAVING with parameter after GROUP BY and WHERE with parameter.
          */
         @Test
-        void testParamOrder_WhereGroupByHaving_Pass4() {
+        void testParamOrder_WhereGroupByHaving() {
             Criteria crit = Criteria.builder().where(Filters.gt("salary", 50000)).groupBy("department").having(Filters.gt("COUNT(*)", 5)).build();
             SP sp = PSC.select("department", "COUNT(*)").from("employees").append(crit).build();
 
@@ -3232,7 +3232,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testInWithExpressionValueIsEmbeddedNotDropped_Pass3() {
+        void testInWithExpressionValueIsEmbeddedNotDropped() {
             SP sp = PSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList(SqlExpression.of("'ACTIVE'"), "PENDING"))).build();
             assertTrue(sp.query().contains("'ACTIVE'"), "SqlExpression literal must be embedded in IN list: " + sp.query());
             assertTrue(sp.query().contains("?"), "Non-SqlExpression value must still be parameterized: " + sp.query());
@@ -3306,7 +3306,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testNotInWithExpressionValueIsEmbeddedNotDropped_Pass3() {
+        void testNotInWithExpressionValueIsEmbeddedNotDropped() {
             SP sp = PSC.select("id").from("test_account").where(Filters.notIn("status", Arrays.asList(SqlExpression.of("'DELETED'"), "ARCHIVED"))).build();
             assertTrue(sp.query().contains("'DELETED'"), "SqlExpression literal must be embedded in NOT IN list: " + sp.query());
             assertTrue(sp.query().contains("NOT IN"));
@@ -4316,7 +4316,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testNamedInWithExpressionValue_Pass3() {
+        void testNamedInWithExpressionValue() {
             SP sp = NSC.select("id").from("test_account").where(Filters.in("status", Arrays.asList(SqlExpression.of("'ACTIVE'"), "PENDING"))).build();
             assertTrue(sp.query().contains("'ACTIVE'"), "SqlExpression must be embedded in named IN list: " + sp.query());
             assertTrue(sp.query().contains(":"), "Non-SqlExpression value must use named placeholder: " + sp.query());
@@ -4809,7 +4809,7 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
-        void testNamedParameters_InSubQueryAndOuterConditionsUseUniqueNames_Pass4() {
+        void testNamedParameters_InSubQueryAndOuterConditionsUseUniqueNames() {
             SubQuery innerSubQuery = Filters.subQuery("orders", Arrays.asList("user_id"), Filters.eq("status", "SHIPPED"));
             SP sp = NSC.select("id")
                     .from("users")
@@ -4897,7 +4897,7 @@ public class SqlBuilderTest extends TestBase {
          * with subquery parameters.
          */
         @Test
-        void testParamOrder_BetweenMixedWithSubQuery_Pass4() {
+        void testParamOrder_BetweenMixedWithSubQuery() {
             SubQuery sq = Filters.subQuery("blacklist", Arrays.asList("user_id"), Filters.eq("region", "EU"));
             SP sp = PSC.select("id").from("users").where(Filters.notIn("id", sq).and(Filters.between("age", 18, 65))).build();
 
@@ -4910,7 +4910,7 @@ public class SqlBuilderTest extends TestBase {
          * Scenario 2 — WHERE with subquery containing parameter + outer WHERE parameter.
          */
         @Test
-        void testParamOrder_InSubQueryThenAndBinary_Pass4() {
+        void testParamOrder_InSubQueryThenAndBinary() {
             SubQuery innerSubQuery = Filters.subQuery("departments", Arrays.asList("id"), Filters.eq("region", "EU"));
             SP sp = PSC.select("id").from("users").where(Filters.in("department_id", innerSubQuery).and(Filters.gt("age", 21))).build();
 
@@ -4923,7 +4923,7 @@ public class SqlBuilderTest extends TestBase {
          * Scenario 7 — InSubQuery + AND + Binary.
          */
         @Test
-        void testParamOrder_InSubQueryThenAndStatus_Pass4() {
+        void testParamOrder_InSubQueryThenAndStatus() {
             SubQuery adminSQ = Filters.subQuery("admins", Arrays.asList("id"), Filters.gt("level", 3));
             SP sp = PSC.select("id").from("test_account").where(Filters.in("user_id", adminSQ).and(Filters.eq("status", "active"))).build();
 
@@ -4937,7 +4937,7 @@ public class SqlBuilderTest extends TestBase {
          * (different from AND) keeps parameter order matching SQL left-to-right.
          */
         @Test
-        void testParamOrder_OrJunctionWithSubQueryAndBinary_Pass4() {
+        void testParamOrder_OrJunctionWithSubQueryAndBinary() {
             SubQuery sq = Filters.subQuery("admins", Arrays.asList("id"), Filters.eq("rank", "S"));
             SP sp = PSC.select("id").from("users").where(Filters.in("id", sq).or(Filters.eq("vip", true))).build();
 
@@ -4953,7 +4953,7 @@ public class SqlBuilderTest extends TestBase {
          *  equivalent ordering risk through WHERE-with-subquery + AND-with-binary.)
          */
         @Test
-        void testParamOrder_StructuredSubQueryConditionBeforeOuter_Pass4() {
+        void testParamOrder_StructuredSubQueryConditionBeforeOuter() {
             SubQuery sq = Filters.subQuery("orders", Arrays.asList("user_id"), Filters.eq("status", "active").and(Filters.gt("amount", 50)));
             SP sp = PSC.select("id").from("users").where(Filters.in("id", sq).and(Filters.gt("age", 18))).build();
 
@@ -4966,7 +4966,7 @@ public class SqlBuilderTest extends TestBase {
          * Scenario 8 — Criteria with WHERE containing subquery + ORDER BY + LIMIT.
          */
         @Test
-        void testParamOrder_WhereSubQueryOrderByLimit_Pass4() {
+        void testParamOrder_WhereSubQueryOrderByLimit() {
             SubQuery vipSQ = Filters.subQuery("vip_users", Arrays.asList("id"), Filters.eq("tier", "GOLD"));
             Criteria crit = Criteria.builder().where(Filters.in("user_id", vipSQ).and(Filters.gt("score", 90))).orderBy("score DESC").limit(10).build();
             SP sp = PSC.select("id").from("test_account").append(crit).build();
@@ -4981,7 +4981,7 @@ public class SqlBuilderTest extends TestBase {
          * from the outer WHERE precede parameters originating from HAVING's nested subquery.
          */
         @Test
-        void testParamOrder_WhereThenHavingWithSubQuery_Pass4() {
+        void testParamOrder_WhereThenHavingWithSubQuery() {
             SubQuery sq = Filters.subQuery("eligible_depts", Arrays.asList("dept_id"), Filters.eq("active", true));
             Criteria crit = Criteria.builder()
                     .where(Filters.eq("status", "ACTIVE"))

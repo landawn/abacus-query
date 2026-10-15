@@ -172,13 +172,6 @@ public class ExceptTest extends TestBase {
     }
 
     @Test
-    void testGetOperator() {
-        SubQuery subQuery = Filters.subQuery("SELECT id FROM table1");
-        Except except = new Except(subQuery);
-        assertEquals(Operator.EXCEPT, except.operator());
-    }
-
-    @Test
     void testHashCode() {
         SubQuery subQuery1 = Filters.subQuery("SELECT id FROM table1");
         SubQuery subQuery2 = Filters.subQuery("SELECT id FROM table1");
