@@ -7552,7 +7552,7 @@ public final class SqlParser {
                     return valueSeen ? end : -1;
                 }
 
-                if (isQueryKeyword(sql.substring(index, end)) || depth > 0 && matchesToken(sql, index, end, "WITH", false)) {
+                if (isQueryKeyword(sql, index, end) || depth > 0 && matchesToken(sql, index, end, "WITH", false)) {
                     // Nested WITH lists cannot be type modifiers. Stop before traversing their CTE bodies, preserving
                     // linear scanning even when malformed input contains many groups without an early SELECT.
                     return -1;

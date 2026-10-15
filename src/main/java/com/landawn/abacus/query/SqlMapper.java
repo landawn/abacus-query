@@ -546,6 +546,10 @@ public final class SqlMapper {
      * Retrieves the attributes associated with the specified SQL identifier.
      * Attributes may include batchSize, fetchSize, resultSetType, timeout, etc.
      *
+     * <p>If a caller supplied an {@code "id"} entry in the attributes map to
+     * {@link #add(String, ParsedSql, Map)}, it is present in the returned map; it is informational
+     * only and is ignored by the {@code saveTo} methods, which always write the canonical identifier.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * // Given XML: <sql id="batchInsert" batchSize="100" timeout="30">...</sql>
@@ -620,7 +624,10 @@ public final class SqlMapper {
      * @param id the SQL identifier (must not be {@code null} or empty, must not contain whitespace, and must not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the parsed SQL to associate with the identifier (must not be {@code null})
      * @param attributes additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout);
-     *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
+     *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null.
+     *              The key {@code "id"} ({@link #ID}) is reserved: a caller-supplied {@code "id"} entry is stored and
+     *              returned by {@link #attributes(String)}, but is ignored by the {@code saveTo} methods, which always
+     *              write the canonical identifier
      * @throws IllegalArgumentException if {@code id} is {@code null}/empty, contains whitespace, exceeds
      *                                  {@link #MAX_ID_LENGTH} characters, or already exists; if {@code sql} is {@code null};
      *                                  or if {@code attributes} contains a {@code null}/empty/invalid or namespace-qualified
@@ -679,7 +686,10 @@ public final class SqlMapper {
      * @param id the SQL identifier (must not be {@code null} or empty, must not contain whitespace, and must not exceed {@link #MAX_ID_LENGTH} characters)
      * @param sql the SQL string to parse and store (must not be {@code null} or blank)
      * @param attributes additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout);
-     *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
+     *              may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null.
+     *              The key {@code "id"} ({@link #ID}) is reserved: a caller-supplied {@code "id"} entry is stored and
+     *              returned by {@link #attributes(String)}, but is ignored by the {@code saveTo} methods, which always
+     *              write the canonical identifier
      * @throws IllegalArgumentException if {@code id} is {@code null}/empty, contains whitespace, exceeds
      *                                  {@link #MAX_ID_LENGTH} characters, or already exists; if {@code sql} is {@code null}
      *                                  or is rejected by {@link ParsedSql#parse(String)} (blank SQL, mixed parameter styles,

@@ -1229,7 +1229,8 @@ public final class QueryUtil {
      * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
      * @param excludedPropNames set of property names to exclude (nullable). When sub-entity properties
      *        are included, excluding a root such as {@code "address"} also excludes descendants such as
-     *        {@code "address.street"}.
+     *        {@code "address.street"}. When {@code includeSubEntityProperties} is {@code true}, {@code null}
+     *        entries in this set are ignored.
      * @return an immutable list of property names suitable for SELECT operations
      * @throws IllegalArgumentException if {@code entityClass} is {@code null} or is not a valid entity bean class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
