@@ -1,14 +1,7 @@
 package com.landawn.abacus.query;
 
-import static com.landawn.abacus.query.Dsl.MSB;
-import static com.landawn.abacus.query.Dsl.MSC;
-import static com.landawn.abacus.query.Dsl.NSB;
 import static com.landawn.abacus.query.Dsl.NSC;
-import static com.landawn.abacus.query.Dsl.PAC;
-import static com.landawn.abacus.query.Dsl.PLC;
-import static com.landawn.abacus.query.Dsl.PSB;
 import static com.landawn.abacus.query.Dsl.PSC;
-import static com.landawn.abacus.query.Dsl.SCSB;
 import static com.landawn.abacus.query.QueryTestSupport.assertSql;
 import static com.landawn.abacus.query.QueryTestSupport.selection;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;

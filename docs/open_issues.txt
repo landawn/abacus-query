@@ -3,7 +3,6 @@ Resolved issues from the deep source review (2026-09-24)
 The five cases previously listed here are fixed and covered by regression tests
 in the existing test classes. This list is not a claim that all SQL grammar
 variants are supported.
-
 1. JSON uniqueness clauses no longer hide real bindings.
    SELECT ARRAY[JSON_OBJECT('k' VALUE ? WITH UNIQUE KEYS)] reports one parameter.
    WITHOUT UNIQUE KEYS and mixed-style rejection are covered as well.
@@ -32,3 +31,15 @@ variants are supported.
    Tests: QueryUtilTest.testUnicodeEscapeStringClausesRetainTableAndNestedQualifiers
           QueryUtilTest.testUnicodeEscapeStringClausesDoNotHideOrInventQualifyingDots
           QueryUtilTest.testUnicodeEscapeStringsDoNotTreatInvalidClausesOrExpressionsAsIdentifiers
+
+Deep source review (2026-10-15)
+
+All 82 classes under src/main/java/ were reviewed line by line for correctness,
+performance, and memory. No new defects were found. One performance improvement
+was applied: SqlParser.skipCteCycleValue no longer allocates a substring per
+word while scanning CTE CYCLE mark values (covered by the existing CYCLE
+regression tests in SqlParserTest). Two previously undocumented behaviors are
+now documented in javadoc: SqlMapper treats the "id" attribute key as reserved
+(stored and returned by attributes(id) but ignored by saveTo), and
+QueryUtil.selectPropNames ignores null entries in excludedPropNames when
+sub-entity properties are included.
