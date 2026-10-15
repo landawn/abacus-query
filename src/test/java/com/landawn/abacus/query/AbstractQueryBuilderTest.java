@@ -96,6 +96,20 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testBatchInsertOmitsCompositeIdsWhenEveryComponentIsDefault() {
+            final CompositeIdEntity first = new CompositeIdEntity().setName("Alice");
+            final CompositeIdEntity second = new CompositeIdEntity().setName("Bob");
+            assertSql("INSERT INTO people (name) VALUES (?), (?)", List.of("Alice", "Bob"), PSC.batchInsert(List.of(first, second)).into("people").build());
+            assertSql("INSERT INTO people (name) VALUES (?)", List.of("Alice"), PSC.insert(first).into("people").build());
+        }
+
+        @Test
+        void testBatchInsertRejectsNonStringMapKeysBeforeAllocatingBuilder() {
+            final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> PSC.batchInsert(List.of(Map.of(7, "value"))));
+            assertEquals("All keys in batch INSERT maps must be String: 7", error.getMessage());
+        }
+
+        @Test
         void testDslSelectAndInsertRejectBlankColumnFragments() {
             assertThrows(IllegalArgumentException.class, () -> PSC.select("   "));
             assertThrows(IllegalArgumentException.class, () -> PSC.select("id", "   "));
@@ -339,6 +353,13 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Nested
     class Joins {
         @Test
+        void testConnectorAfterCompletedSetOperandDoesNotMutateSql() {
+            final SqlBuilder builder = PSC.select("id").from("people").union("SELECT id FROM archived_people");
+            assertTrue(assertThrows(IllegalStateException.class, () -> builder.on("a.id = b.id")).getMessage().contains("completed set-operation operand"));
+            assertSql("SELECT id FROM people UNION SELECT id FROM archived_people", List.of(), builder.build());
+        }
+
+        @Test
         void testEntityJoinOverloadsUseDeclaredTableAliases() {
             final Map<String, UnaryOperator<SqlBuilder>> joins = new LinkedHashMap<>();
             joins.put("INNER JOIN", builder -> builder.innerJoin(QueryTestSupport.Order.class));
@@ -349,7 +370,8 @@ public class AbstractQueryBuilderTest extends TestBase {
                 assertSql("SELECT * FROM users u " + join.getKey() + " user_order o ON u.id = o.user_id", List.of(),
                         join.getValue().apply(PSC.select("*").from("users u")).on("u.id = o.userId").build());
             }
-            assertSql("SELECT * FROM users u CROSS JOIN user_order o", List.of(), PSC.select("*").from("users u").crossJoin(QueryTestSupport.Order.class).build());
+            assertSql("SELECT * FROM users u CROSS JOIN user_order o", List.of(),
+                    PSC.select("*").from("users u").crossJoin(QueryTestSupport.Order.class).build());
         }
 
         @Test
@@ -509,8 +531,8 @@ public class AbstractQueryBuilderTest extends TestBase {
         // modifier word became the primary table's alias ("GLOBAL.first_name").
         @Test
         void testGlobalAndLocalJoinModifiersBeforeCrossJoinAreNotPrimaryTableAlias() {
-            for (final String join : new String[] { "GLOBAL CROSS JOIN q", "LOCAL CROSS JOIN q", "LOCAL ANY LEFT JOIN q USING (id)",
-                    "LOCAL JOIN q USING (id)", "GLOBAL /* modifier */ CROSS JOIN q", "LOCAL -- modifier\n CROSS JOIN q", "LOCAL # modifier\n CROSS JOIN q" }) {
+            for (final String join : new String[] { "GLOBAL CROSS JOIN q", "LOCAL CROSS JOIN q", "LOCAL ANY LEFT JOIN q USING (id)", "LOCAL JOIN q USING (id)",
+                    "GLOBAL /* modifier */ CROSS JOIN q", "LOCAL -- modifier\n CROSS JOIN q", "LOCAL # modifier\n CROSS JOIN q" }) {
                 assertEquals("SELECT a.first_name AS \"firstName\" FROM account a " + join,
                         PSC.select("firstName").from("account a " + join, Account.class).build().query(), join);
             }
@@ -984,6 +1006,12 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testRawConnectorCanStartAfterWhitespace() {
+            final SqlBuilder builder = PSC.select("*").from("people p").join("orders o").append(" \tON p.id = o.person_id");
+            assertSql("SELECT * FROM people p JOIN orders o \tON p.id = o.person_id WHERE p.id = ?", List.of(7), builder.where(Filters.eq("p.id", 7)).build());
+        }
+
+        @Test
         void testRawJoinWithInlineConnectorClosesConnectorSlot() {
             final SqlBuilder inlineOn = PSC.select("*").from("users u").join("orders o ON u.id = o.user_id");
             assertThrows(IllegalStateException.class, () -> inlineOn.on("o.active = 1"));
@@ -1223,6 +1251,14 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testDebugLoggingDescribesBuilderCreationAndCompletedSql() {
+            final var records = QueryTestSupport.captureLogs(AbstractQueryBuilder.class,
+                    () -> assertSql("SELECT id FROM people WHERE id = ?", List.of(7), PSC.select("id").from("people").where(Filters.eq("id", 7)).build()));
+            assertTrue(records.stream().anyMatch(record -> record.getMessage().contains("SqlBuilder created")));
+            assertTrue(records.stream().anyMatch(record -> record.getMessage().contains("Built SQL metadata")));
+        }
+
+        @Test
         void testDialectScopedConfigurationSurvivesToBuilder() {
             final BiConsumer<StringBuilder, String> handler = (sb, name) -> sb.append("${").append(name).append('}');
             final SqlParser.TokenizerConfig tokenizerConfig = SqlParser.tokenizerConfigBuilder().withSeparator("::").build();
@@ -1315,6 +1351,39 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testExcessiveActiveBuildersAreReportedAndReleased() throws Exception {
+            final var counterField = AbstractQueryBuilder.class.getDeclaredField("activeStringBuilderCounter");
+            counterField.setAccessible(true);
+            final var counter = (java.util.concurrent.atomic.AtomicInteger) counterField.get(null);
+            final int before = counter.get();
+            final List<SqlBuilder> builders = new ArrayList<>();
+            final var records = QueryTestSupport.captureLogs(AbstractQueryBuilder.class, () -> {
+                try {
+                    for (int i = 0; i < 1025; i++) {
+                        builders.add(PSC.select("id").from("people"));
+                    }
+                } finally {
+                    for (final SqlBuilder builder : builders) {
+                        assertSql("SELECT id FROM people", List.of(), builder.build());
+                    }
+                }
+            });
+            assertEquals(before, counter.get());
+            assertTrue(records.stream()
+                    .anyMatch(record -> record.getLevel() == java.util.logging.Level.SEVERE && record.getMessage().contains("Too many active query builders")));
+        }
+
+        @Test
+        void testExtensionHooksRejectUninitializedInsertAndSelectColumns() {
+            for (final var operation : List.of(com.landawn.abacus.util.OperationType.ADD, com.landawn.abacus.util.OperationType.QUERY)) {
+                final SqlBuilder builder = new SqlBuilder(null);
+                builder._op = operation;
+                assertTrue(assertThrows(IllegalStateException.class, () -> builder.into("people")).getMessage().contains("Column names must be set"));
+                assertThrows(IllegalStateException.class, builder::build);
+            }
+        }
+
+        @Test
         void testFromDerivedTableParentSelectListFailureLeavesChildReusable() {
             final SqlBuilder child = PSC.select("id").from("users");
             final SqlBuilder parent = PSC.select("id -- x");
@@ -1386,6 +1455,14 @@ public class AbstractQueryBuilderTest extends TestBase {
 
             assertTrue(customBuilder.where(Filters.eq("id", 1)).build().query().contains("#{id}"));
             assertTrue(defaultBuilder.where(Filters.eq("id", 1)).build().query().contains(":id"));
+        }
+
+        @Test
+        void testNullDialectUsesRawSqlAndSnakeCaseDefaults() {
+            final SqlBuilder builder = new SqlBuilder(null);
+            builder._op = com.landawn.abacus.util.OperationType.QUERY;
+            builder._propOrColumnNames = List.of("firstName");
+            assertSql("SELECT first_name AS \"firstName\" FROM people WHERE id = 7", List.of(), builder.from("people").where(Filters.eq("id", 7)).build());
         }
 
         @Test
@@ -1665,6 +1742,13 @@ public class AbstractQueryBuilderTest extends TestBase {
                     .build()
                     .query();
             assertTrue(sql.endsWith("(path = 'a\\\\b') AND (id = :id_2)"), sql);
+        }
+
+        @Test
+        void testUpdatePrefixWithoutAssignmentsCannotBeFinalized() {
+            final SqlBuilder builder = PSC.update("people");
+            builder.init(false);
+            assertTrue(assertThrows(IllegalStateException.class, builder::build).getMessage().contains("set() must be called"));
         }
     }
 
@@ -2051,6 +2135,17 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("_FIRST_NAME = OTHER_VALUE", Filters.expr("_firstName = otherValue").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
         }
 
+        @Test
+        @SuppressWarnings("deprecation")
+        void testLegacyFromBridgeRecognizesCompleteBodiesAndRejectsBlankReferences() {
+            assertSql("SELECT id FROM people", List.of(), PSC.select("id").from("people", "people").build());
+            assertSql("SELECT id FROM people, orders", List.of(), PSC.select("id").from("people", "people, orders").build());
+            assertSql("SELECT id FROM people, people_archive", List.of(), PSC.select("id").from("people", "people_archive").build());
+            final SqlBuilder builder = PSC.select("id");
+            assertThrows(IllegalArgumentException.class, () -> builder.from("people", " "));
+            assertSql("SELECT id FROM people", List.of(), builder.from("people").build());
+        }
+
         // Both registries must agree on the lower-case forms too: SqlExpression deliberately registers only
         // the as-is and UPPER-case keyword forms so a column genuinely named "order"/"count"/"rownum" is
         // still converted, whereas sqlKeyWords also registered every SK keyword in lower case, so the same
@@ -2207,6 +2302,26 @@ public class AbstractQueryBuilderTest extends TestBase {
                     Dsl.PSC.select(Map.of("\"quoted.name\"", "label")).from(QuotedColumns.class, "t").build().query());
             assertEquals("SELECT t.\"quoted.name\" FROM quoted_columns t", Dsl.PSB.select("\"quoted.name\"").from(QuotedColumns.class, "t").build().query());
             assertEquals("SELECT \"quoted.name\" AS \"\"\"quoted.name\"\"\" FROM t", Dsl.PSC.select("\"quoted.name\"").from("t").build().query());
+        }
+
+        @Test
+        void testParenthesizedSelectScannerRequiresACompleteOperand() throws Exception {
+            final var scan = AbstractQueryBuilder.class.getDeclaredMethod("isParenthesizedSelect", String.class, int.class);
+            scan.setAccessible(true);
+            for (final String sql : List.of("((SELECT (1)))", "(SELECT 1) -- trailing\n", "(SELECT 1) # trailing\n", "(SELECT 1) /* trailing */")) {
+                assertEquals(true, scan.invoke(null, sql, sql.indexOf("SELECT")), sql);
+            }
+            for (final String sql : List.of(" SELECT 1", "(SELECT 1))", "(SELECT 1) + 2", "(SELECT 1) /* unfinished")) {
+                assertEquals(false, scan.invoke(null, sql, sql.indexOf("SELECT")), sql);
+            }
+        }
+
+        @Test
+        void testQualifiedColumnAliasIsKeptUnlessItMatchesTheTableAlias() {
+            for (final String table : List.of("people", "people p", "people person")) {
+                assertSql("SELECT u.id AS \"u.id\" FROM " + table, List.of(), PSC.select(Map.of("u.id", "u.id")).from(table).build());
+            }
+            assertSql("SELECT u.id FROM people u", List.of(), PSC.select(Map.of("u.id", "u.id")).from("people u").build());
         }
 
         @Test
@@ -2486,6 +2601,16 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testTableAliasNormalizationPreservesEmptyAliasesAndStripsAsPrefix() throws Exception {
+            final var normalize = AbstractQueryBuilder.class.getDeclaredMethod("normalizeTableAlias", String.class);
+            normalize.setAccessible(true);
+            assertNull(normalize.invoke(null, (Object) null));
+            assertEquals("", normalize.invoke(null, ""));
+            assertEquals("p", normalize.invoke(null, "aS  p "));
+            assertEquals("person", normalize.invoke(null, "person"));
+        }
+
+        @Test
         void testTableAliasRecognizedAcrossCommentsAfterAs() {
             for (final String trivia : List.of("/* alias */ ", "-- alias\n", "# alias\n")) {
                 final String table = "people AS " + trivia + "p";
@@ -2618,6 +2743,20 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testEmptyCustomTokenDuringChildRenameRestoresParentQuery() {
+            final Dsl custom = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sql, name) -> {
+                if (!name.endsWith("_2")) {
+                    sql.append('@').append(name);
+                }
+            }).build());
+            final SqlBuilder parent = custom.select("id").from("people").where(Filters.eq("id", 1));
+            final SqlBuilder child = custom.select("id").from("archive").where(Filters.eq("id", 2));
+            final IllegalStateException error = assertThrows(IllegalStateException.class, () -> parent.union(child));
+            assertEquals("The custom named-parameter handler emitted an empty token for: id_2", error.getMessage());
+            assertSql("SELECT id FROM people WHERE id = @id", List.of(1), parent.build());
+        }
+
+        @Test
         void testFix_setColumnNamesIbatisSqlSanitizesAliasAndDeduplicatesPlaceholders() {
             AbstractQueryBuilder.SP sp = Dsl.MSC.update("users").set("u.firstName").where(Filters.eq("u.firstName", "John")).build();
             String sql = sp.query();
@@ -2745,6 +2884,14 @@ public class AbstractQueryBuilderTest extends TestBase {
             ibatis._sb.append(" AND created_at < ");
             ibatis.setParameterForIbatisNamedSql("createdAt", Filters.expr("CURRENT_TIMESTAMP"));
             assertSql("SELECT * FROM people WHERE id = #{id} AND created_at < CURRENT_TIMESTAMP", List.of(), ibatis.build());
+        }
+
+        @Test
+        void testRawPlaceholderMismatchReportsInlineLiteralPolicy() {
+            final SqlBuilder builder = SCSB.select("id").from("people");
+            final var error = assertThrows(IllegalArgumentException.class, () -> builder.renameRawSubQueryPlaceholders("SELECT ?", List.of(1, 2)));
+            assertTrue(error.getMessage().contains("inline RAW_SQL literals"));
+            assertSql("SELECT id FROM people", List.of(), builder.build());
         }
 
         @Test
@@ -3090,7 +3237,8 @@ public class AbstractQueryBuilderTest extends TestBase {
         @Test
         void testCollectionGroupingAndOrderingKeepColumnOrder() {
             assertSql("SELECT first_name AS \"firstName\", last_name AS \"lastName\" FROM people GROUP BY last_name, first_name ORDER BY first_name, last_name",
-                    List.of(), PSC.select("firstName", "lastName")
+                    List.of(),
+                    PSC.select("firstName", "lastName")
                             .from("people")
                             .groupBy(List.of("lastName", "firstName"))
                             .orderBy(List.of("firstName", "lastName"))
@@ -4781,6 +4929,8 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0));
             assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0L));
             assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(java.math.BigDecimal.ZERO));
+            assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(java.math.BigInteger.ZERO));
+            assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(java.math.BigInteger.ONE));
             assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0.0));
             assertTrue(AbstractQueryBuilder.isDefaultIdPropValue(0.0f));
             assertFalse(AbstractQueryBuilder.isDefaultIdPropValue(new java.math.BigDecimal("0.9")),
@@ -6394,6 +6544,15 @@ public class AbstractQueryBuilderTest extends TestBase {
 
             assertTrue(sql.contains("SET"));
             assertTrue(sql.contains("first_name = ?"));
+        }
+
+        @Test
+        void testSetAssignmentIgnoresEqualsInsideDollarQuotedSubscripts() {
+            final Dsl postgres = lexDialect(PSC, "PostgreSQL");
+            assertSql("UPDATE people SET items[$tag$=$tag$] = 1 WHERE id = ?", List.of(7),
+                    postgres.update("people").set("items[$tag$=$tag$] = 1").where(Filters.eq("id", 7)).build());
+            assertSql("UPDATE people SET items[$$=$$] = ? WHERE id = ?", List.of(7),
+                    postgres.update("people").set("items[$$=$$]").where(Filters.eq("id", 7)).build());
         }
 
         // Regression: set((Object) map, excluded) whose exclusions removed every key reported "'entity' cannot be null or empty".

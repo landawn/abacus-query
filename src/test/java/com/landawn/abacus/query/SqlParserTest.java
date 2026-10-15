@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -5919,6 +5920,16 @@ public class SqlParserTest extends TestBase {
     @Nested
     class ScannerFallbacks {
         @Test
+        void testBackwardListScannerLeavesUnbalancedElementsUnconsumed() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var scan = SqlParser.class.getDeclaredMethod("skipBackwardListElement", String.class, int.class, SqlParser.TokenizerConfig.class, memoClass);
+            scan.setAccessible(true);
+            for (final String text : List.of(")", "name'", "name\"", "name`", "name]")) {
+                assertEquals(text.length() - 1, scan.invoke(null, text, text.length() - 1, SqlParser.defaultTokenizerConfig(), null), text);
+            }
+        }
+
+        @Test
         void testBackwardTriviaFallbackStopsBeforeCommentsAndWhitespace() throws Exception {
             final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
             final var scan = SqlParser.class.getDeclaredMethod("skipBackwardWhitespaceAndBlockComments", String.class, int.class, memoClass);
@@ -5936,6 +5947,34 @@ public class SqlParserTest extends TestBase {
             assertGroupOpening("findOpeningBracketQuotedIdentifier", "SELECT ']'", 8, -1);
             assertGroupOpening("findOpeningBracketQuotedIdentifier", "SELECT ]", 7, -1);
             assertGroupOpening("findOpeningBracketQuotedIdentifier", "/* unclosed ]", 12, -1);
+            final String evenEscapes = "SELECT 'a" + "\\".repeat(2) + "' + [name]";
+            assertGroupOpening("findOpeningBracketQuotedIdentifier", evenEscapes, evenEscapes.length() - 1, evenEscapes.indexOf('['));
+        }
+
+        @Test
+        void testCteCycleLiteralScannerSupportsAlternativeQuotesAndRejectsNonNumericSigns() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var scan = SqlParser.class.getDeclaredMethod("skipCteCycleLiteral", String.class, int.class, SqlParser.TokenizerConfig.class, memoClass);
+            scan.setAccessible(true);
+            for (final String value : List.of("q'[Y]'", "nq'{N}'", "-2", "+.5", "TRUE", "FALSE", "NULL")) {
+                assertEquals(value.length(), scan.invoke(null, value, 0, SqlParser.defaultTokenizerConfig(), null), value);
+            }
+            for (final String value : List.of("+", "-'x'", "1e+wrong")) {
+                assertEquals(-1, scan.invoke(null, value, 0, SqlParser.defaultTokenizerConfig(), null), value);
+            }
+        }
+
+        @Test
+        void testCteCycleValuesKeepQuotedTypesAndLiteralsOutOfKeywordScanning() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var scan = SqlParser.class.getDeclaredMethod("skipCteCycleValue", String.class, int.class, String.class, SqlParser.TokenizerConfig.class,
+                    memoClass);
+            scan.setAccessible(true);
+            for (final String value : List.of("q'[DEFAULT]'", "NQ'{DEFAULT}'", "`char`(1) 'Y'", "[char](1) 'Y'")) {
+                final String sql = value + " DEFAULT";
+                assertEquals(sql.length(), scan.invoke(null, sql, 0, "DEFAULT", SqlParser.defaultTokenizerConfig(), null), sql);
+            }
+            assertEquals(-1, scan.invoke(null, "$tag$unfinished", 0, "DEFAULT", SqlParser.defaultTokenizerConfig(), null));
         }
 
         @Test
@@ -5943,11 +5982,67 @@ public class SqlParserTest extends TestBase {
             final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
             final var scan = SqlParser.class.getDeclaredMethod("skipCteSuffixName", String.class, int.class, SqlParser.TokenizerConfig.class, memoClass);
             scan.setAccessible(true);
-            for (final String name : List.of("", " ", "@invalid", "U&\"unfinished", "U&\"name\" UESCAPE", "U&\"name\" UESCAPE 1")) {
+            for (final String name : List.of("", " ", "@invalid", "U&\"unfinished", "U&\"name\" UESCAPE", "U&\"name\" UESCAPE 1", "U&\"name\" UESCAPE $",
+                    "U&\"name\" UESCAPE 'unfinished")) {
                 assertEquals(-1, scan.invoke(null, name, 0, SqlParser.defaultTokenizerConfig(), null), name);
             }
             final String name = "U&\"name\" UESCAPE '!'";
             assertEquals(name.length(), scan.invoke(null, name + " SELECT", 0, SqlParser.defaultTokenizerConfig(), null));
+            for (final String quoted : List.of("\"name\"", "`name`", "[name]")) {
+                assertEquals(quoted.length(), scan.invoke(null, quoted + " SELECT", 0, SqlParser.defaultTokenizerConfig(), null), quoted);
+            }
+        }
+
+        @Test
+        void testDialectMaskingRejectsUnterminatedAlternativeQuotes() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var mask = SqlParser.class.getDeclaredMethod("maskQuotedRegionsForClassification", String.class, SqlParser.TokenizerConfig.class, int.class,
+                    boolean.class, memoClass, int.class);
+            final var oracle = SqlParser.class.getDeclaredField("READING_ORACLE");
+            final var h2 = SqlParser.class.getDeclaredField("READING_H2");
+            mask.setAccessible(true);
+            oracle.setAccessible(true);
+            h2.setAccessible(true);
+            assertEquals("SELECT  name ", mask.invoke(null, "SELECT `name`", SqlParser.defaultTokenizerConfig(), 0, false, null, oracle.getInt(null)));
+            assertNull(mask.invoke(null, "SELECT q'[unfinished", SqlParser.defaultTokenizerConfig(), 0, false, null, oracle.getInt(null)));
+            assertNull(mask.invoke(null, "SELECT $$unfinished", SqlParser.defaultTokenizerConfig(), 0, false, null, h2.getInt(null)));
+        }
+
+        @Test
+        void testEmptyRawScansReturnNoStatementOrSideEffect() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            for (final String name : List.of("containsOnConflictDoUpdateClause", "containsSelectListIntoToken", "containsIntoOutfileClause")) {
+                final var scan = SqlParser.class.getDeclaredMethod(name, String.class, SqlParser.TokenizerConfig.class, memoClass);
+                scan.setAccessible(true);
+                assertEquals(false, scan.invoke(null, "", SqlParser.defaultTokenizerConfig(), null), name);
+            }
+            final var starts = SqlParser.class.getDeclaredMethod("collectQueryStartKeywords", String.class, SqlParser.TokenizerConfig.class, memoClass);
+            starts.setAccessible(true);
+            assertEquals(List.of(), starts.invoke(null, "", SqlParser.defaultTokenizerConfig(), null));
+            final var leading = SqlParser.class.getDeclaredMethod("getLeadingQueryKeywordIndex", String.class, SqlParser.TokenizerConfig.class, memoClass);
+            leading.setAccessible(true);
+            assertEquals(-1, leading.invoke(null, "", SqlParser.defaultTokenizerConfig(), null));
+        }
+
+        @Test
+        void testEmptySequenceAndSeparatorScansDoNotReadPastEnd() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var sequence = SqlParser.class.getDeclaredMethod("containsTokenSequence", String.class, SqlParser.TokenizerConfig.class, memoClass,
+                    String[].class);
+            final var separator = SqlParser.class.getDeclaredMethod("matchMultiCharSeparator", String.class, int.class, int.class,
+                    SqlParser.TokenizerConfig.class);
+            sequence.setAccessible(true);
+            separator.setAccessible(true);
+            assertEquals(false, sequence.invoke(null, "", SqlParser.defaultTokenizerConfig(), null, new String[] { "SELECT" }));
+            assertEquals(false, sequence.invoke(null, "SELECT 1", SqlParser.defaultTokenizerConfig(), null, new String[0]));
+            assertNull(separator.invoke(null, "", 0, 0, SqlParser.defaultTokenizerConfig()));
+            assertNull(separator.invoke(null, "::", 2, 2, SqlParser.defaultTokenizerConfig()));
+        }
+
+        @Test
+        void testFunctionDetectionNeverTreatsAWhitespaceTokenAsItsName() {
+            assertFalse(SqlParser.isFunctionName(List.of(" ", "("), 0));
+            assertTrue(SqlParser.isFunctionName(List.of("count", " ", " ", "("), 0));
         }
 
         @Test
@@ -5968,6 +6063,9 @@ public class SqlParserTest extends TestBase {
             final Object memo = constructor.newInstance(sql);
             rememberHash.invoke(memo, sql, sql.indexOf('#'), true, true);
             assertEquals(1, readHash.invoke(memo, sql, sql.indexOf('#'), true));
+            rememberHash.invoke(memo, sql, sql.indexOf('#'), false, false);
+            assertEquals(0, readHash.invoke(memo, sql, sql.indexOf('#'), false));
+            assertEquals(1, readHash.invoke(memo, sql, sql.indexOf('#'), true));
             rememberHash.invoke(memo, other, other.indexOf('-'), true, true);
             assertEquals(-1, readHash.invoke(memo, other, other.indexOf('-'), true));
             rememberList.invoke(memo, other, 0, true);
@@ -5975,6 +6073,52 @@ public class SqlParserTest extends TestBase {
             assertEquals(other.indexOf("--"), lineOpener.invoke(memo, other, other.length() - 1, SqlParser.defaultTokenizerConfig()));
             assertEquals(-1, lineOpener.invoke(memo, other, -1, SqlParser.defaultTokenizerConfig()));
             assertEquals(-1, lineOpener.invoke(memo, other, other.length(), SqlParser.defaultTokenizerConfig()));
+        }
+
+        @Test
+        void testIncompleteCteSuffixesCannotSupplyAReadStatement() {
+            for (final String suffix : List.of("SEARCH SIDEWAYS FIRST BY id SET seq", "SEARCH DEPTH BY id SET seq", "SEARCH DEPTH FIRST BY",
+                    "SEARCH DEPTH FIRST BY id NULLS MIDDLE SET seq", "CYCLE @invalid SET flag", "CYCLE id SET flag TO DEFAULT 0 USING path",
+                    "CYCLE id SET flag TO (1 DEFAULT 0 USING path", "CYCLE id SET flag TO 1) DEFAULT 0 USING path", "CYCLE id SET flag TO 1 DEFAULT")) {
+                final String sql = "WITH c AS (SELECT 1) " + suffix;
+                assertFalse(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            }
+        }
+
+        @Test
+        void testInsertOrReplaceScannerRetainsItsDocumentedMalformedTextFallback() throws Exception {
+            assertTrue(SqlParser.isInsertOrReplaceQuery("INSERT OR REPLACE INTO t VALUES ('unfinished)"));
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var leading = SqlParser.class.getDeclaredMethod("leadingInsertOrReplace", String.class, SqlParser.TokenizerConfig.class, memoClass);
+            leading.setAccessible(true);
+            assertEquals(-1, leading.invoke(null, "-- no statement", SqlParser.defaultTokenizerConfig(), null));
+            assertEquals(0, leading.invoke(null, "SELECT 1", SqlParser.defaultTokenizerConfig(), null));
+            assertEquals(1, leading.invoke(null, "INSERT OR REPLACE INTO t VALUES (1)", SqlParser.defaultTokenizerConfig(), null));
+        }
+
+        @Test
+        void testJsonEntryValueScannerDistinguishesOperandsFromStatementContinuations() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var scan = SqlParser.class.getDeclaredMethod("isJsonEntryValue", String.class, int.class, SqlParser.TokenizerConfig.class, memoClass);
+            scan.setAccessible(true);
+            for (final String operand : List.of("NULL", "TRUE", "#{value}", "+.5", "-12", "!value", "@value")) {
+                assertEquals(true, scan.invoke(null, operand, 0, SqlParser.defaultTokenizerConfig(), null), operand);
+            }
+            for (final String operand : List.of("", "#", "#comment", ".name", "(", "[", ")", ",", ";", "\u0301", "WITH", "OUTPUT", "FROM", "WHERE", "OPTION")) {
+                assertEquals(false, scan.invoke(null, operand, 0, SqlParser.defaultTokenizerConfig(), null), operand);
+            }
+        }
+
+        @Test
+        void testLiteralStartsDistinguishUnicodeStringsAndParameterPrefixes() throws Exception {
+            final var literal = SqlParser.class.getDeclaredMethod("isLiteralOrParameterStart", String.class, int.class);
+            literal.setAccessible(true);
+            for (final String text : List.of("U&'name'", "u&'name'", ":value", "#{value}", ".5", "$1")) {
+                assertEquals(true, literal.invoke(null, text, 0), text);
+            }
+            for (final String text : List.of("", "U&name", "U'word'", "U&", "::type", "#table", ".name", "$tag$")) {
+                assertEquals(false, literal.invoke(null, text, 0), text);
+            }
         }
 
         @Test
@@ -5994,6 +6138,29 @@ public class SqlParserTest extends TestBase {
 
             final String unclosed = "/* first */* outer /* nested */ tail";
             assertEquals(unclosed.length(), skip.invoke(constructor.newInstance(unclosed, true), unclosed.indexOf("*/*") + 1));
+
+            for (final String comment : List.of("/* unfinished", "-- no line feed")) {
+                final Object flatSkipper = constructor.newInstance(comment, false);
+                assertEquals(comment.length(), skip.invoke(flatSkipper, 0), comment);
+                assertEquals(comment.length(), skip.invoke(flatSkipper, 0), comment);
+            }
+        }
+
+        @Test
+        void testNumericScannerDistinguishesMoneyLiteralsFromQualifiedNames() throws Exception {
+            final var start = SqlParser.class.getDeclaredMethod("isNumericLiteralStart", String.class, int.class);
+            final var decimal = SqlParser.class.getDeclaredMethod("isNumericLiteralDecimalPoint", String.class, int.class);
+            final var signed = SqlParser.class.getDeclaredMethod("isSignedNumberStart", String.class, int.class);
+            start.setAccessible(true);
+            decimal.setAccessible(true);
+            signed.setAccessible(true);
+            assertEquals(true, start.invoke(null, "12", 0));
+            assertEquals(true, start.invoke(null, "$12", 0));
+            assertEquals(false, start.invoke(null, "`t`.1x", 4));
+            assertEquals(true, decimal.invoke(null, "$123.", 4));
+            assertEquals(false, decimal.invoke(null, "t.123.", 5));
+            assertEquals(true, signed.invoke(null, "-.5", 0));
+            assertEquals(false, signed.invoke(null, "+.x", 0));
         }
 
         @Test
@@ -6004,6 +6171,8 @@ public class SqlParserTest extends TestBase {
             assertGroupOpening("findMatchingOpeningParenthesis", ") SELECT (1)", 11, -1);
             assertGroupOpening("findMatchingOpeningParenthesis", "SELECT ')'", 8, -1);
             assertGroupOpening("findMatchingOpeningParenthesis", "(/* unclosed )", 13, -1);
+            final String evenEscapes = "SELECT 'a" + "\\".repeat(2) + "' + (1)";
+            assertGroupOpening("findMatchingOpeningParenthesis", evenEscapes, evenEscapes.length() - 1, evenEscapes.indexOf('('));
         }
 
         @Test
@@ -6018,12 +6187,85 @@ public class SqlParserTest extends TestBase {
         }
 
         @Test
+        void testQualifiedNamedParametersAndBracketedInsertNamesRemainReadOnly() {
+            for (final String sql : List.of("SELECT :account.name", "SELECT [INSERT] FROM t", "SELECT U&'name' AS label", "SELECT .5 AS n")) {
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            }
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT OR ROLLBACK INTO t(id) VALUES (1)"));
+            assertFalse(SqlParser.isInsertOrReplaceQuery("INSERT OR ROLLBACK INTO t(id) VALUES (1)"));
+        }
+
+        @Test
         void testQuotedListElementsPreserveHashTableNamesAfterEscapedQuotes() {
             for (final char quote : new char[] { '\'', '"', '`' }) {
                 final String name = quote + "a\\" + quote + "b" + quote;
                 final String sql = "SELECT 1 FROM " + name + " q, #temp";
                 assertEquals("#temp", SqlParser.nextToken(sql, sql.indexOf("#temp")), sql);
                 assertEquals(sql.indexOf("#temp"), SqlParser.indexOfToken(sql, "#temp"), sql);
+            }
+        }
+
+        @Test
+        void testSeparatorAndOperatorScannersRequireCompletePrefixes() throws Exception {
+            assertFalse(SqlParser.isSeparator("#{value}", 8, 0, '#'));
+            final var pair = SqlParser.class.getDeclaredMethod("isOperatorPair", String.class, int.class);
+            final var hash = SqlParser.class.getDeclaredMethod("hashIdentifierPrefixStart", String.class, int.class, int.class);
+            pair.setAccessible(true);
+            hash.setAccessible(true);
+            assertEquals(true, pair.invoke(null, "::", 0));
+            assertEquals(true, pair.invoke(null, "@>", 0));
+            assertEquals(false, pair.invoke(null, "@x", 0));
+            assertEquals(false, pair.invoke(null, ":", 0));
+            assertEquals(-1, hash.invoke(null, "FROM ###temp", 12, 7));
+        }
+
+        @Test
+        void testSqliteLeadingTriviaIncludesDashCommentsAndUnterminatedComments() throws Exception {
+            final var skip = SqlParser.class.getDeclaredMethod("skipSqliteWhitespaceAndComments", String.class, int.class);
+            skip.setAccessible(true);
+            final String sql = " \t-- first\r\n/* second */ SELECT 1";
+            assertEquals(sql.indexOf("SELECT"), skip.invoke(null, sql, 0));
+            for (final String comment : List.of("-- no line feed", "/* unfinished")) {
+                assertEquals(comment.length(), skip.invoke(null, comment, 0), comment);
+            }
+        }
+
+        @Test
+        void testSubscriptLocalChecksDeferLongChainsAndRejectEmptyMarkers() throws Exception {
+            final var reset = SqlParser.class.getDeclaredMethod("isSubscriptChainResetLocally", String.class, int.class);
+            final var marker = SqlParser.class.getDeclaredMethod("isMarkerLedSubscript", String.class, int.class);
+            reset.setAccessible(true);
+            marker.setAccessible(true);
+            final String chain = "[1] ".repeat(64) + "[?]";
+            assertEquals(false, reset.invoke(null, chain, chain.lastIndexOf('[')));
+            assertEquals(false, marker.invoke(null, "[ \t", 0));
+        }
+
+        @Test
+        void testSubscriptMemoStopsAtUnterminatedQuotedOrCommentedText() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var constructor = memoClass.getDeclaredConstructor(String.class);
+            final var subscript = memoClass.getDeclaredMethod("isSubscriptBracket", int.class, SqlParser.TokenizerConfig.class);
+            constructor.setAccessible(true);
+            subscript.setAccessible(true);
+            final String array = "items[1";
+            final Object memo = constructor.newInstance(array);
+            assertEquals(true, subscript.invoke(memo, array.indexOf('['), SqlParser.defaultTokenizerConfig()));
+            assertEquals(true, subscript.invoke(memo, array.indexOf('['), SqlParser.defaultTokenizerConfig()));
+            for (final String sql : List.of("'unfinished [", "/* unfinished [", "[unfinished")) {
+                final Object quotedMemo = constructor.newInstance(sql);
+                assertEquals(false, subscript.invoke(quotedMemo, sql.indexOf('['), SqlParser.defaultTokenizerConfig()), sql);
+            }
+        }
+
+        @Test
+        void testTopLevelStatementScannerRejectsUnterminatedQuotedRegions() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var scan = SqlParser.class.getDeclaredMethod("hasOnlyAllowedTopLevelStatements", String.class, SqlParser.TokenizerConfig.class, boolean.class,
+                    memoClass);
+            scan.setAccessible(true);
+            for (final String sql : List.of("SELECT 'unfinished", "SELECT \"unfinished", "SELECT `unfinished", "SELECT [unfinished")) {
+                assertEquals(false, scan.invoke(null, sql, SqlParser.defaultTokenizerConfig(), false, null), sql);
             }
         }
 

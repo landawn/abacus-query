@@ -441,6 +441,19 @@ public class LimitTest extends TestBase {
     }
 
     @Test
+    void testKeywordNormalizationPreservesBoundaryWhitespace() throws Exception {
+        final var normalize = Limit.class.getDeclaredMethod("collapseAndUpperCaseKeywords", String.class);
+        normalize.setAccessible(true);
+        assertEquals("", normalize.invoke(null, ""));
+        assertEquals(" ", normalize.invoke(null, "\t\n"));
+        assertEquals(" LIMIT 10 OFFSET :page ", normalize.invoke(null, "\tlimit\n 10 offset\t:page \r\n"));
+        final var parse = Limit.class.getDeclaredMethod("toInt", String.class);
+        parse.setAccessible(true);
+        assertNull(parse.invoke(null, ":page"));
+        assertNull(parse.invoke(null, ""));
+    }
+
+    @Test
     void testLargeCount() {
         Limit limit = new Limit(Integer.MAX_VALUE);
 

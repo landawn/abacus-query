@@ -47,9 +47,25 @@ public class AbstractConditionTest extends TestBase {
     @Nested
     class ConditionTraversal {
         @Test
+        void testClauseClassificationHandlesIncompleteAndAmbiguousPredicates() {
+            assertFalse(AbstractCondition.isClause((Condition) null));
+            assertFalse(AbstractCondition.isOnOrUsing((Condition) null));
+            assertFalse(AbstractCondition.isClause(new SqlExpression("LEFT OUTER")));
+            for (final String expression : List.of("offset", "offset ~", "offset NOT = 1", "offset NOT ~ 'x'", "offset SIMILAR'x'", "offset REGEXP",
+                    "offset REGEXP = 1", "offset NOT NOT IN (1)", "offset NOT'x'")) {
+                assertTrue(AbstractCondition.isClause(new SqlExpression(expression)), expression);
+            }
+            assertFalse(AbstractCondition.isClause(new SqlExpression("offset ~'x'")));
+            assertEquals("", AbstractCondition.escapeStringLiteral(null));
+            assertEquals("", AbstractCondition.escapeStringLiteral(""));
+        }
+
+        @Test
         void testContainsNonPredicateComponentDescendsThroughCustomCells() {
-            final Cell predicate = new Cell(Operator.NOT, Filters.eq("active", true)) { };
-            final Cell connector = new Cell(Operator.NOT, new On("a.id", "b.id")) { };
+            final Cell predicate = new Cell(Operator.NOT, Filters.eq("active", true)) {
+            };
+            final Cell connector = new Cell(Operator.NOT, new On("a.id", "b.id")) {
+            };
             assertFalse(AbstractCondition.containsNonPredicateComponent(predicate));
             assertTrue(AbstractCondition.containsNonPredicateComponent(connector));
         }
@@ -64,11 +80,14 @@ public class AbstractConditionTest extends TestBase {
             assertFalse(AbstractCondition.containsOnOrUsing(new And(predicate, Filters.eq("id", 1))));
             assertTrue(AbstractCondition.containsOnOrUsing(on));
             assertTrue(AbstractCondition.containsOnOrUsing(using));
-            assertTrue(AbstractCondition.containsOnOrUsing(new Cell(Operator.NOT, on) { }));
-            assertTrue(AbstractCondition.containsOnOrUsing(new ComposableCell(Operator.NOT, using) { }));
+            assertTrue(AbstractCondition.containsOnOrUsing(new Cell(Operator.NOT, on) {
+            }));
+            assertTrue(AbstractCondition.containsOnOrUsing(new ComposableCell(Operator.NOT, using) {
+            }));
 
             // Exercise traversal on an internally assembled tree, before public predicate validation rejects connectors.
-            final Junction nested = new Junction(Operator.AND, Arrays.asList(predicate, new Cell(Operator.NOT, using) { }), true);
+            final Junction nested = new Junction(Operator.AND, Arrays.asList(predicate, new Cell(Operator.NOT, using) {
+            }), true);
             assertTrue(AbstractCondition.containsOnOrUsing(nested));
         }
 

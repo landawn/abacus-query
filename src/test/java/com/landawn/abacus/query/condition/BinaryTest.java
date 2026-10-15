@@ -320,6 +320,7 @@ public class BinaryTest extends TestBase {
         Binary cond2 = new Binary("payload", Operator.IN, java.util.List.of(new byte[] { 9, 2 }));
 
         assertNotEquals(cond1, cond2);
+        assertNotEquals(cond1, new Binary("payload", Operator.IN, List.of(new byte[] { 1, 2 }, new byte[] { 3 })));
     }
 
     @Test

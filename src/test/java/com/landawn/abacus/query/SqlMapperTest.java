@@ -322,6 +322,24 @@ public class SqlMapperTest extends TestBase {
     }
 
     @Test
+    void testDebugLoggingIncludesMappingLifecycleMetadata() {
+        final var records = QueryTestSupport.captureLogs(SqlMapper.class, () -> {
+            final SqlMapper mapper = new SqlMapper();
+            mapper.add("first", ParsedSql.parse("SELECT 1"));
+            mapper.add("second", ParsedSql.parse("SELECT 2"), Map.of("timeout", "3"));
+            mapper.add("third", "SELECT 3", Map.of("timeout", "4"));
+            mapper.remove("first");
+            final ByteArrayOutputStream output = new ByteArrayOutputStream();
+            mapper.saveTo(output);
+            final SqlMapper reloaded = SqlMapper.loadFrom(new ByteArrayInputStream(output.toByteArray()));
+            assertEquals(mapper, reloaded);
+        });
+        assertTrue(records.stream().anyMatch(record -> record.getMessage().contains("Added SQL mapping")));
+        assertTrue(records.stream().anyMatch(record -> record.getMessage().contains("Removed SQL mapping")));
+        assertTrue(records.stream().anyMatch(record -> record.getMessage().contains("Loaded 2 SQL statements")));
+    }
+
+    @Test
     void testEmptyConstructor() {
         SqlMapper mapper = new SqlMapper();
         assertNotNull(mapper);
@@ -378,6 +396,55 @@ public class SqlMapperTest extends TestBase {
     void testEqualsSameObject() {
         SqlMapper mapper = new SqlMapper();
         assertEquals(mapper, mapper);
+    }
+
+    @Test
+    void testFileOpenFailureRetainsPathAndIOException() throws Exception {
+        final File missing = new File(tempDir, "missing.xml");
+        final var load = SqlMapper.class.getDeclaredMethod("loadFile", SqlMapper.class, File.class);
+        load.setAccessible(true);
+        final var invocation = assertThrows(java.lang.reflect.InvocationTargetException.class, () -> load.invoke(null, new SqlMapper(), missing));
+        final Throwable failure = invocation.getCause();
+        assertTrue(failure instanceof com.landawn.abacus.exception.UncheckedIOException);
+        assertTrue(failure.getCause() instanceof java.io.FileNotFoundException);
+        assertTrue(failure.getMessage().contains(missing.getAbsolutePath()));
+    }
+
+    @Test
+    void testFinalFlushFailurePreservesCheckedAndUncheckedIoCauses() {
+        final SqlMapper mapper = new SqlMapper();
+        mapper.add("query", "SELECT 1");
+        final IOException checked = new IOException("final flush failed");
+        final var unchecked = new com.landawn.abacus.exception.UncheckedIOException("custom flush failure", checked);
+        final int[] flushCount = { 0 };
+        mapper.saveTo(new ByteArrayOutputStream() {
+            @Override
+            public void flush() {
+                flushCount[0]++;
+            }
+        });
+        assertTrue(flushCount[0] > 0);
+        for (final boolean alreadyWrapped : new boolean[] { false, true }) {
+            final ByteArrayOutputStream output = new ByteArrayOutputStream() {
+                @Override
+                public void flush() throws IOException {
+                    // Transformer providers can flush repeatedly; target the mapper's final flush.
+                    if (++flushes == flushCount[0]) {
+                        if (alreadyWrapped) {
+                            throw unchecked;
+                        }
+                        throw checked;
+                    }
+                }
+
+                private int flushes;
+            };
+            final var error = assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> mapper.saveTo(output));
+            assertSame(checked, error.getCause());
+            if (alreadyWrapped) {
+                assertSame(unchecked, error);
+            }
+        }
     }
 
     @Test

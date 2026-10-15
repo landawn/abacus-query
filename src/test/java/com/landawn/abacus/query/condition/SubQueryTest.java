@@ -36,6 +36,11 @@ import com.landawn.abacus.util.NamingPolicy;
 public class SubQueryTest extends TestBase {
 
     @Test
+    void testBuilderSnapshotConstructorRequiresSnapshotFlag() {
+        assertEquals("builderBackedSnapshot must be true", assertThrows(IllegalArgumentException.class, () -> new SubQuery("SELECT 1", false)).getMessage());
+    }
+
+    @Test
     void testComplexSubQuery() {
         List<String> props = Arrays.asList("id", "email", "created");
         And complexCondition = Filters.and(Filters.eq("active", true), Filters.gt("created", "2023-01-01"), Filters.like("email", "%@company.com"));
@@ -703,6 +708,13 @@ public class SubQueryTest extends TestBase {
     }
 
     @Test
+    void testRawBindingCannotInlineAnExpressionWithItsOwnParameters() {
+        final var error = assertThrows(IllegalArgumentException.class, () -> new SubQuery("SELECT ?", List.of(new SqlExpression("SELECT :unbound"))));
+        assertTrue(error.getMessage().contains("SqlExpression containing parameter markers"));
+        assertTrue(error.getMessage().contains("parameters[0]"));
+    }
+
+    @Test
     void testRawBindingConditionsThatCannotBeInlinedAreRejected() {
         final String sql = "SELECT id FROM t WHERE a = ?";
 
@@ -903,6 +915,13 @@ public class SubQueryTest extends TestBase {
             final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql), sql);
             assertTrue(e.getMessage().contains("placeholder count"), e.getMessage());
         }
+    }
+
+    @Test
+    void testSelectAliasesIgnoreEscapedQuotesInPrefixedStringLiterals() {
+        final String item = "COALESCE(E'it\\'s AS hidden', firstName) AS label";
+        assertEquals("SELECT " + item + " FROM person", new SubQuery("person", List.of(item), null).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("SELECT p.unknown_name FROM person p", new SubQuery(PersonEntity.class, List.of("p.unknownName"), null).toSql(NamingPolicy.SNAKE_CASE));
     }
 
     @Test

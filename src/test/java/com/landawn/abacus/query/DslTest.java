@@ -653,6 +653,22 @@ public class DslTest extends TestBase {
                     factory.dsl.insert("firstName", "lastName").into("users").append(" RETURNING id").build());
         }
 
+        @Test
+        void testMetadataFailuresReleaseAllocatedBuilders() throws Exception {
+            final var counterField = AbstractQueryBuilder.class.getDeclaredField("activeStringBuilderCounter");
+            counterField.setAccessible(true);
+            final var counter = (java.util.concurrent.atomic.AtomicInteger) counterField.get(null);
+            final List<Runnable> factories = List.of(() -> PSC.update("broken", UnsupportedDateEntity.class),
+                    () -> PSC.deleteFrom("broken", UnsupportedDateEntity.class), () -> PSC.deleteFrom(UnsupportedDateEntity.class),
+                    () -> PSC.select(List.of(Selection.builder(UnsupportedDateEntity.class).includedPropNames(List.of("id")).build())));
+            for (final Runnable factory : factories) {
+                final int before = counter.get();
+                final var failure = assertThrows(UnsupportedOperationException.class, factory::run);
+                assertTrue(failure.getMessage().contains("Date format cannot be 'long'"));
+                assertEquals(before, counter.get(), "A rejected factory must release its pooled builder");
+            }
+        }
+
         @ParameterizedTest(name = "{0}")
         @EnumSource(value = Factory.class, names = { "MSB", "MSC" })
         void testSelectSingleExpression(final Factory factory) {
@@ -9006,5 +9022,12 @@ public class DslTest extends TestBase {
         Factory(final Dsl dsl) {
             this.dsl = dsl;
         }
+    }
+
+    @lombok.Data
+    static class UnsupportedDateEntity {
+        private long id;
+        @com.landawn.abacus.annotation.JsonXmlField(dateFormat = "long")
+        private java.time.LocalDate eventDate;
     }
 }

@@ -64,6 +64,19 @@ public class OnTest extends TestBase {
     }
 
     @Test
+    void testCreateOnConditionRejectsNullMapAndNullEntries() {
+        assertThrows(IllegalArgumentException.class, () -> On.createOnCondition((Map<String, String>) null));
+        final Map<String, String> invalid = new AbstractMap<>() {
+            @Override
+            public Set<Entry<String, String>> entrySet() {
+                return java.util.Collections.singleton(null);
+            }
+        };
+        final var error = assertThrows(IllegalArgumentException.class, () -> new On(invalid));
+        assertEquals("propNamePairs must not contain a null entry", error.getMessage());
+    }
+
+    @Test
     void testMySqlDashReadingOfUnterminatedBlockCommentPropNames() {
         // Regression: MySQL reads "a --/*" as "a - -" plus an open block comment (it needs whitespace after "--"); both
         // sides were accepted and rendered "ON a --/* <newline> = b".

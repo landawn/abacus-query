@@ -112,11 +112,8 @@ public class SqlDialectPaginationTest extends TestBase {
             final String first = product.equals("Microsoft SQL Server") ? "OFFSET 0 ROWS FETCH NEXT" : "FETCH FIRST";
             assertSql("SELECT id FROM users ORDER BY id " + first + " 2147483648 ROWS ONLY", List.of(),
                     dsl.select("id").from("users").orderBy("id").append(new Limit("FETCH FIRST 2147483648 ROWS ONLY")).build());
-            assertSql("SELECT id FROM users ORDER BY id OFFSET 4294967296 ROWS FETCH NEXT 2147483648 ROWS ONLY", List.of(), dsl.select("id")
-                    .from("users")
-                    .orderBy("id")
-                    .append(new Limit("OFFSET 4294967296 ROWS FETCH NEXT 2147483648 ROWS ONLY"))
-                    .build());
+            assertSql("SELECT id FROM users ORDER BY id OFFSET 4294967296 ROWS FETCH NEXT 2147483648 ROWS ONLY", List.of(),
+                    dsl.select("id").from("users").orderBy("id").append(new Limit("OFFSET 4294967296 ROWS FETCH NEXT 2147483648 ROWS ONLY")).build());
         }
     }
 

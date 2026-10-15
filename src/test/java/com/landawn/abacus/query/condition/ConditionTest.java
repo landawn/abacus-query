@@ -476,16 +476,18 @@ public class ConditionTest extends TestBase {
         }
 
         @ParameterizedTest(name = "{0}: serialization constructor")
-        @ValueSource(classes = { All.class, Any.class, CrossJoin.class, Exists.class, FullJoin.class, GreaterThan.class,
-                GreaterThanOrEqual.class, Having.class, In.class, InnerJoin.class, InSubQuery.class, IsInfinite.class, IsNaN.class, IsNotInfinite.class,
-                IsNotNaN.class, IsNotNull.class, IsNull.class, LeftJoin.class, LessThan.class, LessThanOrEqual.class, Like.class, NaturalJoin.class,
-                Not.class, NotEqual.class, NotExists.class, NotIn.class, NotInSubQuery.class, NotLike.class, OrderBy.class,
-                RightJoin.class, Some.class, Using.class, Where.class })
+        @ValueSource(classes = { All.class, Any.class, CrossJoin.class, Exists.class, FullJoin.class, GreaterThan.class, GreaterThanOrEqual.class, Having.class,
+                In.class, InnerJoin.class, InSubQuery.class, IsInfinite.class, IsNaN.class, IsNotInfinite.class, IsNotNaN.class, IsNotNull.class, IsNull.class,
+                LeftJoin.class, LessThan.class, LessThanOrEqual.class, Like.class, NaturalJoin.class, Not.class, NotEqual.class, NotExists.class, NotIn.class,
+                NotInSubQuery.class, NotLike.class, OrderBy.class, RightJoin.class, Some.class, Using.class, Where.class })
         void testSerializationConstructorLeavesConditionUninitialized(final Class<? extends Condition> type) throws Exception {
             // Serializers create these shells before restoring fields; no operator or binding may be fabricated.
             final Condition condition = type.getDeclaredConstructor().newInstance();
             assertNull(condition.operator());
             assertEquals(List.of(), condition.parameters());
+            final Condition equivalent = type.getDeclaredConstructor().newInstance();
+            assertEquals(condition, equivalent);
+            assertEquals(condition.hashCode(), equivalent.hashCode());
         }
 
         @Test
@@ -499,6 +501,8 @@ public class ConditionTest extends TestBase {
             }
             assertNull(new Exists().subQuery());
             assertNull(new NotExists().subQuery());
+            assertTrue(new Using().columnNames().isEmpty());
+            assertEquals(0, new SqlExpression().hashCode());
         }
     }
 }

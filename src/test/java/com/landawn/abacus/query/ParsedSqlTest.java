@@ -451,6 +451,17 @@ public class ParsedSqlTest extends TestBase {
     @Nested
     class GeometricOperators {
         @Test
+        void testIncompleteGeometricOperandsKeepQuestionMarksAsBindings() {
+            for (final String operand : List.of("CAST(? AS)", "CAST(? AS text)", "(?", "?::", "?::pg_catalog", "?::pg_catalog.", "?::pg_catalog other",
+                    "?::\"unfinished", "?::1bad", "?::text.", "?::timestamp WITH wrong", "?::timestamp WITH TIME wrong", "?::text [x]", "?::text [3]tail",
+                    "line", "line + ?", "U & ?", "N ?", "foo(?)", "foo(?", "() + ?")) {
+                final String sql = "SELECT ?- " + operand;
+                final int[] expected = java.util.stream.IntStream.range(0, sql.length()).filter(index -> sql.charAt(index) == '?').toArray();
+                assertOffsets(sql, expected);
+            }
+        }
+
+        @Test
         void testParse_CastChainsSkipQuotedColonsAndArraySuffixes() {
             for (final String operand : List.of("?::\"odd::type\" ::line", "?::\"odd\"\"::type\" ::line", "?::text[]::text ::line", "?::text [] ::text ::line",
                     "?::text[ ][]::text ::line", "?::varchar(30)[] ::line", "?::line [] ::line", "?::text[3] ::line", "?::text [ 30 ][] ::line",
@@ -700,6 +711,16 @@ public class ParsedSqlTest extends TestBase {
                     assertArrayEquals(new int[] { sql.indexOf('?') }, parsed.positionalParameterOffsets(), sql);
                 }
             }
+        }
+
+        @Test
+        void testSpacedTypeSuffixesStillResolveTheFinalGeometricCast() {
+            for (final String operand : List.of("?::timestamp WITH TIME ZONE ::line", "?::time WITHOUT TIME ZONE ::lseg", "?::text [3]::line",
+                    "line '(0,0),(1,0)'::text::line")) {
+                final String sql = "SELECT ?- " + operand;
+                assertOffsets(sql, operand.indexOf('?') >= 0 ? new int[] { sql.lastIndexOf('?') } : new int[0]);
+            }
+            assertOffsets("SELECT ?- line '(0,0),(1,0)'::text", 7);
         }
     }
 
@@ -2928,6 +2949,16 @@ public class ParsedSqlTest extends TestBase {
             }
         }
 
+        @Test
+        void testValuesColumnAfterOperatorsAndReturningKeepsJsonOperatorsUnbound() {
+            for (final String sql : List.of("SELECT 1 = values ? 'key'", "SELECT 1 + values ? 'key'", "UPDATE t SET id = 1 RETURNING values ? 'key'",
+                    "SELECT * FROM t JOIN u ON values ? 'key'", "SELECT * FROM t WHERE id = 1 OR values ? 'key'")) {
+                assertOffsets(sql);
+            }
+            assertOffsets("SELECT * FROM VALUES ? COLLATE \"C\"", 21);
+            assertOffsets("SELECT * FROM VALUES ? AT TIME ZONE 'UTC'", 21);
+        }
+
         // Regression: the VALUES row-constructor fallback counted JSON operators as bindings after VALUE, ':', a
         // qualification dot or IS [NOT] DISTINCT FROM, rejecting valid named bindings in the same query as mixed styles.
         @Test
@@ -2989,6 +3020,14 @@ public class ParsedSqlTest extends TestBase {
             }
 
             assertEquals(List.of("id"), ParsedSql.parse("SELECT values ? format JSON FROM t WHERE id = :id").namedParameters());
+        }
+
+        @Test
+        void testWindowFrameOffsetsRetainBindingsThroughNestedArithmetic() {
+            for (final String expression : List.of("? * (2 + 1) PRECEDING", "? + values[1] FOLLOWING", "? * (2 + (3 - 1)) PRECEDING")) {
+                final String sql = "SELECT sum(n) OVER (ORDER BY id RANGE " + expression + ") FROM t";
+                assertOffsets(sql, sql.indexOf('?'));
+            }
         }
     }
 
@@ -4434,6 +4473,40 @@ public class ParsedSqlTest extends TestBase {
         }
 
         @Test
+        void testDroppedCommentScannerHonorsTheRequestedGapBoundary() throws Exception {
+            final var scan = ParsedSql.class.getDeclaredMethod("firstLineBreakInDroppedBlockComment", String.class, int.class, int.class);
+            scan.setAccessible(true);
+            for (final String gap : List.of(" \t", "/* no line break */", "-- no line break", "# no line break")) {
+                assertEquals(false, scan.invoke(null, gap, 0, gap.length()), gap);
+            }
+            final String unclosed = "/* first\nsecond";
+            assertEquals(true, scan.invoke(null, unclosed, 0, unclosed.length()));
+            final String closed = "/* first\nsecond */";
+            assertEquals(true, scan.invoke(null, closed, 0, closed.indexOf("second")));
+            assertEquals(false, scan.invoke(null, "\n/* second\n */", 0, 14));
+        }
+
+        @Test
+        void testLineBreakScannerRequiresFollowingNonWhitespace() throws Exception {
+            final var scan = ParsedSql.class.getDeclaredMethod("hasTextAfterLineBreak", String.class, int.class);
+            scan.setAccessible(true);
+            for (final String text : List.of("", "same line", "first\n \t\r")) {
+                assertEquals(false, scan.invoke(null, text, 0), text);
+            }
+            assertEquals(true, scan.invoke(null, "first\r\n SELECT", 0));
+        }
+
+        @Test
+        void testMybatisContinuationRejectsUnclosedCommentsAndNestedMarkers() throws Exception {
+            final var scan = ParsedSql.class.getDeclaredMethod("endsInUnclosedIbatisMarker", String.class);
+            scan.setAccessible(true);
+            assertEquals(true, scan.invoke(null, "#{name /* unfinished"));
+            assertEquals(false, scan.invoke(null, "#{name, #{nested}}"));
+            assertEquals(false, scan.invoke(null, "#{name, metadata='#{quoted}'}"));
+            assertEquals(true, scan.invoke(null, "#{first}#{ second"));
+        }
+
+        @Test
         void testNamedParameterScannerStopsAtMissingOrInvalidSegments() throws Exception {
             final var scan = ParsedSql.class.getDeclaredMethod("findNamedParameterEndIndex", String.class, int.class);
             scan.setAccessible(true);
@@ -4450,6 +4523,7 @@ public class ParsedSqlTest extends TestBase {
             assertArrayEquals(new int[] { 0, 1 }, (int[]) scan.invoke(null, "??", 2));
             assertArrayEquals(new int[] { 7 }, (int[]) scan.invoke(null, "SELECT ?", 1));
             assertNull(scan.invoke(null, "??", 1));
+            assertNull(scan.invoke(null, "?", 2));
             assertNull(scan.invoke(null, "SELECT 1", 1));
             assertNull(scan.invoke(null, "SELECT ?, ?", 1));
         }
@@ -4467,6 +4541,19 @@ public class ParsedSqlTest extends TestBase {
             assertNull(align.invoke(null, sql, List.of("SELECT", "missing")));
             assertEquals(-1, end.invoke(null, List.of(" ", ""), new int[] { -1, -1 }));
             assertNull(resolve.invoke(null, sql, List.of("missing", "?"), IntList.of(1), IntList.of(0)));
+            assertNull(resolve.invoke(null, "SELECT ?", List.of("SELECT", "?"), IntList.of(3), IntList.of(0)));
+        }
+
+        @Test
+        void testSqlExpressionWordsRequireValidUnicodeCodePoints() throws Exception {
+            final var scan = ParsedSql.class.getDeclaredMethod("startsWithSqlExpressionWord", String.class);
+            scan.setAccessible(true);
+            for (final String word : List.of("\uD800", "\uDC00", "\uD800x", new String(Character.toChars(0x1F600)))) {
+                assertEquals(false, scan.invoke(null, word), word);
+            }
+            for (final String word : List.of(new String(Character.toChars(0x10400)), new String(Character.toChars(0x1D7CE)))) {
+                assertEquals(true, scan.invoke(null, word), word);
+            }
         }
     }
 

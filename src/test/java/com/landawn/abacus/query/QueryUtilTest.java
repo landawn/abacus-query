@@ -42,6 +42,31 @@ public class QueryUtilTest extends TestBase {
     @Nested
     class LexicalBoundaries {
         @Test
+        void testGluedColonScannerSkipsQuotedMarkersAndNestedSubscripts() throws Exception {
+            final var scan = QueryUtil.class.getDeclaredMethod("containsGluedColon", String.class, int.class);
+            scan.setAccessible(true);
+            for (final String token : List.of("name'ignored:colon'", "name#{missing:brace", "array[lo:hi]", "array[nested[lo:hi]]")) {
+                assertEquals(false, scan.invoke(null, token, 0), token);
+            }
+            assertEquals(true, scan.invoke(null, "array[lo:hi]::int", 0));
+            assertEquals(true, scan.invoke(null, "name#{ignored:colon}:upper", 0));
+        }
+
+        @Test
+        void testIdentifierShapeRejectsEmptyMappingsAndNonAsciiEscapeDigits() throws Exception {
+            final var unqualified = QueryUtil.class.getDeclaredMethod("isUnqualifiedColumnName", String.class);
+            unqualified.setAccessible(true);
+            assertEquals(false, unqualified.invoke(null, ""));
+            assertEquals(false, unqualified.invoke(null, "U&\"name\" UESCAPE E'\\xＦ1'"));
+            final var identifier = QueryUtil.class.getDeclaredMethod("isIdentifierNameChar", char.class);
+            identifier.setAccessible(true);
+            assertEquals(true, identifier.invoke(null, '名'));
+            assertEquals(true, identifier.invoke(null, '\uD83D'));
+            assertEquals(true, identifier.invoke(null, '\u0301'));
+            assertEquals(false, identifier.invoke(null, '\u3000'));
+        }
+
+        @Test
         void testPositionalOffsetsIncludeLeadingWhitespaceAndIgnoreQuotedMarkers() {
             final String sql = " \t\r\n SELECT '?' AS literal, ? AS first_value FROM t WHERE id = ? ";
             assertArrayEquals(new int[] { sql.indexOf("? AS first_value"), sql.lastIndexOf('?') }, QueryUtil.positionalParameterOffsets(sql));
@@ -58,10 +83,33 @@ public class QueryUtilTest extends TestBase {
         }
 
         @Test
+        void testRawTokenAlignmentMarksTheRemainingTokensUnlocated() throws Exception {
+            final var offsets = QueryUtil.class.getDeclaredMethod("tokenSourceOffsets", String.class, List.class, int.class);
+            offsets.setAccessible(true);
+            assertArrayEquals(new int[] { 0, -1, -1 }, (int[]) offsets.invoke(null, "a", List.of("a", "b", "c"), 2));
+            assertArrayEquals(new int[] { 0, -1 }, (int[]) offsets.invoke(null, "a /* unfinished", List.of("a", "b"), 1));
+        }
+
+        @Test
+        void testSubscriptCommentGuardPreservesQuotedAndBracketedText() throws Exception {
+            final var contains = QueryUtil.class.getDeclaredMethod("containsUnquotedCommentOrHash", String.class);
+            contains.setAccessible(true);
+            assertEquals(true, contains.invoke(null, "[name'#']"));
+            assertEquals(false, contains.invoke(null, "'#' / -"));
+            assertEquals(true, contains.invoke(null, "'#' + #"));
+            final var ends = QueryUtil.class.getDeclaredMethod("endsWithDelimiter", String.class);
+            ends.setAccessible(true);
+            assertEquals(false, ends.invoke(null, ""));
+            assertEquals(false, ends.invoke(null, "'"));
+            assertEquals(false, ends.invoke(null, "name"));
+            assertEquals(true, ends.invoke(null, "`name`"));
+        }
+
+        @Test
         void testSubscriptRenderingPreservesCommentAndQuotedContents() {
             final int[] verbatimFrom = new int[1];
-            for (final String interior : List.of("'a''b\\c'", "/* \\ ignored */ firstName", "-- \\ ignored\n firstName", "/* \\ unclosed",
-                    "$$firstName$$", "$$firstName")) {
+            for (final String interior : List.of("'a''b\\c'", "/* \\ ignored */ firstName", "-- \\ ignored\n firstName", "/* \\ unclosed", "$$firstName$$",
+                    "$$firstName")) {
                 final String expression = "myTags[" + interior + "]";
                 assertEquals("my_tags[" + interior + "]", renderRaw(expression, false, verbatimFrom), expression);
             }

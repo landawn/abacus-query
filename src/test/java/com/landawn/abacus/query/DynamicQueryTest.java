@@ -2614,18 +2614,6 @@ public class DynamicQueryTest extends TestBase {
                 + " LEFT JOIN orders o ON o.user_id = u.id WHERE u.active = ? AND u.age > ? GROUP BY u.id, u.name HAVING COUNT(o.id) > ?"
                 + " ORDER BY u.name ASC LIMIT 10 OFFSET 20";
 
-        private static String buildSampleQuery() {
-            final Builder builder = DynamicQuery.builder();
-            builder.select().append("u.id").append("u.name", "user_name").append("COUNT(o.id)", "order_count");
-            builder.from().append("users", "u").leftJoin("orders o", "o.user_id = u.id");
-            builder.where().append("u.active = ?").and("u.age > ?");
-            builder.groupBy().append("u.id").append("u.name");
-            builder.having().append("COUNT(o.id) > ?");
-            builder.orderBy().append("u.name ASC");
-            builder.limit(10, 20);
-            return builder.build();
-        }
-
         @Test
         void testConcurrentBuildsRenderIdenticalSqlOnEveryThread() throws Exception {
             assertEquals(EXPECTED_SQL, buildSampleQuery());
@@ -2657,6 +2645,12 @@ public class DynamicQueryTest extends TestBase {
             } finally {
                 pool.shutdownNow();
             }
+        }
+
+        @Test
+        void testDebugLoggingReportsCompletedSqlLength() {
+            final var records = QueryTestSupport.captureLogs(DynamicQuery.class, () -> assertEquals(EXPECTED_SQL, buildSampleQuery()));
+            assertTrue(records.stream().anyMatch(record -> record.getMessage().contains("Built dynamic SQL metadata")));
         }
 
         @Test
@@ -2699,6 +2693,30 @@ public class DynamicQueryTest extends TestBase {
             b2.from().append("#tmp");
             b2.where().append("a ## b").and("c = 1");
             assertEquals("SELECT a FROM #tmp\n WHERE a ## b\n AND c = 1", b2.build());
+        }
+
+        @Test
+        void testOrStartsWhereAndHavingWithoutLeadingConnector() {
+            final Builder builder = DynamicQuery.builder();
+            builder.select().append("department");
+            builder.from().append("people");
+            builder.where().or("active = 1").or("admin = 1");
+            builder.groupBy().append("department");
+            builder.having().or("COUNT(*) > 2").or("SUM(score) > 10");
+            assertEquals("SELECT department FROM people WHERE active = 1 OR admin = 1 GROUP BY department HAVING COUNT(*) > 2 OR SUM(score) > 10",
+                    builder.build());
+        }
+
+        private static String buildSampleQuery() {
+            final Builder builder = DynamicQuery.builder();
+            builder.select().append("u.id").append("u.name", "user_name").append("COUNT(o.id)", "order_count");
+            builder.from().append("users", "u").leftJoin("orders o", "o.user_id = u.id");
+            builder.where().append("u.active = ?").and("u.age > ?");
+            builder.groupBy().append("u.id").append("u.name");
+            builder.having().append("COUNT(o.id) > ?");
+            builder.orderBy().append("u.name ASC");
+            builder.limit(10, 20);
+            return builder.build();
         }
     }
 }
