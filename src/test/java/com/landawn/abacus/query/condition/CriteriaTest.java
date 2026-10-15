@@ -161,6 +161,16 @@ public class CriteriaTest extends TestBase {
     }
 
     @Test
+    void testAppendParametersToRetainsExistingValuesAndClauseOrder() {
+        final List<Object> bindings = new ArrayList<>(List.of("existing"));
+        final Criteria criteria = Criteria.builder().having(Filters.gt("COUNT(*)", 2)).where(Filters.eq("id", 7)).build();
+        criteria.appendParametersTo(bindings);
+        assertEquals(List.of("existing", 7, 2), bindings);
+        Criteria.builder().build().appendParametersTo(bindings);
+        assertEquals(List.of("existing", 7, 2), bindings);
+    }
+
+    @Test
     void testBlankSelectModifierIsCleared() {
         Criteria criteria = Criteria.builder().distinct().selectModifier("  \t ").build();
 
@@ -370,6 +380,21 @@ public class CriteriaTest extends TestBase {
         assertEquals(1, joins3.size());
         assertEquals(Operator.CROSS_JOIN, joins3.get(0).operator());
         assertEquals(2, joins3.get(0).joinEntities().size());
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void testDeprecatedPredicateFreeJoinsRejectWithoutMutatingBuilder() {
+        final List<java.util.function.Consumer<Builder>> joins = List.of(builder -> builder.join("orders"), builder -> builder.innerJoin("orders"),
+                builder -> builder.leftJoin("orders"), builder -> builder.rightJoin("orders"), builder -> builder.fullJoin("orders"));
+        for (final var join : joins) {
+            final Builder builder = Criteria.builder().where(Filters.eq("id", 7));
+            assertThrows(IllegalArgumentException.class, () -> join.accept(builder));
+            final Criteria criteria = builder.build();
+            assertEquals(" WHERE id = 7", criteria.toString());
+            assertEquals(List.of(7), criteria.parameters());
+            assertTrue(criteria.joins().isEmpty());
+        }
     }
 
     // --- 2026-09-19 fix round: deprecated single-arg qualified joins, duplicate pair names, blank where/having, limit(null). ---

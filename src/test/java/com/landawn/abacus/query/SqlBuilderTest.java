@@ -50,6 +50,7 @@ import com.landawn.abacus.query.AbstractQueryBuilder.SP;
 import com.landawn.abacus.query.QueryTestSupport.Order;
 import com.landawn.abacus.query.SqlDialect.ProductInfo;
 import com.landawn.abacus.query.SqlDialect.SqlPolicy;
+import com.landawn.abacus.query.condition.And;
 import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.query.condition.Criteria;
 import com.landawn.abacus.query.condition.Having;
@@ -3969,6 +3970,17 @@ public class SqlBuilderTest extends TestBase {
             sql = PSC.select("*").from("users").append("WHERE 1=1").append(" AND status = 'x'").append("ORDER BY name").build().query();
 
             assertEquals("SELECT * FROM users WHERE 1=1 AND status = 'x' ORDER BY name", sql);
+        }
+
+        @Test
+        void testAppendConditionHookRendersWhereAndHavingWithoutExtraParentheses() {
+            final SqlBuilder where = PSC.select("id").from("people");
+            where.appendCondition(new Where(new And(Filters.eq("id", 7))));
+            assertSql("SELECT id FROM people WHERE id = ?", List.of(7), where.build());
+
+            final SqlBuilder having = PSC.select("department").from("people").groupBy("department");
+            having.appendCondition(new Having(Filters.gt("COUNT(*)", 2)));
+            assertSql("SELECT department FROM people GROUP BY department HAVING COUNT(*) > ?", List.of(2), having.build());
         }
 
         @Test

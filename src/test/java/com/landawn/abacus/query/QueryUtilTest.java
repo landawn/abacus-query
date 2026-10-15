@@ -1,6 +1,7 @@
 package com.landawn.abacus.query;
 
 import static com.landawn.abacus.query.Dsl.PSC;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -38,6 +39,50 @@ import com.landawn.abacus.util.ImmutableMap;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class QueryUtilTest extends TestBase {
+    @Nested
+    class LexicalBoundaries {
+        @Test
+        void testPositionalOffsetsIncludeLeadingWhitespaceAndIgnoreQuotedMarkers() {
+            final String sql = " \t\r\n SELECT '?' AS literal, ? AS first_value FROM t WHERE id = ? ";
+            assertArrayEquals(new int[] { sql.indexOf("? AS first_value"), sql.lastIndexOf('?') }, QueryUtil.positionalParameterOffsets(sql));
+        }
+
+        @Test
+        void testRawExpressionFallsBackWhenDollarQuotedTokensCannotBeLocated() {
+            final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+            final String sql = "firstName = $$unclosed";
+            final StringBuilder result = new StringBuilder("WHERE ");
+            assertEquals(0, QueryUtil.appendRawExpression(result, sql, List.of("otherName", "=", "$$unclosed"), tokenizer, false, String::toUpperCase,
+                    String::toUpperCase));
+            assertEquals("WHERE " + sql, result.toString());
+        }
+
+        @Test
+        void testSubscriptRenderingPreservesCommentAndQuotedContents() {
+            final int[] verbatimFrom = new int[1];
+            for (final String interior : List.of("'a''b\\c'", "/* \\ ignored */ firstName", "-- \\ ignored\n firstName", "/* \\ unclosed",
+                    "$$firstName$$", "$$firstName")) {
+                final String expression = "myTags[" + interior + "]";
+                assertEquals("my_tags[" + interior + "]", renderRaw(expression, false, verbatimFrom), expression);
+            }
+        }
+
+        @Test
+        void testUnicodeEscapeClausesRejectTruncationAndWhitespaceEscapes() {
+            final var columns = QueryUtil.propToColumnInfoMap(IncompleteUnicodeColumns.class, NamingPolicy.NO_CHANGE);
+            for (final String property : List.of("unclosed", "missingLiteral", "trailingBackslash", "formFeed", "carriageReturn", "tab")) {
+                assertFalse(columns.get(property).isUnqualified(), property);
+            }
+            // A backspace is a single non-whitespace character, so it remains a valid escape delimiter.
+            assertTrue(columns.get("backspace").isUnqualified());
+        }
+
+        @Test
+        void testUnterminatedBracketDoesNotHideAnUnterminatedBlockComment() {
+            assertTrue(QueryUtil.hasUnterminatedBlockComment("SELECT [unclosed /* unfinished"));
+            assertFalse(QueryUtil.hasUnterminatedBlockComment("SELECT [unclosed /* finished */"));
+        }
+    }
 
     // Regression: appendRawExpression had no direct tests; its argument checks used literal names instead of cs constants,
     // and a backslash before a quote that does not close its own region (\" inside '...') switched the rest to verbatim.
@@ -1472,6 +1517,24 @@ public class QueryUtilTest extends TestBase {
                 this.firstName = firstName;
             }
         }
+    }
+
+    @lombok.Data
+    static class IncompleteUnicodeColumns {
+        @Column("U&\"unclosed")
+        private String unclosed;
+        @Column("U&\"name\" UESCAPE")
+        private String missingLiteral;
+        @Column("U&\"name\" UESCAPE E'\\")
+        private String trailingBackslash;
+        @Column("U&\"name\" UESCAPE E'\\b'")
+        private String backspace;
+        @Column("U&\"name\" UESCAPE E'\\f'")
+        private String formFeed;
+        @Column("U&\"name\" UESCAPE E'\\r'")
+        private String carriageReturn;
+        @Column("U&\"name\" UESCAPE E'\\t'")
+        private String tab;
     }
 
     @Table("value_form_accounts")

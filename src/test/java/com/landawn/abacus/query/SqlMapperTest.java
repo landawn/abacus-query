@@ -687,6 +687,40 @@ public class SqlMapperTest extends TestBase {
         assertEquals(mapper.attributes("parsed"), reloaded.attributes("parsed"));
     }
 
+    @Test
+    void testLoadFromInputStreamPreservesReadFailureCause() {
+        final IOException failure = new IOException("source disconnected");
+        final InputStream input = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw failure;
+            }
+        };
+        final var error = assertThrows(com.landawn.abacus.exception.UncheckedIOException.class, () -> SqlMapper.loadFrom(input));
+        assertSame(failure, error.getCause());
+        assertTrue(error.getMessage().contains("input stream"));
+    }
+
+    @Test
+    void testSaveToOutputStreamPreservesNonIoFailure() {
+        final SqlMapper mapper = new SqlMapper();
+        mapper.add("q", "SELECT 1");
+        final IllegalStateException failure = new IllegalStateException("destination unavailable");
+        final OutputStream output = new OutputStream() {
+            @Override
+            public void write(final int value) {
+                throw failure;
+            }
+        };
+        final var error = assertThrows(com.landawn.abacus.exception.UncheckedException.class, () -> mapper.saveTo(output));
+        assertFalse(error instanceof com.landawn.abacus.exception.UncheckedIOException);
+        Throwable cause = error;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        assertSame(failure, cause);
+    }
+
     // Only an XML 1.0 document lets the loader skip attribute-name validation: XML 1.1 Names are wider than what saveTo
     // (an XML 1.0 serializer) can write, so a 1.1-only name is still rejected at load time instead of breaking saveTo later.
     @Test

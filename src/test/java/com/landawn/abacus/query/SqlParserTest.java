@@ -1960,7 +1960,7 @@ public class SqlParserTest extends TestBase {
             for (final String marks : List.of("TO 1 DEFAULT 0", "TO true DEFAULT false", "TO 'Y'::char(1) DEFAULT 'N'::char(1)",
                     "TO numeric(3, 0) '1' DEFAULT numeric(3, 0) '0'",
                     "TO timestamp(3) with time zone '2020-01-01' DEFAULT timestamp(3) with time zone '2020-01-02'", "TO \"char\" 'Y' DEFAULT \"char\" 'N'",
-                    "TO $$Y$$ DEFAULT $t$N$t$")) {
+                    "TO $$Y$$ DEFAULT $t$N$t$", "TO 0 DEFAULT 1e10", "TO 0 DEFAULT 1E+10", "TO 0 DEFAULT -1.5e-10")) {
                 final String clause = pgCte + "CYCLE id SET is_cycle " + marks + " USING path ";
                 assertTrue(SqlParser.isSelectQuery(clause + "SELECT * FROM c"), marks);
                 assertTrue(SqlParser.isSyntacticallyReadQuery(clause + "SELECT * FROM c"), marks);
@@ -5913,6 +5913,133 @@ public class SqlParserTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> SqlParser.indexOfToken("SELECT 1", null, 0, true));
             assertThrows(IllegalArgumentException.class, () -> SqlParser.nextToken(null, 0));
             assertThrows(IllegalArgumentException.class, () -> SqlParser.nextTokenEndIndex(null, 0));
+        }
+    }
+
+    @Nested
+    class ScannerFallbacks {
+        @Test
+        void testBackwardTriviaFallbackStopsBeforeCommentsAndWhitespace() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var scan = SqlParser.class.getDeclaredMethod("skipBackwardWhitespaceAndBlockComments", String.class, int.class, memoClass);
+            scan.setAccessible(true);
+            final String sql = "SELECT 1 /* first */ /* second */ \t";
+            assertEquals(sql.indexOf('1'), scan.invoke(null, sql, sql.length() - 1, null));
+            assertEquals(-1, scan.invoke(null, "text */", 6, null));
+        }
+
+        @Test
+        void testBracketMatchingAgreesWithMemoAcrossQuotesAndComments() throws Exception {
+            final String prefix = "SELECT 'a\\'b', 'c''d', \"e\", `f`, [earlier] -- ignored ]\r\n# ignored ]\n/* ignored ] */ ";
+            final String sql = prefix + "[a[b]]c]";
+            assertGroupOpening("findOpeningBracketQuotedIdentifier", sql, sql.length() - 1, prefix.length());
+            assertGroupOpening("findOpeningBracketQuotedIdentifier", "SELECT ']'", 8, -1);
+            assertGroupOpening("findOpeningBracketQuotedIdentifier", "SELECT ]", 7, -1);
+            assertGroupOpening("findOpeningBracketQuotedIdentifier", "/* unclosed ]", 12, -1);
+        }
+
+        @Test
+        void testCteSuffixNameScannerRejectsIncompleteNamesAndEscapeClauses() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var scan = SqlParser.class.getDeclaredMethod("skipCteSuffixName", String.class, int.class, SqlParser.TokenizerConfig.class, memoClass);
+            scan.setAccessible(true);
+            for (final String name : List.of("", " ", "@invalid", "U&\"unfinished", "U&\"name\" UESCAPE", "U&\"name\" UESCAPE 1")) {
+                assertEquals(-1, scan.invoke(null, name, 0, SqlParser.defaultTokenizerConfig(), null), name);
+            }
+            final String name = "U&\"name\" UESCAPE '!'";
+            assertEquals(name.length(), scan.invoke(null, name + " SELECT", 0, SqlParser.defaultTokenizerConfig(), null));
+        }
+
+        @Test
+        void testHashMemoDoesNotReuseStateForAnotherSqlString() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var constructor = memoClass.getDeclaredConstructor(String.class);
+            final var rememberHash = memoClass.getDeclaredMethod("rememberHashIdentifierState", String.class, int.class, boolean.class, boolean.class);
+            final var readHash = memoClass.getDeclaredMethod("hashIdentifierState", String.class, int.class, boolean.class);
+            final var rememberList = memoClass.getDeclaredMethod("rememberHashListContextState", String.class, int.class, boolean.class);
+            final var readList = memoClass.getDeclaredMethod("hashListContextState", String.class, int.class);
+            final var lineOpener = memoClass.getDeclaredMethod("lineCommentOpenerAt", String.class, int.class, SqlParser.TokenizerConfig.class);
+            constructor.setAccessible(true);
+            for (final var method : List.of(rememberHash, readHash, rememberList, readList, lineOpener)) {
+                method.setAccessible(true);
+            }
+            final String sql = "SELECT 1 FROM t, #temp";
+            final String other = "SELECT 1 -- comment";
+            final Object memo = constructor.newInstance(sql);
+            rememberHash.invoke(memo, sql, sql.indexOf('#'), true, true);
+            assertEquals(1, readHash.invoke(memo, sql, sql.indexOf('#'), true));
+            rememberHash.invoke(memo, other, other.indexOf('-'), true, true);
+            assertEquals(-1, readHash.invoke(memo, other, other.indexOf('-'), true));
+            rememberList.invoke(memo, other, 0, true);
+            assertEquals(-1, readList.invoke(memo, sql, 0));
+            assertEquals(other.indexOf("--"), lineOpener.invoke(memo, other, other.length() - 1, SqlParser.defaultTokenizerConfig()));
+            assertEquals(-1, lineOpener.invoke(memo, other, -1, SqlParser.defaultTokenizerConfig()));
+            assertEquals(-1, lineOpener.invoke(memo, other, other.length(), SqlParser.defaultTokenizerConfig()));
+        }
+
+        @Test
+        void testNestedCommentSkipperHandlesOverlappingDelimiters() throws Exception {
+            final Class<?> skipperClass = Class.forName(SqlParser.class.getName() + "$RawCommentSkipper");
+            final var constructor = skipperClass.getDeclaredConstructor(String.class, boolean.class);
+            final var skip = skipperClass.getDeclaredMethod("skip", int.class);
+            constructor.setAccessible(true);
+            skip.setAccessible(true);
+
+            // Starting at the second slash makes it an opener, though the initial scan read it as a closer.
+            final String sql = "/* first */* outer /* nested */ tail */ -- end\r\n SELECT 1";
+            final Object skipper = constructor.newInstance(sql, true);
+            final int overlappingOpener = sql.indexOf("*/*") + 1;
+            assertEquals(sql.indexOf("SELECT"), skip.invoke(skipper, overlappingOpener));
+            assertEquals(sql.indexOf("SELECT"), skip.invoke(skipper, overlappingOpener));
+
+            final String unclosed = "/* first */* outer /* nested */ tail";
+            assertEquals(unclosed.length(), skip.invoke(constructor.newInstance(unclosed, true), unclosed.indexOf("*/*") + 1));
+        }
+
+        @Test
+        void testParenthesisMatchingAgreesWithMemoAcrossQuotesAndComments() throws Exception {
+            final String sql = "SELECT (f('a\\')b', 'c'')d', \"e)\", `f)`, [g]]h]) -- ignored )\r\n# ignored )\n/* ignored ) */ + (1))";
+            assertGroupOpening("findMatchingOpeningParenthesis", sql, sql.length() - 1, sql.indexOf('('));
+            assertGroupOpening("findMatchingOpeningParenthesis", sql, sql.lastIndexOf(')') - 1, sql.lastIndexOf('('));
+            assertGroupOpening("findMatchingOpeningParenthesis", ") SELECT (1)", 11, -1);
+            assertGroupOpening("findMatchingOpeningParenthesis", "SELECT ')'", 8, -1);
+            assertGroupOpening("findMatchingOpeningParenthesis", "(/* unclosed )", 13, -1);
+        }
+
+        @Test
+        void testProcedureScannerRecognizesJdbcEscapesOnlyAtStatementStarts() throws Exception {
+            assertFalse(containsProcedureInvocation(""));
+            assertTrue(containsProcedureInvocation("{ /* comment */ call p(?) }"));
+            assertTrue(containsProcedureInvocation("SELECT 1; { ? /* return */ = -- assignment\n CALL p() }"));
+            assertFalse(containsProcedureInvocation("{ ? }"));
+            assertFalse(containsProcedureInvocation("{ ?"));
+            assertFalse(containsProcedureInvocation("{ fn abs(1) }"));
+            assertFalse(containsProcedureInvocation("SELECT '{ call p() }'"));
+        }
+
+        @Test
+        void testQuotedListElementsPreserveHashTableNamesAfterEscapedQuotes() {
+            for (final char quote : new char[] { '\'', '"', '`' }) {
+                final String name = quote + "a\\" + quote + "b" + quote;
+                final String sql = "SELECT 1 FROM " + name + " q, #temp";
+                assertEquals("#temp", SqlParser.nextToken(sql, sql.indexOf("#temp")), sql);
+                assertEquals(sql.indexOf("#temp"), SqlParser.indexOfToken(sql, "#temp"), sql);
+            }
+        }
+
+        private void assertGroupOpening(final String methodName, final String sql, final int closing, final int expected) throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var constructor = memoClass.getDeclaredConstructor(String.class);
+            final var scan = SqlParser.class.getDeclaredMethod(methodName, String.class, int.class, SqlParser.TokenizerConfig.class, memoClass);
+            constructor.setAccessible(true);
+            scan.setAccessible(true);
+            final SqlParser.TokenizerConfig config = SqlParser.defaultTokenizerConfig();
+
+            // The fallback defines the lexical contract; verify it independently of the optimized prefix scan.
+            assertEquals(expected, scan.invoke(null, sql, closing, config, null), "uncached: " + sql);
+            final Object memo = constructor.newInstance(sql);
+            assertEquals(expected, scan.invoke(null, sql, closing, config, memo), "cached: " + sql);
+            assertEquals(expected, scan.invoke(null, sql, closing, config, memo), "repeated: " + sql);
         }
     }
 

@@ -15,6 +15,8 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
@@ -471,6 +473,32 @@ public class ConditionTest extends TestBase {
             assertNull(Operator.of(null));
             assertTrue(Criteria.builder().build().findConditions(null).isEmpty());
             assertFalse(new Equal("age", null).equals(null));
+        }
+
+        @ParameterizedTest(name = "{0}: serialization constructor")
+        @ValueSource(classes = { All.class, Any.class, CrossJoin.class, Exists.class, FullJoin.class, GreaterThan.class,
+                GreaterThanOrEqual.class, Having.class, In.class, InnerJoin.class, InSubQuery.class, IsInfinite.class, IsNaN.class, IsNotInfinite.class,
+                IsNotNaN.class, IsNotNull.class, IsNull.class, LeftJoin.class, LessThan.class, LessThanOrEqual.class, Like.class, NaturalJoin.class,
+                Not.class, NotEqual.class, NotExists.class, NotIn.class, NotInSubQuery.class, NotLike.class, OrderBy.class,
+                RightJoin.class, Some.class, Using.class, Where.class })
+        void testSerializationConstructorLeavesConditionUninitialized(final Class<? extends Condition> type) throws Exception {
+            // Serializers create these shells before restoring fields; no operator or binding may be fabricated.
+            final Condition condition = type.getDeclaredConstructor().newInstance();
+            assertNull(condition.operator());
+            assertEquals(List.of(), condition.parameters());
+        }
+
+        @Test
+        void testSerializationConstructorsRetainUnsetBetweenBounds() {
+            for (final AbstractBetween condition : List.of(new Between(), new NotBetween())) {
+                assertNull(condition.operator());
+                assertNull(condition.propName());
+                assertNull(condition.minValue());
+                assertNull(condition.maxValue());
+                assertEquals(Arrays.asList(null, null), condition.parameters());
+            }
+            assertNull(new Exists().subQuery());
+            assertNull(new NotExists().subQuery());
         }
     }
 }

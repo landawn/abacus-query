@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -261,7 +262,103 @@ public class AbstractQueryBuilderTest extends TestBase {
     }
 
     @Nested
+    class InsertExtensionHooks {
+        @Test
+        void testAppendInsertPropertiesPreservesMapOrderInsideAtomicMutation() {
+            final Map<String, Object> first = new LinkedHashMap<>();
+            first.put("firstName", "Alice");
+            first.put("lastName", "Smith");
+            final Map<String, Object> second = new LinkedHashMap<>();
+            second.put("firstName", "Bob");
+            second.put("lastName", "Jones");
+            final SqlBuilder builder = PSC.insert(first).into("people");
+            assertSame(builder, builder.mutateAtomically(() -> {
+                builder._sb.append(", (");
+                builder.appendInsertProps(second);
+                builder._sb.append(')');
+            }));
+            assertSql("INSERT INTO people (first_name, last_name) VALUES (?, ?), (?, ?)", List.of("Alice", "Smith", "Bob", "Jones"), builder.build());
+        }
+
+        @Test
+        void testParseInsertBeanPreservesAssignedCompositeIdsAndSnapshotsValues() {
+            final CompositeIdEntity entity = new CompositeIdEntity().setTenantId(7).setLocalId(0).setName("Alice");
+            final SqlBuilder builder = PSC.insert(Map.of("placeholder", 0));
+            AbstractQueryBuilder.parseInsertEntity(builder, entity, null);
+            entity.setTenantId(9).setName("changed");
+            assertSql("INSERT INTO people (tenant_id, local_id, name) VALUES (?, ?, ?)", List.of(7L, 0L, "Alice"), builder.into("people").build());
+        }
+
+        @Test
+        void testParseInsertBeanSkipsDefaultIdsAndExcludedProperties() {
+            final CompositeIdEntity entity = new CompositeIdEntity().setName("Alice");
+            final SqlBuilder builder = PSC.insert(Map.of("placeholder", 0));
+            AbstractQueryBuilder.parseInsertEntity(builder, entity, Set.of("localId"));
+            assertSql("INSERT INTO people (name) VALUES (?)", List.of("Alice"), builder.into("people").build());
+
+            final CompositeIdEntity assigned = new CompositeIdEntity().setLocalId(8).setName(null);
+            final SqlBuilder assignedBuilder = PSC.insert(Map.of("placeholder", 0));
+            AbstractQueryBuilder.parseInsertEntity(assignedBuilder, assigned, Set.of());
+            assertSql("INSERT INTO people (tenant_id, local_id) VALUES (?, ?)", List.of(0L, 8L), assignedBuilder.into("people").build());
+        }
+
+        @Test
+        void testParseInsertMapCopiesBeforeApplyingExclusions() {
+            final Map<String, Object> props = new LinkedHashMap<>();
+            props.put("firstName", "Alice");
+            props.put("lastName", "Smith");
+            final SqlBuilder builder = PSC.insert(Map.of("placeholder", 0));
+            AbstractQueryBuilder.parseInsertEntity(builder, props, Set.of("lastName"));
+            assertEquals(Map.of("firstName", "Alice", "lastName", "Smith"), props);
+            props.put("firstName", "changed");
+            assertSql("INSERT INTO people (first_name) VALUES (?)", List.of("Alice"), builder.into("people").build());
+        }
+
+        @Test
+        void testParseInsertRejectsInvalidMapsWithoutReplacingValues() {
+            final SqlBuilder builder = PSC.insert(Map.of("name", "Alice"));
+            try {
+                assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.parseInsertEntity(builder, Map.of("name", "Bob"), Set.of("name")));
+                assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.parseInsertEntity(builder, Map.of(" ", "Bob"), null));
+                assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.parseInsertEntity(builder, Map.of(), null));
+                assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.parseInsertEntity(builder, " ", null));
+            } finally {
+                assertSql("INSERT INTO people (name) VALUES (?)", List.of("Alice"), builder.into("people").build());
+            }
+        }
+
+        @Test
+        void testParseInsertStringSelectsOneColumn() {
+            final SqlBuilder builder = PSC.insert("placeholder");
+            AbstractQueryBuilder.parseInsertEntity(builder, "firstName", null);
+            assertSql("INSERT INTO people (first_name) VALUES (?)", List.of(), builder.into("people").build());
+            assertSql("INSERT INTO people (first_name) VALUES (?)", List.of(), PSC.insert((Object) "firstName").into("people").build());
+        }
+    }
+
+    @Nested
     class Joins {
+        @Test
+        void testEntityJoinOverloadsUseDeclaredTableAliases() {
+            final Map<String, UnaryOperator<SqlBuilder>> joins = new LinkedHashMap<>();
+            joins.put("INNER JOIN", builder -> builder.innerJoin(QueryTestSupport.Order.class));
+            joins.put("LEFT JOIN", builder -> builder.leftJoin(QueryTestSupport.Order.class));
+            joins.put("RIGHT JOIN", builder -> builder.rightJoin(QueryTestSupport.Order.class));
+            joins.put("FULL JOIN", builder -> builder.fullJoin(QueryTestSupport.Order.class));
+            for (final var join : joins.entrySet()) {
+                assertSql("SELECT * FROM users u " + join.getKey() + " user_order o ON u.id = o.user_id", List.of(),
+                        join.getValue().apply(PSC.select("*").from("users u")).on("u.id = o.userId").build());
+            }
+            assertSql("SELECT * FROM users u CROSS JOIN user_order o", List.of(), PSC.select("*").from("users u").crossJoin(QueryTestSupport.Order.class).build());
+        }
+
+        @Test
+        void testJoinConditionGroupsMultipleTablesWithCrossJoin() {
+            final Criteria join = Criteria.builder().join(List.of("orders o", "payments p"), Filters.on("u.id", "o.userId")).build();
+            assertSql("SELECT * FROM users u JOIN (orders o CROSS JOIN payments p) ON (u.id = o.user_id)", List.of(),
+                    PSC.select("*").from("users u").append(join).build());
+        }
+
         @Test
         void testJoinExprWithUnterminatedBlockCommentIsRejected() {
             // Regression: join("t /* x") rendered "JOIN t /* x ON ...", commenting out the join predicate and every later
@@ -413,7 +510,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         @Test
         void testGlobalAndLocalJoinModifiersBeforeCrossJoinAreNotPrimaryTableAlias() {
             for (final String join : new String[] { "GLOBAL CROSS JOIN q", "LOCAL CROSS JOIN q", "LOCAL ANY LEFT JOIN q USING (id)",
-                    "LOCAL JOIN q USING (id)" }) {
+                    "LOCAL JOIN q USING (id)", "GLOBAL /* modifier */ CROSS JOIN q", "LOCAL -- modifier\n CROSS JOIN q", "LOCAL # modifier\n CROSS JOIN q" }) {
                 assertEquals("SELECT a.first_name AS \"firstName\" FROM account a " + join,
                         PSC.select("firstName").from("account a " + join, Account.class).build().query(), join);
             }
@@ -2389,6 +2486,16 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testTableAliasRecognizedAcrossCommentsAfterAs() {
+            for (final String trivia : List.of("/* alias */ ", "-- alias\n", "# alias\n")) {
+                final String table = "people AS " + trivia + "p";
+                final SqlBuilder builder = PSC.select("firstName").from(table);
+                assertEquals("p", builder._tableAlias);
+                assertSql("SELECT first_name AS \"firstName\" FROM " + table, List.of(), builder.build());
+            }
+        }
+
+        @Test
         void testTokenizerConfigIsCarriedBySqlDialect() {
             final SqlParser.TokenizerConfig tokenizerConfig = SqlParser.tokenizerConfigBuilder().withSeparator("::").build();
             final Dsl dsl = Dsl.forDialect(Dsl.SCSB.sqlDialect().toBuilder().tokenizerConfig(tokenizerConfig).build());
@@ -2618,11 +2725,42 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
 
         @Test
+        void testParameterRenderingHooksPreserveUnboundMarkersAndExpressions() {
+            final SqlBuilder raw = SCSB.select("*").from("people");
+            raw._sb.append(" WHERE id = ");
+            raw.setParameterForRawSql(Filters.QME);
+            assertSql("SELECT * FROM people WHERE id = ?", List.of(), raw.build());
+
+            final SqlBuilder named = NSC.select("*").from("people");
+            named._sb.append(" WHERE id IN (");
+            named.setParameterForNamedSql("id", Filters.QME);
+            named._sb.append(", ");
+            named.setParameterForNamedSql("id", 7);
+            named._sb.append(')');
+            assertSql("SELECT * FROM people WHERE id IN (:id, :id_2)", List.of(7), named.build());
+
+            final SqlBuilder ibatis = MSC.select("*").from("people");
+            ibatis._sb.append(" WHERE id = ");
+            ibatis.setParameterForIbatisNamedSql("id", Filters.QME);
+            ibatis._sb.append(" AND created_at < ");
+            ibatis.setParameterForIbatisNamedSql("createdAt", Filters.expr("CURRENT_TIMESTAMP"));
+            assertSql("SELECT * FROM people WHERE id = #{id} AND created_at < CURRENT_TIMESTAMP", List.of(), ibatis.build());
+        }
+
+        @Test
         @SuppressWarnings("deprecation")
         void testRawSqlInlinedExpressionBindingLineCommentIsTerminated() {
             final SubQuery subQuery = Filters.subQuery("SELECT id FROM u WHERE a = ? AND b = 2", List.of(SqlExpression.of("x -- c")));
             assertEquals("SELECT id FROM t WHERE id IN (SELECT id FROM u WHERE a = x -- c\n AND b = 2)",
                     SCSB.select("id").from("t").where(Filters.in("id", subQuery)).build().query());
+        }
+
+        @Test
+        void testRawSubqueryRewriteRejectsMismatchedBindingsBeforeAllocatingNames() {
+            final SqlBuilder builder = NSC.select("id").from("people");
+            assertThrows(IllegalArgumentException.class, () -> builder.renameRawSubQueryPlaceholders("SELECT ?", List.of(1, 2)));
+            assertThrows(IllegalArgumentException.class, () -> builder.renameRawSubQueryPlaceholders("SELECT 1", List.of(1)));
+            assertSql("SELECT id FROM people WHERE id = :id", List.of(7), builder.where(Filters.eq("id", 7)).build());
         }
 
         /**
@@ -2947,6 +3085,21 @@ public class AbstractQueryBuilderTest extends TestBase {
         @Test
         void testAppendLimitExpressionAfterLimitThrows() {
             assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users").limit(10).append(new Limit("5")).build().query());
+        }
+
+        @Test
+        void testCollectionGroupingAndOrderingKeepColumnOrder() {
+            assertSql("SELECT first_name AS \"firstName\", last_name AS \"lastName\" FROM people GROUP BY last_name, first_name ORDER BY first_name, last_name",
+                    List.of(), PSC.select("firstName", "lastName")
+                            .from("people")
+                            .groupBy(List.of("lastName", "firstName"))
+                            .orderBy(List.of("firstName", "lastName"))
+                            .build());
+            assertSql("SELECT * FROM people ORDER BY first_name ASC", List.of(), PSC.select("*").from("people").orderByAsc("firstName").build());
+            assertSql("SELECT * FROM people ORDER BY first_name ASC, last_name ASC", List.of(),
+                    PSC.select("*").from("people").orderByAsc(List.of("firstName", "lastName")).build());
+            assertSql("SELECT * FROM people ORDER BY first_name DESC, last_name DESC", List.of(),
+                    PSC.select("*").from("people").orderByDesc(List.of("firstName", "lastName")).build());
         }
 
         @Test
@@ -6268,6 +6421,13 @@ public class AbstractQueryBuilderTest extends TestBase {
             final SqlBuilder closed = PSC.update("t").set("a");
             closed.build();
             assertThrows(IllegalStateException.class, () -> closed.set((String) null, 1));
+        }
+
+        @Test
+        void testSetObjectMapWithoutExclusionsKeepsBindings() {
+            final Object properties = Map.of("firstName", "Alice");
+            assertSql("UPDATE people SET first_name = ? WHERE id = ?", List.of("Alice", 7),
+                    PSC.update("people").set(properties, Set.of()).where(Filters.eq("id", 7)).build());
         }
 
         @Test

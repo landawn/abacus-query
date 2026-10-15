@@ -1,6 +1,7 @@
 package com.landawn.abacus.query;
 
 import static com.landawn.abacus.query.Dsl.PSC;
+import static com.landawn.abacus.query.QueryTestSupport.assertSql;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -87,6 +88,36 @@ public class SqlDialectPaginationTest extends TestBase {
     void testFetchStyleStandaloneOffset() {
         final String sql = dslFor("Oracle").select("*").from("users").orderBy("id").offset(20).build().query();
         assertEquals("SELECT * FROM users ORDER BY id OFFSET 20 ROWS", sql);
+    }
+
+    @Test
+    void testFetchSyntaxRetainsLimitsLargerThanIntegerRange() {
+        for (final String product : List.of("Oracle", "DB2", "Microsoft SQL Server")) {
+            final Dsl dsl = dslFor(product);
+            final String first = product.equals("Microsoft SQL Server") ? "OFFSET 0 ROWS FETCH NEXT" : "FETCH FIRST";
+            assertSql("SELECT id FROM users ORDER BY id " + first + " 2147483648 ROWS ONLY", List.of(),
+                    dsl.select("id").from("users").orderBy("id").append(new Limit("2147483648")).build());
+
+            for (final String expression : List.of("2147483648 OFFSET 4294967296", "4294967296, 2147483648")) {
+                assertSql("SELECT id FROM users ORDER BY id OFFSET 4294967296 ROWS FETCH NEXT 2147483648 ROWS ONLY", List.of(),
+                        dsl.select("id").from("users").orderBy("id").append(new Limit(expression)).build());
+            }
+        }
+    }
+
+    @Test
+    void testFetchSyntaxRetainsUnresolvedFetchExpressions() {
+        for (final String product : List.of("Oracle", "DB2", "Microsoft SQL Server")) {
+            final Dsl dsl = dslFor(product);
+            final String first = product.equals("Microsoft SQL Server") ? "OFFSET 0 ROWS FETCH NEXT" : "FETCH FIRST";
+            assertSql("SELECT id FROM users ORDER BY id " + first + " 2147483648 ROWS ONLY", List.of(),
+                    dsl.select("id").from("users").orderBy("id").append(new Limit("FETCH FIRST 2147483648 ROWS ONLY")).build());
+            assertSql("SELECT id FROM users ORDER BY id OFFSET 4294967296 ROWS FETCH NEXT 2147483648 ROWS ONLY", List.of(), dsl.select("id")
+                    .from("users")
+                    .orderBy("id")
+                    .append(new Limit("OFFSET 4294967296 ROWS FETCH NEXT 2147483648 ROWS ONLY"))
+                    .build());
+        }
     }
 
     @Test

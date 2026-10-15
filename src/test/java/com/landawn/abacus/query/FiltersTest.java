@@ -2533,6 +2533,14 @@ public class FiltersTest extends TestBase {
     }
 
     @Test
+    void testNePlaceholderAndCollectionJunctionRenderOrderedBindings() {
+        final Junction junction = Filters.junction(Operator.AND, List.of(Filters.ne("status"), Filters.eq("id", 7)));
+        final AbstractQueryBuilder.SP result = Dsl.PSC.renderCondition(junction).build();
+        assertEquals("(status != ?) AND (id = ?)", result.query());
+        assertEquals(List.of(7), result.parameters());
+    }
+
+    @Test
     void testNot() {
         Condition condition = Filters.equal("name", "John");
         Not notCondition = Filters.not(condition);
@@ -3092,6 +3100,14 @@ public class FiltersTest extends TestBase {
         assertEquals("NATURAL JOIN (employees CROSS JOIN departments)", Filters.naturalJoin(Arrays.asList("employees", "departments")).toString());
         assertEquals("JOIN (orders CROSS JOIN products) ON orders.product_id = products.id",
                 Filters.join(Arrays.asList("orders", "products"), Filters.on("orders.product_id", "products.id")).toString());
+    }
+
+    @Test
+    void testSinglePropertyEntitySubqueryKeepsProjectionAndPredicate() {
+        final SubQuery subQuery = Filters.subQuery(Account.class, "id", Filters.eq("status", 7));
+        assertEquals(Account.class, subQuery.entityClass());
+        assertEquals(List.of("id"), subQuery.selectPropNames());
+        assertEquals(List.of(7), subQuery.parameters());
     }
 
     @Test

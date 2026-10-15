@@ -24,6 +24,7 @@ import com.landawn.abacus.pool.KeyedObjectPool;
 import com.landawn.abacus.pool.PoolFactory;
 import com.landawn.abacus.pool.PoolableAdapter;
 import com.landawn.abacus.util.ImmutableList;
+import com.landawn.abacus.util.IntList;
 import com.landawn.abacus.util.Strings;
 
 public class ParsedSqlTest extends TestBase {
@@ -1644,6 +1645,17 @@ public class ParsedSqlTest extends TestBase {
         }
 
         @Test
+        void testNamedParameterBoundariesRejectUnpairedSurrogates() {
+            for (final String boundary : List.of("\uD800", "\uDC00", "a\uDC00")) {
+                final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT " + boundary + ":name"));
+                assertTrue(error.getMessage().contains("unpaired"));
+            }
+            final ParsedSql symbol = ParsedSql.parse("SELECT \uD83D\uDE00:name");
+            assertEquals(List.of("name"), symbol.namedParameters());
+            assertEquals("SELECT \uD83D\uDE00?", symbol.parameterizedSql());
+        }
+
+        @Test
         void testParameterWithSpecialCharacters() {
             // Test that colons not followed by valid parameter characters are not treated as parameters
             String sql = "SELECT * FROM users WHERE time > '10:30:00' AND id = :userId";
@@ -2724,6 +2736,23 @@ public class ParsedSqlTest extends TestBase {
     @Nested
     class SqlJsonExpressions {
         @Test
+        void testNestedJsonConstructorsRetainPlaceholderAndOperatorScopes() {
+            final String sql = "SELECT " + "JSON_OBJECT(KEY ? VALUE JSON_ARRAY(".repeat(9) + "doc ? 'key', ?" + "))".repeat(9) + " FROM records";
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertEquals(10, parsed.parameterCount());
+            assertEquals(List.of(), parsed.namedParameters());
+            assertEquals(sql, parsed.parameterizedSql());
+            final int[] expected = new int[10];
+            int from = 0;
+            for (int i = 0; i < 9; i++) {
+                expected[i] = sql.indexOf("KEY ?", from) + 4;
+                from = expected[i] + 1;
+            }
+            expected[9] = sql.indexOf(", ?", from) + 2;
+            assertArrayEquals(expected, parsed.positionalParameterOffsets());
+        }
+
+        @Test
         void testParse_JsonFormatFunctionPreservesOperandBindings() {
             for (final boolean grouped : new boolean[] { false, true }) {
                 final String prefix = grouped ? "SELECT ARRAY[" : "SELECT ";
@@ -3357,6 +3386,16 @@ public class ParsedSqlTest extends TestBase {
 
     @Nested
     class StatementRecognition {
+        @Test
+        void testIncompleteStatementPrefixesRemainUnclassified() {
+            for (final String sql : List.of("(", "((", "{", "{#{result")) {
+                final ParsedSql parsed = ParsedSql.parse(sql);
+                assertFalse(parsed.isDataOperation(), sql);
+                assertEquals(sql, parsed.parameterizedSql());
+                assertEquals(0, parsed.parameterCount());
+            }
+        }
+
         @Test
         void testInsertStatement() {
             String sql = "INSERT INTO users (id, name, email) VALUES (:id, :name, :email)";
@@ -4378,6 +4417,56 @@ public class ParsedSqlTest extends TestBase {
                 assertArrayEquals(new int[] { sql.indexOf('?'), sql.lastIndexOf('?') }, parsed.positionalParameterOffsets(), sql);
                 assertEquals(sql, parsed.parameterizedSql(), sql);
             }
+        }
+    }
+
+    @Nested
+    class SourceOffsetFallbacks {
+        @Test
+        void testBracketContextIgnoresClosingBracketsInComments() throws Exception {
+            final var scan = ParsedSql.class.getDeclaredMethod("isInsideOpenBracketGroup", String.class, int.class);
+            scan.setAccessible(true);
+            for (final String token : List.of("array[/* ] */ :name]", "array[-- ignored ]\n:name]", "array[/* unclosed :name")) {
+                assertEquals(true, scan.invoke(null, token, token.indexOf(":name")), token);
+            }
+            final String closed = "array[0] :name";
+            assertEquals(false, scan.invoke(null, closed, closed.indexOf(":name")));
+        }
+
+        @Test
+        void testNamedParameterScannerStopsAtMissingOrInvalidSegments() throws Exception {
+            final var scan = ParsedSql.class.getDeclaredMethod("findNamedParameterEndIndex", String.class, int.class);
+            scan.setAccessible(true);
+            assertEquals(1, scan.invoke(null, ":", 1));
+            assertEquals(1, scan.invoke(null, ":1", 1));
+            assertEquals(5, scan.invoke(null, ":name.", 1));
+            assertEquals(10, scan.invoke(null, ":name.part", 1));
+        }
+
+        @Test
+        void testQuestionMarkOffsetFastPathsRejectMismatchedCounts() throws Exception {
+            final var scan = ParsedSql.class.getDeclaredMethod("allQuestionMarkOffsets", String.class, int.class);
+            scan.setAccessible(true);
+            assertArrayEquals(new int[] { 0, 1 }, (int[]) scan.invoke(null, "??", 2));
+            assertArrayEquals(new int[] { 7 }, (int[]) scan.invoke(null, "SELECT ?", 1));
+            assertNull(scan.invoke(null, "??", 1));
+            assertNull(scan.invoke(null, "SELECT 1", 1));
+            assertNull(scan.invoke(null, "SELECT ?, ?", 1));
+        }
+
+        @Test
+        void testSourceAlignmentRejectsMissingTokensInsteadOfGuessingOffsets() throws Exception {
+            final var align = ParsedSql.class.getDeclaredMethod("alignTokenSourceOffsets", String.class, List.class);
+            final var end = ParsedSql.class.getDeclaredMethod("endOfLastAlignedToken", List.class, int[].class);
+            final var resolve = ParsedSql.class.getDeclaredMethod("resolvePositionalParameterOffsets", String.class, List.class, IntList.class, IntList.class);
+            align.setAccessible(true);
+            end.setAccessible(true);
+            resolve.setAccessible(true);
+            final String sql = "SELECT /* ignored ? */ ?";
+            assertArrayEquals(new int[] { 0, -1, sql.lastIndexOf('?') }, (int[]) align.invoke(null, sql, List.of("SELECT", " ", "?")));
+            assertNull(align.invoke(null, sql, List.of("SELECT", "missing")));
+            assertEquals(-1, end.invoke(null, List.of(" ", ""), new int[] { -1, -1 }));
+            assertNull(resolve.invoke(null, sql, List.of("missing", "?"), IntList.of(1), IntList.of(0)));
         }
     }
 

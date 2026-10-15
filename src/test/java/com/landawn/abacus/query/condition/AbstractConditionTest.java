@@ -44,6 +44,41 @@ import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class AbstractConditionTest extends TestBase {
+    @Nested
+    class ConditionTraversal {
+        @Test
+        void testContainsNonPredicateComponentDescendsThroughCustomCells() {
+            final Cell predicate = new Cell(Operator.NOT, Filters.eq("active", true)) { };
+            final Cell connector = new Cell(Operator.NOT, new On("a.id", "b.id")) { };
+            assertFalse(AbstractCondition.containsNonPredicateComponent(predicate));
+            assertTrue(AbstractCondition.containsNonPredicateComponent(connector));
+        }
+
+        @Test
+        void testContainsOnOrUsingDescendsThroughWrappersAndJunctions() {
+            final Condition predicate = Filters.eq("active", true);
+            final On on = new On("a.id", "b.id");
+            final Using using = new Using("id");
+            assertFalse(AbstractCondition.containsOnOrUsing(null));
+            assertFalse(AbstractCondition.containsOnOrUsing(predicate));
+            assertFalse(AbstractCondition.containsOnOrUsing(new And(predicate, Filters.eq("id", 1))));
+            assertTrue(AbstractCondition.containsOnOrUsing(on));
+            assertTrue(AbstractCondition.containsOnOrUsing(using));
+            assertTrue(AbstractCondition.containsOnOrUsing(new Cell(Operator.NOT, on) { }));
+            assertTrue(AbstractCondition.containsOnOrUsing(new ComposableCell(Operator.NOT, using) { }));
+
+            // Exercise traversal on an internally assembled tree, before public predicate validation rejects connectors.
+            final Junction nested = new Junction(Operator.AND, Arrays.asList(predicate, new Cell(Operator.NOT, using) { }), true);
+            assertTrue(AbstractCondition.containsOnOrUsing(nested));
+        }
+
+        @Test
+        void testDefaultParameterCollectorAppendsCustomConditionBindings() {
+            final List<Object> parameters = new ArrayList<>(List.of("existing"));
+            new TestCondition(Operator.EQUAL, "bound").appendParametersTo(parameters);
+            assertEquals(List.of("existing", "bound"), parameters);
+        }
+    }
 
     @Test
     void testAnd() {
