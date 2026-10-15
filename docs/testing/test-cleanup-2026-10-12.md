@@ -1,5 +1,8 @@
 # Unit-test cleanup — 2026-10-12
 
+Follow-up: the [second pass](test-cleanup-2026-10-13.md) completes parser
+organization and records additional consolidation and verification.
+
 ## Result
 
 The suite is organized around production units and behavior groups. Seventeen

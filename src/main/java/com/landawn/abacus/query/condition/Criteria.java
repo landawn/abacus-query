@@ -401,20 +401,35 @@ public class Criteria extends AbstractCondition {
      */
     @Override
     public ImmutableList<Object> parameters() {
-        return computeParameters();
+        if (this.conditions.isEmpty()) {
+            return ImmutableList.empty();
+        }
+
+        final List<Object> parameters = new ArrayList<>();
+
+        appendClauseParameters(parameters);
+
+        return ImmutableList.wrap(parameters);
     }
 
     /**
-     * Computes the parameter list for {@link #parameters()}, collecting parameters from the
-     * constituent clauses in SQL clause order: JOINs, WHERE, GROUP BY, HAVING, set operations,
-     * ORDER BY, LIMIT.
+     * Appends the parameters of the constituent clauses, in SQL clause order (JOINs, WHERE, GROUP BY,
+     * HAVING, set operations, ORDER BY, LIMIT), to the supplied list, recursing into nested composites
+     * through {@link AbstractCondition#appendParametersTo(List)} so the whole tree fills one shared list.
      *
-     * @return an immutable list of all parameters collected from the constituent clauses;
-     *         empty if this criteria has no conditions
+     * <p>{@link #parameters()} does not call this method (both share a private helper), so a subclass
+     * may override it as {@code out.addAll(parameters())} without recursing.</p>
+     *
+     * @param out the list to append to (must not be {@code null})
      */
-    private ImmutableList<Object> computeParameters() {
+    @Override
+    protected void appendParametersTo(final List<Object> out) {
+        appendClauseParameters(out);
+    }
+
+    private void appendClauseParameters(final List<Object> out) {
         if (this.conditions.isEmpty()) {
-            return ImmutableList.empty();
+            return;
         }
 
         // Single pass: bucket conditions by clause while preserving the exact ordering used by
@@ -464,41 +479,24 @@ public class Criteria extends AbstractCondition {
             }
         }
 
-        final List<Object> parameters = new ArrayList<>();
-
         if (joins != null) {
             for (final Join join : joins) {
-                parameters.addAll(join.parameters());
+                appendParametersOf(join, out);
             }
         }
 
-        if (where != null) {
-            parameters.addAll(where.parameters());
-        }
-
-        if (groupBy != null) {
-            parameters.addAll(groupBy.parameters());
-        }
-
-        if (having != null) {
-            parameters.addAll(having.parameters());
-        }
+        appendParametersOf(where, out);
+        appendParametersOf(groupBy, out);
+        appendParametersOf(having, out);
 
         if (setOperations != null) {
             for (final Condition cond : setOperations) {
-                parameters.addAll(cond.parameters());
+                appendParametersOf(cond, out);
             }
         }
 
-        if (orderBy != null) {
-            parameters.addAll(orderBy.parameters());
-        }
-
-        if (limit != null) {
-            parameters.addAll(limit.parameters());
-        }
-
-        return ImmutableList.wrap(parameters);
+        appendParametersOf(orderBy, out);
+        appendParametersOf(limit, out);
     }
 
     /**
@@ -1022,7 +1020,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, that is reported first;
          *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #join(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
@@ -1049,7 +1047,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, if {@code joinCondition}
          *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
@@ -1084,7 +1082,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  {@code null}, empty, or blank elements or an element containing an unterminated block comment, if {@code joinCondition} is {@code null}
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
@@ -1117,7 +1115,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, that is reported first;
          *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #innerJoin(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
@@ -1147,7 +1145,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, if {@code joinCondition}
          *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
@@ -1181,7 +1179,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  {@code null}, empty, or blank elements or an element containing an unterminated block comment, if {@code joinCondition} is {@code null}
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
@@ -1214,7 +1212,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, that is reported first;
          *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #leftJoin(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
@@ -1243,7 +1241,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, if {@code joinCondition}
          *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
@@ -1277,7 +1275,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  {@code null}, empty, or blank elements or an element containing an unterminated block comment, if {@code joinCondition} is {@code null}
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
@@ -1310,7 +1308,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, that is reported first;
          *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #rightJoin(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
@@ -1339,7 +1337,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, if {@code joinCondition}
          *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
@@ -1373,7 +1371,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  {@code null}, empty, or blank elements or an element containing an unterminated block comment, if {@code joinCondition} is {@code null}
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
@@ -1406,7 +1404,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining (never reached; this overload always throws)
-         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+         * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, that is reported first;
          *                                  otherwise it is thrown because a qualified join requires a non-{@code null} {@code ON}/{@code USING} predicate
          * @deprecated always throws {@link IllegalArgumentException}; use {@link #fullJoin(String, Condition)} or
          *             {@link #crossJoin(String)} instead.
@@ -1435,7 +1433,7 @@ public class Criteria extends AbstractCondition {
          * @param joinEntity the table or entity to join
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, if {@code joinCondition}
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, if {@code joinCondition}
          *                                  is {@code null} (qualified joins require an ON/USING predicate), or if
          *                                  {@code joinCondition} is or contains a {@link Criteria}, a {@code null} operator, a SQL clause,
          *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested
@@ -1469,7 +1467,7 @@ public class Criteria extends AbstractCondition {
          * @param joinCondition the join condition (must not be {@code null}); an {@link On}/{@link Using} connector or a plain predicate
          * @return this Builder instance for method chaining
          * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, contains
-         *                                  {@code null}, empty, or blank elements, if {@code joinCondition} is {@code null}
+         *                                  {@code null}, empty, or blank elements or an element containing an unterminated block comment, if {@code joinCondition} is {@code null}
          *                                  (qualified joins require an ON/USING predicate), or if {@code joinCondition} is or contains a
          *                                  {@link Criteria}, a {@code null} operator, a SQL clause, an {@link SqlExpression} whose text begins
          *                                  with {@code ON} or {@code USING}, a nested {@code ON}/{@code USING} connector, an
@@ -1497,7 +1495,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public Builder crossJoin(final String joinEntity) {
             addConditions(new CrossJoin(joinEntity));
@@ -1521,7 +1519,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntities the collection of tables/entities to join
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements or an element containing an unterminated block comment
          */
         public Builder crossJoin(final Collection<String> joinEntities) {
             addConditions(new CrossJoin(joinEntities));
@@ -1543,7 +1541,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntity the table or entity to join
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public Builder naturalJoin(final String joinEntity) {
             addConditions(new NaturalJoin(joinEntity));
@@ -1567,7 +1565,7 @@ public class Criteria extends AbstractCondition {
          *
          * @param joinEntities the collection of tables/entities to join
          * @return this Builder instance for method chaining
-         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
+         * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements or an element containing an unterminated block comment
          */
         public Builder naturalJoin(final Collection<String> joinEntities) {
             addConditions(new NaturalJoin(joinEntities));

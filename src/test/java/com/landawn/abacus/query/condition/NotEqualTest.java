@@ -330,8 +330,8 @@ public class NotEqualTest extends TestBase {
         assertEquals(true, boolNe.propValue());
 
         // Date
-        Date now = new Date();
-        NotEqual dateNe = Filters.ne("created", now);
-        assertEquals(now, dateNe.propValue());
+        Date createdAt = new Date(1_700_000_000_000L);
+        NotEqual dateNe = Filters.ne("created", createdAt);
+        assertEquals(createdAt, dateNe.propValue());
     }
 }

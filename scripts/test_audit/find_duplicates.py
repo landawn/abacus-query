@@ -9,8 +9,8 @@ member, so a human can pick the canonical version to keep.
 
 Normalization (see parse_tests.normalize_body):
   - comments removed
-  - string/char literals collapsed to placeholders
-  - whitespace collapsed
+  - string/char literal contents and code token boundaries preserved
+  - code whitespace normalized
 
 Tunables:
   --min-size N     only report groups with >= N members (default 2)

@@ -18,6 +18,7 @@ import static com.landawn.abacus.util.SK.COMMA_SPACE;
 import static com.landawn.abacus.util.SK.SPACE;
 
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -29,6 +30,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import com.landawn.abacus.query.QueryUtil;
@@ -568,6 +571,11 @@ public abstract class AbstractCondition implements Condition {
      * compared properties; those APIs require one selected column per property. {@link Exists} and
      * {@link NotExists} test row existence and do not require a single-column projection.</p>
      *
+     * <p>Every rejection here applies to a {@link Condition} operand only; any other value (including
+     * {@code null}) is returned unchanged. The IN/NOT IN and row-value list validators rely on this to skip
+     * non-condition elements without building their positional names (see {@code isRejectableValueOperand}),
+     * so that predicate must be widened if a check on a non-condition value is ever added here.</p>
+     *
      * @param <T> the operand type
      * @param operand the value-position operand to validate; may be {@code null} or a non-condition value
      * @param argumentName the argument name used in an exception message
@@ -684,6 +692,10 @@ public abstract class AbstractCondition implements Condition {
      * right-hand side of a compatible scalar comparison; they are not scalar values for BETWEEN bounds
      * or IN/NOT IN value lists.
      *
+     * <p>As in {@link #validateValueOperand(Object, String)}, every rejection here applies to a
+     * {@link Condition} operand only: the list validators skip non-condition elements (see
+     * {@code isRejectableValueOperand}), which must be widened if a non-condition check is ever added.</p>
+     *
      * @param <T> the operand type
      * @param operand the operand to validate
      * @param argumentName the argument name used in an exception message
@@ -708,8 +720,9 @@ public abstract class AbstractCondition implements Condition {
      * Applies {@link #validateNonQuantifiedValueOperand(Object, String)} to every element of the given
      * collection, in iteration order. Each element is reported with its positional index appended to
      * {@code argumentName} (for example {@code values[2]}), so a rejected element can be located in the
-     * supplied list. Used by the multi-value conditions ({@code IN}/{@code NOT IN} value lists and
-     * row-value tuples), whose elements are all rendered in a scalar/value position.
+     * supplied list. Used by the multi-value conditions ({@code IN}/{@code NOT IN} value lists; see
+     * {@link #validateNonQuantifiedValueOperands(Collection, String, int)} for row-value tuples), whose
+     * elements are all rendered in a scalar/value position.
      *
      * @param values the value-position operands to validate; must not be {@code null}, though individual
      *               elements may be {@code null}
@@ -725,8 +738,64 @@ public abstract class AbstractCondition implements Condition {
         int index = 0;
 
         for (final Object value : values) {
-            validateNonQuantifiedValueOperand(value, argumentName + "[" + index++ + "]");
+            validateNonQuantifiedValueOperand(value, argumentName, index++);
         }
+    }
+
+    /**
+     * Row-value variant of {@link #validateNonQuantifiedValueOperands(Collection, String)}: validates every
+     * element of the {@code rowIndex}-th tuple of {@code argumentName}, reporting a rejected element as
+     * {@code argumentName[rowIndex][index]} (for example {@code valueRows[3][1]}).
+     *
+     * @param values the tuple elements to validate; must not be {@code null}, though individual elements may be {@code null}
+     * @param argumentName the argument name of the enclosing row collection, used as the prefix in an exception message
+     * @param rowIndex the position of the tuple in the enclosing row collection
+     * @throws IllegalArgumentException if {@code values} is {@code null}, or under the conditions documented for
+     *                                  {@link #validateNonQuantifiedValueOperands(Collection, String)}
+     */
+    static void validateNonQuantifiedValueOperands(final Collection<?> values, final String argumentName, final int rowIndex) {
+        N.checkArgNotNull(values, cs.values);
+
+        int index = 0;
+
+        for (final Object value : values) {
+            if (isRejectableValueOperand(value)) {
+                validateNonQuantifiedValueOperand(value, argumentName + "[" + rowIndex + "]", index);
+            }
+
+            index++;
+        }
+    }
+
+    /**
+     * Validates one element of a value list exactly like {@link #validateNonQuantifiedValueOperand(Object, String)},
+     * reporting a rejected element as {@code argumentName[index]} (for example {@code values[2]}).
+     *
+     * @param <T> the operand type
+     * @param operand the element to validate
+     * @param argumentName the argument name of the enclosing list, used as the prefix in an exception message
+     * @param index the position of {@code operand} in the enclosing list
+     * @return {@code operand}, unchanged
+     * @throws IllegalArgumentException under the conditions documented for
+     *                                  {@link #validateNonQuantifiedValueOperand(Object, String)}
+     */
+    static <T> T validateNonQuantifiedValueOperand(final T operand, final String argumentName, final int index) {
+        if (isRejectableValueOperand(operand)) {
+            validateNonQuantifiedValueOperand(operand, argumentName + "[" + index + "]");
+        }
+
+        return operand;
+    }
+
+    /**
+     * Returns whether {@link #validateNonQuantifiedValueOperand(Object, String)} can reject the operand at all.
+     * Every rejection there applies to a {@link Condition} operand only, so the list validators build their
+     * positional {@code name[index]} message just for such elements instead of once per element of a
+     * (possibly huge) IN membership list or per row-value tuple. Must be widened if either validator ever
+     * gains a rejection for a non-condition value; otherwise the list validators would silently skip it.
+     */
+    private static boolean isRejectableValueOperand(final Object operand) {
+        return operand instanceof Condition;
     }
 
     /**
@@ -999,11 +1068,98 @@ public abstract class AbstractCondition implements Condition {
 
         final String literal = value.toString();
 
+        // Exact-class check: these JDK integral types' toString() is always -?[0-9]+, which the pattern accepts,
+        // so skip the per-number Matcher allocation; subclasses, floating types and BigDecimal still get checked.
+        final Class<?> cls = value.getClass();
+
+        if (cls == Integer.class || cls == Long.class || cls == Short.class || cls == Byte.class || cls == BigInteger.class || cls == AtomicInteger.class
+                || cls == AtomicLong.class) {
+            return literal;
+        }
+
         if (literal == null || !SQL_NUMBER_LITERAL_PATTERN.matcher(literal).matches()) {
             throw new IllegalArgumentException("Number.toString() did not produce a valid SQL numeric literal: " + literal);
         }
 
         return literal;
+    }
+
+    /**
+     * Appends this condition's bound parameters, in {@link #parameters()} order, to the supplied list.
+     * This is the recursive back-end of {@link #parameters()} for aggregating conditions (junctions, cells,
+     * criteria): a composite calls it on its children to push their parameters straight into the one list that
+     * the outermost call owns, instead of materializing and copying an intermediate list per nesting level,
+     * which keeps deeply nested trees (e.g. {@code cond = Filters.and(cond, next)} in a loop) linear.
+     * The default implementation simply appends {@link #parameters()}, which is correct for every leaf
+     * condition and for any composite that does not override it.
+     *
+     * <p>Overrides must append exactly the elements that {@link #parameters()} would return, in the same order.
+     * The composites call this hook only on their children, never from their own {@code parameters()}, so it
+     * is consulted only for a nested condition, and an override written as {@code out.addAll(parameters())}
+     * cannot recurse into itself.
+     * A subclass that overrides only {@link #parameters()} (and not this hook) stays authoritative: the
+     * composites detect that its {@code parameters()} is declared below the class that declares this hook and
+     * fall back to {@code parameters()} for it, so such an override is honoured whether the condition is the
+     * outermost one or nested at any depth. A subclass that overrides both must keep them consistent.</p>
+     *
+     * @param out the list to append to (must not be {@code null})
+     */
+    protected void appendParametersTo(final List<Object> out) {
+        out.addAll(parameters());
+    }
+
+    /**
+     * Per-class memo of whether {@link #appendParametersTo(List)} reflects every override of {@link #parameters()}
+     * in the runtime class: {@code true} when {@code parameters()} is declared no lower in the hierarchy than the
+     * hook, i.e. the hook was declared by (or below) the class that last defined {@code parameters()};
+     * {@code false} when {@code parameters()} was overridden below the class that declares the hook (for example
+     * an {@code And} subclass overriding only {@code parameters()}, with {@code Junction}'s hook above it). Such
+     * a {@code parameters()} override must stay authoritative, so for it the composites fall back to
+     * {@code out.addAll(parameters())} instead of the hook. {@code false} is always a correct answer, so any
+     * reflection failure yields it. One reflective lookup per class, then a cache hit.
+     */
+    private static final ClassValue<Boolean> HOOK_REFLECTS_PARAMETERS = new ClassValue<>() {
+        @Override
+        protected Boolean computeValue(final Class<?> type) {
+            try {
+                final Class<?> parametersOwner = type.getMethod("parameters").getDeclaringClass();
+                Class<?> hookOwner = type;
+
+                while (hookOwner != AbstractCondition.class) {
+                    try {
+                        hookOwner.getDeclaredMethod("appendParametersTo", List.class);
+                        break;
+                    } catch (final NoSuchMethodException | SecurityException e) {
+                        hookOwner = hookOwner.getSuperclass();
+                    }
+                }
+
+                return parametersOwner.isAssignableFrom(hookOwner) ? Boolean.TRUE : Boolean.FALSE;
+            } catch (final NoSuchMethodException | SecurityException | LinkageError e) {
+                // getMethod/getDeclaredMethod resolve every type named in the class's method signatures, so a user
+                // subclass that is otherwise usable (lazy linking) but declares a method naming a class absent at
+                // runtime throws NoClassDefFoundError here - and again on every call, since ClassValue does not cache
+                // a throw. Fall back to parameters() (FALSE) rather than breaking every enclosing parameters() call.
+                return Boolean.FALSE;
+            }
+        }
+    };
+
+    /**
+     * Appends the bound parameters of {@code condition} to {@code out}, recursing through
+     * {@link #appendParametersTo(List)} when the condition is an {@link AbstractCondition} whose hook reflects
+     * its {@link #parameters()} (see {@link #HOOK_REFLECTS_PARAMETERS}) and falling back to
+     * {@code condition.parameters()} otherwise. A {@code null} condition contributes nothing.
+     *
+     * @param condition the condition whose parameters to append, may be {@code null}
+     * @param out the list to append to (must not be {@code null})
+     */
+    protected static void appendParametersOf(final Condition condition, final List<Object> out) {
+        if (condition instanceof AbstractCondition && HOOK_REFLECTS_PARAMETERS.get(condition.getClass())) {
+            ((AbstractCondition) condition).appendParametersTo(out);
+        } else if (condition != null) {
+            out.addAll(condition.parameters());
+        }
     }
 
     /**

@@ -530,9 +530,74 @@ public class JoinTest extends TestBase {
         assertEquals("joinEntity must not be null, empty, or blank", e3.getMessage());
 
         // The collection form still names the element of joinEntities.
-        final IllegalArgumentException e4 = assertThrows(IllegalArgumentException.class,
-                () -> new Join(Arrays.asList("orders o", " "), Filters.expr("a = b")));
+        final IllegalArgumentException e4 = assertThrows(IllegalArgumentException.class, () -> new Join(Arrays.asList("orders o", " "), Filters.expr("a = b")));
         assertTrue(e4.getMessage().contains("joinEntities"), e4.getMessage());
+    }
+
+    @Test
+    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
+        // Regression: "t /* x" was accepted and rendered as "JOIN t /* x ON a.id = b.id", commenting out the join predicate.
+        final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new Join("t /* x", ON_AB));
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x", e.getMessage());
+
+        assertThrows(IllegalArgumentException.class, () -> new InnerJoin("t /* x", ON_AB));
+        assertThrows(IllegalArgumentException.class, () -> new CrossJoin("t /* x"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("t /* x", ON_AB));
+        assertThrows(IllegalArgumentException.class, () -> Criteria.builder().join("t /* x", ON_AB));
+
+        // The collection form names the element of joinEntities.
+        final IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> new Join(List.of("a", "t /* x"), ON_AB));
+        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x", e2.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new CrossJoin(List.of("a", "t /* x")));
+
+        // A terminated block comment is kept verbatim.
+        assertEquals("JOIN t /* x */ u ON a.id = b.id", new Join("t /* x */ u", ON_AB).toString());
+        assertEquals("CROSS JOIN (a CROSS JOIN t /* x */)", new CrossJoin(List.of("a", "t /* x */")).toString());
+    }
+
+    @Test
+    void testMySqlDashReadingOfUnterminatedBlockCommentInJoinEntity() {
+        // Regression: MySQL reads "t --/*" as "t - -" plus an open block comment (it needs whitespace after "--"), so the
+        // generic line-comment terminator does not help there; the entity was accepted.
+        assertEquals("joinEntity must not contain an unterminated block comment: t --/*",
+                assertThrows(IllegalArgumentException.class, () -> new Join("t --/*", ON_AB)).getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new CrossJoin("t --/*"));
+        assertThrows(IllegalArgumentException.class, () -> new Join(List.of("a", "t --x /* y"), ON_AB));
+
+        // With whitespace after "--" every dialect reads a line comment, which the renderer terminates.
+        assertEquals("JOIN t -- /* x\n ON a.id = b.id", new Join("t -- /* x", ON_AB).toString());
+        assertEquals("JOIN t --/* x */\n ON a.id = b.id", new Join("t --/* x */", ON_AB).toString());
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testDeprecatedSingleArgumentCtorsReportUnterminatedBlockCommentFirst() {
+        // Documented: an invalid entity "is reported first", before the always-thrown missing-predicate rejection.
+        final String expected = "joinEntity must not contain an unterminated block comment: t /* x";
+        assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> new Join("t /* x")).getMessage());
+        assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> new InnerJoin("t /* x")).getMessage());
+        assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> new LeftJoin("t /* x")).getMessage());
+        assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> new RightJoin("t /* x")).getMessage());
+        assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> new FullJoin("t /* x")).getMessage());
+        assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> Filters.leftJoin("t /* x")).getMessage());
+
+        // A valid entity still gets the missing-predicate rejection.
+        assertEquals("JOIN requires a non-null ON/USING predicate; use CROSS JOIN for an unconditional join",
+                assertThrows(IllegalArgumentException.class, () -> new Join("t")).getMessage());
+    }
+
+    @Test
+    void testNestedQuotedTempTableAndHintCommentsInJoinEntity() {
+        // PostgreSQL and SQL Server nest block comments: a balanced nest is closed, an inner opener alone is not.
+        assertEquals("JOIN t /* /* */ */ ON a.id = b.id", new Join("t /* /* */ */", ON_AB).toString());
+        assertThrows(IllegalArgumentException.class, () -> new Join("t /* /* */", ON_AB));
+
+        // Quoted identifiers, a SQL Server #temp table and optimizer hints are not unterminated comments.
+        assertEquals("JOIN \"t/*\" ON a.id = b.id", new Join("\"t/*\"", ON_AB).toString());
+        assertEquals("JOIN `t/*` ON a.id = b.id", new Join("`t/*`", ON_AB).toString());
+        assertEquals("JOIN #temp /* x */ ON a.id = b.id", new Join("#temp /* x */", ON_AB).toString());
+        assertEquals("JOIN t /*+ INDEX(t i) */ ON a.id = b.id", new Join("t /*+ INDEX(t i) */", ON_AB).toString());
+        assertEquals("JOIN t /*! STRAIGHT_JOIN */ ON a.id = b.id", new Join("t /*! STRAIGHT_JOIN */", ON_AB).toString());
     }
 
     @Test

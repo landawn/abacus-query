@@ -340,8 +340,8 @@ public class AbstractBetweenTest extends TestBase {
 
             final Object[] cyclicMinimum = new Object[1];
             cyclicMinimum[0] = cyclicMinimum;
-            assertTrue(
-                    assertThrows(IllegalArgumentException.class, () -> new NotBetween("age", cyclicMinimum, null)).getMessage().contains("Cyclic object arrays"));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> new NotBetween("age", cyclicMinimum, null)).getMessage()
+                    .contains("Cyclic object arrays"));
         }
     }
 

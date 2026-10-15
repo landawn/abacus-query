@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.9.5)
-- Build: 0b6001de74ed9c368645d6158ecb0a57a74e64bb
+- Build: b55692d075a5dfafa1a21e15adb0751427e4f167
 - Java: 21
-- Generated: 2026-10-12
+- Generated: 2026-10-14
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -41,7 +41,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -83,7 +83,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -149,7 +149,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, or if a non-empty modifier is supplied and this builder does not represent a SELECT query or already has a modifier for the current SELECT segment
-  - `java.lang.IllegalArgumentException` — if selectModifier is non-empty but blank (whitespace only)
+  - `java.lang.IllegalArgumentException` — if selectModifier is non-empty but blank (whitespace only), or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*").selectModifier("TOP 10").from("account").build().query();
@@ -163,7 +163,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if tableNames is null or empty, contains a null, empty, or blank element, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break
+  - `java.lang.IllegalArgumentException` — if tableNames is null or empty, contains a null, empty, or blank element or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -177,7 +177,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if tableNames is null or empty, contains a null, empty, or blank element, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break
+  - `java.lang.IllegalArgumentException` — if tableNames is null or empty, contains a null, empty, or blank element or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -192,7 +192,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -212,7 +212,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT, has no projection, or already has a FROM clause, or if the child is incomplete or was already consumed; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this builder, does not build a complete, lexically SELECT-only SELECT query without semicolons outside quoted text or comments, uses an incompatible parameter policy, or alias is null, empty, or blank, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break
+  - `java.lang.IllegalArgumentException` — if sqlBuilder is null, is this builder, does not build a complete, lexically SELECT-only SELECT query without semicolons outside quoted text or comments, uses an incompatible parameter policy, or alias is null, empty, or blank, or contains an unterminated block comment (reported before the child is finalized), or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
@@ -231,7 +231,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -247,7 +247,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its mapped table name ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL, where '#' opens a comment), or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -264,7 +264,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if alias contains a line break or a SQL comment token, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its mapped table name ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL, where '#' opens a comment), if alias contains a line break or a SQL comment token, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -279,7 +279,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -295,7 +295,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -318,7 +318,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -339,7 +339,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -355,7 +355,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -372,7 +372,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -389,7 +389,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -405,7 +405,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -422,7 +422,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -439,7 +439,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -455,7 +455,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -472,7 +472,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -489,7 +489,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -505,7 +505,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -522,7 +522,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -539,7 +539,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains a top-level ON/USING connector
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, contains an unterminated block comment, or contains a top-level ON/USING connector
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -555,7 +555,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -572,7 +572,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -589,7 +589,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains a top-level ON/USING connector
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, contains an unterminated block comment, or contains a top-level ON/USING connector
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -605,7 +605,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -622,7 +622,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -748,7 +748,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if WHERE has already been set on this builder (or it is a condition-only builder that has already rendered its bare predicate), if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet or a completed set-operation operand has already been emitted, or if a later clause (GROUP BY, HAVING, ORDER BY, pagination, FOR UPDATE) has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or, on a SQL Server dialect, contains a temporary-table identifier (#name) together with a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or, on a SQL Server dialect, contains a temporary-table identifier (#name) together with a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -765,7 +765,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if WHERE has already been set on this builder (or it is a condition-only builder that has already rendered its bare predicate), if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet or a completed set-operation operand has already been emitted, or if a later clause (GROUP BY, HAVING, ORDER BY, pagination, FOR UPDATE) has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank or comment-only SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example WHERE 1 = 1); or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression, an incompatible subquery parameter policy, or an invalid raw numeric literal; see #appendCondition(Condition); or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if condition is null, has a null operator, or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank or comment-only SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example WHERE 1 = 1); or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression, an incompatible subquery parameter policy, or an invalid raw numeric literal; see #appendCondition(Condition); or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -1027,7 +1027,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1044,7 +1044,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1061,7 +1061,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1080,7 +1080,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1097,7 +1097,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1114,7 +1114,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1133,7 +1133,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1150,7 +1150,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1168,7 +1168,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, if expr contains a SQL comment token, or if direction is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, if expr contains a SQL comment token, or if direction is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1185,7 +1185,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1204,7 +1204,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element or an element containing a SQL comment token, or if direction is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, contains a null, empty, or blank element or an element containing a SQL comment token, or if direction is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1222,7 +1222,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if ORDER BY has already been set on this builder, if a preceding qualified JOIN has not been completed with on(...)/using(...), if this is an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or if pagination or FOR UPDATE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if orders is null or empty, contains a null, empty, or blank key, a key containing a SQL comment token, or maps any key to a null direction; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if orders is null or empty, contains a null, empty, or blank key, a key containing a SQL comment token, or maps any key to a null direction; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1245,7 +1245,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if LIMIT has already been set on this builder, or on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, or if OFFSET was already emitted on a limit-style dialect where LIMIT must precede OFFSET, for SQL Server if ORDER BY has not been set, if a preceding qualified JOIN has not been completed with on(...)/using(...), on a FETCH-style dialect for UPDATE/DELETE statements, on an INSERT VALUES statement or an UPDATE statement that has no SET columns, if the current SELECT segment has no FROM clause yet, or after FOR UPDATE has been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if count is negative; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if count is negative; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1270,7 +1270,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), if LIMIT or OFFSET has already been set on this builder, on a FETCH-style dialect if FETCH FIRST/FETCH NEXT has already been set, for SQL Server if ORDER BY has not been set, on INSERT VALUES statements, on UPDATE/DELETE statements (the OFFSET portion is not valid there), if a preceding qualified JOIN has not been completed with on(...)/using(...), if the current SELECT segment has no FROM clause yet, or after FOR UPDATE has been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if count or offset is negative; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if count or offset is negative; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1380,7 +1380,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed; if a clause emitted by condition (WHERE, GROUP BY, HAVING, ORDER BY, or pagination, including the implicit WHERE of a plain predicate) has already been set, would be emitted after a clause that must follow it, or cannot be placed at the builder's current position (as documented for #where(Condition), #groupBy(String), #having(Condition), #orderBy(String), and #limit(int)); if a Criteria carries JOINs that cannot be appended at the current position (see #join(String)); if a Criteria select modifier has no current SELECT segment or that segment already has a select modifier; or if a set-operation clause is appended to a builder that is not building a SELECT query (or is in condition-only mode), while a preceding qualified JOIN is incomplete, before the current SELECT segment has been completed by from(...), or after ORDER BY, pagination, or FOR UPDATE; if a plain predicate is appended to a condition-only builder (Dsl.renderCondition) that already rendered its condition, or a WHERE clause (directly or in a Criteria) after that rendered bare predicate; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if condition is null, if a predicate position contains a non-predicate condition, if a Criteria join entity contains a top-level ON/USING connector, if a generic clause uses an operator that requires a dedicated builder method or condition type, or if a set-operation operand (standalone or carried by a Criteria) is not a complete, lexically SELECT-only SELECT query, contains a semicolon outside quoted text or comments, or requires explicit branch isolation, or if a Criteria JOIN's Using connector renders a qualified column name; or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression, an incompatible subquery parameter policy, or an invalid raw numeric literal; see #appendCondition(Condition).
+  - `java.lang.IllegalArgumentException` — if condition is null, if a predicate position contains a non-predicate condition, if a Criteria join entity contains a top-level ON/USING connector, if a generic clause uses an operator that requires a dedicated builder method or condition type, or if a set-operation operand (standalone or carried by a Criteria; a structured SubQuery, or under RAW_SQL a raw one whose bindings are inlined, is also judged by the SQL this builder renders for it) is not a complete, lexically SELECT-only SELECT query, contains a semicolon outside quoted text or comments, or requires explicit branch isolation, or if a Criteria JOIN's Using connector renders a qualified column name, or if, on H2, a GROUP BY or ORDER BY clause (standalone or carried by a Criteria) holds a raw expression, such as the sort keys of Filters.orderBy(...), containing a // line comment outside quoted text (as #orderBy(String) rejects a SQL comment token in a sort key); or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression, an incompatible subquery parameter policy, or an invalid raw numeric literal; see #appendCondition(Condition).
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -1402,7 +1402,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (an INSERT with no into(...) table, an UPDATE with no set(...) columns, or a SELECT segment not completed by from(...)); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or contains an unterminated block comment; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1441,7 +1441,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if b is true and the statement prefix cannot be rendered yet (see #append(String)) When the selected branch renders SQL, also if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if b is true and expr is null, empty, or blank; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if b is true and expr is null, empty, or blank, or contains an unterminated block comment; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if the selected branch invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1486,7 +1486,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (see #append(String)) When the selected branch renders SQL, also if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if the selected expression (the one chosen by b) is null, empty, or blank; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if the selected expression (the one chosen by b) is null, empty, or blank, or contains an unterminated block comment; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if the selected branch invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1805,7 +1805,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or contains a SQL comment token
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or contains a SQL comment token; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1832,7 +1832,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element, or an element containing a SQL comment token
+  - `java.lang.IllegalArgumentException` — if propOrColumnNames is null or empty, or contains a null, empty, or blank element, or an element containing a SQL comment token; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -1850,7 +1850,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if props is null or empty, or contains a null, empty, or blank key, or a key containing a SQL comment token; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if props is null or empty, or contains a null, empty, or blank key, or a key containing a SQL comment token; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.UnsupportedOperationException` — if a nested subquery's entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -1872,7 +1872,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.UnsupportedOperationException` — if a nested subquery's entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -1893,7 +1893,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if either property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if either property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.UnsupportedOperationException` — if a nested subquery's entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -1913,7 +1913,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if any property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if any property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.UnsupportedOperationException` — if a nested subquery's entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -1929,7 +1929,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if entity is null; if entity is a Collection or array (use #set(Collection) for column lists); if a String entity is empty or blank or contains a SQL comment token; if a Map entity is empty or has a null, empty, or blank key or a key containing a SQL comment token; or if any other entity is not an instance of an entity bean class or its bean has no updatable property; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if entity is null; if entity is a Collection or array (use #set(Collection) for column lists); if a String entity is empty or blank or contains a SQL comment token; if a Map entity is empty or has a null, empty, or blank key or a key containing a SQL comment token; or if any other entity is not an instance of an entity bean class or its bean has no updatable property; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if reading an entity property invokes a getter that throws, or reflective property access fails; or if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -1949,7 +1949,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if entity is null; if entity is a Collection or array (use #set(Collection) for column lists); if a String entity is empty or blank or contains a SQL comment token; if a Map entity has a null, empty, or blank key or a key containing a SQL comment token, or has no entry remaining after exclusions are applied; or if any other entity is not an instance of an entity bean class or its bean has no updatable property remaining after exclusions are applied; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if entity is null; if entity is a Collection or array (use #set(Collection) for column lists); if a String entity is empty or blank or contains a SQL comment token; if a Map entity has a null, empty, or blank key or a key containing a SQL comment token, or has no entry remaining after exclusions are applied; or if any other entity is not an instance of an entity bean class or its bean has no updatable property remaining after exclusions are applied; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if reading an entity property invokes a getter that throws, or reflective property access fails; or if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -1967,7 +1967,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if entityClass is null, is not an entity bean class, or declares no updatable property
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not an entity bean class, or declares no updatable property; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
@@ -1987,7 +1987,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, does not represent an UPDATE, or a post-SET clause such as WHERE has already been emitted; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if entityClass is null, is not an entity bean class, or no updatable property remains after exclusions are applied
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not an entity bean class, or no updatable property remains after exclusions are applied; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted).
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
@@ -2009,7 +2009,7 @@ Base class for fluent SQL builders.
 - **Returns:** an SP (SQL-Parameters) pair containing the SQL string and parameter list
 - **Throws:**
   - `java.lang.IllegalStateException` — if this method is called after the builder has already been closed by a prior call to build(), or if the statement is incomplete (e.g. a query segment staged columns or a select modifier that no from(...) rendered, an INSERT has no target table, or an UPDATE has no SET columns, or a qualified JOIN was appended without a following on(...)/using(...)); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -2037,7 +2037,7 @@ Base class for fluent SQL builders.
 - **Returns:** the result of applying the function
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed or the statement is incomplete (see #build()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if function is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if function is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `E` — if invoking function with the built SQL and parameters throws an exception
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
@@ -2054,7 +2054,7 @@ Base class for fluent SQL builders.
 - **Returns:** the result of applying the function
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed or the statement is incomplete (see #build()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if function is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if function is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `E` — if invoking function with the built SQL and parameters throws an exception
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
@@ -2076,7 +2076,7 @@ Base class for fluent SQL builders.
   - `consumer` (`Throwables.Consumer<? super SP, E>`) — the consumer to accept the SP pair; must not be null
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed or the statement is incomplete (see #build()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if consumer is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if consumer is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `E` — if invoking consumer with the built SQL and parameters throws an exception
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
@@ -2098,7 +2098,7 @@ Base class for fluent SQL builders.
   - `consumer` (`Throwables.BiConsumer<? super String, ? super List<Object>, E>`) — the bi-consumer to accept the SQL and parameters; must not be null
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed or the statement is incomplete (see #build()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if consumer is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if consumer is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `E` — if invoking consumer with the built SQL and parameters throws an exception
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
@@ -2120,7 +2120,7 @@ Base class for fluent SQL builders.
 - **Returns:** a reusable builder-backed subquery snapshot
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is incomplete or was already consumed; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if the built statement is blank, contains a semicolon outside quoted text or comments, or is not a complete syntactic SELECT query candidate; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if the built statement is blank, contains a semicolon outside quoted text or comments, or is not a complete syntactic SELECT query candidate; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -2141,7 +2141,7 @@ Base class for fluent SQL builders.
   - (none)
 - **Throws:**
   - `java.lang.IllegalStateException` — if the builder has already been closed by a prior call to build(), or if the statement is incomplete (see #build()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered.
+  - `java.lang.IllegalArgumentException` — if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
   - ```java
@@ -2469,7 +2469,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `tableName` (`String`) — the name of the table to update
 - **Returns:** a new SqlBuilder instance configured for UPDATE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.update("account")
@@ -2485,7 +2485,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class for property mapping
 - **Returns:** a new SqlBuilder instance configured for UPDATE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or entityClass is null, or inspected entity metadata has invalid property mappings
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2538,7 +2538,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `tableName` (`String`) — the name of the table to delete from
 - **Returns:** a new SqlBuilder instance configured for DELETE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.deleteFrom("account")
@@ -2553,7 +2553,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class for property mapping
 - **Returns:** a new SqlBuilder instance configured for DELETE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or entityClass is null, or inspected entity metadata has invalid property mappings
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2829,7 +2829,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class to select from
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name
+  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2845,7 +2845,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `tableAlias` (`String`) — the table alias to use
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name, or if tableAlias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2864,7 +2864,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that ends inside a line comment, such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2883,7 +2883,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name, or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that ends inside a line comment, such as t -- note), or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2899,7 +2899,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name
+  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2917,7 +2917,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name, or if tableAlias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2937,7 +2937,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that ends inside a line comment, such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2959,7 +2959,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name, or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that ends inside a line comment, such as t -- note), or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2981,7 +2981,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `classAliasB` (`String`) — property prefix for second entity
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if either entity class is null; if a non-empty table or class alias is blank, quoted, or contains a line break or SQL comment token; if the two selections together resolve to no selectable property; if either entity class is not a valid entity bean class; or if the generated FROM clause is blank
+  - `java.lang.IllegalArgumentException` — if either entity class is null; if a non-empty table or class alias is blank, quoted, or contains a line break or SQL comment token; if the two selections together resolve to no selectable property; if either entity class is not a valid entity bean class; or if the generated FROM clause is blank, or lists a mapped table name that may end inside a line comment (such as t -- note)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -3005,7 +3005,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNamesB` (`Set<String>`) — excluded properties for second entity
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if either entity class is null; if a non-empty table or class alias is blank, quoted, or contains a line break or SQL comment token; if the two selections together resolve to no selectable property after exclusions are applied; if either entity class is not a valid entity bean class; or if the generated FROM clause is blank
+  - `java.lang.IllegalArgumentException` — if either entity class is null; if a non-empty table or class alias is blank, quoted, or contains a line break or SQL comment token; if the two selections together resolve to no selectable property after exclusions are applied; if either entity class is not a valid entity bean class; or if the generated FROM clause is blank, or lists a mapped table name that may end inside a line comment (such as t -- note)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -3023,7 +3023,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `selection` (`Selection`) — the selection descriptor defining the entity, aliases, and property filtering; must not be null
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if selection is null, has a null, empty, or blank included property name, carries a blank, quoted, or comment-bearing table or class alias, resolves to no selectable property, has an entity class that is not a valid entity bean class, or produces a blank generated FROM clause, or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class
+  - `java.lang.IllegalArgumentException` — if selection is null, has a null, empty, or blank included property name, carries a blank, quoted, or comment-bearing table or class alias, resolves to no selectable property, has an entity class that is not a valid entity bean class, or produces a blank generated FROM clause, or lists a mapped table name that may end inside a line comment (such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -3044,7 +3044,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `selections` (`List<Selection>`) — list of Selection objects defining what to select from each entity
 - **Returns:** a new SqlBuilder instance with SELECT and FROM configured
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if selections is null or empty, contains a null element, a null, empty, or blank included property name, or a blank, quoted, or comment-bearing table or class alias, resolves to no properties in total, contains an entity class that is not a valid entity bean class, or produces a blank generated FROM clause, or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class
+  - `java.lang.IllegalArgumentException` — if selections is null or empty, contains a null element, a null, empty, or blank included property name, or a blank, quoted, or comment-bearing table or class alias, resolves to no properties in total, contains an entity class that is not a valid entity bean class, or produces a blank generated FROM clause, or lists a mapped table name that may end inside a line comment (such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -3067,7 +3067,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `tableName` (`String`) — the table to count rows from
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.selectCountFrom("account")
@@ -3081,7 +3081,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class to count
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -3098,7 +3098,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class used for property-to-column mapping (may be null)
 - **Returns:** a new SqlBuilder instance containing the rendered condition SQL
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null, or inspected entity metadata has invalid property mappings; if it is a Where or Having clause whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL clause, JOIN, or ON/USING connector); if it is a clause other than a Where, GroupBy, Having, OrderBy, Limit, or set-operation clause (for example a custom OFFSET clause); if it is or contains a condition type that cannot be rendered or an incompatible subquery; or, under RAW_SQL, a value is a non-finite floating-point number or a Number whose text is not a decimal SQL literal
+  - `java.lang.IllegalArgumentException` — if condition is null, or inspected entity metadata has invalid property mappings; if it is a Where or Having clause whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL clause, JOIN, or ON/USING connector); if it is a clause other than a Where, GroupBy, Having, OrderBy, Limit, or set-operation clause (for example a custom OFFSET clause); if it is or contains a condition type that cannot be rendered or an incompatible subquery; or, under RAW_SQL, a value is a non-finite floating-point number or a Number whose text is not a decimal SQL literal; or, on H2, it is or contains (directly, in a Criteria, or in a structured sub-query) a GROUP BY or ORDER BY clause whose raw expression, such as the sort keys of Filters.orderBy(...), contains a // line comment outside quoted text (see AbstractQueryBuilder#append(Condition)); or a structured sub-query's entity class maps to a table name that AbstractQueryBuilder#from(Class) rejects (an unterminated block comment, or a trailing line comment under this DSL's dialect)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
   - `java.lang.IllegalStateException` — if condition is a com.landawn.abacus.query.condition.Criteria carrying joins, set operations, or a select modifier, or is a standalone set-operation clause: a condition-only builder has no SELECT segment for them to attach to; or a named-parameter handler emits an empty token under NAMED_SQL
   - `java.lang.RuntimeException` — if a custom condition renderer, value renderer, or named-parameter handler throws an exception
@@ -3118,7 +3118,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `condition` (`Condition`) — the condition to render (must not be null)
 - **Returns:** a new SqlBuilder instance containing the rendered condition SQL
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if condition is null; if it is a Where or Having clause whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL clause, JOIN, or ON/USING connector); if it is a clause other than a Where, GroupBy, Having, OrderBy, Limit, or set-operation clause (for example a custom OFFSET clause); if it is or contains a condition type that cannot be rendered or an incompatible subquery; or, under RAW_SQL, a value is a non-finite floating-point number or a Number whose text is not a decimal SQL literal
+  - `java.lang.IllegalArgumentException` — if condition is null; if it is a Where or Having clause whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL clause, JOIN, or ON/USING connector); if it is a clause other than a Where, GroupBy, Having, OrderBy, Limit, or set-operation clause (for example a custom OFFSET clause); if it is or contains a condition type that cannot be rendered or an incompatible subquery; or, under RAW_SQL, a value is a non-finite floating-point number or a Number whose text is not a decimal SQL literal; or, on H2, it is or contains (directly, in a Criteria, or in a structured sub-query) a GROUP BY or ORDER BY clause whose raw expression, such as the sort keys of Filters.orderBy(...), contains a // line comment outside quoted text (see AbstractQueryBuilder#append(Condition)); or a structured sub-query's entity class maps to a table name that AbstractQueryBuilder#from(Class) rejects (an unterminated block comment, or a trailing line comment under this DSL's dialect)
   - `java.lang.IllegalStateException` — if condition is a com.landawn.abacus.query.condition.Criteria carrying joins, set operations, or a select modifier, or is a standalone set-operation clause: a condition-only builder has no SELECT segment for them to attach to; or a named-parameter handler emits an empty token under NAMED_SQL
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer, value renderer, or named-parameter handler throws an exception
@@ -3651,7 +3651,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
-  - `java.lang.IllegalArgumentException` — if table is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if table is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users").append("departments");
@@ -3665,7 +3665,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
-  - `java.lang.IllegalArgumentException` — if table or alias is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if table or alias is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users", "u").append("orders", "o");
@@ -3680,7 +3680,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
-  - `java.lang.IllegalArgumentException` — if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append(Arrays.asList("users", "departments"));
@@ -3695,7 +3695,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users u").join("orders o", "u.id = o.user_id");
@@ -3710,7 +3710,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users u").join("orders o USING (user_id)");
@@ -3725,7 +3725,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users u").innerJoin("orders o", "u.id = o.user_id");
@@ -3740,7 +3740,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users u").innerJoin("orders o USING (user_id)");
@@ -3755,7 +3755,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users u").leftJoin("orders o", "u.id = o.user_id");
@@ -3770,7 +3770,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users u").leftJoin("orders o USING (user_id)");
@@ -3785,7 +3785,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("orders o").rightJoin("users u", "o.user_id = u.id");
@@ -3800,7 +3800,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("orders o").rightJoin("users u USING (user_id)");
@@ -3815,7 +3815,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("employees e").fullJoin("departments d", "e.dept_id = d.id");
@@ -3830,7 +3830,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("employees e").fullJoin("departments d USING (dept_id)");
@@ -3844,7 +3844,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users u").crossJoin("colors c");
@@ -3858,7 +3858,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build(), or if the FROM clause has not been initialized by a prior call that actually appended a table (e.g. append(...), appendIf(...) with a true condition, or appendIfOrElse(...))
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.append("users u").naturalJoin("user_profiles");
@@ -3875,7 +3875,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
-  - `java.lang.IllegalArgumentException` — if b is true and textToAppend is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if b is true and textToAppend is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     from.appendIf(includeArchive, "archived_users");
@@ -3890,7 +3890,7 @@ Builder class for constructing the FROM clause of a SQL query.
 - **Returns:** this FromClause instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this clause builder has already been closed by build()
-  - `java.lang.IllegalArgumentException` — if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank, or contains an unterminated block comment (both are checked, whichever is appended)
 - **Examples:**
   - ```java
     from.appendIfOrElse(useArchive, "archived_users", "active_users");
@@ -6140,7 +6140,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `rightPropName` (`String`) — the second column name to join with
 - **Returns:** an On clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if leftPropName or rightPropName is null, empty, or blank, or if rightPropName consists only of SQL comments
+  - `java.lang.IllegalArgumentException` — if leftPropName or rightPropName is null, empty, or blank, consists only of SQL comments, or contains an unterminated block comment
 - **Examples:**
   - ```java
     On on = Filters.on("user_id", "id");
@@ -6152,7 +6152,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `propNamePairs` (`Map<String, String>`) — map of column name pairs for joining (should be a java.util.LinkedHashMap to preserve order; must not be null or empty)
 - **Returns:** an On clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propNamePairs is null, empty, or contains a null entry, a null, empty, or blank column name, or a value consisting only of SQL comments
+  - `java.lang.IllegalArgumentException` — if propNamePairs is null, empty, or contains a null entry, a null, empty, or blank column name, or a column name consisting only of SQL comments or containing an unterminated block comment
 - **Examples:**
   - ```java
     Map<String, String> joinPairs = new LinkedHashMap<>();
@@ -6197,7 +6197,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntity` (`String`) — the entity/table name to join
 - **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     // Filters.join("orders") always throws; supply the predicate instead:
@@ -6211,7 +6211,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a Join clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Join join = Filters.join("orders",
@@ -6225,7 +6225,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a Join clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Join join = Filters.join(Arrays.asList("orders", "products"),
@@ -6240,7 +6240,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntity` (`String`) — the entity/table name to join
 - **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified LEFT JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified LEFT JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     // Filters.leftJoin("orders") always throws; supply the predicate instead:
@@ -6254,7 +6254,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a LeftJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     LeftJoin join = Filters.leftJoin("orders",
@@ -6268,7 +6268,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a LeftJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     LeftJoin join = Filters.leftJoin(Arrays.asList("orders", "order_items"),
@@ -6283,7 +6283,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntity` (`String`) — the entity/table name to join
 - **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified RIGHT JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified RIGHT JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     // Filters.rightJoin("users") always throws; supply the predicate instead:
@@ -6297,7 +6297,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a RightJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     RightJoin join = Filters.rightJoin("users",
@@ -6311,7 +6311,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a RightJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     RightJoin join = Filters.rightJoin(Arrays.asList("departments", "locations"),
@@ -6325,7 +6325,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntity` (`String`) — the entity/table name to cross join
 - **Returns:** a CrossJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     CrossJoin join = Filters.crossJoin("colors");
@@ -6337,7 +6337,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntities` (`Collection<String>`) — the entity/table names to cross join
 - **Returns:** a CrossJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null, empty, or blank name
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null, empty, or blank name or a name containing an unterminated block comment
 - **Examples:**
   - ```java
     CrossJoin join = Filters.crossJoin(Arrays.asList("colors", "sizes"));
@@ -6351,7 +6351,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntity` (`String`) — the entity/table name to join
 - **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified FULL JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified FULL JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     // Filters.fullJoin("employees") always throws; supply the predicate instead:
@@ -6365,7 +6365,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a FullJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     FullJoin join = Filters.fullJoin("employees",
@@ -6379,7 +6379,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** a FullJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     FullJoin join = Filters.fullJoin(Arrays.asList("employees", "contractors"),
@@ -6394,7 +6394,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntity` (`String`) — the entity/table name to join
 - **Returns:** never returns normally
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified INNER JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified INNER JOIN requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     // Filters.innerJoin("products") always throws; supply the predicate instead:
@@ -6408,7 +6408,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** an InnerJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     InnerJoin join = Filters.innerJoin("products",
@@ -6422,7 +6422,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
 - **Returns:** an InnerJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     InnerJoin join = Filters.innerJoin(Arrays.asList("orders", "order_details"),
@@ -6436,7 +6436,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntity` (`String`) — the entity/table name to natural join
 - **Returns:** a NaturalJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     NaturalJoin join = Filters.naturalJoin("departments");
@@ -6448,7 +6448,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - `joinEntities` (`Collection<String>`) — the entity/table names to natural join
 - **Returns:** a NaturalJoin clause
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null, empty, or blank name
+  - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null, empty, or blank name or a name containing an unterminated block comment
 - **Examples:**
   - ```java
     NaturalJoin join = Filters.naturalJoin(Arrays.asList("employees", "departments"));
@@ -7179,9 +7179,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
 **Nullability:** unspecified
 
 #### Public Fields
-- **Declaration:** `public static final int MAX_CACHEABLE_SQL_LENGTH`
-  - **Summary:** The maximum length (in chars, after String#trim()) of a SQL string that #parse(String) looks up in or stores into its cache.
-  - **Nullability:** unspecified
+- (none)
 
 #### Public Constructors
 - (none)
@@ -7227,6 +7225,9 @@ Represents a parsed SQL statement with support for named parameters and paramete
 ##### parameterizedSql(...) -> String
 - **Signature:** `public String parameterizedSql()`
 - **Summary:** Returns the parameterized SQL with named parameters replaced by JDBC placeholders (?) for recognized data-operation statements.
+- **Contract:**
+  - A /* on such a line is comment text to H2, which reads the lines after it as SQL, so a block comment that opens there and spans that line break is kept as written, from the end of the preceding token up to the next one, instead of being dropped; the line on which such kept text ends is then treated as a line holding // as well, even if it holds none.
+  - If the output ends on such a line, the text discarded after its last token is kept as written whenever it contains a /* (on that line or a later one) and goes on to a later line (complete comments there are kept too); an unterminated /* on a later line then makes H2 report it instead of running the truncated statement.
 - **Parameters:**
   - (none)
 - **Returns:** the parameterized SQL string with ? placeholders
@@ -7377,12 +7378,22 @@ Utility class for handling database query operations, entity-column mappings, an
 - **See also:** #propToColumnNameMap(Class, NamingPolicy)
 ##### hasUnterminatedBlockComment(...) -> boolean
 - **Signature:** `@Internal public static boolean hasUnterminatedBlockComment(final String sql)`
-- **Summary:** Reports whether sql opens a /* block comment that is never closed under any of its plausible lexical readings: string literals with or without backslash escapes, a -- comment ended by any line break or, as in MySQL and SQLite, only by '\\n', a # that starts a line comment (MySQL) or not, \[...\] as a quoted identifier (SQL Server) or not, and block comments that nest (PostgreSQL, SQL Server, H2) or not.
+- **Summary:** Reports whether sql opens a /* block comment that is never closed under any of its plausible lexical readings: string literals with or without backslash escapes, a -- comment ended by any line break or, as in MySQL and SQLite, only by '\\n', a # that starts a line comment (MySQL) or not, \[...\] as a quoted identifier (SQL Server) or not, block comments that nest (PostgreSQL, SQL Server, H2) or not, a -- that starts a comment wherever it occurs or, as in MySQL and MariaDB, only before whitespace, a control character or the end of the text (there the /* of t --/* opens a block comment), and PostgreSQL dollar-quoted strings ($$...$$, $tag$...$tag$) or none (in $$'$$ /* x ' only the dollar-quote reading leaves the comment open).
 - **Parameters:**
   - `sql` (`String`) — the text to scan (must not be null)
 - **Returns:** true if text appended after sql could continue an open block comment
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if sql is null
+##### dollarQuoteEnd(...) -> int
+- **Signature:** `@Internal public static int dollarQuoteEnd(final String sql, final int index)`
+- **Summary:** Returns the index just past the PostgreSQL dollar-quoted string ($$...$$ or $tag$...$tag$) that opens at index, 0 if none opens there, or -1 if it is never closed.
+- **Parameters:**
+  - `sql` (`String`) — the text to scan (must not be null)
+  - `index` (`int`) — an index of sql
+- **Returns:** the index just past the closing tag, 0, or -1
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if sql is null
+  - `java.lang.IndexOutOfBoundsException` — if index is negative or not less than sql.length()
 ##### terminateLineComment(...) -> String
 - **Signature:** `@Internal public static String terminateLineComment(final String sql)`
 - **Summary:** Terminates a trailing SQL line comment before a renderer appends a separator, keyword, or closing parenthesis.
@@ -7685,7 +7696,7 @@ Utility class for handling database query operations, entity-column mappings, an
   - `expr` (`String`) — the raw expression tokens was produced from
   - `tokens` (`List<String>`) — the tokens of expr, as tokenizer returns them
   - `tokenizer` (`SqlParser.Tokenizer`) — the tokenizer that produced tokens; it also tokenizes the interior of array subscripts
-  - `backslashEscapesOnly` (`boolean`) — true if the target server reads a backslash before a quote in a string literal as an escape (MySQL), so the tokenizer's reading is taken as authoritative and conversion never stops early. It matches MySQL only for string literals: MySQL applies no backslash escapes inside backtick identifiers, inside "..." identifiers under ANSI_QUOTES, or anywhere under NO_BACKSLASH_ESCAPES
+  - `backslashEscapesOnly` (`boolean`) — true if the target server reads a backslash before a quote in a string literal as an escape and has no dollar-quoted strings (MySQL), so the tokenizer's reading is taken as authoritative and conversion never stops early. It matches MySQL only for string literals: MySQL applies no backslash escapes inside backtick identifiers, inside "..." identifiers under ANSI_QUOTES, or anywhere under NO_BACKSLASH_ESCAPES
   - `wordConverter` (`UnaryOperator<String>`) — converts an identifier; it applies any SQL keyword exemption itself
   - `qualifiedPartConverter` (`UnaryOperator<String>`) — converts a name that follows a delimited qualifier (the firstName in "T".firstName) or a glued marker (the createdAt in <code>log_${month}.createdAt</code>)
 - **Returns:** the index in expr from which it was appended verbatim, or -1 if every token was rendered
@@ -8942,7 +8953,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Contract:**
   - A statement is accepted only if its leading keyword is SELECT (see #isSelectQuery(String)) and it contains no top-level mutation or DDL keyword (INSERT, UPDATE, DELETE, MERGE, UPSERT, REPLACE, TRUNCATE, CREATE, ALTER or DROP), no data-change statement nested in parentheses (a DB2/H2 delta table such as SELECT * FROM FINAL TABLE (INSERT ...) or ...
   - For ;-separated multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) is rejected.
-  - In addition, the SQL is read, only to reject it, as these dialects read it: as MySQL/MariaDB, with every # (except a MyBatis #{...} marker) starting a line comment, with # and -- comments ending only at \\n, and with the statements before an unterminated quote or comment still executing; as H2, with // line comments, nesting block comments and only $$...$$ dollar quotes, and with \[...\] read both as punctuation and (MSSQLServer mode) as a quoted name; as SQLite, with every -- comment ending only at \\n, an unterminated /* commenting out the rest of the text, #name as a parameter rather than a comment, a parameter's Tcl-style (...) suffix (:a(...), @a(...)) swallowing everything up to its ), a parameter that starts a statement being a syntax error, and the statements before a lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as q'\[...\]', with that literal (which may contain ') read as one; and as SQL Server, with no # comments at all, so #name and a lone # are names and the rest of their line is SQL (a # that opens a statement keeps its comment reading, since no T-SQL statement can start there).
+  - In addition, the SQL is read, only to reject it, as these dialects read it: as MySQL/MariaDB, with every # (except a MyBatis #{...} marker) starting a line comment, with # and -- comments ending only at \\n, and with the statements before an unterminated quote or comment still executing; as H2, with // line comments, nesting block comments and only $$...$$ dollar quotes, and with \[...\] read both as punctuation and (MSSQLServer mode) as a quoted name; as SQLite, with every -- comment ending only at \\n, an unterminated /* commenting out the rest of the text, #name as a parameter rather than a comment, a parameter's Tcl-style (...) suffix (:a(...), @a(...)) swallowing everything up to its ), a parameter that starts a statement being a syntax error, and the statements before a lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as q'\[...\]', with that literal (which may contain ') read as one; and as SQL Server, with no # comments at all, so #name and a lone # are names and the rest of their line is SQL (a # that opens a statement keeps its comment reading, since no T-SQL statement can start with it, unless it names a T-SQL label such as #x: or #:, after which the rest of its line is read as the statement; so a MySQL comment line such as #TODO: delete later that opens a statement is rejected, while # TODO: delete later, with a space after the #, stays a comment).
   - Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot hide a mutation clause.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
@@ -9052,7 +9063,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
   - A statement qualifies as read-or-insert only if its leading keyword is SELECT or INSERT and it contains none of the following (matching outside of quoted string literals and SQL comments): a top-level UPDATE, DELETE, MERGE, UPSERT, REPLACE, TRUNCATE, CREATE, ALTER or DROP keyword (matched only at statement-start positions, so e.g. SELECT ...
   - More generally, every top-level statement must resolve to either SELECT or INSERT; an unrecognized or vendor-specific command is rejected rather than assumed to be safe.
   - A # that the temp-table heuristic cannot anchor is a MySQL line comment, but if a ; follows it later on its line (#name, ##name or a lone #) the statement is rejected outright, because SQL Server reads that # as a name and would execute what follows that semicolon; with semicolon-less batches enabled an identifier-shaped #name is read as a temp table and the rest of its line is scanned as SQL.
-  - In addition, the SQL is read, only to reject it, as these dialects read it: as MySQL/MariaDB, with every # (except a MyBatis #{...} marker) starting a line comment, with # and -- comments ending only at \\n, and with the statements before an unterminated quote or comment still executing; as H2, with // line comments, nesting block comments and only $$...$$ dollar quotes, and with \[...\] read both as punctuation and (MSSQLServer mode) as a quoted name; as SQLite, with every -- comment ending only at \\n, an unterminated /* commenting out the rest of the text, #name as a parameter rather than a comment, a parameter's Tcl-style (...) suffix (:a(...), @a(...)) swallowing everything up to its ), a parameter that starts a statement being a syntax error, and the statements before a lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as q'\[...\]', with that literal (which may contain ') read as one; and as SQL Server, with no # comments at all, so #name and a lone # are names and the rest of their line is SQL (a # that opens a statement keeps its comment reading, since no T-SQL statement can start there).
+  - In addition, the SQL is read, only to reject it, as these dialects read it: as MySQL/MariaDB, with every # (except a MyBatis #{...} marker) starting a line comment, with # and -- comments ending only at \\n, and with the statements before an unterminated quote or comment still executing; as H2, with // line comments, nesting block comments and only $$...$$ dollar quotes, and with \[...\] read both as punctuation and (MSSQLServer mode) as a quoted name; as SQLite, with every -- comment ending only at \\n, an unterminated /* commenting out the rest of the text, #name as a parameter rather than a comment, a parameter's Tcl-style (...) suffix (:a(...), @a(...)) swallowing everything up to its ), a parameter that starts a statement being a syntax error, and the statements before a lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as q'\[...\]', with that literal (which may contain ') read as one; and as SQL Server, with no # comments at all, so #name and a lone # are names and the rest of their line is SQL (a # that opens a statement keeps its comment reading, since no T-SQL statement can start with it, unless it names a T-SQL label such as #x: or #:, after which the rest of its line is read as the statement; so a MySQL comment line such as #TODO: delete later that opens a statement is rejected, while # TODO: delete later, with a space after the #, stays a comment).
   - Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot hide an upsert or overwrite clause.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
@@ -9143,7 +9154,7 @@ Builder for immutable TokenizerConfig instances.
 - **Signature:** `public Builder withSemicolonlessBatches(final boolean enabled)`
 - **Summary:** Enables or disables splitting of SQL Server-style batches by the read gates (Tokenizer#isSyntacticallyReadQuery(String) and Tokenizer#isReadOrInsertQuery(String)).
 - **Contract:**
-  - When enabled, a top-level DELETE, UPDATE, INSERT, MERGE, TRUNCATE, DROP, ALTER, CREATE, CALL, EXEC or EXECUTE token, or one of the reserved T-SQL statement verbs GRANT, REVOKE, DENY, KILL, SHUTDOWN, DBCC, BACKUP, RESTORE, BULK, WRITETEXT, UPDATETEXT, RECONFIGURE, CHECKPOINT, SETUSER, ADD, BEGIN, IF, WHILE, WAITFOR, COMMIT or ROLLBACK (or DISABLE/ENABLE before TRIGGER), that follows a statement's own verb (outside parentheses, quotes, brackets and comments, and other than the UPDATE of a FOR UPDATE clause) starts a new statement that is classified like one after a ;.
+  - When enabled, a top-level DELETE, UPDATE, INSERT, MERGE, TRUNCATE, DROP, ALTER, CREATE, CALL, EXEC or EXECUTE token, or one of the reserved T-SQL statement verbs GRANT, REVOKE, DENY, KILL, SHUTDOWN, DBCC, BACKUP, RESTORE, BULK, WRITETEXT, UPDATETEXT, RECONFIGURE, CHECKPOINT, SETUSER, ADD, BEGIN, IF, WHILE, WAITFOR, COMMIT or ROLLBACK (or DISABLE/ENABLE before TRIGGER, END before CONVERSATION, and the Service Broker RECEIVE, SEND or MOVE right after a T-SQL label), that follows a statement's own verb (outside parentheses, quotes, brackets and comments, and other than the UPDATE of a FOR UPDATE clause) starts a new statement that is classified like one after a ;.
   - Clauses such as ON DUPLICATE KEY UPDATE, ON CONFLICT DO UPDATE and WHEN MATCHED THEN DELETE are split as well; they only occur in statements (upserts, MERGE) that the read gates reject anyway.
 - **Parameters:**
   - `enabled` (`boolean`) — true to split semicolon-less batches at their statement verbs
@@ -11132,7 +11143,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     Criteria.builder().join("orders");   // throws IllegalArgumentException
@@ -11148,7 +11159,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria criteria = Criteria.builder()
@@ -11164,7 +11175,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Collection<String> tables = Arrays.asList("orders", "order_items");
@@ -11185,7 +11196,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     Criteria.builder().innerJoin("orders");   // throws IllegalArgumentException
@@ -11201,7 +11212,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11220,7 +11231,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11240,7 +11251,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     Criteria.builder().leftJoin("orders");   // throws IllegalArgumentException
@@ -11256,7 +11267,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11274,7 +11285,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11294,7 +11305,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     Criteria.builder().rightJoin("orders");   // throws IllegalArgumentException
@@ -11310,7 +11321,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11328,7 +11339,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11348,7 +11359,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining (never reached; this overload always throws)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate
 - **Examples:**
   - ```java
     Criteria.builder().fullJoin("orders");   // throws IllegalArgumentException
@@ -11364,7 +11375,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11382,7 +11393,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinCondition` (`Condition`) — the join condition (must not be null); an On/Using connector or a plain predicate
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder()
@@ -11401,7 +11412,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().crossJoin("colors").build();
@@ -11416,7 +11427,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().crossJoin(Arrays.asList("colors", "sizes")).build();
@@ -11433,7 +11444,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntity` (`String`) — the table or entity to join
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().naturalJoin("employees").build();
@@ -11448,7 +11459,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
   - `joinEntities` (`Collection<String>`) — the collection of tables/entities to join
 - **Returns:** this Builder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment
 - **Examples:**
   - ```java
     Criteria c = Criteria.builder().naturalJoin(Arrays.asList("employees", "departments")).build();
@@ -12217,13 +12228,13 @@ Represents a CROSS JOIN clause in SQL queries.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment
 - **Signature:** `public CrossJoin(final Collection<String> joinEntities)`
 - **Summary:** Creates a CROSS JOIN clause with multiple tables/entities and no join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment
 
 #### Public Static Methods
 - (none)
@@ -12351,21 +12362,21 @@ Represents a FULL JOIN clause in SQL queries.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a FULL JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a FULL JOIN requires a non-null ON/USING predicate
 - **Signature:** `public FullJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Signature:** `public FullJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a FULL JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12578,21 +12589,21 @@ Represents an INNER JOIN clause in SQL queries.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because an INNER JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because an INNER JOIN requires a non-null ON/USING predicate
 - **Signature:** `public InnerJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Signature:** `public InnerJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates an INNER JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -12842,21 +12853,21 @@ Base class for SQL JOIN operations.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified JOIN requires a non-null ON/USING predicate
 - **Signature:** `public Join(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a JOIN clause with a condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Signature:** `public Join(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a JOIN clause with multiple tables or entities and a condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is rendered with an ON prefix; an explicit On or @Beta Using supplies its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -13171,21 +13182,21 @@ Represents a LEFT JOIN clause in SQL queries.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a LEFT JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a LEFT JOIN requires a non-null ON/USING predicate
 - **Signature:** `public LeftJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Signature:** `public LeftJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a LEFT JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -14416,13 +14427,13 @@ Represents a NATURAL JOIN clause in SQL queries.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment
 - **Signature:** `public NaturalJoin(final Collection<String> joinEntities)`
 - **Summary:** Creates a NATURAL JOIN clause with multiple tables/entities.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment
 
 #### Public Static Methods
 - (none)
@@ -14651,13 +14662,13 @@ Represents an ON clause used in SQL JOIN operations.
   - `leftPropName` (`String`) — the column name from the first table (can include table name/alias)
   - `rightPropName` (`String`) — the column name from the second table (can include table name/alias). Treated as a column expression rather than a string literal.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if leftPropName or rightPropName is null, empty, or blank, or if rightPropName consists only of SQL comments
+  - `java.lang.IllegalArgumentException` — if leftPropName or rightPropName is null, empty, or blank, consists only of SQL comments, or contains an unterminated block comment
 - **Signature:** `public On(final Map<String, String> propNamePairs)`
 - **Summary:** Creates an ON clause with multiple column equality conditions.
 - **Parameters:**
   - `propNamePairs` (`Map<String, String>`) — map of column pairs where the key is from the first table and the value is from the second table. The entries are validated and snapshotted in one iteration. Order is preserved if a LinkedHashMap is used.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if propNamePairs is null, empty, or contains a null entry, null, empty, or blank keys or values, or a value consisting only of SQL comments
+  - `java.lang.IllegalArgumentException` — if propNamePairs is null, empty, or contains a null entry, null, empty, or blank keys or values, or a key or value consisting only of SQL comments or containing an unterminated block comment
 
 #### Public Static Methods
 - (none)
@@ -15014,21 +15025,21 @@ Represents a RIGHT JOIN clause in SQL queries.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias (e.g., "orders o").
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a RIGHT JOIN requires a non-null ON/USING predicate
+  - `java.lang.IllegalArgumentException` — always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a RIGHT JOIN requires a non-null ON/USING predicate
 - **Signature:** `public RightJoin(final String joinEntity, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with a join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the table or entity to join with. Can include alias.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 - **Signature:** `public RightJoin(final Collection<String> joinEntities, final Condition joinCondition)`
 - **Summary:** Creates a RIGHT JOIN clause with multiple tables/entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — the collection of tables or entities to join with.
   - `joinCondition` (`Condition`) — the join condition; must not be null. A plain predicate is automatically prefixed with ON; an explicit On (or @Beta Using) renders its own keyword.
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
+  - `java.lang.IllegalArgumentException` — if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
 
 #### Public Static Methods
 - (none)
@@ -16286,7 +16297,7 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Summary:** Creates a structured subquery with entity name, selected properties, and condition.
 - **Parameters:**
   - `entityName` (`String`) — the entity/table name (must not be null, empty, or blank); a bare, optionally schema-qualified name. An inline alias such as users u is not recognized by #toSql(NamingPolicy), which converts the whole text as one identifier; build aliased sub-queries with a query builder instead
-  - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty and must not contain null, empty, or blank names)
+  - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty and must not contain null, empty, or blank names); an item may carry an inline alias (firstName AS fn) or be an expression (COUNT(*) AS cnt), in which case #toSql(NamingPolicy) converts only its identifiers
   - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, or an empty Criteria adds no clause. An empty Junction is preserved as its true/false Boolean identity.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityName is null, empty, or blank, if propNames is null or empty, if propNames contains null, empty, or blank names, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
@@ -16302,7 +16313,7 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Summary:** Creates a structured subquery with entity class, selected properties, and condition.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class (must not be null)
-  - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty and must not contain null, empty, or blank names)
+  - `propNames` (`Collection<String>`) — collection of property names to select (must not be null or empty and must not contain null, empty, or blank names); an item may carry an inline alias (firstName AS fn) or be an expression (COUNT(*) AS cnt), in which case #toSql(NamingPolicy) converts only its identifiers
   - `condition` (`Condition`) — an optional trailing condition, clause, or Criteria. A predicate is wrapped in Where; null, a blank expression, or an empty Criteria adds no clause. An empty Junction is preserved as its true/false Boolean identity.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null, if propNames is null or empty, if propNames contains null, empty, or blank names, if condition uses an ON/USING operator, is not a complete predicate (for example a standalone SubQuery or quantified operand), or is a Criteria that carries a SELECT modifier (e.g. DISTINCT) — none of which are valid here
@@ -16450,6 +16461,7 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Signature:** `@Override public String toSql(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this subquery to its SQL representation.
 - **Contract:**
+  - An alias is kept as written as well: one after AS (firstName AS fn), and an implicit one when the item is exactly a name (bare, delimited or dot-qualified), whitespace and a bare alias (firstName fn, \[firstName\] fn, acc.firstName fn), unless that name is a SQL keyword in any case (distinct userId is a modifier and a column).
   - Render the subquery through a SqlBuilder when condition identifiers must also resolve against entity column mappings.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply; if null, com.landawn.abacus.util.NamingPolicy#NO_CHANGE is used

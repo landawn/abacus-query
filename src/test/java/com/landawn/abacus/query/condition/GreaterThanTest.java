@@ -67,9 +67,9 @@ public class GreaterThanTest extends TestBase {
         assertEquals(1000000L, (Long) gtLong.propValue());
 
         // Test with Date
-        Date now = new Date();
-        GreaterThan gtDate = Filters.gt("createdDate", now);
-        assertEquals(now, gtDate.propValue());
+        Date createdAt = new Date(1_700_000_000_000L);
+        GreaterThan gtDate = Filters.gt("createdDate", createdAt);
+        assertEquals(createdAt, gtDate.propValue());
 
         // Test with String (for alphabetical comparison)
         GreaterThan gtString = Filters.gt("name", "M");

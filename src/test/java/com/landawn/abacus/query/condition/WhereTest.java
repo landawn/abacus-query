@@ -28,13 +28,11 @@ public class WhereTest extends TestBase {
     @Test
     void testConstructor_nullCondition_messageNamesCondition() {
         // every clause wrapper funnels through Clause's null check; the message must name a public parameter
-        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
-                () -> new Where((com.landawn.abacus.query.condition.Condition) null));
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new Where((com.landawn.abacus.query.condition.Condition) null));
         assertTrue(e.getMessage().contains("condition"), e.getMessage());
         assertTrue(!e.getMessage().contains("'cond'"), e.getMessage());
 
-        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class,
-                () -> new Having((com.landawn.abacus.query.condition.Condition) null));
+        IllegalArgumentException e2 = assertThrows(IllegalArgumentException.class, () -> new Having((com.landawn.abacus.query.condition.Condition) null));
         assertTrue(e2.getMessage().contains("condition"), e2.getMessage());
     }
 

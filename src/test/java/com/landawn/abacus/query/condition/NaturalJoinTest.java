@@ -54,4 +54,15 @@ public class NaturalJoinTest extends TestBase {
         assertTrue(join.parameters().isEmpty());
         assertEquals("NATURAL JOIN employees", join.toSql(NamingPolicy.NO_CHANGE));
     }
+
+    @Test
+    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
+        // An open "/*" in the entity would comment out everything rendered after the join.
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new NaturalJoin("t /* x")).getMessage());
+        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new NaturalJoin(Arrays.asList("t /* x"))).getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new NaturalJoin("t --/*"));
+        assertEquals("NATURAL JOIN t /* x */", new NaturalJoin("t /* x */").toString());
+    }
 }

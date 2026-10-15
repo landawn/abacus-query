@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.Strings;
@@ -196,7 +197,7 @@ public class On extends Cell {
      * @param rightPropName the column name from the second table (can include table name/alias). Treated as a
      *            column expression rather than a string literal.
      * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank,
-     *                                  or if {@code rightPropName} consists only of SQL comments
+     *                                  consists only of SQL comments, or contains an unterminated block comment
      */
     public On(final String leftPropName, final String rightPropName) {
         this(createOnCondition(leftPropName, rightPropName));
@@ -240,7 +241,7 @@ public class On extends Cell {
      *            table. The entries are validated and snapshotted in one iteration. Order is preserved if a
      *            {@code LinkedHashMap} is used.
      * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a null entry,
-     *                                  {@code null}, empty, or blank keys or values, or a value consisting only of SQL comments
+     *                                  {@code null}, empty, or blank keys or values, or a key or value consisting only of SQL comments or containing an unterminated block comment
      */
     public On(final Map<String, String> propNamePairs) {
         this(createOnCondition(propNamePairs));
@@ -263,7 +264,7 @@ public class On extends Cell {
      *            column reference rather than a quoted literal)
      * @return an {@link Equal} condition comparing the two columns
      * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank,
-     *                                  or if {@code rightPropName} consists only of SQL comments
+     *                                  consists only of SQL comments, or contains an unterminated block comment
      */
     static Condition createOnCondition(final String leftPropName, final String rightPropName) {
         if (Strings.isBlank(leftPropName)) {
@@ -274,13 +275,29 @@ public class On extends Cell {
             throw new IllegalArgumentException("rightPropName must not be null, empty, or blank");
         }
 
-        final SqlExpression rightColumn = Filters.expr(rightPropName);
+        checkOnPropName(leftPropName, "leftPropName");
+        checkOnPropName(rightPropName, "rightPropName");
 
-        if (isEmptyPredicate(rightColumn)) {
-            throw new IllegalArgumentException("rightPropName must not consist only of SQL comments: " + rightPropName);
+        return new Equal(leftPropName, Filters.expr(rightPropName));
+    }
+
+    /**
+     * Applies to one side of a column-equality join the checks {@code AbstractCondition.checkSortPropName} applies to a
+     * sort key: comment-only text (a SQL Server {@code #temp} reference is kept) would be stripped by the renderer, leaving
+     * a one-sided predicate, and an unterminated block comment would swallow the rest of the join predicate.
+     *
+     * @param propName the non-blank column reference
+     * @param argName the argument name used in the exception message
+     * @throws IllegalArgumentException if {@code propName} consists only of SQL comments or contains an unterminated block comment
+     */
+    private static void checkOnPropName(final String propName, final String argName) {
+        if (isEmptyPredicate(Filters.expr(propName))) {
+            throw new IllegalArgumentException(argName + " must not consist only of SQL comments: " + propName);
         }
 
-        return new Equal(leftPropName, rightColumn);
+        if (QueryUtil.hasUnterminatedBlockComment(propName)) {
+            throw new IllegalArgumentException(argName + " must not contain an unterminated block comment: " + propName);
+        }
     }
 
     /**
@@ -304,7 +321,7 @@ public class On extends Cell {
      *            iteration, so the returned condition is internally consistent even for a live map
      * @return a single Equal condition or an And condition combining multiple equalities
      * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a null entry,
-     *                                  {@code null}, empty, or blank keys or values, or a value consisting only of SQL comments
+     *                                  {@code null}, empty, or blank keys or values, or a key or value consisting only of SQL comments or containing an unterminated block comment
      */
     static Condition createOnCondition(final Map<String, String> propNamePairs) {
         if (propNamePairs == null) {

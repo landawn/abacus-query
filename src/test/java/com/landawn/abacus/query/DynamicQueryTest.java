@@ -18,13 +18,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.DynamicQuery.Builder;
-import com.landawn.abacus.util.Objectory;
 
 public class DynamicQueryTest extends TestBase {
 
@@ -382,11 +382,11 @@ public class DynamicQueryTest extends TestBase {
 
     @Test
     void testClauseBuilderCloseIsIdempotent() {
-        DynamicQuery.OrderByClause clause = new DynamicQuery.OrderByClause(Objectory.createStringBuilder());
+        DynamicQuery.OrderByClause clause = new DynamicQuery.OrderByClause(new StringBuilder());
         clause.append("id ASC");
 
         clause.close();
-        clause.close(); // second close must be a no-op (no double recycle into the buffer pool)
+        clause.close(); // second close must be a no-op
 
         assertThrows(IllegalStateException.class, () -> clause.append("name ASC"));
     }
@@ -862,6 +862,22 @@ public class DynamicQueryTest extends TestBase {
         b4.from().append("[t]");
         b4.where().append("x = #{x}").and("y = 2");
         assertEquals("SELECT [a] FROM [t] WHERE x = #{x} AND y = 2", b4.build());
+    }
+
+    @Test
+    void testFragmentTrailingCommentCheckReadsDollarQuotedStrings() {
+        // Regression: PostgreSQL and H2 read "$$'$$" as a string holding a quote, so the "--" after it is a real comment; every
+        // reading of the check took the quote for an unterminated string, and the comment swallowed the next condition.
+        Builder b1 = DynamicQuery.builder();
+        b1.select().append("*");
+        b1.from().append("t");
+        b1.where().append("note = $$'$$ -- c").and("tenant_id = ?");
+        assertEquals("SELECT * FROM t WHERE note = $$'$$ -- c\n AND tenant_id = ?", b1.build());
+
+        assertTrue(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("note = $tag$it's$tag$ -- c"));
+        assertFalse(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("note = $$it's$$"));
+        // "a$$" is a name: the quote after it opens a string that holds the "--".
+        assertFalse(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("x = a$$'$$ -- c"));
     }
 
     @Test
@@ -2117,6 +2133,161 @@ public class DynamicQueryTest extends TestBase {
                 b2.build());
     }
 
+    private static final String[] SINGLE_ARG_JOINS = { "JOIN", "INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN", "CROSS JOIN", "NATURAL JOIN" };
+
+    private static DynamicQuery.FromClause singleArgJoin(final DynamicQuery.FromClause from, final int method, final String joinExpr) {
+        return switch (method) {
+            case 0 -> from.join(joinExpr);
+            case 1 -> from.innerJoin(joinExpr);
+            case 2 -> from.leftJoin(joinExpr);
+            case 3 -> from.rightJoin(joinExpr);
+            case 4 -> from.fullJoin(joinExpr);
+            case 5 -> from.crossJoin(joinExpr);
+            default -> from.naturalJoin(joinExpr);
+        };
+    }
+
+    private static DynamicQuery.FromClause twoArgJoin(final DynamicQuery.FromClause from, final int method, final String joinExpr, final String expr) {
+        return switch (method) {
+            case 0 -> from.join(joinExpr, expr);
+            case 1 -> from.innerJoin(joinExpr, expr);
+            case 2 -> from.leftJoin(joinExpr, expr);
+            case 3 -> from.rightJoin(joinExpr, expr);
+            default -> from.fullJoin(joinExpr, expr);
+        };
+    }
+
+    @Test
+    void testUnterminatedBlockCommentInSingleArgumentJoinFragmentsIsRejected() {
+        // Regression: "u /* x" rendered "FROM t NATURAL JOIN u /* x WHERE x = 1", the WHERE inside an open block comment.
+        for (int i = 0; i < SINGLE_ARG_JOINS.length; i++) {
+            final int method = i;
+            final Builder b = DynamicQuery.builder();
+            b.select().append("*");
+            final DynamicQuery.FromClause from = b.from().append("t");
+
+            assertEquals("joinExpr must not contain an unterminated block comment: u /* x",
+                    assertThrows(IllegalArgumentException.class, () -> singleArgJoin(from, method, "u /* x")).getMessage(), SINGLE_ARG_JOINS[i]);
+            // MySQL reads "--/*" as two minus signs and an open comment; a nested opener stays open in PostgreSQL/SQL Server.
+            assertThrows(IllegalArgumentException.class, () -> singleArgJoin(from, method, "u --/*"), SINGLE_ARG_JOINS[i]);
+            assertThrows(IllegalArgumentException.class, () -> singleArgJoin(from, method, "u /* a /* b */"), SINGLE_ARG_JOINS[i]);
+            // Blank text keeps its own message.
+            assertEquals("joinExpr must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> singleArgJoin(from, method, " ")).getMessage(), SINGLE_ARG_JOINS[i]);
+
+            // The rejections left the buffer untouched; a terminated comment is kept verbatim.
+            singleArgJoin(from, method, "u /* x */");
+            b.where().append("x = 1");
+            assertEquals("SELECT * FROM t " + SINGLE_ARG_JOINS[i] + " u /* x */ WHERE x = 1", b.build(), SINGLE_ARG_JOINS[i]);
+        }
+
+        final Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        b.from().append("t").join("u -- /* x");
+        b.where().append("x = 1");
+        assertEquals("SELECT * FROM t JOIN u -- /* x\n WHERE x = 1", b.build());
+    }
+
+    @Test
+    void testUnterminatedBlockCommentInTwoArgumentJoinFragmentsIsRejected() {
+        // Regression: "u /* x" rendered "FROM t LEFT JOIN u /* x ON t.id = u.id WHERE x = 1", and an open comment in the ON
+        // expression swallowed the WHERE in the same way.
+        for (int i = 0; i < 5; i++) {
+            final int method = i;
+            final Builder b = DynamicQuery.builder();
+            b.select().append("*");
+            final DynamicQuery.FromClause from = b.from().append("t");
+
+            assertEquals("joinExpr must not contain an unterminated block comment: u /* x",
+                    assertThrows(IllegalArgumentException.class, () -> twoArgJoin(from, method, "u /* x", "t.id = u.id")).getMessage(), SINGLE_ARG_JOINS[i]);
+            assertEquals("expr must not contain an unterminated block comment: t.id = u.id /* x",
+                    assertThrows(IllegalArgumentException.class, () -> twoArgJoin(from, method, "u", "t.id = u.id /* x")).getMessage(), SINGLE_ARG_JOINS[i]);
+            assertThrows(IllegalArgumentException.class, () -> twoArgJoin(from, method, "u --/*", "t.id = u.id"), SINGLE_ARG_JOINS[i]);
+            assertThrows(IllegalArgumentException.class, () -> twoArgJoin(from, method, "u", "t.id = u.id --/*"), SINGLE_ARG_JOINS[i]);
+            // joinExpr is checked before expr, and both blank checks still run before either comment check.
+            assertEquals("joinExpr must not contain an unterminated block comment: u /* x",
+                    assertThrows(IllegalArgumentException.class, () -> twoArgJoin(from, method, "u /* x", "t.id /* y")).getMessage(), SINGLE_ARG_JOINS[i]);
+            assertEquals("expr must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> twoArgJoin(from, method, "u /* x", " ")).getMessage(), SINGLE_ARG_JOINS[i]);
+            assertEquals("joinExpr must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> twoArgJoin(from, method, null, "t.id /* y")).getMessage(), SINGLE_ARG_JOINS[i]);
+
+            // The rejections left the buffer untouched; terminated comments are kept verbatim.
+            twoArgJoin(from, method, "u /* h */", "t.id = u.id /* c */");
+            b.where().append("x = 1");
+            assertEquals("SELECT * FROM t " + SINGLE_ARG_JOINS[i] + " u /* h */ ON t.id = u.id /* c */ WHERE x = 1", b.build(), SINGLE_ARG_JOINS[i]);
+        }
+    }
+
+    /**
+     * Asserts that {@code call} is rejected with {@code expectedMessage} both as the first FROM fragment and after a table,
+     * and that the rejection leaves the clause untouched (no "FROM " prefix, no ", " separator).
+     */
+    private static void assertFromFragmentRejected(final String expectedMessage, final Consumer<DynamicQuery.FromClause> call) {
+        final Builder first = DynamicQuery.builder();
+        first.select().append("*");
+        assertEquals(expectedMessage, assertThrows(IllegalArgumentException.class, () -> call.accept(first.from())).getMessage());
+        first.from().append("t");
+        first.where().append("x = 1");
+        assertEquals("SELECT * FROM t WHERE x = 1", first.build(), expectedMessage);
+
+        final Builder next = DynamicQuery.builder();
+        next.select().append("*");
+        final DynamicQuery.FromClause from = next.from().append("t");
+        assertEquals(expectedMessage, assertThrows(IllegalArgumentException.class, () -> call.accept(from)).getMessage());
+        next.where().append("x = 1");
+        assertEquals("SELECT * FROM t WHERE x = 1", next.build(), expectedMessage);
+    }
+
+    private static String fromWithWhere(final Consumer<DynamicQuery.FromClause> call) {
+        final Builder b = DynamicQuery.builder();
+        b.select().append("*");
+        call.accept(b.from());
+        b.where().append("x = 1");
+        return b.build();
+    }
+
+    @Test
+    void testUnterminatedBlockCommentInFromTableFragmentsIsRejected() {
+        // Regression: from().append("t /* x") rendered "SELECT * FROM t /* x WHERE x = 1", the WHERE inside an open block
+        // comment (the query builder's from(...) already rejected it); the same held for an alias, a collection element and
+        // the appendIf / appendIfOrElse text.
+        assertFromFragmentRejected("table must not contain an unterminated block comment: u /* x", from -> from.append("u /* x"));
+        assertFromFragmentRejected("table must not contain an unterminated block comment: u --/*", from -> from.append("u --/*"));
+        assertFromFragmentRejected("table must not contain an unterminated block comment: u /* a /* b */", from -> from.append("u /* a /* b */"));
+
+        assertFromFragmentRejected("table must not contain an unterminated block comment: u /* x", from -> from.append("u /* x", "a"));
+        assertFromFragmentRejected("alias must not contain an unterminated block comment: a /* x", from -> from.append("u", "a /* x"));
+        // table is checked before alias, and both blank checks still run before either comment check.
+        assertFromFragmentRejected("table must not contain an unterminated block comment: u /* x", from -> from.append("u /* x", "a /* y"));
+        assertFromFragmentRejected("alias must not be null, empty, or blank", from -> from.append("u /* x", " "));
+
+        assertFromFragmentRejected("Element in tables must not contain an unterminated block comment: v /* x",
+                from -> from.append(Arrays.asList("u", "v /* x")));
+        assertFromFragmentRejected("Element in tables must not be null, empty, or blank", from -> from.append(Arrays.asList("u /* x", " ")));
+
+        assertFromFragmentRejected("textToAppend must not contain an unterminated block comment: u /* x", from -> from.appendIf(true, "u /* x"));
+        assertFromFragmentRejected("textToAppend must not be null, empty, or blank", from -> from.appendIf(true, " "));
+
+        // Both alternatives are validated whichever one is appended, as the blank checks already are.
+        assertFromFragmentRejected("textToAppendWhenTrue must not contain an unterminated block comment: u /* x",
+                from -> from.appendIfOrElse(false, "u /* x", "v"));
+        assertFromFragmentRejected("textToAppendWhenFalse must not contain an unterminated block comment: v /* x",
+                from -> from.appendIfOrElse(true, "u", "v /* x"));
+        assertFromFragmentRejected("textToAppendWhenFalse must not be null, empty, or blank", from -> from.appendIfOrElse(true, "u /* x", " "));
+
+        // A false appendIf neither validates nor appends.
+        assertEquals("SELECT * FROM t WHERE x = 1", fromWithWhere(from -> from.appendIf(false, "u /* x").append("t")));
+
+        // Terminated comments, and a "/*" inside a line comment, are kept verbatim.
+        assertEquals("SELECT * FROM t /* c */ WHERE x = 1", fromWithWhere(from -> from.append("t /* c */")));
+        assertEquals("SELECT * FROM t -- /* x\n WHERE x = 1", fromWithWhere(from -> from.append("t -- /* x")));
+        assertEquals("SELECT * FROM t /* c */ a /* d */ WHERE x = 1", fromWithWhere(from -> from.append("t /* c */", "a /* d */")));
+        assertEquals("SELECT * FROM t, u /* c */ WHERE x = 1", fromWithWhere(from -> from.append(Arrays.asList("t", "u /* c */"))));
+        assertEquals("SELECT * FROM t /* c */ WHERE x = 1", fromWithWhere(from -> from.appendIf(true, "t /* c */")));
+        assertEquals("SELECT * FROM u /* d */ WHERE x = 1", fromWithWhere(from -> from.appendIfOrElse(false, "t /* c */", "u /* d */")));
+    }
+
     @Test
     void testTrailingLineCommentInPlaceholderPrefixAndPostfixIsTerminated() {
         // Covers the appendPlaceholders prefix/postfix path of the trailing line-comment fix (WHERE and HAVING).
@@ -2434,6 +2605,100 @@ public class DynamicQueryTest extends TestBase {
             builder.appendIf(false, null);
             assertEquals("SELECT id FROM people", builder.build());
             assertThrows(IllegalStateException.class, () -> builder.select().append((Collection<String>) null));
+        }
+    }
+
+    @Nested
+    class ClauseBuffers {
+        private static final String EXPECTED_SQL = "SELECT u.id, u.name AS user_name, COUNT(o.id) AS order_count FROM users u"
+                + " LEFT JOIN orders o ON o.user_id = u.id WHERE u.active = ? AND u.age > ? GROUP BY u.id, u.name HAVING COUNT(o.id) > ?"
+                + " ORDER BY u.name ASC LIMIT 10 OFFSET 20";
+
+        private static String buildSampleQuery() {
+            final Builder builder = DynamicQuery.builder();
+            builder.select().append("u.id").append("u.name", "user_name").append("COUNT(o.id)", "order_count");
+            builder.from().append("users", "u").leftJoin("orders o", "o.user_id = u.id");
+            builder.where().append("u.active = ?").and("u.age > ?");
+            builder.groupBy().append("u.id").append("u.name");
+            builder.having().append("COUNT(o.id) > ?");
+            builder.orderBy().append("u.name ASC");
+            builder.limit(10, 20);
+            return builder.build();
+        }
+
+        @Test
+        void testConcurrentBuildsRenderIdenticalSqlOnEveryThread() throws Exception {
+            assertEquals(EXPECTED_SQL, buildSampleQuery());
+
+            final int threadCount = 8;
+            final int buildsPerThread = 3000;
+            final java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+
+            try {
+                final List<java.util.concurrent.Future<Integer>> results = new java.util.ArrayList<>();
+
+                for (int t = 0; t < threadCount; t++) {
+                    results.add(pool.submit(() -> {
+                        int mismatches = 0;
+
+                        for (int i = 0; i < buildsPerThread; i++) {
+                            if (!EXPECTED_SQL.equals(buildSampleQuery())) {
+                                mismatches++;
+                            }
+                        }
+
+                        return mismatches;
+                    }));
+                }
+
+                for (final java.util.concurrent.Future<Integer> result : results) {
+                    assertEquals(0, result.get(2, java.util.concurrent.TimeUnit.MINUTES));
+                }
+            } finally {
+                pool.shutdownNow();
+            }
+        }
+
+        @Test
+        void testFragmentWithoutDashOrHashNeverGetsLineFeed() {
+            // Fragments that cannot contain a line comment are appended verbatim with no trailing '\n'.
+            final Builder b1 = DynamicQuery.builder();
+            b1.select().append("a");
+            b1.from().append("t");
+            b1.where().append("x = 'y'").and("z IN (?, ?)");
+            b1.orderBy().append("a");
+            assertEquals("SELECT a FROM t WHERE x = 'y' AND z IN (?, ?) ORDER BY a", b1.build());
+
+            // A '-' or '#' inside a string literal still runs the scanner, which (correctly) does not terminate.
+            final Builder b2 = DynamicQuery.builder();
+            b2.select().append("a");
+            b2.from().append("t");
+            b2.where().append("x = '--'").and("y = '#'").and("z = 1 - 2");
+            b2.orderBy().append("a");
+            assertEquals("SELECT a FROM t WHERE x = '--' AND y = '#' AND z = 1 - 2 ORDER BY a", b2.build());
+
+            // The dialect-neutral readings never take an H2 "//" for a line comment, so no line feed follows it either.
+            final Builder b3 = DynamicQuery.builder();
+            b3.select().append("a // c");
+            b3.from().append("t");
+            assertEquals("SELECT a // c FROM t", b3.build());
+        }
+
+        @Test
+        void testFragmentEndingInLineCommentUnderAnyReadingGetsLineFeed() {
+            // "--" comment: the following clause lands on a new line.
+            final Builder b1 = DynamicQuery.builder();
+            b1.select().append("a -- c");
+            b1.from().append("t");
+            b1.where().append("x = 1");
+            assertEquals("SELECT a -- c\n FROM t WHERE x = 1", b1.build());
+
+            // "#" comments (MySQL reading) still count, so the guard can never be tightened to indexOf("--").
+            final Builder b2 = DynamicQuery.builder();
+            b2.select().append("a");
+            b2.from().append("#tmp");
+            b2.where().append("a ## b").and("c = 1");
+            assertEquals("SELECT a FROM #tmp\n WHERE a ## b\n AND c = 1", b2.build());
         }
     }
 }

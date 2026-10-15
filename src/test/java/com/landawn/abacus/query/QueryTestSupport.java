@@ -19,8 +19,7 @@ public final class QueryTestSupport {
     }
 
     static void assertSql(final String expectedSql, final List<?> expectedParameters, final SP actual) {
-        assertAll(() -> assertEquals(expectedSql, actual.query(), "SQL"),
-                () -> assertEquals(expectedParameters, actual.parameters(), "ordered parameters"));
+        assertAll(() -> assertEquals(expectedSql, actual.query(), "SQL"), () -> assertEquals(expectedParameters, actual.parameters(), "ordered parameters"));
     }
 
     static Selection selection(final Class<?> entityClass, final String tableAlias, final String classAlias, final Collection<String> includedPropNames,

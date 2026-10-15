@@ -17,7 +17,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
+import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -1097,34 +1098,49 @@ public class NamedPropertyTest extends TestBase {
 
     @Test
     void testOfMethodCachingIsAtomicDuringConcurrentFirstAccess() throws Exception {
-        final int threadCount = 24;
-        final String propName = "concurrentProperty" + System.nanoTime();
+        final int threadCount = 8;
+        final int roundCount = 64;
+        final String prefix = "concurrentProperty_" + UUID.randomUUID() + "_";
+        final String[] propNames = new String[roundCount];
+
+        for (int round = 0; round < roundCount; round++) {
+            propNames[round] = prefix + round;
+        }
+
         final ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        final CountDownLatch ready = new CountDownLatch(threadCount);
-        final CountDownLatch start = new CountDownLatch(1);
-        final List<Future<NamedProperty>> futures = new java.util.ArrayList<>(threadCount);
+        final CyclicBarrier start = new CyclicBarrier(threadCount);
+        final List<Future<NamedProperty[]>> futures = new java.util.ArrayList<>(threadCount);
 
         try {
             for (int i = 0; i < threadCount; i++) {
                 futures.add(executor.submit(() -> {
-                    ready.countDown();
-                    assertTrue(start.await(10, TimeUnit.SECONDS));
-                    return NamedProperty.of(propName);
+                    final NamedProperty[] properties = new NamedProperty[roundCount];
+
+                    for (int round = 0; round < roundCount; round++) {
+                        // Each round races on a new key; cached hits from an earlier round cannot mask a first-access bug.
+                        start.await(10, TimeUnit.SECONDS);
+                        properties[round] = NamedProperty.of(propNames[round]);
+                    }
+
+                    return properties;
                 }));
             }
 
-            assertTrue(ready.await(10, TimeUnit.SECONDS));
-            start.countDown();
+            final NamedProperty[] expected = futures.get(0).get(10, TimeUnit.SECONDS);
 
-            final NamedProperty expected = futures.get(0).get(10, TimeUnit.SECONDS);
+            for (final Future<NamedProperty[]> future : futures) {
+                final NamedProperty[] actual = future.get(10, TimeUnit.SECONDS);
 
-            for (final Future<NamedProperty> future : futures) {
-                assertSame(expected, future.get(10, TimeUnit.SECONDS));
+                for (int round = 0; round < roundCount; round++) {
+                    assertSame(expected[round], actual[round], "Racing callers must agree in round " + round);
+                }
             }
 
-            assertSame(expected, NamedProperty.of(propName), "Racing callers must receive the instance retained in the cache");
+            for (int round = 0; round < roundCount; round++) {
+                assertEquals(propNames[round], expected[round].propName());
+                assertSame(expected[round], NamedProperty.of(propNames[round]), "Racing callers must receive the instance retained in the cache");
+            }
         } finally {
-            start.countDown();
             executor.shutdownNow();
             assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
         }

@@ -21,7 +21,6 @@ import java.util.Map;
 import com.landawn.abacus.logging.Logger;
 import com.landawn.abacus.logging.LoggerFactory;
 import com.landawn.abacus.util.N;
-import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -39,9 +38,11 @@ import com.landawn.abacus.util.Strings;
  * order. Raw trailing fragments are always emitted after typed pagination.</p>
  *
  * <p><b>Important:</b> Always call {@link Builder#build()} to generate the final SQL string and
- * release resources. The builder uses object pooling internally for performance optimization.</p>
+ * release resources. A builder is one-shot: {@code build()} closes it and every retained clause handle.</p>
  *
- * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation; a
+ * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation ({@code FROM}
+ * table, alias and join fragments must also not open an unterminated {@code /*} block comment, which would swallow
+ * the clauses rendered after them); a
  * fragment that ends inside a {@code --} or {@code #} line comment is followed by a line feed, so the
  * comment cannot hide the separator or clause emitted after it. This class does not quote identifiers,
  * escape literals, or collect parameter values. Placeholder
@@ -79,7 +80,7 @@ public final class DynamicQuery {
      * Creates a new {@link Builder} instance for constructing a dynamic SQL query.
      *
      * <p>Each call returns a fresh, independent {@link Builder}. Always finish with
-     * {@link Builder#build()} to obtain the SQL and release pooled resources.</p>
+     * {@link Builder#build()} to obtain the SQL and release the builder's resources.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -198,7 +199,12 @@ public final class DynamicQuery {
     private static StringBuilder appendFragment(final StringBuilder sb, final String fragment) {
         sb.append(fragment);
 
-        return AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment) ? sb.append('\n') : sb;
+        // Every reading endsInsideLineCommentUnderAnyReading tries is dialect-neutral and never takes "//" for a comment
+        // (only an H2 builder does), so it can answer true only for a region opened by "--" or "#": skip the multi-reading
+        // scan for the common fragment that contains neither character, which cannot end inside a line comment there.
+        return (fragment.indexOf('-') >= 0 || fragment.indexOf('#') >= 0) && AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment)
+                ? sb.append('\n')
+                : sb;
     }
 
     /**
@@ -249,11 +255,16 @@ public final class DynamicQuery {
      */
     public static class Builder {
 
+        // Clause buffers are plain, small StringBuilders on purpose. Do NOT switch them to Objectory.createStringBuilder():
+        // that shared pool is a single ArrayBlockingQueue with one global lock (3 lock acquisitions per borrow/recycle pair,
+        // ~12 per build), which serialised concurrent builds across the whole JVM (8 threads built fewer queries/s than 1),
+        // and it hands out 16 KB buffers for fragments of ~5-20 chars. Short-lived 64-char builders are cheaper even uncontended.
+
         /** The {@link SelectClause} for this builder. */
-        private SelectClause selectClause = new SelectClause(Objectory.createStringBuilder());
+        private SelectClause selectClause = new SelectClause(new StringBuilder(64));
 
         /** The {@link FromClause} for this builder. */
-        private FromClause fromClause = new FromClause(Objectory.createStringBuilder());
+        private FromClause fromClause = new FromClause(new StringBuilder(64));
 
         /** The {@link WhereClause} for this builder. */
         private WhereClause whereClause;
@@ -361,7 +372,7 @@ public final class DynamicQuery {
             checkNotBuilt();
 
             if (whereClause == null) {
-                whereClause = new WhereClause(Objectory.createStringBuilder());
+                whereClause = new WhereClause(new StringBuilder(64));
             }
 
             return whereClause;
@@ -385,7 +396,7 @@ public final class DynamicQuery {
             checkNotBuilt();
 
             if (groupByClause == null) {
-                groupByClause = new GroupByClause(Objectory.createStringBuilder());
+                groupByClause = new GroupByClause(new StringBuilder(64));
             }
 
             return groupByClause;
@@ -409,7 +420,7 @@ public final class DynamicQuery {
             checkNotBuilt();
 
             if (havingClause == null) {
-                havingClause = new HavingClause(Objectory.createStringBuilder());
+                havingClause = new HavingClause(new StringBuilder(64));
             }
 
             return havingClause;
@@ -433,7 +444,7 @@ public final class DynamicQuery {
             checkNotBuilt();
 
             if (orderByClause == null) {
-                orderByClause = new OrderByClause(Objectory.createStringBuilder());
+                orderByClause = new OrderByClause(new StringBuilder(64));
             }
 
             return orderByClause;
@@ -986,7 +997,7 @@ public final class DynamicQuery {
         }
 
         /**
-         * Returns the trailing "more parts" buffer, creating it from the object pool on first use.
+         * Returns the trailing "more parts" buffer, creating it on first use.
          * Holds only raw fragments appended by {@link #append(String)}-style methods, in relative invocation
          * order. Typed pagination is stored as structured state and rendered before this buffer.
          *
@@ -997,14 +1008,14 @@ public final class DynamicQuery {
             checkNotBuilt();
 
             if (moreParts == null) {
-                moreParts = Objectory.createStringBuilder();
+                moreParts = new StringBuilder(64);
             }
 
             return moreParts;
         }
 
         /**
-         * Returns the set-operations buffer, creating it from the object pool on first use.
+         * Returns the set-operations buffer, creating it on first use.
          * Holds the {@code UNION}/{@code UNION ALL}/{@code INTERSECT}/{@code EXCEPT}/{@code MINUS}
          * fragments, which {@link #build()} renders before the final {@code ORDER BY} and pagination
          * clauses regardless of invocation order.
@@ -1016,7 +1027,7 @@ public final class DynamicQuery {
             checkNotBuilt();
 
             if (setOperations == null) {
-                setOperations = Objectory.createStringBuilder();
+                setOperations = new StringBuilder(64);
             }
 
             return setOperations;
@@ -1026,7 +1037,7 @@ public final class DynamicQuery {
          * Verifies this builder is still open, throwing if {@link #build()} has already run.
          * {@code build()} nulls out {@code selectClause} in its {@code finally} block, so a {@code null}
          * {@code selectClause} is the closed marker; without this guard, post-build calls would either
-         * NPE or silently write into freshly pooled buffers that are never recycled.
+         * NPE or silently write into fresh buffers that are never rendered.
          *
          * @throws IllegalStateException if this builder has already been closed by a prior call to {@code build()}
          */
@@ -1044,8 +1055,8 @@ public final class DynamicQuery {
          *
          * <p>The method combines the primary clauses, set operations, the final {@code ORDER BY},
          * typed pagination, and raw trailing fragments in SQL grammar order and returns the complete statement.
-         * Internal {@link StringBuilder} objects are recycled to the object pool for performance
-         * optimization.</p>
+         * Internal {@link StringBuilder} objects are released so that retained clause handles do not
+         * pin them.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1156,15 +1167,8 @@ public final class DynamicQuery {
                     orderByClause = null;
                 }
 
-                if (setOperations != null) {
-                    Objectory.recycle(setOperations);
-                    setOperations = null;
-                }
-
-                if (moreParts != null) {
-                    Objectory.recycle(moreParts);
-                    moreParts = null;
-                }
+                setOperations = null;
+                moreParts = null;
 
                 if (selectClause != null) {
                     selectClause.close();
@@ -1178,14 +1182,14 @@ public final class DynamicQuery {
     /**
      * Base class for the typed clause builders ({@link SelectClause}, {@link FromClause},
      * {@link WhereClause}, {@link GroupByClause}, {@link HavingClause}, and {@link OrderByClause}).
-     * Holds the shared clause buffer and the closed-state tracking used to recycle the buffer
-     * to the object pool once the owning {@link Builder#build()} completes.
+     * Holds the shared clause buffer and the closed-state tracking used to release the buffer
+     * once the owning {@link Builder#build()} completes.
      */
     static abstract class ClauseBuilder {
-        /** The buffer holding this clause's SQL fragments; recycled and cleared to {@code null} by {@link #close()}. */
+        /** The buffer holding this clause's SQL fragments; released (cleared to {@code null}) by {@link #close()}. */
         StringBuilder sb;
 
-        /** Closed-state marker; set by {@link #close()} when the owning {@link Builder#build()} recycles this clause's buffer. */
+        /** Closed-state marker; set by {@link #close()} when the owning {@link Builder#build()} releases this clause's buffer. */
         private boolean isClosed;
 
         /**
@@ -1243,20 +1247,18 @@ public final class DynamicQuery {
         }
 
         /**
-         * Closes this clause builder and recycles its buffer to the object pool.
+         * Closes this clause builder and releases its buffer.
          * Idempotent: subsequent calls have no effect. After closing, any append operation
          * throws {@link IllegalStateException}.
          */
         final void close() {
             if (isClosed) {
-                return; // idempotent: never recycle the same buffer into the pool twice
+                return;
             }
 
             isClosed = true;
-            // Retained clause handles must not pin a recycled buffer, especially one that the pool discards for being oversized.
-            final StringBuilder buffer = sb;
+            // Retained clause handles must not pin the (possibly large) buffer after build().
             sb = null;
-            Objectory.recycle(buffer);
         }
     }
 
@@ -1528,11 +1530,13 @@ public final class DynamicQuery {
          * @param table the table name to add (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
-         * @throws IllegalArgumentException if {@code table} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code table} is {@code null}, empty, or blank, or contains an unterminated
+         *         block comment
          */
         public FromClause append(final String table) {
             assertNotClosed();
             checkSqlFragmentNotBlank(table, "table");
+            checkNoUnterminatedBlockComment(table, "table");
 
             startClauseFragment(sb, "FROM ", ", ");
 
@@ -1555,12 +1559,15 @@ public final class DynamicQuery {
          * @param alias the alias for the table (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
-         * @throws IllegalArgumentException if {@code table} or {@code alias} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code table} or {@code alias} is {@code null}, empty, or blank, or contains
+         *         an unterminated block comment
          */
         public FromClause append(final String table, final String alias) {
             assertNotClosed();
             checkSqlFragmentNotBlank(table, "table");
             checkSqlFragmentNotBlank(alias, "alias");
+            checkNoUnterminatedBlockComment(table, "table");
+            checkNoUnterminatedBlockComment(alias, "alias");
 
             startClauseFragment(sb, "FROM ", ", ");
 
@@ -1586,7 +1593,8 @@ public final class DynamicQuery {
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
          * @throws IllegalArgumentException if a non-empty input yields an empty snapshot, or any
-         *                                  snapshotted element is {@code null}, empty, or blank
+         *                                  snapshotted element is {@code null}, empty, or blank, or contains an
+         *                                  unterminated block comment
          */
         public FromClause append(final Collection<String> tables) {
             assertNotClosed();
@@ -1596,6 +1604,10 @@ public final class DynamicQuery {
             }
 
             final Collection<String> tablesSnapshot = copyAndCheckSqlFragmentsNotBlank(tables, "tables");
+
+            for (final String table : tablesSnapshot) {
+                checkNoUnterminatedBlockComment(table, "Element in tables");
+            }
 
             startClauseFragment(sb, "FROM ", ", ");
 
@@ -1619,13 +1631,16 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank, or contains an
+         *         unterminated block comment
          */
         public FromClause join(final String joinExpr, final String expr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(expr, "expr");
             sb.append(" JOIN ");
             appendFragment(sb, joinExpr).append(" ON ");
             appendFragment(sb, expr);
@@ -1649,13 +1664,16 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank, or contains an
+         *         unterminated block comment
          */
         public FromClause innerJoin(final String joinExpr, final String expr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(expr, "expr");
             sb.append(" INNER JOIN ");
             appendFragment(sb, joinExpr).append(" ON ");
             appendFragment(sb, expr);
@@ -1679,13 +1697,16 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank, or contains an
+         *         unterminated block comment
          */
         public FromClause leftJoin(final String joinExpr, final String expr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(expr, "expr");
             sb.append(" LEFT JOIN ");
             appendFragment(sb, joinExpr).append(" ON ");
             appendFragment(sb, expr);
@@ -1709,13 +1730,16 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank, or contains an
+         *         unterminated block comment
          */
         public FromClause rightJoin(final String joinExpr, final String expr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(expr, "expr");
             sb.append(" RIGHT JOIN ");
             appendFragment(sb, joinExpr).append(" ON ");
             appendFragment(sb, expr);
@@ -1740,13 +1764,16 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} or {@code expr} is {@code null}, empty, or blank, or contains an
+         *         unterminated block comment
          */
         public FromClause fullJoin(final String joinExpr, final String expr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
             checkSqlFragmentNotBlank(expr, "expr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(expr, "expr");
             sb.append(" FULL JOIN ");
             appendFragment(sb, joinExpr).append(" ON ");
             appendFragment(sb, expr);
@@ -1770,12 +1797,13 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public FromClause join(final String joinExpr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
             sb.append(" JOIN ");
             appendFragment(sb, joinExpr);
 
@@ -1798,12 +1826,13 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public FromClause innerJoin(final String joinExpr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
             sb.append(" INNER JOIN ");
             appendFragment(sb, joinExpr);
 
@@ -1826,12 +1855,13 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public FromClause leftJoin(final String joinExpr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
             sb.append(" LEFT JOIN ");
             appendFragment(sb, joinExpr);
 
@@ -1854,12 +1884,13 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public FromClause rightJoin(final String joinExpr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
             sb.append(" RIGHT JOIN ");
             appendFragment(sb, joinExpr);
 
@@ -1882,12 +1913,13 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public FromClause fullJoin(final String joinExpr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
             sb.append(" FULL JOIN ");
             appendFragment(sb, joinExpr);
 
@@ -1909,12 +1941,13 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public FromClause crossJoin(final String joinExpr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
             sb.append(" CROSS JOIN ");
             appendFragment(sb, joinExpr);
 
@@ -1936,12 +1969,13 @@ public final class DynamicQuery {
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}, or if the
          *         {@code FROM} clause has not been initialized by a prior call that actually appended a table
          *         (e.g. {@code append(...)}, {@code appendIf(...)} with a {@code true} condition, or {@code appendIfOrElse(...)})
-         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
          */
         public FromClause naturalJoin(final String joinExpr) {
             assertNotClosed();
             requireFromInitialized();
             checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+            checkNoUnterminatedBlockComment(joinExpr, "joinExpr");
             sb.append(" NATURAL JOIN ");
             appendFragment(sb, joinExpr);
 
@@ -1962,6 +1996,22 @@ public final class DynamicQuery {
         }
 
         /**
+         * Rejects a table, alias or join fragment that opens a {@code /*} block comment without closing it, as the query
+         * builder's {@code from(...)} and {@code join(String)} methods do: {@code appendFragment} terminates only a
+         * trailing line comment, so an open block comment would swallow the {@code ON} connector and every clause
+         * rendered after the fragment.
+         *
+         * @param value the non-blank fragment
+         * @param argName the argument name used in the exception message
+         * @throws IllegalArgumentException if {@code value} contains an unterminated block comment
+         */
+        private static void checkNoUnterminatedBlockComment(final String value, final String argName) {
+            if (QueryUtil.hasUnterminatedBlockComment(value)) {
+                throw new IllegalArgumentException(argName + " must not contain an unterminated block comment: " + value);
+            }
+        }
+
+        /**
          * Conditionally appends a string to the {@code FROM} clause based on a boolean condition.
          * The string is only appended if the condition is true.
          *
@@ -1974,13 +2024,15 @@ public final class DynamicQuery {
          * @param textToAppend the string to append if condition is true (must not be {@code null}, empty, or blank when {@code b} is {@code true})
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
-         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code b} is {@code true} and {@code textToAppend} is {@code null}, empty, or blank,
+         *         or contains an unterminated block comment
          */
         public FromClause appendIf(final boolean b, final String textToAppend) {
             assertNotClosed();
 
             if (b) {
                 checkSqlFragmentNotBlank(textToAppend, "textToAppend");
+                checkNoUnterminatedBlockComment(textToAppend, "textToAppend");
 
                 startClauseFragment(sb, "FROM ", ", ");
 
@@ -2004,12 +2056,15 @@ public final class DynamicQuery {
          * @param textToAppendWhenFalse the string to append if condition is false (must not be {@code null}, empty, or blank)
          * @return this {@link FromClause} instance for method chaining
          * @throws IllegalStateException if this clause builder has already been closed by {@code build()}
-         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank
+         * @throws IllegalArgumentException if {@code textToAppendWhenTrue} or {@code textToAppendWhenFalse} is {@code null}, empty, or blank,
+         *         or contains an unterminated block comment (both are checked, whichever is appended)
          */
         public FromClause appendIfOrElse(final boolean b, final String textToAppendWhenTrue, final String textToAppendWhenFalse) {
             assertNotClosed();
             checkSqlFragmentNotBlank(textToAppendWhenTrue, "textToAppendWhenTrue");
             checkSqlFragmentNotBlank(textToAppendWhenFalse, "textToAppendWhenFalse");
+            checkNoUnterminatedBlockComment(textToAppendWhenTrue, "textToAppendWhenTrue");
+            checkNoUnterminatedBlockComment(textToAppendWhenFalse, "textToAppendWhenFalse");
 
             startClauseFragment(sb, "FROM ", ", ");
 

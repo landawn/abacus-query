@@ -21,6 +21,8 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
@@ -41,10 +43,14 @@ import com.landawn.abacus.util.Strings;
  * This class handles SQL parsing to extract named parameters (e.g., {@code :userId}, {@code #{userId}}) and converts
  * them to standard JDBC parameter placeholders ({@code ?}).
  *
- * <p>The class maintains an internal cache (a keyed object pool) of parsed SQL statements for
- * performance optimization, so repeated calls to {@link #parse(String)} with the same SQL string
- * typically return the same cached instance (subject to pool eviction after prolonged inactivity). Only SQL whose
- * trimmed length does not exceed {@link #MAX_CACHEABLE_SQL_LENGTH} characters is cached; longer SQL is parsed fresh on
+ * <p>The class maintains an internal cache (a keyed object pool behind a lock-free mirror of its entries) of parsed SQL
+ * statements for performance optimization, so repeated calls to {@link #parse(String)} with the same SQL string
+ * typically return the same cached instance. The cache is bounded: a statement evicted from both the pool and the
+ * mirror (which is reset wholesale when full) is parsed again on its next use, yielding a new, equal instance. Hits
+ * served by the mirror do not refresh the pool's access times, so when many distinct statements are parsed this can
+ * also affect frequently used ones, at most once per statement per mirror reset. Only SQL whose
+ * length as given (surrounding whitespace included) does not exceed {@link #MAX_CACHEABLE_SQL_LENGTH} characters is cached;
+ * longer SQL is parsed fresh on
  * every call, so that oversized statements (for example a batch {@code INSERT} with thousands of inlined rows) neither
  * evict the small, frequently reused statements nor pin large strings in memory. Supported parameter formats include:</p>
  * <ul>
@@ -140,7 +146,13 @@ import com.landawn.abacus.util.Strings;
  * that a JDBC driver would otherwise read as placeholders.
  * Comments are normally removed by {@link SqlParser} when parameter conversion is applied; markers
  * inside block comments retained by its keep-comments directive are still ignored. Block and dash-line
- * comments embedded in a subscript token are preserved verbatim, and their markers are ignored as well. For an
+ * comments embedded in a subscript token are preserved verbatim, and their markers are ignored as well. An H2
+ * {@code //} line comment is not a comment to {@link SqlParser}: its text stays in the parameterized SQL and its
+ * markers are bound like any others, but the line break that ends a line holding {@code //} is kept, and a block
+ * comment that opens on such a line (comment text to H2) and continues past its line break is kept as written rather
+ * than dropped (see
+ * {@link #parameterizedSql()}), so on H2 the comment neither swallows the rest of the statement nor hides lines that H2
+ * runs; markers in such kept text are not converted, so a binding there fails loudly. For an
  * unrecognized operation the token stream is not used to rebuild the SQL and no parameter
  * conversion is performed, so its comments remain in the normalized parameterized SQL.</p>
  *
@@ -182,8 +194,8 @@ import com.landawn.abacus.util.Strings;
 public final class ParsedSql {
 
     /**
-     * The maximum length (in {@code char}s, after {@link String#trim()}) of a SQL string that {@link #parse(String)}
-     * looks up in or stores into its cache. Longer SQL is parsed on every call and never cached.
+     * The maximum length (in {@code char}s, as given: surrounding whitespace included) of a SQL string that
+     * {@link #parse(String)} looks up in or stores into its cache. Longer SQL is parsed on every call and never cached.
      */
     static final int MAX_CACHEABLE_SQL_LENGTH = 4096;
 
@@ -194,6 +206,23 @@ public final class ParsedSql {
     private static final int MAX_IDLE_TIME = 24 * 60 * 60 * 1000;
 
     private static final int FACTOR = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
+
+    /**
+     * Lock-free mirror of the entries of {@link #pool}, consulted before it by {@link #parse(String)}. The pool serves
+     * every lookup under one exclusive lock, so cache hits (the hot path of every query execution) would otherwise
+     * serialize across threads and aggregate throughput would fall as threads are added; a hit here is a plain
+     * {@code ConcurrentHashMap} read. The pool stays the authority on capacity: the mirror only ever holds instances
+     * the pool admitted, and instead of evicting entry by entry it is dropped wholesale once it holds as many entries
+     * as the pool's capacity (see {@link #mirror(String, ParsedSql, KeyedObjectPool, ConcurrentMap)}).
+     *
+     * <p>Trade-off: hits served here never reach the pool, so they do not refresh its last-access times. Under churn
+     * the pool's least-recently-accessed eviction may therefore drop the hottest statements first, and an entry may
+     * stay here past the pool's idle expiry until the next wholesale reset. Both effects are bounded: the mirror holds at
+     * most the pool's capacity plus one entry per concurrent caller (see
+     * {@link #mirror(String, ParsedSql, KeyedObjectPool, ConcurrentMap)}), and after each reset a statement the pool
+     * evicted meanwhile is parsed (and pooled) again at most once.</p>
+     */
+    private static final ConcurrentMap<String, ParsedSql> poolFront = new ConcurrentHashMap<>();
 
     /** The parse cache, or {@code null} if it could not be created because the JVM was already shutting down. */
     private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = createCache(
@@ -299,7 +328,11 @@ public final class ParsedSql {
                 : N.EMPTY_INT_ARRAY;
         int positionalTokenCursor = 0;
         boolean lastSourceTokenEndsWithQuestionMark = false;
-        // Source offset of every token, aligned lazily, once, when two string literals are separated by whitespace and
+        // Whether the current output line holds an H2 "//" line comment (see the line-break rule below). Only SQL that
+        // contains "//" can set it, so the output of any other statement is unchanged.
+        final boolean mayHoldDoubleSlashComment = isOpSqlPrefix && this.sql.indexOf("//") >= 0;
+        boolean lineHoldsDoubleSlashComment = false;
+        // Source offset of every token, aligned lazily, once, when a collapsed gap may have to keep its line break and
         // the SQL contains a line break somewhere.
         int[] tokenSourceOffsets = null;
         final StringBuilder sb = Objectory.createStringBuilder();
@@ -519,22 +552,66 @@ public final class ParsedSql {
                     // Between two string literals that changes the SQL: the standard (and PostgreSQL) concatenate
                     // adjacent literals only when a line break separates them ('a'\n'b' is 'ab', 'a' 'b' is a syntax
                     // error), so keep a line break that the original gap contained.
-                    if (SK.SPACE.equals(word) && i > 0 && i + 1 < size && sb.length() > 0 && sb.charAt(sb.length() - 1) == '\''
-                            && words.get(i - 1).endsWith("'") && words.get(i + 1).startsWith("'")) {
-                        if (tokenSourceOffsets == null) {
-                            // Empty when the SQL has no line break at all (or, defensively, cannot be aligned).
-                            final int[] aligned = containsLineBreak(this.sql, 0, this.sql.length()) ? alignTokenSourceOffsets(this.sql, words) : null;
-                            tokenSourceOffsets = aligned == null ? N.EMPTY_INT_ARRAY : aligned;
-                        }
+                    // H2 also reads "//" as a line comment, which the tokenizer does not: it emits two '/' tokens and reads
+                    // the comment text as SQL. Collapsing the line break that ends such a comment lets it swallow the rest
+                    // of the statement on H2 ("x = ? // c\nAND id = 42" runs as "x = ?"), so after an output line that
+                    // holds "//" the first gap whose original text contained a line break keeps one, too. If that line break
+                    // lies inside a block comment the tokenizer dropped, the comment opened inside the "//" comment, where H2
+                    // reads "/*" as comment text and the lines after it as SQL: the gap is then kept as written (and the
+                    // flag stays set), so H2 reads exactly the source there and any marker in it fails loudly instead of
+                    // those lines silently disappearing. This is dialect-neutral and fail-closed: only source text is ever
+                    // kept, and a "//" that H2 would read as quoted text (inside "$$...$$", which is not modelled) also counts.
+                    if (SK.SPACE.equals(word) && i > 0 && i + 1 < size) {
+                        if (lineHoldsDoubleSlashComment || sb.length() > 0 && sb.charAt(sb.length() - 1) == '\'' && words.get(i - 1).endsWith("'")
+                                && words.get(i + 1).startsWith("'")) {
+                            if (tokenSourceOffsets == null) {
+                                // Empty when the SQL has no line break at all (or, defensively, cannot be aligned).
+                                final int[] aligned = containsLineBreak(this.sql, 0, this.sql.length()) ? alignTokenSourceOffsets(this.sql, words) : null;
+                                tokenSourceOffsets = aligned == null ? N.EMPTY_INT_ARRAY : aligned;
+                            }
 
-                        if (tokenSourceOffsets.length > 0
-                                && containsLineBreak(this.sql, tokenSourceOffsets[i - 1] + words.get(i - 1).length(), tokenSourceOffsets[i + 1])) {
-                            word = "\n";
+                            final int gapStart = tokenSourceOffsets.length > 0 && tokenSourceOffsets[i - 1] >= 0
+                                    ? tokenSourceOffsets[i - 1] + words.get(i - 1).length()
+                                    : -1;
+                            final int gapEnd = gapStart >= 0 ? tokenSourceOffsets[i + 1] : -1;
+
+                            if (gapEnd >= 0 && containsLineBreak(this.sql, gapStart, gapEnd)) {
+                                if (lineHoldsDoubleSlashComment && firstLineBreakInDroppedBlockComment(this.sql, gapStart, gapEnd)) {
+                                    word = this.sql.substring(gapStart, gapEnd);
+                                } else {
+                                    word = "\n";
+                                    lineHoldsDoubleSlashComment = false;
+                                }
+                            }
                         }
+                    } else if (mayHoldDoubleSlashComment && !lineHoldsDoubleSlashComment) {
+                        lineHoldsDoubleSlashComment = sb.length() > 0 && sb.charAt(sb.length() - 1) == '/' && word.startsWith("/")
+                                || mayHoldH2LineComment(word);
                     }
                 }
 
                 sb.append(word);
+            }
+
+            // The tokenizer drops an unterminated "/*" with all the text after it. So when the last output line holds "//"
+            // (or is the line where a gap kept as written above ends: the flag stays set there even without a "//"), the
+            // text it discarded after the last token is kept as written if that text contains "/*" and continues with
+            // more text on a later line; H2 then reads it as the source has it. A "/*" on the "//" line is comment text
+            // there, so the lines after it are SQL again and must not be lost ("x = ? // a /* b\nAND y = 2" must not end at
+            // "// a"); a "/*" that opens on a later line ("// a\n/* b\nAND y = 2") is a real unterminated comment, which H2
+            // now reports instead of running the truncated statement; and complete comments ("// a\n/* b */") are merely
+            // kept. Markers in the kept text stay unconverted: a binding there fails loudly rather than silently disappearing.
+            if (lineHoldsDoubleSlashComment && containsLineBreak(this.sql, 0, this.sql.length())) {
+                final int[] offsets = tokenSourceOffsets == null ? alignTokenSourceOffsets(this.sql, words) : tokenSourceOffsets;
+                final int tailStart = offsets == null ? -1 : endOfLastAlignedToken(words, offsets);
+
+                if (tailStart >= 0 && this.sql.indexOf("/*", tailStart) >= 0 && hasTextAfterLineBreak(this.sql, tailStart)) {
+                    while (sb.length() > 0 && sb.charAt(sb.length() - 1) == ' ') {
+                        sb.setLength(sb.length() - 1); // the collapsed form of the tail's leading whitespace
+                    }
+
+                    sb.append(this.sql, tailStart, this.sql.length());
+                }
             }
 
             final String tmpSql = Strings.stripToEmpty(isOpSqlPrefix ? sb.toString() : this.sql);
@@ -667,7 +744,7 @@ public final class ParsedSql {
     /**
      * Parses the given SQL string and returns a {@code ParsedSql} instance.
      * This method uses an internal cache to avoid re-parsing the same SQL statements; SQL longer than
-     * {@link #MAX_CACHEABLE_SQL_LENGTH} characters (after trimming) bypasses the cache and is parsed on every call.
+     * {@link #MAX_CACHEABLE_SQL_LENGTH} characters (as given, surrounding whitespace included) bypasses the cache and is parsed on every call.
      * The SQL is analyzed to extract named parameters and convert them to standard JDBC placeholders.
      *
      * <p>The parser automatically detects and converts different parameter styles:</p>
@@ -717,7 +794,7 @@ public final class ParsedSql {
     public static ParsedSql parse(final String sql) {
         N.checkArgument(Strings.isNotBlank(sql), "sql must not be null, empty, or blank");
 
-        return parse(sql, pool);
+        return parse(sql, pool, poolFront);
     }
 
     /**
@@ -743,9 +820,36 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the instance cached in {@code cache} for an already validated and trimmed SQL string, parsing and
-     * caching it on a miss. SQL longer than {@link #MAX_CACHEABLE_SQL_LENGTH} characters is neither looked up nor
-     * stored: it is parsed and returned directly.
+     * Returns the instance cached in {@code cache} for an already validated SQL string, parsing and caching it on a
+     * miss, without a lock-free mirror in front of the cache. Equivalent to
+     * {@link #parse(String, KeyedObjectPool, ConcurrentMap) parse(inputSql, cache, null)}.
+     *
+     * @param inputSql the nonblank SQL; its surrounding whitespace is kept in the cache key
+     * @param cache the cache to consult and fill, or {@code null} to parse without caching
+     * @return the cached instance, or a newly parsed one
+     * @throws IllegalArgumentException if the SQL is rejected by parameter detection (see {@link #parse(String)})
+     */
+    static ParsedSql parse(final String inputSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache) {
+        return parse(inputSql, cache, null);
+    }
+
+    /**
+     * Returns the instance cached in {@code cache} for an already validated SQL string, parsing and caching it on a
+     * miss. SQL longer than {@link #MAX_CACHEABLE_SQL_LENGTH} characters as given (surrounding whitespace included, so
+     * that no cached key exceeds the limit) is neither looked up nor stored: it is parsed and returned directly. The SQL
+     * is cached exactly as given, so variants of one statement that differ only in surrounding whitespace are separate
+     * (equal-valued) entries.
+     *
+     * <p>{@code front}, when given, is a lock-free mirror of the entries of {@code cache}: it is consulted first, and
+     * refreshed from every cache hit and every successful cache insertion (see
+     * {@link #mirror(String, ParsedSql, KeyedObjectPool, ConcurrentMap)}). It keeps serving instances the cache has
+     * since evicted or, at JVM shutdown, closed, which is harmless because {@code ParsedSql} is immutable and
+     * value-equal. Hits served by {@code front} never reach {@code cache} and so do not refresh its last-access times:
+     * under churn the cache may evict the most used statements first, and an entry may stay in {@code front} past the
+     * cache's idle expiry until the next wholesale reset of {@code front}. The cost is bounded: {@code front} holds at
+     * most the cache's capacity plus one entry per concurrent caller (see
+     * {@link #mirror(String, ParsedSql, KeyedObjectPool, ConcurrentMap)}), and after each reset a statement the cache
+     * evicted meanwhile is parsed (and cached) again at most once.</p>
      *
      * <p>A closed cache is a permanent miss rather than an error. The pool registers its own JVM shutdown hook
      * that closes it, after which its {@code get}/{@code put} throw {@code IllegalStateException}; shutdown hooks
@@ -754,19 +858,29 @@ public final class ParsedSql {
      * that could not be created at all, typically because shutdown had already begun when this class was initialized
      * ({@code cache} is {@code null}, see {@link #createCache(Supplier)}), is a permanent miss as well.</p>
      *
-     * @param inputSql the nonblank SQL, already trimmed by {@link String#trim()}
+     * @param inputSql the nonblank SQL; its surrounding whitespace is kept in the cache key
      * @param cache the cache to consult and fill, or {@code null} to parse without caching
+     * @param front the lock-free mirror of {@code cache} to consult first and keep filled, or {@code null} for none
      * @return the cached instance, or a newly parsed one
      * @throws IllegalArgumentException if the SQL is rejected by parameter detection (see {@link #parse(String)})
      */
-    static ParsedSql parse(final String inputSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache) {
+    static ParsedSql parse(final String inputSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache,
+            final ConcurrentMap<String, ParsedSql> front) {
         if (cache == null || inputSql.length() > MAX_CACHEABLE_SQL_LENGTH) {
             return new ParsedSql(inputSql);
         }
 
-        ParsedSql result = cachedValue(inputSql, cache);
+        ParsedSql result = front == null ? null : front.get(inputSql);
 
         if (result != null) {
+            return result;
+        }
+
+        result = cachedValue(inputSql, cache);
+
+        if (result != null) {
+            mirror(inputSql, result, cache, front);
+
             return result;
         }
 
@@ -783,18 +897,43 @@ public final class ParsedSql {
         synchronized (cache) {
             result = cachedValue(inputSql, cache);
 
-            if (result != null) {
-                return result;
-            }
+            if (result == null) {
+                try {
+                    if (!cache.put(inputSql, Poolable.wrap(parsed, LIVE_TIME, MAX_IDLE_TIME))) {
+                        return parsed; // Rejected by the pool (full and not balanceable): uncached, so not mirrored either.
+                    }
+                } catch (final IllegalStateException e) {
+                    return parsed; // Closed concurrently (JVM shutdown): return the parsed instance uncached.
+                }
 
-            try {
-                cache.put(inputSql, Poolable.wrap(parsed, LIVE_TIME, MAX_IDLE_TIME));
-            } catch (final IllegalStateException e) {
-                // Closed concurrently (JVM shutdown): return the parsed instance uncached.
+                result = parsed;
             }
         }
 
-        return parsed;
+        mirror(inputSql, result, cache, front);
+
+        return result;
+    }
+
+    /**
+     * Records an entry that {@code cache} holds in its lock-free mirror {@code front} (no-op when there is none). The
+     * mirror is bounded by the cache's capacity: once full it is cleared as a whole rather than evicted entry by entry,
+     * which keeps every hit a single map read; the next lookups refill it from the cache, re-parsing (once) any entry
+     * the cache has evicted meanwhile. Concurrent callers may overshoot the bound by at most one entry each.
+     */
+    private static void mirror(final String inputSql, final ParsedSql value, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache,
+            final ConcurrentMap<String, ParsedSql> front) {
+        if (front == null) {
+            return;
+        }
+
+        if (front.size() >= cache.capacity()) {
+            front.clear();
+        }
+
+        // Reuse the pooled key instance rather than pinning the caller's copy: an equal length means nothing was trimmed,
+        // so originalSql() equals inputSql and is the very String the cache holds as this entry's key.
+        front.put(value.originalSql().length() == inputSql.length() ? value.originalSql() : inputSql, value);
     }
 
     /** Returns the live cached instance, or {@code null} on a miss, including a cache closed at JVM shutdown. */
@@ -837,7 +976,17 @@ public final class ParsedSql {
      * tokens is collapsed to a single space (quoted text and bracket groups keep theirs), except that a gap
      * containing a line break between a string literal and a following unprefixed {@code '...'} continuation
      * becomes one line break, since SQL concatenates adjacent literals only across a line break
-     * ({@code 'a'\n'b'}). A {@code ?} converted
+     * ({@code 'a'\n'b'}). Likewise, after a line holding {@code //} outside a quoted literal or identifier, the first
+     * gap whose original text contains a line break becomes one line break, since H2 reads {@code //} as a line
+     * comment ({@code x = :a // c\nAND y = 2} becomes {@code x = ? // c\nAND y = 2}, not
+     * {@code x = ? // c AND y = 2}). A {@code /*} on such a line is comment text to H2, which reads the lines after it
+     * as SQL, so a block comment that opens there and spans that line break is kept as written, from the end of the
+     * preceding token up to the next one, instead of being dropped; the line on which such kept text ends is then treated
+     * as a line holding {@code //} as well, even if it holds none. If the output ends on such a line, the text discarded
+     * after its last token is kept as written whenever it contains a {@code /*} (on that line or a later one) and goes
+     * on to a later line (complete comments there are kept too); an unterminated {@code /*} on a later line then makes
+     * H2 report it instead of running the truncated statement. Kept text is not converted, so a marker in it fails
+     * loudly. A {@code ?} converted
      * from a named or iBatis marker that would otherwise pair with an adjacent {@code ?} is separated from it by
      * one space ({@code payload?:key} becomes {@code payload? ?}, {@code :a:b} becomes {@code ? ?},
      * {@code #{a}?|x} becomes {@code ? ?|x}), so the output never forms a pgJDBC {@code ??} escape absent from
@@ -1140,6 +1289,90 @@ public final class ParsedSql {
         }
 
         return false;
+    }
+
+    /**
+     * Returns the offset in {@code sql} just past the last token that {@code offsets} aligned (see
+     * {@link #alignTokenSourceOffsets(String, List)}), or {@code -1} if no token was aligned (an empty array included).
+     */
+    private static int endOfLastAlignedToken(final List<String> words, final int[] offsets) {
+        for (int k = Math.min(words.size(), offsets.length) - 1; k >= 0; k--) {
+            if (offsets[k] >= 0) {
+                return offsets[k] + words.get(k).length();
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Returns {@code true} if the first line break in {@code sql[from, to)}, a gap of whitespace and comments that the
+     * tokenizer collapsed into one space, lies inside a block comment it discarded. The comments are read as
+     * {@link #locateToken(String, String, int)} skips them: a block comment ends at its first closing delimiter (they do
+     * not nest), and a {@code --} or {@code #} comment runs to the line break, so a {@code /*} inside one opens nothing.
+     */
+    private static boolean firstLineBreakInDroppedBlockComment(final String sql, final int from, final int to) {
+        int i = from;
+
+        while (i < to) {
+            final char ch = sql.charAt(i);
+
+            if (ch == '\n' || ch == '\r') {
+                return false;
+            }
+
+            if (sql.startsWith("/*", i)) {
+                final int end = sql.indexOf("*/", i + 2);
+                final int commentEnd = end < 0 || end > to ? to : end;
+
+                if (containsLineBreak(sql, i + 2, commentEnd)) {
+                    return true;
+                }
+
+                i = commentEnd + 2;
+            } else if (sql.startsWith("--", i) || ch == '#') {
+                while (i < to && sql.charAt(i) != '\n' && sql.charAt(i) != '\r') {
+                    i++;
+                }
+            } else {
+                i++;
+            }
+        }
+
+        return false;
+    }
+
+    /** Returns {@code true} if {@code text} holds a line break at or after {@code fromIndex} followed by non-whitespace. */
+    private static boolean hasTextAfterLineBreak(final String text, final int fromIndex) {
+        boolean afterLineBreak = false;
+
+        for (int i = fromIndex, len = text.length(); i < len; i++) {
+            final char ch = text.charAt(i);
+
+            if (ch == '\n' || ch == '\r') {
+                afterLineBreak = true;
+            } else if (afterLineBreak && !Character.isWhitespace(ch)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns {@code true} if the emitted token {@code word} may hold an H2 {@code //} line comment: it contains
+     * {@code //} and is neither a block comment kept as a token nor a string literal or quoted identifier whose extent
+     * is certain. A backslash makes the extent uncertain, because the tokenizer reads it as an escape and H2 does not:
+     * H2 ends {@code 'C:\' // it'} at its second quote, so the {@code //} after it opens a comment there.
+     */
+    private static boolean mayHoldH2LineComment(final String word) {
+        if (word.indexOf("//") < 0 || word.startsWith("/*")) {
+            return false;
+        }
+
+        final char first = word.charAt(0);
+
+        return !(first == '"' || first == '`' || isStringLiteralToken(word)) || word.indexOf('\\') >= 0;
     }
 
     /**

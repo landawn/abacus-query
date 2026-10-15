@@ -329,4 +329,17 @@ public class FullJoinTest extends TestBase {
         assertTrue(result.contains("department_id"));
         assertTrue(result.contains("employee_dept_id"));
     }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
+        // An open "/*" in the entity would comment out the ON predicate and everything rendered after the join.
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new FullJoin("t /* x", ON_AB)).getMessage());
+        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new FullJoin(List.of("a", "t /* x"), ON_AB)).getMessage());
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new FullJoin("t /* x")).getMessage());
+        assertEquals("FULL JOIN t /* x */ ON a.id = b.id", new FullJoin("t /* x */", ON_AB).toString());
+    }
 }

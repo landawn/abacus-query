@@ -106,7 +106,7 @@ public class FullJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, that is reported first;
      *                                  otherwise it is thrown because a FULL JOIN requires a non-{@code null} {@code ON}/{@code USING} predicate
      * @deprecated always throws {@link IllegalArgumentException} because a qualified join requires an {@code ON}/{@code USING}
      *             predicate; use {@link #FullJoin(String, Condition)} instead, or {@link CrossJoin} for an unconditional join
@@ -152,7 +152,7 @@ public class FullJoin extends Join {
      * @param joinEntity the table or entity to join with. Can include alias.
      * @param joinCondition the join condition; must not be {@code null}. A plain predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING},
@@ -187,7 +187,7 @@ public class FullJoin extends Join {
      * @param joinEntities the collection of tables or entities to join with.
      * @param joinCondition the join condition; must not be {@code null}. A plain predicate is automatically prefixed with
      *            {@code ON}; an explicit {@link On} (or {@code @Beta} {@link Using}) renders its own keyword.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements;
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING},

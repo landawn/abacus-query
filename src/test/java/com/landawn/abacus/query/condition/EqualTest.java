@@ -79,9 +79,9 @@ public class EqualTest extends TestBase {
         assertEquals(99.99, eqDouble.propValue());
 
         // Test with Date
-        Date now = new Date();
-        Equal eqDate = Filters.eq("createdDate", now);
-        assertEquals(now, eqDate.propValue());
+        Date createdAt = new Date(1_700_000_000_000L);
+        Equal eqDate = Filters.eq("createdDate", createdAt);
+        assertEquals(createdAt, eqDate.propValue());
 
         // Test with null
         Equal eqNull = Filters.eq("deletedDate", null);

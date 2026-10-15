@@ -2167,7 +2167,7 @@ public class SqlExpression extends ComposableCondition {
      * @param word the token to check
      * @return {@code true} if {@code word} is a registered SQL keyword
      */
-    private static boolean isSqlKeyword(final String word) {
+    static boolean isSqlKeyword(final String word) {
         return SQL_KEY_WORDS.contains(word);
     }
 
@@ -2179,6 +2179,27 @@ public class SqlExpression extends ComposableCondition {
      */
     private static boolean isIdentifierStart(final char ch) {
         return Strings.isAsciiAlpha(ch) || ch == '_';
+    }
+
+    /**
+     * Returns whether the literal consists only of ASCII letters, digits and underscores, so that it is at most
+     * one identifier (or one keyword, or one digit-leading token) for the tokenizer. Unlike
+     * {@link QueryUtil#SIMPLE_COLUMN_NAME_PATTERN} this rejects {@code '-'} (a hyphen may be SQL subtraction
+     * and must be split into operands by the tokenizer) and allocates no {@code Matcher}.
+     *
+     * @param literal the non-empty literal to check
+     * @return {@code true} if every character is in {@code [A-Za-z0-9_]}
+     */
+    private static boolean isSimpleIdentifier(final String literal) {
+        for (int i = 0, len = literal.length(); i < len; i++) {
+            final char ch = literal.charAt(i);
+
+            if (!(isIdentifierStart(ch) || (ch >= '0' && ch <= '9'))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -2198,9 +2219,12 @@ public class SqlExpression extends ComposableCondition {
      * {@code #} outside a string literal, it is copied unchanged. A column that follows a delimited qualifier is
      * converted ({@code "T".firstName} renders as {@code "T".first_name}), and so is one that follows a glued marker
      * and a dot (<code>log_${month}.createdAt</code> renders as <code>log_${month}.created_at</code>).
-     * PostgreSQL dollar-quoted strings ({@code $$...$$}) are not recognized by the tokenizer, so a word inside
-     * one that contains whitespace can be converted (for example {@code $$aB cD$$} renders as {@code $$aB c_d$$}
-     * under {@code SNAKE_CASE}).
+     * A PostgreSQL dollar-quoted string ({@code $$...$$}, {@code $tag$...$tag$}) that starts a word is copied as written,
+     * whitespace and words included ({@code $$aB cD$$} stays {@code $$aB cD$$} under {@code SNAKE_CASE}), in a
+     * subscript or array constructor too ({@code ARRAY[$$a  b$$]}). From one whose text a
+     * server without dollar quotes reads differently, because it holds a quote character, a {@code [}, a {@code #} or a
+     * comment opener ({@code $$it's$$}), or that is never closed, the rest of the literal (in a subscript, the rest of
+     * the subscript) is copied exactly as written, as described below for a backslash before a quote.
      * Bind names and MyBatis attributes inside a {@code #{...}} or {@code ${...}} marker are also
      * protected when the marker contains whitespace; tokenization can still normalize whitespace
      * runs. A marker without a closing {@code '}'} is not a binding and is converted like ordinary SQL. Recognized SQL
@@ -2260,13 +2284,16 @@ public class SqlExpression extends ComposableCondition {
             return Strings.EMPTY;
         }
 
-        if (literal.length() < 16 && literal.indexOf('-') < 0 && QueryUtil.SIMPLE_COLUMN_NAME_PATTERN.matcher(literal).matches()) {
+        // The length cutoff only bounds the isSimpleIdentifier scan; it is not a correctness guard, since the
+        // tokenizer path below renders a lone [A-Za-z0-9_]+ token identically for every length and policy.
+        // AbstractQueryBuilder.appendStringExpr/isSimpleColumnName mirror this fast path.
+        if (literal.length() < 64 && isSimpleIdentifier(literal)) {
             // Mirror the parse path below: identifiers starting with an ASCII letter or underscore are
             // naming-policy converted (leading/trailing underscore runs preserved by QueryUtil.convertIdentifier);
             // a digit-leading token (e.g. "2faCode") passes through unchanged.
-            // Hyphen-containing literals (e.g. "price-tax", SQL subtraction) are excluded even though the
-            // simple-column pattern accepts '-': CAMEL_CASE/SNAKE_CASE conversion would swallow the '-',
-            // so they take the parser path below, which converts each operand independently.
+            // Hyphen-containing literals (e.g. "price-tax", SQL subtraction) are rejected by isSimpleIdentifier:
+            // CAMEL_CASE/SNAKE_CASE conversion would swallow the '-', so they take the parser path below,
+            // which converts each operand independently.
             if (!isIdentifierStart(literal.charAt(0)) || isSqlKeyword(literal)) {
                 return literal;
             }

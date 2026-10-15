@@ -61,8 +61,7 @@ public class SubQuerySnapshotTest extends TestBase {
         assertNotEquals("SELECT id FROM users", value);
         assertNotEquals(new SubQuery("SELECT id FROM users"), value);
         assertNotEquals(value, new SubQuery("SELECT id FROM users"));
-        assertNotEquals(value, new SubQuerySnapshot("SELECT id FROM archive", List.of(), SqlPolicy.NAMED_SQL, false, false,
-                Map.of(), Set.of(), Map.of()));
+        assertNotEquals(value, new SubQuerySnapshot("SELECT id FROM archive", List.of(), SqlPolicy.NAMED_SQL, false, false, Map.of(), Set.of(), Map.of()));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -73,25 +72,24 @@ public class SubQuerySnapshotTest extends TestBase {
     }
 
     private static Stream<Arguments> differentBindings() {
-        return Stream.of(Arguments.of("empty", List.of()), Arguments.of("shorter", List.of(1)),
-                Arguments.of("longer", Arrays.asList(1, null, 2)), Arguments.of("different order", Arrays.asList(null, 1)),
-                Arguments.of("different value", Arrays.asList(2, null)));
+        return Stream.of(Arguments.of("empty", List.of()), Arguments.of("shorter", List.of(1)), Arguments.of("longer", Arrays.asList(1, null, 2)),
+                Arguments.of("different order", Arrays.asList(null, 1)), Arguments.of("different value", Arrays.asList(2, null)));
     }
 
     private static Stream<Arguments> differentCompositionMetadata() {
         return Stream.of(
-                Arguments.of("SQL policy", new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.PARAMETERIZED_SQL, false, false,
-                        Map.of(), Set.of(), Map.of())),
-                Arguments.of("generated placeholder", new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, true, false,
-                        Map.of(), Set.of(), Map.of())),
-                Arguments.of("set operation isolation", new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, false, true,
-                        Map.of(), Set.of(), Map.of())),
-                Arguments.of("occurrence counts", new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, false, false,
-                        Map.of("id", 1), Set.of(), Map.of())),
-                Arguments.of("generated names", new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, false, false,
-                        Map.of(), Set.of("id"), Map.of())),
-                Arguments.of("rendered tokens", new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, false, false,
-                        Map.of(), Set.of(), Map.of("id", ":id"))));
+                Arguments.of("SQL policy",
+                        new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.PARAMETERIZED_SQL, false, false, Map.of(), Set.of(), Map.of())),
+                Arguments.of("generated placeholder",
+                        new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, true, false, Map.of(), Set.of(), Map.of())),
+                Arguments.of("set operation isolation",
+                        new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, false, true, Map.of(), Set.of(), Map.of())),
+                Arguments.of("occurrence counts",
+                        new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, false, false, Map.of("id", 1), Set.of(), Map.of())),
+                Arguments.of("generated names",
+                        new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, false, false, Map.of(), Set.of("id"), Map.of())),
+                Arguments.of("rendered tokens",
+                        new SubQuerySnapshot("SELECT id FROM users", List.of(), SqlPolicy.NAMED_SQL, false, false, Map.of(), Set.of(), Map.of("id", ":id"))));
     }
 
     private static SubQuerySnapshot snapshot(final List<Object> parameters) {

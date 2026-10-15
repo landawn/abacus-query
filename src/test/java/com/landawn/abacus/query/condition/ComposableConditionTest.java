@@ -95,11 +95,29 @@ public class ComposableConditionTest extends TestBase {
     @Nested
     class Validation {
         @Test
+        void testCompositionRejectsClauseArgumentAndAcceptsNestedJunctionReceiver() {
+            final Equal eq = new Equal("a", 1);
+
+            assertThrows(IllegalArgumentException.class, () -> eq.and(new Where(new Equal("b", 2))));
+            assertThrows(IllegalArgumentException.class, () -> eq.or(new Where(new Equal("b", 2))));
+            assertThrows(IllegalArgumentException.class, () -> eq.xor(new Where(new Equal("b", 2))));
+
+            final Or nested = new Or(new Equal("b", 2)).or(new Equal("c", 3));
+
+            assertDoesNotThrow(() -> nested.and(eq));
+            assertDoesNotThrow(() -> eq.and(nested).or(nested).xor(eq));
+            assertThrows(IllegalArgumentException.class, () -> nested.and(new Where(eq)));
+            assertThrows(IllegalArgumentException.class, () -> new And(nested).or(new SqlExpression("")));
+        }
+
+        @Test
         void testCompositionChecksReceiverBeforeArgument() {
             final SqlExpression invalidReceiver = SqlExpression.of("");
 
-            assertTrue(assertThrows(IllegalArgumentException.class, () -> invalidReceiver.and((Condition) null)).getMessage().contains("composable method 'and'"));
-            assertTrue(assertThrows(IllegalArgumentException.class, () -> invalidReceiver.or((Condition) null)).getMessage().contains("composable method 'or'"));
+            assertTrue(
+                    assertThrows(IllegalArgumentException.class, () -> invalidReceiver.and((Condition) null)).getMessage().contains("composable method 'and'"));
+            assertTrue(
+                    assertThrows(IllegalArgumentException.class, () -> invalidReceiver.or((Condition) null)).getMessage().contains("composable method 'or'"));
             assertTrue(assertThrows(IllegalArgumentException.class, () -> invalidReceiver.xor(null)).getMessage().contains("composable method 'xor'"));
         }
     }

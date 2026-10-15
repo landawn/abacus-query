@@ -39,14 +39,12 @@ SUFFIXES = [
 # known aliases: test class stem -> source class simple name
 ALIASES = {
     "SqlBuilderSupportedSqlTest": "SqlBuilder",
-    "ParsedSqlValidationTest": "ParsedSql",
     "Simple": "AbstractQueryBuilder",
     "CriteriaBuilderAdd": "Criteria",
 }
 INTENTIONAL_SPLITS = {
     "SqlBuilder": "The supported-SQL catalog is a separate executable specification.",
     "SqlDialect": "Pagination is kept as a focused dialect behavior suite.",
-    "ParsedSql": "Scanner preconditions are kept in a focused validation suite.",
 }
 
 

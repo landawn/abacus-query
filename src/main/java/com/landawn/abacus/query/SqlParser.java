@@ -15,6 +15,7 @@
 package com.landawn.abacus.query;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -661,7 +662,8 @@ public final class SqlParser {
              * {@code RESTORE}, {@code BULK}, {@code WRITETEXT}, {@code UPDATETEXT}, {@code RECONFIGURE},
              * {@code CHECKPOINT}, {@code SETUSER}, {@code ADD}, {@code BEGIN}, {@code IF}, {@code WHILE},
              * {@code WAITFOR}, {@code COMMIT} or {@code ROLLBACK} (or {@code DISABLE}/{@code ENABLE} before
-             * {@code TRIGGER}), that follows a statement's own verb (outside
+             * {@code TRIGGER}, {@code END} before {@code CONVERSATION}, and the Service Broker {@code RECEIVE},
+             * {@code SEND} or {@code MOVE} right after a T-SQL label), that follows a statement's own verb (outside
              * parentheses, quotes, brackets and comments, and other than the {@code UPDATE} of a {@code FOR UPDATE}
              * clause) starts a new statement that is classified like one after a {@code ;}. Such a word followed by
              * {@code (} is a function call ({@code TRUNCATE(x, 2)}), except for {@code EXEC}, {@code EXECUTE},
@@ -670,7 +672,8 @@ public final class SqlParser {
              * {@code ON CONFLICT DO UPDATE} and {@code WHEN MATCHED THEN DELETE} are split as well; they only occur in
              * statements (upserts, {@code MERGE}) that the read gates reject anyway. A qualified name such as
              * {@code o.update} is not a statement verb, but a verb glued to a numeric literal ({@code 1DELETE},
-             * {@code 1.DELETE}) or following a T-SQL label ({@code lbl:DELETE}) is, as SQL Server ends the literal or
+             * {@code 1.DELETE}) or following a T-SQL label ({@code lbl:DELETE}, also {@code x#:DELETE} and
+             * {@code x@:DELETE}, as a T-SQL name may contain {@code #} and {@code @}) is, as SQL Server ends the literal or
              * label there. Enabling this also makes an identifier-shaped {@code #name} a temp-table reference rather
              * than a MySQL line comment, so a statement hidden behind one is still found.
              *
@@ -1953,8 +1956,7 @@ public final class SqlParser {
      */
     private static boolean isHashPrefixInIdentifierContext(final String str, final int prefixStart, final TokenizerConfig tokenizerConfig,
             final boolean lineCommentAware, final HashScanMemo memo) {
-        int left = lineCommentAware ? skipBackwardWhitespaceAndComments(str, prefixStart - 1, tokenizerConfig, memo)
-                : skipBackwardWhitespaceAndBlockComments(str, prefixStart - 1, memo);
+        int left = skipBackwardHashContextTrivia(str, prefixStart - 1, lineCommentAware, tokenizerConfig, memo);
 
         if (isHashIdentifierDmlTargetContext(str, left, lineCommentAware, tokenizerConfig, memo)) {
             return true;
@@ -2087,9 +2089,15 @@ public final class SqlParser {
         return tokenStart >= 0 && matchesAnyToken(str, tokenStart, left + 1, hashIdentifierDmlTargetKeywords);
     }
 
+    /**
+     * The backward walk of a {@code '#'} classification: whitespace and block comments, plus line comments in the
+     * line-comment-aware flavor. Its line-comment-aware walks use the {@code '#'}-classification storage rule of the
+     * memo (see {@link #skipBackwardWhitespaceAndComments(String, int, TokenizerConfig, HashScanMemo, boolean)}).
+     */
     private static int skipBackwardHashContextTrivia(final String str, final int left, final boolean skipLineComments, final TokenizerConfig tokenizerConfig,
             final HashScanMemo memo) {
-        return skipLineComments ? skipBackwardWhitespaceAndComments(str, left, tokenizerConfig, memo) : skipBackwardWhitespaceAndBlockComments(str, left, memo);
+        return skipLineComments ? skipBackwardWhitespaceAndComments(str, left, tokenizerConfig, memo, true)
+                : skipBackwardWhitespaceAndBlockComments(str, left, memo);
     }
 
     private static int identifierWordStart(final String str, final int end) {
@@ -2265,10 +2273,20 @@ public final class SqlParser {
     /**
      * Finds the opening bracket paired with {@code closingBracket}. A forward lexical scan is
      * necessary because an unescaped {@code '['} is legal content inside a bracket-quoted SQL
-     * Server identifier, while doubled {@code "]]"} represents a literal closing bracket.
+     * Server identifier, while doubled {@code "]]"} represents a literal closing bracket. With a
+     * memo for {@code str} the answer comes from the memo's lazily extended group pass (one scan per
+     * memo instead of one per query); the scan below is the memo-less fallback and defines the answer.
      */
     private static int findOpeningBracketQuotedIdentifier(final String str, final int closingBracket, final TokenizerConfig tokenizerConfig,
             final HashScanMemo memo) {
+        if (memo != null && memo.str == str) {
+            final int opener = memo.groupOpenerAt(closingBracket, tokenizerConfig);
+
+            if (opener != HashScanMemo.UNKNOWN) {
+                return opener;
+            }
+        }
+
         int openingBracket = -1;
         char quoteChar = 0;
         boolean backslashEscaped = false;
@@ -2343,10 +2361,21 @@ public final class SqlParser {
 
     /**
      * Finds the opening parenthesis paired with {@code closingParenthesis}, ignoring parentheses
-     * inside quoted text, bracket-quoted identifiers, and SQL line/block/hash comments.
+     * inside quoted text, bracket-quoted identifiers, and SQL line/block/hash comments. With a memo
+     * for {@code str} the answer comes from the memo's lazily extended group pass (one scan per memo
+     * instead of one per query); the scan below is the memo-less fallback and defines the answer,
+     * including its quirk that a {@code ')'} without an opener makes every later query answer -1.
      */
     private static int findMatchingOpeningParenthesis(final String str, final int closingParenthesis, final TokenizerConfig tokenizerConfig,
             final HashScanMemo memo) {
+        if (memo != null && memo.str == str) {
+            final int opener = memo.groupOpenerAt(closingParenthesis, tokenizerConfig);
+
+            if (opener != HashScanMemo.UNKNOWN) {
+                return opener;
+            }
+        }
+
         final List<Integer> openings = new ArrayList<>(4);
         char quoteChar = 0;
         boolean backslashEscaped = false;
@@ -2430,7 +2459,60 @@ public final class SqlParser {
         return -1;
     }
 
-    private static int skipBackwardWhitespaceAndComments(final String str, int left, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+    /**
+     * Skips whitespace, block comments and (with a {@code memo}) {@code --}/{@code #} line comments backward from
+     * {@code left}, returning the index of the first other character, or -1. With a {@code memo} bound to {@code str},
+     * the walk reads the results that earlier walks stored there, and stores its own result only when it starts inside
+     * what the memo's line-comment pass reads as a line comment and covers more than 32 characters (see the overload
+     * below).
+     */
+    private static int skipBackwardWhitespaceAndComments(final String str, final int left, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        return skipBackwardWhitespaceAndComments(str, left, tokenizerConfig, memo, false);
+    }
+
+    /**
+     * {@link #skipBackwardWhitespaceAndComments(String, int, TokenizerConfig, HashScanMemo)}, reading and recording
+     * results in {@code memo} (if it is bound to {@code str}) under the storage rule of a {@code '#'} classification
+     * when {@code hashClassification} is set, or of the other scanners otherwise.
+     */
+    private static int skipBackwardWhitespaceAndComments(final String str, int left, final TokenizerConfig tokenizerConfig, final HashScanMemo memo,
+            final boolean hashClassification) {
+        // The result is a pure function of (str, left) for a memo bound to str, and the walk below
+        // restarts from scratch at `commentIndex - 1` after each line comment. Memoizing the result
+        // per start position (and per restart position) makes a run of consecutive comment lines
+        // cost one step per line in total instead of one walk over all earlier lines for every word
+        // or '#' visited below them (quadratic in the number of comment lines). Every walk reads the
+        // memo; which walks store (the first stored one allocates the array) depends on the caller:
+        // - A '#' classification stores a walk that crossed a line comment, or one that covered more
+        //   than 32 characters, whatever reached its start: repeating a shorter walk costs O(1), while
+        //   a longer one may be repeated by every later '#' that reaches the same start by other means
+        //   than crossing a line comment (the TOP-clause sub-walks of isHashIdentifierDmlTargetContext
+        //   start before a '(' found by parenthesis matching, or before a PERCENT/TOP/bare word). Not
+        //   the long walk that starts right before the '#' being classified, though: no other walk
+        //   starts there, and a later walk that crosses this '#' line restarts before it and stores that.
+        // - The other scanners skip line comments themselves, so their walks normally start after one
+        //   and cross at most the comments right before their token, each block once. They store only a
+        //   walk that starts inside what the memo's pass reads as a line comment and covers more than 32
+        //   characters: then a forward scanner is visiting text that the pass reads as a comment (an
+        //   identifier-shaped "#name" line in a semicolon-less batch configuration, which is SQL to the
+        //   scanners), and every word of a run of such lines would otherwise walk back over all the lines
+        //   (or a long gap) before it; a single such line costs no array unless more than 32 characters
+        //   of whitespace or comments precede it.
+        final boolean memoized = memo != null && memo.str == str && left >= 0 && left < memo.length;
+        boolean crossedLineComment = false;
+        boolean recordRestarts = hashClassification;
+
+        if (memoized) {
+            final int known = memo.backwardSkipResult(left);
+
+            if (known != HashScanMemo.UNKNOWN) {
+                return known;
+            }
+        }
+
+        final int start = left;
+        int firstRestart = -1; // the first restart position; `restarts` holds the later ones (allocated only then)
+        IntList restarts = null;
         boolean skipped;
         int lastLineScanPosition = Integer.MIN_VALUE;
 
@@ -2456,11 +2538,56 @@ public final class SqlParser {
                 final int commentIndex = memo == null ? -1 : memo.lineCommentOpenerAt(str, left, tokenizerConfig);
 
                 if (commentIndex >= 0) {
+                    if (memoized && !crossedLineComment && !hashClassification) {
+                        // The walk started inside this comment if no line break separates its start from `left`
+                        // (looked up within a short stretch only, which is all that such a walk skips in practice).
+                        recordRestarts = start - left <= 32 && !containsLineBreak(str, left + 1, start + 1);
+                    }
+
                     left = commentIndex - 1;
                     skipped = true;
+                    crossedLineComment = true;
+
+                    if (memoized && left >= 0) {
+                        final int known = memo.backwardSkipResult(left);
+
+                        if (known != HashScanMemo.UNKNOWN) {
+                            left = known;
+                            break;
+                        }
+
+                        if (recordRestarts) {
+                            if (firstRestart < 0) {
+                                firstRestart = left;
+                            } else {
+                                if (restarts == null) {
+                                    restarts = new IntList(4);
+                                }
+
+                                restarts.add(left);
+                            }
+                        }
+                    }
                 }
             }
         } while (skipped);
+
+        final boolean store = hashClassification ? crossedLineComment || start - left > 32 && (start + 1 >= str.length() || str.charAt(start + 1) != '#')
+                : recordRestarts && start - left > 32;
+
+        if (memoized && store) {
+            memo.rememberBackwardSkipResult(start, left);
+
+            if (firstRestart >= 0) {
+                memo.rememberBackwardSkipResult(firstRestart, left);
+            }
+
+            if (restarts != null) {
+                for (int i = 0, size = restarts.size(); i < size; i++) {
+                    memo.rememberBackwardSkipResult(restarts.get(i), left);
+                }
+            }
+        }
 
         return left;
     }
@@ -2527,10 +2654,32 @@ public final class SqlParser {
      * pass after every position before it is final; the backward helpers therefore never ask about
      * a {@code '#'} at or after the one currently being classified.</p>
      *
+     * <p>Two further caches keep the backward walk linear. A group pass with the same lazy-prefix
+     * discipline records, for every {@code ')'} and every {@code ']'} ending a bracket-quoted
+     * identifier, the index of its opener (or -1) exactly as the memo-less scans in
+     * {@link #findMatchingOpeningParenthesis} / {@link #findOpeningBracketQuotedIdentifier} would
+     * answer; without it each {@code '#'} preceded by a {@code ')'} or {@code ']'} re-lexed the
+     * string from the start (quadratic for a multi-row {@code INSERT} with a {@code #tag} per row).
+     * And a line-comment-aware backward walk of a {@code '#'} classification that crosses a line
+     * comment or more than 32 characters (except a long walk that starts right before the {@code '#'}
+     * itself, which no other walk repeats) remembers its result per start and restart position, so a
+     * block of consecutive comment lines, or a long gap that every later {@code '#'} walks again (such
+     * as the whitespace before the {@code (} of a {@code TOP} clause), is walked once rather than once
+     * per {@code '#'} below it; a shorter walk is cheap to repeat and is not stored. The other scanners'
+     * backward walks read these results too, and store their own only when they start inside what the
+     * line-comment pass reads as a comment (an identifier-shaped {@code #name} line in a semicolon-less
+     * batch configuration is SQL to them) and cover more than 32 characters, so that every word of a run
+     * of such lines is not walked back over all the lines before it.</p>
+     *
      * <p>A memo is bound to one string, one {@link TokenizerConfig} and one scan (every creation site
      * pairs a fresh memo with the single configuration that scan uses; the memo does not record the
      * configuration itself) and is never shared between threads. Its arrays are allocated on first
-     * use. The hash-classification state array also records the governing context of visited commas,
+     * use only, so a scan pays just for the caches it needs: the group pass's when a {@code '#'}
+     * classification first asks for the opener of a {@code ')'} or {@code ']'}, and the backward-walk
+     * results when a walk first stores a result under the rules above (for consistently lexed text, only
+     * a {@code '#'} classification's walk that crosses a line comment or a long gap; the other backward
+     * walks, which then only reach the previous token, merely read them).
+     * The hash-classification state array also records the governing context of visited commas,
      * so later temporary-table names reuse the list prefix already classified. A separate lazy prefix
      * pass tracks bracket roles so chained subscripts share the same token
      * boundaries across tokenization and token search, without confusing a bracket-quoted root with an
@@ -2568,9 +2717,159 @@ public final class SqlParser {
         private int bracketPassEnd;
         private boolean bracketChainOpen;
 
+        /** Answer of {@link #groupOpenerAt} / {@link #backwardSkipResult} when the memo has none. */
+        static final int UNKNOWN = Integer.MIN_VALUE;
+
+        /** Per {@code ')'}/{@code ']'} position: its opener or -1; valid for {@code [0, groupPassEnd)}; {@code null} until the first query. */
+        private int[] groupOpeners;
+        private int groupPassEnd;
+        private char groupPassQuoteChar;
+        private boolean groupPassBackslashEscaped;
+        private int groupPassBracketOpener = -1;
+        private boolean groupPassInBlockComment;
+        private boolean groupPassInLineComment;
+        private boolean groupPassUnbalanced;
+        private IntList groupPassOpenParentheses;
+        private boolean extendingGroupPass;
+
+        /**
+         * Per start or restart position of a {@link #skipBackwardWhitespaceAndComments} walk that stored its result (see
+         * the storage rules there): that result, or {@link #UNKNOWN}; {@code null} until the first such walk.
+         */
+        private int[] backwardSkipResults;
+
         HashScanMemo(final String str) {
             this.str = str;
             length = str.length();
+        }
+
+        int backwardSkipResult(final int position) {
+            return backwardSkipResults == null ? UNKNOWN : backwardSkipResults[position];
+        }
+
+        void rememberBackwardSkipResult(final int position, final int result) {
+            if (backwardSkipResults == null) {
+                backwardSkipResults = new int[length];
+                Arrays.fill(backwardSkipResults, UNKNOWN);
+            }
+
+            backwardSkipResults[position] = result;
+        }
+
+        /**
+         * Returns what {@link #findMatchingOpeningParenthesis} answers for the {@code ')'} at
+         * {@code closing} and what {@link #findOpeningBracketQuotedIdentifier} answers for the
+         * {@code ']'} at {@code closing} (the two memo-less scans share one lexical reading, so one
+         * pass records both), or {@link #UNKNOWN} for a re-entrant query beyond the frontier, which
+         * the strictly-decreasing recursion never produces; the caller then runs its own scan.
+         */
+        int groupOpenerAt(final int closing, final TokenizerConfig tokenizerConfig) {
+            if (closing < groupPassEnd) {
+                return groupOpeners[closing];
+            }
+
+            if (extendingGroupPass) {
+                return UNKNOWN;
+            }
+
+            extendGroupPass(closing, tokenizerConfig);
+
+            return groupOpeners[closing];
+        }
+
+        /**
+         * Runs the group pass from the current frontier through {@code toIndex} with exactly the
+         * lexical rules of the memo-less scans: quoted text with doubled and backslash-escaped
+         * quotes, bracket-quoted identifiers with doubled {@code ]]}, {@code --}, {@code /*} ...
+         * {@code *}{@code /} and {@code '#'} comments (the latter classified by
+         * {@link #isHashCommentStart} with this memo). Both scans answer a query at the first
+         * {@code ']'} of a doubled pair with the opener and at the second with -1, which is recorded
+         * the same way, and the parenthesis scan answers -1 for every {@code ')'} at or after the
+         * first {@code ')'} without an opener.
+         */
+        private void extendGroupPass(final int toIndex, final TokenizerConfig tokenizerConfig) {
+            if (groupOpeners == null) {
+                groupOpeners = new int[length];
+                groupPassOpenParentheses = new IntList(8);
+            }
+
+            extendingGroupPass = true;
+
+            try {
+                int i = groupPassEnd;
+
+                while (i <= toIndex) {
+                    final char ch = str.charAt(i);
+                    groupOpeners[i] = -1;
+
+                    if (groupPassInLineComment) {
+                        if (ch == ENTER || ch == ENTER_2) {
+                            groupPassInLineComment = false;
+                        }
+                    } else if (groupPassInBlockComment) {
+                        if (ch == '*' && i + 1 < length && str.charAt(i + 1) == '/') {
+                            groupOpeners[++i] = -1;
+                            groupPassInBlockComment = false;
+                        }
+                    } else if (groupPassQuoteChar != 0) {
+                        if (ch == groupPassQuoteChar) {
+                            if (groupPassBackslashEscaped) {
+                                groupPassBackslashEscaped = false;
+                            } else if (i + 1 < length && str.charAt(i + 1) == groupPassQuoteChar) {
+                                groupOpeners[++i] = -1;
+                            } else {
+                                groupPassQuoteChar = 0;
+                            }
+                        } else {
+                            groupPassBackslashEscaped = ch == '\\' && !groupPassBackslashEscaped;
+                        }
+                    } else if (groupPassBracketOpener >= 0) {
+                        if (ch == ']') {
+                            groupOpeners[i] = groupPassBracketOpener;
+
+                            if (i + 1 < length && str.charAt(i + 1) == ']') {
+                                groupOpeners[++i] = -1;
+                            } else {
+                                groupPassBracketOpener = -1;
+                            }
+                        }
+                    } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK) {
+                        groupPassQuoteChar = ch;
+                        groupPassBackslashEscaped = false;
+                    } else if (ch == '[') {
+                        groupPassBracketOpener = i;
+                    } else if (ch == '/' && i + 1 < length && str.charAt(i + 1) == '*') {
+                        groupOpeners[++i] = -1;
+                        groupPassInBlockComment = true;
+                    } else if (ch == '-' && i + 1 < length && str.charAt(i + 1) == '-') {
+                        groupOpeners[++i] = -1;
+                        groupPassInLineComment = true;
+                    } else if (ch == '#') {
+                        // Every position before i is final; the classification below only asks
+                        // about those (see the class comment), so publish the frontier first.
+                        groupPassEnd = i;
+
+                        if (isHashCommentStart(str, length, i, tokenizerConfig, this)) {
+                            groupPassInLineComment = true;
+                        }
+                    } else if (ch == '(') {
+                        if (!groupPassUnbalanced) {
+                            groupPassOpenParentheses.add(i);
+                        }
+                    } else if (ch == ')') {
+                        if (groupPassUnbalanced || groupPassOpenParentheses.isEmpty()) {
+                            groupPassUnbalanced = true;
+                        } else {
+                            groupOpeners[i] = groupPassOpenParentheses.removeLast();
+                        }
+                    }
+
+                    i++;
+                    groupPassEnd = i;
+                }
+            } finally {
+                extendingGroupPass = false;
+            }
         }
 
         /** The end ({@code *}) of the last {@code /*} that ends at or before {@code position}, or -1. */
@@ -2848,6 +3147,30 @@ public final class SqlParser {
     }
 
     /**
+     * Returns {@code true} when {@code ch} may end the name of a T-SQL label ({@code lbl:}): an identifier character,
+     * or {@code #}/{@code @}, which a T-SQL identifier may contain after its first character ({@code x#:}, {@code x@:}).
+     */
+    private static boolean isTsqlLabelChar(final char ch) {
+        return isIdentifierChar(ch) || ch == '#' || ch == '@';
+    }
+
+    /**
+     * Returns the index of the {@code :} that ends a T-SQL label starting with the {@code '#'} at {@code index} (a run of
+     * label characters, see {@link #isTsqlLabelChar(char)}: {@code #x}, {@code ##x}, or the {@code #} alone, directly
+     * followed by a single {@code :}, as in {@code #x:} and {@code #:}), or -1 if there is none ({@code #x::int} casts).
+     */
+    private static int tsqlHashLabelColon(final String sql, final int index) {
+        final int len = sql.length();
+        int colon = index + 1;
+
+        while (colon < len && isTsqlLabelChar(sql.charAt(colon))) {
+            colon++;
+        }
+
+        return colon < len && sql.charAt(colon) == ':' && (colon + 1 >= len || sql.charAt(colon + 1) != ':') ? colon : -1;
+    }
+
+    /**
      * Returns {@code true} when the letter at {@code index} starts a word, that is, it is not preceded by an
      * identifier character, by a {@code @}/{@code #}/{@code :} prefix or by a qualifying dot ({@code _exec},
      * {@code @exec}, {@code #exec}, {@code :exec} and {@code s.exec} are identifiers, variables, markers and
@@ -3086,7 +3409,10 @@ public final class SqlParser {
      * lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as
      * {@code q'[...]'}, with that literal (which may contain {@code '}) read as one; and as SQL Server, with no
      * {@code #} comments at all, so {@code #name} and a lone {@code #} are names and the rest of their line is SQL
-     * (a {@code #} that opens a statement keeps its comment reading, since no T-SQL statement can start there).
+     * (a {@code #} that opens a statement keeps its comment reading, since no T-SQL statement can start with it,
+     * unless it names a T-SQL label such as {@code #x:} or {@code #:}, after which the rest of its line is read as the
+     * statement; so a MySQL comment line such as {@code #TODO: delete later} that opens a statement is rejected, while
+     * {@code # TODO: delete later}, with a space after the {@code #}, stays a comment).
      * Outside the H2, MySQL, SQLite and Oracle readings, a block comment containing a nested {@code /*} is
      * rejected, because its extent differs between dialects; such text is also read, only to reject it, in every quote
      * and comment combination above with nesting block comments (PostgreSQL, SQL Server). The H2 reading runs whenever
@@ -3475,7 +3801,10 @@ public final class SqlParser {
      * lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as
      * {@code q'[...]'}, with that literal (which may contain {@code '}) read as one; and as SQL Server, with no
      * {@code #} comments at all, so {@code #name} and a lone {@code #} are names and the rest of their line is SQL
-     * (a {@code #} that opens a statement keeps its comment reading, since no T-SQL statement can start there).
+     * (a {@code #} that opens a statement keeps its comment reading, since no T-SQL statement can start with it,
+     * unless it names a T-SQL label such as {@code #x:} or {@code #:}, after which the rest of its line is read as the
+     * statement; so a MySQL comment line such as {@code #TODO: delete later} that opens a statement is rejected, while
+     * {@code # TODO: delete later}, with a space after the {@code #}, stays a comment).
      * Outside the H2, MySQL, SQLite and Oracle readings, a block comment containing a nested {@code /*} is
      * rejected, because its extent differs between dialects; such text is also read, only to reject it, in every quote
      * and comment combination above with nesting block comments (PostgreSQL, SQL Server). The H2 reading runs whenever
@@ -4161,7 +4490,9 @@ public final class SqlParser {
      * {@code ##name} and even a lone {@code #} as (temp-table) names, so each {@code #} outside quotes and
      * comments is replaced by the identifier character {@code _} and the rest of its line stays visible as SQL,
      * except a single-line MyBatis {@code #{...}} marker whose body is a plain parameter expression (no quote,
-     * comment or statement delimiter) and a {@code #} that opens a statement, which keeps its comment reading.</p>
+     * comment or statement delimiter) and a {@code #} that opens a statement, which keeps its comment reading unless
+     * it names a T-SQL label ({@code #x:}, {@code #:}; see {@link #tsqlHashLabelColon(String, int)}): such a label is
+     * blanked and the rest of its line is read as the statement it labels.</p>
      *
      * @param reading {@code READING_DEFAULT} or a combination of the dialect reading bits {@code READING_MYSQL}
      *        ({@code mysqlReading}), {@code READING_H2} ({@code h2Reading}), {@code READING_SQLITE}
@@ -4347,10 +4678,10 @@ public final class SqlParser {
                 index = endIndex;
                 continue;
             } else if (ch == ':'
-                    && (index == 0 || sql.charAt(index - 1) != ':' && !(tokenizerConfig.semicolonlessBatches && isIdentifierChar(sql.charAt(index - 1))))
+                    && (index == 0 || sql.charAt(index - 1) != ':' && !(tokenizerConfig.semicolonlessBatches && isTsqlLabelChar(sql.charAt(index - 1))))
                     && index + 1 < len && isParameterIdentifierStart(sql.codePointAt(index + 1))) {
-                // With batches on (T-SQL), "lbl:DELETE" is a statement label followed by a statement, not a named
-                // parameter, so a ':' glued to a preceding word does not mask the word after it.
+                // With batches on (T-SQL), "lbl:DELETE" (also "x#:DELETE") is a statement label followed by a statement,
+                // not a named parameter, so a ':' glued to a preceding word does not mask the word after it.
                 final int start = ++index;
 
                 while (index < len) {
@@ -4407,6 +4738,21 @@ public final class SqlParser {
                 }
 
                 if (leadingEnd > index) {
+                    final int labelColon = tsqlHashLabelColon(sql, index);
+
+                    if (labelColon >= 0) {
+                        // A T-SQL name may start with '#', so a statement-leading "#x:" or "#:" is a label, and the statement
+                        // after it runs ("SELECT 1; #x: DELETE FROM t"). Blank the label, leaving that statement's own
+                        // leading word for the gates, and look for another label or leading '#' after it. Fail-closed:
+                        // a MySQL comment line that merely looks like a label ("#todo: delete later") then exposes its
+                        // text, as the gates already reject a "lbl:" or a "# (delete later)" comment that a T-SQL reading
+                        // exposes.
+                        masked = maskRange(sql, masked, index, labelColon + 1);
+                        index = labelColon + 1;
+                        leadingEnd = index;
+                        continue;
+                    }
+
                     // A '#' that opens a statement (only whitespace and comments before it) cannot start a T-SQL
                     // statement: the batch fails to compile, so keep the MySQL comment reading the other modes check.
                     do {
@@ -4661,10 +5007,35 @@ public final class SqlParser {
      * name, not a quote opener). The rule is applied after a digit as well, as pgJDBC's splitter does, although the
      * PostgreSQL server ends a number before {@code $} and reads {@code 1$$...$$} as a number and a dollar quote: that
      * is a syntax error, and in simple-query mode the server parses the whole string before running any of it.
+     * The character at {@code index} must be a {@code $}.
      */
-    private static int dollarQuoteEnd(final String sql, final int index) {
-        if (index > 0 && isByteLexerIdentifierChar(sql.charAt(index - 1))) {
+    static int dollarQuoteEnd(final String sql, final int index) {
+        return dollarQuoteEnd(sql, index, dollarQuoteTagEnd(sql, index, false));
+    }
+
+    /** {@link #dollarQuoteEnd(String, int)} for the opening tag that ends at {@code tagEnd} ({@code -1}: no opening tag). */
+    private static int dollarQuoteEnd(final String sql, final int index, final int tagEnd) {
+        if (tagEnd < 0) {
             return 0;
+        }
+        final String tag = sql.substring(index, tagEnd + 1);
+        final int close = sql.indexOf(tag, tagEnd + 1);
+        return close < 0 ? -1 : close + tag.length();
+    }
+
+    /**
+     * Returns the index of the {@code $} that ends the opening {@code $tag$} of a PostgreSQL dollar quote at
+     * {@code index} (see {@link #dollarQuoteEnd(String, int)}), or -1 if no dollar quote opens there. Only the opener
+     * is read; the closing tag is not looked for. With {@code h2Boundaries}, a {@code $} also opens a quote after a
+     * non-ASCII character that cannot be part of an H2 name, such as a Unicode space: PostgreSQL glues the {@code $} to
+     * the name the character belongs to, but H2 reads the character as a separator.
+     */
+    private static int dollarQuoteTagEnd(final String sql, final int index, final boolean h2Boundaries) {
+        if (index > 0 && isByteLexerIdentifierChar(sql.charAt(index - 1))) {
+            final int previous = sql.codePointBefore(index);
+            if (!h2Boundaries || previous < 0x80 || Character.isJavaIdentifierPart(previous)) {
+                return -1;
+            }
         }
         int tagEnd = index + 1;
         if (tagEnd < sql.length() && isDollarQuoteTagStart(sql.charAt(tagEnd))) {
@@ -4672,12 +5043,48 @@ public final class SqlParser {
                 tagEnd++;
             } while (tagEnd < sql.length() && (isDollarQuoteTagStart(sql.charAt(tagEnd)) || isAsciiDigit(sql.charAt(tagEnd))));
         }
-        if (tagEnd >= sql.length() || sql.charAt(tagEnd) != '$') {
+        return tagEnd < sql.length() && sql.charAt(tagEnd) == '$' ? tagEnd : -1;
+    }
+
+    /**
+     * {@link #dollarQuoteEnd(String, int)} for the query builders: their comment, terminator and alias scanners and the
+     * rendering of raw expressions, which must find every opener the target may read. With {@code h2}, H2's rules: only
+     * the untagged {@code $$...$$} form, opened by a {@code $$} that does not continue an H2 name
+     * ({@link #continuesH2Token}). Otherwise PostgreSQL's rules, widened to every opener H2 reads as well: a {@code $}
+     * after a non-ASCII character that cannot be part of an H2 name (a Unicode space, for one) opens a quote too, which
+     * PostgreSQL would glue to a name. The builders also emit such a space glued to a word as a plain space. The character
+     * at {@code index} must be a {@code $}.
+     *
+     * @param h2 whether H2's rules apply
+     * @return the index just past the closing tag, 0 if no dollar quote opens at {@code index}, or -1 if it is unterminated
+     */
+    static int dollarQuoteEnd(final String sql, final int index, final boolean h2) {
+        if (!h2) {
+            return dollarQuoteEnd(sql, index, dollarQuoteTagEnd(sql, index, true));
+        }
+        if (!isH2DollarQuoteOpener(sql, index)) {
             return 0;
         }
-        final String tag = sql.substring(index, tagEnd + 1);
-        final int close = sql.indexOf(tag, tagEnd + 1);
-        return close < 0 ? -1 : close + tag.length();
+        final int close = sql.indexOf("$$", index + 2);
+        return close < 0 ? -1 : close + 2;
+    }
+
+    /**
+     * Whether a dollar quote opens anywhere in {@code sql} under the rules of {@link #dollarQuoteEnd(String, int, boolean)},
+     * whether or not it is closed. Only the openers are read, so the check is linear in the length of {@code sql}.
+     */
+    static boolean containsDollarQuoteOpener(final String sql, final boolean h2) {
+        for (int i = sql.indexOf('$'); i >= 0; i = sql.indexOf('$', i + 1)) {
+            if (h2 ? isH2DollarQuoteOpener(sql, i) : dollarQuoteTagEnd(sql, i, true) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether an H2 {@code $$...$$} string opens at {@code index}: a {@code $$} that does not continue an H2 name. */
+    private static boolean isH2DollarQuoteOpener(final String sql, final int index) {
+        return sql.startsWith("$$", index) && !continuesH2Token(sql, index);
     }
 
     /** PostgreSQL {@code dolq_start}: an ASCII letter, {@code _} or any non-ASCII character. */
@@ -5113,8 +5520,8 @@ public final class SqlParser {
                     index = gluedWordStart;
                     continue;
                 } else if (depth == 0 && Character.isLetter(ch) && (isWordStart(sql, index) || index == gluedWordStart
-                // the statement after a T-SQL label ("lbl:DELETE FROM t"); masking left it visible
-                        || index >= 2 && sql.charAt(index - 1) == ':' && isIdentifierChar(sql.charAt(index - 2)))) {
+                // the statement after a T-SQL label ("lbl:DELETE FROM t", "x#:DELETE FROM t"); masking left it visible
+                        || index >= 2 && sql.charAt(index - 1) == ':' && isTsqlLabelChar(sql.charAt(index - 2)))) {
                     final int end = identifierEnd(sql, index);
 
                     if (isBatchStatementVerb(sql, index, end, sqlLength, tokenizerConfig, memo)
@@ -5156,7 +5563,11 @@ public final class SqlParser {
      * a semicolon-less batch. {@code EXEC}/{@code EXECUTE}, the T-SQL control-flow words {@code IF}, {@code WHILE},
      * {@code WAITFOR} and {@code BEGIN}, and {@code COMMIT}/{@code ROLLBACK} count even when followed by {@code (};
      * every other verb followed by {@code (} is a function call ({@code TRUNCATE(x, 2)}, also across whitespace and
-     * comments) and is ignored. The non-reserved {@code DISABLE}/{@code ENABLE} count only before {@code TRIGGER}.
+     * comments) and is ignored. The non-reserved {@code DISABLE}/{@code ENABLE} count only before {@code TRIGGER}, and
+     * {@code END} only before {@code CONVERSATION}. The Service Broker {@code RECEIVE}, {@code SEND} and {@code MOVE},
+     * which SQL Server accepts only after a {@code ;} or at the start of a batch, count only as the next token after a
+     * T-SQL label ({@code lbl:RECEIVE}; whitespace and comments between the colon and the word are skipped, as in
+     * {@code lbl: SEND ON CONVERSATION @h}).
      */
     private static boolean isBatchStatementVerb(final String sql, final int start, final int end, final int sqlLength, final TokenizerConfig tokenizerConfig,
             final HashScanMemo memo) {
@@ -5166,6 +5577,10 @@ public final class SqlParser {
         // batch mode is the T-SQL setting, where that function is spelled IIF. BEGIN also opens TRY/CATCH blocks,
         // transactions and "BEGIN DIALOG". ELSE and END are deliberately absent: they also belong to CASE
         // expressions, and a statement after them follows an IF or BEGIN that is already a split.
+        // The non-reserved Service Broker RECEIVE (like SEND and MOVE) is absent too (see the label rule below): SQL
+        // Server requires a ';' before a RECEIVE that does not start the batch, which the ';' split already handles
+        // (and WAITFOR splits "WAITFOR (RECEIVE ...)"), so splitting at every RECEIVE would only reject columns, tables
+        // and aliases named receive.
         final boolean alwaysVerb = switch (end - start) {
             case 2 -> matchesToken(sql, start, end, "IF", false);
             case 4 -> matchesToken(sql, start, end, "EXEC", false);
@@ -5186,6 +5601,28 @@ public final class SqlParser {
             final int next = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
 
             return next < sqlLength && matchesToken(sql, next, identifierEnd(sql, next), "TRIGGER", false);
+        }
+
+        // END closes a CASE expression (or an IF/BEGIN block that is already a split), so a bare END cannot be a verb;
+        // but "END CONVERSATION @h" is the Service Broker statement. CONVERSATION is not reserved, so this rejects the
+        // (contrived) alias "CASE ... END conversation" too: fail closed.
+        if (end - start == 3 && matchesToken(sql, start, end, "END", false)) {
+            final int next = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
+
+            return next < sqlLength && matchesToken(sql, next, identifierEnd(sql, next), "CONVERSATION", false);
+        }
+
+        // A T-SQL label ("lbl:") starts a statement, and whether SQL Server's ';'-before-RECEIVE rule also covers a
+        // RECEIVE right after one (whitespace and comments between them are skipped) cannot be verified here, so that
+        // RECEIVE opens a statement (fail-closed). The same holds for the other non-reserved Service Broker statements
+        // with that ';' rule that change data: SEND (ON CONVERSATION) queues a message and MOVE (CONVERSATION) regroups
+        // a conversation. The colon must directly follow a label character (see isTsqlLabelChar): "x::receive" and
+        // the ":receive" parameter are no labels.
+        if (end - start == 7 && matchesToken(sql, start, end, "RECEIVE", false)
+                || end - start == 4 && (matchesToken(sql, start, end, "SEND", false) || matchesToken(sql, start, end, "MOVE", false))) {
+            final int colon = skipBackwardWhitespaceAndComments(sql, start - 1, tokenizerConfig, memo);
+
+            return colon >= 1 && sql.charAt(colon) == ':' && isTsqlLabelChar(sql.charAt(colon - 1));
         }
 
         final boolean verb = switch (end - start) {
@@ -5883,11 +6320,19 @@ public final class SqlParser {
         return index;
     }
 
-    /** Recognizes modifiers between INSERT and its INTO table-name clause. */
-    private static boolean isInsertModifierKeyword(final String token) {
-        return "IGNORE".equalsIgnoreCase(token) || "LOW_PRIORITY".equalsIgnoreCase(token) || "DELAYED".equalsIgnoreCase(token)
-                || "HIGH_PRIORITY".equalsIgnoreCase(token) || "OR".equalsIgnoreCase(token) || "REPLACE".equalsIgnoreCase(token)
-                || "ROLLBACK".equalsIgnoreCase(token) || "ABORT".equalsIgnoreCase(token) || "FAIL".equalsIgnoreCase(token);
+    /** Recognizes modifiers between INSERT and its INTO table-name clause (the word at {@code [start, end)}). */
+    private static boolean isInsertModifierKeyword(final String sql, final int start, final int end) {
+        return switch (end - start) {
+            case 2 -> matchesToken(sql, start, end, "OR", false);
+            case 4 -> matchesToken(sql, start, end, "FAIL", false);
+            case 5 -> matchesToken(sql, start, end, "ABORT", false);
+            case 6 -> matchesToken(sql, start, end, "IGNORE", false);
+            case 7 -> matchesToken(sql, start, end, "DELAYED", false) || matchesToken(sql, start, end, "REPLACE", false);
+            case 8 -> matchesToken(sql, start, end, "ROLLBACK", false);
+            case 12 -> matchesToken(sql, start, end, "LOW_PRIORITY", false);
+            case 13 -> matchesToken(sql, start, end, "HIGH_PRIORITY", false);
+            default -> false;
+        };
     }
 
     /**
@@ -5903,8 +6348,12 @@ public final class SqlParser {
         }
 
         int index = 0;
-        String previousKeyword = "";
-        String beforePreviousKeyword = "";
+        // The previous two keywords as index pairs (start < 0: none), matched in place: this scanner runs on every
+        // word of the text once per lexical mode, so it must not allocate a substring per word.
+        int previousStart = -1;
+        int previousEnd = -1;
+        int beforePreviousStart = -1;
+        int beforePreviousEnd = -1;
 
         while (index < sql.length()) {
             index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
@@ -5917,43 +6366,47 @@ public final class SqlParser {
 
             if (ch == '\'' || ch == '"' || ch == '`') {
                 index = skipQuotedLiteral(sql, index, ch);
-                previousKeyword = "";
+                previousStart = -1;
                 continue;
             } else if (ch == '[') {
                 index = skipBracketQuotedIdentifier(sql, index);
-                previousKeyword = "";
+                previousStart = -1;
                 continue;
             }
 
             if (Character.isLetter(ch)) {
-                final String token = readKeyword(sql, index, tokenizerConfig, memo);
+                final int end = identifierEnd(sql, index);
+                final boolean afterInsert = previousStart >= 0 && matchesToken(sql, previousStart, previousEnd, "INSERT", false);
 
-                if (("OUTFILE".equalsIgnoreCase(token) || "DUMPFILE".equalsIgnoreCase(token)) && "INTO".equalsIgnoreCase(previousKeyword)
-                        && !"INSERT".equalsIgnoreCase(beforePreviousKeyword)) {
+                if ((matchesToken(sql, index, end, "OUTFILE", false) || matchesToken(sql, index, end, "DUMPFILE", false)) && previousStart >= 0
+                        && matchesToken(sql, previousStart, previousEnd, "INTO", false)
+                        && !(beforePreviousStart >= 0 && matchesToken(sql, beforePreviousStart, beforePreviousEnd, "INSERT", false))) {
                     return true;
                 }
 
-                if ("INSERT".equalsIgnoreCase(previousKeyword) && isInsertModifierKeyword(token)) {
+                if (afterInsert && isInsertModifierKeyword(sql, index, end)) {
                     // INSERT [IGNORE | LOW_PRIORITY | DELAYED | HIGH_PRIORITY | OR <action>] INTO outfile ...: the modifiers
                     // sit between INSERT and INTO, so keep INSERT as the previous keyword or a table genuinely named
                     // "outfile"/"dumpfile" would be mistaken for a MySQL INTO OUTFILE clause.
-                    index += token.length();
+                    index = end;
                     continue;
                 }
 
-                beforePreviousKeyword = previousKeyword;
+                beforePreviousStart = previousStart;
+                beforePreviousEnd = previousEnd;
                 // A dot-qualified word ("t.insert") is a column name, never the INSERT statement verb whose
                 // INTO introduces a table name, so it must not exempt a following INTO OUTFILE.
                 final int previousIndex = skipBackwardWhitespaceAndComments(sql, index - 1, tokenizerConfig, memo);
-                previousKeyword = previousIndex >= 0 && sql.charAt(previousIndex) == '.' ? "" : token;
-                index += token.length();
+                previousStart = previousIndex >= 0 && sql.charAt(previousIndex) == '.' ? -1 : index;
+                previousEnd = end;
+                index = end;
                 continue;
             }
 
             // Fail closed on a separator that some connection character set may read as whitespace (NBSP, NEL and
             // other control or space characters that Character.isWhitespace does not cover): it keeps the keyword.
             if (!isLenientWhitespace(ch)) {
-                previousKeyword = "";
+                previousStart = -1;
             }
 
             index++;
@@ -6046,7 +6499,7 @@ public final class SqlParser {
         int index = 0;
         boolean canStartQueryKeyword = true;
         boolean afterOpeningParenthesis = false;
-        String previousKeyword = "";
+        boolean previousKeywordOpensCteBody = false; // the previous word was AS or MATERIALIZED
 
         while (index < sql.length()) {
             index = skipLeadingWhitespaceAndComments(sql, index, tokenizerConfig, memo);
@@ -6073,9 +6526,10 @@ public final class SqlParser {
             }
 
             if (Character.isLetter(ch)) {
-                final String token = readKeyword(sql, index, tokenizerConfig, memo);
+                // Words are matched in place at [index, end); only the few collected at a statement start are copied.
+                final int end = identifierEnd(sql, index);
 
-                if (cteListPending && group.cteBodyClosed && isCteBodySuffixKeyword(token)) {
+                if (cteListPending && group.cteBodyClosed && isCteBodySuffixKeyword(sql, index, end)) {
                     final int suffixEnd = skipCteBodySuffix(sql, index, tokenizerConfig, memo);
 
                     if (suffixEnd >= 0) {
@@ -6086,17 +6540,19 @@ public final class SqlParser {
                     }
                 }
 
-                countCompanionWord(token, companionWords);
+                countCompanionWord(sql, index, end, companionWords);
+
+                final boolean with = matchesToken(sql, index, end, "WITH", false);
 
                 if (canStartQueryKeyword) {
-                    statementStartKeywords.add(token);
+                    statementStartKeywords.add(sql.substring(index, end));
 
-                    if ("WITH".equalsIgnoreCase(token)) {
+                    if (with) {
                         if (afterOpeningParenthesis) {
                             // "AS (WITH ...": its statement verb is resolved within this group, as the scan goes on.
                             topGroup(groups).startCteList(true);
                         } else {
-                            final int queryKeywordIndex = findKeywordIndexAfterWithClause(sql, index + token.length(), tokenizerConfig, memo);
+                            final int queryKeywordIndex = findKeywordIndexAfterWithClause(sql, end, tokenizerConfig, memo);
 
                             if (queryKeywordIndex >= 0) {
                                 statementStartKeywords.add(readKeyword(sql, queryKeywordIndex, tokenizerConfig, memo));
@@ -6107,26 +6563,26 @@ public final class SqlParser {
                     // A data-change statement can also run nested in parentheses inside a query: DB2/H2 delta tables
                     // ("SELECT * FROM OLD|NEW|FINAL TABLE (DELETE FROM t)") and SQL Server composable DML
                     // ("INSERT INTO x SELECT a FROM (DELETE FROM t OUTPUT deleted.a) AS d") execute it.
-                    if ("WITH".equalsIgnoreCase(token)) {
+                    if (with) {
                         topGroup(groups).startCteList(false);
                     } else {
-                        collectNestedDataChangeVerb(sql, index, token, topGroup(groups), companionWords, statementStartKeywords, tokenizerConfig, memo);
+                        collectNestedDataChangeVerb(sql, index, end, topGroup(groups), companionWords, statementStartKeywords, tokenizerConfig, memo);
                     }
                 }
 
                 // A '(' always pushes a new group, so a word right after one never reaches the enclosing group's list.
-                if (cteListPending && group.onCteListWord(token)) {
+                if (cteListPending && group.onCteListWord(sql, index, end)) {
                     if (group.cteListStartsStatement) {
-                        statementStartKeywords.add(token);
+                        statementStartKeywords.add(sql.substring(index, end));
                     } else {
-                        collectNestedDataChangeVerb(sql, index, token, group, companionWords, statementStartKeywords, tokenizerConfig, memo);
+                        collectNestedDataChangeVerb(sql, index, end, group, companionWords, statementStartKeywords, tokenizerConfig, memo);
                     }
                 }
 
-                previousKeyword = token;
+                previousKeywordOpensCteBody = matchesToken(sql, index, end, "AS", false) || matchesToken(sql, index, end, "MATERIALIZED", false);
                 canStartQueryKeyword = false;
                 afterOpeningParenthesis = false;
-                index += token.length();
+                index = end;
                 continue;
             }
 
@@ -6142,8 +6598,7 @@ public final class SqlParser {
                 // ("x AS (WITH c AS (SELECT 1) (DELETE FROM t))").
                 final boolean opensMainStatement = cteListPending && group.onCteListOpenGroup() && group.cteListStartsStatement;
 
-                canStartQueryKeyword = canStartQueryKeyword || opensMainStatement || "AS".equalsIgnoreCase(previousKeyword)
-                        || "MATERIALIZED".equalsIgnoreCase(previousKeyword);
+                canStartQueryKeyword = canStartQueryKeyword || opensMainStatement || previousKeywordOpensCteBody;
                 afterOpeningParenthesis = true;
                 groups.add(null);
             } else if (ch == ')') {
@@ -6214,14 +6669,16 @@ public final class SqlParser {
     private static final int COMPANION_ROW_SOURCE = 3; // OUTPUT, VALUES, VALUE, SELECT, DEFAULT, EXEC, EXECUTE, TABLE
     private static final int COMPANION_WORD_KINDS = 4;
 
-    private static void countCompanionWord(final String token, final int[] companionWords) {
-        final int kind = switch (token.length()) {
-            case 3 -> "SET".equalsIgnoreCase(token) ? COMPANION_SET : -1;
-            case 4 -> "INTO".equalsIgnoreCase(token) ? COMPANION_INTO : "EXEC".equalsIgnoreCase(token) ? COMPANION_ROW_SOURCE : -1;
-            case 5 -> "USING".equalsIgnoreCase(token) ? COMPANION_USING
-                    : "VALUE".equalsIgnoreCase(token) || "TABLE".equalsIgnoreCase(token) ? COMPANION_ROW_SOURCE : -1;
-            case 6 -> "OUTPUT".equalsIgnoreCase(token) || "VALUES".equalsIgnoreCase(token) || "SELECT".equalsIgnoreCase(token) ? COMPANION_ROW_SOURCE : -1;
-            case 7 -> "DEFAULT".equalsIgnoreCase(token) || "EXECUTE".equalsIgnoreCase(token) ? COMPANION_ROW_SOURCE : -1;
+    /** Counts the word at {@code [start, end)} if it is a companion word; matched in place, no substring. */
+    private static void countCompanionWord(final String sql, final int start, final int end, final int[] companionWords) {
+        final int kind = switch (end - start) {
+            case 3 -> matchesToken(sql, start, end, "SET", false) ? COMPANION_SET : -1;
+            case 4 -> matchesToken(sql, start, end, "INTO", false) ? COMPANION_INTO : matchesToken(sql, start, end, "EXEC", false) ? COMPANION_ROW_SOURCE : -1;
+            case 5 -> matchesToken(sql, start, end, "USING", false) ? COMPANION_USING
+                    : matchesToken(sql, start, end, "VALUE", false) || matchesToken(sql, start, end, "TABLE", false) ? COMPANION_ROW_SOURCE : -1;
+            case 6 -> matchesToken(sql, start, end, "OUTPUT", false) || matchesToken(sql, start, end, "VALUES", false)
+                    || matchesToken(sql, start, end, "SELECT", false) ? COMPANION_ROW_SOURCE : -1;
+            case 7 -> matchesToken(sql, start, end, "DEFAULT", false) || matchesToken(sql, start, end, "EXECUTE", false) ? COMPANION_ROW_SOURCE : -1;
             default -> -1;
         };
 
@@ -6231,7 +6688,7 @@ public final class SqlParser {
     }
 
     /**
-     * Checks the first word {@code token} (at {@code index}) of the statement nested in {@code group}'s parentheses (for a
+     * Checks the first word (at {@code [index, end)}) of the statement nested in {@code group}'s parentheses (for a
      * nested {@code WITH}, the verb after its CTE list). Fail closed, but do not read a column or alias that merely shares
      * a verb's name as a statement: PostgreSQL and MySQL do not reserve {@code MERGE}, {@code INSERT} or {@code UPSERT},
      * PostgreSQL not even {@code UPDATE} or {@code DELETE}, and H2 none of them, and junction rendering wraps every
@@ -6257,16 +6714,17 @@ public final class SqlParser {
      * {@code OPTION (MERGE JOIN)} and text such as {@code (update required)} that another lexical reading exposes from a
      * comment or literal accepted.</p>
      */
-    private static void collectNestedDataChangeVerb(final String sql, final int index, final String token, final ParenthesizedGroup group,
+    private static void collectNestedDataChangeVerb(final String sql, final int index, final int end, final ParenthesizedGroup group,
             final int[] companionWords, final List<String> statementStartKeywords, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
-        final boolean delete = "DELETE".equalsIgnoreCase(token);
-        final boolean function = "INSERT".equalsIgnoreCase(token) || "MERGE".equalsIgnoreCase(token) || "REPLACE".equalsIgnoreCase(token);
+        final boolean delete = matchesToken(sql, index, end, "DELETE", false);
+        final boolean function = matchesToken(sql, index, end, "INSERT", false) || matchesToken(sql, index, end, "MERGE", false)
+                || matchesToken(sql, index, end, "REPLACE", false);
 
-        if (!(delete || function || "UPDATE".equalsIgnoreCase(token) || "UPSERT".equalsIgnoreCase(token))) {
+        if (!(delete || function || matchesToken(sql, index, end, "UPDATE", false) || matchesToken(sql, index, end, "UPSERT", false))) {
             return;
         }
 
-        final int next = skipLeadingWhitespaceAndComments(sql, index + token.length(), tokenizerConfig, memo);
+        final int next = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
 
         if (next < sql.length()) {
             final char ch = sql.charAt(next);
@@ -6289,9 +6747,9 @@ public final class SqlParser {
         }
 
         if (delete) {
-            statementStartKeywords.add(token);
+            statementStartKeywords.add(sql.substring(index, end));
         } else {
-            group.nestedVerb = token;
+            group.nestedVerb = sql.substring(index, end);
             group.companionWordsAtVerb = companionWords.clone();
         }
     }
@@ -6479,7 +6937,7 @@ public final class SqlParser {
         private boolean cteListStartsStatement; // "AS (WITH": the verb is collected unconditionally, like a CTE body's first word
         private boolean expectCteName;
         private boolean atFirstToken;
-        private String previousKeyword;
+        private boolean previousKeywordOpensCteBody; // the previous word at the group's level was AS or MATERIALIZED
         private boolean groupIsCteBody;
         private boolean cteBodyClosed;
 
@@ -6488,23 +6946,23 @@ public final class SqlParser {
             cteListStartsStatement = startsStatement;
             expectCteName = true;
             atFirstToken = true;
-            previousKeyword = "";
+            previousKeywordOpensCteBody = false;
             groupIsCteBody = false;
             cteBodyClosed = false;
         }
 
-        /** Returns {@code true} (and ends the list) if {@code token} is the statement verb. */
-        boolean onCteListWord(final String token) {
+        /** Returns {@code true} (and ends the list) if the word at {@code [start, end)} is the statement verb. */
+        boolean onCteListWord(final String sql, final int start, final int end) {
             if (expectCteName) {
-                if (!(atFirstToken && "RECURSIVE".equalsIgnoreCase(token))) {
+                if (!(atFirstToken && matchesToken(sql, start, end, "RECURSIVE", false))) {
                     expectCteName = false;
                 }
-            } else if (isQueryKeyword(token) || cteBodyClosed && !isCteBodySuffixKeyword(token)) {
+            } else if (isQueryKeyword(sql, start, end) || cteBodyClosed && !isCteBodySuffixKeyword(sql, start, end)) {
                 cteListPending = false;
                 return true;
             }
 
-            previousKeyword = token;
+            previousKeywordOpensCteBody = matchesToken(sql, start, end, "AS", false) || matchesToken(sql, start, end, "MATERIALIZED", false);
             cteBodyClosed = false;
             atFirstToken = false;
             return false;
@@ -6518,7 +6976,7 @@ public final class SqlParser {
                 return cteBodyClosed;
             }
 
-            groupIsCteBody = "AS".equalsIgnoreCase(previousKeyword) || "MATERIALIZED".equalsIgnoreCase(previousKeyword);
+            groupIsCteBody = previousKeywordOpensCteBody;
             return false;
         }
 
@@ -6528,18 +6986,18 @@ public final class SqlParser {
 
         void onCteListComma() {
             expectCteName = true;
-            previousKeyword = "";
+            previousKeywordOpensCteBody = false;
             cteBodyClosed = false;
         }
 
         void onCteListQuotedName() {
             expectCteName = false;
-            previousKeyword = "";
+            previousKeywordOpensCteBody = false;
             cteBodyClosed = false;
         }
 
         void onCteListPunctuation() {
-            previousKeyword = "";
+            previousKeywordOpensCteBody = false;
             cteBodyClosed = false;
         }
     }
@@ -6680,9 +7138,9 @@ public final class SqlParser {
         // so the name slot must be consumed before isQueryKeyword may claim a token.
         boolean expectCteName = true;
         boolean atFirstToken = true;
-        // The last keyword read at depth 0. A top-level "(...)" group is a CTE body only when it
-        // directly follows AS or [NOT] MATERIALIZED; otherwise it is a CTE column list.
-        String previousKeyword = "";
+        // Whether the last keyword read at depth 0 was AS or [NOT] MATERIALIZED: only a top-level "(...)" group
+        // directly after one is a CTE body; otherwise it is a CTE column list.
+        boolean previousKeywordOpensCteBody = false;
         boolean groupIsCteBody = false;
         // Once a CTE body has closed at the top level, the CTE list can only continue with ','; a
         // top-level '(' there instead opens a parenthesized main statement, e.g.
@@ -6703,7 +7161,7 @@ public final class SqlParser {
 
                 if (depth == 0) {
                     expectCteName = false; // a quoted CTE name fills the name slot
-                    previousKeyword = "";
+                    previousKeywordOpensCteBody = false;
                     cteBodyClosed = false;
                 }
 
@@ -6713,7 +7171,7 @@ public final class SqlParser {
 
                 if (depth == 0) {
                     expectCteName = false; // a bracket-quoted CTE name fills the name slot
-                    previousKeyword = "";
+                    previousKeywordOpensCteBody = false;
                     cteBodyClosed = false;
                 }
 
@@ -6737,7 +7195,7 @@ public final class SqlParser {
                         return (fromIndex < sql.length() && Character.isLetter(sql.charAt(fromIndex))) ? fromIndex : -1;
                     }
 
-                    groupIsCteBody = "AS".equalsIgnoreCase(previousKeyword) || "MATERIALIZED".equalsIgnoreCase(previousKeyword);
+                    groupIsCteBody = previousKeywordOpensCteBody;
                 }
 
                 depth++;
@@ -6762,7 +7220,7 @@ public final class SqlParser {
                 if (depth == 0) {
                     // Next CTE definition in the list: ", name [(columns)] AS (...)".
                     expectCteName = true;
-                    previousKeyword = "";
+                    previousKeywordOpensCteBody = false;
                     cteBodyClosed = false;
                 }
 
@@ -6771,10 +7229,11 @@ public final class SqlParser {
             }
 
             if (Character.isLetter(ch)) {
-                final String token = readKeyword(sql, fromIndex, tokenizerConfig, memo);
+                // Matched in place at [fromIndex, end): this runs on every word of a CTE list once per lexical mode.
+                final int end = identifierEnd(sql, fromIndex);
 
                 if (depth == 0) {
-                    if (cteBodyClosed && isCteBodySuffixKeyword(token)) {
+                    if (cteBodyClosed && isCteBodySuffixKeyword(sql, fromIndex, end)) {
                         // SEARCH/CYCLE belong to the preceding CTE. Their column-name slots may legally contain
                         // verbs such as INSERT, so consume the complete suffix before resolving the main statement.
                         fromIndex = skipCteBodySuffix(sql, fromIndex, tokenizerConfig, memo);
@@ -6789,12 +7248,12 @@ public final class SqlParser {
                     if (expectCteName) {
                         // A leading RECURSIVE modifier keeps the name slot open for the token
                         // after it (the caller may or may not have consumed RECURSIVE already).
-                        if (!(atFirstToken && "RECURSIVE".equalsIgnoreCase(token))) {
+                        if (!(atFirstToken && matchesToken(sql, fromIndex, end, "RECURSIVE", false))) {
                             expectCteName = false;
                         }
-                    } else if (isQueryKeyword(token)) {
+                    } else if (isQueryKeyword(sql, fromIndex, end)) {
                         return fromIndex;
-                    } else if (cteBodyClosed && !isCteBodySuffixKeyword(token)) {
+                    } else if (cteBodyClosed && !isCteBodySuffixKeyword(sql, fromIndex, end)) {
                         // The CTE list is complete and this word is neither a query verb nor a
                         // SEARCH/CYCLE clause, so it is the statement verb itself (e.g. SQLite
                         // "WITH ... REPLACE INTO", CockroachDB "WITH ... UPSERT INTO"). Report it
@@ -6802,19 +7261,19 @@ public final class SqlParser {
                         return fromIndex;
                     }
 
-                    previousKeyword = token;
+                    previousKeywordOpensCteBody = matchesToken(sql, fromIndex, end, "AS", false) || matchesToken(sql, fromIndex, end, "MATERIALIZED", false);
                     cteBodyClosed = false;
                 }
 
                 atFirstToken = false;
-                fromIndex += token.length();
+                fromIndex = end;
                 continue;
             }
 
             if (depth == 0) {
                 // Any other top-level character is not valid between CTE definitions and the main
                 // statement; stay conservative and treat what follows as unresolved.
-                previousKeyword = "";
+                previousKeywordOpensCteBody = false;
                 cteBodyClosed = false;
             }
 
@@ -6829,9 +7288,22 @@ public final class SqlParser {
                 || "MERGE".equalsIgnoreCase(token);
     }
 
-    /** PostgreSQL/Oracle/MariaDB {@code SEARCH ...} / {@code CYCLE ...} clauses may follow a recursive CTE body before the main statement. */
-    private static boolean isCteBodySuffixKeyword(final String token) {
-        return "SEARCH".equalsIgnoreCase(token) || "CYCLE".equalsIgnoreCase(token);
+    /** {@link #isQueryKeyword(String)} for the word at {@code [start, end)}, without a substring. */
+    private static boolean isQueryKeyword(final String sql, final int start, final int end) {
+        return switch (end - start) {
+            case 5 -> matchesToken(sql, start, end, "MERGE", false);
+            case 6 -> matchesToken(sql, start, end, "SELECT", false) || matchesToken(sql, start, end, "INSERT", false)
+                    || matchesToken(sql, start, end, "UPDATE", false) || matchesToken(sql, start, end, "DELETE", false);
+            default -> false;
+        };
+    }
+
+    /**
+     * Returns {@code true} when the word at {@code [start, end)} is {@code SEARCH} or {@code CYCLE}: PostgreSQL/Oracle/MariaDB
+     * {@code SEARCH ...} / {@code CYCLE ...} clauses may follow a recursive CTE body before the main statement.
+     */
+    private static boolean isCteBodySuffixKeyword(final String sql, final int start, final int end) {
+        return matchesToken(sql, start, end, "SEARCH", false) || matchesToken(sql, start, end, "CYCLE", false);
     }
 
     /**

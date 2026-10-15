@@ -44,7 +44,7 @@ inspection is not a substitute for actual JUnit discovery.
 
 `map_consolidation.py` assigns nested behavior groups to their enclosing unit,
 prefers an exact production-class name, excludes fixture-only classes, and
-documents the supported-SQL, pagination, and scanner-validation splits.
+documents the supported-SQL and pagination splits.
 Dependency contracts such as `SKTest` are reported separately. A missing
 name-based mapping does not establish missing runtime coverage.
 

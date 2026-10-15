@@ -74,28 +74,26 @@ public class SqlBuilderTest extends TestBase {
         // DELETE tests
         @Test
         void testDeleteFrom() {
-            String sql = PSC.deleteFrom("users").where(Filters.eq("id", 1)).build().query();
-            assertTrue(sql.contains("DELETE FROM users"));
+            assertSql("DELETE FROM users WHERE id = ?", List.of(1), PSC.deleteFrom("users").where(Filters.eq("id", 1)).build());
         }
 
         @Test
         void testDeleteFromFactory() {
             SqlBuilder builder = PSC.deleteFrom("users");
-            assertNotNull(builder);
+            assertSql("DELETE FROM users", List.of(), builder.build());
         }
 
         @Test
         void testDeleteFromWithEntityClass() {
-            String sql = PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).build().query();
-            assertNotNull(sql);
+            assertSql("DELETE FROM test_account WHERE id = ?", List.of(1), PSC.deleteFrom(Account.class).where(Filters.eq("id", 1)).build());
         }
 
         @Test
         void testDeleteFromWithMultipleConditions() {
-            String sql = PSC.deleteFrom("users").where(Filters.and(Filters.eq("status", "DELETED"), Filters.lt("deletedDate", new Date()))).build().query();
+            Date cutoff = new Date(1_700_000_000_000L);
+            SP result = PSC.deleteFrom("users").where(Filters.and(Filters.eq("status", "DELETED"), Filters.lt("deletedDate", cutoff))).build();
 
-            assertTrue(sql.contains("DELETE FROM users"));
-            assertTrue(sql.contains("WHERE (status = ?) AND (deleted_date < ?)"));
+            assertSql("DELETE FROM users WHERE (status = ?) AND (deleted_date < ?)", List.of("DELETED", cutoff), result);
         }
     }
 
@@ -283,8 +281,9 @@ public class SqlBuilderTest extends TestBase {
             List<Map<String, Object>> rows = batchRows();
 
             List<SP> results = Arrays.asList(Dsl.SCSB.batchInsert(rows).into("users").build(), Dsl.ACSB.batchInsert(rows).into("users").build(),
-                    Dsl.PSB.batchInsert(rows).into("users").build(), PSC.batchInsert(rows).into("users").build(), Dsl.NSB.batchInsert(rows).into("users").build(),
-                    NSC.batchInsert(rows).into("users").build(), Dsl.NAC.batchInsert(rows).into("users").build(), Dsl.NLC.batchInsert(rows).into("users").build(),
+                    Dsl.PSB.batchInsert(rows).into("users").build(), PSC.batchInsert(rows).into("users").build(),
+                    Dsl.NSB.batchInsert(rows).into("users").build(), NSC.batchInsert(rows).into("users").build(),
+                    Dsl.NAC.batchInsert(rows).into("users").build(), Dsl.NLC.batchInsert(rows).into("users").build(),
                     Dsl.MSC.batchInsert(rows).into("users").build(), Dsl.MLC.batchInsert(rows).into("users").build());
 
             for (SP sp : results) {
@@ -504,16 +503,14 @@ public class SqlBuilderTest extends TestBase {
             account.setId(1);
             account.setFirstName("John");
             account.setLastName("Doe");
-            account.setCreatedDate(new Date());
-            account.setLastModifiedDate(new Date());
+            account.setCreatedDate(new Date(1_700_000_000_000L));
+            account.setLastModifiedDate(new Date(1_700_086_400_000L));
 
             Set<String> excluded = N.asSet("createdDate", "lastModifiedDate");
 
-            String sql = PSC.insert(account, excluded).into("account").build().query();
+            SP result = PSC.insert(account, excluded).into("account").build();
 
-            assertTrue(sql.contains("INSERT INTO account"));
-            assertFalse(sql.contains("created_date"));
-            assertFalse(sql.contains("last_modified_date"));
+            assertSql("INSERT INTO account (id, first_name, last_name, age) VALUES (?, ?, ?, ?)", List.of(1L, "John", "Doe", 0), result);
         }
 
         @Test
@@ -716,7 +713,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         void testUpdateTableWithEntityVariants_Batch2() {
-            List<SP> results = Arrays.asList(Dsl.SCSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
+            List<SP> results = Arrays.asList(
+                    Dsl.SCSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
                     Dsl.ACSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
                     Dsl.PSB.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
                     PSC.update("account", SqlBuilderTest.Account.class).set("firstName", "John").where(Filters.eq("id", 1)).build(),
@@ -971,7 +969,13 @@ public class SqlBuilderTest extends TestBase {
                                 .build()
                                 .query());
                 assertEquals(expected + placeholder,
-                        dsl.select("*").from(Account.class, "a").join(Account.class, "b").on(Filters.using("status")).where(Filters.eq("id", 1)).build().query());
+                        dsl.select("*")
+                                .from(Account.class, "a")
+                                .join(Account.class, "b")
+                                .on(Filters.using("status"))
+                                .where(Filters.eq("id", 1))
+                                .build()
+                                .query());
                 assertEquals("SELECT * FROM test_account a JOIN test_account b USING (id, account_status)",
                         dsl.select("*").from(Account.class, "a").join(Account.class, "b").using("id", "status").build().query());
             }
@@ -1195,7 +1199,8 @@ public class SqlBuilderTest extends TestBase {
         void testBuiltQueriesReleaseEveryProjectionForm() {
             final SqlBuilder columns = Dsl.PSC.select("id").from("measurements");
             final SqlBuilder aliases = Dsl.PSC.select(Map.of("id", "key")).from("measurements");
-            final SqlBuilder selections = Dsl.PSC.select(Selection.builder(com.landawn.abacus.query.entity.Account.class).includedPropNames(List.of("id")).build())
+            final SqlBuilder selections = Dsl.PSC
+                    .select(Selection.builder(com.landawn.abacus.query.entity.Account.class).includedPropNames(List.of("id")).build())
                     .from("measurements");
             assertNotNull(columns._propOrColumnNames);
             assertNotNull(aliases._propOrColumnNameAliases);
@@ -1387,7 +1392,8 @@ public class SqlBuilderTest extends TestBase {
             assertEquals("SELECT id FROM current_records WHERE id = :id", incompatible.where(Filters.eq("id", 1)).build().query());
 
             final SP compatible = PSC.select("id").from("current_records").where(Filters.in("id", archived)).build();
-            assertEquals("SELECT id FROM current_records WHERE id IN (SELECT id FROM archived_records WHERE owner_id IN (SELECT id FROM owners WHERE active = ?))",
+            assertEquals(
+                    "SELECT id FROM current_records WHERE id IN (SELECT id FROM archived_records WHERE owner_id IN (SELECT id FROM owners WHERE active = ?))",
                     compatible.query());
             assertEquals(Arrays.asList(true), compatible.parameters());
         }
@@ -1403,7 +1409,9 @@ public class SqlBuilderTest extends TestBase {
         @Test
         void testSelectFromRenderingFailureReleasesAllocatedBuilder() {
             final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
-            final Selection unsafeSelection = Selection.builder(AllNullBatchEntity.class).includedPropNames(Collections.singletonList("value -- unsafe")).build();
+            final Selection unsafeSelection = Selection.builder(AllNullBatchEntity.class)
+                    .includedPropNames(Collections.singletonList("value -- unsafe"))
+                    .build();
 
             assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(unsafeSelection));
             assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
@@ -1618,7 +1626,12 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         void testSqlBuilder_PSC_selectWithHaving() {
-            String sql = PSC.select("department", "COUNT(*) AS cnt").from("employees").groupBy("department").having(Filters.expr("COUNT(*) > 5")).build().query();
+            String sql = PSC.select("department", "COUNT(*) AS cnt")
+                    .from("employees")
+                    .groupBy("department")
+                    .having(Filters.expr("COUNT(*) > 5"))
+                    .build()
+                    .query();
             assertNotNull(sql);
             assertTrue(sql.contains("HAVING"));
         }
@@ -1819,8 +1832,9 @@ public class SqlBuilderTest extends TestBase {
 
                 @Override
                 protected void appendColumnName(final Class<?> entityClass, final com.landawn.abacus.parser.ParserUtil.BeanInfo entityInfo,
-                        final ImmutableMap<String, QueryUtil.ColumnInfo> propColumnNameMap, final String tableAlias, final String propName, final String propAlias,
-                        final boolean withClassAlias, final String classAlias, final boolean isForSelect, final boolean quotePropAlias) {
+                        final ImmutableMap<String, QueryUtil.ColumnInfo> propColumnNameMap, final String tableAlias, final String propName,
+                        final String propAlias, final boolean withClassAlias, final String classAlias, final boolean isForSelect,
+                        final boolean quotePropAlias) {
                     fullCalls++;
                     super.appendColumnName(entityClass, entityInfo, propColumnNameMap, tableAlias, propName, propAlias, withClassAlias, classAlias, isForSelect,
                             quotePropAlias);
@@ -1903,7 +1917,8 @@ public class SqlBuilderTest extends TestBase {
             assertEquals("SELECT id AS \"id\", first_name AS \"firstName\", last_name AS \"lastName\", email AS \"email\" FROM account WHERE email = ?",
                     PSC.selectFrom(JavadocAccount.class).where(Filters.eq("email", "john.doe@example.com")).build().query());
 
-            assertEquals("SELECT a.id AS \"id\", a.first_name AS \"firstName\", a.last_name AS \"lastName\", a.email AS \"email\" FROM account a WHERE a.email = ?",
+            assertEquals(
+                    "SELECT a.id AS \"id\", a.first_name AS \"firstName\", a.last_name AS \"lastName\", a.email AS \"email\" FROM account a WHERE a.email = ?",
                     PSC.selectFrom(JavadocAccount.class, "a").where(Filters.eq("a.email", "john.doe@example.com")).build().query());
         }
 
@@ -1942,7 +1957,8 @@ public class SqlBuilderTest extends TestBase {
                         dsl.select(Collections.singletonMap("status", "currentStatus")).from(Account.class).build().query());
                 assertEquals("SELECT a.account_status AS \"currentStatus\" FROM test_account a",
                         dsl.select(Collections.singletonMap("a.status", "currentStatus")).from(Account.class, "a").build().query());
-                assertEquals("SELECT account_status AS currentStatus FROM test_account", dsl.select("status AS currentStatus").from(Account.class).build().query());
+                assertEquals("SELECT account_status AS currentStatus FROM test_account",
+                        dsl.select("status AS currentStatus").from(Account.class).build().query());
                 assertEquals("SELECT a.account_status AS currentStatus FROM test_account a",
                         dsl.select("a.status AS currentStatus").from(Account.class, "a").build().query());
             }
@@ -2091,7 +2107,7 @@ public class SqlBuilderTest extends TestBase {
         //    }
 
         @Test
-        public void testIntoWithoutColumns() {
+        void testIntoWithoutColumns() {
             assertThrows(RuntimeException.class, () -> PSC.update("account").into("account"));
         }
 
@@ -2196,7 +2212,8 @@ public class SqlBuilderTest extends TestBase {
                     .build();
             final Selection profile = Selection.builder(QualifiedProfile.class).tableAlias("p").build();
 
-            assertEquals("SELECT p.display_name AS \"name\" FROM profile_holders h, profiles p", PSC.selectFrom(Arrays.asList(holder, profile)).build().query());
+            assertEquals("SELECT p.display_name AS \"name\" FROM profile_holders h, profiles p",
+                    PSC.selectFrom(Arrays.asList(holder, profile)).build().query());
         }
 
         /**
@@ -2288,8 +2305,8 @@ public class SqlBuilderTest extends TestBase {
         @Test
         void testPredefinedDslConstantsInitializeAndForDialectCaches() {
             // Touch every predefined constant: each must initialize (non-null) and be usable.
-            for (final Dsl dsl : new Dsl[] { Dsl.PSB, Dsl.PSC, Dsl.PAC, Dsl.PLC, Dsl.NSB, Dsl.NSC, Dsl.NAC, Dsl.NLC, Dsl.SCSB, Dsl.ACSB, Dsl.LCSB, Dsl.MSB, Dsl.MSC,
-                    Dsl.MAC, Dsl.MLC }) {
+            for (final Dsl dsl : new Dsl[] { Dsl.PSB, Dsl.PSC, Dsl.PAC, Dsl.PLC, Dsl.NSB, Dsl.NSC, Dsl.NAC, Dsl.NLC, Dsl.SCSB, Dsl.ACSB, Dsl.LCSB, Dsl.MSB,
+                    Dsl.MSC, Dsl.MAC, Dsl.MLC }) {
                 assertNotNull(dsl);
                 assertNotNull(dsl.sqlDialect());
             }
@@ -2362,7 +2379,8 @@ public class SqlBuilderTest extends TestBase {
                     .where(Filters.eq("id", 7))
                     .build();
 
-            assertEquals("UPDATE measurements SET \"metric=value\" = ?, other_value = COALESCE(previous_value, 0), plain_value = ? WHERE id = ?", result.query());
+            assertEquals("UPDATE measurements SET \"metric=value\" = ?, other_value = COALESCE(previous_value, 0), plain_value = ? WHERE id = ?",
+                    result.query());
             assertEquals(List.of(7), result.parameters());
         }
 
@@ -2438,9 +2456,12 @@ public class SqlBuilderTest extends TestBase {
         @Test
         void testSelectFromRejectsUnsafeTableAlias() {
             for (final String alias : new String[] { "a--", "a#", "a /* x */", "a\nb" }) {
-                assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, alias, false), "alias: " + alias);
-                assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, alias, true), "alias: " + alias);
-                assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(com.landawn.abacus.query.entity.Account.class, alias), "alias: " + alias);
+                assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, alias, false),
+                        "alias: " + alias);
+                assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, alias, true),
+                        "alias: " + alias);
+                assertThrows(IllegalArgumentException.class, () -> PSC.select("*").from(com.landawn.abacus.query.entity.Account.class, alias),
+                        "alias: " + alias);
             }
 
             // Plain aliases, quoted aliases and the class-level @Table alias are unaffected.
@@ -2540,7 +2561,8 @@ public class SqlBuilderTest extends TestBase {
         void testSelectSingleExpressionDoesNotSplitCommaListOrImplicitAlias() {
             // select(String) treats its argument as ONE select item: a comma list is not split and an alias
             // must be introduced with AS, otherwise the auto-alias heuristic aliases the whole text
-            assertEquals("SELECT first_name, last_name AS \"firstName, lastName\" FROM account", PSC.select("firstName, lastName").from("account").build().query());
+            assertEquals("SELECT first_name, last_name AS \"firstName, lastName\" FROM account",
+                    PSC.select("firstName, lastName").from("account").build().query());
             assertEquals("SELECT first_name fn AS \"firstName fn\" FROM account", PSC.select("firstName fn").from("account").build().query());
             assertEquals("SELECT first_name AS fn FROM account", PSC.select("firstName AS fn").from("account").build().query());
             assertEquals("SELECT first_name AS \"firstName\", last_name AS \"lastName\" FROM account",
@@ -2630,8 +2652,10 @@ public class SqlBuilderTest extends TestBase {
             // The class alias keeps its column-alias wording and a safe table alias still renders.
             final List<Selection> badClassAlias = Arrays.asList(Selection.builder(Account.class).tableAlias("a").classAlias("x'y").build());
             assertTrue(assertThrows(IllegalArgumentException.class, () -> PSC.select(badClassAlias)).getMessage().startsWith("Column alias for 'Account'"));
-            assertNotNull(
-                    PSC.select(Arrays.asList(Selection.builder(Account.class).tableAlias("a").classAlias("acc").build())).from("test_account a").build().query());
+            assertNotNull(PSC.select(Arrays.asList(Selection.builder(Account.class).tableAlias("a").classAlias("acc").build()))
+                    .from("test_account a")
+                    .build()
+                    .query());
         }
 
         @Test
@@ -3014,7 +3038,11 @@ public class SqlBuilderTest extends TestBase {
         // Chaining tests
         @Test
         void testChainedAndConditions() {
-            String sql = PSC.select("*").from("users").where(Filters.eq("status", "active").and(Filters.gt("age", 18)).and(Filters.lt("age", 65))).build().query();
+            String sql = PSC.select("*")
+                    .from("users")
+                    .where(Filters.eq("status", "active").and(Filters.gt("age", 18)).and(Filters.lt("age", 65)))
+                    .build()
+                    .query();
             assertTrue(sql.contains("AND"));
         }
 
@@ -3074,7 +3102,8 @@ public class SqlBuilderTest extends TestBase {
             assertEquals(Arrays.asList(18, 65), sp.parameters());
 
             assertEquals("SELECT id FROM t WHERE age BETWEEN 1 AND 2", SCSB.select("id").from("t").where(new CustomBetween("age", 1, 2)).build().query());
-            assertEquals("SELECT id FROM t WHERE age NOT BETWEEN 1 AND 2", SCSB.select("id").from("t").where(new CustomNotBetween("age", 1, 2)).build().query());
+            assertEquals("SELECT id FROM t WHERE age NOT BETWEEN 1 AND 2",
+                    SCSB.select("id").from("t").where(new CustomNotBetween("age", 1, 2)).build().query());
 
             sp = MSC.select("id").from("t").where(new CustomNotBetween("age", 1, 2)).build();
             assertEquals("SELECT id FROM t WHERE age NOT BETWEEN #{minAge} AND #{maxAge}", sp.query());
@@ -3868,10 +3897,12 @@ public class SqlBuilderTest extends TestBase {
         void testSelectModifierEmittedVerbatim() {
             // The modifier used to be routed through column-name normalization, camelCasing any
             // non-keyword modifier under PLC (SQL_CALC_FOUND_ROWS -> sqlCalcFoundRows).
-            assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account", Dsl.PLC.select("*").selectModifier("SQL_CALC_FOUND_ROWS").from("account").build().query());
+            assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account",
+                    Dsl.PLC.select("*").selectModifier("SQL_CALC_FOUND_ROWS").from("account").build().query());
 
             // The late-insert path (selectModifier after from) must be verbatim too.
-            assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account", Dsl.PLC.select("*").from("account").selectModifier("SQL_CALC_FOUND_ROWS").build().query());
+            assertEquals("SELECT SQL_CALC_FOUND_ROWS * FROM account",
+                    Dsl.PLC.select("*").from("account").selectModifier("SQL_CALC_FOUND_ROWS").build().query());
         }
 
         // Collection-based select
@@ -3917,18 +3948,6 @@ public class SqlBuilderTest extends TestBase {
 
     @Nested
     class RenderingContracts {
-        @Test
-        void testAllPublicConstants() {
-            // Verify all public constants
-            assertEquals("ALL", AbstractQueryBuilder.ALL);
-            assertEquals("TOP", AbstractQueryBuilder.TOP);
-            assertEquals("UNIQUE", AbstractQueryBuilder.UNIQUE);
-            assertEquals("DISTINCT", AbstractQueryBuilder.DISTINCT);
-            assertEquals("DISTINCTROW", AbstractQueryBuilder.DISTINCTROW);
-            assertEquals("*", AbstractQueryBuilder.ASTERISK);
-            assertEquals("count(*)", AbstractQueryBuilder.COUNT_ALL);
-        }
-
         @Test
         void testAppend() {
             // With condition
@@ -4021,6 +4040,7 @@ public class SqlBuilderTest extends TestBase {
             String sql = PSC.select("AVG(price)").from("products").build().query();
             assertTrue(sql.contains("AVG(price)"));
         }
+
         @Test
         void testBinaryWithInOperatorRendersAsInClause() {
             // A Binary built via Filters.binary(prop, Operator.IN, collection) must render as a real IN clause
@@ -4077,7 +4097,12 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         void testCompleteLiteralSetOperandsCanBeChained() {
-            String sql = PSC.select("id").from("current_records").union("SELECT id FROM archived_records").except("SELECT id FROM deleted_records").build().query();
+            String sql = PSC.select("id")
+                    .from("current_records")
+                    .union("SELECT id FROM archived_records")
+                    .except("SELECT id FROM deleted_records")
+                    .build()
+                    .query();
 
             assertEquals("SELECT id FROM current_records UNION SELECT id FROM archived_records EXCEPT SELECT id FROM deleted_records", sql);
         }
@@ -4121,10 +4146,11 @@ public class SqlBuilderTest extends TestBase {
                     .limit(20, 10)
                     .build();
 
-            assertSql("SELECT u.id, u.name, COUNT(o.id) AS order_count, SUM(o.amount) AS total_amount "
-                    + "FROM users u LEFT JOIN orders o ON (u.id = ?) AND (o.status = ?) "
-                    + "WHERE (u.created_date > ?) AND (u.status IN (?, ?)) GROUP BY u.id, u.name "
-                    + "HAVING COUNT(o.id) > ? ORDER BY total_amount DESC LIMIT 20 OFFSET 10",
+            assertSql(
+                    "SELECT u.id, u.name, COUNT(o.id) AS order_count, SUM(o.amount) AS total_amount "
+                            + "FROM users u LEFT JOIN orders o ON (u.id = ?) AND (o.status = ?) "
+                            + "WHERE (u.created_date > ?) AND (u.status IN (?, ?)) GROUP BY u.id, u.name "
+                            + "HAVING COUNT(o.id) > ? ORDER BY total_amount DESC LIMIT 20 OFFSET 10",
                     List.of("o.user_id", "COMPLETED", createdAfter, "ACTIVE", "VIP", 5), result);
         }
 
@@ -4351,11 +4377,13 @@ public class SqlBuilderTest extends TestBase {
             final String sql = SCSB.select("id")
                     .from("orders")
                     .where(Filters.and(Filters.eq("orderDate", java.sql.Date.valueOf("2020-01-02")),
-                            Filters.eq("createdAt", java.sql.Timestamp.valueOf("2020-01-02 03:04:05")), Filters.eq("shipTime", java.sql.Time.valueOf("03:04:05"))))
+                            Filters.eq("createdAt", java.sql.Timestamp.valueOf("2020-01-02 03:04:05")),
+                            Filters.eq("shipTime", java.sql.Time.valueOf("03:04:05"))))
                     .build()
                     .query();
 
-            assertEquals("SELECT id FROM orders WHERE (order_date = '2020-01-02') AND (created_at = '2020-01-02 03:04:05.0') AND (ship_time = '03:04:05')", sql);
+            assertEquals("SELECT id FROM orders WHERE (order_date = '2020-01-02') AND (created_at = '2020-01-02 03:04:05.0') AND (ship_time = '03:04:05')",
+                    sql);
         }
 
         @Test
@@ -4500,7 +4528,8 @@ public class SqlBuilderTest extends TestBase {
                     assertSetExpression(dsl, expression, expression + " = ?");
                 }
 
-                for (final String expression : List.of("metric = 'unterminated", "metric = \"unterminated", "metric = `unterminated", "metric = [unterminated")) {
+                for (final String expression : List.of("metric = 'unterminated", "metric = \"unterminated", "metric = `unterminated",
+                        "metric = [unterminated")) {
                     assertSetExpression(dsl, expression, expression);
                 }
             }
@@ -4775,7 +4804,8 @@ public class SqlBuilderTest extends TestBase {
                     .where(Filters.and(Filters.eq("status", "ACTIVE"), Filters.in("id", innerSubQuery), Filters.eq("status", "PENDING")))
                     .build();
 
-            assertEquals("SELECT id FROM users WHERE (status = :status) AND (id IN (SELECT user_id FROM orders WHERE status = :status_2)) AND (status = :status_3)",
+            assertEquals(
+                    "SELECT id FROM users WHERE (status = :status) AND (id IN (SELECT user_id FROM orders WHERE status = :status_2)) AND (status = :status_3)",
                     sp.query());
             assertEquals(Arrays.asList("ACTIVE", "SHIPPED", "PENDING"), sp.parameters());
         }
@@ -4800,8 +4830,10 @@ public class SqlBuilderTest extends TestBase {
             // The IN subquery's parentheses already contain its UNION/ORDER BY/LIMIT. Its bindings must
             // propagate to the outer branch, but its top-level isolation requirement must stay inside IN.
             final SP result = PSC.select("id").from("current_records").union(child).build();
-            assertEquals("SELECT id FROM current_records UNION SELECT id FROM archived_records WHERE owner_id IN "
-                    + "(SELECT id FROM owners WHERE active = ? UNION SELECT id FROM former_owners WHERE active = ? ORDER BY id LIMIT 1)", result.query());
+            assertEquals(
+                    "SELECT id FROM current_records UNION SELECT id FROM archived_records WHERE owner_id IN "
+                            + "(SELECT id FROM owners WHERE active = ? UNION SELECT id FROM former_owners WHERE active = ? ORDER BY id LIMIT 1)",
+                    result.query());
             assertEquals(List.of(true, false), result.parameters());
         }
 
@@ -4961,11 +4993,13 @@ public class SqlBuilderTest extends TestBase {
                             .where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE z = ?", Arrays.asList(java.sql.Date.valueOf("2020-01-02")))))
                             .build()
                             .query());
-            assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM y WHERE z = '2020-01-02 03:04:05.5')", SCSB.select("id")
-                    .from("t")
-                    .where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE z = ?", Arrays.asList(java.sql.Timestamp.valueOf("2020-01-02 03:04:05.5")))))
-                    .build()
-                    .query());
+            assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM y WHERE z = '2020-01-02 03:04:05.5')",
+                    SCSB.select("id")
+                            .from("t")
+                            .where(Filters.in("id",
+                                    Filters.subQuery("SELECT x FROM y WHERE z = ?", Arrays.asList(java.sql.Timestamp.valueOf("2020-01-02 03:04:05.5")))))
+                            .build()
+                            .query());
 
             final java.util.TimeZone defaultZone = java.util.TimeZone.getDefault();
 
@@ -4979,7 +5013,11 @@ public class SqlBuilderTest extends TestBase {
                 // 2020-01-02 03:04:05 in Tokyo is 2020-01-01 18:04:05 in UTC.
                 assertEquals("SELECT id FROM t WHERE c = '2020-01-01 18:04:05.0'", SCSB.select("id").from("t").where(Filters.eq("c", tokyo)).build().query());
                 assertEquals("SELECT id FROM t WHERE id IN (SELECT x FROM y WHERE z = '2020-01-01 18:04:05.0')",
-                        SCSB.select("id").from("t").where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE z = ?", Arrays.asList(tokyo)))).build().query());
+                        SCSB.select("id")
+                                .from("t")
+                                .where(Filters.in("id", Filters.subQuery("SELECT x FROM y WHERE z = ?", Arrays.asList(tokyo))))
+                                .build()
+                                .query());
             } finally {
                 java.util.TimeZone.setDefault(defaultZone);
             }
@@ -5052,9 +5090,11 @@ public class SqlBuilderTest extends TestBase {
                             "SELECT 1 FROM documents WHERE doc ?? 'k' AND id = #{param}" },
                     { "SELECT doc ??? FROM documents", "SELECT doc ??:param FROM documents", "SELECT doc ??#{param} FROM documents" },
                     { "SELECT ARRAY[doc ?? ?] FROM documents", "SELECT ARRAY[doc ?? :param] FROM documents", "SELECT ARRAY[doc ?? #{param}] FROM documents" },
-                    { "SELECT doc ??| ARRAY[?] FROM documents", "SELECT doc ??| ARRAY[:param] FROM documents", "SELECT doc ??| ARRAY[#{param}] FROM documents" },
+                    { "SELECT doc ??| ARRAY[?] FROM documents", "SELECT doc ??| ARRAY[:param] FROM documents",
+                            "SELECT doc ??| ARRAY[#{param}] FROM documents" },
                     { "SELECT doc @??? FROM documents", "SELECT doc @??:param FROM documents", "SELECT doc @??#{param} FROM documents" },
-                    { "SELECT ARRAY[doc ??& ?] FROM documents", "SELECT ARRAY[doc ??& :param] FROM documents", "SELECT ARRAY[doc ??& #{param}] FROM documents" } };
+                    { "SELECT ARRAY[doc ??& ?] FROM documents", "SELECT ARRAY[doc ??& :param] FROM documents",
+                            "SELECT ARRAY[doc ??& #{param}] FROM documents" } };
             for (final String[] sql : cases) {
                 final SubQuery subQuery = new SubQuery(sql[0], List.of("key"));
                 assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql[0]), sql[0]);
@@ -5223,7 +5263,8 @@ public class SqlBuilderTest extends TestBase {
 
             // Both builders remain usable; the derived table preserves A EXCEPT (B EXCEPT C).
             final SP result = parent.except(PSC.select("id").from(child, "branch")).build();
-            assertEquals("SELECT id FROM current_records EXCEPT SELECT id FROM " + "(SELECT id FROM archived_records EXCEPT SELECT id FROM older_records) branch",
+            assertEquals(
+                    "SELECT id FROM current_records EXCEPT SELECT id FROM " + "(SELECT id FROM archived_records EXCEPT SELECT id FROM older_records) branch",
                     result.query());
             assertTrue(result.parameters().isEmpty());
         }
@@ -5391,7 +5432,11 @@ public class SqlBuilderTest extends TestBase {
                     () -> PSC.update("current_records").set(Collections.singletonMap("active", false)).except("SELECT id FROM archived_records"));
             assertThrows(IllegalStateException.class, () -> PSC.renderCondition(Filters.equal("active", true)).minus("SELECT id FROM archived_records"));
             assertThrows(IllegalStateException.class,
-                    () -> PSC.select("id").from("current_records").union("SELECT id FROM archived_records").distinct().except("SELECT id FROM deleted_records"));
+                    () -> PSC.select("id")
+                            .from("current_records")
+                            .union("SELECT id FROM archived_records")
+                            .distinct()
+                            .except("SELECT id FROM deleted_records"));
         }
 
         @Test
@@ -5419,7 +5464,12 @@ public class SqlBuilderTest extends TestBase {
             assertEquals("SELECT id FROM archived_records WHERE active = ?", right.build().query());
 
             assertEquals("SELECT id FROM current_records WHERE active = :active UNION SELECT id FROM archived_records",
-                    NSC.select("id").from("current_records").where(Filters.equal("active", true)).union(PSC.select("id").from("archived_records")).build().query());
+                    NSC.select("id")
+                            .from("current_records")
+                            .where(Filters.equal("active", true))
+                            .union(PSC.select("id").from("archived_records"))
+                            .build()
+                            .query());
 
             SqlBuilder questionMarkLeft = NSC.select("id").from("current_records");
             SqlBuilder questionMark = PSC.select("id").from("archived_records").where(Filters.equal("active", Filters.QME));
@@ -5708,8 +5758,8 @@ public class SqlBuilderTest extends TestBase {
 
         @Test
         void testUnionRenamesCustomNamedParametersInsideArraySubscripts() {
-            final Dsl customDsl = Dsl
-                    .forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("CAST(:").append(name).append(" AS integer)")).build());
+            final Dsl customDsl = Dsl.forDialect(
+                    NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append("CAST(:").append(name).append(" AS integer)")).build());
             final SubQuery subQuery = Filters.subQuery("SELECT scores[?] FROM score_archive", Collections.singletonList(2));
             final SP sp = customDsl.select("id")
                     .from("users")
@@ -5788,20 +5838,20 @@ public class SqlBuilderTest extends TestBase {
     class Updates {
         @Test
         void testComplexUpdateWithMultipleConditions() {
+            Date modifiedAt = new Date(1_700_086_400_000L);
+            Date lastLoginCutoff = new Date(1_700_000_000_000L);
             Map<String, Object> updateValues = new LinkedHashMap<>();
             updateValues.put("status", "INACTIVE");
-            updateValues.put("lastModifiedDate", new Date());
+            updateValues.put("lastModifiedDate", modifiedAt);
 
-            String sql = PSC.update("users")
+            SP result = PSC.update("users")
                     .set(updateValues)
-                    .where(Filters.and(Filters.lt("lastLoginDate", new Date()), Filters.or(Filters.eq("status", "PENDING"), Filters.eq("status", "ACTIVE"))))
-                    .build()
-                    .query();
+                    .where(Filters.and(Filters.lt("lastLoginDate", lastLoginCutoff),
+                            Filters.or(Filters.eq("status", "PENDING"), Filters.eq("status", "ACTIVE"))))
+                    .build();
 
-            assertTrue(sql.contains("UPDATE users SET"));
-            assertTrue(sql.contains("status = ?"));
-            assertTrue(sql.contains("last_modified_date = ?"));
-            assertTrue(sql.contains("WHERE"));
+            assertSql("UPDATE users SET status = ?, last_modified_date = ? WHERE (last_login_date < ?) AND ((status = ?) OR (status = ?))",
+                    List.of("INACTIVE", modifiedAt, lastLoginCutoff, "PENDING", "ACTIVE"), result);
         }
 
         @Test

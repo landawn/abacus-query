@@ -165,6 +165,12 @@ public final class SqlMapper {
      */
     private final Map<String, ImmutableMap<String, String>> attrsMap = new HashMap<>();
 
+    /** Guards {@link #validationDocument}: DOM nodes are not thread-safe, so every use of the shared document is serialized. */
+    private static final Object VALIDATION_LOCK = new Object();
+
+    /** DOM document created lazily, once, to validate programmatic attribute names; guarded by {@link #VALIDATION_LOCK}. */
+    private static Document validationDocument;
+
     /**
      * Creates an empty SqlMapper instance.
      *
@@ -436,11 +442,15 @@ public final class SqlMapper {
 
             final List<Element> sqlElementList = XmlUtil.getElementsByTagName(sqlMapperElement, SQL);
 
+            // Names read out of an XML 1.0 document are already valid XML 1.0 Names, so only the cheap checks apply. XML 1.1
+            // Names are wider than what saveTo(...), an XML 1.0 serializer, accepts, so any other version is still validated.
+            final boolean validateNames = !"1.0".equals(doc.getXmlVersion());
+
             for (final Element sqlElement : sqlElementList) {
                 final Map<String, String> attrMap = XmlUtil.readAttributes(sqlElement);
 
                 try {
-                    sqlMapper.add(attrMap.remove(ID), XmlUtil.getTextContent(sqlElement), attrMap);
+                    sqlMapper.add(attrMap.remove(ID), XmlUtil.getTextContent(sqlElement), attrMap, validateNames);
                 } catch (final IllegalArgumentException e) {
                     // Name the offending source so a failure while loading multiple files/streams
                     // is diagnosable (the id/body validation in add(...) knows nothing about it).
@@ -622,7 +632,7 @@ public final class SqlMapper {
         checkId(id);
         N.checkArgNotNull(sql, cs.sql);
 
-        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attributes);
+        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attributes, true);
         sqlMap.put(id, sql);
         attrsMap.put(id, immutableAttrs);
 
@@ -679,11 +689,19 @@ public final class SqlMapper {
      *         to validate its attribute names
      */
     public void add(final String id, final String sql, final Map<String, String> attributes) {
+        add(id, sql, attributes, true);
+    }
+
+    /**
+     * Implementation of {@link #add(String, String, Map)}; {@code validateNames} is {@code false} only for attributes
+     * read out of a parsed XML 1.0 document, whose names are valid XML 1.0 Names by construction.
+     */
+    private void add(final String id, final String sql, final Map<String, String> attributes, final boolean validateNames) {
         checkId(id);
         N.checkArgNotNull(sql, cs.sql);
 
         final ParsedSql parsedSql = ParsedSql.parse(sql);
-        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attributes);
+        final ImmutableMap<String, String> immutableAttrs = copyAttributes(attributes, validateNames);
         sqlMap.put(id, parsedSql);
         attrsMap.put(id, immutableAttrs);
 
@@ -719,39 +737,58 @@ public final class SqlMapper {
      * containing {@code ':'} are rejected), and each value must be non-{@code null}.
      *
      * @param attrs the attributes to copy (may be {@code null} or empty)
+     * @param validateNames whether to check each name against the XML Name grammar; {@code false} only for
+     *        attributes read out of a parsed XML 1.0 document, which are valid by construction
      * @return an immutable copy of {@code attrs}, or an empty immutable map if {@code attrs} is {@code null} or empty
-     * @throws UncheckedException if {@code attrs} is nonempty and the XML parser cannot be configured
-     *         to validate its attribute names
+     * @throws UncheckedException if {@code attrs} is nonempty, {@code validateNames} is {@code true} and the XML
+     *         parser cannot be configured to validate its attribute names
      * @throws IllegalArgumentException if an attribute name is {@code null}, empty, namespace-qualified,
-     *         or not a valid XML attribute name, or if an attribute value is {@code null}
+     *         or (when {@code validateNames}) not a valid XML attribute name, or if an attribute value is {@code null}
      */
-    private static ImmutableMap<String, String> copyAttributes(final Map<String, String> attrs) {
+    private static ImmutableMap<String, String> copyAttributes(final Map<String, String> attrs, final boolean validateNames) {
         if (attrs == null || attrs.isEmpty()) {
             return ImmutableMap.empty();
         }
 
-        // Snapshot first so validation and copying see one stable set of entries.
-        final Map<String, String> snapshot = new LinkedHashMap<>(attrs);
+        // Copy first so validation and the stored map see one stable set of entries.
+        final ImmutableMap<String, String> copy = ImmutableMap.copyOf(attrs);
 
-        final Document validationDocument = XmlUtil.createDOMParser(true, true).newDocument();
-
-        for (final Map.Entry<String, String> entry : snapshot.entrySet()) {
+        for (final Map.Entry<String, String> entry : copy.entrySet()) {
             N.checkArgNotEmpty(entry.getKey(), "XML attribute name must not be null or empty");
             N.checkArgNotNull(entry.getValue(), "XML attribute value for '" + entry.getKey() + "' must not be null");
 
             N.checkArgument(entry.getKey().indexOf(':') < 0 && !"xmlns".equals(entry.getKey()), "Namespace-qualified XML attributes are not supported: %s",
                     entry.getKey());
 
-            try {
-                // Delegate XML Name validation to the same DOM implementation used by saveTo(...), rather
-                // than maintaining an incomplete ASCII-only approximation of the XML Name grammar.
-                validationDocument.createAttribute(entry.getKey());
-            } catch (final DOMException e) {
-                throw new IllegalArgumentException("Invalid XML attribute name: " + entry.getKey(), e);
+            if (validateNames) {
+                checkXmlAttributeName(entry.getKey());
             }
         }
 
-        return ImmutableMap.copyOf(snapshot);
+        return copy;
+    }
+
+    /**
+     * Validates {@code name} against the XML Name grammar.
+     *
+     * @throws UncheckedException if the XML parser cannot be configured on the first call
+     * @throws IllegalArgumentException if {@code name} is not a valid XML attribute name
+     */
+    private static void checkXmlAttributeName(final String name) {
+        // Delegate XML Name validation to the same DOM implementation used by saveTo(...), rather than maintaining
+        // an incomplete ASCII-only approximation of the XML Name grammar. One document is created lazily and shared
+        // (a DocumentBuilder per call was the dominant cost of add); DOM nodes are not thread-safe, hence the lock.
+        synchronized (VALIDATION_LOCK) {
+            if (validationDocument == null) {
+                validationDocument = XmlUtil.createDOMParser(true, true).newDocument();
+            }
+
+            try {
+                validationDocument.createAttribute(name);
+            } catch (final DOMException e) {
+                throw new IllegalArgumentException("Invalid XML attribute name: " + name, e);
+            }
+        }
     }
 
     /**

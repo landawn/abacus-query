@@ -12,6 +12,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -27,6 +29,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -719,8 +723,7 @@ public class AbstractConditionTest extends TestBase {
         assertTrue(AbstractCondition.isClause(Filters.expr("right /* hint */ outer join orders o on o.user_id = u.id")));
         assertTrue(AbstractCondition.isClause(Filters.expr("FULL OUTER JOIN orders o ON o.user_id = u.id")));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> Filters.eq("active", true).and(Filters.expr("LEFT OUTER JOIN orders o ON o.user_id = u.id")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.eq("active", true).and(Filters.expr("LEFT OUTER JOIN orders o ON o.user_id = u.id")));
     }
 
     @Test
@@ -839,6 +842,84 @@ public class AbstractConditionTest extends TestBase {
 
         assertEquals("42", AbstractCondition.formatNumberLiteral(42));
         AbstractCondition.validateNonQuantifiedValueOperands(Arrays.asList(1, null, "a"), "values");
+    }
+
+    @Test
+    void testFormatNumberLiteral_JdkIntegralTypesRenderToStringUnchangedAndSubclassesStillValidated() {
+        // exact JDK integral types take the regex-free fast path and must render exactly their toString()
+        assertEquals("42", AbstractCondition.formatNumberLiteral(42));
+        assertEquals("-42", AbstractCondition.formatNumberLiteral(-42));
+        assertEquals("7", AbstractCondition.formatNumberLiteral(7L));
+        assertEquals("-9223372036854775808", AbstractCondition.formatNumberLiteral(Long.MIN_VALUE));
+        assertEquals("-128", AbstractCondition.formatNumberLiteral((byte) -128));
+        assertEquals("32767", AbstractCondition.formatNumberLiteral((short) 32767));
+        assertEquals("123456789012345678901234567890", AbstractCondition.formatNumberLiteral(new BigInteger("123456789012345678901234567890")));
+        assertEquals("-123456789012345678901234567890", AbstractCondition.formatNumberLiteral(new BigInteger("-123456789012345678901234567890")));
+        assertEquals("3", AbstractCondition.formatNumberLiteral(new AtomicInteger(3)));
+        assertEquals("-5", AbstractCondition.formatNumberLiteral(new AtomicLong(-5)));
+
+        // floating / decimal types still go through the literal pattern
+        assertEquals("1.5", AbstractCondition.formatNumberLiteral(1.5));
+        assertEquals("-2.25", AbstractCondition.formatNumberLiteral(-2.25f));
+        assertEquals("1E+3", AbstractCondition.formatNumberLiteral(new BigDecimal("1E+3")));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatNumberLiteral(Double.NaN));
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatNumberLiteral(Float.POSITIVE_INFINITY));
+
+        // a custom Number whose toString() is not a numeric literal is still rejected
+        final Number smuggler = new Number() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public int intValue() {
+                return 1;
+            }
+
+            @Override
+            public long longValue() {
+                return 1;
+            }
+
+            @Override
+            public float floatValue() {
+                return 1;
+            }
+
+            @Override
+            public double doubleValue() {
+                return 1;
+            }
+
+            @Override
+            public String toString() {
+                return "abc";
+            }
+        };
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatNumberLiteral(smuggler));
+
+        // a SUBCLASS of a fast-path type is not exempt: the exact-class check must not match it
+        final BigInteger bigSmuggler = new BigInteger("1") {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public String toString() {
+                return "1; DROP TABLE t";
+            }
+        };
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatNumberLiteral(bigSmuggler));
+
+        final AtomicLong atomicSmuggler = new AtomicLong(1) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public String toString() {
+                return "1 OR 1=1";
+            }
+        };
+        assertThrows(IllegalArgumentException.class, () -> AbstractCondition.formatNumberLiteral(atomicSmuggler));
+
+        // rendering through a real condition is unchanged
+        assertEquals("id IN (1, 2, 10)", Filters.in("id", 1, 2L, BigInteger.TEN).toString());
+        assertEquals("id = -3", Filters.eq("id", new AtomicLong(-3)).toString());
     }
 
     @Test
@@ -1141,6 +1222,119 @@ public class AbstractConditionTest extends TestBase {
         assertEquals(List.of(true), notInSql.parameters());
     }
 
+    /** Stands in for an optional dependency; the child class loader below hides it, as if its jar were absent. */
+    public static final class OptionalDependency {
+    }
+
+    /** An {@code And} subclass with a never-called method whose signature names {@link OptionalDependency}. */
+    public static class OptionalDependencyAnd extends And {
+        private static final long serialVersionUID = 1L;
+
+        public OptionalDependencyAnd(final Condition... conditions) {
+            super(conditions);
+        }
+
+        @SuppressWarnings("unused")
+        private void integrate(final OptionalDependency dependency) {
+            // never called: only its signature matters
+        }
+    }
+
+    /** An {@code Equal} (leaf) subclass with a never-called method whose signature names {@link OptionalDependency}. */
+    public static class OptionalDependencyEqual extends Equal {
+        private static final long serialVersionUID = 1L;
+
+        public OptionalDependencyEqual(final String propName, final Object propValue) {
+            super(propName, propValue);
+        }
+
+        @SuppressWarnings("unused")
+        private void integrate(final OptionalDependency dependency) {
+            // never called: only its signature matters
+        }
+    }
+
+    /**
+     * An {@code And} subclass with a never-called <b>public</b> method whose signature names {@link OptionalDependency}:
+     * unlike the private ones above, it makes {@code getMethod("parameters")} itself fail, before any per-superclass lookup.
+     */
+    public static class OptionalDependencyPublicAnd extends And {
+        private static final long serialVersionUID = 1L;
+
+        public OptionalDependencyPublicAnd(final Condition... conditions) {
+            super(conditions);
+        }
+
+        public void integrate(final OptionalDependency dependency) {
+            // never called: only its signature matters
+        }
+    }
+
+    /**
+     * Defines {@code subject} afresh in a child class loader that cannot load {@link OptionalDependency}, so the
+     * class itself links and runs (lazy linking) but reflecting over its declared methods fails.
+     */
+    private static Class<?> defineWithoutOptionalDependency(final Class<?> subject) throws Exception {
+        final String subjectName = subject.getName();
+        final String hiddenName = OptionalDependency.class.getName();
+        final byte[] bytes;
+
+        try (java.io.InputStream in = subject.getResourceAsStream(subjectName.substring(subjectName.lastIndexOf('.') + 1) + ".class")) {
+            assertNotNull(in, subjectName);
+            bytes = in.readAllBytes();
+        }
+
+        final ClassLoader loader = new ClassLoader(AbstractConditionTest.class.getClassLoader()) {
+            @Override
+            protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
+                if (name.equals(hiddenName)) {
+                    throw new ClassNotFoundException(name);
+                }
+
+                if (name.equals(subjectName)) {
+                    synchronized (getClassLoadingLock(name)) {
+                        final Class<?> loaded = findLoadedClass(name);
+                        return loaded != null ? loaded : defineClass(name, bytes, 0, bytes.length);
+                    }
+                }
+
+                return super.loadClass(name, resolve);
+            }
+        };
+
+        final Class<?> isolated = loader.loadClass(subjectName);
+        assertNotSame(subject, isolated);
+        // precondition: reflection resolves every declared method signature and fails on the hidden type
+        assertThrows(NoClassDefFoundError.class, isolated::getDeclaredMethods);
+        return isolated;
+    }
+
+    @Test
+    void testParametersSurviveSubclassWhoseMethodSignatureNamesAClassMissingAtRuntime() throws Exception {
+        // the per-class hook memo reflects over the condition's class; a NoClassDefFoundError from a signature that
+        // names an absent optional dependency must fall back to parameters() instead of breaking the enclosing call
+        final Condition and = (Condition) defineWithoutOptionalDependency(OptionalDependencyAnd.class).getConstructor(Condition[].class)
+                .newInstance((Object) new Condition[] { Filters.eq("a", 1) });
+        final Condition leaf = (Condition) defineWithoutOptionalDependency(OptionalDependencyEqual.class).getConstructor(String.class, Object.class)
+                .newInstance("a", 1);
+        // A public signature breaks the very first lookup, getMethod("parameters"), not just the per-superclass hook search.
+        final Class<?> publicIsolated = defineWithoutOptionalDependency(OptionalDependencyPublicAnd.class);
+        assertThrows(NoClassDefFoundError.class, () -> publicIsolated.getMethod("parameters"));
+        final Condition publicAnd = (Condition) publicIsolated.getConstructor(Condition[].class).newInstance((Object) new Condition[] { Filters.eq("a", 1) });
+
+        for (final Condition condition : List.of(and, leaf, publicAnd)) {
+            for (int i = 0; i < 2; i++) { // the fallback answer is cached: repeated calls keep working
+                assertEquals(List.of(1), condition.parameters());
+                assertEquals(List.of(1, 2), Filters.and(condition, Filters.eq("b", 2)).parameters());
+                assertEquals(List.of(0, 1), Filters.or(Filters.eq("z", 0), condition).parameters());
+                assertEquals(List.of(1), Filters.not(condition).parameters());
+                assertEquals(List.of(1, 2), Filters.where(Filters.and(Filters.not(condition), Filters.eq("b", 2))).parameters());
+                assertEquals(List.of(1), Criteria.builder().where(condition).build().parameters());
+                assertEquals(List.of(1, 3), Criteria.builder().where(Filters.or(condition, Filters.eq("c", 3))).build().parameters());
+            }
+        }
+    }
+
     @Nested
     class Validation {
         @Test
@@ -1164,6 +1358,41 @@ public class AbstractConditionTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> AbstractCondition.validateSubQuerySelectArity(1, null));
             AbstractCondition.validateSubQuerySelectArity(1, new SubQuery("SELECT id FROM users"));
             AbstractCondition.validateSubQuerySelectArity(1, new SubQuery("users", List.of("id"), null));
+        }
+
+        @Test
+        void testIndexedListElementValidatorAgreesWithTheSingleOperandValidator() {
+            // the list/row validators skip non-Condition elements without building their name[index]; that is
+            // only sound while every rejection of the single-operand validator is Condition-only, so a future
+            // non-Condition check (e.g. NaN) must show up here as a disagreement
+            final SubQuery subQuery = new SubQuery("users", List.of("id"), null);
+            final List<Object> samples = Arrays.asList(null, 1, Double.NaN, Double.POSITIVE_INFINITY, Float.NaN, "s", "", new Object[] { 1 }, new int[] { 1 },
+                    List.of(1), Collections.emptyList(), java.util.Optional.of(1), new Date(), Calendar.getInstance(), Operator.IN, Filters.eq("a", 1),
+                    new And(), Filters.not(Filters.eq("a", 1)), new SqlExpression("x + 1"), new SqlExpression(" "), new SqlExpression("/* c */"), subQuery,
+                    new SubQuery("users", List.of("id", "name"), null), Filters.any(subQuery));
+            int rejected = 0;
+
+            for (final Object sample : samples) {
+                final String single = rejectionMessage(() -> AbstractCondition.validateNonQuantifiedValueOperand(sample, "x[0]"));
+                final String indexed = rejectionMessage(() -> AbstractCondition.validateNonQuantifiedValueOperand(sample, "x", 0));
+                final String rowSingle = rejectionMessage(() -> AbstractCondition.validateNonQuantifiedValueOperand(sample, "x[0][0]"));
+                final String row = rejectionMessage(() -> AbstractCondition.validateNonQuantifiedValueOperands(Collections.singletonList(sample), "x", 0));
+
+                assertEquals(single, indexed, String.valueOf(sample));
+                assertEquals(rowSingle, row, String.valueOf(sample));
+                rejected += single == null ? 0 : 1;
+            }
+
+            assertEquals(7, rejected); // eq, empty And, Not, blank / comment-only expressions, 2-column subquery, ANY
+        }
+
+        private String rejectionMessage(final Runnable validation) {
+            try {
+                validation.run();
+                return null;
+            } catch (final IllegalArgumentException e) {
+                return e.getMessage();
+            }
         }
     }
 

@@ -3402,7 +3402,7 @@ public final class Filters {
      * @param rightPropName the second column name to join with
      * @return an {@link On} clause
      * @throws IllegalArgumentException if {@code leftPropName} or {@code rightPropName} is {@code null}, empty, or blank,
-     *                                  or if {@code rightPropName} consists only of SQL comments
+     *                                  consists only of SQL comments, or contains an unterminated block comment
      */
     public static On on(final String leftPropName, final String rightPropName) {
         return new On(leftPropName, rightPropName);
@@ -3427,7 +3427,7 @@ public final class Filters {
      *                     {@link java.util.LinkedHashMap} to preserve order; must not be {@code null} or empty)
      * @return an {@link On} clause
      * @throws IllegalArgumentException if {@code propNamePairs} is {@code null}, empty, or contains a {@code null} entry,
-     *                                  a {@code null}, empty, or blank column name, or a value consisting only of SQL comments
+     *                                  a {@code null}, empty, or blank column name, or a column name consisting only of SQL comments or containing an unterminated block comment
      */
     public static On on(final Map<String, String> propNamePairs) {
         return new On(propNamePairs);
@@ -3490,7 +3490,7 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment that is reported
      *                                  first; otherwise because a qualified {@code JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #join(String, Condition)} or {@link #crossJoin(String)} instead
@@ -3515,7 +3515,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return a {@link Join} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3541,7 +3541,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return a {@link Join} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element;
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3569,7 +3569,7 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment that is reported
      *                                  first; otherwise because a qualified {@code LEFT JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #leftJoin(String, Condition)} or {@link #crossJoin(String)} instead
@@ -3594,7 +3594,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return a {@link LeftJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3620,7 +3620,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return a {@link LeftJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element;
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3648,7 +3648,7 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment that is reported
      *                                  first; otherwise because a qualified {@code RIGHT JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #rightJoin(String, Condition)} or {@link #crossJoin(String)} instead
@@ -3673,7 +3673,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return a {@link RightJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3699,7 +3699,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return a {@link RightJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element;
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3722,7 +3722,7 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to cross join
      * @return a {@link CrossJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment
      */
     public static CrossJoin crossJoin(final String joinEntity) {
         return new CrossJoin(joinEntity);
@@ -3739,7 +3739,7 @@ public final class Filters {
      *
      * @param joinEntities the entity/table names to cross join
      * @return a {@link CrossJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a null, empty, or blank name
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a null, empty, or blank name or a name containing an unterminated block comment
      */
     public static CrossJoin crossJoin(final Collection<String> joinEntities) {
         return new CrossJoin(joinEntities);
@@ -3762,7 +3762,7 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment that is reported
      *                                  first; otherwise because a qualified {@code FULL JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #fullJoin(String, Condition)} or {@link #crossJoin(String)} instead
@@ -3787,7 +3787,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return a {@link FullJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3813,7 +3813,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return a {@link FullJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element;
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3841,7 +3841,7 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to join
      * @return never returns normally
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank that is reported
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment that is reported
      *                                  first; otherwise because a qualified {@code INNER JOIN} requires a non-null
      *                                  {@code ON}/{@code USING} predicate
      * @deprecated always throws; use {@link #innerJoin(String, Condition)} or {@link #crossJoin(String)} instead
@@ -3866,7 +3866,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return an {@link InnerJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3892,7 +3892,7 @@ public final class Filters {
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
      *                      {@link #naturalJoin(String)} for an unconditional join
      * @return an {@link InnerJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element;
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
      *                                  {@link com.landawn.abacus.query.condition.Criteria Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins with {@code ON} or {@code USING}, a nested ON/USING
@@ -3915,7 +3915,7 @@ public final class Filters {
      *
      * @param joinEntity the entity/table name to natural join
      * @return a {@link NaturalJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment
      */
     public static NaturalJoin naturalJoin(final String joinEntity) {
         return new NaturalJoin(joinEntity);
@@ -3932,7 +3932,7 @@ public final class Filters {
      *
      * @param joinEntities the entity/table names to natural join
      * @return a {@link NaturalJoin} clause
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a null, empty, or blank name
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a null, empty, or blank name or a name containing an unterminated block comment
      */
     public static NaturalJoin naturalJoin(final Collection<String> joinEntities) {
         return new NaturalJoin(joinEntities);

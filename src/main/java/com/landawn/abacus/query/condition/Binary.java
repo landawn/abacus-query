@@ -369,6 +369,14 @@ public class Binary extends ComposableCondition {
         }
 
         if (isCollectionOperator(op) && propValue instanceof final Collection<?> values) {
+            // Reuse only a membership list owned by the constructor (see copyPropValueForExposure): the rebuild
+            // flag is false only when every element is a non-snapshot value (no array/Date/Calendar/Condition),
+            // so the parameters are exactly the membership list and a second copy would just retain the same
+            // elements twice.
+            if (isCollectionOperator(operator) && !rebuildParametersPerCall && values instanceof final List<?> list) {
+                return ImmutableList.wrap(list);
+            }
+
             final List<Object> parameters = new ArrayList<>(values.size());
 
             for (final Object value : values) {
@@ -499,7 +507,7 @@ public class Binary extends ComposableCondition {
                     throw new IllegalArgumentException("propValue[" + index + "] must not be null for " + op);
                 }
 
-                valuesCopy.add(snapshotMutableValue(validateNonQuantifiedValueOperand(value, "propValue[" + index++ + "]")));
+                valuesCopy.add(snapshotMutableValue(validateNonQuantifiedValueOperand(value, cs.propValue, index++)));
             }
 
             N.checkArgNotEmpty(valuesCopy, cs.propValue);
@@ -522,7 +530,7 @@ public class Binary extends ComposableCondition {
                     throw new IllegalArgumentException("propValue[" + i + "] must not be null for " + op);
                 }
 
-                values.add(snapshotMutableValue(validateNonQuantifiedValueOperand(value, "propValue[" + i + "]")));
+                values.add(snapshotMutableValue(validateNonQuantifiedValueOperand(value, cs.propValue, i)));
             }
 
             return Collections.unmodifiableList(values);

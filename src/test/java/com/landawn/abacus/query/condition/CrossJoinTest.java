@@ -56,4 +56,14 @@ public class CrossJoinTest extends TestBase {
         assertTrue(join.parameters().isEmpty());
         assertEquals("CROSS JOIN colors", join.toSql(NamingPolicy.NO_CHANGE));
     }
+
+    @Test
+    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
+        // An open "/*" in the entity would comment out everything rendered after the join; MySQL also reads "t --/*" that way.
+        assertEquals("joinEntity must not contain an unterminated block comment: t --/*",
+                assertThrows(IllegalArgumentException.class, () -> new CrossJoin("t --/*")).getMessage());
+        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new CrossJoin(Arrays.asList("a", "t /* x"))).getMessage());
+        assertEquals("CROSS JOIN t /* x */", new CrossJoin("t /* x */").toString());
+    }
 }

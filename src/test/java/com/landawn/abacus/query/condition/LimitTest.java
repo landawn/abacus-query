@@ -9,10 +9,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.SK;
 
@@ -604,5 +607,28 @@ public class LimitTest extends TestBase {
 
         assertEquals(0, limit.offset());
         assertEquals(10, limit.count());
+    }
+
+    @Test
+    void testSubclassOverridingParametersIsHonouredInsideCriteria() {
+        // Limit's own appendParametersTo hook appends nothing; a subclass that overrides only parameters() must
+        // still be authoritative when Criteria aggregates its clauses
+        final Limit custom = new Limit(5) {
+            @Override
+            public ImmutableList<Object> parameters() {
+                return ImmutableList.of("lim");
+            }
+        };
+
+        assertEquals(List.of("lim"), custom.parameters());
+        assertEquals(List.of(), new Limit(5).parameters());
+
+        final Criteria criteria = Criteria.builder().where(Filters.eq("w", 1)).limit(custom).build();
+        assertEquals(List.of(1, "lim"), criteria.parameters());
+        assertEquals(List.of("lim"), Criteria.builder().limit(custom).build().parameters());
+        assertEquals(List.of(1, "lim"), Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
+        assertEquals(List.of(0, 1, "lim", 2),
+                Filters.and(Filters.eq("z", 0), Filters.not(Filters.exists(Filters.subQuery("t", List.of("id"), criteria))), Filters.eq("b", 2)).parameters());
+        assertEquals(List.of(1), Criteria.builder().where(Filters.eq("w", 1)).limit(new Limit(5)).build().parameters());
     }
 }

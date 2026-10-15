@@ -36,6 +36,70 @@ public class OnTest extends TestBase {
     }
 
     @Test
+    void testCommentOnlyOrUnterminatedBlockCommentPropNamesAreRejectedOnBothSides() {
+        // Regression: only rightPropName was checked for comment-only text, and neither side for an unterminated block
+        // comment, so On("-- x", "b") rendered a one-sided "ON -- x <newline> = b" and On("a /* c", "b") commented out the predicate.
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new On("-- x", "b.id"));
+        assertEquals("leftPropName must not consist only of SQL comments: -- x", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new On("/* c */", "b.id"));
+        assertTrue(ex.getMessage().contains("leftPropName"), ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new On("a.id /* c", "b.id"));
+        assertEquals("leftPropName must not contain an unterminated block comment: a.id /* c", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new On("a.id", "b.id /* c"));
+        assertEquals("rightPropName must not contain an unterminated block comment: b.id /* c", ex.getMessage());
+
+        assertThrows(IllegalArgumentException.class, () -> new On(Map.of("-- x", "b.id")));
+        assertThrows(IllegalArgumentException.class, () -> new On(Map.of("a.id", "b.id /* c")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.on("a.id /* c", "b.id"));
+        assertThrows(IllegalArgumentException.class, () -> Filters.on(Map.of("a.id /* c", "b.id")));
+
+        // Existing right-side rejections are unchanged; terminated comments and a SQL Server #temp reference are kept.
+        ex = assertThrows(IllegalArgumentException.class, () -> new On("a.id", "-- x"));
+        assertEquals("rightPropName must not consist only of SQL comments: -- x", ex.getMessage());
+        assertEquals("ON a.id /* c */ = b.id", new On("a.id /* c */", "b.id").toString());
+        assertEquals("ON #tmp.id = b.id", new On("#tmp.id", "b.id").toString());
+    }
+
+    @Test
+    void testMySqlDashReadingOfUnterminatedBlockCommentPropNames() {
+        // Regression: MySQL reads "a --/*" as "a - -" plus an open block comment (it needs whitespace after "--"); both
+        // sides were accepted and rendered "ON a --/* <newline> = b".
+        assertEquals("leftPropName must not contain an unterminated block comment: a --/*",
+                assertThrows(IllegalArgumentException.class, () -> new On("a --/*", "b")).getMessage());
+        assertEquals("rightPropName must not contain an unterminated block comment: b --/*",
+                assertThrows(IllegalArgumentException.class, () -> new On("a", "b --/*")).getMessage());
+        assertThrows(IllegalArgumentException.class, () -> new On(Map.of("a --x /* y", "b")));
+
+        // With whitespace after "--" every dialect reads a line comment, which the renderer terminates.
+        assertEquals("ON a -- /* x\n = b", new On("a -- /* x", "b").toString());
+    }
+
+    @Test
+    void testCommentCounterExamplesOnBothSides() {
+        // A terminated comment on the right side is stripped by the SqlExpression rendering.
+        assertEquals("ON a.id = b.id ", new On("a.id", "b.id /* c */").toString());
+
+        // Quoted identifiers, a #temp reference and optimizer hints are not unterminated comments.
+        assertEquals("ON \"a/*\" = b.id", new On("\"a/*\"", "b.id").toString());
+        assertEquals("ON `a/*` = b.id", new On("`a/*`", "b.id").toString());
+        assertEquals("ON a = \"b/*\"", new On("a", "\"b/*\"").toString());
+        assertEquals("ON #temp.id /* x */ = b", new On("#temp.id /* x */", "b").toString());
+        assertEquals("ON /*+ h */ a = b", new On("/*+ h */ a", "b").toString());
+
+        // Nested comments (PostgreSQL, SQL Server): a balanced nest is closed, an inner opener alone is not.
+        assertEquals("ON /* /* */ */ a = b", new On("/* /* */ */ a", "b").toString());
+        assertThrows(IllegalArgumentException.class, () -> new On("/* /* */ a", "b"));
+        assertThrows(IllegalArgumentException.class, () -> new On("a", "b /* /* */"));
+
+        // With both sides invalid, leftPropName is reported first.
+        assertEquals("leftPropName must not consist only of SQL comments: -- x",
+                assertThrows(IllegalArgumentException.class, () -> new On("-- x", "/* c */")).getMessage());
+    }
+
+    @Test
     void testComplexCondition() {
         And complexCondition = new And(new Equal("orders.customer_id", "customers.id"), new GreaterThan("orders.order_date", "customers.registration_date"));
         On on = new On(complexCondition);

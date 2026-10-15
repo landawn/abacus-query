@@ -87,7 +87,7 @@ public class CrossJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment
      */
     public CrossJoin(final String joinEntity) {
         super(Operator.CROSS_JOIN, joinEntity);
@@ -110,7 +110,7 @@ public class CrossJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements or an element containing an unterminated block comment
      */
     public CrossJoin(final Collection<String> joinEntities) {
         super(Operator.CROSS_JOIN, joinEntities, null);

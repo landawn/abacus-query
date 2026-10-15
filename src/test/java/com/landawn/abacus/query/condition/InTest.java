@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -640,8 +641,61 @@ public class InTest extends TestBase {
         assertEquals(5, userFilter.parameters().size());
     }
 
+    // Characterisation (R16-02): an all-scalar membership list exposes the membership values themselves as the
+    // memoized, unmodifiable parameter list; a Date element still forces a fresh defensive copy on every call.
+    @Test
+    void testAllScalarParametersAreMemoizedUnmodifiableAndEqualToValues() {
+        final In condition = new In("id", Arrays.asList(1, 2, 3));
+
+        final List<Object> parameters = condition.parameters();
+        assertEquals(Arrays.asList(1, 2, 3), parameters);
+        assertEquals(condition.values(), parameters);
+        assertSame(parameters, condition.parameters());
+        assertThrows(UnsupportedOperationException.class, () -> parameters.add(4));
+        assertThrows(UnsupportedOperationException.class, () -> parameters.set(0, 9));
+        assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
+        assertEquals("id IN (1, 2, 3)", condition.toString());
+
+        final java.util.Date date = new java.util.Date(1_000L);
+        final In dated = new In("createdOn", Arrays.asList(date, 2));
+        assertNotSame(dated.parameters(), dated.parameters());
+        assertNotSame(date, dated.parameters().get(0));
+        assertNotSame(dated.parameters().get(0), dated.parameters().get(0));
+        ((java.util.Date) dated.parameters().get(0)).setTime(4_000L);
+        assertEquals(1_000L, ((java.util.Date) dated.parameters().get(0)).getTime());
+    }
+
     @Nested
     class Validation {
+        // Characterisation (R16-01): the positional element names in the rejection messages are unchanged now
+        // that they are built only for a rejected element.
+        @Test
+        void testRejectedElementMessagesCarryPositionalIndex() {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new In("id", Arrays.asList(1, null, 3)));
+            assertEquals("values must not contain null elements; null found at index 1", ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> new In("id", Arrays.asList(1, 2, Filters.eq("a", 1))));
+            assertTrue(ex.getMessage().startsWith("values[2] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+
+            final Condition quantified = Filters.any(Filters.subQuery("t", Arrays.asList("id"), Filters.eq("x", 1)));
+            ex = assertThrows(IllegalArgumentException.class, () -> new In("id", Arrays.asList(1, quantified)));
+            assertEquals("values[1] must not be an ALL/ANY/SOME operand; quantified operands require a direct scalar-comparison RHS", ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> new In("id", Arrays.asList(SqlExpression.of("  "), 1)));
+            assertEquals("values[0] must not be a blank SqlExpression", ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class,
+                    () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, null))));
+            assertEquals("valueRows[1] must not contain null elements; null found at index 1", ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class,
+                    () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(Filters.eq("a", 1), 4))));
+            assertTrue(ex.getMessage().startsWith("valueRows[1][0] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, quantified))));
+            assertEquals("valueRows[0][1] must not be an ALL/ANY/SOME operand; quantified operands require a direct scalar-comparison RHS", ex.getMessage());
+        }
+
         @Test
         void testRowValueConstructionPropagatesGetterFailure() {
             final RuntimeException failure = assertThrows(RuntimeException.class, () -> new In(List.of("id"), List.of(new ThrowingRow())));

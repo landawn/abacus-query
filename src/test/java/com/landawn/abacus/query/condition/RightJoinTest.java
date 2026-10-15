@@ -345,4 +345,17 @@ public class RightJoinTest extends TestBase {
         assertTrue(result.contains("suppliers"));
         assertTrue(result.contains("ON"));
     }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testUnterminatedBlockCommentInJoinEntityIsRejected() {
+        // An open "/*" in the entity would comment out the ON predicate and everything rendered after the join.
+        assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new RightJoin(List.of("t /* x"), ON_AB)).getMessage());
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new RightJoin("t /* x", ON_AB)).getMessage());
+        assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                assertThrows(IllegalArgumentException.class, () -> new RightJoin("t /* x")).getMessage());
+        assertEquals("RIGHT JOIN t /* x */ ON a.id = b.id", new RightJoin("t /* x */", ON_AB).toString());
+    }
 }

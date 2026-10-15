@@ -6,8 +6,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -580,7 +582,8 @@ public class QueryUtilTest extends TestBase {
         // KEBAB_CASE / UPPER_CAMEL_CASE -- so the helper rendered "alias-only-entity ao" where the
         // FROM clause said "AliasOnlyEntity ao".
         for (final NamingPolicy np : NamingPolicy.values()) {
-            assertEquals(AbstractQueryBuilder.getTableName(AliasOnlyEntity.class, np) + " ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, np), np.name());
+            assertEquals(AbstractQueryBuilder.getTableName(AliasOnlyEntity.class, np) + " ao", QueryUtil.tableNameAndAlias(AliasOnlyEntity.class, np),
+                    np.name());
             assertEquals(AbstractQueryBuilder.getTableName(Account.class, np) + " " + AbstractQueryBuilder.tableAlias(Account.class),
                     QueryUtil.tableNameAndAlias(Account.class, np), np.name());
         }
@@ -740,6 +743,89 @@ public class QueryUtilTest extends TestBase {
         // Fail-closed trade-offs: one reading sees an open comment.
         assertTrue(QueryUtil.hasUnterminatedBlockComment("[a/*b]"));
         assertTrue(QueryUtil.hasUnterminatedBlockComment("a # note /*"));
+    }
+
+    // Regression: PostgreSQL and H2 read a dollar-quoted string as text, so in "$$'$$ /* x '" the quote is data and the comment
+    // is open; every reading of the scan took the quote for the start of a string that hid the opener.
+    @Test
+    void testHasUnterminatedBlockCommentDollarQuoteReading() {
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("$$'$$ /* x '"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("$t$'$t$ /* x '"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("a = $$it's$$ AND b = 'c' /* x 'd'"));
+        // An opener inside a dollar-quoted string is still open under the reading without dollar quotes (fail closed).
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("$$ /* $$"));
+
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("$$a$$ /* x */"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("$$'$$ /* x */ '"));
+        // An unterminated dollar quote holds the rest of the text; a "$$" glued to a name opens none.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("$$'a /* x '"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("a$$'$$ /* x '"));
+        // "$1" and "${x}" are no dollar quotes.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("$1 = '/*' AND ${x} = 1"));
+        // H2 reads a Unicode space before "$$" as a separator, PostgreSQL as part of a name: the opener counts.
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("　$$'$$ /* x '"));
+    }
+
+    // Regression: QueryUtil.terminateLineComment (used by every condition renderer) missed a comment after a dollar-quoted
+    // string holding a quote, so "(b = $$'$$ -- c) AND (id = ?)" commented out the rest of the WHERE clause.
+    @Test
+    void testTerminateLineCommentAfterDollarQuotedString() {
+        assertEquals("$$'$$ -- c\n", QueryUtil.terminateLineComment("$$'$$ -- c"));
+        assertEquals("$t$'$t$ -- c\n", QueryUtil.terminateLineComment("$t$'$t$ -- c"));
+        assertEquals("a = $$\"$$ -- c\n", QueryUtil.terminateLineComment("a = $$\"$$ -- c"));
+        // Read without dollar quotes, the text ends in a comment too: the extra line feed is harmless.
+        assertEquals("$$-- c$$\n", QueryUtil.terminateLineComment("$$-- c$$"));
+
+        assertEquals("$$a$$", QueryUtil.terminateLineComment("$$a$$"));
+        assertEquals("$$'$$ -- c\n", QueryUtil.terminateLineComment("$$'$$ -- c\n"));
+        // "a$$" is a name: the quote opens a string that holds the "--". So is "é$$"; a Unicode space is no name character on H2.
+        assertEquals("a$$'$$ -- c", QueryUtil.terminateLineComment("a$$'$$ -- c"));
+        assertEquals("é$$'$$ -- c", QueryUtil.terminateLineComment("é$$'$$ -- c"));
+        assertEquals("　$$'$$ -- c\n", QueryUtil.terminateLineComment("　$$'$$ -- c"));
+    }
+
+    @Test
+    void testDollarQuoteEnd() {
+        assertEquals(5, QueryUtil.dollarQuoteEnd("$$a$$", 0));
+        assertEquals(4, QueryUtil.dollarQuoteEnd("$$$$ x", 0));
+        assertEquals(14, QueryUtil.dollarQuoteEnd("x = $t$a$$b$t$", 4));
+        assertEquals(18, QueryUtil.dollarQuoteEnd("$tag_1$it's$tag_1$ AS x", 0));
+        // Unterminated.
+        assertEquals(-1, QueryUtil.dollarQuoteEnd("$$a", 0));
+        assertEquals(-1, QueryUtil.dollarQuoteEnd("$t$a$$", 0));
+        // No opener: a name continues before the '$', a positional marker, a MyBatis marker, a '$' that is no tag, another character.
+        assertEquals(0, QueryUtil.dollarQuoteEnd("a$$b$$", 1));
+        assertEquals(0, QueryUtil.dollarQuoteEnd("$1", 0));
+        assertEquals(0, QueryUtil.dollarQuoteEnd("${x}", 0));
+        assertEquals(0, QueryUtil.dollarQuoteEnd("$1$ a $1$", 0));
+        assertEquals(0, QueryUtil.dollarQuoteEnd("$col", 0));
+        assertEquals(0, QueryUtil.dollarQuoteEnd("x$$", 0));
+        assertEquals(0, QueryUtil.dollarQuoteEnd("é$$a$$", 1));
+        // H2 reads a Unicode space as a separator.
+        assertEquals(6, QueryUtil.dollarQuoteEnd("　$$a$$", 1));
+
+        assertThrows(IllegalArgumentException.class, () -> QueryUtil.dollarQuoteEnd(null, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> QueryUtil.dollarQuoteEnd("$$", 2));
+    }
+
+    // Regression: MySQL/MariaDB read "--" as a comment only before whitespace, a control character or the end, so "t --/*" is
+    // "t", "-", "-" and an open block comment there; the scan read every "--" as a line comment and accepted it.
+    @Test
+    void testHasUnterminatedBlockCommentMySqlDashReading() {
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("t --/*"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("t ---/*"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("t --x /* y"));
+        assertTrue(QueryUtil.hasUnterminatedBlockComment("t --/* x */ u --/*"));
+
+        // Whitespace, a control character, DEL or the end of the text after "--" starts a comment in MySQL too.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("t -- /* x"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("t --" + (char) 0x09 + "/* x"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("t --" + (char) 0x7F + "/* x"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("t /* x */ --"));
+        // A closed comment, or quoted dashes, stay accepted under every reading.
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("t --/* x */"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("t '--/*'"));
+        assertFalse(QueryUtil.hasUnterminatedBlockComment("t --x"));
     }
 
     @Test
@@ -1202,6 +1288,47 @@ public class QueryUtilTest extends TestBase {
         for (final String sql : List.of("'a\\' -- tail\n", "'a\\'", "E'a\\' -- quoted'", "e'a\\' # quoted'")) {
             assertSame(sql, QueryUtil.terminateLineComment(sql), sql);
         }
+    }
+
+    // R14-02: a fragment without '-' and '#' can never end inside a line comment, so it is returned as is without the
+    // multi-reading scan; fragments that do carry a comment opener keep their exact prior results.
+    @Test
+    void testTerminateLineCommentShortCircuitsFragmentsWithoutCommentOpeners() {
+        // The dialect-neutral reading the short circuit relies on never takes an H2 "//" for a line comment.
+        final String doubleSlash = "a // c";
+        assertSame(doubleSlash, QueryUtil.terminateLineComment(doubleSlash));
+
+        for (final String sql : List.of("age", "customer_account_number", "first_name = 'x' /* c */", "'--'", "a -- c\n", "a # c\r\n")) {
+            assertSame(sql, QueryUtil.terminateLineComment(sql), sql);
+        }
+
+        assertEquals("a -- c\n", QueryUtil.terminateLineComment("a -- c"));
+        assertEquals("a # c\n", QueryUtil.terminateLineComment("a # c"));
+    }
+
+    // R13-01: a "#{"/"${" token opens a binding only when some later token closes a brace; the unterminated ones are
+    // converted like ordinary text. The closing index is memoized, so many unterminated markers render in linear time.
+    @Test
+    void testAppendRawExpressionKeepsUnterminatedMarkersOutOfBindingsAndRendersThemLinearly() {
+        final int[] verbatimFrom = new int[1];
+
+        assertEquals("${a ${b} c_d ${e", renderRaw("${a ${b} cD ${e", false, verbatimFrom));
+        assertEquals("#{a ${b} c_d #{e f_g", renderRaw("#{a ${b} cD #{e fG", false, verbatimFrom));
+        assertEquals("${a cD} e_f ${g hI #{j} k_l", renderRaw("${a cD} eF ${g hI #{j} kL", false, verbatimFrom));
+        assertEquals("first_name = #{x", renderRaw("firstName = #{x", false, verbatimFrom));
+        assertEquals("${a} ${b", renderRaw("${a} ${b", false, verbatimFrom));
+        assertEquals("first_name = #{x} AND last_name = ${y", renderRaw("firstName = #{x} AND lastName = ${y", false, verbatimFrom));
+        assertEquals(-1, verbatimFrom[0]);
+
+        // 64,000 unterminated markers: the pre-fix per-marker rescan took ~10 s here, the memoized check under 100 ms.
+        final String expr = "${a ".repeat(64_000);
+        final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+        final List<String> tokens = tokenizer.tokenize(expr);
+        final StringBuilder sb = new StringBuilder(expr.length());
+
+        assertTimeoutPreemptively(Duration.ofSeconds(2),
+                () -> assertEquals(-1, QueryUtil.appendRawExpression(sb, expr, tokens, tokenizer, false, w -> w.toLowerCase(), w -> w)));
+        assertEquals(expr, sb.toString());
     }
 
     @Test

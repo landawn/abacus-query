@@ -1,0 +1,261 @@
+Unit-test cleanup execution plan
+
+Use this plan to clean up, consolidate, organize, and strengthen an existing unit-test suite while preserving its behavioral coverage. It is self-contained and can be copied into another project.
+
+The default scope is test code, test fixtures, test discovery configuration, audit tooling, and test documentation. Preserve production behavior. Handle any production defect exposed by the work as an explicit, separately reviewed change.
+
+1. Configure the scope
+
+Fill in these values before execution. Prefer the project's existing conventions and build tools.
+
+Setting / Project value
+- Production source roots: <source roots>
+- Unit-test roots: <test roots>
+- Framework and supported runtime: <framework, runtime version>
+- Build tool or wrapper: <command>
+- Unit-test command: <command>
+- Fresh-build command: <command>
+- Coverage command and reports: <command, report paths>
+- Intended exclusions: <integration, slow, platform-specific, or other categories>
+- Test naming and layout conventions: <existing conventions>
+- Starting revision and local changes: <revision, working-tree notes>
+- Audit output directory: <ignored generated directory>
+
+Read repository instructions and inspect the working tree. Identify concurrent work and preserve unrelated changes. Confirm that the chosen commands do not publish artifacts or perform unrelated deployment tasks.
+
+Completion criterion: the scope, commands, exclusions, and starting state are recorded and reproducible.
+
+2. Establish a trustworthy baseline
+
+1. Inspect discovery rules: filename patterns, package selectors, suite classes, tags, inherited tests, nested tests, parameterized tests, and disabled tests.
+2. Confirm that test failures fail the build. Confirm that coverage instrumentation actually reaches the test process and preserves other required runtime arguments.
+3. Run the intended unit suite from fresh build output. Keep the logs, machine-readable test results, and coverage data.
+4. Record discovered methods, executed invocations, failures, errors, skips, duration, and per-unit coverage. Where supported, capture covered instructions, lines, branches, and methods, including their totals.
+5. Explain existing failures, intentional exclusions, and unexecuted tests. If discovery or failure-reporting settings require correction, verify those corrections and establish a new baseline before reorganizing tests.
+
+Keep the original and corrected baseline distinct. Never treat a green build with hidden failures or missing tests as proof of correctness.
+
+For shared workspaces, use a separate build directory or isolated checkout. Compare baseline and final coverage against the same production sources, dependencies, and coverage settings. If production changes during cleanup, preserve those edits and create a comparable snapshot; also validate the final current workspace.
+
+Completion criterion: every baseline discrepancy is understood, and the reports can support a meaningful before/after comparison.
+
+3. Inventory and map ownership
+
+Inventory each executable test and its context: file, owning class or module, behavior, setup, fixtures, lifecycle hooks, tags, parameter sources, and assertions. Include inherited and dynamically generated tests where the framework supports them. Runtime discovery is the authority when a static inventory cannot model a framework feature.
+
+Classify findings into these work items:
+
+Finding / Intended action
+- Tests for one production unit spread across files: Consolidate under a primary owner when fixtures and lifecycle are compatible
+- One test file covers unrelated units: Move cases to the units they exercise
+- Large test class with mixed behaviors: Introduce behavior groups supported by the framework
+- Repeated setup and equivalent scenarios: Consider a small helper or parameterized test
+- Exact or similar test bodies: Review as duplicate candidates
+- Weak assertions, live time, sleeps, or leaked state: Strengthen assertions and improve independence
+- Manual maintenance utilities in test roots: Move outside automatic test compilation and discovery
+- Separate integration, compatibility, or supported-feature suites: Retain and document the intentional split
+
+Use <ProductionUnit>Test or the project's equivalent as the primary owner. Shared behavior across several units can have an explicit contract-test owner. Avoid a single miscellaneous test file becoming the destination for unrelated cases.
+
+Create the ownership map before moving code. Prioritize discovery defects and uncertain assertions, then misplaced tests, duplicates, and structural consistency.
+
+Completion criterion: every proposed move has a destination and a reason; intentional splits are documented.
+
+4. Reorganize in small batches
+
+Complete one production unit or coherent behavior area at a time. Separate mechanical moves from assertion changes so each can be reviewed independently.
+
+1. Move tests to their agreed owners, carrying necessary fixtures, annotations, lifecycle behavior, and regression explanations.
+2. Group large suites by behavior, such as construction, validation, transformations, rendering, persistence, caching, or lifecycle. Choose groups that fit the unit's API.
+3. Keep setup fields and lifecycle methods first, grouped tests next, and private helpers and fixtures last. Sort tests by name within a group unless the project has a clearer established convention.
+4. Align method names, visibility, imports, assertion style, and descriptive parameterized invocation names with the framework and project conventions.
+5. Remove redundant tags only after confirming discovery no longer depends on them. Preserve intentional exclusions.
+6. Move manual utilities to a documented tools or scripts location. Do not execute source-rewriting or destructive utilities as part of relocation.
+
+Preserve initializer order, fixture field order, serialization order, reflection-sensitive declarations, and lifecycle scope. Source sorting must not introduce execution-order dependencies. A nested group must not accidentally change how shared setup runs.
+
+Before deleting a merged source file, verify that all its members have been accounted for. A member-name collision requires explicit reconciliation; never silently choose one version by name or length. Shared helpers should express a repeated contract without hiding scenario-specific inputs or expectations.
+
+For mechanical changes, compare retained method bodies before and after. Fingerprints may ignore comments and formatting but must preserve literals, code-token boundaries, annotations, parameter sources, and parameter types. Check fixtures and setup separately; matching bodies alone do not prove equivalence.
+
+Completion criterion: the affected tests compile, execute under their new owners, and retain their original scenarios and setup behavior.
+
+5. Remove duplicates and consolidate equivalent cases
+
+Use exact matching first and similarity matching only to generate review candidates. Prefer a language parser or a tested, language-aware scanner over regular expressions that mistake comments or strings for code. Validate audit tools on representative syntax before trusting their output.
+
+Candidate relationship / Decision
+- Same inputs, overload, setup, context, and assertions: Keep one canonical test and record the removal
+- Same scenario, one test has strictly stronger assertions: Retain the stronger test after checking that no distinct behavior is lost
+- Same contract and setup, differing inputs or supported variants: Parameterize with explicit inputs and expected results
+- Different fixtures, policies, overloads, lifecycle, or validation precedence: Retain distinct coverage unless an explicit matrix preserves each difference
+- Similar implementation but different contracts: Keep separate tests
+- Equivalence is uncertain: Retain the case and record the unresolved candidate
+
+Preserve regression explanations and boundary cases. Do not remove a test solely because its name resembles another, because overall coverage remains unchanged, or because a smaller suite is desirable.
+
+Parameterization should keep each scenario identifiable in the runner's results. Preserve nulls, empty inputs, ordering, exception behavior, and variant-specific expectations. Avoid abstractions that need many conditionals to accommodate unrelated cases.
+
+Maintain a removal ledger and an old-case-to-new-invocation mapping as changes are made. Review across nested groups and files as well as within individual classes.
+
+Completion criterion: every removed case has equivalent or stronger retained coverage, and every consolidated scenario has an identifiable replacement.
+
+6. Improve assertions and independence
+
+Review weak tests while their owning unit is in scope. Expected values should come from the contract, not from copying the observed output or recomputing the result through the same production logic.
+
+Weak pattern / Improvement
+- Only checks non-null output: Check the meaningful value, structure, state, identity, or metadata promised by the contract
+- Only checks a substring or collection size: Check complete stable output or collection contents and order where those are contractual
+- SQL text without parameter checks: Verify SQL and ordered parameter values together
+- Generic exception assertion: Use the most specific documented exception; check stable details and validation precedence when relevant
+- Compares two calls only to each other: Also compare against an independently specified expected result
+- Prints output without checking it: Replace the diagnostic print with a meaningful assertion
+- Shared mutable inputs: Verify relevant mutation or isolation behavior and restore shared state
+
+Avoid assertions that overspecify incidental formatting, implementation details, or unspecified iteration order. Keep distinct null, empty, boundary, overload, and error-precedence contracts visible.
+
+Use fixed dates or an injected clock for time-dependent expectations. Use temporary directories and isolated fixtures for external state. Control locale and time zone when they affect the contract. Keep expected results independent of random values; unique identifiers may still be useful for isolating cache keys or resources.
+
+Restore global configuration and release files, streams, executors, and other resources in reliable cleanup hooks or finally blocks. Prefer latches or barriers to sleeps in concurrency tests. Bound waits and retries, assert the outcome of every participant, and use fresh state for each contention scenario. Repeated synchronized rounds can improve race detection but do not guarantee a particular thread interleaving.
+
+If a test exposes a production discrepancy, determine the intended behavior from the contract and available evidence. Clarify only the unresolved behavior while continuing independent cleanup. Never weaken, disable, or delete the test simply to restore a green build.
+
+Completion criterion: changed tests detect meaningful contract violations and have controlled inputs and reliable cleanup.
+
+7. Validate each batch and the complete suite
+
+Run affected tests after a batch. After moving or renaming classes, use fresh compiled test output so stale classes cannot masquerade as discovered tests. Once implementation changes are complete, run the full intended suite and generate fresh coverage reports.
+
+Check / Acceptance criterion
+- Build result: No new unexplained failures or errors; successful completion is clearly distinguished from any documented baseline failures
+- Discovery: Every intended test or generated scenario executes, or has a documented intentional exclusion
+- Invocation accounting: Every change in invocation count is explained by a removal, addition, split, or parameterization change
+- Coverage: No unexplained per-unit loss in covered instructions, lines, branches, or methods; compare totals as well as percentages
+- Duplicate review: No unresolved confirmed duplicates; legitimate matching bodies and uncertain candidates are documented
+- Assertions: Every test has a meaningful verification, directly or through an understood helper or framework mechanism
+- Organization: Ownership, grouping, names, visibility, and sorting follow the agreed conventions
+- Independence: No accidental dependency on execution order, leaked resources, or uncontrolled time/state
+- Change scope: Unrelated edits are preserved; production changes, if any, are separately explained
+
+Track both logical scenarios and runner invocations. Moving or renaming a test should not change its invocation count. Replacing three independent tests with three parameterized cases preserves three invocations; converting a loop into separately reported cases can legitimately increase the count without adding scenarios.
+
+Use this reconciliation:
+
+expected final invocations = baseline invocations
+                           - removed redundant invocations
+                           + added or intentionally split invocations
+                           + documented parameterization/repetition delta
+
+Coverage supports the review but does not prove assertion quality. Investigate differences by class and source line. Diagnose scheduling-dependent branches and strengthen the relevant test where useful; do not rerun until a favorable percentage appears and present that as certainty.
+
+Distinguish infrastructure failures from test failures. If verification exceeds local memory or process limits, use sequential runs or documented temporary limits. Do not silently change the project's runtime requirements to accommodate one machine.
+
+Once the required checks pass, repeat them only after relevant changes or to investigate a specific unresolved concern.
+
+Completion criterion: the final reports account for all test movement and count changes, preserve intended coverage, and accurately describe any remaining limitation.
+
+8. Make a second review pass
+
+Review the final structure using fresh inventories and reports. Check deferred files, cross-file duplicates, similarly named tests, misplaced groups, remaining weak assertions, and discovery exceptions that are no longer needed.
+
+Do not manufacture changes to make this pass appear productive. Keep a candidate when its distinct purpose is justified. If the second pass changes code or configuration, repeat the affected checks and final suite validation as appropriate.
+
+Completion criterion: the final organization has been reviewed as a whole, and any remaining exceptions have explicit reasons.
+
+9. Record and hand off the result
+
+Keep a concise tracked cleanup record and test-conventions guide. Store large inventories, build logs, and generated reports in an ignored directory or the project's normal artifact storage. Keep manual utilities outside automatic test discovery.
+
+Use these reusable record formats:
+
+Ownership map
+
+- Production unit: <unit>
+  Original locations: <files/classes>
+  Final owner/group: <destination>
+  Fixture or lifecycle notes: <notes>
+  Reason for any split: <reason or none>
+
+Removal and consolidation ledger
+
+- Original case: <test identifier>
+  Action: <move/merge/remove/parameterize>
+  Retained case or parameterized invocation: <replacement identifier>
+  Evidence of preserved behavior: <inputs, setup, assertions, contract>
+
+Verification summary
+
+- Measure: Test files
+  Baseline: <count>
+  Final: <count>
+  Explanation: <moves/merges>
+
+- Measure: Test methods
+  Baseline: <count>
+  Final: <count>
+  Explanation: <ledger reference>
+
+- Measure: Executed invocations
+  Baseline: <count>
+  Final: <count>
+  Explanation: <reconciliation>
+
+- Measure: Failures / errors / skips
+  Baseline: <counts>
+  Final: <counts>
+  Explanation: <any baseline or intentional exclusions>
+
+- Measure: Covered lines / total
+  Baseline: <counts>
+  Final: <counts>
+  Explanation: <per-unit changes>
+
+- Measure: Covered branches / total
+  Baseline: <counts>
+  Final: <counts>
+  Explanation: <per-unit changes or framework limitation>
+
+- Measure: Intended cases not discovered
+  Baseline: <count>
+  Final: <count>
+  Explanation: <reasons>
+
+Also record the production revision or snapshot, runtime and dependency versions, exact commands, report locations, relevant environment settings, assertion improvements, and unresolved items. Report what changed, why it changed, and what verification demonstrates. Do not present deferred work or inherited failures as completed fixes.
+
+Completion criterion: another maintainer can understand each consolidation decision and reproduce the final verification without the original conversation.
+
+Java/JUnit adaptation
+
+For a Java project, common roots are src/main/java and src/test/java. Use the repository's installed JUnit generation and build configuration. For JUnit Jupiter, package-private test methods and @Nested behavior groups can provide a consistent layout. Keep shared fixtures explicit and preserve field order when reflection or generated output depends on it.
+
+These are command examples, not universal defaults. Inspect the configured lifecycle and use the repository wrapper when available. The JaCoCo report command requires the plugin to be configured.
+
+# Maven example
+mvn clean test jacoco:report
+
+# POSIX Gradle-wrapper example; use gradlew.bat on Windows
+# The jacocoTestReport task must be configured in the project.
+./gradlew clean test jacocoTestReport
+
+Read Surefire, Gradle, or other runner reports to confirm nested and parameterized invocation discovery. Preserve JaCoCo agent arguments when adding JVM flags. Use the existing unit/integration boundary and document any deliberate exclusions. Other frameworks should use their equivalent discovery, grouping, fixture, parameterization, and coverage mechanisms.
+
+Reusable execution request
+
+Apply the unit-test cleanup execution plan to <test roots>.
+
+Inspect repository instructions, current changes, discovery, and the build first.
+Establish a reproducible baseline, then map tests to production-unit owners.
+Clean up in small batches: merge compatible suites, group and sort tests,
+align conventions, review duplicates, parameterize equivalent scenarios,
+strengthen assertions, and improve deterministic setup and resource cleanup.
+
+Preserve production contracts, distinct regression cases, intentional suite
+boundaries, and unrelated edits. Record every removed or consolidated case
+with its retained coverage. Do not infer equivalence from test names or
+coverage percentages alone.
+
+Verify affected tests and the final full suite, reconcile runtime invocation
+counts, confirm discovery, and compare per-unit coverage against the same
+production sources. Perform a second review pass and write a reproducible
+cleanup record with commands, results, exceptions, and remaining work.

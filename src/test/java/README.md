@@ -35,9 +35,9 @@ and the optional `unit` tag.
   `finally` or lifecycle cleanup.
 
 Some suites intentionally remain separate: `SqlBuilderSupportedSqlTest` is the
-executable supported-SQL catalog; `SqlDialectPaginationTest` covers pagination;
-`ParsedSqlValidationTest` covers internal scanner preconditions. `SKTest` tests
-the `abacus-common` keyword constants used by query code.
+executable supported-SQL catalog, and `SqlDialectPaginationTest` covers pagination.
+`ParsedSqlTest` groups parser behaviors, including internal scanner preconditions
+in `Validation`. `SKTest` tests the `abacus-common` keyword constants used by query code.
 
 Shared query assertions, selection construction, and the shared `Order` entity
 live in `QueryTestSupport`. The `entity` package contains reusable domain
@@ -52,5 +52,6 @@ Compare JUnit invocations, not just `@Test` counts: parameterized tests have
 multiple invocations. Review duplicate candidates against their fixtures,
 annotations, and expected behavior before removing anything.
 
-The [cleanup record](../../../docs/testing/test-cleanup-2026-10-12.md) records
+The [initial cleanup record](../../../docs/testing/test-cleanup-2026-10-12.md)
+and [second-pass record](../../../docs/testing/test-cleanup-2026-10-13.md) record
 the consolidation, removed cases, and validation for the current organization.

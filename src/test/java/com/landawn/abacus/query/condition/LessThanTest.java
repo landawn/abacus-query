@@ -44,7 +44,7 @@ public class LessThanTest extends TestBase {
 
     @Test
     void testConstructorWithDate() {
-        Date date = new Date();
+        Date date = new Date(1_700_000_000_000L);
         LessThan condition = new LessThan("created_date", date);
 
         assertNotNull(condition);

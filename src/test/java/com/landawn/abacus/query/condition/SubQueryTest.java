@@ -15,12 +15,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.annotation.Table;
+import com.landawn.abacus.query.Dsl;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.SqlDialect;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -146,8 +152,7 @@ public class SubQueryTest extends TestBase {
 
     @Test
     void testConstructorRejectsRawOnUsingExpressions() {
-        assertThrows(IllegalArgumentException.class,
-                () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("ON users.id = orders.user_id")));
+        assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("ON users.id = orders.user_id")));
         assertThrows(IllegalArgumentException.class, () -> Filters.subQuery("users", Arrays.asList("id"), Filters.expr("USING (id)")));
     }
 
@@ -1113,6 +1118,424 @@ public class SubQueryTest extends TestBase {
 
         // A JSON existence test on a column named values takes no binding.
         assertTrue(new SubQuery("SELECT values ? format JSON FROM t", List.of()).parameters().isEmpty());
+    }
+
+    @Test
+    public void testToSqlConvertsOnlyTheIdentifierOfAnAliasedOrExpressionSelectItem() {
+        // Explicit alias: the expression is converted, the alias is kept verbatim (entity-class and entity-name constructors).
+        assertEquals("SELECT first_name AS fn FROM person p",
+                new SubQuery(PersonEntity.class, List.of("firstName AS fn"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT first_name AS fn FROM person", new SubQuery("person", List.of("firstName AS fn"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT first_name AS fn FROM person", new SubQuery("person", List.of("firstName as fn"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // Implicit alias.
+        assertEquals("SELECT first_name fn FROM person p", new SubQuery(PersonEntity.class, List.of("firstName fn"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT first_name fn FROM person", new SubQuery("person", List.of("firstName fn"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // Expressions: identifiers converted, keywords and function names left alone, an AS inside a call is not an alias.
+        assertEquals("SELECT COUNT(*) AS cnt FROM person p", new SubQuery(PersonEntity.class, List.of("COUNT(*) AS cnt"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT COUNT(*) AS cnt FROM person", new SubQuery("person", List.of("COUNT(*) AS cnt"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT CAST(first_name AS CHAR) AS fn, 'x AS y' AS lit FROM person",
+                new SubQuery("person", List.of("CAST(firstName AS CHAR) AS fn", "'x AS y' AS lit"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // A keyword-headed item is not an implicit alias, a hyphenated expression keeps its operator, padding is trimmed.
+        assertEquals("SELECT DISTINCT user_id FROM orders", new SubQuery("orders", List.of("DISTINCT userId"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT ALL user_id FROM orders", new SubQuery("orders", List.of("ALL userId"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT price-tax AS net FROM t", new SubQuery("t", List.of("price-tax AS net"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT first_name, last_name FROM t", new SubQuery("t", List.of(" firstName ", "lastName "), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // An explicit column mapping applies to the aliased property.
+        assertEquals("SELECT EMAIL AS em, EMAIL em FROM person p",
+                new SubQuery(PersonEntity.class, List.of("emailAddress AS em", "emailAddress em"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // Plain names and function calls render as before.
+        assertEquals("SELECT first_name, max(first_name), p.last_name, EMAIL FROM person p",
+                new SubQuery(PersonEntity.class, List.of("firstName", "max(firstName)", "p.lastName", "emailAddress"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT firstName AS fn, COUNT(*) AS cnt, firstName fn FROM person",
+                new SubQuery("person", List.of("firstName AS fn", "COUNT(*) AS cnt", "firstName fn"), null).toSql(NamingPolicy.NO_CHANGE));
+    }
+
+    @Test
+    public void testToSqlSelectListAgreesWithBuilderForAliasedItems() {
+        for (final String item : List.of("firstName AS fn", "COUNT(*) AS cnt", "CAST(firstName AS CHAR) AS fn", "'x AS y' AS lit", "max(firstName) AS m")) {
+            final String builderSql = com.landawn.abacus.query.Dsl.PSC.select(item).from("person").build().query();
+
+            assertEquals(builderSql, new SubQuery("person", List.of(item), null).toSql(NamingPolicy.SNAKE_CASE), item);
+        }
+
+        final List<String> items = List.of("firstName AS fn", "COUNT(*) AS cnt", "CAST(firstName AS CHAR) AS fn", "'x AS y' AS lit", "max(firstName) AS m",
+                "CASE WHEN isActive THEN firstName END AS fn", "unitPrice-taxAmount AS net", "-unitPrice AS neg", "unitPrice::int AS up",
+                "COUNT(DISTINCT firstName) AS c", "'it''s' AS s", "'lit' AS l", "'HelloWorld' AS s", "N'Abc' AS s", "'Item #1' AS s",
+                "CONCAT(firstName, ' -- ', lastName) AS x", "#{firstName} AS x", "CURRENT_TIMESTAMP AS ts", "NULL AS n", "@myVar AS v", "data #> '{a}' AS x",
+                "a ?# b AS x");
+
+        for (final NamingPolicy policy : SELECT_ITEM_POLICIES) {
+            final Dsl dsl = Dsl.forDialect(SqlDialect.builder().namingPolicy(policy).sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL).build());
+
+            for (final String item : items) {
+                final String builderSql = dsl.select(item).from("person").build().query();
+                final String subQuerySql = new SubQuery("person", List.of(item), null).toSql(policy);
+
+                // Only the SELECT lists are compared: a builder keeps the FROM table name as written, SubQuery converts it.
+                assertEquals(builderSql.substring(0, builderSql.lastIndexOf(" FROM ")), subQuerySql.substring(0, subQuerySql.lastIndexOf(" FROM ")),
+                        item + " / " + policy);
+            }
+        }
+    }
+
+    private static final NamingPolicy[] SELECT_ITEM_POLICIES = { NamingPolicy.SNAKE_CASE, NamingPolicy.CAMEL_CASE, NamingPolicy.SCREAMING_SNAKE_CASE,
+            NamingPolicy.UPPER_CAMEL_CASE, NamingPolicy.NO_CHANGE };
+
+    /**
+     * Select items and their rendering under SNAKE_CASE, CAMEL_CASE, SCREAMING_SNAKE_CASE, UPPER_CAMEL_CASE and NO_CHANGE.
+     * Each expectation is what a query builder renders for the same item, without its table-alias prefix and its automatic
+     * {@code AS "..."} label, unless a comment says why that is impossible. None of these items names a property with an
+     * explicit column mapping, so both constructors render them alike.
+     */
+    static Stream<Arguments> selectItemRenderings() {
+        return Stream.of(Arguments.of("firstName", "first_name", "firstName", "FIRST_NAME", "FirstName", "firstName"),
+                Arguments.of("firstName AS fn", "first_name AS fn", "firstName AS fn", "FIRST_NAME AS fn", "FirstName AS fn", "firstName AS fn"),
+                Arguments.of("firstName\tAS\tfn", "first_name AS fn", "firstName AS fn", "FIRST_NAME AS fn", "FirstName AS fn", "firstName AS fn"),
+                Arguments.of("firstName\nAS fn", "first_name AS fn", "firstName AS fn", "FIRST_NAME AS fn", "FirstName AS fn", "firstName AS fn"),
+                // An implicit alias is kept as written. A builder converts it like an identifier (FIRST_NAME FN), so parity is impossible here.
+                Arguments.of("firstName fn", "first_name fn", "firstName fn", "FIRST_NAME fn", "FirstName fn", "firstName fn"),
+                Arguments.of("firstName" + (char) 0x3000 + "fn", "first_name fn", "firstName fn", "FIRST_NAME fn", "FirstName fn", "firstName fn"),
+                Arguments.of("acc.firstName fn", "acc.first_name fn", "acc.firstName fn", "ACC.FIRST_NAME fn", "Acc.FirstName fn", "acc.firstName fn"),
+                Arguments.of("[firstName] fName", "[firstName] fName", "[firstName] fName", "[firstName] fName", "[firstName] fName", "[firstName] fName"),
+                Arguments.of("\"FirstName\" fName", "\"FirstName\" fName", "\"FirstName\" fName", "\"FirstName\" fName", "\"FirstName\" fName",
+                        "\"FirstName\" fName"),
+                Arguments.of("`firstName` fName", "`firstName` fName", "`firstName` fName", "`firstName` fName", "`firstName` fName", "`firstName` fName"),
+                Arguments.of("t.\"FirstName\" fName", "t.\"FirstName\" fName", "t.\"FirstName\" fName", "T.\"FirstName\" fName", "T.\"FirstName\" fName",
+                        "t.\"FirstName\" fName"),
+                // A digit-leading token is kept, as in the builders; the implicit alias is kept as written (a builder converts it).
+                Arguments.of("2faCode x", "2faCode x", "2faCode x", "2faCode x", "2faCode x", "2faCode x"),
+                Arguments.of("COUNT(*)", "COUNT(*)", "COUNT(*)", "COUNT(*)", "COUNT(*)", "COUNT(*)"),
+                // After an expression, a trailing word is converted like an identifier, as in the builders.
+                Arguments.of("COUNT(*) cnt", "COUNT(*) cnt", "COUNT(*) cnt", "COUNT(*) CNT", "COUNT(*) Cnt", "COUNT(*) cnt"),
+                Arguments.of("COUNT(*) AS cnt", "COUNT(*) AS cnt", "COUNT(*) AS cnt", "COUNT(*) AS cnt", "COUNT(*) AS cnt", "COUNT(*) AS cnt"),
+                Arguments.of("CASE WHEN isActive THEN firstName END AS c", "case when is_active then first_name end AS c",
+                        "case when isActive then firstName end AS c", "CASE WHEN IS_ACTIVE THEN FIRST_NAME END AS c",
+                        "Case When IsActive Then FirstName End AS c", "CASE WHEN isActive THEN firstName END AS c"),
+                Arguments.of("unitPrice + taxAmount AS c", "unit_price + tax_amount AS c", "unitPrice + taxAmount AS c", "UNIT_PRICE + TAX_AMOUNT AS c",
+                        "UnitPrice + TaxAmount AS c", "unitPrice + taxAmount AS c"),
+                Arguments.of("price-tax AS net", "price-tax AS net", "price-tax AS net", "PRICE-TAX AS net", "Price-Tax AS net", "price-tax AS net"),
+                Arguments.of("-unitPrice AS neg", "-unit_price AS neg", "-unitPrice AS neg", "-UNIT_PRICE AS neg", "-UnitPrice AS neg", "-unitPrice AS neg"),
+                Arguments.of("CAST(firstName AS CHAR) AS b", "CAST(first_name AS CHAR) AS b", "CAST(firstName AS CHAR) AS b", "CAST(FIRST_NAME AS CHAR) AS b",
+                        "CAST(FirstName AS CHAR) AS b", "CAST(firstName AS CHAR) AS b"),
+                Arguments.of("unitPrice::int AS up", "unit_price::int AS up", "unitPrice::int AS up", "UNIT_PRICE::int AS up", "UnitPrice::int AS up",
+                        "unitPrice::int AS up"),
+                // String literals, parameter markers and variables are never converted.
+                Arguments.of("'lit' AS s", "'lit' AS s", "'lit' AS s", "'lit' AS s", "'lit' AS s", "'lit' AS s"),
+                Arguments.of("'HelloWorld' AS s", "'HelloWorld' AS s", "'HelloWorld' AS s", "'HelloWorld' AS s", "'HelloWorld' AS s", "'HelloWorld' AS s"),
+                Arguments.of("'HelloWorld'", "'HelloWorld'", "'HelloWorld'", "'HelloWorld'", "'HelloWorld'", "'HelloWorld'"),
+                Arguments.of("N'Abc' AS s", "N'Abc' AS s", "N'Abc' AS s", "N'Abc' AS s", "N'Abc' AS s", "N'Abc' AS s"),
+                Arguments.of("'Item #1' AS s", "'Item #1' AS s", "'Item #1' AS s", "'Item #1' AS s", "'Item #1' AS s", "'Item #1' AS s"),
+                Arguments.of("'it''s' AS s", "'it''s' AS s", "'it''s' AS s", "'it''s' AS s", "'it''s' AS s", "'it''s' AS s"),
+                Arguments.of("CONCAT(firstName, ' -- ', lastName) AS x", "CONCAT(first_name, ' -- ', last_name) AS x",
+                        "CONCAT(firstName, ' -- ', lastName) AS x", "CONCAT(FIRST_NAME, ' -- ', LAST_NAME) AS x", "CONCAT(FirstName, ' -- ', LastName) AS x",
+                        "CONCAT(firstName, ' -- ', lastName) AS x"),
+                Arguments.of("#{firstName} AS x", "#{firstName} AS x", "#{firstName} AS x", "#{firstName} AS x", "#{firstName} AS x", "#{firstName} AS x"),
+                Arguments.of("@myVar AS v", "@myVar AS v", "@myVar AS v", "@myVar AS v", "@myVar AS v", "@myVar AS v"),
+                Arguments.of(":param AS p", ":param AS p", ":param AS p", ":param AS p", ":param AS p", ":param AS p"),
+                Arguments.of("data #> '{a}' AS x", "data #> '{a}' AS x", "data #> '{a}' AS x", "DATA #> '{a}' AS x", "Data #> '{a}' AS x",
+                        "data #> '{a}' AS x"),
+                // "#-" is the JSON delete-path operator, not a comment.
+                Arguments.of("data #- '{a}' AS x", "data #- '{a}' AS x", "data #- '{a}' AS x", "DATA #- '{a}' AS x", "Data #- '{a}' AS x",
+                        "data #- '{a}' AS x"),
+                // A comment character inside a delimited identifier or a string literal (doubled escape included) is no comment.
+                Arguments.of("CONCAT([a#b], firstName) AS x", "CONCAT([a#b], first_name) AS x", "CONCAT([a#b], firstName) AS x",
+                        "CONCAT([a#b], FIRST_NAME) AS x", "CONCAT([a#b], FirstName) AS x", "CONCAT([a#b], firstName) AS x"),
+                Arguments.of("CONCAT(\"a#b\", firstName) AS x", "CONCAT(\"a#b\", first_name) AS x", "CONCAT(\"a#b\", firstName) AS x",
+                        "CONCAT(\"a#b\", FIRST_NAME) AS x", "CONCAT(\"a#b\", FirstName) AS x", "CONCAT(\"a#b\", firstName) AS x"),
+                Arguments.of("CONCAT(`a--b`, firstName) AS x", "CONCAT(`a--b`, first_name) AS x", "CONCAT(`a--b`, firstName) AS x",
+                        "CONCAT(`a--b`, FIRST_NAME) AS x", "CONCAT(`a--b`, FirstName) AS x", "CONCAT(`a--b`, firstName) AS x"),
+                Arguments.of("firstName || 'it''s #1' AS x", "first_name || 'it''s #1' AS x", "firstName || 'it''s #1' AS x", "FIRST_NAME || 'it''s #1' AS x",
+                        "FirstName || 'it''s #1' AS x", "firstName || 'it''s #1' AS x"),
+                // A PostgreSQL E'...' string honors backslash escapes: the escaped quote neither hides the AS alias nor exposes the '#'.
+                Arguments.of("E'it\\'s' AS label", "E'it\\'s' AS label", "E'it\\'s' AS label", "E'it\\'s' AS label", "E'it\\'s' AS label",
+                        "E'it\\'s' AS label"),
+                Arguments.of("E'it\\'s' aS myAlias", "E'it\\'s' AS myAlias", "E'it\\'s' AS myAlias", "E'it\\'s' AS myAlias", "E'it\\'s' AS myAlias",
+                        "E'it\\'s' AS myAlias"),
+                Arguments.of("e'it\\'s' AS label", "e'it\\'s' AS label", "e'it\\'s' AS label", "e'it\\'s' AS label", "e'it\\'s' AS label",
+                        "e'it\\'s' AS label"),
+                Arguments.of("E'it\\'s #1' || firstName AS x", "E'it\\'s #1' || first_name AS x", "E'it\\'s #1' || firstName AS x",
+                        "E'it\\'s #1' || FIRST_NAME AS x", "E'it\\'s #1' || FirstName AS x", "E'it\\'s #1' || firstName AS x"),
+                // A token that does not start with an ASCII letter or '_' is kept as written, as in the builders: a dollar-quoted
+                // string, a '$'-leading or non-ASCII-leading name, a number.
+                Arguments.of("$$HelloWorld$$", "$$HelloWorld$$", "$$HelloWorld$$", "$$HelloWorld$$", "$$HelloWorld$$", "$$HelloWorld$$"),
+                Arguments.of("$$HelloWorld$$ AS s", "$$HelloWorld$$ AS s", "$$HelloWorld$$ AS s", "$$HelloWorld$$ AS s", "$$HelloWorld$$ AS s",
+                        "$$HelloWorld$$ AS s"),
+                Arguments.of("$q$Abc$q$ AS s", "$q$Abc$q$ AS s", "$q$Abc$q$ AS s", "$q$Abc$q$ AS s", "$q$Abc$q$ AS s", "$q$Abc$q$ AS s"),
+                Arguments.of("$col", "$col", "$col", "$col", "$col", "$col"), Arguments.of("$x", "$x", "$x", "$x", "$x", "$x"),
+                Arguments.of("$x AS y", "$x AS y", "$x AS y", "$x AS y", "$x AS y", "$x AS y"), Arguments.of("t.$x", "t.$x", "t.$x", "T.$X", "T.$X", "t.$x"),
+                Arguments.of((char) 0xC9 + "tatCivil", (char) 0xC9 + "tatCivil", (char) 0xC9 + "tatCivil", (char) 0xC9 + "tatCivil", (char) 0xC9 + "tatCivil",
+                        (char) 0xC9 + "tatCivil"),
+                Arguments.of(".5E3", ".5E3", ".5E3", ".5E3", ".5E3", ".5E3"),
+                // A subscript or an array constructor is an expression, so the trailing word is converted, as in the builders.
+                Arguments.of("ids[1] myAlias", "ids[1] my_alias", "ids[1] myAlias", "IDS[1] MY_ALIAS", "Ids[1] MyAlias", "ids[1] myAlias"),
+                Arguments.of("arr[i + 1] myAlias", "arr[i + 1] my_alias", "arr[i + 1] myAlias", "ARR[I + 1] MY_ALIAS", "Arr[I + 1] MyAlias",
+                        "arr[i + 1] myAlias"),
+                Arguments.of("matrix[i][j] myAlias", "matrix[i][j] my_alias", "matrix[i][j] myAlias", "MATRIX[I][J] MY_ALIAS", "Matrix[I][J] MyAlias",
+                        "matrix[i][j] myAlias"),
+                Arguments.of("ARRAY[1, 2] cnt", "ARRAY[1, 2] cnt", "ARRAY[1, 2] cnt", "ARRAY[1, 2] CNT", "ARRAY[1, 2] Cnt", "ARRAY[1, 2] cnt"),
+                Arguments.of("a\"b\" c", "a\"b\" c", "a\"b\" c", "a\"b\" C", "a\"b\" C", "a\"b\" c"),
+                // A delimited part after a '.' still makes a name, so its implicit alias is kept as written (a builder converts it).
+                Arguments.of("t.[c d] al", "t.[c d] al", "t.[c d] al", "T.[c d] al", "T.[c d] al", "t.[c d] al"),
+                // A SQL keyword head, in any case, modifies the column; it is not the expression of an implicit alias.
+                Arguments.of("DISTINCT firstName", "DISTINCT first_name", "DISTINCT firstName", "DISTINCT FIRST_NAME", "DISTINCT FirstName",
+                        "DISTINCT firstName"),
+                Arguments.of("distinct firstName", "distinct first_name", "distinct firstName", "DISTINCT FIRST_NAME", "Distinct FirstName",
+                        "distinct firstName"),
+                Arguments.of("ALL firstName", "ALL first_name", "ALL firstName", "ALL FIRST_NAME", "ALL FirstName", "ALL firstName"),
+                Arguments.of("all firstName", "all first_name", "all firstName", "ALL FIRST_NAME", "All FirstName", "all firstName"),
+                Arguments.of("not firstName", "not first_name", "not firstName", "NOT FIRST_NAME", "Not FirstName", "not firstName"),
+                // A recognised keyword is kept with or without an alias.
+                Arguments.of("CURRENT_TIMESTAMP AS ts", "CURRENT_TIMESTAMP AS ts", "CURRENT_TIMESTAMP AS ts", "CURRENT_TIMESTAMP AS ts",
+                        "CURRENT_TIMESTAMP AS ts", "CURRENT_TIMESTAMP AS ts"),
+                Arguments.of("CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP"),
+                Arguments.of("NULL AS n", "NULL AS n", "NULL AS n", "NULL AS n", "NULL AS n", "NULL AS n"),
+                // A comment character inside a string literal does not hide the rest of the item from the set-operation gate.
+                Arguments.of("firstName into outfile '/tmp/#f'", "first_name into outfile '/tmp/#f'", "firstName into outfile '/tmp/#f'",
+                        "FIRST_NAME INTO OUTFILE '/tmp/#f'", "FirstName Into Outfile '/tmp/#f'", "firstName into outfile '/tmp/#f'"),
+                Arguments.of("'#' into @v", "'#' into @v", "'#' into @v", "'#' INTO @v", "'#' Into @v", "'#' into @v"),
+                // A builder rejects a comment in a select item, so there is no builder rendering to match. The comment is kept and
+                // ended before the FROM clause.
+                Arguments.of("firstName AS fn -- c", "first_name AS fn -- c\n", "firstName AS fn -- c\n", "FIRST_NAME AS fn -- c\n", "FirstName AS fn -- c\n",
+                        "firstName AS fn -- c\n"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("selectItemRenderings")
+    public void testToSqlSelectItemRendersLikeBuilderUnderEveryNamingPolicy(final String item, final String snake, final String camel, final String screaming,
+            final String upperCamel, final String noChange) {
+        final String[] expected = { snake, camel, screaming, upperCamel, noChange };
+        final String[] entityNameFrom = { "person", "person", "PERSON", "Person", "person" };
+
+        for (int i = 0; i < SELECT_ITEM_POLICIES.length; i++) {
+            final NamingPolicy policy = SELECT_ITEM_POLICIES[i];
+
+            assertEquals("SELECT " + expected[i] + " FROM " + entityNameFrom[i], new SubQuery("person", List.of(item), null).toSql(policy),
+                    item + " / " + policy);
+            assertEquals("SELECT " + expected[i] + " FROM person p", new SubQuery(PersonEntity.class, List.of(item), null).toSql(policy),
+                    item + " / " + policy);
+        }
+    }
+
+    /**
+     * Entity-class select items that name the {@code @Column("EMAIL")} property or qualify a property with the table alias
+     * {@code p}: the column mapping applies inside expressions too, as in a query builder minus its {@code p.} prefix.
+     */
+    static Stream<Arguments> mappedSelectItemRenderings() {
+        return Stream.of(Arguments.of("emailAddress", "EMAIL", "EMAIL", "EMAIL", "EMAIL", "EMAIL"),
+                Arguments.of("emailAddress em", "EMAIL em", "EMAIL em", "EMAIL em", "EMAIL em", "EMAIL em"),
+                Arguments.of("emailAddress AS em", "EMAIL AS em", "EMAIL AS em", "EMAIL AS em", "EMAIL AS em", "EMAIL AS em"),
+                Arguments.of("max(emailAddress) AS m", "max(EMAIL) AS m", "max(EMAIL) AS m", "max(EMAIL) AS m", "max(EMAIL) AS m", "max(EMAIL) AS m"),
+                Arguments.of("max(emailAddress)", "max(EMAIL)", "max(EMAIL)", "max(EMAIL)", "max(EMAIL)", "max(EMAIL)"),
+                Arguments.of("DISTINCT emailAddress", "DISTINCT EMAIL", "DISTINCT EMAIL", "DISTINCT EMAIL", "DISTINCT EMAIL", "DISTINCT EMAIL"),
+                Arguments.of("emailAddress + 1 AS e", "EMAIL + 1 AS e", "EMAIL + 1 AS e", "EMAIL + 1 AS e", "EMAIL + 1 AS e", "EMAIL + 1 AS e"),
+                Arguments.of("COUNT(DISTINCT emailAddress) AS c", "COUNT(DISTINCT EMAIL) AS c", "COUNT(DISTINCT EMAIL) AS c", "COUNT(DISTINCT EMAIL) AS c",
+                        "COUNT(DISTINCT EMAIL) AS c", "COUNT(DISTINCT EMAIL) AS c"),
+                // A user-written table-alias qualifier stays, as in the builders.
+                Arguments.of("p.emailAddress AS em", "p.EMAIL AS em", "p.EMAIL AS em", "p.EMAIL AS em", "p.EMAIL AS em", "p.EMAIL AS em"),
+                Arguments.of("p.emailAddress", "p.EMAIL", "p.EMAIL", "p.EMAIL", "p.EMAIL", "p.EMAIL"),
+                Arguments.of("p.firstName", "p.first_name", "p.firstName", "p.FIRST_NAME", "p.FirstName", "p.firstName"),
+                // The mapped column name itself resolves like the property, as in the builders; converting it would name a column
+                // that does not exist (email, Email).
+                Arguments.of("EMAIL", "EMAIL", "EMAIL", "EMAIL", "EMAIL", "EMAIL"),
+                Arguments.of("EMAIL em", "EMAIL em", "EMAIL em", "EMAIL em", "EMAIL em", "EMAIL em"),
+                Arguments.of("p.EMAIL", "p.EMAIL", "p.EMAIL", "p.EMAIL", "p.EMAIL", "p.EMAIL"),
+                Arguments.of("max(EMAIL) AS m", "max(EMAIL) AS m", "max(EMAIL) AS m", "max(EMAIL) AS m", "max(EMAIL) AS m", "max(EMAIL) AS m"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("mappedSelectItemRenderings")
+    public void testToSqlSelectItemResolvesColumnMappingInsideExpressions(final String item, final String snake, final String camel, final String screaming,
+            final String upperCamel, final String noChange) {
+        final String[] expected = { snake, camel, screaming, upperCamel, noChange };
+
+        for (int i = 0; i < SELECT_ITEM_POLICIES.length; i++) {
+            assertEquals("SELECT " + expected[i] + " FROM person p", new SubQuery(PersonEntity.class, List.of(item), null).toSql(SELECT_ITEM_POLICIES[i]),
+                    item + " / " + SELECT_ITEM_POLICIES[i]);
+        }
+    }
+
+    // A mapped column is prefixed with the entity's table alias only when the mapping is an unqualified name, as the
+    // builders decide it (ColumnInfo.isUnqualified()): a quoted name containing a dot is still prefixed, while an
+    // expression mapping is never prefixed ("p.COALESCE(...)" would be invalid SQL).
+    @Test
+    public void testToSqlQualifiesMappedColumnOnlyWhenItIsAnUnqualifiedName() {
+        for (final NamingPolicy policy : new NamingPolicy[] { NamingPolicy.SNAKE_CASE, NamingPolicy.NO_CHANGE }) {
+            assertEquals("SELECT p.\"a.b\" FROM person p", new SubQuery(MappedColumnEntity.class, List.of("p.dotted"), null).toSql(policy));
+            assertEquals("SELECT max(p.\"a.b\") FROM person p", new SubQuery(MappedColumnEntity.class, List.of("max(p.dotted)"), null).toSql(policy));
+            assertEquals("SELECT COALESCE(x, 'N') FROM person p", new SubQuery(MappedColumnEntity.class, List.of("p.expr"), null).toSql(policy));
+            assertEquals("SELECT max(COALESCE(x, 'N')) AS m FROM person p",
+                    new SubQuery(MappedColumnEntity.class, List.of("max(p.expr) AS m"), null).toSql(policy));
+        }
+    }
+
+    @Test
+    public void testToSqlSelectItemWithTrailingCondition() {
+        assertEquals("SELECT distinct first_name FROM account WHERE id = 1",
+                Filters.subQuery("account", List.of("distinct firstName"), Filters.eq("id", 1)).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT distinct user_id FROM orders", new SubQuery("orders", List.of("distinct userId"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT all user_id FROM orders", new SubQuery("orders", List.of("all userId"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // String literal contents are never case-converted.
+        assertEquals("SELECT 'lit' AS l FROM ACCOUNT WHERE ID = 1",
+                Filters.subQuery("account", List.of("'lit' AS l"), Filters.eq("id", 1)).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("SELECT 'lit' AS l FROM account WHERE id = 1",
+                Filters.subQuery("account", List.of("'lit' AS l"), Filters.eq("id", 1)).toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("SELECT 'lit' AS l FROM Account WHERE Id = 1",
+                Filters.subQuery("account", List.of("'lit' AS l"), Filters.eq("id", 1)).toSql(NamingPolicy.UPPER_CAMEL_CASE));
+    }
+
+    @Test
+    public void testToSqlSelectItemCommentAndMalformedInput() {
+        // A line comment in the projected expression keeps the line break that ends it, so it cannot swallow the alias.
+        assertEquals("SELECT firstName -- c\n AS x FROM t", new SubQuery("t", List.of("firstName -- c\nAS x"), null).toSql(NamingPolicy.NO_CHANGE));
+        assertEquals("SELECT first_name AS fn -- c\n FROM t", new SubQuery("t", List.of("firstName AS fn -- c"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // An unquoted '#' still counts as a comment token, so a SQL Server temp-table name stays one identifier.
+        assertEquals("SELECT #temp.col AS t FROM t", new SubQuery("t", List.of("#temp.col AS t"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT #temp.col FROM t", new SubQuery("t", List.of("#temp.col"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // Not an alias split.
+        assertEquals("SELECT class_name AS cls FROM t", new SubQuery("t", List.of("className AS cls"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT first_name ASx FROM t", new SubQuery("t", List.of("firstName ASx"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT first_name AS FROM t", new SubQuery("t", List.of("firstName AS"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT 'abc AS x FROM t", new SubQuery("t", List.of("'abc AS x"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT [abc AS x FROM t", new SubQuery("t", List.of("[abc AS x"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // An unterminated quote is scanned like unquoted text, so its '#' counts and the item stays one identifier.
+        assertEquals("SELECT 'unterminated_#_first_name FROM t", new SubQuery("t", List.of("'unterminated # firstName"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // Malformed items render without an exception under every policy, KEBAB_CASE included.
+        for (final String item : List.of("'abc AS x", "\"abc AS x", "[abc AS x", "/* c AS x", " AS x", "x AS ", "#{a--b} AS x", "'C:\\' || firstName AS p",
+                "E'abc\\' AS x", "e'\\", "ids[1 x", "a\"b x", "t.[c d x", "[a]b c", "$$ x")) {
+            for (final NamingPolicy policy : NamingPolicy.values()) {
+                assertNotNull(new SubQuery("t", List.of(item), null).toSql(policy), item + " / " + policy);
+                assertNotNull(new SubQuery(PersonEntity.class, List.of(item), null).toSql(policy), item + " / " + policy);
+            }
+        }
+    }
+
+    // Regression: the alias scans did not know dollar-quoted strings, so "$$foo  as  bar$$" was split at the "as" inside the
+    // literal and rendered as "$$foo AS bar$$" even under NO_CHANGE, changing the selected value; the shared expression
+    // rendering also collapsed its whitespace ("$$a  b$$" became "$$a b$$").
+    @Test
+    public void testToSqlSelectItemKeepsDollarQuotedStringsAsWritten() {
+        for (final NamingPolicy policy : new NamingPolicy[] { NamingPolicy.NO_CHANGE, NamingPolicy.SNAKE_CASE }) {
+            assertEquals("SELECT $$foo  as  bar$$ FROM t", new SubQuery("t", List.of("$$foo  as  bar$$"), null).toSql(policy));
+            assertEquals("SELECT $q$foo  as  bar$q$ FROM t", new SubQuery("t", List.of("$q$foo  as  bar$q$"), null).toSql(policy));
+            // No implicit alias inside the string, and an alias after it is still one.
+            assertEquals("SELECT $$a  b$$ FROM t", new SubQuery("t", List.of("$$a  b$$"), null).toSql(policy));
+            assertEquals("SELECT $$foo as bar$$ AS x FROM t", new SubQuery("t", List.of("$$foo as bar$$ AS x"), null).toSql(policy));
+            assertEquals("SELECT upper($$a  as  b$$) AS x FROM t", new SubQuery("t", List.of("upper($$a  as  b$$) AS x"), null).toSql(policy));
+            // A comment opener inside the string does not select the identifier path, which converted the whole item; the
+            // trailing line feed covers a server without dollar quotes, which reads "-- b$$" as a comment.
+            assertEquals("SELECT $$a -- b$$\n FROM t", new SubQuery("t", List.of("$$a -- b$$"), null).toSql(policy));
+            assertEquals("SELECT $$a  b$$ FROM person p", new SubQuery(PersonEntity.class, List.of("$$a  b$$"), null).toSql(policy));
+        }
+
+        assertEquals("SELECT $$foo  as  bar$$ AS X FROM T", new SubQuery("t", List.of("$$foo  as  bar$$ AS X"), null).toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+    }
+
+    /**
+     * Select items and their rendering under KEBAB_CASE, which no query builder supports: identifiers are converted, and
+     * everything else is kept as under the other policies. None of these items names a property with an explicit column
+     * mapping, so both constructors render them alike.
+     */
+    static Stream<Arguments> kebabCaseSelectItemRenderings() {
+        return Stream.of(Arguments.of("firstName", "first-name"), Arguments.of("firstName AS fn", "first-name AS fn"),
+                Arguments.of("firstName fn", "first-name fn"), Arguments.of("COUNT(*) myCount", "COUNT(*) my-count"),
+                Arguments.of("unitPrice::int AS up", "unit-price::int AS up"), Arguments.of("'HelloWorld' AS s", "'HelloWorld' AS s"),
+                Arguments.of("CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP"), Arguments.of("data #- '{a}' AS x", "data #- '{a}' AS x"),
+                Arguments.of("CONCAT([a#b], firstName) AS x", "CONCAT([a#b], first-name) AS x"),
+                Arguments.of("CONCAT(`a--b`, firstName) AS x", "CONCAT(`a--b`, first-name) AS x"),
+                Arguments.of("firstName || 'it''s #1' AS x", "first-name || 'it''s #1' AS x"), Arguments.of("E'it\\'s' aS myAlias", "E'it\\'s' AS myAlias"),
+                Arguments.of("$$HelloWorld$$ AS s", "$$HelloWorld$$ AS s"), Arguments.of("$x AS y", "$x AS y"),
+                Arguments.of("ids[1] myAlias", "ids[1] my-alias"), Arguments.of("firstName AS fn -- c", "first-name AS fn -- c\n"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("kebabCaseSelectItemRenderings")
+    public void testToSqlSelectItemUnderKebabCase(final String item, final String expected) {
+        assertEquals("SELECT " + expected + " FROM person", new SubQuery("person", List.of(item), null).toSql(NamingPolicy.KEBAB_CASE), item);
+        assertEquals("SELECT " + expected + " FROM person p", new SubQuery(PersonEntity.class, List.of(item), null).toSql(NamingPolicy.KEBAB_CASE), item);
+    }
+
+    @Test
+    public void testToSqlSelectItemWithManyUnclosedBracketsIsLinear() {
+        // An unclosed '[' is scanned like unquoted text, so a later comment token still counts (the identifier path), and
+        // without one the item takes the expression path.
+        assertEquals("SELECT first_name_[_last_name_[_#_x FROM t",
+                new SubQuery("t", List.of("firstName [ lastName [ # x"), null).toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("SELECT first_name [ lastName [ x FROM t", new SubQuery("t", List.of("firstName [ lastName [ x"), null).toSql(NamingPolicy.SNAKE_CASE));
+
+        // 2,000,000 unclosed '[': searching to the end for a ']' once per '[' took over 5 s at half this size, the linear
+        // scan a few milliseconds.
+        final String item = "[".repeat(2_000_000);
+        final SubQuery subQuery = new SubQuery("t", List.of(item), null);
+        final String sql = org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(java.time.Duration.ofSeconds(2),
+                () -> subQuery.toSql(NamingPolicy.SNAKE_CASE));
+
+        assertEquals("SELECT " + item + " FROM t", sql);
+    }
+
+    @Table(name = "person", alias = "p")
+    public static class MappedColumnEntity {
+        @com.landawn.abacus.annotation.Column("\"a.b\"")
+        private String dotted;
+        @com.landawn.abacus.annotation.Column("COALESCE(x, 'N')")
+        private String expr;
+
+        public String getDotted() {
+            return dotted;
+        }
+
+        public void setDotted(final String dotted) {
+            this.dotted = dotted;
+        }
+
+        public String getExpr() {
+            return expr;
+        }
+
+        public void setExpr(final String expr) {
+            this.expr = expr;
+        }
+    }
+
+    @Table(name = "person", alias = "p")
+    public static class PersonEntity {
+        private String firstName;
+        private String lastName;
+        @com.landawn.abacus.annotation.Column("EMAIL")
+        private String emailAddress;
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public void setFirstName(final String firstName) {
+            this.firstName = firstName;
+        }
+
+        public String getLastName() {
+            return lastName;
+        }
+
+        public void setLastName(final String lastName) {
+            this.lastName = lastName;
+        }
+
+        public String getEmailAddress() {
+            return emailAddress;
+        }
+
+        public void setEmailAddress(final String emailAddress) {
+            this.emailAddress = emailAddress;
+        }
     }
 
     // Helper test class

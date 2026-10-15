@@ -26,6 +26,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.SortDirection;
 import com.landawn.abacus.query.condition.Criteria.Builder;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 public class CriteriaTest extends TestBase {
@@ -170,8 +171,7 @@ public class CriteriaTest extends TestBase {
     @Test
     void testBuilderAddRejectsOperatorTypeMismatchWithActionableException() {
         for (Operator operator : Arrays.asList(Operator.LIMIT, Operator.UNION, Operator.UNION_ALL, Operator.INTERSECT, Operator.EXCEPT, Operator.MINUS)) {
-            IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                    () -> Criteria.builder().add(new FakeClauseCondition(operator)));
+            IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> Criteria.builder().add(new FakeClauseCondition(operator)));
 
             assertTrue(error.getMessage().contains(operator.toString()), error.getMessage());
             assertTrue(error.getMessage().contains("FakeClauseCondition"), error.getMessage());
@@ -295,8 +295,7 @@ public class CriteriaTest extends TestBase {
 
     @Test
     void testCheckCondition_RejectsNonClauseOperator() {
-        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> invokeCheckCondition(Criteria.builder(), Filters.eq("id", 1)));
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> invokeCheckCondition(Criteria.builder(), Filters.eq("id", 1)));
 
         assertTrue(error.getMessage().contains("Invalid operator"));
     }
@@ -1821,8 +1820,7 @@ public class CriteriaTest extends TestBase {
             assertTrue(snake.contains("first_name = 'John'") && snake.contains("last_name"), "SNAKE_CASE render wrong: " + snake);
 
             String screaming = criteria.toSql(NamingPolicy.SCREAMING_SNAKE_CASE);
-            assertTrue(screaming.contains("FIRST_NAME = 'John'") && screaming.contains("LAST_NAME"),
-                    "SCREAMING_SNAKE_CASE render wrong: " + screaming);
+            assertTrue(screaming.contains("FIRST_NAME = 'John'") && screaming.contains("LAST_NAME"), "SCREAMING_SNAKE_CASE render wrong: " + screaming);
         }
     }
 
@@ -1957,6 +1955,25 @@ public class CriteriaTest extends TestBase {
             assertEquals(" ORDER BY firstName ASC, lastName DESC",
                     Criteria.builder().orderBy("firstName", SortDirection.ASC, "lastName", SortDirection.DESC).build().toString());
         }
+
+        @Test
+        void testCrossAndNaturalJoinRejectUnterminatedBlockComment() {
+            // An open "/*" in a join entity would comment out every clause rendered after the join.
+            final Builder builder = Criteria.builder();
+            assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> builder.crossJoin(List.of("a", "t /* x"))).getMessage());
+            assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> builder.crossJoin("t /* x")).getMessage());
+            assertEquals("joinEntity must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> builder.naturalJoin("t /* x")).getMessage());
+            assertEquals("joinEntity in joinEntities must not contain an unterminated block comment: t /* x",
+                    assertThrows(IllegalArgumentException.class, () -> builder.naturalJoin(List.of("t /* x"))).getMessage());
+            assertThrows(IllegalArgumentException.class, () -> builder.crossJoin("t --/*"));
+
+            // The rejections left the builder unchanged; a terminated comment is kept verbatim.
+            assertEquals(" CROSS JOIN (a CROSS JOIN t /* x */) NATURAL JOIN u /* y */",
+                    builder.crossJoin(List.of("a", "t /* x */")).naturalJoin("u /* y */").build().toString());
+        }
     }
 
     private static final class FakeClauseCondition extends AbstractCondition {
@@ -2013,6 +2030,101 @@ public class CriteriaTest extends TestBase {
     private static final class CustomWhereClause extends Clause {
         CustomWhereClause() {
             super(Operator.WHERE, Filters.eq("id", 1));
+        }
+    }
+
+    @Test
+    void testParametersHonoursSubclassOverridingOnlyParametersWhenNested() {
+        // a subclass that overrides parameters() but not appendParametersTo(List) must be honoured inside Criteria
+        final And customAnd = new And(Filters.eq("a", 1)) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                final List<Object> extended = new ArrayList<>();
+                extended.add("extra");
+                extended.addAll(super.parameters());
+                return ImmutableList.wrap(extended);
+            }
+        };
+
+        final Where customWhere = new Where(Filters.eq("w", 1)) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                return ImmutableList.of("whereExtra");
+            }
+        };
+
+        assertEquals(List.of("extra", 1), Criteria.builder().where(customAnd).build().parameters());
+        assertEquals(List.of("extra", 1, 2), Criteria.builder().where(Filters.and(customAnd, Filters.eq("b", 2))).build().parameters());
+        assertEquals(List.of("whereExtra"), Criteria.builder().where(customWhere).build().parameters());
+        assertEquals(List.of("open", "whereExtra", 3),
+                Criteria.builder()
+                        .join(Filters.innerJoin("orders o", Filters.eq("o.status", "open")))
+                        .where(customWhere)
+                        .having(Filters.gt("cnt", 3))
+                        .build()
+                        .parameters());
+
+        // and a Criteria nested in a cell is itself still walked correctly
+        final Criteria criteria = Criteria.builder().where(customAnd).having(Filters.gt("cnt", 3)).limit(10).build();
+        assertEquals(List.of("extra", 1, 3), criteria.parameters());
+        assertEquals(List.of("extra", 1, 3), Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
+
+        assertEquals(List.of("whereExtra"), customWhere.parameters());
+        final Criteria whereCriteria = Criteria.builder().where(customWhere).having(Filters.gt("cnt", 3)).build();
+        assertEquals(List.of("whereExtra", 3), whereCriteria.parameters());
+        assertEquals(List.of("whereExtra", 3), Filters.exists(Filters.subQuery("t", List.of("id"), whereCriteria)).parameters());
+        assertEquals(List.of(0, "whereExtra", 3, 2),
+                Filters.and(Filters.eq("z", 0), Filters.not(Filters.exists(Filters.subQuery("t", List.of("id"), whereCriteria))), Filters.eq("b", 2))
+                        .parameters());
+    }
+
+    @Test
+    void testHookOverrideDelegatingToParametersDoesNotRecurse() {
+        // Criteria.parameters() never calls the overridable appendParametersTo hook (both share a private helper),
+        // so the natural "keep them consistent" override out.addAll(parameters()) cannot recurse into itself
+        final List<Condition> clauses = List.of(new Where(Filters.eq("a", 1)), new Having(Filters.gt("cnt", 3)));
+        final Criteria hookOnly = new Criteria(null, clauses) {
+            @Override
+            protected void appendParametersTo(final List<Object> out) {
+                out.addAll(parameters());
+            }
+        };
+        final Criteria tagged = new Criteria(null, clauses) {
+            @Override
+            public ImmutableList<Object> parameters() {
+                final List<Object> extended = new ArrayList<>();
+                extended.add("tag");
+                extended.addAll(super.parameters());
+                return ImmutableList.wrap(extended);
+            }
+
+            @Override
+            protected void appendParametersTo(final List<Object> out) {
+                out.addAll(parameters());
+            }
+        };
+
+        assertEquals(List.of(1, 3), hookOnly.parameters());
+        assertEquals(List.of("tag", 1, 3), tagged.parameters());
+
+        for (final Criteria criteria : List.of(hookOnly, tagged)) {
+            final List<Object> expected = criteria.parameters();
+            final List<Object> out = new ArrayList<>();
+            criteria.appendParametersTo(out);
+            assertEquals(expected, out);
+            assertEquals(expected, Filters.exists(Filters.subQuery("t", List.of("id"), criteria)).parameters());
+            final List<Object> withTail = new ArrayList<>(expected);
+            withTail.add(2);
+            assertEquals(withTail, Filters.and(Filters.exists(Filters.subQuery("t", List.of("id"), criteria)), Filters.eq("b", 2)).parameters());
+            assertEquals(withTail,
+                    Criteria.builder()
+                            .where(Filters.or(Filters.in("id", Filters.subQuery("t", List.of("id"), criteria)), Filters.eq("b", 2)))
+                            .build()
+                            .parameters());
         }
     }
 

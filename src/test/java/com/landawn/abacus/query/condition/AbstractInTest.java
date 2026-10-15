@@ -559,6 +559,36 @@ public class AbstractInTest extends TestBase {
         assertThrows(NoSuchMethodException.class, () -> AbstractIn.class.getMethod("rowValueConstructor"));
     }
 
+    // Characterisation (R16-01/R16-02): rejection messages keep their positional element names now that those are
+    // built only for a rejected element, and an all-scalar single-column list exposes the membership values
+    // themselves as the memoized, unmodifiable parameter list (the row-value form still flattens into a copy).
+    @Test
+    void testPositionalRejectionMessagesAndScalarParameterReuse() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("id", Arrays.asList(1, 2, null)));
+        assertEquals("values must not contain null elements; null found at index 2", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("id", Arrays.asList(1, Filters.gt("a", 1), 3)));
+        assertTrue(ex.getMessage().startsWith("values[1] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(null, 4))));
+        assertEquals("valueRows[1] must not contain null elements; null found at index 0", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class,
+                () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, Filters.gt("a", 1)))));
+        assertTrue(ex.getMessage().startsWith("valueRows[1][1] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+
+        final TestAbstractIn scalars = new TestAbstractIn("id", Arrays.asList(1, 2));
+        assertEquals(scalars.values(), scalars.parameters());
+        assertSame(scalars.parameters(), scalars.parameters());
+        assertThrows(UnsupportedOperationException.class, () -> scalars.parameters().add(3));
+
+        final TestRowAbstractIn rows = new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, 4)));
+        assertEquals(Arrays.asList(1, 2, 3, 4), rows.parameters());
+        assertSame(rows.parameters(), rows.parameters());
+        assertThrows(UnsupportedOperationException.class, () -> rows.parameters().add(5));
+    }
+
     private static final class TestAbstractIn extends AbstractIn {
         TestAbstractIn(final String propName, final Collection<?> values) {
             super(propName, Operator.IN, values);

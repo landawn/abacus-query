@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.query.QueryUtil;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -389,7 +391,7 @@ public class SqlExpressionTest extends TestBase {
     // Removed: testBt() - bt() method has been removed. Use between() instead.
 
     @Test
-    public void testConcatWithTwoStrings() {
+    void testConcatWithTwoStrings() {
         String result = SqlExpression.concat("firstName", "lastName");
 
         assertTrue(result.contains("CONCAT"));
@@ -460,7 +462,7 @@ public class SqlExpressionTest extends TestBase {
     //    }
 
     @Test
-    public void testDefaultConstructor_EmptyState_Batch2() {
+    void testDefaultConstructor_EmptyState_Batch2() {
         SqlExpression expr = new SqlExpression();
 
         assertNull(expr.literal());
@@ -1795,6 +1797,41 @@ public class SqlExpressionTest extends TestBase {
         assertDoesNotThrow(() -> new Where(Filters.expr("#tmp.id = x.id")));
     }
 
+    // Regression: the tokenizer splits a PostgreSQL dollar-quoted string into words, so rendering collapsed its whitespace and
+    // converted its words ($$Hello World$$ became $$Hello world$$ under SNAKE_CASE), and a "--" inside one was dropped as a
+    // comment together with the closing tag ($$a -- b$$ became "$$a ").
+    @Test
+    void testToSqlCopiesDollarQuotedStringsAsWritten() {
+        for (final NamingPolicy policy : new NamingPolicy[] { NamingPolicy.NO_CHANGE, NamingPolicy.SNAKE_CASE }) {
+            final String firstName = policy == NamingPolicy.NO_CHANGE ? "firstName" : "first_name";
+
+            assertEquals("$$Hello World$$ || " + firstName, SqlExpression.of("$$Hello World$$ || firstName").toSql(policy));
+            assertEquals("$$a  as  b$$", SqlExpression.of("$$a  as  b$$").toSql(policy));
+            assertEquals("$tag$x  Y$tag$ || " + firstName, SqlExpression.of("$tag$x  Y$tag$ || firstName").toSql(policy));
+            assertEquals("upper($$a  b$$) AS " + firstName, SqlExpression.of("upper($$a  b$$) AS firstName").toSql(policy));
+            // A string ending inside a token, followed by more text: "$$a  b$$'c'" ends at its closing tag.
+            assertEquals(firstName + " || $$a  b$$'c'", SqlExpression.of("firstName || $$a  b$$'c'").toSql(policy));
+            // A non-ASCII space inside the string is kept too; one glued before it is emitted as a plain space.
+            assertEquals("$$a　b$$ || " + firstName, SqlExpression.of("$$a　b$$ || firstName").toSql(policy));
+            assertEquals("x || $$Hello  World$$ || " + firstName, SqlExpression.of("x ||　$$Hello  World$$ || firstName").toSql(policy));
+            // So is a string in a subscript or an array constructor, whose other names are still converted.
+            assertEquals("ARRAY[$$a$$, $$b  c$$, " + firstName + "]", SqlExpression.of("ARRAY[$$a$$, $$b  c$$, firstName]").toSql(policy));
+            assertEquals("arr[$$Hello  World$$] || " + firstName, SqlExpression.of("arr[$$Hello  World$$] || firstName").toSql(policy));
+
+            // From a string that a server without dollar quotes reads differently (a quote, '[', '#' or comment opener in
+            // it), or that is never closed, the rest is copied as written, like the text from a backslash before a quote.
+            assertEquals("$$a -- b$$ || firstName", SqlExpression.of("$$a -- b$$ || firstName").toSql(policy));
+            assertEquals((policy == NamingPolicy.NO_CHANGE ? "lastName" : "last_name") + " = $$it's$$ AND firstName = 1",
+                    SqlExpression.of("lastName = $$it's$$ AND firstName = 1").toSql(policy));
+            assertEquals(firstName + " || $$x  y", SqlExpression.of("firstName || $$x  y").toSql(policy));
+
+            // No dollar quote: positional and MyBatis markers, and "$$" glued to a name.
+            assertEquals("$1 + " + firstName, SqlExpression.of("$1 + firstName").toSql(policy));
+            assertEquals("${x} = " + firstName, SqlExpression.of("${x} = firstName").toSql(policy));
+            assertEquals("a$$b c$$", SqlExpression.of("a$$b  c$$").toSql(policy));
+        }
+    }
+
     @Test
     void testToString() {
         SqlExpression expr = SqlExpression.of("price > 100");
@@ -1828,8 +1865,7 @@ public class SqlExpressionTest extends TestBase {
 
         // Buggy (find()) path returned "col\n" verbatim; correct (matches()) path parses it
         // and collapses the whitespace run, so no line terminator may survive.
-        assertFalse(result.contains("\n"),
-                "Short literal with trailing newline must be parsed (whitespace collapsed), got: " + result.replace("\n", "\\n"));
+        assertFalse(result.contains("\n"), "Short literal with trailing newline must be parsed (whitespace collapsed), got: " + result.replace("\n", "\\n"));
         assertTrue(result.startsWith("col"), "Column token must be preserved, got: " + result);
     }
 
@@ -1879,6 +1915,86 @@ public class SqlExpressionTest extends TestBase {
 
         // The digit-leading pass-through guard is still intact.
         assertEquals("2faCode", SqlExpression.of("2faCode").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    /**
+     * The identifier fast path in {@code toSql} and the tokenizer path must render a lone identifier
+     * identically regardless of its length (the former 16-char cutoff was only a scan bound), so a bare
+     * identifier of any ordinary length converts exactly like {@code QueryUtil.convertIdentifier}.
+     */
+    @Test
+    void testToSqlConvertsBareIdentifierIdenticallyAcrossLengths() {
+        final String[] ids = { "lastModifiedTim", // 15
+                "lastModifiedTime", // 16
+                "lastModifiedTimes", // 17
+                "someVeryLongIdentifierNameWithFortyChars", // 40
+                "_lastModified_XY", "__lastModifiedTime__", "LAST_MODIFIED_TIME_X", "last_modified_time_x", "Ab1Cd2Ef3Gh4Ij5Kl6" };
+        final NamingPolicy[] policies = { NamingPolicy.SNAKE_CASE, NamingPolicy.CAMEL_CASE, NamingPolicy.SCREAMING_SNAKE_CASE, NamingPolicy.NO_CHANGE,
+                NamingPolicy.UPPER_CAMEL_CASE, NamingPolicy.KEBAB_CASE };
+
+        for (final String id : ids) {
+            for (final NamingPolicy policy : policies) {
+                assertEquals(QueryUtil.convertIdentifier(id, policy), SqlExpression.of(id).toSql(policy), id + " / " + policy);
+            }
+        }
+
+        assertEquals("last_modified_tim", SqlExpression.of("lastModifiedTim").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("last_modified_time", SqlExpression.of("lastModifiedTime").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("last_modified_times", SqlExpression.of("lastModifiedTimes").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("LAST_MODIFIED_TIMES", SqlExpression.of("lastModifiedTimes").toSql(NamingPolicy.SCREAMING_SNAKE_CASE));
+        assertEquals("lastModifiedTimes", SqlExpression.of("last_modified_times").toSql(NamingPolicy.CAMEL_CASE));
+        assertEquals("some_very_long_identifier_name_with_forty_chars",
+                SqlExpression.of("someVeryLongIdentifierNameWithFortyChars").toSql(NamingPolicy.SNAKE_CASE));
+
+        // Keyword and digit-leading tokens pass through unchanged on both sides of the former 16-char boundary.
+        for (final String passThrough : new String[] { "CURRENT_TIMESTAMP", "CURRENT_DATE", "2faCodeForUser1", "2faCodeForUser12", "ORDER", "COUNT" }) {
+            for (final NamingPolicy policy : policies) {
+                assertEquals(passThrough, SqlExpression.of(passThrough).toSql(policy), passThrough + " / " + policy);
+            }
+        }
+
+        // Hyphens are still split by the tokenizer at every length.
+        assertEquals("last_modified_time-created_time", SqlExpression.of("lastModifiedTime-createdTime").toSql(NamingPolicy.SNAKE_CASE));
+        assertEquals("unit_price-tax", SqlExpression.of("unitPrice-tax").toSql(NamingPolicy.SNAKE_CASE));
+    }
+
+    /**
+     * Fuzz: every generated {@code [A-Za-z0-9_]+} identifier (1..70 chars, spanning the fast-path scan bound)
+     * that is not a registered keyword renders exactly like {@code QueryUtil.convertIdentifier} when it starts
+     * with a letter or underscore, and unchanged when it starts with a digit.
+     */
+    @Test
+    void testToSqlFastPathMatchesConvertIdentifierForGeneratedIdentifiers() {
+        final String alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
+        final NamingPolicy[] policies = { NamingPolicy.SNAKE_CASE, NamingPolicy.CAMEL_CASE, NamingPolicy.SCREAMING_SNAKE_CASE, NamingPolicy.NO_CHANGE,
+                NamingPolicy.UPPER_CAMEL_CASE, NamingPolicy.KEBAB_CASE };
+        final Random random = new Random(20261013L);
+
+        for (int i = 0; i < 600; i++) {
+            final int len = 1 + random.nextInt(70);
+            final StringBuilder sb = new StringBuilder(len);
+            final int mode = i % 3;
+
+            for (int j = 0; j < len; j++) {
+                if (mode == 0) {
+                    sb.append(alphabet.charAt(random.nextInt(alphabet.length())));
+                } else if (mode == 1) {
+                    sb.append(random.nextInt(5) == 0 ? '_' : alphabet.charAt(random.nextInt(52)));
+                } else {
+                    sb.append(random.nextInt(8) == 0 ? alphabet.charAt(52 + random.nextInt(10)) : alphabet.charAt(random.nextInt(26)));
+                }
+            }
+
+            final String id = sb.toString();
+            final char first = id.charAt(0);
+            final boolean digitLeading = first >= '0' && first <= '9';
+
+            for (final NamingPolicy policy : policies) {
+                final String expected = digitLeading ? id : QueryUtil.convertIdentifier(id, policy);
+
+                assertEquals(expected, SqlExpression.of(id).toSql(policy), id + " / " + policy);
+            }
+        }
     }
 
     @Test

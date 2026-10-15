@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -630,6 +631,88 @@ public class SqlMapperTest extends TestBase {
         assertThrows(IllegalArgumentException.class, () -> mapper.add("query", "SELECT 1", Map.of("xmlns", "urn:test")));
         assertTrue(mapper.isEmpty());
         assertFalse(mapper.containsId("query"));
+    }
+
+    // R13-02: attribute names are validated through one shared DOM document instead of a parser per call, and the
+    // loader skips that validation for names the XML parser already accepted; every rejection and the stored
+    // content/order must be unchanged.
+    @Test
+    void testAttributeValidationAndOrderSurviveSharedValidatorAndLoader() {
+        SqlMapper mapper = new SqlMapper();
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> mapper.add("query", ParsedSql.parse("SELECT 1"), Map.of("not an xml name", "10")));
+        assertEquals("Invalid XML attribute name: not an xml name", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> mapper.add("query", "SELECT 1", Map.of("1abc", "10")));
+        assertEquals("Invalid XML attribute name: 1abc", e.getMessage());
+        e = assertThrows(IllegalArgumentException.class, () -> mapper.add("query", "SELECT 1", Map.of("p:timeout", "10")));
+        assertEquals("Namespace-qualified XML attributes are not supported: p:timeout", e.getMessage());
+        assertTrue(mapper.isEmpty());
+
+        // Repeated valid adds reuse the shared validator; insertion order of the supplied map is kept.
+        Map<String, String> attrs = new LinkedHashMap<>();
+        attrs.put(SqlMapper.TIMEOUT, "5");
+        attrs.put(SqlMapper.BATCH_SIZE, "100");
+        attrs.put(SqlMapper.FETCH_SIZE, "10");
+        attrs.put(SqlMapper.RESULT_SET_TYPE, "FORWARD_ONLY");
+
+        mapper.add("parsed", ParsedSql.parse("SELECT 1"), attrs);
+        mapper.add("text", "SELECT 2", attrs);
+        attrs.put("later", "ignored"); // the stored map is a snapshot
+
+        for (String id : Arrays.asList("parsed", "text")) {
+            assertEquals(Arrays.asList(SqlMapper.TIMEOUT, SqlMapper.BATCH_SIZE, SqlMapper.FETCH_SIZE, SqlMapper.RESULT_SET_TYPE),
+                    new ArrayList<>(mapper.attributes(id).keySet()), id);
+            assertEquals("5", mapper.attributes(id).get(SqlMapper.TIMEOUT));
+            assertEquals("FORWARD_ONLY", mapper.attributes(id).get(SqlMapper.RESULT_SET_TYPE));
+            assertThrows(UnsupportedOperationException.class, () -> mapper.attributes(id).put("x", "y"));
+        }
+
+        // Loaded attributes keep the parsed document's content and order; a prefixed attribute is still rejected.
+        String xml = "<sqlMapper><sql id=\"q\" batchSize=\"100\" fetchSize=\"10\" resultSetType=\"FORWARD_ONLY\" timeout=\"5\">select 1</sql></sqlMapper>";
+        SqlMapper loaded = SqlMapper.loadFrom(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(Arrays.asList(SqlMapper.BATCH_SIZE, SqlMapper.FETCH_SIZE, SqlMapper.RESULT_SET_TYPE, SqlMapper.TIMEOUT),
+                new ArrayList<>(loaded.attributes("q").keySet()));
+        assertEquals(mapper.attributes("text"), loaded.attributes("q"));
+
+        String prefixed = "<sqlMapper><sql id=\"q\" p:timeout=\"5\" xmlns:p=\"urn:p\">select 1</sql></sqlMapper>";
+        e = assertThrows(IllegalArgumentException.class, () -> SqlMapper.loadFrom(new ByteArrayInputStream(prefixed.getBytes(StandardCharsets.UTF_8))));
+        assertEquals("Invalid <sql> definition in input stream: Namespace-qualified XML attributes are not supported: p:timeout", e.getMessage());
+
+        // saveTo -> loadFrom round trip of programmatic attributes.
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        mapper.saveTo(out);
+        SqlMapper reloaded = SqlMapper.loadFrom(new ByteArrayInputStream(out.toByteArray()));
+        assertEquals(mapper, reloaded);
+        assertEquals(mapper.attributes("parsed"), reloaded.attributes("parsed"));
+    }
+
+    // Only an XML 1.0 document lets the loader skip attribute-name validation: XML 1.1 Names are wider than what saveTo
+    // (an XML 1.0 serializer) can write, so a 1.1-only name is still rejected at load time instead of breaking saveTo later.
+    @Test
+    void testXml11DocumentAttributeNamesAreStillValidatedOnLoad() {
+        for (String name : Arrays.asList("a\u2070", "\u2C00x", "\uD840\uDC00x")) {
+            String xml11 = "<?xml version=\"1.1\"?><sqlMapper><sql id=\"q\" " + name + "=\"1\">select 1</sql></sqlMapper>";
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> SqlMapper.loadFrom(new ByteArrayInputStream(xml11.getBytes(StandardCharsets.UTF_8))));
+            assertEquals("Invalid <sql> definition in input stream: Invalid XML attribute name: " + name, e.getMessage());
+
+            e = assertThrows(IllegalArgumentException.class, () -> new SqlMapper().add("q", "select 1", Map.of(name, "1")));
+            assertEquals("Invalid XML attribute name: " + name, e.getMessage());
+        }
+
+        // XML 1.1 and XML 1.0 documents with ordinary names still load and round-trip through saveTo.
+        for (String version : Arrays.asList("1.1", "1.0")) {
+            String xml = "<?xml version=\"" + version + "\"?><sqlMapper><sql id=\"q\" fetchSize=\"1\">select 1</sql></sqlMapper>";
+            SqlMapper loaded = SqlMapper.loadFrom(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+            assertEquals("1", loaded.attributes("q").get(SqlMapper.FETCH_SIZE), version);
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            loaded.saveTo(out);
+            SqlMapper reloaded = SqlMapper.loadFrom(new ByteArrayInputStream(out.toByteArray()));
+            assertEquals(loaded, reloaded, version);
+            assertEquals(loaded.attributes("q"), reloaded.attributes("q"), version);
+        }
     }
 
     @Test

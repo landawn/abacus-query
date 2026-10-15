@@ -3122,7 +3122,7 @@ public class FiltersTest extends TestBase {
     //    }
 
     @Test
-    public void testSubQuery() {
+    void testSubQuery() {
         // Test with class, properties and condition
         List<String> props = Arrays.asList("id", "name");
         Condition condition = Filters.eq("active", true);
@@ -3185,7 +3185,7 @@ public class FiltersTest extends TestBase {
     //    }
 
     @Test
-    public void testSubQueryWithEntityClass() {
+    void testSubQueryWithEntityClass() {
         com.landawn.abacus.query.condition.SubQuery subQuery = Filters.subQuery(Account.class, Arrays.asList("id", "name"), Filters.equal("active", true));
         assertNotNull(subQuery);
     }
@@ -3358,7 +3358,8 @@ public class FiltersTest extends TestBase {
                     assertThrows(IllegalArgumentException.class, () -> Filters.contains(" ", null)).getMessage());
             assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.orderBy("first", null, " ", SortDirection.ASC)).getMessage()
                     .contains("SortDirection for 'first'"));
-            assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Collections.emptyList(), null)).getMessage().contains("entities"));
+            assertTrue(
+                    assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Collections.emptyList(), null)).getMessage().contains("entities"));
         }
 
         @Test

@@ -345,13 +345,30 @@ public class Junction extends ComposableCondition {
     public ImmutableList<Object> parameters() {
         final List<Object> parameters = new ArrayList<>(conditions.size());
 
-        for (final Condition condition : conditions) {
-            if (condition != null) {
-                parameters.addAll(condition.parameters());
-            }
-        }
+        appendChildParameters(parameters);
 
         return ImmutableList.wrap(parameters);
+    }
+
+    /**
+     * Appends the parameters of every non-{@code null} child, in order, to the supplied list,
+     * recursing into nested composites through {@link AbstractCondition#appendParametersTo(List)}
+     * so that a deeply nested tree fills one shared list instead of one list per level.
+     *
+     * <p>{@link #parameters()} does not call this method (both share a private helper), so a subclass
+     * may override it as {@code out.addAll(parameters())} without recursing.</p>
+     *
+     * @param out the list to append to (must not be {@code null})
+     */
+    @Override
+    protected void appendParametersTo(final List<Object> out) {
+        appendChildParameters(out);
+    }
+
+    private void appendChildParameters(final List<Object> out) {
+        for (final Condition condition : conditions) {
+            appendParametersOf(condition, out);
+        }
     }
 
     /**

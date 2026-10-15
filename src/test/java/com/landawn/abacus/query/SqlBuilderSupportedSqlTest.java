@@ -229,7 +229,8 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
         assertSql("SELECT * FROM users ORDER BY id OFFSET 20", List.of(), PSC.select("*").from("users").orderBy("id").offset(20).build());
 
         // 51. ANSI FETCH FIRST.
-        assertSql("SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY", List.of(), PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).build());
+        assertSql("SELECT * FROM users ORDER BY id FETCH FIRST 10 ROWS ONLY", List.of(),
+                PSC.select("*").from("users").orderBy("id").fetchFirstRows(10).build());
 
         // 52. ANSI OFFSET ... FETCH NEXT.
         assertSql("SELECT * FROM users ORDER BY id OFFSET 20 ROWS FETCH NEXT 10 ROWS ONLY", List.of(),
@@ -317,7 +318,8 @@ public class SqlBuilderSupportedSqlTest extends TestBase {
         assertSql("SELECT * FROM users WHERE age >= ?", List.of(18), PSC.select("*").from("users").where(Filters.ge("age", 18)).build());
 
         // 21. BETWEEN / NOT BETWEEN.
-        assertSql("SELECT * FROM users WHERE age BETWEEN ? AND ?", List.of(18, 65), PSC.select("*").from("users").where(Filters.between("age", 18, 65)).build());
+        assertSql("SELECT * FROM users WHERE age BETWEEN ? AND ?", List.of(18, 65),
+                PSC.select("*").from("users").where(Filters.between("age", 18, 65)).build());
 
         // 22. LIKE / NOT LIKE.
         assertSql("SELECT * FROM users WHERE name LIKE ?", List.of("A%"), PSC.select("*").from("users").where(Filters.like("name", "A%")).build());

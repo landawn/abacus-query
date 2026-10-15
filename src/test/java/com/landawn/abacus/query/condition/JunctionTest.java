@@ -7,8 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.lang.management.ManagementFactory;
 import java.util.AbstractCollection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -18,6 +21,7 @@ import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
+import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -606,6 +610,340 @@ public class JunctionTest extends TestBase {
     @Test
     void testTrustedConstructorStillRejectsNonJunctionOperator() {
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.EQUAL, new java.util.ArrayList<>(), true));
+    }
+
+    @Test
+    void testConstructorValidationStillRejectsNonPredicateOperandsAndAcceptsNestedJunctions() {
+        // Operands are validated at insertion; a clause or a clause hidden in a custom wrapper is still rejected.
+        assertThrows(IllegalArgumentException.class, () -> new And(Filters.where(Filters.eq("a", 1))));
+        assertThrows(IllegalArgumentException.class, () -> new Or(Filters.eq("a", 1), Filters.where(Filters.eq("b", 2))));
+        assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.AND, new TestComposableWrapper(Filters.where(Filters.eq("a", 1)))));
+        assertThrows(IllegalArgumentException.class, () -> new And(Filters.eq("a", 1)).and(Filters.where(Filters.eq("b", 2))));
+        assertThrows(IllegalArgumentException.class, () -> new Or(Filters.eq("a", 1)).or(Filters.expr("   ")));
+
+        // Already-validated junctions nest freely.
+        final Or nested = new Or(Filters.eq("a", 1)).or(Filters.eq("b", 2));
+        final And outer = assertDoesNotThrow(() -> new And(nested, new Or(new And(Filters.eq("c", 3)), Filters.eq("d", 4))));
+        assertEquals(List.of(1, 2, 3, 4), outer.parameters());
+        assertTrue(outer.toSql(NamingPolicy.NO_CHANGE).contains("((a = 1) OR (b = 2))"));
+        assertThrows(IllegalArgumentException.class, () -> outer.and(Filters.where(Filters.eq("e", 5))));
+    }
+
+    @Test
+    void testAlternatingAndOrChainOfNestedJunctionsStaysValid() {
+        ComposableCondition chain = Filters.eq("p0", 0);
+
+        for (int i = 1; i < 1000; i++) {
+            chain = i % 2 == 0 ? chain.and(Filters.eq("p" + i, i)) : chain.or(Filters.eq("p" + i, i));
+        }
+
+        assertEquals(1000, chain.parameters().size());
+        assertEquals(Integer.valueOf(999), chain.parameters().get(999));
+
+        final ComposableCondition deep = chain;
+        assertThrows(IllegalArgumentException.class, () -> deep.and(Filters.where(Filters.eq("x", 1))));
+        assertThrows(IllegalArgumentException.class, () -> deep.or(new SubQuery("SELECT 1")));
+    }
+
+    @Test
+    void testDeeplyNestedAlternatingTreeParametersAreFlatInSqlOrderAndUnmodifiable() {
+        // left-deep: cond = and/or(cond, next) in a loop -> depth 300
+        final List<Object> expected = new ArrayList<>();
+        Condition leftDeep = Filters.eq("p0", 0);
+        expected.add(0);
+
+        for (int i = 1; i <= 300; i++) {
+            final Condition next = Filters.eq("p" + i, i);
+            leftDeep = i % 2 == 0 ? Filters.and(leftDeep, next) : Filters.or(leftDeep, next);
+            expected.add(i);
+        }
+
+        final ImmutableList<Object> parameters = leftDeep.parameters();
+        assertEquals(expected, parameters);
+        assertEquals(301, parameters.size());
+        assertThrows(UnsupportedOperationException.class, () -> parameters.add(1));
+        assertThrows(UnsupportedOperationException.class, () -> parameters.set(0, 1));
+        assertThrows(UnsupportedOperationException.class, () -> parameters.remove(0));
+        assertThrows(UnsupportedOperationException.class, parameters::clear);
+        // each call builds a fresh list (not memoized)
+        assertEquals(parameters, leftDeep.parameters());
+
+        // right-deep: cond = and/or(next, cond) -> parameters are emitted in rendered order (next first)
+        final List<Object> expectedRight = new ArrayList<>();
+        Condition rightDeep = Filters.eq("p0", 0);
+        expectedRight.add(0);
+
+        for (int i = 1; i <= 300; i++) {
+            final Condition next = Filters.eq("p" + i, i);
+            rightDeep = i % 2 == 0 ? Filters.and(next, rightDeep) : Filters.or(next, rightDeep);
+            expectedRight.add(0, i);
+        }
+
+        assertEquals(expectedRight, rightDeep.parameters());
+
+        // the parameter order matches the rendered SQL placeholder order
+        final String sql = leftDeep.toSql(NamingPolicy.NO_CHANGE);
+        int cursor = -1;
+        for (int i = 0; i <= 300; i++) {
+            final int idx = sql.indexOf("p" + i + " = " + i, cursor + 1);
+            assertTrue(idx > cursor, "p" + i + " should follow p" + (i - 1) + " in the rendered SQL");
+            cursor = idx;
+        }
+    }
+
+    @Test
+    void testDeeplyNestedTreeWithNotCellAndCriteriaWrappersParametersStayFlat() {
+        // Not wrappers interleaved inside the tree, then Where (Cell) / Criteria / Limit wrappers outside it
+        final List<Object> expected = new ArrayList<>();
+        Condition tree = Filters.eq("p0", 0);
+        expected.add(0);
+
+        for (int i = 1; i <= 300; i++) {
+            final Condition next = Filters.between("p" + i, i, i + 0.5);
+            switch (i % 3) {
+                case 0:
+                    tree = Filters.and(tree, next);
+                    break;
+                case 1:
+                    tree = Filters.or(Filters.not(tree), next);
+                    break;
+                default:
+                    tree = Filters.and(Filters.not(Filters.not(tree)), Filters.not(next));
+                    break;
+            }
+            expected.add(i);
+            expected.add(i + 0.5);
+        }
+
+        assertEquals(expected, tree.parameters());
+        assertEquals(expected, Filters.not(tree).parameters());
+        assertEquals(expected, Filters.where(tree).parameters());
+        assertEquals(expected, Filters.having(tree).parameters());
+
+        final Criteria criteria = Criteria.builder()
+                .join(Filters.innerJoin("orders o", Filters.eq("o.status", "open")))
+                .where(tree)
+                .groupBy("p0")
+                .having(Filters.gt("cnt", 1))
+                .orderBy("p0")
+                .limit(10)
+                .build();
+        final List<Object> expectedCriteria = new ArrayList<>();
+        expectedCriteria.add("open");
+        expectedCriteria.addAll(expected);
+        expectedCriteria.add(1);
+        final ImmutableList<Object> criteriaParameters = criteria.parameters();
+        assertEquals(expectedCriteria, criteriaParameters);
+        assertThrows(UnsupportedOperationException.class, () -> criteriaParameters.add(1));
+
+        // Limit never contributes parameters even though it wraps an expression
+        assertEquals(List.of(), Filters.limit(5).parameters());
+        assertEquals(List.of(), Criteria.builder().limit(5).build().parameters());
+        assertEquals(List.of(), Criteria.builder().build().parameters());
+    }
+
+    @Test
+    void testDeeplyNestedTreeParametersIsLinearInDepth() {
+        Condition tree = Filters.eq("p0", 0);
+
+        for (int i = 1; i <= 3000; i++) {
+            tree = i % 2 == 0 ? Filters.and(tree, Filters.eq("p" + i, i)) : Filters.or(tree, Filters.eq("p" + i, i));
+        }
+
+        final Condition deep = tree;
+        final List<Object> expected = new ArrayList<>();
+
+        for (int i = 0; i <= 3000; i++) {
+            expected.add(i);
+        }
+
+        assertEquals(expected, deep.parameters());
+
+        // Allocated bytes are deterministic where wall-clock time is not: the previous per-level copy
+        // implementation allocated ~64 MB per call on this depth-3000 tree (quadratic), the shared-list walk ~0.2 MB.
+        final java.lang.management.ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        assumeTrue(threadBean instanceof com.sun.management.ThreadMXBean, "per-thread allocation counter unavailable");
+        final com.sun.management.ThreadMXBean allocationBean = (com.sun.management.ThreadMXBean) threadBean;
+        assumeTrue(allocationBean.isThreadAllocatedMemorySupported() && allocationBean.isThreadAllocatedMemoryEnabled(),
+                "per-thread allocation counter unsupported or disabled");
+
+        for (int i = 0; i < 20; i++) {
+            assertEquals(3001, deep.parameters().size());
+        }
+
+        long fewestBytes = Long.MAX_VALUE;
+
+        for (int i = 0; i < 5; i++) {
+            final long before = allocationBean.getCurrentThreadAllocatedBytes();
+            final int size = deep.parameters().size();
+            final long allocated = allocationBean.getCurrentThreadAllocatedBytes() - before;
+
+            assertEquals(3001, size);
+            fewestBytes = Math.min(fewestBytes, allocated);
+        }
+
+        final long bytesPerCall = fewestBytes;
+        assertTrue(bytesPerCall < 5_000_000, () -> "parameters() of a depth-3000 tree allocated " + bytesPerCall + " bytes; expected linear (~0.2 MB)");
+    }
+
+    @Test
+    void testSubclassOverridingOnlyParametersIsHonouredWhenNested() {
+        // a user subclass that overrides parameters() but not appendParametersTo(List) must give the same
+        // answer whether it is the outermost condition or nested in a junction / cell / criteria
+        final And custom = new And(Filters.eq("a", 1)) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                final List<Object> extended = new ArrayList<>();
+                extended.add("extra");
+                extended.addAll(super.parameters());
+                return ImmutableList.wrap(extended);
+            }
+        };
+
+        assertParametersEverywhere(List.of("extra", 1), custom);
+
+        // ComposableCell subclass: Not's own hook is above the override, so the override must win when nested
+        final Not customNot = new Not(Filters.eq("a", 1)) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                return ImmutableList.of("notX");
+            }
+        };
+
+        assertParametersEverywhere(List.of("notX"), customNot);
+
+        // a subclass that inherits (rather than declares) the parameters() override is still honoured
+        assertParametersEverywhere(List.of("tagged", 1), new TaggingAndChild(Filters.eq("a", 1)));
+        assertParametersEverywhere(List.of("tagged", 1, 3), new TaggingAndChild(Filters.eq("a", 1), Filters.or(Filters.eq("c", 3))));
+
+        // a subclass that overrides both, with parameters() built through its own hook, is consistent everywhere
+        final And both = new And(Filters.eq("a", 1)) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                final List<Object> out = new ArrayList<>();
+                appendParametersTo(out);
+                return ImmutableList.wrap(out);
+            }
+
+            @Override
+            protected void appendParametersTo(final List<Object> out) {
+                out.add("hooked");
+                super.appendParametersTo(out);
+            }
+        };
+
+        assertParametersEverywhere(List.of("hooked", 1), both);
+    }
+
+    @Test
+    void testHookOverrideDelegatingToParametersDoesNotRecurse() {
+        // Junction.parameters() never calls the overridable appendParametersTo hook (both share a private helper),
+        // so the natural "keep them consistent" override out.addAll(parameters()) cannot recurse into itself
+        final And hookOnly = new And(Filters.eq("a", 1), Filters.or(Filters.eq("c", 3))) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected void appendParametersTo(final List<Object> out) {
+                out.addAll(parameters());
+            }
+        };
+
+        assertParametersEverywhere(List.of(1, 3), hookOnly);
+
+        final And tagged = new And(Filters.eq("a", 1)) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public ImmutableList<Object> parameters() {
+                final List<Object> extended = new ArrayList<>();
+                extended.add("tag");
+                extended.addAll(super.parameters());
+                return ImmutableList.wrap(extended);
+            }
+
+            @Override
+            protected void appendParametersTo(final List<Object> out) {
+                out.addAll(parameters());
+            }
+        };
+
+        assertParametersEverywhere(List.of("tag", 1), tagged);
+        final List<Object> out = new ArrayList<>();
+        tagged.appendParametersTo(out);
+        assertEquals(List.of("tag", 1), out);
+
+        // hook declared below the class that declares the parameters() override: the hook is used when nested
+        assertParametersEverywhere(List.of("tagged", 1), new TaggingAndWithDelegatingHook(Filters.eq("a", 1)));
+    }
+
+    /**
+     * Asserts that {@code condition} yields exactly {@code expected} as the outermost condition and nested in
+     * and / or / not / where / Criteria / exists(subQuery), at several positions and depths.
+     */
+    private static void assertParametersEverywhere(final List<Object> expected, final Condition condition) {
+        final List<Object> withTail = new ArrayList<>(expected);
+        withTail.add(2);
+        final List<Object> withHead = new ArrayList<>();
+        withHead.add(0);
+        withHead.addAll(expected);
+
+        assertEquals(expected, condition.parameters());
+        assertEquals(withTail, Filters.and(condition, Filters.eq("b", 2)).parameters());
+        assertEquals(withHead, Filters.or(Filters.eq("z", 0), condition).parameters());
+        assertEquals(expected, Filters.not(condition).parameters());
+        assertEquals(withTail, Filters.and(Filters.not(condition), Filters.eq("b", 2)).parameters());
+        assertEquals(withHead, Filters.or(Filters.eq("z", 0), Filters.and(Filters.not(Filters.or(condition)))).parameters());
+        assertEquals(expected, Filters.where(condition).parameters());
+        assertEquals(withTail, Filters.where(Filters.and(condition, Filters.eq("b", 2))).parameters());
+        assertEquals(expected, Criteria.builder().where(condition).build().parameters());
+        assertEquals(withTail, Criteria.builder().where(Filters.or(condition, Filters.eq("b", 2))).build().parameters());
+        assertEquals(withHead, Criteria.builder().where(Filters.eq("z", 0)).having(Filters.not(condition)).build().parameters());
+        assertEquals(expected, Filters.exists(Filters.subQuery("t", List.of("id"), Criteria.builder().where(condition).build())).parameters());
+        assertEquals(withTail, Filters.and(Filters.exists(Filters.subQuery("t", List.of("id"), condition)), Filters.eq("b", 2)).parameters());
+    }
+
+    /** An {@code And} whose {@code parameters()} override is inherited by {@link TaggingAndChild}. */
+    private static class TaggingAnd extends And {
+        private static final long serialVersionUID = 1L;
+
+        TaggingAnd(final Condition... conditions) {
+            super(conditions);
+        }
+
+        @Override
+        public ImmutableList<Object> parameters() {
+            final List<Object> extended = new ArrayList<>();
+            extended.add("tagged");
+            extended.addAll(super.parameters());
+            return ImmutableList.wrap(extended);
+        }
+    }
+
+    private static final class TaggingAndChild extends TaggingAnd {
+        private static final long serialVersionUID = 1L;
+
+        TaggingAndChild(final Condition... conditions) {
+            super(conditions);
+        }
+    }
+
+    private static final class TaggingAndWithDelegatingHook extends TaggingAnd {
+        private static final long serialVersionUID = 1L;
+
+        TaggingAndWithDelegatingHook(final Condition... conditions) {
+            super(conditions);
+        }
+
+        @Override
+        protected void appendParametersTo(final List<Object> out) {
+            out.addAll(parameters());
+        }
     }
 
     private static final class TestComposableWrapper extends ComposableCell {

@@ -773,9 +773,16 @@ public class BinaryTest extends TestBase {
             assertThrows(UnsupportedOperationException.class, exposed::clear);
             assertThrows(UnsupportedOperationException.class, typedExposure::clear);
             assertEquals(List.of(1, 2, 3), source);
+            // parameters() must not alias the caller-owned list either: the reuse fast path in computeParameters
+            // is guarded by the final operator field (EQUAL here), not by the overridable operator()
+            final List<Object> params = condition.parameters();
+            assertEquals(List.of(1, 2, 3), params);
             source.set(0, 9);
             assertEquals(List.of(1, 2, 3), exposed);
             assertEquals(List.of(1, 2, 3), typedExposure);
+            assertEquals(List.of(1, 2, 3), params);
+            assertEquals(List.of(1, 2, 3), condition.parameters());
+            assertThrows(UnsupportedOperationException.class, () -> params.add(4));
         }
     }
 
@@ -1176,5 +1183,58 @@ public class BinaryTest extends TestBase {
     void testXorRejectsClauseOperand() {
         Binary cond = new Binary("a", Operator.EQUAL, 1);
         assertThrows(IllegalArgumentException.class, () -> cond.xor(Filters.limit(1)));
+    }
+
+    // Characterisation (R16-02): an all-scalar IN membership list exposes the membership values themselves as the
+    // memoized, unmodifiable parameter list; a Date element still forces a fresh defensive copy on every call.
+    @Test
+    void testAllScalarInParametersAreMemoizedUnmodifiableAndEqualToPropValue() {
+        final Binary condition = new Binary("id", Operator.IN, Arrays.asList(1, 2, 3));
+
+        final ImmutableList<Object> parameters = condition.parameters();
+        assertEquals(Arrays.asList(1, 2, 3), parameters);
+        assertEquals(condition.propValue(), parameters);
+        assertSame(parameters, condition.parameters());
+        assertThrows(UnsupportedOperationException.class, () -> parameters.add(4));
+        assertThrows(UnsupportedOperationException.class, () -> parameters.set(0, 9));
+        assertEquals(Arrays.asList(1, 2, 3), condition.parameters());
+        assertEquals("id IN (1, 2, 3)", condition.toString());
+
+        final Binary fromArray = new Binary("id", Operator.NOT_IN, new int[] { 7, 8 });
+        assertEquals(Arrays.asList(7, 8), fromArray.parameters());
+        assertSame(fromArray.parameters(), fromArray.parameters());
+        assertThrows(UnsupportedOperationException.class, () -> fromArray.parameters().clear());
+
+        final Date date = new Date(1_000L);
+        final Binary dated = new Binary("createdOn", Operator.IN, Arrays.asList(date, 2));
+        assertNotSame(dated.parameters(), dated.parameters());
+        assertNotSame(date, dated.parameters().get(0));
+        assertNotSame(dated.parameters().get(0), dated.parameters().get(0));
+        ((Date) dated.parameters().get(0)).setTime(4_000L);
+        assertEquals(1_000L, ((Date) dated.parameters().get(0)).getTime());
+    }
+
+    // Characterisation (R16-01): the positional element names in the IN/NOT IN rejection messages are unchanged
+    // now that they are built only for a rejected element.
+    @Test
+    void testRejectedInElementMessagesCarryPositionalIndex() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.IN, Arrays.asList(1, null, 3)));
+        assertEquals("propValue[1] must not be null for IN", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.NOT_IN, new Object[] { 1, 2, null }));
+        assertEquals("propValue[2] must not be null for NOT IN", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.IN, Arrays.asList(1, Filters.eq("a", 1))));
+        assertTrue(ex.getMessage().startsWith("propValue[1] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.IN, new Object[] { Filters.eq("a", 1) }));
+        assertTrue(ex.getMessage().startsWith("propValue[0] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+
+        final Condition quantified = Filters.any(Filters.subQuery("t", Arrays.asList("id"), Filters.eq("x", 1)));
+        ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.NOT_IN, Arrays.asList(1, 2, quantified)));
+        assertEquals("propValue[2] must not be an ALL/ANY/SOME operand; quantified operands require a direct scalar-comparison RHS", ex.getMessage());
+
+        ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.IN, new Object[] { 1, 2, SqlExpression.of("  ") }));
+        assertEquals("propValue[2] must not be a blank SqlExpression", ex.getMessage());
     }
 }

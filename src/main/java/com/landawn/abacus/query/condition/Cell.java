@@ -14,6 +14,8 @@
 
 package com.landawn.abacus.query.condition;
 
+import java.util.List;
+
 import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
@@ -138,6 +140,17 @@ public abstract class Cell extends AbstractCondition {
     @Override
     public ImmutableList<Object> parameters() {
         return (condition == null) ? ImmutableList.empty() : condition.parameters();
+    }
+
+    /**
+     * Appends the wrapped condition's parameters to the supplied list, recursing through
+     * {@link AbstractCondition#appendParametersTo(List)} so a nested composite shares the caller's list.
+     *
+     * @param out the list to append to (must not be {@code null})
+     */
+    @Override
+    protected void appendParametersTo(final List<Object> out) {
+        appendParametersOf(condition, out);
     }
 
     /**

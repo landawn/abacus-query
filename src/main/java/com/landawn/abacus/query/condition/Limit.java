@@ -16,6 +16,7 @@ package com.landawn.abacus.query.condition;
 
 import static com.landawn.abacus.util.SK._SPACE;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.OptionalInt;
 import java.util.Set;
@@ -300,6 +301,17 @@ public class Limit extends Clause {
     @Override
     public ImmutableList<Object> parameters() {
         return ImmutableList.empty();
+    }
+
+    /**
+     * Appends nothing: a {@code Limit} never carries bound parameters (see {@link #parameters()}), so the
+     * wrapped expression must not be walked by the inherited {@link Cell} implementation.
+     *
+     * @param out the list to append to (must not be {@code null}); left unchanged
+     */
+    @Override
+    protected void appendParametersTo(final List<Object> out) {
+        // intentionally empty
     }
 
     /**

@@ -45,7 +45,7 @@ public class LessThanOrEqualTest extends TestBase {
 
     @Test
     void testConstructorWithDate() {
-        Date date = new Date();
+        Date date = new Date(1_700_000_000_000L);
         LessThanOrEqual condition = new LessThanOrEqual("submit_date", date);
 
         assertNotNull(condition);

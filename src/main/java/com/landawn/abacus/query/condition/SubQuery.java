@@ -21,12 +21,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.ParsedSql;
 import com.landawn.abacus.query.QueryUtil;
+import com.landawn.abacus.query.QueryUtil.ColumnInfo;
 import com.landawn.abacus.query.SqlBuilder;
 import com.landawn.abacus.query.SqlParser;
 import com.landawn.abacus.util.ClassUtil;
@@ -395,7 +398,9 @@ public class SubQuery extends AbstractCondition {
      *            schema-qualified name. An inline alias such as {@code users u} is not recognized by
      *            {@link #toSql(NamingPolicy)}, which converts the whole text as one identifier; build aliased
      *            sub-queries with a query builder instead
-     * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
+     * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names);
+     *            an item may carry an inline alias ({@code firstName AS fn}) or be an expression ({@code COUNT(*) AS cnt}),
+     *            in which case {@link #toSql(NamingPolicy)} converts only its identifiers
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
      *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no
      *             clause. An empty {@link Junction} is preserved as its true/false Boolean identity.
@@ -473,7 +478,9 @@ public class SubQuery extends AbstractCondition {
      * }</pre>
      *
      * @param entityClass the entity class (must not be {@code null})
-     * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names)
+     * @param propNames collection of property names to select (must not be {@code null} or empty and must not contain {@code null}, empty, or blank names);
+     *            an item may carry an inline alias ({@code firstName AS fn}) or be an expression ({@code COUNT(*) AS cnt}),
+     *            in which case {@link #toSql(NamingPolicy)} converts only its identifiers
      * @param condition an optional trailing condition, clause, or {@link Criteria}. A predicate is wrapped in
      *             {@link Where}; {@code null}, a blank expression, or an empty {@code Criteria} adds no
      *             clause. An empty {@link Junction} is preserved as its true/false Boolean identity.
@@ -657,6 +664,390 @@ public class SubQuery extends AbstractCondition {
         }
 
         return result;
+    }
+
+    /**
+     * Renders one structured select item for {@link #toSql(NamingPolicy)} the way a query builder renders the
+     * same item, minus the builder's table-alias prefix. The item is first split into the projected expression
+     * and an optional alias, which is re-appended as written: {@code expr AS alias}, or {@code name alias} when
+     * the item is exactly a name (bare, delimited or dot-qualified, see {@link #leadingNameEnd(String)}),
+     * whitespace and a bare alias, and the name is not a SQL keyword in any case (a builder converts such an
+     * implicit alias like an identifier). The expression then takes one of three paths:
+     * <ul>
+     * <li>a bare name ({@link #isBareName(String)}) is resolved by {@link #renderName};</li>
+     * <li>an expression with a comment token outside quoted regions ({@link #containsCommentToken(String)})
+     * goes through {@link QueryUtil#convertIdentifier(String, NamingPolicy)} as one identifier, which keeps the
+     * comment intact only under {@code NO_CHANGE} (a builder rejects such an item); a trailing line comment is
+     * ended with a newline before the alias;</li>
+     * <li>anything else (a function call, an operator expression, a string literal, a parameter marker, a
+     * delimited identifier) is rendered by {@link #renderExpression}.</li>
+     * </ul>
+     * A PostgreSQL dollar-quoted string ({@code $$...$$}, {@code $tag$...$tag$}) is quoted text throughout: an
+     * {@code AS}, whitespace or comment opener inside it neither splits off an alias nor selects the comment path,
+     * and {@link #renderExpression} copies it as written.
+     *
+     * @param item the select item as supplied to the constructor (non-blank)
+     * @param entityClass the entity class of an entity-class subquery, or {@code null}
+     * @param columnInfoMap the entity column mapping keyed by property and mapped column names
+     *        ({@link QueryUtil#propToColumnInfoMap(Class, NamingPolicy)}), or {@code null} for an entity-name subquery
+     * @param namingPolicy the effective naming policy (never {@code null})
+     * @return the rendered select item
+     */
+    private static String renderSelectItem(final String item, final Class<?> entityClass, final Map<String, ColumnInfo> columnInfoMap,
+            final NamingPolicy namingPolicy) {
+        // Fast path for the common plain property name: one character scan before the lookup or conversion.
+        if (isBareName(item)) {
+            return renderName(item, entityClass, columnInfoMap, namingPolicy);
+        }
+
+        String expression;
+        String alias = null;
+        String separator = null;
+
+        final int aliasKeywordIndex = indexOfTopLevelAliasKeyword(item);
+
+        if (aliasKeywordIndex >= 0) {
+            expression = item.substring(0, aliasKeywordIndex).strip();
+            alias = item.substring(aliasKeywordIndex + 2).strip();
+            separator = SK.SPACE + SK.AS + SK.SPACE;
+        } else {
+            expression = item.strip();
+            final int headEnd = leadingNameEnd(expression);
+
+            if (headEnd > 0) {
+                final String head = expression.substring(0, headEnd);
+                final String tail = expression.substring(headEnd).strip();
+
+                // A keyword in any case ("DISTINCT userId", "distinct userId", "all userId") modifies the projected
+                // expression; it is never the expression of an implicit alias.
+                if (isBareName(tail) && !SqlExpression.isSqlKeyword(head) && !SqlExpression.isSqlKeyword(head.toUpperCase(Locale.ROOT))) {
+                    expression = head;
+                    alias = tail;
+                    separator = SK.SPACE;
+                }
+            }
+        }
+
+        final String rendered;
+
+        if (isBareName(expression)) {
+            rendered = renderName(expression, entityClass, columnInfoMap, namingPolicy);
+        } else if (containsCommentToken(expression)) {
+            // The tokenizer path would strip the comment. Stripping the expression also dropped the line break that
+            // ended a line comment before the alias ("firstName -- c\nAS x"), so restore one before " AS x".
+            rendered = QueryUtil.terminateLineComment(QueryUtil.convertIdentifier(expression, namingPolicy));
+        } else {
+            rendered = renderExpression(expression, entityClass, columnInfoMap, namingPolicy);
+        }
+
+        return alias == null ? rendered : rendered + separator + alias;
+    }
+
+    /**
+     * Renders a bare name: an entity property or mapped column name resolves through the column mapping (see
+     * {@link #mappedColumn}); otherwise a registered SQL keyword ({@code CURRENT_TIMESTAMP}) or a token that does
+     * not start with an ASCII letter or {@code _} (the number {@code 2faCode} or {@code .5E3}, the dollar-quoted
+     * string {@code $$text$$}, the name {@code $col} or a non-ASCII-leading name) is kept as written, as
+     * {@link SqlExpression#toSql(NamingPolicy)} and the query builders keep it, and any other name goes through
+     * {@link QueryUtil#convertIdentifier(String, NamingPolicy)}.
+     */
+    private static String renderName(final String name, final Class<?> entityClass, final Map<String, ColumnInfo> columnInfoMap,
+            final NamingPolicy namingPolicy) {
+        if (columnInfoMap != null) {
+            final String columnName = mappedColumn(name, entityClass, columnInfoMap);
+
+            if (columnName != null) {
+                return columnName;
+            }
+        }
+
+        final char first = name.charAt(0);
+
+        // The builders and SqlExpression convert only a token that starts like an ASCII identifier (isRawIdentifierStart).
+        return !(Strings.isAsciiAlpha(first) || first == '_') || SqlExpression.isSqlKeyword(name) ? name : QueryUtil.convertIdentifier(name, namingPolicy);
+    }
+
+    /**
+     * Renders an expression with the token loop of {@link SqlExpression#toSql(NamingPolicy)}
+     * ({@link QueryUtil#appendRawExpression}): string literals, parameter markers, delimited identifiers, function
+     * names and recognised (upper-case) SQL keywords are kept, and every other identifier is converted on its own.
+     * For an entity-class subquery an identifier that names a property or a mapped column resolves through the column
+     * mapping first, as in a query builder ({@code max(emailAddress)} renders as {@code max(EMAIL)} for
+     * {@code @Column("EMAIL")}).
+     */
+    private static String renderExpression(final String expression, final Class<?> entityClass, final Map<String, ColumnInfo> columnInfoMap,
+            final NamingPolicy namingPolicy) {
+        final UnaryOperator<String> nameConverter = word -> SqlExpression.isSqlKeyword(word) ? word : QueryUtil.convertIdentifier(word, namingPolicy);
+        final UnaryOperator<String> columnConverter = columnInfoMap == null ? nameConverter : word -> {
+            final String columnName = mappedColumn(word, entityClass, columnInfoMap);
+
+            return columnName == null ? nameConverter.apply(word) : columnName;
+        };
+
+        final StringBuilder sb = Objectory.createStringBuilder();
+
+        try {
+            // A name after a delimited qualifier ("T".firstName) takes the naming policy only, as in the builders.
+            QueryUtil.appendRawExpression(sb, expression, SqlParser.tokenize(expression), SqlParser.tokenizer(), false, columnConverter, nameConverter);
+
+            return sb.toString();
+        } finally {
+            Objectory.recycle(sb);
+        }
+    }
+
+    /**
+     * Returns the mapped column of an entity property, or {@code null}. Like the query builders, the lookup accepts
+     * a property name ({@code emailAddress}) and a mapped column name ({@code EMAIL} for {@code @Column("EMAIL")}).
+     * A key qualified with the entity's own table alias ({@code p.emailAddress} for {@code @Table(alias = "p")})
+     * resolves too and keeps the qualifier, unless the mapped column is not a single unqualified identifier
+     * ({@link ColumnInfo#isUnqualified()}), as in the query builders.
+     */
+    private static String mappedColumn(final String word, final Class<?> entityClass, final Map<String, ColumnInfo> columnInfoMap) {
+        final ColumnInfo columnInfo = columnInfoMap.get(word);
+
+        if (columnInfo != null) {
+            return columnInfo.columnName();
+        }
+
+        if (entityClass == null || word.indexOf('.') < 0) {
+            return null;
+        }
+
+        final String tableAlias = QueryUtil.tableAlias(entityClass);
+
+        if (Strings.isEmpty(tableAlias) || word.length() <= tableAlias.length() + 1 || word.charAt(tableAlias.length()) != '.'
+                || !word.startsWith(tableAlias)) {
+            return null;
+        }
+
+        final ColumnInfo aliasedColumnInfo = columnInfoMap.get(word.substring(tableAlias.length() + 1));
+
+        if (aliasedColumnInfo == null) {
+            return null;
+        }
+
+        return aliasedColumnInfo.isUnqualified() ? tableAlias + '.' + aliasedColumnInfo.columnName() : aliasedColumnInfo.columnName();
+    }
+
+    /**
+     * Finds the start of a top-level {@code AS} alias keyword in a select item: an {@code AS} (any case)
+     * surrounded by whitespace, outside parentheses, quoted strings/identifiers (dollar-quoted strings included) and
+     * comments, and followed by a non-blank alias. The first such keyword is taken, as the query builders do.
+     *
+     * @param item the select item to scan
+     * @return the index of the {@code AS} keyword, or {@code -1} if the item carries no explicit alias
+     */
+    private static int indexOfTopLevelAliasKeyword(final String item) {
+        final int len = item.length();
+        int depth = 0;
+
+        for (int i = 0; i < len; i++) {
+            final char ch = item.charAt(i);
+
+            if (ch == '\'' || ch == '"' || ch == '`') {
+                i = closingQuoteIndex(item, i, ch);
+            } else if (ch == '$') {
+                // The "as" of $$foo as bar$$ is text. A dollar quote that is never closed holds the rest of the item.
+                final int end = QueryUtil.dollarQuoteEnd(item, i);
+
+                if (end != 0) {
+                    i = end < 0 ? len : end - 1;
+                }
+            } else if (ch == '[') {
+                final int close = item.indexOf(']', i + 1);
+                i = close < 0 ? len : close;
+            } else if (ch == '-' && i + 1 < len && item.charAt(i + 1) == '-') {
+                final int eol = item.indexOf('\n', i + 2);
+                i = eol < 0 ? len : eol;
+            } else if (ch == '/' && i + 1 < len && item.charAt(i + 1) == '*') {
+                final int close = item.indexOf("*/", i + 2);
+                i = close < 0 ? len : close + 1;
+            } else if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                depth = Math.max(0, depth - 1);
+            } else if (depth == 0 && (ch == 'A' || ch == 'a') && i > 0 && i + 3 < len && Character.isWhitespace(item.charAt(i - 1))
+                    && (item.charAt(i + 1) == 'S' || item.charAt(i + 1) == 's') && Character.isWhitespace(item.charAt(i + 2))
+                    && !item.substring(i + 2).isBlank()) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Returns the index of the quote closing the quoted region opened at {@code open} (a doubled quote
+     * inside the region is an escape), or the end of {@code item} when the region is unterminated. A PostgreSQL
+     * {@code E'...'} string (a standalone {@code E} or {@code e} before the quote) also honors backslash escapes
+     * ({@code E'it\'s'}), as the query builders and the tokenizer read it.
+     */
+    private static int closingQuoteIndex(final String item, final int open, final char quote) {
+        final int len = item.length();
+        final boolean backslashEscapes = quote == '\'' && isEscapeStringPrefix(item, open);
+
+        for (int i = open + 1; i < len; i++) {
+            final char ch = item.charAt(i);
+
+            if (ch == quote) {
+                if (i + 1 < len && item.charAt(i + 1) == quote) {
+                    i++;
+                } else {
+                    return i;
+                }
+            } else if (backslashEscapes && ch == '\\') {
+                i++;
+            }
+        }
+
+        return len;
+    }
+
+    /**
+     * Whether the quote at {@code quoteIndex} opens a PostgreSQL {@code E'...'} string: an {@code E} or {@code e}
+     * directly before it that does not end a longer name, the rule of the query builders' alias scan.
+     */
+    private static boolean isEscapeStringPrefix(final String text, final int quoteIndex) {
+        if (quoteIndex == 0 || (text.charAt(quoteIndex - 1) != 'E' && text.charAt(quoteIndex - 1) != 'e')) {
+            return false;
+        }
+
+        if (quoteIndex == 1) {
+            return true;
+        }
+
+        final char beforePrefix = text.charAt(quoteIndex - 2);
+
+        return beforePrefix < 128 && beforePrefix != '_' && beforePrefix != '$' && !Character.isLetterOrDigit(beforePrefix);
+    }
+
+    /**
+     * Returns whether {@code text} is a bare, optionally dot-qualified name: letters, digits, {@code _},
+     * {@code $} and {@code .} only. Such a name is a property name candidate for the entity column mapping.
+     */
+    private static boolean isBareName(final String text) {
+        if (text.isEmpty()) {
+            return false;
+        }
+
+        for (int i = 0, len = text.length(); i < len; i++) {
+            if (!isBareNameChar(text.charAt(i))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean isBareNameChar(final char ch) {
+        return Character.isLetterOrDigit(ch) || ch == '_' || ch == '$' || ch == '.';
+    }
+
+    /**
+     * Returns the end of the name that starts {@code text} if whitespace follows it, or {@code -1}. The name is a
+     * sequence of dot-separated parts, each a run of bare-name characters or one delimited part ({@code "..."} and
+     * {@code `...`} with doubled-quote escapes, {@code [...]}), such as {@code acc.firstName}, {@code [firstName]} or
+     * {@code t."First Name"}. A delimited part directly after other name text is no name part: {@code ids[1]} and
+     * {@code ARRAY[1, 2]} are a subscript and an array constructor, and {@code a"b"} is not one name. A dollar-quoted
+     * string ({@code $$a b$$}) is no name either.
+     */
+    private static int leadingNameEnd(final String text) {
+        final int len = text.length();
+        boolean partStart = true; // at the start of the text or directly after a '.'
+        boolean afterDelimitedPart = false;
+
+        for (int i = 0; i < len; i++) {
+            final char ch = text.charAt(i);
+
+            if (Character.isWhitespace(ch)) {
+                return i;
+            } else if (partStart && ch == '$' && QueryUtil.dollarQuoteEnd(text, i) != 0) {
+                return -1;
+            } else if (ch == '.') {
+                partStart = true;
+                afterDelimitedPart = false;
+            } else if (ch == '"' || ch == '`' || ch == '[') {
+                if (!partStart) {
+                    return -1;
+                }
+
+                i = ch == '[' ? text.indexOf(']', i + 1) : closingQuoteIndex(text, i, ch);
+
+                if (i < 0 || i >= len) {
+                    return -1; // unterminated
+                }
+
+                partStart = false;
+                afterDelimitedPart = true;
+            } else if (afterDelimitedPart || !isBareNameChar(ch)) {
+                return -1;
+            } else {
+                partStart = false;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Returns whether {@code text} contains a line ({@code --}, {@code #}) or block (<code>/*</code>) comment token
+     * outside the quoted regions {@code '...'}, {@code "..."}, {@code `...`} (doubled-quote escapes) and
+     * {@code [...]}; it only decides which rendering path an item takes. As for the tokenizer, the {@code #} that
+     * opens a {@code #{...}} marker or a {@code #>} / {@code #-} operator, or ends a {@code ?#} operator, is no
+     * comment; any other {@code #} counts, so a SQL Server {@code #temp} name stays on the identifier path. An
+     * unterminated quoted region is scanned like unquoted text. An {@code E'...'} string honors backslash escapes
+     * (see {@link #closingQuoteIndex}). A dollar-quoted string is skipped too, and one that is never closed holds the
+     * rest of the text: {@link #renderExpression} copies such a string, comment openers included, as written.
+     */
+    private static boolean containsCommentToken(final String text) {
+        final int len = text.length();
+        // Once a '[' has no closing ']', no later '[' has one either. Remembering that keeps the scan linear: searching
+        // to the end again for every unclosed '[' made it quadratic in their number.
+        boolean bracketUnclosed = false;
+
+        for (int i = 0; i < len; i++) {
+            final char ch = text.charAt(i);
+
+            if (ch == '\'' || ch == '"' || ch == '`') {
+                final int close = closingQuoteIndex(text, i, ch);
+
+                if (close < len) {
+                    i = close;
+                }
+            } else if (ch == '$') {
+                final int end = QueryUtil.dollarQuoteEnd(text, i);
+
+                if (end < 0) {
+                    return false;
+                }
+
+                if (end > 0) {
+                    i = end - 1;
+                }
+            } else if (ch == '[') {
+                if (!bracketUnclosed) {
+                    final int close = text.indexOf(']', i + 1);
+
+                    if (close >= 0) {
+                        i = close;
+                    } else {
+                        bracketUnclosed = true;
+                    }
+                }
+            } else if ((ch == '-' || ch == '/') && i + 1 < len && text.charAt(i + 1) == (ch == '-' ? '-' : '*')) {
+                return true;
+            } else if (ch == '#') {
+                // Only the '#' is passed over: the tokenizer still reads a comment inside a #{...} marker.
+                final char next = i + 1 < len ? text.charAt(i + 1) : 0;
+
+                if (next != '{' && next != '>' && next != '-' && (i == 0 || text.charAt(i - 1) != '?')) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -989,13 +1380,31 @@ public class SubQuery extends AbstractCondition {
      * {@code namingPolicy} is ignored because builder-backed SQL was already rendered by its source builder).
      * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition-or-clauses]}
      * statement, applying the naming policy to property names, the entity/table name, and to
-     * the trailing condition or clauses. Trailing line comments in a projection or table fragment are
-     * terminated with a newline before generated separators or clauses are appended.</p>
+     * the trailing condition or clauses. A select item has only its identifiers converted, the way a query
+     * builder renders the same item minus the builder's table-alias prefix: string literals, parameter markers,
+     * delimited identifiers, function names, recognised (upper-case) SQL keywords and tokens that do not start
+     * with an ASCII letter or {@code _} (numbers such as {@code 2faCode}, dollar-quoted strings such as
+     * {@code $$text$$}) are kept as written ({@code COUNT(*) AS cnt}, {@code 'HelloWorld' AS s},
+     * {@code CURRENT_TIMESTAMP AS ts}).
+     * An alias is kept as written as well: one after {@code AS} ({@code firstName AS fn}), and an implicit one
+     * when the item is exactly a name (bare, delimited or dot-qualified), whitespace and a bare alias
+     * ({@code firstName fn}, {@code [firstName] fn}, {@code acc.firstName fn}), unless that name is a SQL keyword
+     * in any case ({@code distinct userId} is a modifier and a column). After any other expression, a subscript
+     * ({@code ids[1]}) or an array constructor ({@code ARRAY[1, 2]}) included, a trailing word is converted like an
+     * identifier, as the builders do ({@code COUNT(*) myCount} renders as {@code COUNT(*) my_count} under
+     * {@code SNAKE_CASE}). A projected expression that contains a comment token
+     * outside quoted regions ({@code --}, <code>/*</code>, or a {@code #} other than that of a {@code #{...}}
+     * marker or a {@code #>}, {@code #-} or {@code ?#} operator) is converted as one identifier, which keeps
+     * the comment intact only under {@code NO_CHANGE}. Trailing line comments in a projection or table fragment
+     * are terminated with a newline before generated separators or clauses are appended.</p>
      *
      * <p>This direct rendering is intended for diagnostics. For an entity-class subquery, table
-     * metadata and explicit column mappings are applied to the SELECT list, while trailing conditions
-     * receive only the naming policy. Render the subquery through a {@link SqlBuilder} when condition
-     * identifiers must also resolve against entity column mappings.</p>
+     * metadata and explicit column mappings are applied to the SELECT list, also to a property inside an
+     * expression ({@code max(emailAddress)}) or qualified with the entity's table alias ({@code p.emailAddress});
+     * as in the query builders, a mapped column name written in place of its property ({@code EMAIL} for
+     * {@code @Column("EMAIL")}) is kept as that column. Trailing conditions receive only the naming policy.
+     * Render the subquery through a {@link SqlBuilder}
+     * when condition identifiers must also resolve against entity column mappings.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1035,7 +1444,7 @@ public class SubQuery extends AbstractCondition {
     public String toSql(final NamingPolicy namingPolicy) {
         if (sql == null) {
             final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.NO_CHANGE : namingPolicy;
-            final Map<String, String> propToColumnNameMap = entityClass == null ? null : QueryUtil.propToColumnNameMap(entityClass, effectiveNamingPolicy);
+            final Map<String, ColumnInfo> columnInfoMap = entityClass == null ? null : QueryUtil.propToColumnInfoMap(entityClass, effectiveNamingPolicy);
             final StringBuilder sb = Objectory.createStringBuilder();
 
             try {
@@ -1050,12 +1459,7 @@ public class SubQuery extends AbstractCondition {
                             sb.append(COMMA_SPACE);
                         }
 
-                        if (propToColumnNameMap == null) {
-                            sb.append(QueryUtil.terminateLineComment(QueryUtil.convertIdentifier(propName, effectiveNamingPolicy)));
-                        } else {
-                            sb.append(QueryUtil.terminateLineComment(
-                                    propToColumnNameMap.getOrDefault(propName, QueryUtil.convertIdentifier(propName, effectiveNamingPolicy))));
-                        }
+                        sb.append(QueryUtil.terminateLineComment(renderSelectItem(propName, entityClass, columnInfoMap, effectiveNamingPolicy)));
                     }
                 } else {
                     sb.append("*");

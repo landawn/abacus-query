@@ -180,7 +180,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      *         builder's tokenizer (for example a leading {@code #name}, which is a hash comment outside SQL Server
      *         dialects); if a {@link Using} condition
      *         renders a table- or schema-qualified column name; if a
-     *         structured {@link SubQuery} (one not defined by raw SQL) has no selected property/column names;
+     *         structured {@link SubQuery} (one not defined by raw SQL) has no selected property/column names, or its entity
+     *         class maps to a table name that {@link #from(Class)} rejects (one containing an unterminated block comment, or
+     *         ending inside a line comment under this builder's dialect, such as {@code t -- note} or {@code #tmp} on MySQL);
      *         or if, under {@code NAMED_SQL}/{@code IBATIS_SQL}/{@code RAW_SQL}, the positional placeholder count
      *         of a bound raw sub-query cannot be matched to its bindings. Placeholder detection follows
      *         {@link ParsedSql}: array-subscript bindings are included, while JSON operators and quoted or
@@ -616,7 +618,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * @param subQuery the sub-query condition being rendered
      * @return a fresh sub-query builder bound to the same {@link SqlDialect} as {@code this}
      * @throws IllegalArgumentException if {@code subQuery} has no selected property/column names;
-     *         or if its entity name is blank, its entity class is not a bean class, or a selected column contains an unsafe SQL fragment.
+     *         or if its entity name is blank, its entity class is not a bean class or maps to a table name that {@link #from(Class)}
+     *         rejects, or a selected column contains an unsafe SQL fragment.
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     private SqlBuilder newSubQueryBuilder(final SubQuery subQuery) {

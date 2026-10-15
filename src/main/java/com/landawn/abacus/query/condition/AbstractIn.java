@@ -222,16 +222,22 @@ public abstract class AbstractIn extends ComposableCondition {
             // Each tuple is wrapped unmodifiable so values() is immutable in depth, not just at the
             // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).
             final List<Object> tuple = toRowTuple(row, validatedPropNames, arity);
-            final String rowPath = "valueRows[" + rowIndex++ + "]";
 
             // Snapshot array/Date/Calendar tuple elements like the single-column form and Binary.IN.
             for (int i = 0, n = tuple.size(); i < n; i++) {
                 tuple.set(i, snapshotMutableValue(tuple.get(i)));
             }
 
-            rejectNullElements(tuple, rowPath);
-            validateNonQuantifiedValueOperands(tuple, rowPath);
+            // The "valueRows[r]" path is built only for a rejected row, not once per row.
+            final int nullIndex = indexOfNull(tuple);
+
+            if (nullIndex >= 0) {
+                throw new IllegalArgumentException("valueRows[" + rowIndex + "] must not contain null elements; null found at index " + nullIndex);
+            }
+
+            validateNonQuantifiedValueOperands(tuple, cs.valueRows, rowIndex);
             copy.add(Collections.unmodifiableList(tuple));
+            rowIndex++;
         }
 
         this.propNames = validatedPropNames;
@@ -352,15 +358,31 @@ public abstract class AbstractIn extends ComposableCondition {
      * @throws IllegalArgumentException if {@code values} contains a null element
      */
     private static void rejectNullElements(final Collection<?> values, final String path) {
+        final int nullIndex = indexOfNull(values);
+
+        if (nullIndex >= 0) {
+            throw new IllegalArgumentException(path + " must not contain null elements; null found at index " + nullIndex);
+        }
+    }
+
+    /**
+     * Returns the position of the first {@code null} element, or {@code -1} if there is none.
+     *
+     * @param values the values to scan
+     * @return the index of the first {@code null} element, or {@code -1}
+     */
+    private static int indexOfNull(final Collection<?> values) {
         int index = 0;
 
         for (final Object value : values) {
             if (value == null) {
-                throw new IllegalArgumentException(path + " must not contain null elements; null found at index " + index);
+                return index;
             }
 
             index++;
         }
+
+        return -1;
     }
 
     /**
@@ -586,6 +608,13 @@ public abstract class AbstractIn extends ComposableCondition {
     private ImmutableList<Object> computeParameters() {
         if (values == null) {
             return ImmutableList.empty();
+        }
+
+        if (!usesRowValueConstructor() && !rebuildPerCall) {
+            // The rebuild flag is false only when every membership value is a non-snapshot value (no
+            // array/Date/Calendar/Condition), so the parameters are exactly the (already unmodifiable) membership
+            // list; a copy would just retain the same elements twice. The row-value form still needs its flattened copy.
+            return ImmutableList.wrap(values);
         }
 
         final List<Object> parameters = new ArrayList<>(values.size());

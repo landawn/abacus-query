@@ -96,7 +96,7 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment
      */
     public NaturalJoin(final String joinEntity) {
         super(Operator.NATURAL_JOIN, joinEntity);
@@ -123,7 +123,7 @@ public class NaturalJoin extends Join {
      * }</pre>
      *
      * @param joinEntities the collection of tables or entities to join with.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements or an element containing an unterminated block comment
      */
     public NaturalJoin(final Collection<String> joinEntities) {
         super(Operator.NATURAL_JOIN, joinEntities, null);

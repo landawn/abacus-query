@@ -504,13 +504,18 @@ public final class QueryUtil {
     private static final int BLOCK_SCAN_HASH_COMMENTS = 4;
     private static final int BLOCK_SCAN_BRACKET_IDENTIFIERS = 8;
     private static final int BLOCK_SCAN_NESTED_COMMENTS = 16;
+    private static final int BLOCK_SCAN_MYSQL_DASH_COMMENTS = 32;
+    private static final int BLOCK_SCAN_DOLLAR_QUOTES = 64;
 
     /**
      * Reports whether {@code sql} opens a {@code /*} block comment that is never closed under any of its plausible lexical
      * readings: string literals with or without backslash escapes, a {@code --} comment ended by any line break or, as in
      * MySQL and SQLite, only by {@code '\n'}, a {@code #} that starts a line comment (MySQL) or not, {@code [...]} as a
-     * quoted identifier (SQL Server) or not, and block comments that nest (PostgreSQL, SQL Server, H2) or not. Each extra
-     * reading can only add a {@code true} answer, so the check fails closed.
+     * quoted identifier (SQL Server) or not, block comments that nest (PostgreSQL, SQL Server, H2) or not, a {@code --}
+     * that starts a comment wherever it occurs or, as in MySQL and MariaDB, only before whitespace, a control character or
+     * the end of the text (there the {@code /*} of {@code t --/*} opens a block comment), and PostgreSQL dollar-quoted
+     * strings ({@code $$...$$}, {@code $tag$...$tag$}) or none (in {@code $$'$$ /* x '} only the dollar-quote reading
+     * leaves the comment open). Each extra reading can only add a {@code true} answer, so the check fails closed.
      * The scan is linear in the length of {@code sql} for each reading.
      *
      * @param sql the text to scan (must not be {@code null})
@@ -528,7 +533,9 @@ public final class QueryUtil {
         // Only readings that can differ for this text are run: a reading flag is irrelevant without its trigger character.
         final int relevant = (sql.indexOf('\\') >= 0 ? BLOCK_SCAN_BACKSLASH_ESCAPES : 0) | (sql.indexOf('\r') >= 0 ? BLOCK_SCAN_CR_ENDS_LINE_COMMENT : 0)
                 | (sql.indexOf('#') >= 0 ? BLOCK_SCAN_HASH_COMMENTS : 0) | (sql.indexOf('[') >= 0 ? BLOCK_SCAN_BRACKET_IDENTIFIERS : 0)
-                | (sql.indexOf("/*", sql.indexOf("/*") + 2) >= 0 ? BLOCK_SCAN_NESTED_COMMENTS : 0);
+                | (sql.indexOf("/*", sql.indexOf("/*") + 2) >= 0 ? BLOCK_SCAN_NESTED_COMMENTS : 0)
+                | (hasDashesNotStartingMySqlComment(sql) ? BLOCK_SCAN_MYSQL_DASH_COMMENTS : 0)
+                | (SqlParser.containsDollarQuoteOpener(sql, false) ? BLOCK_SCAN_DOLLAR_QUOTES : 0);
 
         for (int reading = 0; reading <= relevant; reading++) {
             if ((reading & ~relevant) == 0 && hasUnterminatedBlockComment(sql, reading)) {
@@ -544,7 +551,8 @@ public final class QueryUtil {
      * ({@code '...'}, {@code "..."}, {@code `...`}, doubled-quote escapes, and {@code [...]} with {@code ]]} when bracket
      * identifiers are read) and line comments are skipped. An unterminated quote is NOT taken to quote the rest of the
      * text: another lexer may skip it (inside a {@code #} comment or an {@code [it's]} identifier), so the scan continues
-     * right after it and treats later copies of that quote character as plain text.
+     * right after it and treats later copies of that quote character as plain text. Under the dollar-quote reading, a
+     * dollar-quoted string is skipped too, and one that is never closed holds the rest of the text.
      *
      * @param sql the text to scan
      * @param reading the {@code BLOCK_SCAN_*} flags of this reading
@@ -556,6 +564,8 @@ public final class QueryUtil {
         final boolean hashComments = (reading & BLOCK_SCAN_HASH_COMMENTS) != 0;
         final boolean bracketIdentifiers = (reading & BLOCK_SCAN_BRACKET_IDENTIFIERS) != 0;
         final boolean nestedComments = (reading & BLOCK_SCAN_NESTED_COMMENTS) != 0;
+        final boolean mysqlDashComments = (reading & BLOCK_SCAN_MYSQL_DASH_COMMENTS) != 0;
+        final boolean dollarQuotes = (reading & BLOCK_SCAN_DOLLAR_QUOTES) != 0;
 
         // Once a quote character has no closing partner from some position on, it has none from any later position
         // either, so later copies of it are plain text: rescanning to the end for each of them would be quadratic.
@@ -598,7 +608,18 @@ public final class QueryUtil {
                 } else {
                     bracketUnclosed = true;
                 }
-            } else if ((ch == '-' && i + 1 < len && sql.charAt(i + 1) == '-') || (ch == '#' && hashComments)) {
+            } else if (ch == '$' && dollarQuotes) {
+                final int end = SqlParser.dollarQuoteEnd(sql, i, false);
+
+                if (end < 0) {
+                    return false; // an unterminated dollar quote: the rest of the text is its content
+                }
+
+                if (end > 0) {
+                    i = end - 1;
+                }
+            } else if ((ch == '-' && i + 1 < len && sql.charAt(i + 1) == '-' && !(mysqlDashComments && isMySqlNonCommentDashes(sql, i)))
+                    || (ch == '#' && hashComments)) {
                 int lineEnd = i + 1;
 
                 // A bounded walk (not indexOf over the rest of the text) keeps many comment lines linear.
@@ -623,6 +644,48 @@ public final class QueryUtil {
         }
 
         return false;
+    }
+
+    /**
+     * Returns the index just past the PostgreSQL dollar-quoted string ({@code $$...$$} or {@code $tag$...$tag$}) that opens
+     * at {@code index}, {@code 0} if none opens there, or {@code -1} if it is never closed. A {@code $} that continues a
+     * name ({@code a$$b}) or that is no opening tag ({@code $1}, <code>${x}</code>) opens none. As H2 reads it, a
+     * {@code $} after a Unicode space (or another non-ASCII character that cannot be part of a name) opens one, although
+     * PostgreSQL would read the two as one name.
+     *
+     * @param sql the text to scan (must not be {@code null})
+     * @param index an index of {@code sql}
+     * @return the index just past the closing tag, {@code 0}, or {@code -1}
+     * @throws IllegalArgumentException if {@code sql} is {@code null}
+     * @throws IndexOutOfBoundsException if {@code index} is negative or not less than {@code sql.length()}
+     */
+    @Internal
+    public static int dollarQuoteEnd(final String sql, final int index) {
+        N.checkArgNotNull(sql, cs.sql);
+
+        return sql.charAt(index) == '$' ? SqlParser.dollarQuoteEnd(sql, index, false) : 0;
+    }
+
+    /**
+     * Whether {@code sql} holds a {@code --} that MySQL/MariaDB would not read as a comment start (see
+     * {@link #isMySqlNonCommentDashes(String, int)}); without one, the MySQL dash reading equals the default reading.
+     */
+    private static boolean hasDashesNotStartingMySqlComment(final String sql) {
+        for (int i = sql.indexOf("--"); i >= 0; i = sql.indexOf("--", i + 1)) {
+            if (isMySqlNonCommentDashes(sql, i)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether the {@code --} at {@code index} is plain text to MySQL/MariaDB, which start a comment there only before ASCII
+     * whitespace, a control character or the end of the text (the rule of {@code AbstractQueryBuilder}'s MySQL lexer).
+     */
+    private static boolean isMySqlNonCommentDashes(final String sql, final int index) {
+        return index + 2 < sql.length() && sql.charAt(index + 2) > ' ' && sql.charAt(index + 2) != 0x7F;
     }
 
     /**
@@ -665,6 +728,14 @@ public final class QueryUtil {
     @Internal
     public static String terminateLineComment(final String sql) {
         N.checkArgNotNull(sql, cs.sql);
+
+        // The dialect-neutral endsInsideLineComment(String, boolean) used here never reads "//" as a comment (only an H2
+        // builder does), so it can answer true only for a region opened by "--" or "#": a fragment without '-' and '#'
+        // cannot end inside a line comment and never needs the multi-reading scan.
+        if (sql.indexOf('-') < 0 && sql.indexOf('#') < 0) {
+            return sql;
+        }
+
         return AbstractQueryBuilder.endsInsideLineComment(sql, false) ? sql + '\n' : sql;
     }
 
@@ -1705,15 +1776,29 @@ public final class QueryUtil {
      * and does not stop conversion, and neither does a PostgreSQL {@code E'...'} string, which honors backslash
      * escapes under both readings.</p>
      *
+     * <p>Unless {@code backslashEscapesOnly} is {@code true}, a PostgreSQL dollar-quoted string ({@code $$...$$},
+     * {@code $tag$...$tag$}; H2 knows the untagged form) that starts a word is copied as written, whitespace and words
+     * included: the tokenizer does not know dollar quotes and splits one into words, which would collapse its
+     * whitespace and convert its words ({@code $$Hello World$$} would become {@code $$Hello world$$} under
+     * {@code SNAKE_CASE}). So is one that starts a word in the interior of a subscript or array constructor
+     * ({@code ARRAY[$$a  b$$, firstName]}), whatever {@code backslashEscapesOnly} says (MySQL has no subscripts), unless
+     * it holds a {@code ']'}, which ends the subscript for the tokenizer; one
+     * glued after a {@code ::} cast or a {@code '.'}, where no server accepts a string, is rendered like other text. A
+     * dollar-quoted string whose text holds a quote character, a {@code [}, a {@code #} or a comment opener is read
+     * differently by a server without dollar quotes ({@code $$'$$ -- c} is a name and a string there, but a string
+     * and a comment on PostgreSQL), and so is one that is never closed. Conversion stops at such a string, as at a
+     * token that depends on backslash escapes: it and the rest of {@code expr} (or of the subscript's interior) are
+     * appended exactly as written.</p>
+     *
      * @param sb the builder to append to
      * @param expr the raw expression {@code tokens} was produced from
      * @param tokens the tokens of {@code expr}, as {@code tokenizer} returns them
      * @param tokenizer the tokenizer that produced {@code tokens}; it also tokenizes the interior of array subscripts
      * @param backslashEscapesOnly {@code true} if the target server reads a backslash before a quote in a string
-     *        literal as an escape (MySQL), so the tokenizer's reading is taken as authoritative and conversion never
-     *        stops early. It matches MySQL only for string literals: MySQL applies no backslash escapes inside
-     *        backtick identifiers, inside {@code "..."} identifiers under {@code ANSI_QUOTES}, or anywhere under
-     *        {@code NO_BACKSLASH_ESCAPES}
+     *        literal as an escape and has no dollar-quoted strings (MySQL), so the tokenizer's reading is taken as
+     *        authoritative and conversion never stops early. It matches MySQL only for string literals: MySQL applies
+     *        no backslash escapes inside backtick identifiers, inside {@code "..."} identifiers under
+     *        {@code ANSI_QUOTES}, or anywhere under {@code NO_BACKSLASH_ESCAPES}
      * @param wordConverter converts an identifier; it applies any SQL keyword exemption itself
      * @param qualifiedPartConverter converts a name that follows a delimited qualifier (the {@code firstName} in
      *        {@code "T".firstName}) or a glued marker (the {@code createdAt} in <code>log_${month}.createdAt</code>)
@@ -1730,10 +1815,20 @@ public final class QueryUtil {
         N.checkArgNotNull(wordConverter, cs.wordConverter);
         N.checkArgNotNull(qualifiedPartConverter, cs.qualifiedPartConverter);
 
-        final List<String> words = splitAtNonSeparatorWhitespace(tokens);
-        int renderedTokenCount = words.size();
         int verbatimFrom = -1;
+        // Split first: a dollar quote can open right after a non-ASCII space glued to the word before it ("x ||" U+3000 "$$a  b$$").
+        List<String> words = splitAtNonSeparatorWhitespace(tokens);
 
+        if (!backslashEscapesOnly && expr.indexOf('$') >= 0) {
+            final int[] dollarVerbatimFrom = { -1 };
+            words = mergeDollarQuotedStrings(expr, words, dollarVerbatimFrom);
+            verbatimFrom = dollarVerbatimFrom[0];
+        }
+
+        int renderedTokenCount = words.size();
+
+        // The merged tokens end before a dollar-quoted string that stops conversion, so an escape-dependent token among
+        // them comes before that string.
         if (!backslashEscapesOnly && expr.indexOf('\\') >= 0) {
             final int escapeDependentToken = firstEscapeDependentToken(words);
 
@@ -1755,6 +1850,111 @@ public final class QueryUtil {
     }
 
     /**
+     * Merges each dollar-quoted string that starts a token of {@code expr} into one token holding its text as written (see
+     * {@link #appendRawExpression}). A string that stops conversion ends the returned list: {@code verbatimFrom[0]}
+     * receives its start in {@code expr}, or 0 (and the list is empty) if the token that opens it cannot be located.
+     * Returns {@code tokens} itself if {@code expr} has no dollar-quoted string.
+     */
+    private static List<String> mergeDollarQuotedStrings(final String expr, final List<String> tokens, final int[] verbatimFrom) {
+        final int size = tokens.size();
+        List<String> result = null;
+        int[] offsets = null; // aligned at the first token that opens a dollar quote
+        int stringEnd = -1; // the end in expr of the last merged string
+
+        for (int i = 0; i < size; i++) {
+            String token = tokens.get(i);
+            int tokenStart = offsets == null ? -1 : offsets[i];
+
+            if (stringEnd >= 0 && tokenStart < stringEnd) {
+                // A token the tokenizer split off inside the last merged string. A whitespace token has no offset of its own: it
+                // is inside the string if the next located token is.
+                if (tokenStart < 0 ? nextLocatedTokenStart(tokens, offsets, i + 1) < stringEnd : tokenStart + token.length() <= stringEnd) {
+                    continue;
+                }
+
+                if (tokenStart >= 0) {
+                    // "b$$c": the text after the closing tag is a token of its own.
+                    token = token.substring(stringEnd - tokenStart);
+                    tokenStart = stringEnd;
+                }
+            }
+
+            // A dollar quote that the rendering keeps opens at the start of a token. Inside one, a '$' continues a name, sits in
+            // a subscript (see appendSubscriptInterior) or follows a "::" or '.', where no server accepts a string. The token
+            // text alone tells whether it can open one; its offset is needed only then.
+            if (token.length() > 1 && token.charAt(0) == '$' && SqlParser.dollarQuoteEnd(token, 0, false) != 0) {
+                if (offsets == null) {
+                    offsets = tokenSourceOffsets(expr, tokens, size - 1);
+                    tokenStart = offsets[i];
+                }
+
+                final int end = tokenStart < 0 ? -1 : SqlParser.dollarQuoteEnd(expr, tokenStart, false);
+
+                // 0: glued to a name in expr
+                if (end != 0) {
+                    if (result == null) {
+                        result = new ArrayList<>(size);
+                        result.addAll(tokens.subList(0, i));
+                    }
+
+                    if (end < 0 || dependsOnDollarQuoting(expr, tokenStart, end)) {
+                        // Unterminated, read differently without dollar quotes, or not located (then all of expr is appended as written).
+                        if (tokenStart < 0) {
+                            result.clear();
+                        }
+
+                        verbatimFrom[0] = Math.max(0, tokenStart);
+                        return result;
+                    }
+
+                    result.add(expr.substring(tokenStart, end));
+                    stringEnd = end;
+                    // "$$a$$b": the text after the closing tag is a token of its own. It opens no further string, because the
+                    // closing tag's '$' glues to it, as pgJDBC reads it (PostgreSQL rejects two adjacent strings anyway).
+                    token = tokenStart + token.length() <= end ? null : token.substring(end - tokenStart);
+                }
+            }
+
+            if (token != null && result != null) {
+                result.add(token);
+            }
+        }
+
+        return result == null ? tokens : result;
+    }
+
+    /**
+     * The start in the source of the first token at or after {@code from} that is not whitespace, or
+     * {@link Integer#MAX_VALUE} if there is none or it has no known start.
+     */
+    private static int nextLocatedTokenStart(final List<String> tokens, final int[] offsets, final int from) {
+        for (int i = from, size = tokens.size(); i < size; i++) {
+            if (!tokens.get(i).isBlank()) {
+                return offsets[i] < 0 ? Integer.MAX_VALUE : offsets[i];
+            }
+        }
+
+        return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Whether the dollar-quoted string {@code expr[start, end)} is read differently by a server without dollar quotes,
+     * which reads its text as SQL: the text holds a quote character, a {@code [} or a {@code #}, or opens a comment.
+     */
+    private static boolean dependsOnDollarQuoting(final String expr, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            final char ch = expr.charAt(i);
+
+            if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[' || ch == '#'
+                    || (ch == '-' || ch == '/') && i + 1 < end && expr.charAt(i + 1) == (ch == '-' ? '-' : '*')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Renders {@code tokens[0, end)} as {@link #appendRawExpression} describes. {@code expr} is the text the tokens
      * were produced from; it is read only to find a line break between two adjacent string literals.
      */
@@ -1762,6 +1962,7 @@ public final class QueryUtil {
             final SqlParser.Tokenizer tokenizer, final UnaryOperator<String> wordConverter, final UnaryOperator<String> qualifiedPartConverter,
             final int depth) {
         boolean inBracedPlaceholder = false;
+        int lastBracedPlaceholderEnd = -2; // index of the last token closing a braced marker, -2 until first needed
         boolean afterGluedSubscript = false;
         int[] sourceOffsets = null; // aligned lazily, at most once per call
         // A type or collation names a database object, not a column: converting order_status to orderStatus under
@@ -1808,7 +2009,17 @@ public final class QueryUtil {
             // The SQL tokenizer can split MyBatis bind names and attributes at spaces or operators.
             // Keep the entire marker out of identifier conversion, then resume with the next SQL token.
             // An unterminated marker is not a binding, so the rest of the expression is converted normally.
-            final boolean placeholder = inBracedPlaceholder || ((token.startsWith("#{") || token.startsWith("${")) && closesBracedPlaceholder(tokens, i));
+            boolean placeholder = inBracedPlaceholder;
+
+            if (!placeholder && (token.startsWith("#{") || token.startsWith("${"))) {
+                // A marker closes iff some later token ends a brace; memoized because rescanning per unterminated marker is quadratic.
+                if (lastBracedPlaceholderEnd == -2) {
+                    lastBracedPlaceholderEnd = lastBracedPlaceholderEnd(tokens);
+                }
+
+                placeholder = i <= lastBracedPlaceholderEnd;
+            }
+
             final boolean typeNamePart = !placeholder && typeNameState != TYPE_NAME_NONE && isTypeNamePart(tokens, i, typeNameState);
 
             if (placeholder) {
@@ -2451,7 +2662,8 @@ public final class QueryUtil {
      * {@code '#'} inside the brackets as part of the subscript. Tokenized on its own, that text would be
      * stripped as a comment, so an interior with a {@code '#'}, {@code --} or <code>/*</code> outside its quoted
      * regions is copied as written instead. So is an interior nested deeper than
-     * {@link #MAX_RENDERED_SUBSCRIPT_DEPTH}.
+     * {@link #MAX_RENDERED_SUBSCRIPT_DEPTH}. A dollar-quoted string in the interior is copied as written, and the text
+     * from one that stops conversion, as at the top level of {@link #appendRawExpression}.
      */
     private static void appendSubscriptInterior(final StringBuilder sb, final String interior, final SqlParser.Tokenizer tokenizer,
             final UnaryOperator<String> wordConverter, final UnaryOperator<String> qualifiedPartConverter, final int depth) {
@@ -2460,8 +2672,18 @@ public final class QueryUtil {
             return;
         }
 
-        final List<String> interiorTokens = splitAtNonSeparatorWhitespace(tokenizer.tokenize(interior));
+        List<String> interiorTokens = splitAtNonSeparatorWhitespace(tokenizer.tokenize(interior));
+        final int[] verbatimFrom = { -1 };
+
+        if (interior.indexOf('$') >= 0) {
+            interiorTokens = mergeDollarQuotedStrings(interior, interiorTokens, verbatimFrom);
+        }
+
         appendRawExpressionTokens(sb, interior, interiorTokens, interiorTokens.size(), tokenizer, wordConverter, qualifiedPartConverter, depth + 1);
+
+        if (verbatimFrom[0] >= 0) {
+            sb.append(interior, verbatimFrom[0], interior.length());
+        }
     }
 
     /**
@@ -2515,15 +2737,18 @@ public final class QueryUtil {
         return token.indexOf('}') >= 0 && !token.startsWith("'") && !token.startsWith("\"");
     }
 
-    /** Whether the braced marker opened by the token at {@code start} is closed by that token or a later one. */
-    private static boolean closesBracedPlaceholder(final List<String> tokens, final int start) {
-        for (int i = start, len = tokens.size(); i < len; i++) {
+    /**
+     * The index of the last token in {@code tokens} (the whole list, not only the rendered prefix) that closes a braced
+     * marker, or -1 if none: a marker opened at index {@code i} is closed iff {@code i <= } that index.
+     */
+    private static int lastBracedPlaceholderEnd(final List<String> tokens) {
+        for (int i = tokens.size() - 1; i >= 0; i--) {
             if (isBracedPlaceholderEnd(tokens.get(i))) {
-                return true;
+                return i;
             }
         }
 
-        return false;
+        return -1;
     }
 
     /**

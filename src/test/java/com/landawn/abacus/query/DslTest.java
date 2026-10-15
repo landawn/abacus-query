@@ -1394,7 +1394,10 @@ public class DslTest extends TestBase {
 
         @Test
         void testCountEntityClass() {
-            String sql = Dsl.MAC.selectCountFrom(Account.class).where(Filters.between("createdDate", new Date(1_700_000_000_000L), new Date(1_700_000_000_000L))).build().query();
+            String sql = Dsl.MAC.selectCountFrom(Account.class)
+                    .where(Filters.between("createdDate", new Date(1_700_000_000_000L), new Date(1_700_000_000_000L)))
+                    .build()
+                    .query();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM ACCOUNT"));
             assertTrue(sql.contains("CREATED_DATE BETWEEN"));
@@ -1689,7 +1692,11 @@ public class DslTest extends TestBase {
 
         @Test
         void testSelectMultipleColumns() {
-            String sql = Dsl.MAC.select("firstName", "lastName", "emailAddress").from("ACCOUNT").where(Filters.gt("createdDate", new Date(1_700_000_000_000L))).build().query();
+            String sql = Dsl.MAC.select("firstName", "lastName", "emailAddress")
+                    .from("ACCOUNT")
+                    .where(Filters.gt("createdDate", new Date(1_700_000_000_000L)))
+                    .build()
+                    .query();
             assertTrue(sql.contains("SELECT"));
             assertTrue(sql.contains("FIRST_NAME AS \"firstName\""));
             assertTrue(sql.contains("LAST_NAME AS \"lastName\""));
@@ -1870,7 +1877,10 @@ public class DslTest extends TestBase {
 
         @Test
         void testCountEntityClass() {
-            String sql = Dsl.MLC.selectCountFrom(Account.class).where(Filters.between("createdDate", new Date(1_700_000_000_000L), new Date(1_700_000_000_000L))).build().query();
+            String sql = Dsl.MLC.selectCountFrom(Account.class)
+                    .where(Filters.between("createdDate", new Date(1_700_000_000_000L), new Date(1_700_000_000_000L)))
+                    .build()
+                    .query();
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM account"));
             assertTrue(sql.contains("createdDate BETWEEN"));
@@ -2214,7 +2224,11 @@ public class DslTest extends TestBase {
 
         @Test
         void testSelectMultipleColumns() {
-            String sql = Dsl.MLC.select("firstName", "lastName", "emailAddress").from("account").where(Filters.gt("createdDate", new Date(1_700_000_000_000L))).build().query();
+            String sql = Dsl.MLC.select("firstName", "lastName", "emailAddress")
+                    .from("account")
+                    .where(Filters.gt("createdDate", new Date(1_700_000_000_000L)))
+                    .build()
+                    .query();
             assertTrue(sql.contains("SELECT firstName, lastName, emailAddress"));
             assertTrue(sql.contains("FROM account"));
             assertTrue(sql.contains("createdDate > #{createdDate}"));
@@ -2437,7 +2451,10 @@ public class DslTest extends TestBase {
 
         @Test
         void testCountEntityClass() {
-            String sql = Dsl.MSB.selectCountFrom(Account.class).where(Filters.between("createdDate", new Date(1_700_000_000_000L), new Date(1_700_000_000_000L))).build().query();
+            String sql = Dsl.MSB.selectCountFrom(Account.class)
+                    .where(Filters.between("createdDate", new Date(1_700_000_000_000L), new Date(1_700_000_000_000L)))
+                    .build()
+                    .query();
             assertEquals("SELECT count(*) FROM test_account WHERE createdDate BETWEEN #{minCreatedDate} AND #{maxCreatedDate}", sql);
             assertTrue(sql.contains("SELECT count(*)"));
             assertTrue(sql.contains("FROM test_account"));
@@ -8913,11 +8930,76 @@ public class DslTest extends TestBase {
             assertTrue(assertThrows(IllegalArgumentException.class, () -> new Dsl(null)).getMessage().contains(cs.sqlDialect));
             assertTrue(assertThrows(IllegalArgumentException.class, () -> Dsl.forDialect(null)).getMessage().contains(cs.sqlDialect));
         }
+
+        // The UPDATE/DELETE target table name is rejected by the factory call itself, before any clause is staged, so an
+        // open block comment cannot swallow the SET/WHERE clauses rendered after it.
+        @Test
+        void testUpdateAndDeleteFromRejectUnterminatedBlockCommentInTableNameEagerly() {
+            final String expected = "tableName must not contain an unterminated block comment: t /* x";
+
+            for (final Factory factory : Factory.values()) {
+                final Dsl dsl = factory.dsl;
+                assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> dsl.update("t /* x")).getMessage(), factory.name());
+                assertEquals(expected,
+                        assertThrows(IllegalArgumentException.class, () -> dsl.update("t /* x", com.landawn.abacus.query.entity.Account.class)).getMessage(),
+                        factory.name());
+                assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> dsl.deleteFrom("t /* x")).getMessage(), factory.name());
+                assertEquals(expected,
+                        assertThrows(IllegalArgumentException.class, () -> dsl.deleteFrom("t /* x", com.landawn.abacus.query.entity.Account.class))
+                                .getMessage(),
+                        factory.name());
+                assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> dsl.selectCountFrom("t /* x")).getMessage(), factory.name());
+            }
+
+            // The table name is checked before the column list, so it wins over a later comment-bearing SET column.
+            assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> PSC.update("t /* x").set("a -- b")).getMessage());
+            // Blank names keep their own message; terminated and quoted comments are accepted.
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> PSC.update(" ")).getMessage().contains("tableName"));
+            assertEquals("UPDATE t /* x */ SET a = ?", PSC.update("t /* x */").set("a").build().query());
+            assertEquals("DELETE FROM \"t/*x\"", PSC.deleteFrom("\"t/*x\"").build().query());
+            assertEquals("DELETE FROM t", PSC.deleteFrom("t", com.landawn.abacus.query.entity.Account.class).build().query());
+        }
+
+        // renderCondition documents the H2 rejection of a "//" line comment in a condition-layer GROUP BY / ORDER BY expression,
+        // reached directly, through a Criteria, and through a structured sub-query; other dialects render the same conditions.
+        @Test
+        void testRenderConditionRejectsH2DoubleSlashSortKey() {
+            final Dsl h2 = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("H2")).build());
+            final Dsl postgres = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
+            final Condition orderBy = Filters.orderBy("a // c", SortDirection.DESC, "b", SortDirection.ASC);
+            final Condition criteria = com.landawn.abacus.query.condition.Criteria.builder().where(Filters.eq("x", 1)).groupBy("g // c").build();
+            final Condition subQuery = Filters.in("id",
+                    Filters.subQuery("u", List.of("id"), com.landawn.abacus.query.condition.Criteria.builder().orderBy("a // c").build()));
+
+            assertEquals("SQL comment token is not allowed in ORDER BY expression: a // c DESC, b ASC",
+                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(orderBy)).getMessage());
+            assertEquals("SQL comment token is not allowed in GROUP BY expression: g // c",
+                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(criteria, null)).getMessage());
+            assertEquals("SQL comment token is not allowed in ORDER BY expression: a // c",
+                    assertThrows(IllegalArgumentException.class, () -> h2.renderCondition(subQuery)).getMessage());
+
+            assertEquals("ORDER BY a // c DESC, b ASC", postgres.renderCondition(orderBy).build().query());
+            assertEquals("WHERE x = ? GROUP BY g // c", postgres.renderCondition(criteria, null).build().query());
+            assertEquals("id IN (SELECT id FROM u ORDER BY a // c)", postgres.renderCondition(subQuery).build().query());
+        }
     }
 
     enum Factory {
-        SCSB(Dsl.SCSB), ACSB(Dsl.ACSB), LCSB(Dsl.LCSB), PSB(Dsl.PSB), PSC(Dsl.PSC), PAC(Dsl.PAC), PLC(Dsl.PLC), NSB(Dsl.NSB), NSC(Dsl.NSC),
-        NAC(Dsl.NAC), NLC(Dsl.NLC), MSB(Dsl.MSB), MSC(Dsl.MSC), MAC(Dsl.MAC), MLC(Dsl.MLC);
+        SCSB(Dsl.SCSB),
+        ACSB(Dsl.ACSB),
+        LCSB(Dsl.LCSB),
+        PSB(Dsl.PSB),
+        PSC(Dsl.PSC),
+        PAC(Dsl.PAC),
+        PLC(Dsl.PLC),
+        NSB(Dsl.NSB),
+        NSC(Dsl.NSC),
+        NAC(Dsl.NAC),
+        NLC(Dsl.NLC),
+        MSB(Dsl.MSB),
+        MSC(Dsl.MSC),
+        MAC(Dsl.MAC),
+        MLC(Dsl.MLC);
 
         final Dsl dsl;
 

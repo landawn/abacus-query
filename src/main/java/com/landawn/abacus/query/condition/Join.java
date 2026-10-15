@@ -133,7 +133,7 @@ public class Join extends AbstractCondition {
      * }</pre>
      *
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
-     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, that is reported first;
+     * @throws IllegalArgumentException always: if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment, that is reported first;
      *                                  otherwise it is thrown because a qualified {@code JOIN} requires a non-{@code null} {@code ON}/{@code USING} predicate
      * @deprecated always throws {@link IllegalArgumentException} because a qualified join requires an {@code ON}/{@code USING}
      *             predicate; use {@link #Join(String, Condition)} instead, or {@link CrossJoin} for an unconditional join
@@ -152,7 +152,7 @@ public class Join extends AbstractCondition {
      * @param operator the join operator; only {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} succeeds here
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @throws IllegalArgumentException if {@code operator} is {@code null} or is not a JOIN operator; if {@code joinEntity} is
-     *                                  {@code null}, empty, or blank; or if {@code operator} is any JOIN operator other than
+     *                                  {@code null}, empty, or blank, or contains an unterminated block comment; or if {@code operator} is any JOIN operator other than
      *                                  {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} (those require a non-{@code null}
      *                                  {@code ON}/{@code USING} predicate)
      */
@@ -192,7 +192,7 @@ public class Join extends AbstractCondition {
      * @param joinEntity the table or entity to join with. Can include alias (e.g., "orders o").
      * @param joinCondition the join condition; must not be {@code null}. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword.
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank; if {@code joinCondition} is {@code null};
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
      *                                  {@link Criteria}, a null operator, a SQL clause, an {@link SqlExpression} whose text begins with
      *                                  {@code ON} or {@code USING}, a nested ON/USING connector, an {@code ANY}/{@code ALL}/{@code SOME}
@@ -222,7 +222,7 @@ public class Join extends AbstractCondition {
      * @param joinCondition the join condition. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. Must be {@code null} for
      *            {@link Operator#CROSS_JOIN}/{@link Operator#NATURAL_JOIN} and non-{@code null} for every other JOIN operator.
-     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not a JOIN operator; if {@code joinEntity} is {@code null}, empty, or blank;
+     * @throws IllegalArgumentException if {@code operator} is {@code null} or is not a JOIN operator; if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment;
      *                                  if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
      *                                  {@code joinCondition} is non-{@code null}; if {@code operator} is any other JOIN operator and
      *                                  {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
@@ -240,11 +240,15 @@ public class Join extends AbstractCondition {
      *
      * @param joinEntity the table or entity to join with
      * @return {@code joinEntity}, unchanged
-     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment
      */
     private static String checkSingleJoinEntity(final String joinEntity) {
         if (Strings.isBlank(joinEntity)) {
             throw new IllegalArgumentException("joinEntity must not be null, empty, or blank");
+        }
+
+        if (QueryUtil.hasUnterminatedBlockComment(joinEntity)) {
+            throw new IllegalArgumentException("joinEntity must not contain an unterminated block comment: " + joinEntity);
         }
 
         return joinEntity;
@@ -275,7 +279,7 @@ public class Join extends AbstractCondition {
      * @param joinEntities the collection of tables or entities to join with.
      * @param joinCondition the join condition; must not be {@code null}. A plain predicate is rendered with an {@code ON} prefix; an explicit
      *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword.
-     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements;
+     * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains {@code null}, empty, or blank elements or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a {@link Criteria}, a null operator, a SQL clause,
      *                                  an {@link SqlExpression} whose text begins
@@ -307,7 +311,7 @@ public class Join extends AbstractCondition {
      *            {@link On} or {@code @Beta} {@link Using} supplies its own keyword. Must be {@code null} for
      *            {@link Operator#CROSS_JOIN}/{@link Operator#NATURAL_JOIN} and non-{@code null} for every other JOIN operator.
      * @throws IllegalArgumentException if {@code operator} is {@code null} or is not a JOIN operator; if {@code joinEntities} is
-     *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements;
+     *                                  {@code null} or empty, or contains {@code null}, empty, or blank elements or an element containing an unterminated block comment;
      *                                  if {@code operator} is {@link Operator#CROSS_JOIN} or {@link Operator#NATURAL_JOIN} and
      *                                  {@code joinCondition} is non-{@code null}; if {@code operator} is any other JOIN operator and
      *                                  {@code joinCondition} is {@code null}; or
@@ -345,12 +349,12 @@ public class Join extends AbstractCondition {
 
     /**
      * Copies {@code joinEntities} into a new list, rejecting a {@code null} or empty collection and any
-     * {@code null}, empty, or blank element.
+     * {@code null}, empty, or blank element or element containing an unterminated block comment.
      *
      * @param joinEntities the tables or entities to join with
      * @return a mutable copy of the validated join entities
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null} or empty, or contains a
-     *         {@code null}, empty, or blank element
+     *         {@code null}, empty, or blank element or an element containing an unterminated block comment
      */
     private static List<String> copyAndValidateJoinEntities(final Collection<String> joinEntities) {
         N.checkArgNotEmpty(joinEntities, cs.joinEntities);
@@ -360,6 +364,12 @@ public class Join extends AbstractCondition {
         for (final String joinEntity : joinEntities) {
             if (Strings.isBlank(joinEntity)) {
                 throw new IllegalArgumentException("joinEntity in joinEntities must not be null, empty, or blank");
+            }
+
+            // renderJoinEntities() terminates only line comments; an open "/*" would comment out the ON/USING
+            // predicate and everything appended after the join.
+            if (QueryUtil.hasUnterminatedBlockComment(joinEntity)) {
+                throw new IllegalArgumentException("joinEntity in joinEntities must not contain an unterminated block comment: " + joinEntity);
             }
 
             copy.add(joinEntity);

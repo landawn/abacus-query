@@ -2,10 +2,10 @@
   "library": {
     "name": "abacus-query",
     "version": "4.9.5",
-    "generated_at": "2026-10-12",
+    "generated_at": "2026-10-14",
     "java_target": "21",
     "source": {
-      "git_sha": "0b6001de74ed9c368645d6158ecb0a57a74e64bb"
+      "git_sha": "b55692d075a5dfafa1a21e15adb0751427e4f167"
     }
   },
   "packages": [
@@ -75,7 +75,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -174,7 +174,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -308,7 +308,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if selectModifier is non-empty but blank (whitespace only)"
+                  "condition": "if selectModifier is non-empty but blank (whitespace only), or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a pre-select modifier to the SELECT statement.",
@@ -345,7 +345,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableNames is null or empty, contains a null, empty, or blank element, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break"
+                  "condition": "if tableNames is null or empty, contains a null, empty, or blank element or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -384,7 +384,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableNames is null or empty, contains a null, empty, or blank element, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break"
+                  "condition": "if tableNames is null or empty, contains a null, empty, or blank element or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -423,7 +423,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break"
+                  "condition": "if expr is null, empty, or blank, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -468,7 +468,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sqlBuilder is null, is this builder, does not build a complete, lexically SELECT-only SELECT query without semicolons outside quoted text or comments, uses an incompatible parameter policy, or alias is null, empty, or blank, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break"
+                  "condition": "if sqlBuilder is null, is this builder, does not build a complete, lexically SELECT-only SELECT query without semicolons outside quoted text or comments, uses an incompatible parameter policy, or alias is null, empty, or blank, or contains an unterminated block comment (reported before the child is finalized), or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -519,7 +519,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break"
+                  "condition": "if expr is null, empty, or blank, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -560,7 +560,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its mapped table name ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL, where '#' opens a comment), or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -607,7 +607,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, if alias contains a line break or a SQL comment token, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character or line break"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its mapped table name ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL, where '#' opens a comment), if alias contains a line break or a SQL comment token, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -648,7 +648,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause to the SQL statement.",
@@ -683,7 +683,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class"
+                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -728,7 +728,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -769,7 +769,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause to the SQL statement.",
@@ -804,7 +804,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class"
+                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -849,7 +849,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -888,7 +888,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause to the SQL statement.",
@@ -923,7 +923,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class"
+                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -968,7 +968,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1007,7 +1007,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause to the SQL statement.",
@@ -1042,7 +1042,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class"
+                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1087,7 +1087,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1126,7 +1126,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause to the SQL statement.",
@@ -1161,7 +1161,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class"
+                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1206,7 +1206,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1245,7 +1245,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, or contains a top-level ON/USING connector"
+                  "condition": "if joinExpr is null, empty, or blank, contains an unterminated block comment, or contains a top-level ON/USING connector"
                 }
               ],
               "javadoc_summary": "Adds a CROSS JOIN clause to the SQL statement.",
@@ -1280,7 +1280,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class"
+                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1325,7 +1325,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1364,7 +1364,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, or contains a top-level ON/USING connector"
+                  "condition": "if joinExpr is null, empty, or blank, contains an unterminated block comment, or contains a top-level ON/USING connector"
                 }
               ],
               "javadoc_summary": "Adds a NATURAL JOIN clause to the SQL statement.",
@@ -1399,7 +1399,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class"
+                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1444,7 +1444,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or if alias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1703,7 +1703,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, blank, or comment-only, or, on a SQL Server dialect, contains a temporary-table identifier (#name) together with a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if expr is null, empty, blank, or comment-only, or, on a SQL Server dialect, contains a temporary-table identifier (#name) together with a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -1742,7 +1742,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, has a null operator, or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank or comment-only SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example WHERE 1 = 1); or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression, an incompatible subquery parameter policy, or an invalid raw numeric literal; see #appendCondition(Condition); or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if condition is null, has a null operator, or is/contains a Criteria, standalone SubQuery, SQL clause, JOIN, ON/USING connector, quantified-subquery operand, or blank or comment-only SqlExpression. An empty com.landawn.abacus.query.condition.Junction is accepted and renders its Boolean identity (for example WHERE 1 = 1); or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression, an incompatible subquery parameter policy, or an invalid raw numeric literal; see #appendCondition(Condition); or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -2299,7 +2299,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2338,7 +2338,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2377,7 +2377,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2416,7 +2416,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2455,7 +2455,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2494,7 +2494,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2533,7 +2533,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2572,7 +2572,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2617,7 +2617,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, if expr contains a SQL comment token, or if direction is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if expr is null, empty, or blank, if expr contains a SQL comment token, or if direction is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2656,7 +2656,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element, or an element containing a SQL comment token; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2701,7 +2701,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element or an element containing a SQL comment token, or if direction is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if propOrColumnNames is null or empty, contains a null, empty, or blank element or an element containing a SQL comment token, or if direction is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2740,7 +2740,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if orders is null or empty, contains a null, empty, or blank key, a key containing a SQL comment token, or maps any key to a null direction; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if orders is null or empty, contains a null, empty, or blank key, a key containing a SQL comment token, or maps any key to a null direction; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2779,7 +2779,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if count is negative; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if count is negative; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -2826,7 +2826,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if count or offset is negative; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if count or offset is negative; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -3020,7 +3020,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, if a predicate position contains a non-predicate condition, if a Criteria join entity contains a top-level ON/USING connector, if a generic clause uses an operator that requires a dedicated builder method or condition type, or if a set-operation operand (standalone or carried by a Criteria) is not a complete, lexically SELECT-only SELECT query, contains a semicolon outside quoted text or comments, or requires explicit branch isolation, or if a Criteria JOIN's Using connector renders a qualified column name; or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression, an incompatible subquery parameter policy, or an invalid raw numeric literal; see #appendCondition(Condition)."
+                  "condition": "if condition is null, if a predicate position contains a non-predicate condition, if a Criteria join entity contains a top-level ON/USING connector, if a generic clause uses an operator that requires a dedicated builder method or condition type, or if a set-operation operand (standalone or carried by a Criteria; a structured SubQuery, or under RAW_SQL a raw one whose bindings are inlined, is also judged by the SQL this builder renders for it) is not a complete, lexically SELECT-only SELECT query, contains a semicolon outside quoted text or comments, or requires explicit branch isolation, or if a Criteria JOIN's Using connector renders a qualified column name, or if, on H2, a GROUP BY or ORDER BY clause (standalone or carried by a Criteria) holds a raw expression, such as the sort keys of Filters.orderBy(...), containing a // line comment outside quoted text (as #orderBy(String) rejects a SQL comment token in a sort key); or if a rendered condition contains an unsupported condition type, an unsafe column fragment, a comment-only raw expression, an incompatible subquery parameter policy, or an invalid raw numeric literal; see #appendCondition(Condition)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -3067,7 +3067,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if expr is null, empty, or blank, or contains an unterminated block comment; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -3164,7 +3164,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if b is true and expr is null, empty, or blank; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if b is true and expr is null, empty, or blank, or contains an unterminated block comment; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -3270,7 +3270,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if the selected expression (the one chosen by b) is null, empty, or blank; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if the selected expression (the one chosen by b) is null, empty, or blank, or contains an unterminated block comment; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -3888,7 +3888,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or contains a SQL comment token"
+                  "condition": "if expr is null, empty, or blank, or contains a SQL comment token; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -3929,7 +3929,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnNames is null or empty, or contains a null, empty, or blank element, or an element containing a SQL comment token"
+                  "condition": "if propOrColumnNames is null or empty, or contains a null, empty, or blank element, or an element containing a SQL comment token; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -3970,7 +3970,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if props is null or empty, or contains a null, empty, or blank key, or a key containing a SQL comment token; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if props is null or empty, or contains a null, empty, or blank key, or a key containing a SQL comment token; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -4019,7 +4019,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if propOrColumnName is null, empty, or blank, or contains a SQL comment token; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -4080,7 +4080,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if either property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if either property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -4153,7 +4153,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if any property or column name is null, empty, or blank, contains a SQL comment token, or if the same name is given more than once; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -4196,7 +4196,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null; if entity is a Collection or array (use #set(Collection) for column lists); if a String entity is empty or blank or contains a SQL comment token; if a Map entity is empty or has a null, empty, or blank key or a key containing a SQL comment token; or if any other entity is not an instance of an entity bean class or its bean has no updatable property; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if entity is null; if entity is a Collection or array (use #set(Collection) for column lists); if a String entity is empty or blank or contains a SQL comment token; if a Map entity is empty or has a null, empty, or blank key or a key containing a SQL comment token; or if any other entity is not an instance of an entity bean class or its bean has no updatable property; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -4245,7 +4245,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entity is null; if entity is a Collection or array (use #set(Collection) for column lists); if a String entity is empty or blank or contains a SQL comment token; if a Map entity has a null, empty, or blank key or a key containing a SQL comment token, or has no entry remaining after exclusions are applied; or if any other entity is not an instance of an entity bean class or its bean has no updatable property remaining after exclusions are applied; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if entity is null; if entity is a Collection or array (use #set(Collection) for column lists); if a String entity is empty or blank or contains a SQL comment token; if a Map entity has a null, empty, or blank key or a key containing a SQL comment token, or has no entry remaining after exclusions are applied; or if any other entity is not an instance of an entity bean class or its bean has no updatable property remaining after exclusions are applied; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -4290,7 +4290,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, is not an entity bean class, or declares no updatable property"
+                  "condition": "if entityClass is null, is not an entity bean class, or declares no updatable property; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -4339,7 +4339,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, is not an entity bean class, or no updatable property remains after exclusions are applied"
+                  "condition": "if entityClass is null, is not an entity bean class, or no updatable property remains after exclusions are applied; or if the UPDATE target table name contains an unterminated block comment (checked when the statement prefix is emitted)."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -4377,7 +4377,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -4432,7 +4432,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if function is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if function is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "E",
@@ -4488,7 +4488,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if function is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if function is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "E",
@@ -4538,7 +4538,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if consumer is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if consumer is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "E",
@@ -4589,7 +4589,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if consumer is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if consumer is null; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "E",
@@ -4626,7 +4626,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if the built statement is blank, contains a semicolon outside quoted text or comments, or is not a complete syntactic SELECT query candidate; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if the built statement is blank, contains a semicolon outside quoted text or comments, or is not a complete syntactic SELECT query candidate; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -4660,7 +4660,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered."
+                  "condition": "if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment."
                 },
                 {
                   "type": "java.lang.RuntimeException",
@@ -5227,7 +5227,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank"
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates an UPDATE statement for a table.",
@@ -5264,7 +5264,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or entityClass is null, or inspected entity metadata has invalid property mappings"
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5377,7 +5377,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank"
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates a DELETE FROM statement for a table.",
@@ -5416,7 +5416,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or entityClass is null, or inspected entity metadata has invalid property mappings"
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5781,7 +5781,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name"
+                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5822,7 +5822,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name, or if tableAlias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5863,7 +5863,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
+                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that ends inside a line comment, such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5913,7 +5913,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name, or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
+                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that ends inside a line comment, such as t -- note), or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5956,7 +5956,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name"
+                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6003,7 +6003,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name, or if tableAlias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6050,7 +6050,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
+                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that ends inside a line comment, such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6105,7 +6105,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name, or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
+                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that ends inside a line comment, such as t -- note), or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6400,7 +6400,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if either entity class is null; if a non-empty table or class alias is blank, quoted, or contains a line break or SQL comment token; if the two selections together resolve to no selectable property; if either entity class is not a valid entity bean class; or if the generated FROM clause is blank"
+                  "condition": "if either entity class is null; if a non-empty table or class alias is blank, quoted, or contains a line break or SQL comment token; if the two selections together resolve to no selectable property; if either entity class is not a valid entity bean class; or if the generated FROM clause is blank, or lists a mapped table name that may end inside a line comment (such as t -- note)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6482,7 +6482,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if either entity class is null; if a non-empty table or class alias is blank, quoted, or contains a line break or SQL comment token; if the two selections together resolve to no selectable property after exclusions are applied; if either entity class is not a valid entity bean class; or if the generated FROM clause is blank"
+                  "condition": "if either entity class is null; if a non-empty table or class alias is blank, quoted, or contains a line break or SQL comment token; if the two selections together resolve to no selectable property after exclusions are applied; if either entity class is not a valid entity bean class; or if the generated FROM clause is blank, or lists a mapped table name that may end inside a line comment (such as t -- note)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6522,7 +6522,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if selection is null, has a null, empty, or blank included property name, carries a blank, quoted, or comment-bearing table or class alias, resolves to no selectable property, has an entity class that is not a valid entity bean class, or produces a blank generated FROM clause, or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class"
+                  "condition": "if selection is null, has a null, empty, or blank included property name, carries a blank, quoted, or comment-bearing table or class alias, resolves to no selectable property, has an entity class that is not a valid entity bean class, or produces a blank generated FROM clause, or lists a mapped table name that may end inside a line comment (such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6562,7 +6562,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if selections is null or empty, contains a null element, a null, empty, or blank included property name, or a blank, quoted, or comment-bearing table or class alias, resolves to no properties in total, contains an entity class that is not a valid entity bean class, or produces a blank generated FROM clause, or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class"
+                  "condition": "if selections is null or empty, contains a null element, a null, empty, or blank included property name, or a blank, quoted, or comment-bearing table or class alias, resolves to no properties in total, contains an entity class that is not a valid entity bean class, or produces a blank generated FROM clause, or lists a mapped table name that may end inside a line comment (such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6601,7 +6601,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank"
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates a COUNT(*) query for a table.",
@@ -6632,7 +6632,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name (or one that ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6673,7 +6673,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null, or inspected entity metadata has invalid property mappings; if it is a Where or Having clause whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL clause, JOIN, or ON/USING connector); if it is a clause other than a Where, GroupBy, Having, OrderBy, Limit, or set-operation clause (for example a custom OFFSET clause); if it is or contains a condition type that cannot be rendered or an incompatible subquery; or, under RAW_SQL, a value is a non-finite floating-point number or a Number whose text is not a decimal SQL literal"
+                  "condition": "if condition is null, or inspected entity metadata has invalid property mappings; if it is a Where or Having clause whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL clause, JOIN, or ON/USING connector); if it is a clause other than a Where, GroupBy, Having, OrderBy, Limit, or set-operation clause (for example a custom OFFSET clause); if it is or contains a condition type that cannot be rendered or an incompatible subquery; or, under RAW_SQL, a value is a non-finite floating-point number or a Number whose text is not a decimal SQL literal; or, on H2, it is or contains (directly, in a Criteria, or in a structured sub-query) a GROUP BY or ORDER BY clause whose raw expression, such as the sort keys of Filters.orderBy(...), contains a // line comment outside quoted text (see AbstractQueryBuilder#append(Condition)); or a structured sub-query's entity class maps to a table name that AbstractQueryBuilder#from(Class) rejects (an unterminated block comment, or a trailing line comment under this DSL's dialect)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6716,7 +6716,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if condition is null; if it is a Where or Having clause whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL clause, JOIN, or ON/USING connector); if it is a clause other than a Where, GroupBy, Having, OrderBy, Limit, or set-operation clause (for example a custom OFFSET clause); if it is or contains a condition type that cannot be rendered or an incompatible subquery; or, under RAW_SQL, a value is a non-finite floating-point number or a Number whose text is not a decimal SQL literal"
+                  "condition": "if condition is null; if it is a Where or Having clause whose condition is not a predicate (for example a Criteria, standalone sub-query, SQL clause, JOIN, or ON/USING connector); if it is a clause other than a Where, GroupBy, Having, OrderBy, Limit, or set-operation clause (for example a custom OFFSET clause); if it is or contains a condition type that cannot be rendered or an incompatible subquery; or, under RAW_SQL, a value is a non-finite floating-point number or a Number whose text is not a decimal SQL literal; or, on H2, it is or contains (directly, in a Criteria, or in a structured sub-query) a GROUP BY or ORDER BY clause whose raw expression, such as the sort keys of Filters.orderBy(...), contains a // line comment outside quoted text (see AbstractQueryBuilder#append(Condition)); or a structured sub-query's entity class maps to a table name that AbstractQueryBuilder#from(Class) rejects (an unterminated block comment, or a trailing line comment under this DSL's dialect)"
                 },
                 {
                   "type": "java.lang.IllegalStateException",
@@ -8026,7 +8026,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if table is null, empty, or blank"
+                  "condition": "if table is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Appends a table to the FROM clause.",
@@ -8067,7 +8067,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if table or alias is null, empty, or blank"
+                  "condition": "if table or alias is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Appends a table with an alias to the FROM clause.",
@@ -8102,7 +8102,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank"
+                  "condition": "if a non-empty input yields an empty snapshot, or any snapshotted element is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Appends multiple tables to the FROM clause.",
@@ -8145,7 +8145,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "condition": "if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause (implicit INNER JOIN) with the specified table and join condition.",
@@ -8186,7 +8186,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "condition": "if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause with the specified table and join condition.",
@@ -8227,7 +8227,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "condition": "if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause with the specified table and join condition.",
@@ -8268,7 +8268,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "condition": "if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause with the specified table and join condition.",
@@ -8309,7 +8309,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr or expr is null, empty, or blank"
+                  "condition": "if joinExpr or expr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause with the specified table and join condition.",
@@ -8344,7 +8344,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause (implicit INNER JOIN) with the specified table and no separate connector step.",
@@ -8381,7 +8381,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause with the specified table and no separate connector step.",
@@ -8418,7 +8418,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause with the specified table and no separate connector step.",
@@ -8455,7 +8455,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause with the specified table and no separate connector step.",
@@ -8492,7 +8492,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause with the specified table and no separate connector step.",
@@ -8529,7 +8529,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a CROSS JOIN clause with the specified table.",
@@ -8564,7 +8564,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank"
+                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a NATURAL JOIN clause with the specified table.",
@@ -8605,7 +8605,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if b is true and textToAppend is null, empty, or blank"
+                  "condition": "if b is true and textToAppend is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Conditionally appends a string to the FROM clause based on a boolean condition.",
@@ -8654,7 +8654,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank"
+                  "condition": "if textToAppendWhenTrue or textToAppendWhenFalse is null, empty, or blank, or contains an unterminated block comment (both are checked, whichever is appended)"
                 }
               ],
               "javadoc_summary": "Appends one of two strings to the FROM clause based on a boolean condition.",
@@ -14283,7 +14283,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if leftPropName or rightPropName is null, empty, or blank, or if rightPropName consists only of SQL comments"
+                  "condition": "if leftPropName or rightPropName is null, empty, or blank, consists only of SQL comments, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates an On clause for a simple equality join between two columns.",
@@ -14315,7 +14315,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNamePairs is null, empty, or contains a null entry, a null, empty, or blank column name, or a value consisting only of SQL comments"
+                  "condition": "if propNamePairs is null, empty, or contains a null entry, a null, empty, or blank column name, or a column name consisting only of SQL comments or containing an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates an On clause from a map of column pairs for JOIN operations.",
@@ -14413,7 +14413,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified JOIN requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -14456,7 +14456,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates a Join clause with the specified entity and join condition.",
@@ -14494,7 +14494,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates a Join clause with multiple entities and a join condition.",
@@ -14526,7 +14526,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified LEFT JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified LEFT JOIN requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -14569,7 +14569,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates a LEFT JOIN clause with the specified entity and join condition.",
@@ -14607,7 +14607,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates a LEFT JOIN clause with multiple entities and a join condition.",
@@ -14639,7 +14639,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified RIGHT JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified RIGHT JOIN requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -14682,7 +14682,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates a RIGHT JOIN clause with the specified entity and join condition.",
@@ -14720,7 +14720,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates a RIGHT JOIN clause with multiple entities and a join condition.",
@@ -14752,7 +14752,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates a CROSS JOIN clause for the specified entity/table.",
@@ -14784,7 +14784,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null, empty, or contains a null, empty, or blank name"
+                  "condition": "if joinEntities is null, empty, or contains a null, empty, or blank name or a name containing an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates a conditionless CROSS JOIN for multiple entities.",
@@ -14816,7 +14816,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified FULL JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified FULL JOIN requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -14859,7 +14859,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates a FULL JOIN clause with the specified entity and join condition.",
@@ -14897,7 +14897,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates a FULL JOIN clause with multiple entities and a join condition.",
@@ -14929,7 +14929,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank that is reported first; otherwise because a qualified INNER JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment that is reported first; otherwise because a qualified INNER JOIN requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -14972,7 +14972,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates an INNER JOIN clause with the specified entity and join condition.",
@@ -15010,7 +15010,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Creates an INNER JOIN clause with multiple entities and a join condition.",
@@ -15042,7 +15042,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates a NATURAL JOIN clause for the specified entity/table.",
@@ -15074,7 +15074,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null, empty, or contains a null, empty, or blank name"
+                  "condition": "if joinEntities is null, empty, or contains a null, empty, or blank name or a name containing an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates a conditionless NATURAL JOIN for multiple entities.",
@@ -17020,7 +17020,10 @@
               "throws": [],
               "javadoc_summary": "Returns the parameterized SQL with named parameters replaced by JDBC placeholders (?) for recognized data-operation statements.",
               "returns": "the parameterized SQL string with ? placeholders",
-              "contract": [],
+              "contract": [
+                "A /* on such a line is comment text to H2, which reads the lines after it as SQL, so a block comment that opens there and spans that line break is kept as written, from the end of the preceding token up to the next one, instead of being dropped; the line on which such kept text ends is then treated as a line holding // as well, even if it holds none.",
+                "If the output ends on such a line, the text discarded after its last token is kept as written whenever it contains a /* (on that line or a later one) and goes on to a later line (complete comments there are kept too); an unterminated /* on a later line then makes H2 report it instead of running the truncated statement."
+              ],
               "examples": [
                 "ParsedSql parsed = ParsedSql.parse(\"SELECT * FROM users WHERE id = :userId AND status = :status\");\nString sql = parsed.parameterizedSql();\n// Returns: \"SELECT * FROM users WHERE id = ? AND status = ?\"\n\n// Use with PreparedStatement\nPreparedStatement stmt = connection.prepareStatement(parsed.parameterizedSql());\nstmt.setLong(1, userId);\nstmt.setString(2, status);"
               ],
@@ -17152,20 +17155,7 @@
               "see_also": []
             }
           ],
-          "fields": [
-            {
-              "name": "MAX_CACHEABLE_SQL_LENGTH",
-              "modifiers": [
-                "public",
-                "static",
-                "final"
-              ],
-              "type": "int",
-              "value": "4096",
-              "javadoc_summary": "The maximum length (in chars, after String#trim()) of a SQL string that #parse(String) looks up in or stores into its cache.",
-              "nullability": "unspecified"
-            }
-          ]
+          "fields": []
         },
         {
           "fqn": "com.landawn.abacus.query.QueryUtil",
@@ -17251,8 +17241,48 @@
                   "condition": "if sql is null"
                 }
               ],
-              "javadoc_summary": "Reports whether sql opens a /* block comment that is never closed under any of its plausible lexical readings: string literals with or without backslash escapes, a -- comment ended by any line break or, as in MySQL and SQLite, only by '\\n', a # that starts a line comment (MySQL) or not, [...] as a quoted identifier (SQL Server) or not, and block comments that nest (PostgreSQL, SQL Server, H2) or not.",
+              "javadoc_summary": "Reports whether sql opens a /* block comment that is never closed under any of its plausible lexical readings: string literals with or without backslash escapes, a -- comment ended by any line break or, as in MySQL and SQLite, only by '\\n', a # that starts a line comment (MySQL) or not, [...] as a quoted identifier (SQL Server) or not, block comments that nest (PostgreSQL, SQL Server, H2) or not, a -- that starts a comment wherever it occurs or, as in MySQL and MariaDB, only before whitespace, a control character or the end of the text (there the /* of t --/* opens a block comment), and PostgreSQL dollar-quoted strings ($$...$$, $tag$...$tag$) or none (in $$'$$ /* x ' only the dollar-quote reading leaves the comment open).",
               "returns": "true if text appended after sql could continue an open block comment",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "dollarQuoteEnd",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "@Internal public static int dollarQuoteEnd(final String sql, final int index)",
+              "return_type": "int",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the text to scan (must not be null)",
+                  "nullability": "unspecified"
+                },
+                {
+                  "name": "index",
+                  "type": "int",
+                  "javadoc": "an index of sql",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if sql is null"
+                },
+                {
+                  "type": "java.lang.IndexOutOfBoundsException",
+                  "condition": "if index is negative or not less than sql.length()"
+                }
+              ],
+              "javadoc_summary": "Returns the index just past the PostgreSQL dollar-quoted string ($$...$$ or $tag$...$tag$) that opens at index, 0 if none opens there, or -1 if it is never closed.",
+              "returns": "the index just past the closing tag, 0, or -1",
               "contract": [],
               "examples": [],
               "see_also": []
@@ -17872,7 +17902,7 @@
                 {
                   "name": "backslashEscapesOnly",
                   "type": "boolean",
-                  "javadoc": "true if the target server reads a backslash before a quote in a string literal as an escape (MySQL), so the tokenizer's reading is taken as authoritative and conversion never stops early. It matches MySQL only for string literals: MySQL applies no backslash escapes inside backtick identifiers, inside \"...\" identifiers under ANSI_QUOTES, or anywhere under NO_BACKSLASH_ESCAPES",
+                  "javadoc": "true if the target server reads a backslash before a quote in a string literal as an escape and has no dollar-quoted strings (MySQL), so the tokenizer's reading is taken as authoritative and conversion never stops early. It matches MySQL only for string literals: MySQL applies no backslash escapes inside backtick identifiers, inside \"...\" identifiers under ANSI_QUOTES, or anywhere under NO_BACKSLASH_ESCAPES",
                   "nullability": "unspecified"
                 },
                 {
@@ -20658,7 +20688,7 @@
               "contract": [
                 "A statement is accepted only if its leading keyword is SELECT (see #isSelectQuery(String)) and it contains no top-level mutation or DDL keyword (INSERT, UPDATE, DELETE, MERGE, UPSERT, REPLACE, TRUNCATE, CREATE, ALTER or DROP), no data-change statement nested in parentheses (a DB2/H2 delta table such as SELECT * FROM FINAL TABLE (INSERT ...) or ...",
                 "For ;-separated multi-statement SQL, a later statement is permitted only when it also resolves to a SELECT; a later statement with any other leading verb (including an unrecognized or vendor-specific command) is rejected.",
-                "In addition, the SQL is read, only to reject it, as these dialects read it: as MySQL/MariaDB, with every # (except a MyBatis #{...} marker) starting a line comment, with # and -- comments ending only at \\n, and with the statements before an unterminated quote or comment still executing; as H2, with // line comments, nesting block comments and only $$...$$ dollar quotes, and with [...] read both as punctuation and (MSSQLServer mode) as a quoted name; as SQLite, with every -- comment ending only at \\n, an unterminated /* commenting out the rest of the text, #name as a parameter rather than a comment, a parameter's Tcl-style (...) suffix (:a(...), @a(...)) swallowing everything up to its ), a parameter that starts a statement being a syntax error, and the statements before a lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as q'[...]', with that literal (which may contain ') read as one; and as SQL Server, with no # comments at all, so #name and a lone # are names and the rest of their line is SQL (a # that opens a statement keeps its comment reading, since no T-SQL statement can start there).",
+                "In addition, the SQL is read, only to reject it, as these dialects read it: as MySQL/MariaDB, with every # (except a MyBatis #{...} marker) starting a line comment, with # and -- comments ending only at \\n, and with the statements before an unterminated quote or comment still executing; as H2, with // line comments, nesting block comments and only $$...$$ dollar quotes, and with [...] read both as punctuation and (MSSQLServer mode) as a quoted name; as SQLite, with every -- comment ending only at \\n, an unterminated /* commenting out the rest of the text, #name as a parameter rather than a comment, a parameter's Tcl-style (...) suffix (:a(...), @a(...)) swallowing everything up to its ), a parameter that starts a statement being a syntax error, and the statements before a lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as q'[...]', with that literal (which may contain ') read as one; and as SQL Server, with no # comments at all, so #name and a lone # are names and the rest of their line is SQL (a # that opens a statement keeps its comment reading, since no T-SQL statement can start with it, unless it names a T-SQL label such as #x: or #:, after which the rest of its line is read as the statement; so a MySQL comment line such as #TODO: delete later that opens a statement is rejected, while # TODO: delete later, with a space after the #, stays a comment).",
                 "Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot hide a mutation clause."
               ],
               "examples": [],
@@ -20865,7 +20895,7 @@
                 "A statement qualifies as read-or-insert only if its leading keyword is SELECT or INSERT and it contains none of the following (matching outside of quoted string literals and SQL comments): a top-level UPDATE, DELETE, MERGE, UPSERT, REPLACE, TRUNCATE, CREATE, ALTER or DROP keyword (matched only at statement-start positions, so e.g. SELECT ...",
                 "More generally, every top-level statement must resolve to either SELECT or INSERT; an unrecognized or vendor-specific command is rejected rather than assumed to be safe.",
                 "A # that the temp-table heuristic cannot anchor is a MySQL line comment, but if a ; follows it later on its line (#name, ##name or a lone #) the statement is rejected outright, because SQL Server reads that # as a name and would execute what follows that semicolon; with semicolon-less batches enabled an identifier-shaped #name is read as a temp table and the rest of its line is scanned as SQL.",
-                "In addition, the SQL is read, only to reject it, as these dialects read it: as MySQL/MariaDB, with every # (except a MyBatis #{...} marker) starting a line comment, with # and -- comments ending only at \\n, and with the statements before an unterminated quote or comment still executing; as H2, with // line comments, nesting block comments and only $$...$$ dollar quotes, and with [...] read both as punctuation and (MSSQLServer mode) as a quoted name; as SQLite, with every -- comment ending only at \\n, an unterminated /* commenting out the rest of the text, #name as a parameter rather than a comment, a parameter's Tcl-style (...) suffix (:a(...), @a(...)) swallowing everything up to its ), a parameter that starts a statement being a syntax error, and the statements before a lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as q'[...]', with that literal (which may contain ') read as one; and as SQL Server, with no # comments at all, so #name and a lone # are names and the rest of their line is SQL (a # that opens a statement keeps its comment reading, since no T-SQL statement can start there).",
+                "In addition, the SQL is read, only to reject it, as these dialects read it: as MySQL/MariaDB, with every # (except a MyBatis #{...} marker) starting a line comment, with # and -- comments ending only at \\n, and with the statements before an unterminated quote or comment still executing; as H2, with // line comments, nesting block comments and only $$...$$ dollar quotes, and with [...] read both as punctuation and (MSSQLServer mode) as a quoted name; as SQLite, with every -- comment ending only at \\n, an unterminated /* commenting out the rest of the text, #name as a parameter rather than a comment, a parameter's Tcl-style (...) suffix (:a(...), @a(...)) swallowing everything up to its ), a parameter that starts a statement being a syntax error, and the statements before a lexing error still executing; as Oracle, when the text contains an alternative-quoted literal such as q'[...]', with that literal (which may contain ') read as one; and as SQL Server, with no # comments at all, so #name and a lone # are names and the rest of their line is SQL (a # that opens a statement keeps its comment reading, since no T-SQL statement can start with it, unless it names a T-SQL label such as #x: or #:, after which the rest of its line is read as the statement; so a MySQL comment line such as #TODO: delete later that opens a statement is rejected, while # TODO: delete later, with a space after the #, stays a comment).",
                 "Every lexically valid interpretation must have the accepted shape, so an ambiguous quote or comment cannot hide an upsert or overwrite clause."
               ],
               "examples": [],
@@ -21066,7 +21096,7 @@
               "javadoc_summary": "Enables or disables splitting of SQL Server-style batches by the read gates (Tokenizer#isSyntacticallyReadQuery(String) and Tokenizer#isReadOrInsertQuery(String)).",
               "returns": "this builder",
               "contract": [
-                "When enabled, a top-level DELETE, UPDATE, INSERT, MERGE, TRUNCATE, DROP, ALTER, CREATE, CALL, EXEC or EXECUTE token, or one of the reserved T-SQL statement verbs GRANT, REVOKE, DENY, KILL, SHUTDOWN, DBCC, BACKUP, RESTORE, BULK, WRITETEXT, UPDATETEXT, RECONFIGURE, CHECKPOINT, SETUSER, ADD, BEGIN, IF, WHILE, WAITFOR, COMMIT or ROLLBACK (or DISABLE/ENABLE before TRIGGER), that follows a statement's own verb (outside parentheses, quotes, brackets and comments, and other than the UPDATE of a FOR UPDATE clause) starts a new statement that is classified like one after a ;.",
+                "When enabled, a top-level DELETE, UPDATE, INSERT, MERGE, TRUNCATE, DROP, ALTER, CREATE, CALL, EXEC or EXECUTE token, or one of the reserved T-SQL statement verbs GRANT, REVOKE, DENY, KILL, SHUTDOWN, DBCC, BACKUP, RESTORE, BULK, WRITETEXT, UPDATETEXT, RECONFIGURE, CHECKPOINT, SETUSER, ADD, BEGIN, IF, WHILE, WAITFOR, COMMIT or ROLLBACK (or DISABLE/ENABLE before TRIGGER, END before CONVERSATION, and the Service Broker RECEIVE, SEND or MOVE right after a T-SQL label), that follows a statement's own verb (outside parentheses, quotes, brackets and comments, and other than the UPDATE of a FOR UPDATE clause) starts a new statement that is classified like one after a ;.",
                 "Clauses such as ON DUPLICATE KEY UPDATE, ON CONFLICT DO UPDATE and WHEN MATCHED THEN DELETE are split as well; they only occur in statements (upserts, MERGE) that the read gates reject anyway."
               ],
               "examples": [],
@@ -24713,7 +24743,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -24755,7 +24785,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds a plain JOIN (no explicit type keyword) with a condition to this criteria.",
@@ -24792,7 +24822,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds a plain JOIN (no explicit type keyword) with multiple entities and a condition to this criteria.",
@@ -24823,7 +24853,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -24865,7 +24895,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN with a condition to this criteria.",
@@ -24902,7 +24932,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN with multiple entities and a condition.",
@@ -24933,7 +24963,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -24975,7 +25005,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN with a condition to this criteria.",
@@ -25012,7 +25042,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN with multiple entities and a condition.",
@@ -25043,7 +25073,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -25085,7 +25115,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN with a condition to this criteria.",
@@ -25122,7 +25152,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN with multiple entities and a condition.",
@@ -25153,7 +25183,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified join requires a non-null ON/USING predicate"
                 }
               ],
               "deprecated": {
@@ -25195,7 +25225,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN with a condition to this criteria.",
@@ -25232,7 +25262,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, contains null, empty, or blank elements or an element containing an unterminated block comment, if joinCondition is null (qualified joins require an ON/USING predicate), or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN with multiple entities and a condition.",
@@ -25263,7 +25293,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a CROSS JOIN to this criteria.",
@@ -25294,7 +25324,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a conditionless CROSS JOIN for multiple entities.",
@@ -25325,7 +25355,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a NATURAL JOIN to this criteria.",
@@ -25356,7 +25386,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a conditionless NATURAL JOIN for multiple entities.",
@@ -26923,7 +26953,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment"
                 }
               ]
             },
@@ -26941,7 +26971,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment"
                 }
               ]
             }
@@ -27128,7 +27158,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a FULL JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a FULL JOIN requires a non-null ON/USING predicate"
                 }
               ]
             },
@@ -27152,7 +27182,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             },
@@ -27176,7 +27206,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             }
@@ -27597,7 +27627,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because an INNER JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because an INNER JOIN requires a non-null ON/USING predicate"
                 }
               ]
             },
@@ -27621,7 +27651,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             },
@@ -27645,7 +27675,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             }
@@ -28022,7 +28052,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a qualified JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a qualified JOIN requires a non-null ON/USING predicate"
                 }
               ]
             },
@@ -28046,7 +28076,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             },
@@ -28070,7 +28100,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             }
@@ -28469,7 +28499,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a LEFT JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a LEFT JOIN requires a non-null ON/USING predicate"
                 }
               ]
             },
@@ -28493,7 +28523,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             },
@@ -28517,7 +28547,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             }
@@ -31224,7 +31254,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment"
                 }
               ]
             },
@@ -31242,7 +31272,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment"
                 }
               ]
             }
@@ -31646,7 +31676,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if leftPropName or rightPropName is null, empty, or blank, or if rightPropName consists only of SQL comments"
+                  "condition": "if leftPropName or rightPropName is null, empty, or blank, consists only of SQL comments, or contains an unterminated block comment"
                 }
               ]
             },
@@ -31664,7 +31694,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if propNamePairs is null, empty, or contains a null entry, null, empty, or blank keys or values, or a value consisting only of SQL comments"
+                  "condition": "if propNamePairs is null, empty, or contains a null entry, null, empty, or blank keys or values, or a key or value consisting only of SQL comments or containing an unterminated block comment"
                 }
               ]
             }
@@ -32593,7 +32623,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "always: if joinEntity is null, empty, or blank, that is reported first; otherwise it is thrown because a RIGHT JOIN requires a non-null ON/USING predicate"
+                  "condition": "always: if joinEntity is null, empty, or blank, or contains an unterminated block comment, that is reported first; otherwise it is thrown because a RIGHT JOIN requires a non-null ON/USING predicate"
                 }
               ]
             },
@@ -32617,7 +32647,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntity is null, empty, or blank; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             },
@@ -32641,7 +32671,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
+                  "condition": "if joinEntities is null or empty, or contains null, empty, or blank elements or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression"
                 }
               ]
             }
@@ -35569,7 +35599,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to select (must not be null or empty and must not contain null, empty, or blank names)",
+                  "javadoc": "collection of property names to select (must not be null or empty and must not contain null, empty, or blank names); an item may carry an inline alias (firstName AS fn) or be an expression (COUNT(*) AS cnt), in which case #toSql(NamingPolicy) converts only its identifiers",
                   "nullability": "unspecified"
                 },
                 {
@@ -35629,7 +35659,7 @@
                 {
                   "name": "propNames",
                   "type": "Collection<String>",
-                  "javadoc": "collection of property names to select (must not be null or empty and must not contain null, empty, or blank names)",
+                  "javadoc": "collection of property names to select (must not be null or empty and must not contain null, empty, or blank names); an item may carry an inline alias (firstName AS fn) or be an expression (COUNT(*) AS cnt), in which case #toSql(NamingPolicy) converts only its identifiers",
                   "nullability": "unspecified"
                 },
                 {
@@ -35798,6 +35828,7 @@
               "javadoc_summary": "Converts this subquery to its SQL representation.",
               "returns": "SQL representation of the subquery",
               "contract": [
+                "An alias is kept as written as well: one after AS (firstName AS fn), and an implicit one when the item is exactly a name (bare, delimited or dot-qualified), whitespace and a bare alias (firstName fn, [firstName] fn, acc.firstName fn), unless that name is a SQL keyword in any case (distinct userId is a modifier and a column).",
                 "Render the subquery through a SqlBuilder when condition identifiers must also resolve against entity column mappings."
               ],
               "examples": [
