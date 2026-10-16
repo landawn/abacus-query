@@ -135,7 +135,9 @@ public final class DynamicQuery {
         N.checkArgNotEmpty(copy, argName);
 
         for (final String value : copy) {
-            checkSqlFragmentNotBlank(value, "Element in " + argName);
+            if (Strings.isBlank(value)) {
+                checkSqlFragmentNotBlank(value, "Element in " + argName);
+            }
         }
 
         return copy;
@@ -159,8 +161,12 @@ public final class DynamicQuery {
         N.checkArgNotEmpty(copy, argName);
 
         for (final Map.Entry<String, String> entry : copy.entrySet()) {
-            checkSqlFragmentNotBlank(entry.getKey(), "Key in " + argName);
-            checkSqlFragmentNotBlank(entry.getValue(), "Value in " + argName);
+            if (Strings.isBlank(entry.getKey())) {
+                checkSqlFragmentNotBlank(entry.getKey(), "Key in " + argName);
+            }
+            if (Strings.isBlank(entry.getValue())) {
+                checkSqlFragmentNotBlank(entry.getValue(), "Value in " + argName);
+            }
         }
 
         return copy;
@@ -264,7 +270,7 @@ public final class DynamicQuery {
         private SelectClause selectClause = new SelectClause(new StringBuilder(64));
 
         /** The {@link FromClause} for this builder. */
-        private FromClause fromClause = new FromClause(new StringBuilder(64));
+        private FromClause fromClause;
 
         /** The {@link WhereClause} for this builder. */
         private WhereClause whereClause;
@@ -350,6 +356,10 @@ public final class DynamicQuery {
          */
         public FromClause from() {
             checkNotBuilt();
+
+            if (fromClause == null) {
+                fromClause = new FromClause(new StringBuilder(64));
+            }
 
             return fromClause;
         }
@@ -949,22 +959,22 @@ public final class DynamicQuery {
             if (paginationSyntax == PaginationSyntax.LIMIT) {
                 if (limitCount != null) {
                     appendSpaceIfNeeded(sb);
-                    sb.append("LIMIT ").append(limitCount);
+                    sb.append("LIMIT ").append(limitCount.intValue());
                 }
 
                 if (plainOffset != null && plainOffset > 0) {
                     appendSpaceIfNeeded(sb);
-                    sb.append("OFFSET ").append(plainOffset);
+                    sb.append("OFFSET ").append(plainOffset.intValue());
                 }
             } else if (paginationSyntax == PaginationSyntax.FETCH) {
                 if (rowsOffset != null) {
                     appendSpaceIfNeeded(sb);
-                    sb.append("OFFSET ").append(rowsOffset).append(" ROWS");
+                    sb.append("OFFSET ").append(rowsOffset.intValue()).append(" ROWS");
                 }
 
                 if (fetchCount != null) {
                     appendSpaceIfNeeded(sb);
-                    sb.append(fetchFirst ? "FETCH FIRST " : "FETCH NEXT ").append(fetchCount).append(" ROWS ONLY");
+                    sb.append(fetchFirst ? "FETCH FIRST " : "FETCH NEXT ").append(fetchCount.intValue()).append(" ROWS ONLY");
                 }
             }
         }
@@ -1048,6 +1058,52 @@ public final class DynamicQuery {
         }
 
         /**
+         * Reserves a conservative final size for merges needing more than one ordinary buffer growth.
+         * Separator slack is bounded; the long sum avoids overflow without temporary pagination text.
+         */
+        private void reserveBuildCapacity() {
+            long length = selectClause.sb.length();
+            length += mergedClauseLength(fromClause);
+            length += mergedClauseLength(whereClause);
+            length += mergedClauseLength(groupByClause);
+            length += mergedClauseLength(havingClause);
+            length += mergedClauseLength(orderByClause);
+            length += setOperations == null ? 0 : setOperations.length();
+            length += moreParts == null ? 0 : moreParts.length();
+
+            if (limitCount != null) {
+                length += 7 + decimalLength(limitCount); // " LIMIT " + digits
+            }
+            if (plainOffset != null && plainOffset > 0) {
+                length += 8 + decimalLength(plainOffset); // " OFFSET " + digits
+            }
+            if (rowsOffset != null) {
+                length += 13 + decimalLength(rowsOffset); // " OFFSET " + digits + " ROWS"
+            }
+            if (fetchCount != null) {
+                length += (fetchFirst ? 23 : 22) + decimalLength(fetchCount);
+            }
+
+            // A single ordinary growth is already sufficient for small merges. Leave it to append,
+            // avoiding a premature growth when a separator in the upper bound is not actually needed.
+            if (length > 2L * selectClause.sb.capacity() + 2 && length <= Integer.MAX_VALUE) {
+                selectClause.sb.ensureCapacity((int) length);
+            }
+        }
+
+        private static int decimalLength(final int value) {
+            int length = 1;
+            for (int remaining = value; remaining >= 10; remaining /= 10) {
+                length++;
+            }
+            return length;
+        }
+
+        private static long mergedClauseLength(final ClauseBuilder clause) {
+            return clause == null || clause.sb.isEmpty() ? 0 : (long) clause.sb.length() + 1;
+        }
+
+        /**
          * Builds the final SQL string from all the components and releases resources.
          * This method MUST be called to get the SQL and clean up internal resources.
          * After calling {@code build()}, this builder is closed and must not be reused: any subsequent
@@ -1075,6 +1131,7 @@ public final class DynamicQuery {
         public String build() {
             try {
                 checkNotBuilt();
+                reserveBuildCapacity();
 
                 if (fromClause != null && !fromClause.sb.isEmpty()) {
                     if (!selectClause.sb.isEmpty()) {

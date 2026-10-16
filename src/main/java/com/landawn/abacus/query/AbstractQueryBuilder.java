@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.IntBinaryOperator;
 import java.util.function.IntPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -664,6 +665,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * checkpoint restores the text.
      */
     private int _openMutationCheckpoints = 0; //NOSONAR
+
+    /** Only exact built-in mutations may restore appended bindings and journaled map/set changes. */
+    private int _journaledMutationDepth;
+    private ArrayList<Object> _mutationUndo;
+    private static final Object ABSENT_MUTATION_VALUE = new Object();
+
+    /** Bound the flat snapshots used before named-parameter history is large enough to favor incremental undo. */
+    private static final int MUTATION_SNAPSHOT_REFERENCE_LIMIT = 64;
+
+    /** A private structured child reads inherited names here and keeps only its own naming deltas. */
+    private AbstractQueryBuilder<?> _namingParent;
 
     /**
      * True after a set operation has appended a complete right-hand query. At that point only
@@ -1528,6 +1540,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return {@code true} if an unquoted, uncommented semicolon occurs
      */
     private boolean containsStatementTerminator(final String query) {
+        if (query.indexOf(';') < 0) {
+            return false;
+        }
+
         final IntPredicate hashIdentifierMatcher = scannerHashIdentifierMatcher(query);
 
         for (final LexicalReading reading : withFailClosedVariants(lexicalReadings(query, true, true), query)) {
@@ -2199,16 +2215,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This from(final Collection<String> tableNames) {
         checkCanAppendFrom();
-        final List<String> tableNamesSnapshot = copyAndValidateSqlFragments(tableNames, "tableNames");
+        final List<String> normalizedTableNames = copyAndValidateSqlFragments(tableNames, "tableNames");
+        long fromBodyLength = Math.max(0L, (normalizedTableNames.size() - 1L) * 2);
 
-        final List<String> normalizedTableNames = new ArrayList<>(tableNamesSnapshot.size());
-        int idx = 0;
-
-        for (final String tableName : tableNamesSnapshot) {
-            final String normalizedTableName = tableName.trim();
-            N.checkArgNotEmpty(normalizedTableName, "tableNames[" + idx + "]");
-            normalizedTableNames.add(normalizedTableName);
-            idx++;
+        // This snapshot is owned: normalize it in place, without copying the same references again.
+        for (int idx = 0, size = normalizedTableNames.size(); idx < size; idx++) {
+            final String normalizedTableName = normalizedTableNames.get(idx).trim();
+            if (normalizedTableName.isEmpty()) {
+                N.checkArgNotEmpty(normalizedTableName, "tableNames[" + idx + "]");
+            }
+            normalizedTableNames.set(idx, normalizedTableName);
+            fromBodyLength += normalizedTableName.length();
         }
 
         if (normalizedTableNames.size() == 1) {
@@ -2221,9 +2238,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final int separatorIdx = findFirstTopLevelFromSeparator(firstTableName);
         final String localTableName = (separatorIdx > 0 ? firstTableName.substring(0, separatorIdx) : firstTableName).trim();
 
-        final StringBuilder fromBody = new StringBuilder();
+        // Avoid growth copies for ordinary lists without reserving an unbounded caller-sized buffer upfront.
+        final StringBuilder fromBody = new StringBuilder((int) Math.min(fromBodyLength, 8192));
         String fromClauseRejection = null;
-        idx = 0;
+        int idx = 0;
 
         for (final String normalizedTableName : normalizedTableNames) {
             if (fromBody.length() > 0) {
@@ -2238,8 +2256,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 fromBody.append('\n');
             }
 
-            if (fromClauseRejection == null) {
-                fromClauseRejection = unterminatedBlockCommentRejection("tableNames[" + idx + "]", normalizedTableName);
+            if (fromClauseRejection == null && QueryUtil.hasUnterminatedBlockComment(normalizedTableName)) {
+                fromClauseRejection = "tableNames[" + idx + "] must not contain an unterminated block comment: " + normalizedTableName;
             }
 
             idx++;
@@ -2375,6 +2393,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /** Scans for the first top-level FROM separator under one lexical reading. */
     private int findFirstTopLevelFromSeparator(final String fromClause, final LexicalReading reading, final IntPredicate hashIdentifierMatcher) {
         int depth = 0;
+        FailedJoinModifierLookahead failedLookaheads = null;
 
         for (int i = 0, len = fromClause.length(); i < len; i++) {
             final int next = skipScannedQuotedOrComment(fromClause, i, reading, hashIdentifierMatcher);
@@ -2397,8 +2416,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (depth > 0) {
                     depth--;
                 }
-            } else if (depth == 0 && (ch == SK._COMMA || isTopLevelJoinStart(fromClause, i))) {
-                return i;
+            } else if (depth == 0) {
+                if (ch == SK._COMMA) {
+                    return i;
+                }
+
+                final int lookaheadStart = topLevelJoinLookaheadStart(fromClause, i);
+
+                if (lookaheadStart == 0) {
+                    return i;
+                }
+
+                if (lookaheadStart > 0 && lookaheadStart < len) {
+                    failedLookaheads = failedLookaheads == null ? new FailedJoinModifierLookahead() : failedLookaheads;
+
+                    if (isFollowedByJoinKeyword(fromClause, lookaheadStart, failedLookaheads)) {
+                        return i;
+                    }
+                }
             }
         }
 
@@ -2406,19 +2441,19 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Reports whether a JOIN-family keyword (e.g. {@code JOIN}, {@code LEFT}, {@code CROSS},
-     * {@code STRAIGHT_JOIN}) starts at {@code index}, preceded by whitespace or a block-comment end.
-     * The caller is responsible for the nesting-depth check.
+     * Identifies a JOIN-family word at {@code index}, preceded by whitespace or a block-comment end.
+     * Returns zero for a definite JOIN start, the end of a leading modifier that needs lookahead, or -1 otherwise.
+     * The caller is responsible for the nesting-depth check and for confirming a modifier's following JOIN.
      */
-    private static boolean isTopLevelJoinStart(final String sql, final int index) {
+    private static int topLevelJoinLookaheadStart(final String sql, final int index) {
         if (index <= 0 || !isJoinLeadingTrivia(sql, index)) {
-            return false;
+            return -1;
         }
 
         if (isSqlWordAt(sql, index, SK.JOIN) || isSqlWordAt(sql, index, "INNER") || isSqlWordAt(sql, index, "LEFT") || isSqlWordAt(sql, index, "RIGHT")
                 || isSqlWordAt(sql, index, "FULL") || isSqlWordAt(sql, index, "CROSS") || isSqlWordAt(sql, index, "NATURAL") || isSqlWordAt(sql, index, "OUTER")
                 || isSqlWordAt(sql, index, "STRAIGHT_JOIN")) {
-            return true;
+            return 0;
         }
 
         // Leading join modifiers of other dialects: ASOF/SEMI/ANTI/ANY/ALL/GLOBAL/LOCAL/ARRAY (ClickHouse, DuckDB) and
@@ -2429,15 +2464,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // a join modifier, so no alias is inferred and entity columns are emitted unqualified.
         for (final String modifier : LEADING_JOIN_MODIFIERS) {
             if (isSqlWordAt(sql, index, modifier)) {
-                return isFollowedByJoinKeyword(sql, index + modifier.length());
+                return index + modifier.length();
             }
         }
 
-        return false;
+        return -1;
     }
 
     /**
-     * Dialect-specific words that may start a JOIN, but only when a JOIN keyword follows; see {@link #isTopLevelJoinStart(String, int)}.
+     * Dialect-specific words that may start a JOIN, but only when a JOIN keyword follows; see {@link #topLevelJoinLookaheadStart(String, int)}.
      * Deliberate trade-off: several are non-reserved words, so a table alias literally named like one of them and
      * directly followed by a JOIN ({@code account global JOIN b ...}) is read as a join modifier, not as the primary
      * table's alias; the entity columns are then left unqualified (a loud "ambiguous column" error at worst, never a
@@ -2453,8 +2488,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             "LOCAL" };
 
     /** Reports whether only JOIN-modifier words (and trivia) separate {@code index} from a {@code JOIN} keyword. */
-    private static boolean isFollowedByJoinKeyword(final String sql, int index) {
+    private static boolean isFollowedByJoinKeyword(final String sql, int index, final FailedJoinModifierLookahead failedLookaheads) {
         while (true) {
+            // Offsets advance strictly. A repeated offset belongs to an earlier failed scan; if this scan
+            // succeeds, its caller immediately returns the separator and discards this reading's entire memo.
+            if (!failedLookaheads.add(index)) {
+                return false;
+            }
+
             index = skipAliasTrivia(sql, index);
 
             if (index < 0 || index >= sql.length()) {
@@ -2478,6 +2519,72 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (!matched) {
                 return false;
             }
+        }
+    }
+
+    /**
+     * Actual modifier-end offsets visited by lookaheads in one lexical scan. An interval is not sufficient:
+     * a word inside skipped comment trivia can be visible under the outer scanner's different dialect rules.
+     * A primitive set avoids one boxed integer and hash node per word, and grows with visited offsets rather
+     * than SQL length. A lone candidate needs no backing array.
+     */
+    private static final class FailedJoinModifierLookahead {
+        private int firstOffset;
+        private int size;
+        private int[] offsets;
+
+        /** Records a positive modifier-end offset, returning false when a previous lookahead visited it. */
+        boolean add(final int offset) {
+            if (firstOffset == 0) {
+                firstOffset = offset;
+                size = 1;
+                return true;
+            }
+
+            if (offset == firstOffset) {
+                return false;
+            }
+
+            if (offsets == null) {
+                offsets = new int[16];
+                offsets[slot(firstOffset, offsets)] = firstOffset;
+            }
+
+            int slot = slot(offset, offsets);
+
+            if (offsets[slot] == offset) {
+                return false;
+            }
+
+            if (size >= offsets.length / 2) {
+                final int[] grown = new int[Math.multiplyExact(offsets.length, 2)];
+
+                for (final int previous : offsets) {
+                    if (previous != 0) {
+                        grown[slot(previous, grown)] = previous;
+                    }
+                }
+
+                offsets = grown;
+                slot = slot(offset, offsets);
+            }
+
+            offsets[slot] = offset;
+            size++;
+            return true;
+        }
+
+        /** Finds the existing key or an empty slot in a power-of-two, at-most-half-full table. */
+        private static int slot(final int offset, final int[] table) {
+            final int hash = offset * 0x9E3779B9;
+            final int mask = table.length - 1;
+            int slot = (hash ^ (hash >>> 16)) & mask;
+
+            while (table[slot] != 0 && table[slot] != offset) {
+                slot = (slot + 1) & mask;
+            }
+
+            return slot;
         }
     }
 
@@ -3213,7 +3320,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             for (final Selection selection : _multiSelects) {
                 if (Strings.isNotEmpty(selection.tableAlias())) {
-                    _aliasPropColumnNameMap.put(selection.tableAlias(), propToColumnInfoMap(selection.entityClass(), _namingPolicy));
+                    putWithMutationUndo(_aliasPropColumnNameMap, selection.tableAlias(), propToColumnInfoMap(selection.entityClass(), _namingPolicy));
                 }
             }
 
@@ -3350,6 +3457,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     private static boolean endsInsideLineComment(final String sql, final boolean sqlServerTempIdentifiers, final boolean mysqlHashComments,
             final boolean bracketIdentifiers, final boolean h2LineComments, final boolean dollarQuotes, final SqlParser.TokenizerConfig tokenizerConfig) {
+        if (!mayOpenLineComment(sql)) {
+            return false;
+        }
+
         // One classifier serves every reading: it depends only on the text, and its memo keeps repeated '#' classification cheap.
         final IntPredicate hashIdentifierMatcher = hashIdentifierMatcher(sql, sqlServerTempIdentifiers, mysqlHashComments, tokenizerConfig);
         // The primary reading first: the further readings (and the feature checks that select them) are only needed
@@ -3569,7 +3680,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // Only the alias-scoped mapping is registered here. Adopting the joined entity's mapping as the
         // builder's PRIMARY mapping (when the FROM table was a plain string) resolved unqualified property
         // names in later clauses through the joined entity and prefixed them with the primary table's alias.
-        _aliasPropColumnNameMap.put(alias, Beans.isBeanClass(entityClass) ? propToColumnInfoMap(entityClass, _namingPolicy) : _propColumnNameMap);
+        putWithMutationUndo(_aliasPropColumnNameMap, alias,
+                Beans.isBeanClass(entityClass) ? propToColumnInfoMap(entityClass, _namingPolicy) : _propColumnNameMap);
     }
 
     /**
@@ -3670,8 +3782,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final int len = sqlFragment.length();
         int depth = 0;
         int pendingImplicitExpressionEnd = -1;
+        int implicitExpressionEnd = -1;
+        int implicitAliasStart = -1;
         TopLevelAlias explicitAlias = null;
-        TopLevelAlias implicitAlias = null;
         boolean explicitAliasKeywordSeen = false;
         boolean complete = true;
 
@@ -3679,7 +3792,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final char ch = sqlFragment.charAt(i);
 
             if (Character.isWhitespace(ch)) {
-                if (depth == 0 && pendingImplicitExpressionEnd < 0) {
+                if (!explicitAsRequired && depth == 0 && pendingImplicitExpressionEnd < 0) {
                     pendingImplicitExpressionEnd = i;
                 }
 
@@ -3694,7 +3807,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 final int commentEnd = skipScannedQuotedOrComment(sqlFragment, i, reading, hashIdentifierMatcher);
 
                 if (commentEnd != i) {
-                    if (depth == 0 && pendingImplicitExpressionEnd < 0) {
+                    if (!explicitAsRequired && depth == 0 && pendingImplicitExpressionEnd < 0) {
                         pendingImplicitExpressionEnd = i;
                     }
 
@@ -3705,7 +3818,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             if (depth == 0 && pendingImplicitExpressionEnd >= 0) {
                 if (pendingImplicitExpressionEnd > 0) {
-                    implicitAlias = new TopLevelAlias(pendingImplicitExpressionEnd, i, findAliasTokenEnd(sqlFragment, i, reading));
+                    // Only the final implicit candidate can survive; SELECT scans never need one.
+                    implicitExpressionEnd = pendingImplicitExpressionEnd;
+                    implicitAliasStart = i;
                 }
 
                 pendingImplicitExpressionEnd = -1;
@@ -3774,6 +3889,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         } else if (explicitAliasKeywordSeen) {
             alias = null;
         } else {
+            final TopLevelAlias implicitAlias = implicitAliasStart < 0 ? null
+                    : new TopLevelAlias(implicitExpressionEnd, implicitAliasStart, findAliasTokenEnd(sqlFragment, implicitAliasStart, reading));
             alias = isValidTopLevelAlias(sqlFragment, implicitAlias, reading, hashIdentifierMatcher) ? implicitAlias : null;
         }
 
@@ -4034,7 +4151,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         appendSqlFragment(joinExpr);
         _joinConditionAllowed = joinConditionAllowed && !suppliesTopLevelJoinCondition(joinExpr);
         // A connector visible under some line-end reading but not under all of them sits behind a lone-'\r' comment.
-        _joinConnectorHiddenByLoneCarriageReturn = _joinConditionAllowed && containsTopLevelJoinCondition(joinExpr);
+        _joinConnectorHiddenByLoneCarriageReturn = _joinConditionAllowed && hasLoneCarriageReturn(joinExpr) && containsTopLevelJoinCondition(joinExpr);
 
         return (This) this;
     }
@@ -6692,9 +6809,18 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // policy, so a shared dialect carrying a handler must not cost a PSC builder a full copy per clause call.
         final boolean copySql = mayRewritePrefix
                 || _sqlPolicy == SqlPolicy.NAMED_SQL && _handlerForNamedParameter != SqlDialect.DEFAULT_NAMED_PARAMETER_HANDLER;
-        final MutationCheckpoint checkpoint = new MutationCheckpoint(this, copySql, _openMutationCheckpoints > 0);
+        // Protected callbacks, subclasses and arbitrary token handlers retain the complete state snapshot.
+        // Small named-parameter histories are cheaper to copy than to journal a potentially large
+        // incoming clause. Empty collections already have allocation-free snapshots. A snapshot
+        // here must not suppress an enclosing checkpoint's journal: its successful writes still
+        // need to be undone if that enclosing mutation fails later.
+        final boolean journalState = !copySql && getClass() == SqlBuilder.class && shouldJournalMutation();
+        final MutationCheckpoint checkpoint = new MutationCheckpoint(this, copySql, _openMutationCheckpoints > 0, journalState);
 
         _openMutationCheckpoints++;
+        if (journalState) {
+            _journaledMutationDepth++;
+        }
 
         try {
             mutation.run();
@@ -6704,6 +6830,109 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             throw e;
         } finally {
             _openMutationCheckpoints--;
+            if (journalState && --_journaledMutationDepth == 0) {
+                _mutationUndo = null;
+            }
+        }
+    }
+
+    private boolean shouldJournalMutation() {
+        if (_sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL) {
+            // Flat map snapshots store both keys and values. Count references, not just bindings:
+            // QME placeholders and registered aliases can also contribute state without a value.
+            final long snapshotReferences = _parameters.size() + 2L * _namedParameterNameOccurrences.size() + _generatedNamedParameterNames.size()
+                    + 2L * _renderedNamedParameterTokens.size() + (_aliasPropColumnNameMap == null ? 0 : 2L * _aliasPropColumnNameMap.size());
+            return snapshotReferences > MUTATION_SNAPSHOT_REFERENCE_LIMIT;
+        }
+
+        // Ordinary positional bindings only need length rollback, with no per-binding undo entry.
+        return !_parameters.isEmpty() || !_namedParameterNameOccurrences.isEmpty() || !_generatedNamedParameterNames.isEmpty()
+                || !_renderedNamedParameterTokens.isEmpty() || _aliasPropColumnNameMap != null && !_aliasPropColumnNameMap.isEmpty();
+    }
+
+    /** Records only changed entries; nested successful changes remain available to an outer rollback. */
+    private <K, V> void putWithMutationUndo(final Map<K, V> target, final K key, final V value) {
+        if (_journaledMutationDepth > 0) {
+            final V oldValue = target.get(key);
+            recordMutationUndo(target, key, oldValue != null || target.containsKey(key) ? oldValue : ABSENT_MUTATION_VALUE);
+        }
+        target.put(key, value);
+    }
+
+    private <T> void addWithMutationUndo(final Set<T> target, final T value) {
+        if (_journaledMutationDepth > 0 && !target.contains(value)) {
+            recordMutationUndo(target, value, ABSENT_MUTATION_VALUE);
+        }
+        target.add(value);
+    }
+
+    private void recordMutationUndo(final Object target, final Object key, final Object previousValue) {
+        if (_mutationUndo == null) {
+            _mutationUndo = new ArrayList<>();
+        }
+        // Allocate before writing any part of the triple, so a failed growth cannot corrupt rollback.
+        if (_mutationUndo.size() > Integer.MAX_VALUE - 3) {
+            throw new OutOfMemoryError("Mutation journal exceeds maximum array size");
+        }
+        _mutationUndo.ensureCapacity(_mutationUndo.size() + 3);
+        _mutationUndo.add(target);
+        _mutationUndo.add(key);
+        _mutationUndo.add(previousValue);
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private void restoreMutationUndo(final int offset) {
+        if (_mutationUndo == null) {
+            return;
+        }
+        for (int i = _mutationUndo.size() - 3; i >= offset; i -= 3) {
+            final Object target = _mutationUndo.get(i);
+            final Object key = _mutationUndo.get(i + 1);
+            final Object previousValue = _mutationUndo.get(i + 2);
+            if (target instanceof final Map map) {
+                if (previousValue == ABSENT_MUTATION_VALUE) {
+                    map.remove(key);
+                } else {
+                    map.put(key, previousValue);
+                }
+            } else if (previousValue == ABSENT_MUTATION_VALUE) {
+                ((Set) target).remove(key);
+            } else {
+                ((Set) target).add(key);
+            }
+        }
+        while (_mutationUndo.size() > offset) {
+            _mutationUndo.remove(_mutationUndo.size() - 1);
+        }
+    }
+
+    private void clearWithMutationUndo(final Map<?, ?> target) {
+        if (_journaledMutationDepth > 0) {
+            for (final Map.Entry<?, ?> entry : target.entrySet()) {
+                recordMutationUndo(target, entry.getKey(), entry.getValue());
+            }
+        }
+        target.clear();
+    }
+
+    private void clearWithMutationUndo(final Set<?> target) {
+        if (_journaledMutationDepth > 0) {
+            for (final Object value : target) {
+                recordMutationUndo(target, value, value);
+            }
+        }
+        target.clear();
+    }
+
+    private void mergeNamedParameterState(final Map<String, Integer> occurrences, final Set<String> names, final Map<String, String> tokens) {
+        for (final Map.Entry<String, Integer> entry : occurrences.entrySet()) {
+            putWithMutationUndo(_namedParameterNameOccurrences, entry.getKey(), entry.getValue());
+        }
+        for (final String name : names) {
+            addWithMutationUndo(_generatedNamedParameterNames, name);
+        }
+        for (final Map.Entry<String, String> entry : tokens.entrySet()) {
+            putWithMutationUndo(_renderedNamedParameterTokens, entry.getKey(), entry.getValue());
         }
     }
 
@@ -6717,6 +6946,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         private final String sql;
         /** Whether another checkpoint of the same builder was open at capture (this one runs nested inside it). */
         private final boolean nested;
+        private final boolean journalState;
+        private final int parameterSize;
+        private final int mutationUndoOffset;
+        private final Map<String, Map<String, ColumnInfo>> aliasMapReference;
         private final Object[] parameters;
         private final Object[] namedParameterNameOccurrences;
         private final Object[] generatedNamedParameterNames;
@@ -6752,16 +6985,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
          *
          * @param nested whether this checkpoint opens inside another open checkpoint of the same builder
          */
-        MutationCheckpoint(final AbstractQueryBuilder<?> builder, final boolean mayRewritePrefix, final boolean nested) {
+        MutationCheckpoint(final AbstractQueryBuilder<?> builder, final boolean mayRewritePrefix, final boolean nested, final boolean journalState) {
             sqlLength = builder._sb.length();
             sql = mayRewritePrefix ? builder._sb.toString() : null;
             this.nested = nested;
-            parameters = snapshot(builder._parameters);
-            namedParameterNameOccurrences = snapshot(builder._namedParameterNameOccurrences);
-            generatedNamedParameterNames = snapshot(builder._generatedNamedParameterNames);
-            renderedNamedParameterTokens = snapshot(builder._renderedNamedParameterTokens);
+            this.journalState = journalState;
+            parameterSize = builder._parameters.size();
+            mutationUndoOffset = builder._mutationUndo == null ? 0 : builder._mutationUndo.size();
+            aliasMapReference = builder._aliasPropColumnNameMap;
+            parameters = journalState ? null : snapshot(builder._parameters);
+            namedParameterNameOccurrences = journalState ? null : snapshot(builder._namedParameterNameOccurrences);
+            generatedNamedParameterNames = journalState ? null : snapshot(builder._generatedNamedParameterNames);
+            renderedNamedParameterTokens = journalState ? null : snapshot(builder._renderedNamedParameterTokens);
             calledOperations = snapshot(builder.calledOpSet);
-            aliasPropColumnNameMap = builder._aliasPropColumnNameMap == null ? null : snapshot(builder._aliasPropColumnNameMap);
+            aliasPropColumnNameMap = journalState || builder._aliasPropColumnNameMap == null ? null : snapshot(builder._aliasPropColumnNameMap);
             operation = builder._op;
             entityClass = builder._entityClass;
             entityInfo = builder._entityInfo;
@@ -6810,16 +7047,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 builder._sb.append(sql);
             }
 
-            restore(builder._parameters, parameters);
-            restore(builder._namedParameterNameOccurrences, namedParameterNameOccurrences);
-            restore(builder._generatedNamedParameterNames, generatedNamedParameterNames);
-            restore(builder._renderedNamedParameterTokens, renderedNamedParameterTokens);
-            restore(builder.calledOpSet, calledOperations);
-
-            builder._aliasPropColumnNameMap = aliasPropColumnNameMap == null ? null : new HashMap<>();
-            if (aliasPropColumnNameMap != null) {
-                restore(builder._aliasPropColumnNameMap, aliasPropColumnNameMap);
+            if (journalState) {
+                while (builder._parameters.size() > parameterSize) {
+                    builder._parameters.remove(builder._parameters.size() - 1);
+                }
+                builder.restoreMutationUndo(mutationUndoOffset);
+                builder._aliasPropColumnNameMap = aliasMapReference;
+            } else {
+                restore(builder._parameters, parameters);
+                restore(builder._namedParameterNameOccurrences, namedParameterNameOccurrences);
+                restore(builder._generatedNamedParameterNames, generatedNamedParameterNames);
+                restore(builder._renderedNamedParameterTokens, renderedNamedParameterTokens);
+                builder._aliasPropColumnNameMap = aliasPropColumnNameMap == null ? null : new HashMap<>();
+                if (aliasPropColumnNameMap != null) {
+                    restore(builder._aliasPropColumnNameMap, aliasPropColumnNameMap);
+                }
             }
+            restore(builder.calledOpSet, calledOperations);
             builder._op = operation;
             builder._entityClass = entityClass;
             builder._entityInfo = entityInfo;
@@ -8500,7 +8744,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         N.checkArgument(_sqlPolicy == sqlBuilder._sqlPolicy || !sqlBuilder._hasGeneratedParameterPlaceholder,
                 "A set-operation child with generated parameter placeholders must use the parent's SQL policy: parent=" + _sqlPolicy + ", child="
                         + sqlBuilder._sqlPolicy);
-        final Map<String, Integer> parentOccurrences = new HashMap<>(_namedParameterNameOccurrences);
+        final NamedOccurrenceChanges parentOccurrences = new NamedOccurrenceChanges(this,
+                !supportsIncrementalNaming() || !((AbstractQueryBuilder<?>) sqlBuilder).supportsIncrementalNaming());
 
         final SP sp = sqlBuilder.build();
 
@@ -8521,9 +8766,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             checkSetOperationSubQuery(sql, operationName);
         }
 
-        _namedParameterNameOccurrences.putAll(parentOccurrences);
-        _generatedNamedParameterNames.addAll(childParameterNames);
-        _renderedNamedParameterTokens.putAll(childParameterTokens);
+        mergeNamedParameterState(parentOccurrences.values, childParameterNames, childParameterTokens);
 
         if (N.notEmpty(sp.parameters())) {
             _parameters.addAll(sp.parameters());
@@ -8653,7 +8896,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 "A builder-backed subquery with generated parameter placeholders must use the parent's SQL policy: parent=" + _sqlPolicy + ", child="
                         + subQuery.sqlPolicy);
 
-        final Map<String, Integer> parentOccurrences = new HashMap<>(_namedParameterNameOccurrences);
+        final NamedOccurrenceChanges parentOccurrences = new NamedOccurrenceChanges(this, !supportsIncrementalNaming());
         final Set<String> childParameterNames = new HashSet<>(subQuery.generatedNamedParameterNames);
         final Map<String, String> childParameterTokens = new HashMap<>(subQuery.renderedNamedParameterTokens);
         final String sql = uniquifyChildNamedParameters(subQuery.rawSql(), subQuery.namedParameterNameOccurrences, parentOccurrences, childParameterNames,
@@ -8661,9 +8904,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         checkSubQuerySnapshot(sql);
 
-        _namedParameterNameOccurrences.putAll(parentOccurrences);
-        _generatedNamedParameterNames.addAll(childParameterNames);
-        _renderedNamedParameterTokens.putAll(childParameterTokens);
+        mergeNamedParameterState(parentOccurrences.values, childParameterNames, childParameterTokens);
 
         if (N.notEmpty(subQuery.parameters)) {
             _parameters.addAll(subQuery.parameters);
@@ -8702,7 +8943,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param sql the operand query text built by the child builder
      * @param childOccurrences the child's named-parameter occurrence counts per base name
-     * @param parentOccurrences a mutable snapshot of the parent's counts; updated with the merged occurrence bounds
+     * @param parentOccurrences the parent's counts plus a private delta; updated with the merged occurrence bounds
      * @param childParameterNames the generated names emitted by the child; updated to the final names
      * @param childParameterTokens the rendered tokens per generated name, holding only tokens that differ from the
      *        default {@code ":" + name} (an absent name was rendered in the default form, as in
@@ -8715,7 +8956,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException under {@link SqlPolicy#NAMED_SQL} if this builder's named-parameter handler emits an empty token
      * @throws RuntimeException if the configured named-parameter handler throws while rendering a placeholder token
      */
-    private String uniquifyChildNamedParameters(final String sql, final Map<String, Integer> childOccurrences, final Map<String, Integer> parentOccurrences,
+    private String uniquifyChildNamedParameters(final String sql, final Map<String, Integer> childOccurrences, final NamedOccurrenceChanges parentOccurrences,
             final Set<String> childParameterNames, final Map<String, String> childParameterTokens, final SqlPolicy childSqlPolicy) {
         if (N.isEmpty(childOccurrences)) {
             return sql;
@@ -8771,7 +9012,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 // past the parent's), or when this exact name collides with a parent name generated from a
                 // DIFFERENT base (e.g. parent property "id_2" vs the child's "id" + "_2" suffix, or the
                 // reverse) -- otherwise the same placeholder would be bound to two different values.
-                final boolean rename = parentCount > 0 || _generatedNamedParameterNames.contains(oldName);
+                final boolean rename = parentCount > 0 || containsGeneratedParameterName(oldName);
                 String newName = oldName;
 
                 if (rename) {
@@ -8779,7 +9020,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     newName = indexedNamedParameterName(name, suffix);
 
                     // Bump past names already taken on either side, e.g. a property literally named "<base>_<n>".
-                    while (_generatedNamedParameterNames.contains(newName) || childParameterNames.contains(newName)) {
+                    while (containsGeneratedParameterName(newName) || childParameterNames.contains(newName)) {
                         newName = indexedNamedParameterName(name, ++suffix);
                     }
 
@@ -8885,6 +9126,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
          */
         final Set<String> dataTokens = new HashSet<>();
 
+        /** Shared by the lexical readings of this immutable rename plan. */
+        private CustomTokenIndex tokenIndex;
+
         /**
          * Renames every planned placeholder of {@code sql} at once, outside quoted regions and comments, under one
          * string-literal convention ({@code mysqlStrings}: MySQL's, whose single- and double-quoted string literals honor
@@ -8893,26 +9137,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
          */
         String applyTo(final String sql, final boolean mysqlStrings, final DialectFamily dialectFamily, final boolean bracketIdentifiers,
                 final IntPredicate hashIdentifiers, final int[] subscriptOpenings) {
-            // Custom tokens to their replacement (a data token that keeps its name maps to itself), looked up by the
-            // distinct token lengths (longest first) at positions starting with one of the tokens' first characters.
-            final Map<String, String> tokenTargets = new HashMap<>();
-
-            for (final String token : dataTokens) {
-                tokenTargets.put(token, token);
-            }
-
-            tokenTargets.putAll(customTokens);
-
-            final int[] tokenLengthsAscending = tokenTargets.keySet().stream().mapToInt(String::length).distinct().sorted().toArray();
-            final StringBuilder firstChars = new StringBuilder();
-
-            for (final String token : tokenTargets.keySet()) {
-                if (firstChars.indexOf(token.substring(0, 1)) < 0) {
-                    firstChars.append(token.charAt(0));
+            if (tokenIndex == null) {
+                final Map<String, String> tokenTargets = new HashMap<>();
+                for (final String token : dataTokens) {
+                    tokenTargets.put(token, token);
                 }
+                tokenTargets.putAll(customTokens);
+                tokenIndex = new CustomTokenIndex(tokenTargets);
             }
-
-            final String tokenFirstChars = firstChars.toString();
             StringBuilder sb = null;
             int last = 0;
 
@@ -8922,11 +9154,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 // A handler-rendered token is matched BEFORE the quoted-region/comment skip: the builder generated it, so it
                 // is data even where its first character could start a comment, e.g. a "#name" token on PostgreSQL, Oracle
                 // or the dialect-agnostic default, whose context-aware '#' classification reads "= #id" as a hash comment.
-                if (tokenFirstChars.indexOf(ch) >= 0) {
-                    final String token = customTokenAt(sql, i, tokenTargets, tokenLengthsAscending);
+                if (tokenIndex.mayStartWith(ch)) {
+                    final String token = tokenIndex.match(sql, i);
 
                     if (token != null) {
-                        final String target = tokenTargets.get(token);
+                        final String target = tokenIndex.targets.get(token);
 
                         if (!target.equals(token)) {
                             sb = sb == null ? new StringBuilder(sql.length() + 16) : sb;
@@ -8989,34 +9221,152 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return sb == null ? sql : sb.append(sql, last, sql.length()).toString();
         }
 
-        /**
-         * Returns the longest of the {@code tokens} keys that occurs at {@code index} as a whole placeholder (not glued to
-         * adjacent parameter-name characters), or {@code null}.
-         */
-        private static String customTokenAt(final String sql, final int index, final Map<String, String> tokens, final int[] tokenLengthsAscending) {
-            for (int k = tokenLengthsAscending.length - 1; k >= 0; k--) {
-                final int end = index + tokenLengthsAscending[k];
+    }
 
-                if (end > sql.length()) {
-                    continue;
+    /**
+     * Matches original custom tokens without copying candidate SQL substrings. Tiny plans use a bounded
+     * direct search; larger plans use compressed prefix edges, so long shared prefixes need no node per character.
+     */
+    private static final class CustomTokenIndex {
+        final Map<String, String> targets;
+        private final String[] smallTokens;
+        private final CustomTokenNode root;
+        private final String firstCharacters;
+        private final char[] sortedFirstCharacters;
+        private final long firstCharacterMask;
+
+        CustomTokenIndex(final Map<String, String> targets) {
+            this.targets = targets;
+            if (targets.size() <= 4) {
+                smallTokens = targets.keySet().toArray(new String[0]);
+                Arrays.sort(smallTokens, (left, right) -> Integer.compare(right.length(), left.length()));
+                root = null;
+                final StringBuilder starts = new StringBuilder(smallTokens.length);
+                for (final String token : smallTokens) {
+                    starts.append(token.charAt(0));
                 }
-
-                final String token = sql.substring(index, end);
-
-                if (!tokens.containsKey(token)) {
-                    continue;
+                firstCharacters = starts.toString();
+                sortedFirstCharacters = null;
+                firstCharacterMask = 0;
+            } else {
+                smallTokens = null;
+                root = new CustomTokenNode(null, 0, 0, null);
+                for (final String token : targets.keySet()) {
+                    root.insert(token);
                 }
-
-                final boolean hasNameCharBefore = isSqlParameterNameChar(token.charAt(0)) && index > 0 && isSqlParameterNameChar(sql.charAt(index - 1));
-                final boolean hasNameCharAfter = isSqlParameterNameChar(token.charAt(token.length() - 1)) && end < sql.length()
-                        && isSqlParameterNameChar(sql.charAt(end));
-
-                if (!hasNameCharBefore && !hasNameCharAfter) {
-                    return token;
+                // Scan the root's UTF-16 code units without boxing each unrelated SQL character.
+                // Keep linear searching bounded; a broad set of token starts uses binary search.
+                final char[] starts = new char[root.children.size()];
+                int index = 0;
+                long mask = 0;
+                for (final char ch : root.children.keySet()) {
+                    starts[index++] = ch;
+                    mask |= 1L << ch;
+                }
+                firstCharacterMask = mask;
+                if (starts.length <= 8) {
+                    firstCharacters = new String(starts);
+                    sortedFirstCharacters = null;
+                } else {
+                    Arrays.sort(starts);
+                    firstCharacters = null;
+                    sortedFirstCharacters = starts;
                 }
             }
+        }
 
-            return null;
+        boolean mayStartWith(final char ch) {
+            // A low-six-bit mask rejects most unrelated text in constant time. Colliding code
+            // units still pass through the exact primitive lookup, so this cannot introduce matches.
+            if (root != null && (firstCharacterMask & 1L << ch) == 0) {
+                return false;
+            }
+            return firstCharacters != null ? firstCharacters.indexOf(ch) >= 0 : Arrays.binarySearch(sortedFirstCharacters, ch) >= 0;
+        }
+
+        String match(final String sql, final int index) {
+            if (isSqlParameterNameChar(sql.charAt(index)) && index > 0 && isSqlParameterNameChar(sql.charAt(index - 1))) {
+                return null;
+            }
+            if (smallTokens != null) {
+                for (final String token : smallTokens) {
+                    final int end = index + token.length();
+                    if (sql.startsWith(token, index) && endsWholeToken(sql, end, token)) {
+                        return token;
+                    }
+                }
+                return null;
+            }
+
+            CustomTokenNode node = root;
+            int end = index;
+            String result = null;
+            while (end < sql.length() && node.children != null) {
+                node = node.children.get(sql.charAt(end));
+                if (node == null || !sql.regionMatches(end, node.text, node.start, node.end - node.start)) {
+                    break;
+                }
+                end += node.end - node.start;
+                if (node.token != null && endsWholeToken(sql, end, node.token)) {
+                    result = node.token;
+                }
+            }
+            return result;
+        }
+
+        private static boolean endsWholeToken(final String sql, final int end, final String token) {
+            return !isSqlParameterNameChar(token.charAt(token.length() - 1)) || end == sql.length() || !isSqlParameterNameChar(sql.charAt(end));
+        }
+    }
+
+    /** A radix edge refers to an existing token's range; splits retain the original strings. */
+    private static final class CustomTokenNode {
+        private final String text;
+        private int start;
+        private int end;
+        private String token;
+        private Map<Character, CustomTokenNode> children;
+
+        CustomTokenNode(final String text, final int start, final int end, final String token) {
+            this.text = text;
+            this.start = start;
+            this.end = end;
+            this.token = token;
+        }
+
+        void insert(final String value) {
+            CustomTokenNode node = this;
+            int offset = 0;
+            while (offset < value.length()) {
+                if (node.children == null) {
+                    node.children = new HashMap<>(2);
+                }
+                final char first = value.charAt(offset);
+                final CustomTokenNode child = node.children.get(first);
+                if (child == null) {
+                    node.children.put(first, new CustomTokenNode(value, offset, value.length(), value));
+                    return;
+                }
+                int common = 1;
+                final int length = Math.min(child.end - child.start, value.length() - offset);
+                while (common < length && child.text.charAt(child.start + common) == value.charAt(offset + common)) {
+                    common++;
+                }
+                offset += common;
+                if (common < child.end - child.start) {
+                    final CustomTokenNode suffix = new CustomTokenNode(child.text, child.start + common, child.end, child.token);
+                    suffix.children = child.children;
+                    child.end = child.start + common;
+                    child.token = null;
+                    child.children = new HashMap<>(2);
+                    child.children.put(suffix.text.charAt(suffix.start), suffix);
+                }
+                if (offset == value.length()) {
+                    child.token = value;
+                    return;
+                }
+                node = child;
+            }
         }
     }
 
@@ -9811,6 +10161,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         appendSetProperties(propsSnapshot);
     }
 
+    /** Validates a privately owned SET map without taking another defensive copy. */
+    private void validateAndAppendOwnedSetProperties(final Map<String, Object> props, final String argName) {
+        checkUpdateOperation();
+        checkSqlFragmentKeysNotBlank(props, argName);
+        appendSetProperties(props);
+    }
+
     /**
      * Sets properties to update from an entity object, a {@code Map}, or a single column-name {@code String}.
      * For bean entities, properties annotated as {@code @NonUpdatable}, {@code @ReadOnly}, {@code @ReadOnlyId},
@@ -9905,7 +10262,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                         throw new IllegalArgumentException("No properties remain after exclusions are applied");
                     }
 
-                    validateAndAppendSetProperties(localProps, cs.entity);
+                    validateAndAppendOwnedSetProperties(localProps, cs.entity);
                 }
 
                 return;
@@ -9926,7 +10283,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 localProps.put(propName, _entityInfo.getPropValue(entity, propName));
             }
 
-            validateAndAppendSetProperties(localProps, cs.entity);
+            validateAndAppendOwnedSetProperties(localProps, cs.entity);
         });
     }
 
@@ -10105,7 +10462,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         // SP's canonical constructor snapshots even a wrapped list, so a subclass retaining access to
         // this protected buffer cannot mutate an already built result.
-        return new SP(sql, ImmutableList.wrap(_parameters));
+        return new SP(sql, ImmutableList.copyOf(_parameters));
     }
 
     /**
@@ -10627,7 +10984,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         if (!isDefaultNamedParameterToken(_sb, start, parameterName)) {
-            _renderedNamedParameterTokens.put(parameterName, _sb.substring(start));
+            putWithMutationUndo(_renderedNamedParameterTokens, parameterName, _sb.substring(start));
         }
     }
 
@@ -10772,7 +11129,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     final String token = renderNamedParameterToken(_handlerForNamedParameter, parameterName);
 
                     if (token.length() != parameterName.length() + 1 || token.charAt(0) != ':' || !token.endsWith(parameterName)) {
-                        _renderedNamedParameterTokens.put(parameterName, token);
+                        putWithMutationUndo(_renderedNamedParameterTokens, parameterName, token);
                     }
 
                     // A placeholder right after ':' (a PostgreSQL array slice "arr[1:?]" / "arr[?:?]") would fuse with
@@ -10881,15 +11238,106 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         _hasGeneratedParameterPlaceholder = true;
 
         final String sanitized = sanitizeNamedParameterName(propName);
-        int occurrence = _namedParameterNameOccurrences.compute(sanitized, (k, v) -> v == null ? 1 : v + 1);
+        final Integer inherited = _namingParent == null || _namedParameterNameOccurrences.containsKey(sanitized) ? null
+                : _namingParent.namedParameterOccurrence(sanitized);
+        if (_journaledMutationDepth > 0) {
+            final Integer localPrevious = _namedParameterNameOccurrences.get(sanitized);
+            recordMutationUndo(_namedParameterNameOccurrences, sanitized,
+                    localPrevious != null || _namedParameterNameOccurrences.containsKey(sanitized) ? localPrevious : ABSENT_MUTATION_VALUE);
+        }
+        // Keep HashMap.compute's collision-bucket insertion order: custom handlers may map multiple
+        // names to the same token, and the existing rewrite plan resolves those in encounter order.
+        // The usual local-only computation must stay non-capturing: a captured inherited value
+        // otherwise allocates a lambda for every parameter in an ordinary bulk clause.
+        int occurrence = inherited == null ? _namedParameterNameOccurrences.compute(sanitized, (key, value) -> value == null ? 1 : value + 1)
+                : _namedParameterNameOccurrences.compute(sanitized, (key, value) -> value == null ? inherited + 1 : value + 1);
         String result = indexedNamedParameterName(sanitized, occurrence);
 
-        while (!_generatedNamedParameterNames.add(result)) {
-            occurrence = _namedParameterNameOccurrences.compute(sanitized, (k, v) -> v == null ? 1 : v + 1);
+        while (containsGeneratedParameterName(result)) {
+            putWithMutationUndo(_namedParameterNameOccurrences, sanitized, ++occurrence);
             result = indexedNamedParameterName(sanitized, occurrence);
         }
+        addWithMutationUndo(_generatedNamedParameterNames, result);
 
         return result;
+    }
+
+    private boolean supportsIncrementalNaming() {
+        return getClass() == SqlBuilder.class && (_sqlPolicy != SqlPolicy.NAMED_SQL || _handlerForNamedParameter == SqlDialect.DEFAULT_NAMED_PARAMETER_HANDLER);
+    }
+
+    private Integer namedParameterOccurrence(final String name) {
+        return namedParameterOccurrence(name, null);
+    }
+
+    private Integer namedParameterOccurrence(final String name, final Integer defaultValue) {
+        if (_namedParameterNameOccurrences.containsKey(name) || _namingParent == null) {
+            return _namedParameterNameOccurrences.getOrDefault(name, defaultValue);
+        }
+        return _namingParent.namedParameterOccurrence(name, defaultValue);
+    }
+
+    private boolean containsGeneratedParameterName(final String name) {
+        return _generatedNamedParameterNames.contains(name) || _namingParent != null && _namingParent.containsGeneratedParameterName(name);
+    }
+
+    /** Read-through counts with only changed keys stored for commit after final SQL validation. */
+    private static final class NamedOccurrenceChanges {
+        private final AbstractQueryBuilder<?> parent;
+        private final Map<String, Integer> values = new HashMap<>();
+
+        NamedOccurrenceChanges(final AbstractQueryBuilder<?> parent, final boolean snapshot) {
+            this.parent = snapshot ? null : parent;
+            if (snapshot) {
+                copyInheritedOccurrences(parent);
+            }
+        }
+
+        private void copyInheritedOccurrences(final AbstractQueryBuilder<?> builder) {
+            if (builder._namingParent != null) {
+                copyInheritedOccurrences(builder._namingParent);
+            }
+            values.putAll(builder._namedParameterNameOccurrences);
+        }
+
+        Integer getOrDefault(final String name, final int defaultValue) {
+            if (values.containsKey(name) || parent == null) {
+                return values.getOrDefault(name, defaultValue);
+            }
+            return parent.namedParameterOccurrence(name, defaultValue);
+        }
+
+        void merge(final String name, final Integer value, final IntBinaryOperator merger) {
+            // Map.merge rejects a null incoming value and treats an existing null as absent.
+            java.util.Objects.requireNonNull(value);
+            final Integer previous = values.containsKey(name) || parent == null ? values.get(name) : parent.namedParameterOccurrence(name);
+            values.put(name, previous == null ? value : merger.applyAsInt(previous, value));
+        }
+    }
+
+    /** A private structured child can inherit naming lookups without copying the parent's complete history. */
+    final void seedStructuredNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
+        if (supportsIncrementalNaming() && childBuilder.supportsIncrementalNaming() && childBuilder._namedParameterNameOccurrences.isEmpty()
+                && childBuilder._generatedNamedParameterNames.isEmpty() && childBuilder._renderedNamedParameterTokens.isEmpty()) {
+            childBuilder._namingParent = this;
+        } else {
+            seedNamedParameterOccurrences(childBuilder);
+        }
+    }
+
+    final void adoptStructuredNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
+        if (childBuilder._namingParent == this) {
+            mergeNamedParameterState(childBuilder._namedParameterNameOccurrences, childBuilder._generatedNamedParameterNames,
+                    childBuilder._renderedNamedParameterTokens);
+            _hasGeneratedParameterPlaceholder |= childBuilder._hasGeneratedParameterPlaceholder;
+        } else {
+            adoptNamedParameterOccurrences(childBuilder);
+        }
+    }
+
+    /** Drops the temporary parent reference after successful adoption or failed child rendering. */
+    final void clearStructuredNamingScope() {
+        _namingParent = null;
     }
 
     /**
@@ -10923,14 +11371,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     protected final void adoptNamedParameterOccurrences(final AbstractQueryBuilder<?> childBuilder) {
         N.checkArgNotNull(childBuilder, cs.childBuilder);
 
-        _namedParameterNameOccurrences.clear();
-        _namedParameterNameOccurrences.putAll(childBuilder._namedParameterNameOccurrences);
+        clearWithMutationUndo(_namedParameterNameOccurrences);
+        for (final Map.Entry<String, Integer> entry : childBuilder._namedParameterNameOccurrences.entrySet()) {
+            putWithMutationUndo(_namedParameterNameOccurrences, entry.getKey(), entry.getValue());
+        }
 
-        _generatedNamedParameterNames.clear();
-        _generatedNamedParameterNames.addAll(childBuilder._generatedNamedParameterNames);
+        clearWithMutationUndo(_generatedNamedParameterNames);
+        for (final String name : childBuilder._generatedNamedParameterNames) {
+            addWithMutationUndo(_generatedNamedParameterNames, name);
+        }
 
-        _renderedNamedParameterTokens.clear();
-        _renderedNamedParameterTokens.putAll(childBuilder._renderedNamedParameterTokens);
+        clearWithMutationUndo(_renderedNamedParameterTokens);
+        for (final Map.Entry<String, String> entry : childBuilder._renderedNamedParameterTokens.entrySet()) {
+            putWithMutationUndo(_renderedNamedParameterTokens, entry.getKey(), entry.getValue());
+        }
 
         // A structured sub-query is rendered by a child builder and then embedded in this builder.
         // Preserve its placeholder state so a later sibling set operation cannot combine the resulting
@@ -11532,6 +11986,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code $$'$$ -- note} hides its comment from the other readings only.
      */
     private boolean containsSqlCommentToken(final String expr) {
+        if (!mayOpenLineComment(expr)) {
+            return false;
+        }
+
         if (containsSqlCommentToken(expr, true, false, false)) {
             return true;
         }
@@ -11559,6 +12017,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final boolean dollarQuotes) {
         char quoteChar = 0;
         boolean quoteBackslashEscapes = false;
+        boolean unterminatedBracket = false;
 
         for (int i = 0, len = expr.length(); i < len; i++) {
             final char ch = expr.charAt(i);
@@ -11618,7 +12077,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             // elsewhere brackets are array subscripts whose "--" / "/*" / "#" are real comments. An unterminated "["
             // hides nothing either: skipping to the end would let "a[1 -- x" through and comment out later clauses.
             // SQLite ends the identifier at the first "]" ("]]" is no escape there), so "[a]]--x]" exposes "--x]".
-            if (ch == '[' && _bracketQuotedIdentifiers) {
+            if (ch == '[' && _bracketQuotedIdentifiers && !unterminatedBracket) {
                 int j = i + 1;
 
                 for (; j < len; j++) {
@@ -11633,6 +12092,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 if (j < len) {
                     i = j;
+                } else {
+                    // No later opener can find a closer in this same suffix. Keep inspecting the
+                    // suffix itself: an unclosed bracket must not hide a subsequent comment.
+                    unterminatedBracket = true;
                 }
 
                 continue;
@@ -12786,9 +13249,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         public SP {
             N.checkArgNotNull(query, cs.query);
             N.checkArgNotNull(parameters, cs.parameters);
-            // ImmutableList.copyOf may return its argument unchanged. Force a fresh backing list because
-            // callers can supply an ImmutableList created with wrap(mutableList).
-            parameters = ImmutableList.wrap(new ArrayList<>(parameters));
+            // copyOf reuses only owned backing storage. A public wrap(mutableList) input is still
+            // defensively copied, while build() can pass its already-owned parameter snapshot through.
+            parameters = ImmutableList.copyOf(parameters);
         }
     }
 }

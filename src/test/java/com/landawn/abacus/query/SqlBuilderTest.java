@@ -2726,6 +2726,87 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
+        void testMixedPositionalInFailureRestoresPriorBindingsAndAllowsRetry() {
+            final List<Object> values = new ArrayList<>(Collections.nCopies(32, 1));
+            values.set(31, NSB.select("id").from("archive").where(Filters.eq("id", 7)).toSubQuery());
+            final SqlBuilder builder = PSB.update("records").set("value", 0);
+            assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.in("id", values)));
+            assertSql("UPDATE records SET value = ? WHERE id = ?", List.of(0, 9), builder.where(Filters.eq("id", 9)).build());
+        }
+
+        @Test
+        void testMixedPositionalInRunShapesPreserveBindingOrder() {
+            for (final int size : new int[] { 16, 17, 257 }) {
+                for (final int runLength : new int[] { 1, 4, 32, 128 }) {
+                    final List<Object> values = new ArrayList<>();
+                    final List<Object> bindings = new ArrayList<>();
+                    final List<String> rendered = new ArrayList<>();
+                    int expressionIndex = 0;
+                    for (int i = 0; i < size; i++) {
+                        if (i % (runLength + 1) != runLength) {
+                            values.add(i);
+                            bindings.add(i);
+                            rendered.add("?");
+                        } else {
+                            final int expressionKind = expressionIndex++ % 3;
+                            if (expressionKind == 0) {
+                                values.add(SqlExpression.of("7"));
+                                rendered.add("7");
+                            } else if (expressionKind == 1) {
+                                values.add(Filters.QME);
+                                rendered.add("?");
+                            } else {
+                                values.add(new SubQuery("SELECT value FROM archive WHERE id = ?", List.of(-i)));
+                                bindings.add(-i);
+                                rendered.add("(SELECT value FROM archive WHERE id = ?)");
+                            }
+                        }
+                    }
+                    final String membership = "(" + String.join(", ", rendered) + ")";
+                    assertSql("SELECT id FROM records WHERE id IN " + membership, bindings,
+                            PSB.select("id").from("records").where(Filters.in("id", values)).build());
+                    assertSql("SELECT id FROM records WHERE id NOT IN " + membership, bindings,
+                            PSB.select("id").from("records").where(Filters.notIn("id", values)).build());
+                }
+            }
+        }
+
+        @Test
+        void testMixedPositionalInSubclassStillSeesEveryValue() {
+            class RecordingBuilder extends SqlBuilder {
+                final List<String> names = new ArrayList<>();
+
+                RecordingBuilder() {
+                    super(PSB.sqlDialect());
+                    _isForConditionOnly = true;
+                }
+
+                @Override
+                protected void setParameter(final String name, final Object value) {
+                    names.add(name);
+                    super.setParameter(name, value);
+                }
+            }
+            final List<Object> values = new ArrayList<>();
+            final List<Object> bindings = new ArrayList<>();
+            final List<String> rendered = new ArrayList<>();
+            for (int i = 0; i < 32; i++) {
+                if (i % 2 == 0) {
+                    values.add(i);
+                    bindings.add(i);
+                    rendered.add("?");
+                } else {
+                    values.add(SqlExpression.of("7"));
+                    rendered.add("7");
+                }
+            }
+            final RecordingBuilder builder = new RecordingBuilder();
+            builder.appendCondition(Filters.in("id", values));
+            assertEquals(Collections.nCopies(values.size(), "id"), builder.names);
+            assertSql("id IN (" + String.join(", ", rendered) + ")", bindings, builder.build());
+        }
+
+        @Test
         void testMultiColumnInCondition_Parameterized() {
             AbstractQueryBuilder.SP sp = PSC.select("*")
                     .from("users")

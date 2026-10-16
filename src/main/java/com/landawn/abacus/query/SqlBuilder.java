@@ -20,6 +20,7 @@ import static com.landawn.abacus.util.SK._PARENTHESIS_L;
 import static com.landawn.abacus.util.SK._PARENTHESIS_R;
 import static com.landawn.abacus.util.SK._SPACE;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -323,14 +324,14 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 final SqlBuilder subBuilder = newSubQueryBuilder(subQuery);
 
                 try {
-                    seedNamedParameterOccurrences(subBuilder);
+                    seedStructuredNamedParameterOccurrences(subBuilder);
 
                     if (subCond != null) {
                         subBuilder.append(subCond);
                     }
 
                     final SP subSP = subBuilder.build();
-                    adoptNamedParameterOccurrences(subBuilder);
+                    adoptStructuredNamedParameterOccurrences(subBuilder);
 
                     appendSqlFragment(subSP.query());
 
@@ -340,6 +341,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 } catch (final RuntimeException | Error e) {
                     releaseFailedSubQueryBuilder(subBuilder, e);
                     throw e;
+                } finally {
+                    subBuilder.clearStructuredNamingScope();
                 }
             }
         } else if (cond instanceof SqlExpression) {
@@ -436,8 +439,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     }
 
     /**
-     * Copies runs of ordinary positional bindings together, rendering expressions in their original
-     * position between runs. Subclasses retain individual setter calls so their hooks still run.
+     * Copies an entirely ordinary positional list together. Mixed lists append bindings directly,
+     * avoiding temporary sublists and arrays while expressions keep their original positions.
+     * Subclasses retain individual setter calls so their hooks still run.
      * @throws IllegalArgumentException if a condition in {@code values} contains an unsupported condition type, an unsafe column, or an incompatible subquery
      * @throws IllegalStateException if rendering a condition in {@code values} encounters an incomplete or out-of-order structured subquery
      * @throws UnsupportedOperationException if a structured subquery's entity metadata configures a LocalDate or LocalTime property with date format {@code long}
@@ -463,11 +467,24 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                 end++;
             }
             _sb.append('?');
-            for (int i = start + 1; i < end; i++) {
-                _sb.append(", ?");
+            if (start == 0 && end == size) {
+                for (int i = start + 1; i < end; i++) {
+                    _sb.append(", ?");
+                }
+                _parameters.addAll(values);
+            } else {
+                // Retain bulk-growth capacity planning without a sublist's temporary toArray copy.
+                final long requiredCapacity = (long) _parameters.size() + end - start;
+                if (_parameters instanceof ArrayList<?> parameterList && requiredCapacity <= Integer.MAX_VALUE) {
+                    parameterList.ensureCapacity((int) requiredCapacity);
+                }
+                _parameters.add(value);
+                for (int i = start + 1; i < end; i++) {
+                    _sb.append(", ?");
+                    _parameters.add(values.get(i));
+                }
             }
             _hasGeneratedParameterPlaceholder = true;
-            _parameters.addAll(start == 0 && end == size ? values : values.subList(start, end));
             start = end;
         }
         return true;

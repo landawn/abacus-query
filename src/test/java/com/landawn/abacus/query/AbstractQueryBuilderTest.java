@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -7061,6 +7062,522 @@ public class AbstractQueryBuilderTest extends TestBase {
             builder.build();
             final IllegalStateException exception = assertThrows(IllegalStateException.class, () -> operation.accept(builder));
             assertTrue(exception.getMessage().contains("closed"));
+        }
+    }
+
+    @Nested
+    class CoreSqlScanning {
+
+        @Nested
+        class AliasAndFromScanning {
+            @Test
+            void testAliasDetectionRetainsLastTemporalAsAndTrailingTrivia() {
+                final String from = "t FOR SYSTEM_TIME AS OF '2026-01-01' AS finalAlias /* note */";
+                final SqlBuilder builder = PSB.select("*").from(from);
+
+                assertEquals("finalAlias", builder._tableAlias);
+                assertSql("SELECT * FROM " + from, List.of(), builder.build());
+            }
+
+            @Test
+            void testAliasScanningRetainsLongExpressionsAndExplicitAlias() {
+                final String expression = "a" + " + a".repeat(1024);
+
+                assertSql("SELECT " + expression + " FROM t", List.of(), PSB.select(expression).from("t").build());
+                assertSql("SELECT " + expression + " AS total FROM t", List.of(), PSB.select(expression + " AS total").from("t").build());
+            }
+
+            @Test
+            void testFromJoinLookaheadCachesOnlyActuallyVisitedOffsets() {
+                // MySQL exposes --x as text, while the modifier lookahead's historical trivia rule skips it.
+                // An offset interval cache would incorrectly hide the inner GLOBAL before its visible JOIN.
+                final String from = "t GLOBAL --x GLOBAL JOIN other o ON t.id = o.id\n GLOBAL alias";
+                final SqlBuilder builder = dialect("MySQL").select("*").from(from);
+
+                assertNull(builder._tableAlias);
+                assertSql("SELECT * FROM " + from, List.of(), builder.build());
+            }
+
+            @Test
+            void testFromJoinLookaheadHandlesConvergingCommentPaths() {
+                final String from = "t " + "GLOBAL --x GLOBAL GLOBAL\n ".repeat(128) + "GLOBAL alias";
+                final SqlBuilder builder = dialect("MySQL").select("*").from(from);
+
+                assertEquals("alias", builder._tableAlias);
+                assertSql("SELECT * FROM " + from, List.of(), builder.build());
+            }
+
+            @Test
+            void testFromJoinLookaheadHandlesLongModifierSequenceWithoutJoin() {
+                // This raw text is deliberately not executable SQL; its accepted rendering must stay bounded.
+                final String from = "t " + "GLOBAL ".repeat(4096) + "alias";
+                final SqlBuilder builder = PSB.select("*").from(from);
+
+                assertEquals("alias", builder._tableAlias);
+                assertSql("SELECT * FROM " + from, List.of(), builder.build());
+            }
+
+            @Test
+            void testFromJoinLookaheadKeepsModifierAliasesAndActualJoinBoundary() {
+                for (final String alias : List.of("local", "semi", "anti")) {
+                    final SqlBuilder builder = PSB.select("*").from("t " + alias);
+                    assertEquals(alias, builder._tableAlias);
+                    assertSql("SELECT * FROM t " + alias, List.of(), builder.build());
+                }
+
+                final String from = "t a GLOBAL ANY LEFT JOIN u ON a.id = u.id";
+                final SqlBuilder builder = PSB.select("*").from(from);
+                assertEquals("a", builder._tableAlias);
+                assertSql("SELECT * FROM " + from, List.of(), builder.build());
+            }
+        }
+
+        @Nested
+        class FromCollections {
+            @Test
+            void testFromCollectionKeepsCallerValuesAndSingleSnapshot() {
+                final List<String> caller = new ArrayList<>(List.of("  t a  ", " u b\n"));
+                final SingleIterationCollection tables = new SingleIterationCollection(caller);
+
+                assertSql("SELECT * FROM t a, u b WHERE a.id = ?", List.of(7), PSB.select("*").from(tables).where(Filters.eq("a.id", 7)).build());
+                assertEquals(List.of("  t a  ", " u b\n"), caller);
+                assertEquals(1, tables.iterations);
+            }
+
+            @Test
+            void testFromCollectionKeepsIndexedTrimFailureAndRetry() {
+                final SqlBuilder builder = PSB.select("*");
+                final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> builder.from(List.of("t", "\u0000")));
+
+                assertTrue(error.getMessage().contains("tableNames[1]"), error.getMessage());
+                assertSql("SELECT * FROM t, u", List.of(), builder.from(List.of("t", "u")).build());
+            }
+
+            @Test
+            void testFromCollectionKeepsSingleElementOverrideDispatch() {
+                final TrackingFromBuilder builder = new TrackingFromBuilder();
+
+                assertSql("SELECT * FROM t", List.of(), builder.from(List.of("  t  ")).build());
+                assertEquals(1, builder.fromStringCalls);
+                assertEquals("t", builder.fromStringArgument);
+            }
+
+            @Test
+            void testFromCollectionKeepsUnterminatedCommentErrorAndRetry() {
+                final SqlBuilder builder = PSB.select("*");
+                final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> builder.from(List.of(" t ", " u /* open ")));
+
+                assertEquals("tableNames[1] must not contain an unterminated block comment: u /* open", error.getMessage());
+                assertSql("SELECT * FROM t, u WHERE id = ?", List.of(8), builder.from(List.of("t", "u")).where(Filters.eq("id", 8)).build());
+            }
+
+            @Test
+            void testFromCollectionRestoresCommentBoundaryForDialectMarkers() {
+                for (final String[] fixture : List.of(new String[] { "MySQL", "# note" }, new String[] { "H2", "// note" },
+                        new String[] { "PostgreSQL", "-- note" })) {
+                    assertSql("SELECT * FROM t a " + fixture[1] + "\n, u b WHERE a.id = ?", List.of(9),
+                            dialect(fixture[0]).select("*").from(List.of("t a " + fixture[1] + "\n", "u b")).where(Filters.eq("a.id", 9)).build());
+                }
+            }
+        }
+
+        @Nested
+        class QueryBoundaries {
+            @Test
+            void testJoinConnectorKeepsLoneCarriageReturnHintAndRetry() {
+                final SqlBuilder builder = dialect("MySQL").select("*").from("t").join("u -- x\r ON u.id = t.id");
+                final IllegalStateException error = assertThrows(IllegalStateException.class, () -> builder.where(Filters.eq("id", 1)));
+
+                assertTrue(error.getMessage().contains("lone carriage return"), error.getMessage());
+                assertSql("SELECT * FROM t JOIN u -- x\r ON u.id = t.id\n ON t.id = u.id WHERE t.id = ?", List.of(2),
+                        builder.on("t.id = u.id").where(Filters.eq("t.id", 2)).build());
+            }
+
+            @Test
+            void testJoinConnectorSeparateAndInlineAgreeForDenseTempTables() {
+                final String tables = IntStream.range(0, 128).mapToObj(index -> "#t" + index).collect(Collectors.joining(", "));
+                final String joined = "(SELECT * FROM " + tables + ") j";
+                final SP inline = PSB.select("*").from("t").join(joined + " ON t.id = j.id").where(Filters.eq("t.id", 7)).build();
+                final SP separate = PSB.select("*").from("t").join(joined).on("t.id = j.id").where(Filters.eq("t.id", 7)).build();
+
+                assertSql(inline.query(), inline.parameters(), separate);
+            }
+
+            @Test
+            void testSetOperandKeepsQuotedSemicolonsAndRejectsRealTerminator() {
+                final SqlBuilder builder = PSB.select("id").from("t");
+                assertThrows(IllegalArgumentException.class, () -> builder.union("SELECT id FROM u;"));
+                assertSql("SELECT id FROM t UNION SELECT ';' FROM u /* ; */", List.of(), builder.union("SELECT ';' FROM u /* ; */").build());
+            }
+
+            @Test
+            void testSetOperandWithoutMarkersKeepsLongQueryAndBindings() {
+                final String columns = IntStream.range(0, 256).mapToObj(index -> "id" + index).collect(Collectors.joining(", "));
+                final String operand = "SELECT " + columns + " FROM u";
+
+                assertSql("SELECT id FROM t WHERE id = ? UNION " + operand, List.of(3),
+                        PSB.select("id").from("t").where(Filters.eq("id", 3)).union(operand).build());
+            }
+        }
+
+        private static Dsl dialect(final String product) {
+            return Dsl.forDialect(PSB.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of(product)).build());
+        }
+
+        private static final class SingleIterationCollection extends AbstractCollection<String> {
+            private final List<String> values;
+            private int iterations;
+
+            private SingleIterationCollection(final List<String> values) {
+                this.values = values;
+            }
+
+            @Override
+            public Iterator<String> iterator() {
+                if (++iterations != 1) {
+                    throw new AssertionError("FROM must use its validated snapshot");
+                }
+                return values.iterator();
+            }
+
+            @Override
+            public int size() {
+                return values.size();
+            }
+        }
+
+        private static final class TrackingFromBuilder extends SqlBuilder {
+            private int fromStringCalls;
+            private String fromStringArgument;
+
+            private TrackingFromBuilder() {
+                super(PSB.sqlDialect());
+                _op = com.landawn.abacus.util.OperationType.QUERY;
+                _propOrColumnNames = List.of("*");
+            }
+
+            @Override
+            public SqlBuilder from(final String expression) {
+                fromStringCalls++;
+                fromStringArgument = expression;
+                return super.from(expression);
+            }
+        }
+    }
+
+    @Nested
+    class IncrementalRendering {
+        @Test
+        void testCustomDuplicateTokensRetainExistingRewriteOrder() {
+            final Dsl custom = Dsl.forDialect(
+                    NSB.sqlDialect().toBuilder().namingPolicy(NamingPolicy.NO_CHANGE).namedParameterHandler((sql, name) -> sql.append("@constant")).build());
+            final SubQuery snapshot = custom.select("id")
+                    .from("s")
+                    .where(Filters.and(Filters.eq("p", 1), Filters.eq("Aa", 2), Filters.eq("BB", 3)))
+                    .toSubQuery();
+
+            // The handler deliberately aliases distinct names. Preserve the established winner in
+            // this accepted edge case, including String-hash collisions and a parent suffix shift.
+            assertSql("SELECT id FROM t WHERE (p = :p) AND (EXISTS (SELECT id FROM s WHERE (p = :p_2) AND (Aa = :p_2) AND (BB = :p_2)))", List.of(0, 1, 2, 3),
+                    NSB.select("id").from("t").where(Filters.and(Filters.eq("p", 0), Filters.exists(snapshot))).build());
+        }
+
+        @Test
+        void testCustomHashTokensKeepUnchangedDataBeforeRenamedTokens() {
+            final Dsl hash = Dsl.forDialect(NSB.sqlDialect()
+                    .toBuilder()
+                    .productInfo(SqlDialect.ProductInfo.of("PostgreSQL"))
+                    .namedParameterHandler((sb, name) -> sb.append('#').append(name))
+                    .build());
+            final SqlBuilder child = hash.select("id")
+                    .from("archive")
+                    .where(Filters.and(Filters.eq("p", 1), Filters.eq("q", 2), Filters.eq("r", 3), Filters.eq("s", 4), Filters.eq("id", 5)));
+            assertSql(
+                    "SELECT id FROM records WHERE id = #id UNION SELECT id FROM archive WHERE (p = #p) AND (q = #q) AND (r = #r)"
+                            + " AND (s = #s) AND (id = #id_2)\n",
+                    List.of(0, 1, 2, 3, 4, 5), hash.select("id").from("records").where(Filters.eq("id", 0)).union(child).build());
+        }
+
+        @Test
+        void testCustomTokensWithLongOverlappingPrefixesPreserveQuotedTextAndSnapshot() {
+            final String prefix = "@" + "shared".repeat(342);
+            final Dsl custom = Dsl.forDialect(NSB.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> sb.append(prefix).append(name)).build());
+            final List<Condition> conditions = new ArrayList<>();
+            final List<Object> parameters = new ArrayList<>();
+            final List<String> expectedPredicates = new ArrayList<>();
+            for (int i = 1; i <= 6; i++) {
+                final String name = "p".repeat(i);
+                conditions.add(Filters.eq(name, i));
+                parameters.add(i);
+                expectedPredicates.add("(" + name + " = :" + name + ")");
+            }
+            final String quoted = "note = '" + prefix + "p'";
+            conditions.add(Filters.expr(quoted));
+            expectedPredicates.add("(" + quoted + ")");
+            final SubQuery snapshot = custom.select("id").from("archive").where(Filters.and(conditions)).toSubQuery();
+            final String originalSql = snapshot.rawSql();
+            final String expected = "SELECT id FROM records WHERE EXISTS (SELECT id FROM archive WHERE " + String.join(" AND ", expectedPredicates) + ")";
+            for (int i = 0; i < 2; i++) {
+                assertSql(expected, parameters, NSB.select("id").from("records").where(Filters.exists(snapshot)).build());
+                assertEquals(originalSql, snapshot.rawSql());
+                assertEquals(parameters, snapshot.parameters());
+            }
+        }
+
+        @Test
+        void testDeepStructuredNamedChildrenPreserveAncestorSuffixAndHashCollisions() {
+            // Aa and BB have the same String hash; literal id_2 also occupies a generated suffix.
+            assertEquals("Aa".hashCode(), "BB".hashCode());
+            final SubQuery leaf = new SubQuery("leaf", List.of("id"),
+                    Filters.where(Filters.and(Filters.eq("id", 2), Filters.eq("id_2", 21), Filters.eq("BB", 13))));
+            final SubQuery middle = new SubQuery("middle", List.of("id"),
+                    Filters.where(Filters.and(Filters.eq("id", 1), Filters.eq("Aa", 12), Filters.in("id", leaf))));
+            final Condition condition = Filters.and(Filters.eq("id_2", 20), Filters.eq("Aa", 10), Filters.eq("BB", 11), Filters.in("id", middle),
+                    Filters.eq("id", 3), Filters.eq("Aa", 14), Filters.eq("BB", 15));
+            final String leafSql = "SELECT id FROM leaf WHERE (id = :id_3) AND (id_2 = :id_2_2) AND (BB = :BB_2)";
+            final String middleSql = "SELECT id FROM middle WHERE (id = :id) AND (Aa = :Aa_2) AND (id IN (" + leafSql + "))";
+            final String expected = "SELECT id FROM records WHERE (id_2 = :id_2) AND (Aa = :Aa) AND (BB = :BB) AND (id IN (" + middleSql
+                    + ")) AND (id = :id_4) AND (Aa = :Aa_3) AND (BB = :BB_3)";
+            for (int i = 0; i < 2; i++) {
+                assertSql(expected, List.of(20, 10, 11, 1, 12, 2, 21, 13, 3, 14, 15), NSB.select("id").from("records").where(condition).build());
+            }
+        }
+
+        @Test
+        void testNamedChildSuccessThenFailureRestoresParentHistory() {
+            final SubQuery leaf = new SubQuery("archive", List.of("id"), Filters.where(Filters.eq("id", 1)));
+            final SubQuery middle = new SubQuery("history", List.of("id"), Filters.where(Filters.and(Filters.eq("id_2", 2), Filters.in("id", leaf))));
+            final SqlBuilder builder = NSB.update("records").set("id", 0);
+            assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.and(Filters.in("id", middle), Filters.eq("bad -- column", 3))));
+            assertEquals(List.of(0), builder.parameters());
+            assertSql("UPDATE records SET id = :id WHERE (id = :id_2) AND (id_2 = :id_2_2)", List.of(0, 9, 10),
+                    builder.where(Filters.and(Filters.eq("id", 9), Filters.eq("id_2", 10))).build());
+        }
+
+        @Test
+        void testParameterSnapshotsCopyWrappedSubListsAndReversedViews() {
+            final Object value = new byte[] { 1, 2 };
+            final List<Object> source = new ArrayList<>(Arrays.asList("before", null, value, "after"));
+            final ImmutableList<Object> view = ImmutableList.wrap(source).subList(1, 3).reversed();
+            final SP result = new SP("SELECT ?, ?", view);
+            source.clear();
+            assertSql("SELECT ?, ?", Arrays.asList(value, null), result);
+            assertSame(value, result.parameters().get(0));
+        }
+
+        @Test
+        void testSetExcludedMapFailureRestoresEarlierAssignments() {
+            final Map<String, Object> properties = new LinkedHashMap<>();
+            properties.put("id", 1);
+            properties.put("skip", 2);
+            properties.put("bad -- column", 3);
+            final SqlBuilder builder = NSB.update("records").set("id", 0);
+            assertThrows(IllegalArgumentException.class, () -> builder.set((Object) properties, Set.of("skip")));
+            assertSql("UPDATE records SET id = :id, id = :id_2", List.of(0, 4), builder.set("id", 4).build());
+        }
+
+        @Test
+        void testSetExcludedMapSkipsExcludedInvalidKeyAndKeepsOrder() {
+            final Map<String, Object> properties = new LinkedHashMap<>();
+            properties.put("first", 1);
+            properties.put(" ", 2);
+            properties.put("second", null);
+            final SqlBuilder builder = NSB.update("records").set((Object) properties, Set.of(" "));
+            properties.clear();
+            assertSql("UPDATE records SET first = :first, second = :second, third = :third", Arrays.asList(1, null, 3), builder.set("third", 3).build());
+        }
+
+        @Test
+        void testUnterminatedBracketRunsStillExposeLateCommentsAndAllowRetry() {
+            final String openers = "[".repeat(1024) + "x";
+            for (final Dsl dialect : new Dsl[] { PSB, lexDialect(PSB, "SQL Server"), lexDialect(PSB, "SQLite") }) {
+                final SqlBuilder builder = dialect.select("id").from("records");
+                assertThrows(IllegalArgumentException.class, () -> builder.orderBy(openers + " -- late"));
+                assertThrows(IllegalArgumentException.class, () -> builder.orderBy(openers + " /* late */"));
+                assertSql("SELECT id FROM records ORDER BY id", List.of(), builder.orderBy("id").build());
+                final String closed = openers + " -- quoted]";
+                assertSql("SELECT id FROM records ORDER BY " + closed, List.of(), dialect.select("id").from("records").orderBy(closed).build());
+            }
+        }
+    }
+
+    @Nested
+    class AccumulatedClauseRendering {
+        @Test
+        @SuppressWarnings("deprecation")
+        void testAliasOnlyStateRestoresMappingAfterLargeClauseFailure() {
+            final List<String> values = IntStream.range(0, 128).mapToObj(i -> "v" + i).toList();
+            final Condition membership = Filters.in("c.value", values);
+            for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                final SqlBuilder builder = dsl.select("*").from(ReviewChild.class, "c");
+                assertEquals(List.of(), builder.parameters());
+                assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.and(membership, Filters.eq("bad -- column", 1))));
+                assertEquals(List.of(), builder.parameters());
+
+                final List<String> markers = IntStream.rangeClosed(1, values.size()).mapToObj(i -> parameterToken(dsl, "value" + i)).toList();
+                final List<Object> bindings = new ArrayList<>(values);
+                bindings.add("done");
+                assertSql("SELECT * FROM review_child c WHERE (c.stored_value IN (" + String.join(", ", markers) + ")) AND (c.stored_value = "
+                        + parameterToken(dsl, "value") + ")", bindings, builder.where(Filters.and(membership, Filters.eq("c.value", "done"))).build());
+            }
+        }
+
+        @Test
+        void testCustomTokenManyRootsPreserveCommentsUnicodeAndSnapshot() {
+            final String[] prefixes = { "/*", "@", "\u00e9", "\u03a9", "\u6c49", "\u0416", "\u0100", "\u05d0", "\u0e01", "\uD801\uDC00" };
+            for (final int count : new int[] { 8, 9, 10 }) {
+                final Map<String, String> tokens = new LinkedHashMap<>();
+                final List<Condition> conditions = new ArrayList<>();
+                final List<Object> values = new ArrayList<>();
+                final List<String> rendered = new ArrayList<>();
+                final List<String> rewritten = new ArrayList<>();
+                for (int i = 0; i < count; i++) {
+                    final String name = "p" + i;
+                    final String token = prefixes[i] + name + (i == 0 ? "*/" : "");
+                    tokens.put(name, token);
+                    conditions.add(Filters.eq(name, i + 1));
+                    values.add(i + 1);
+                    rendered.add("(" + name + " = " + token + ")");
+                    rewritten.add("(" + name + " = :" + name + (i == 0 ? "_2" : "") + ")");
+                }
+                final Dsl custom = Dsl.forDialect(NSB.sqlDialect().toBuilder().namedParameterHandler((sql, name) -> sql.append(tokens.get(name))).build());
+                // The first custom token looks like a comment. It remains data, while its quoted copy stays literal text.
+                // U+0429 and the U+00E9/U+03A9 token roots also share their low six bits.
+                final String tail = " AND (note = '/*p0*/') AND (" + "\u6f22\u5b57".repeat(128) + " = 1) AND (\u0429p2 = 3)";
+                final SubQuery snapshot = custom.select("id").from("archive").where(Filters.and(conditions)).append(tail).toSubQuery();
+                final String originalSql = "SELECT id FROM archive WHERE " + String.join(" AND ", rendered) + tail;
+                final String rewrittenSql = "SELECT id FROM archive WHERE " + String.join(" AND ", rewritten) + tail;
+                final List<Object> bindings = new ArrayList<>();
+                bindings.add(0);
+                bindings.addAll(values);
+                assertEquals(originalSql, snapshot.rawSql());
+                for (int reuse = 0; reuse < 2; reuse++) {
+                    assertSql("SELECT id FROM records WHERE (p0 = :p0) AND (EXISTS (" + rewrittenSql + "))", bindings,
+                            NSB.select("id").from("records").where(Filters.and(Filters.eq("p0", 0), Filters.exists(snapshot))).build());
+                    assertEquals(originalSql, snapshot.rawSql());
+                    assertEquals(values, snapshot.parameters());
+                }
+            }
+        }
+
+        @Test
+        void testCustomTokenOverlappingRootsPreserveBoundariesAndQuotedText() {
+            for (final String prefix : new String[] { "@", "\u00e9@", "\uD801\uDC00@" }) {
+                final Dsl custom = Dsl.forDialect(NSB.sqlDialect().toBuilder().namedParameterHandler((sql, name) -> sql.append(prefix).append(name)).build());
+                final List<Condition> conditions = new ArrayList<>();
+                final List<String> rendered = new ArrayList<>();
+                final List<String> rewritten = new ArrayList<>();
+                for (int i = 1; i <= 6; i++) {
+                    final String name = "p".repeat(i);
+                    conditions.add(Filters.eq(name, i));
+                    rendered.add("(" + name + " = " + prefix + name + ")");
+                    rewritten.add("(" + name + " = :" + name + (i == 1 ? "_2" : "") + ")");
+                }
+                final String tail = " AND (other = " + prefix + "pppppp_more) AND (note = '" + prefix + "pp') AND (" + "\u6f22\u5b57".repeat(128)
+                        + " = 1) AND (\u0429pp = 3) AND (\u0100pp = 4) AND (\u0141pp = 5)" + (prefix.equals("@") ? "" : " AND (leading" + prefix + "p = 2)");
+                final SubQuery snapshot = custom.select("id").from("archive").where(Filters.and(conditions)).append(tail).toSubQuery();
+                final String originalSql = "SELECT id FROM archive WHERE " + String.join(" AND ", rendered) + tail;
+                final String rewrittenSql = "SELECT id FROM archive WHERE " + String.join(" AND ", rewritten) + tail;
+                assertEquals(originalSql, snapshot.rawSql());
+                for (int reuse = 0; reuse < 2; reuse++) {
+                    assertSql("SELECT id FROM records WHERE (p = :p) AND (EXISTS (" + rewrittenSql + "))", List.of(0, 1, 2, 3, 4, 5, 6),
+                            NSB.select("id").from("records").where(Filters.and(Filters.eq("p", 0), Filters.exists(snapshot))).build());
+                    assertEquals(originalSql, snapshot.rawSql());
+                    assertEquals(List.of(1, 2, 3, 4, 5, 6), snapshot.parameters());
+                }
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testLargeNamedInRestoresSmallAndAccumulatedStateBeforeRetry() {
+            final List<Integer> values = IntStream.range(0, 5000).boxed().toList();
+            final Condition membership = Filters.in("id", values);
+            // Exercise nearby history sizes without tying the behavioral contract to a private optimization cutoff.
+            for (final int priorCount : new int[] { 1, 15, 16, 17 }) {
+                final Map<String, Object> prior = priorProperties(priorCount, "id1", false);
+                for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                    final SqlBuilder builder = dsl.update("records").set(prior);
+                    assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.and(membership, Filters.eq("bad -- column", 1))));
+                    assertEquals(new ArrayList<>(prior.values()), builder.parameters());
+
+                    final List<String> markers = IntStream.rangeClosed(1, values.size())
+                            .mapToObj(i -> parameterToken(dsl, i == 1 ? "id1_2" : "id" + i))
+                            .toList();
+                    final List<Object> bindings = new ArrayList<>(prior.values());
+                    bindings.addAll(values);
+                    bindings.add(9000);
+                    assertSql(updatePrefix(dsl, prior) + " WHERE (id IN (" + String.join(", ", markers) + ")) AND (id1 = " + parameterToken(dsl, "id1_3") + ")",
+                            bindings, builder.where(Filters.and(membership, Filters.eq("id1", 9000))).build());
+                }
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testOuterSnapshotRestoresSuccessfulAndFailedNestedClauses() {
+            final List<Condition> comparisons = IntStream.range(0, 128).mapToObj(i -> (Condition) Filters.eq("id", i)).toList();
+            final Condition disjunction = Filters.or(comparisons);
+            for (final int priorCount : new int[] { 16, 17 }) {
+                final Map<String, Object> prior = priorProperties(priorCount, "id", false);
+                for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                    final SqlBuilder builder = dsl.update("records").set(prior);
+                    assertThrows(IllegalStateException.class, () -> builder.mutateAtomically(() -> {
+                        assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.and(disjunction, Filters.eq("bad -- column", 1))));
+                        assertEquals(new ArrayList<>(prior.values()), builder.parameters());
+                        builder.where(disjunction);
+                        throw new IllegalStateException("outer failure after successful child");
+                    }));
+                    assertEquals(new ArrayList<>(prior.values()), builder.parameters());
+                    final List<Object> bindings = new ArrayList<>(prior.values());
+                    bindings.add(9000);
+                    assertSql(updatePrefix(dsl, prior) + " WHERE id = " + parameterToken(dsl, "id_2"), bindings, builder.where(Filters.eq("id", 9000)).build());
+                }
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testRepeatedNamedOrRestoresSuffixesBeforeRetry() {
+            final List<Condition> comparisons = IntStream.range(0, 2000).mapToObj(i -> (Condition) Filters.eq("id", i)).toList();
+            final Condition disjunction = Filters.or(comparisons);
+            for (final int priorCount : new int[] { 1, 15, 16, 17 }) {
+                final Map<String, Object> prior = priorProperties(priorCount, "id", true);
+                final int firstSuffix = priorCount == 1 ? 2 : 3;
+                for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                    final SqlBuilder builder = dsl.update("records").set(prior);
+                    assertThrows(IllegalArgumentException.class, () -> builder.where(Filters.and(disjunction, Filters.eq("bad -- column", 1))));
+                    assertEquals(new ArrayList<>(prior.values()), builder.parameters());
+
+                    final List<String> predicates = IntStream.range(0, comparisons.size())
+                            .mapToObj(i -> "(id = " + parameterToken(dsl, "id_" + (firstSuffix + i)) + ")")
+                            .toList();
+                    final List<Object> bindings = new ArrayList<>(prior.values());
+                    bindings.addAll(IntStream.range(0, comparisons.size()).boxed().toList());
+                    bindings.add(9000);
+                    assertSql(
+                            updatePrefix(dsl, prior) + " WHERE (" + String.join(" OR ", predicates) + ") AND (id = "
+                                    + parameterToken(dsl, "id_" + (firstSuffix + comparisons.size())) + ")",
+                            bindings, builder.where(Filters.and(disjunction, Filters.eq("id", 9000))).build());
+                }
+            }
+        }
+
+        @SuppressWarnings("deprecation")
+        private String parameterToken(final Dsl dsl, final String name) {
+            return dsl == MSC ? "#{" + name + "}" : ":" + name;
+        }
+
+        private Map<String, Object> priorProperties(final int size, final String firstName, final boolean reserveSuffix) {
+            final Map<String, Object> result = new LinkedHashMap<>();
+            for (int i = 0; i < size; i++) {
+                result.put(i == 0 ? firstName : reserveSuffix && i == 1 ? "id_2" : "seed" + i, -i - 1);
+            }
+            return result;
+        }
+
+        private String updatePrefix(final Dsl dsl, final Map<String, Object> properties) {
+            return "UPDATE records SET " + properties.keySet().stream().map(name -> name + " = " + parameterToken(dsl, name)).collect(Collectors.joining(", "));
         }
     }
 

@@ -18,6 +18,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -229,6 +230,13 @@ public final class QueryUtil {
     @Internal
     public static ImmutableMap<String, ColumnInfo> propToColumnInfoMap(final Class<?> entityClass, final NamingPolicy namingPolicy) {
         N.checkArgNotNull(entityClass, cs.entityClass);
+
+        // Map types have no entity metadata. Do not retain their classes (and class loaders)
+        // just to cache an empty result, including anonymous or generated Map subclasses.
+        if (Map.class.isAssignableFrom(entityClass)) {
+            return ImmutableMap.empty();
+        }
+
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
         Map<NamingPolicy, ImmutableMap<String, ColumnInfo>> namingPropColumnInfoMap = entityPropColumnInfoMap.get(entityClass);
@@ -236,26 +244,33 @@ public final class QueryUtil {
 
         if (namingPropColumnInfoMap == null || (result = namingPropColumnInfoMap.get(effectiveNamingPolicy)) == null) {
             final ImmutableMap<String, String> propToColumnNameMap = propToColumnNameMap(entityClass, effectiveNamingPolicy);
-            final Map<String, ColumnInfo> newPropColumnInfoMap = N.newHashMap(propToColumnNameMap.size() * 2);
-
-            for (final Map.Entry<String, String> entry : propToColumnNameMap.entrySet()) {
-                final ColumnInfo columnInfo = new ColumnInfo(entry.getValue(), isUnqualifiedColumnName(entry.getValue()));
-                newPropColumnInfoMap.put(entry.getKey(), columnInfo);
-
-                if (!propToColumnNameMap.containsKey(entry.getValue())) {
-                    newPropColumnInfoMap.put(entry.getValue(), columnInfo);
-                }
-            }
-
-            result = ImmutableMap.wrap(newPropColumnInfoMap);
 
             if (namingPropColumnInfoMap == null) {
-                final Map<NamingPolicy, ImmutableMap<String, ColumnInfo>> newMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
-                final Map<NamingPolicy, ImmutableMap<String, ColumnInfo>> existingMap = entityPropColumnInfoMap.putIfAbsent(entityClass, newMap);
-                namingPropColumnInfoMap = existingMap == null ? newMap : existingMap;
+                namingPropColumnInfoMap = entityPropColumnInfoMap.computeIfAbsent(entityClass,
+                        cls -> Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class)));
             }
 
-            namingPropColumnInfoMap.put(effectiveNamingPolicy, result);
+            // Lock only this class's policy map, and resolve recursive name metadata before taking it.
+            // Publishing after an unguarded build would discard entire maps on concurrent first use.
+            synchronized (namingPropColumnInfoMap) {
+                result = namingPropColumnInfoMap.get(effectiveNamingPolicy);
+
+                if (result == null) {
+                    final Map<String, ColumnInfo> newPropColumnInfoMap = N.newHashMap(propToColumnNameMap.size() * 2);
+
+                    for (final Map.Entry<String, String> entry : propToColumnNameMap.entrySet()) {
+                        final ColumnInfo columnInfo = new ColumnInfo(entry.getValue(), isUnqualifiedColumnName(entry.getValue()));
+                        newPropColumnInfoMap.put(entry.getKey(), columnInfo);
+
+                        if (!propToColumnNameMap.containsKey(entry.getValue())) {
+                            newPropColumnInfoMap.put(entry.getValue(), columnInfo);
+                        }
+                    }
+
+                    result = ImmutableMap.wrap(newPropColumnInfoMap);
+                    namingPropColumnInfoMap.put(effectiveNamingPolicy, result);
+                }
+            }
         }
 
         return result;
@@ -939,7 +954,42 @@ public final class QueryUtil {
      */
     static ImmutableMap<String, String> registerEntityPropColumnNameMap(final Class<?> entityClass, final NamingPolicy namingPolicy,
             final Set<Class<?>> registeringClasses) {
-        return registerEntityPropColumnNameMap(entityClass, namingPolicy, registeringClasses, MAX_NESTED_PROP_DEPTH);
+        N.checkArgNotNull(entityClass, cs.entityClass);
+
+        if (registeringClasses != null) {
+            return registerEntityPropColumnNameMap(entityClass, namingPolicy, registeringClasses, MAX_NESTED_PROP_DEPTH);
+        }
+
+        N.checkArgNotNull(namingPolicy, cs.namingPolicy);
+        Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
+
+        if (namingPropColumnMap != null) {
+            final ImmutableMap<String, String> cached = namingPropColumnMap.get(namingPolicy);
+
+            if (cached != null) {
+                return cached;
+            }
+        }
+
+        // ParserUtil may run user constructors or class initializers while holding its metadata lock.
+        // Build without a query-cache lock so a callback into this method cannot reverse the lock order.
+        // Recursive calls keep their own ancestor/depth context and never publish a top-level result.
+        final ImmutableMap<String, String> result = registerEntityPropColumnNameMap(entityClass, namingPolicy, null, MAX_NESTED_PROP_DEPTH);
+
+        if (namingPropColumnMap == null) {
+            // Publish only after the full nested mapping succeeds; a failed build must not retain an empty holder.
+            final Map<NamingPolicy, ImmutableMap<String, String>> newMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
+            newMap.put(namingPolicy, result);
+            namingPropColumnMap = entityTablePropColumnNameMap.putIfAbsent(entityClass, newMap);
+
+            if (namingPropColumnMap == null) {
+                return result;
+            }
+        }
+
+        // Racing cold builds may duplicate work, but every caller receives the completed published winner.
+        final ImmutableMap<String, String> cached = namingPropColumnMap.putIfAbsent(namingPolicy, result);
+        return cached == null ? result : cached;
     }
 
     /**
@@ -1040,23 +1090,7 @@ public final class QueryUtil {
             propColumnNameMap = N.emptyMap();
         }
 
-        final ImmutableMap<String, String> result = ImmutableMap.wrap(propColumnNameMap);
-
-        if (registeringClasses != null) {
-            return result;
-        }
-
-        Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
-
-        if (namingPropColumnMap == null) {
-            final Map<NamingPolicy, ImmutableMap<String, String>> newMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
-            final Map<NamingPolicy, ImmutableMap<String, String>> existingMap = entityTablePropColumnNameMap.putIfAbsent(entityClass, newMap);
-            namingPropColumnMap = existingMap == null ? newMap : existingMap;
-        }
-
-        namingPropColumnMap.put(namingPolicy, result);
-
-        return result;
+        return ImmutableMap.wrap(propColumnNameMap);
     }
 
     /**
@@ -1249,21 +1283,41 @@ public final class QueryUtil {
             return getNoExclusionPropNames(entityClass, slot);
         }
 
-        final Collection<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
+        final Set<String>[] val = SqlBuilder.loadPropNamesByClass(entityClass);
 
         if (includeSubEntityProperties) {
             final List<String> result = new ArrayList<>(val[slot].size());
 
-            outer: for (final String propName : val[slot]) {
-                for (final String excludedPropName : excludedPropNames) {
-                    // Compare the path boundary directly instead of allocating a prefix for every property/exclusion pair.
-                    if (excludedPropName != null && propName.startsWith(excludedPropName)
-                            && (propName.length() == excludedPropName.length() || propName.charAt(excludedPropName.length()) == SK._PERIOD)) {
-                        continue outer;
-                    }
-                }
+            if (excludedPropNames.size() > 8) {
+                final Set<String> exclusions = nestedPropExclusions(val[slot], excludedPropNames);
 
-                result.add(propName);
+                outer: for (final String propName : val[slot]) {
+                    if (exclusions.contains(propName)) {
+                        continue;
+                    }
+
+                    for (int dot = propName.indexOf(SK._PERIOD); dot >= 0; dot = propName.indexOf(SK._PERIOD, dot + 1)) {
+                        if (exclusions.contains(propName.substring(0, dot))) {
+                            continue outer;
+                        }
+                    }
+
+                    result.add(propName);
+                }
+            } else {
+                // A small snapshot avoids allocating a Set iterator for every candidate property.
+                final String[] exclusions = excludedPropNames.toArray(N.EMPTY_STRING_ARRAY);
+
+                outer: for (final String propName : val[slot]) {
+                    for (final String excludedPropName : exclusions) {
+                        if (excludedPropName != null && propName.startsWith(excludedPropName)
+                                && (propName.length() == excludedPropName.length() || propName.charAt(excludedPropName.length()) == SK._PERIOD)) {
+                            continue outer;
+                        }
+                    }
+
+                    result.add(propName);
+                }
             }
 
             return ImmutableList.wrap(result);
@@ -1272,6 +1326,47 @@ public final class QueryUtil {
         // N.excludeAll returns a freshly-built mutable ArrayList; wrap it (no extra copy) so the
         // exclusion path also returns an immutable list.
         return ImmutableList.wrap(N.excludeAll(val[slot], excludedPropNames));
+    }
+
+    /**
+     * Uses exact String equality for nested exclusions, regardless of a caller Set's comparator or identity semantics.
+     * Ordinary hash sets already have that behavior. For other sets, index only names that can exclude a candidate
+     * or one of its dot-boundary ancestors; thousands of irrelevant exclusions must not create a large temporary set.
+     */
+    private static Set<String> nestedPropExclusions(final Set<String> propNames, final Set<String> excludedPropNames) {
+        if (propNames.isEmpty()) {
+            return N.emptySet();
+        }
+
+        if (excludedPropNames.getClass() == HashSet.class || excludedPropNames.getClass() == LinkedHashSet.class) {
+            return excludedPropNames;
+        }
+
+        Set<String> ancestors = null;
+
+        for (final String propName : propNames) {
+            for (int dot = propName.indexOf(SK._PERIOD); dot >= 0; dot = propName.indexOf(SK._PERIOD, dot + 1)) {
+                if (ancestors == null) {
+                    ancestors = new HashSet<>();
+                }
+
+                ancestors.add(propName.substring(0, dot));
+            }
+        }
+
+        Set<String> result = null;
+
+        for (final String excludedPropName : excludedPropNames) {
+            if (excludedPropName != null && (propNames.contains(excludedPropName) || (ancestors != null && ancestors.contains(excludedPropName)))) {
+                if (result == null) {
+                    result = new HashSet<>();
+                }
+
+                result.add(excludedPropName);
+            }
+        }
+
+        return result == null ? N.emptySet() : result;
     }
 
     /**
@@ -1592,7 +1687,8 @@ public final class QueryUtil {
      * }</pre>
      *
      * <p>Qualified names consisting only of lowercase ASCII letters and dots are reused under {@code SNAKE_CASE}, avoiding
-     * temporary segment strings when rendering common join predicates such as {@code u.id = a.id}.</p>
+     * temporary segment strings when rendering common join predicates such as {@code u.id = a.id}. Quoted names whose
+     * segments need no conversion also reuse their original string.</p>
      *
      * @param identifier the identifier to convert; {@code null} and empty strings are returned as-is
      * @param namingPolicy the naming policy to apply to the parts between the underscore runs;
@@ -1660,34 +1756,48 @@ public final class QueryUtil {
      * A delimited identifier is exact, case-sensitive text; converting inside it would target a different column.
      */
     private static String convertQuoteAwareIdentifier(final String identifier, final NamingPolicy namingPolicy) {
-        final StringBuilder sb = new StringBuilder(identifier.length() + 8);
+        StringBuilder sb = null;
+        int copiedTo = 0;
         int start = 0;
 
         while (true) {
             // Scan the original text: copying the remaining suffix for every segment grows quadratically for long qualified names.
             final int dot = indexOfQualifyingDot(identifier, start);
             final int end = dot < 0 ? identifier.length() : dot;
-            final String segment = identifier.substring(start, end);
-            final char first = segment.isEmpty() ? 0 : segment.charAt(0);
+            final char first = start == end ? 0 : identifier.charAt(start);
 
-            if (first == SK._DOUBLE_QUOTE || first == SK._BACKTICK || first == '[' || isUnicodeQuotedIdentifierStart(segment, 0)) {
-                sb.append(segment);
-            } else {
-                sb.append(convertIdentifierSegment(segment, namingPolicy));
+            if (first != SK._DOUBLE_QUOTE && first != SK._BACKTICK && first != '[' && !isUnicodeQuotedIdentifierStart(identifier, start)
+                    && !(namingPolicy == NamingPolicy.SNAKE_CASE && isLowercaseAsciiDottedName(identifier, start, end))) {
+                final String segment = identifier.substring(start, end);
+                final String converted = convertIdentifierSegment(segment, namingPolicy);
+
+                if (!segment.equals(converted)) {
+                    // Most quoted names are already exact. Delay the output buffer until a segment
+                    // actually changes, and copy unchanged spans directly from the original string.
+                    if (sb == null) {
+                        sb = new StringBuilder(identifier.length() + 8);
+                    }
+
+                    sb.append(identifier, copiedTo, start).append(converted);
+                    copiedTo = end;
+                }
             }
 
             if (dot < 0) {
-                return sb.toString();
+                return sb == null ? identifier : sb.append(identifier, copiedTo, identifier.length()).toString();
             }
 
-            sb.append('.');
             start = end + 1;
         }
     }
 
     /** Only lowercase ASCII letters and dots are proven unchanged; all other spellings use the converter. */
     private static boolean isLowercaseAsciiDottedName(final String identifier) {
-        for (int i = 0, len = identifier.length(); i < len; i++) {
+        return isLowercaseAsciiDottedName(identifier, 0, identifier.length());
+    }
+
+    private static boolean isLowercaseAsciiDottedName(final String identifier, final int fromIndex, final int toIndex) {
+        for (int i = fromIndex; i < toIndex; i++) {
             final char ch = identifier.charAt(i);
             if ((ch < 'a' || ch > 'z') && ch != '.') {
                 return false;

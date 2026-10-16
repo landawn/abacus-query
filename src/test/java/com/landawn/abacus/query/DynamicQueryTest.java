@@ -2270,6 +2270,15 @@ public class DynamicQueryTest extends TestBase {
         }
 
         @Test
+        void testSelectAppendCollectionReportsOriginalLabelWithoutAppendingValidPrefix() {
+            final Builder builder = DynamicQuery.builder();
+            builder.select().append("id");
+            assertEquals("Element in columns must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> builder.select().append(Arrays.asList("name", "  "))).getMessage());
+            assertEquals("SELECT id", builder.build());
+        }
+
+        @Test
         void testSelectAppendCollectionValidatesAndRendersOneSnapshot() {
             Collection<String> changingCollection = new AbstractCollection<>() {
                 private int iteratorCalls;
@@ -2357,6 +2366,22 @@ public class DynamicQueryTest extends TestBase {
             Builder builder = DynamicQuery.builder();
             assertThrows(IllegalArgumentException.class, () -> builder.select().append(disappearingMap));
             assertEquals("", builder.build());
+        }
+
+        @Test
+        void testSelectAppendMapReportsKeyBeforeValueWithoutAppendingValidPrefix() {
+            final Builder builder = DynamicQuery.builder();
+            builder.select().append("id");
+            final Map<String, String> aliases = new LinkedHashMap<>();
+            aliases.put("name", "display_name");
+            aliases.put("  ", null);
+            assertEquals("Key in columnAliases must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> builder.select().append(aliases)).getMessage());
+            aliases.remove("  ");
+            aliases.put("title", null);
+            assertEquals("Value in columnAliases must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> builder.select().append(aliases)).getMessage());
+            assertEquals("SELECT id", builder.build());
         }
 
         @Test
@@ -2597,6 +2622,34 @@ public class DynamicQueryTest extends TestBase {
         private static final String EXPECTED_SQL = "SELECT u.id, u.name AS user_name, COUNT(o.id) AS order_count FROM users u"
                 + " LEFT JOIN orders o ON o.user_id = u.id WHERE u.active = ? AND u.age > ? GROUP BY u.id, u.name HAVING COUNT(o.id) > ?"
                 + " ORDER BY u.name ASC LIMIT 10 OFFSET 20";
+
+        @Test
+        void testBuildLargeMixedWidthClausesPreservesOrderAndClosesHandles() {
+            final String projection = "x + ".repeat(1024) + "1";
+            final String predicate = "note = '" + "\u4e2d".repeat(2048) + "' -- trailing";
+            final String groups = "x, ".repeat(1024) + "id";
+            final String havingText = "SUM(x) > " + "1 + ".repeat(1024) + "0";
+            final String ordering = "x, ".repeat(1024) + "id DESC";
+            final Builder builder = DynamicQuery.builder();
+
+            // Invoke the APIs out of SQL order and force widening after an ASCII SELECT prefix.
+            builder.append("FOR UPDATE").offset(Integer.MAX_VALUE).limit(1000);
+            final DynamicQuery.OrderByClause orderBy = builder.orderBy().append(ordering);
+            builder.unionAll("SELECT 1");
+            final DynamicQuery.HavingClause having = builder.having().append(havingText);
+            final DynamicQuery.GroupByClause groupBy = builder.groupBy().append(groups);
+            final DynamicQuery.WhereClause where = builder.where().append(predicate);
+            final DynamicQuery.FromClause from = builder.from().append("records");
+            final DynamicQuery.SelectClause select = builder.select().append(projection);
+
+            assertEquals("SELECT " + projection + " FROM records WHERE " + predicate + "\n GROUP BY " + groups + " HAVING " + havingText
+                    + " UNION ALL SELECT 1 ORDER BY " + ordering + " LIMIT 1000 OFFSET 2147483647 FOR UPDATE", builder.build());
+            for (final DynamicQuery.ClauseBuilder clause : List.of(select, from, where, groupBy, having, orderBy)) {
+                assertNull(clause.sb);
+                assertThrows(IllegalStateException.class, clause::assertNotClosed);
+            }
+            assertThrows(IllegalStateException.class, builder::from);
+        }
 
         @Test
         void testConcurrentBuildsRenderIdenticalSqlOnEveryThread() throws Exception {

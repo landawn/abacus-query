@@ -10,21 +10,41 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -32,6 +52,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.annotation.Column;
 import com.landawn.abacus.annotation.Id;
+import com.landawn.abacus.annotation.JsonXmlField;
 import com.landawn.abacus.annotation.NonColumn;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.parser.ParserUtil;
@@ -1481,6 +1502,200 @@ public class QueryUtilTest extends TestBase {
     }
 
     @Nested
+    class MetadataPublication {
+        @Test
+        void testConcurrentColumnInfoLookupsShareOneCompletedMap() throws Exception {
+            final List<ImmutableMap<String, QueryUtil.ColumnInfo>> results = concurrentMetadata(
+                    () -> QueryUtil.propToColumnInfoMap(ConcurrentColumnEntity.class, NamingPolicy.SNAKE_CASE));
+
+            assertTrue(results.get(0).containsKey("first.firstName"));
+            for (final ImmutableMap<String, QueryUtil.ColumnInfo> result : results) {
+                assertSame(results.get(0), result);
+            }
+        }
+
+        @Test
+        void testConcurrentNameLookupsShareOneCompletedMap() throws Exception {
+            final List<ImmutableMap<String, String>> results = concurrentMetadata(
+                    () -> QueryUtil.propToColumnNameMap(ConcurrentNameEntity.class, NamingPolicy.SNAKE_CASE));
+
+            assertTrue(results.get(0).containsKey("first.firstName"));
+            for (final ImmutableMap<String, String> result : results) {
+                assertSame(results.get(0), result);
+            }
+        }
+
+        @Test
+        void testConcurrentNestedMetadataCallbacksDoNotDeadlock(@TempDir final Path directory) throws Exception {
+            // A regression must not leave ParserUtil's global monitor locked in the suite's JVM.
+            final Path output = directory.resolve("metadata-callback.txt");
+            final Path javaBin = Path.of(System.getProperty("java.home"), "bin");
+            final Path java = javaBin.resolve(Files.isRegularFile(javaBin.resolve("java.exe")) ? "java.exe" : "java");
+            final Process child = new ProcessBuilder(java.toString(), "-Dfile.encoding=UTF-8", "-Dabacus.query.maxNestedPropDepth=2", "-cp",
+                    metadataProbeClasspath(), MetadataCallbackProbe.class.getName()).redirectErrorStream(true).redirectOutput(output.toFile()).start();
+            final boolean completed;
+
+            try {
+                completed = child.waitFor(40, TimeUnit.SECONDS);
+            } finally {
+                if (child.isAlive()) {
+                    child.destroyForcibly();
+                    assertTrue(child.waitFor(5, TimeUnit.SECONDS), "Metadata callback probe did not terminate after being killed");
+                }
+            }
+
+            final String diagnostic = Files.readString(output, StandardCharsets.UTF_8);
+            assertTrue(completed, "Metadata callback probe timed out:\n" + diagnostic);
+            assertEquals(0, child.exitValue(), diagnostic);
+            assertTrue(diagnostic.contains("metadata-callback-check=passed"), diagnostic);
+        }
+
+        @Test
+        void testFailedNestedMetadataDoesNotPublishCacheHolders() throws Exception {
+            final Map<?, ?> names = metadataCache("entityTablePropColumnNameMap");
+            final Map<?, ?> infos = metadataCache("entityPropColumnInfoMap");
+            ParserUtil.getBeanInfo(FailedNestedRoot.class); // Root metadata is valid; only the nested bean fails.
+            assertFalse(names.containsKey(FailedNestedRoot.class));
+            assertFalse(infos.containsKey(FailedNestedRoot.class));
+
+            try {
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    final UnsupportedOperationException error = assertThrows(UnsupportedOperationException.class,
+                            () -> QueryUtil.propToColumnNameMap(FailedNestedRoot.class, NamingPolicy.SNAKE_CASE));
+                    assertEquals("Date format cannot be 'long' for type java.time.LocalTime/LocalDate", error.getMessage());
+                    assertFalse(names.containsKey(FailedNestedRoot.class), "A failed nested build must not leave an empty class holder");
+                    assertThrows(UnsupportedOperationException.class, () -> QueryUtil.propToColumnInfoMap(FailedNestedRoot.class, NamingPolicy.SNAKE_CASE));
+                    assertFalse(names.containsKey(FailedNestedRoot.class));
+                    assertFalse(infos.containsKey(FailedNestedRoot.class));
+                }
+            } finally {
+                names.remove(FailedNestedRoot.class);
+                infos.remove(FailedNestedRoot.class);
+            }
+        }
+
+        @Test
+        void testMapClassesDoNotBecomeColumnInfoCacheKeys() throws Exception {
+            final Field field = QueryUtil.class.getDeclaredField("entityPropColumnInfoMap");
+            field.setAccessible(true);
+            final Map<?, ?> cache = (Map<?, ?>) field.get(null);
+
+            assertFalse(cache.containsKey(UnmappedMap.class));
+            for (final NamingPolicy policy : NamingPolicy.values()) {
+                assertSame(ImmutableMap.empty(), QueryUtil.propToColumnInfoMap(UnmappedMap.class, policy));
+            }
+            assertSame(ImmutableMap.empty(), QueryUtil.propToColumnInfoMap(UnmappedMap.class, null));
+            assertFalse(cache.containsKey(UnmappedMap.class), "An empty mapping must not pin an otherwise unused Map class");
+            assertThrows(IllegalArgumentException.class, () -> QueryUtil.propToColumnInfoMap(null, null));
+        }
+
+        @Test
+        void testRecursiveMappingDoesNotReuseAnotherTopLevelAncestorContext() {
+            final ImmutableMap<String, String> child = QueryUtil.propToColumnNameMap(MappingChild.class, NamingPolicy.SNAKE_CASE);
+            assertTrue(child.containsKey("parent.label"));
+            assertFalse(child.containsKey("parent.child.code"));
+
+            final ImmutableMap<String, String> parent = QueryUtil.propToColumnNameMap(MappingParent.class, NamingPolicy.SNAKE_CASE);
+            assertTrue(parent.containsKey("child.code"));
+            assertFalse(parent.containsKey("child.parent.label"));
+            assertSame(parent, QueryUtil.registerEntityPropColumnNameMap(MappingParent.class, NamingPolicy.SNAKE_CASE, null));
+            assertTrue(QueryUtil.registerEntityPropColumnNameMap(MappingParent.class, NamingPolicy.SNAKE_CASE, Set.of(MappingParent.class)).isEmpty());
+        }
+    }
+
+    @Nested
+    class NestedExclusionLookup {
+        @Test
+        void testLargeExclusionsPreservePathBoundariesNullsAndOrder() {
+            final Set<String> exclusions = exclusionMisses(32);
+            exclusions.addAll(Arrays.asList(null, "", "chil", "child.", "child.first", "childish."));
+            final List<String> all = List.of("visible", "childish", "child.firstName", "child.lastName");
+
+            assertEquals(all, QueryUtil.selectPropNames(ExclusionRoot.class, true, exclusions));
+            exclusions.add("child.firstName");
+            assertEquals(List.of("visible", "childish", "child.lastName"), QueryUtil.selectPropNames(ExclusionRoot.class, true, exclusions));
+            exclusions.add("child");
+            final ImmutableList<String> result = QueryUtil.selectPropNames(ExclusionRoot.class, true, exclusions);
+            assertEquals(List.of("visible", "childish"), result);
+            assertThrows(UnsupportedOperationException.class, () -> result.add("other"));
+            assertSame(QueryUtil.selectPropNames(ExclusionRoot.class, true, null),
+                    QueryUtil.selectPropNames(ExclusionRoot.class, true, Collections.emptySet()));
+        }
+
+        @Test
+        void testLargeExclusionsUseExactStringsForComparatorAndIdentitySets() {
+            final Set<String> insensitive = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            insensitive.addAll(exclusionMisses(32));
+            insensitive.add("CHILD");
+            assertEquals(List.of("visible", "childish", "child.firstName", "child.lastName"),
+                    QueryUtil.selectPropNames(ExclusionRoot.class, true, insensitive));
+
+            final Set<String> identities = Collections.newSetFromMap(new IdentityHashMap<>());
+            identities.addAll(exclusionMisses(32));
+            identities.add(new String("child.firstName"));
+            identities.add(new String("child.firstName"));
+            identities.add(null);
+            assertEquals(List.of("visible", "childish", "child.lastName"), QueryUtil.selectPropNames(ExclusionRoot.class, true, identities));
+
+            insensitive.remove("CHILD");
+            insensitive.add("child");
+            assertEquals(List.of("visible", "childish"), QueryUtil.selectPropNames(ExclusionRoot.class, true, insensitive));
+        }
+
+        @Test
+        void testLargeExclusionsVisitIrrelevantCallerEntriesOnlyLinearly() {
+            final CountingExclusions exclusions = new CountingExclusions(exclusionMisses(64));
+            assertEquals(List.of("visible", "childish", "child.firstName", "child.lastName"), QueryUtil.selectPropNames(ExclusionRoot.class, true, exclusions));
+            assertTrue(exclusions.visits <= exclusions.size() * 2L, "Do not traverse the caller's whole set for every property");
+        }
+
+        @Test
+        void testSmallExclusionsRetainExactStringSemantics() {
+            final Set<String> insensitive = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            insensitive.add("CHILD");
+            assertEquals(List.of("visible", "childish", "child.firstName", "child.lastName"),
+                    QueryUtil.selectPropNames(ExclusionRoot.class, true, insensitive));
+            assertEquals(List.of("visible", "childish"), QueryUtil.selectPropNames(ExclusionRoot.class, true, Set.of("child")));
+            assertEquals(List.of("visible", "childish", "child.firstName", "child.lastName"),
+                    QueryUtil.selectPropNames(ExclusionRoot.class, true, Collections.singleton(null)));
+        }
+    }
+
+    @Nested
+    class QuotedIdentifierConversion {
+        @Test
+        void testChangedSegmentsPreserveEveryUnchangedSourceSpan() {
+            assertEquals("\"fixed\".first_name.[Last].second_name",
+                    QueryUtil.convertIdentifier("\"fixed\".firstName.[Last].secondName", NamingPolicy.SNAKE_CASE));
+            assertEquals("first_name.\"fixed\".second_name.[last]",
+                    QueryUtil.convertIdentifier("firstName.\"fixed\".secondName.[last]", NamingPolicy.SNAKE_CASE));
+            assertEquals("..first_name.\"a.b\".last_name..", QueryUtil.convertIdentifier("..FirstName.\"a.b\".LastName..", NamingPolicy.SNAKE_CASE));
+            assertEquals("U&\"caf.00e9\" UESCAPE '.'.first_name", QueryUtil.convertIdentifier("U&\"caf.00e9\" UESCAPE '.'.firstName", NamingPolicy.SNAKE_CASE));
+            assertEquals("first_name.\"unterminated.LastName", QueryUtil.convertIdentifier("firstName.\"unterminated.LastName", NamingPolicy.SNAKE_CASE));
+            assertEquals("__first_name_.\"Exact\"", QueryUtil.convertIdentifier("__FirstName_.\"Exact\"", NamingPolicy.SNAKE_CASE));
+
+            for (final NamingPolicy policy : NamingPolicy.values()) {
+                assertEquals(policy.convert("firstName") + ".\"Exact.Name\"." + policy.convert("lastName"),
+                        QueryUtil.convertIdentifier("firstName.\"Exact.Name\".lastName", policy), policy.name());
+            }
+        }
+
+        @Test
+        void testUnchangedQuotedNamesReuseTheirOriginalStrings() {
+            for (final String text : List.of("\"Exact.Name\"", "`back``tick`", "[a]]b]", "U&\"name\" UESCAPE '!'", "\"first\"..[last]", "\"unterminated",
+                    "U&\"name\" UESCAPE E'!!'", "\"fixed\".".repeat(128) + "[last]")) {
+                final String source = new String(text);
+                for (final NamingPolicy policy : NamingPolicy.values()) {
+                    assertSame(source, QueryUtil.convertIdentifier(source, policy), policy + ": " + text);
+                }
+            }
+
+            final String mixed = new String("p.\"final.name\"");
+            assertSame(mixed, QueryUtil.convertIdentifier(mixed, NamingPolicy.SNAKE_CASE));
+        }
+    }
+
+    @Nested
     class Validation {
         @Test
         void testQualifyingDotScannerRetainsItsRequiredSourcePrecondition() {
@@ -1517,6 +1732,383 @@ public class QueryUtilTest extends TestBase {
                 this.firstName = firstName;
             }
         }
+    }
+
+    private static <T> List<T> concurrentMetadata(final Supplier<T> supplier) throws Exception {
+        final int readers = 16;
+        final CountDownLatch ready = new CountDownLatch(readers);
+        final CountDownLatch start = new CountDownLatch(1);
+        final ExecutorService executor = Executors.newFixedThreadPool(readers);
+        final List<Future<T>> futures = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < readers; i++) {
+                futures.add(executor.submit(() -> {
+                    ready.countDown();
+                    start.await();
+                    return supplier.get();
+                }));
+            }
+
+            assertTrue(ready.await(10, TimeUnit.SECONDS), "Metadata readers did not reach the start barrier");
+            start.countDown();
+            final List<T> results = new ArrayList<>();
+            for (final Future<T> future : futures) {
+                results.add(future.get(15, TimeUnit.SECONDS));
+            }
+            return results;
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+        }
+    }
+
+    private static Set<String> exclusionMisses(final int count) {
+        final Set<String> exclusions = new LinkedHashSet<>();
+        for (int i = 0; i < count; i++) {
+            exclusions.add("missing" + i);
+        }
+        return exclusions;
+    }
+
+    private static Map<?, ?> metadataCache(final String name) throws Exception {
+        final Field field = QueryUtil.class.getDeclaredField(name);
+        field.setAccessible(true);
+        return (Map<?, ?>) field.get(null);
+    }
+
+    private static String metadataProbeClasspath() throws Exception {
+        final Set<String> entries = new LinkedHashSet<>();
+        // Prefer the actually loaded classes, including when a console launcher uses its own child classloader.
+        for (final Class<?> type : new Class<?>[] { QueryUtilTest.class, QueryUtil.class, ParserUtil.class, Test.class, ParameterizedTest.class,
+                jakarta.xml.bind.annotation.XmlRootElement.class }) {
+            entries.add(Path.of(type.getProtectionDomain().getCodeSource().getLocation().toURI()).toString());
+        }
+        entries.add(System.getProperty("surefire.test.class.path", System.getProperty("java.class.path")));
+        return String.join(File.pathSeparator, entries);
+    }
+
+    private static final class CountingExclusions extends AbstractSet<String> {
+        private final Set<String> delegate;
+        private long visits;
+
+        private CountingExclusions(final Set<String> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public Iterator<String> iterator() {
+            final Iterator<String> iterator = delegate.iterator();
+            return new Iterator<>() {
+                @Override
+                public boolean hasNext() {
+                    return iterator.hasNext();
+                }
+
+                @Override
+                public String next() {
+                    visits++;
+                    return iterator.next();
+                }
+            };
+        }
+    }
+
+    public static class ExclusionRoot {
+        private String visible;
+        private ExclusionLeaf child;
+        private String childish;
+
+        public String getVisible() {
+            return visible;
+        }
+
+        public void setVisible(final String value) {
+            visible = value;
+        }
+
+        public ExclusionLeaf getChild() {
+            return child;
+        }
+
+        public void setChild(final ExclusionLeaf value) {
+            child = value;
+        }
+
+        public String getChildish() {
+            return childish;
+        }
+
+        public void setChildish(final String value) {
+            childish = value;
+        }
+    }
+
+    @Table(alias = "leaf")
+    public static class ExclusionLeaf {
+        private String firstName;
+        private String lastName;
+
+        public String getFirstName() {
+            return firstName;
+        }
+
+        public void setFirstName(final String value) {
+            firstName = value;
+        }
+
+        public String getLastName() {
+            return lastName;
+        }
+
+        public void setLastName(final String value) {
+            lastName = value;
+        }
+    }
+
+    public static class ConcurrentMetadataBase {
+        private ExclusionLeaf first;
+        private ExclusionLeaf second;
+        private ExclusionLeaf third;
+
+        public ExclusionLeaf getFirst() {
+            return first;
+        }
+
+        public void setFirst(final ExclusionLeaf value) {
+            first = value;
+        }
+
+        public ExclusionLeaf getSecond() {
+            return second;
+        }
+
+        public void setSecond(final ExclusionLeaf value) {
+            second = value;
+        }
+
+        public ExclusionLeaf getThird() {
+            return third;
+        }
+
+        public void setThird(final ExclusionLeaf value) {
+            third = value;
+        }
+    }
+
+    public static class ConcurrentColumnEntity extends ConcurrentMetadataBase {
+    }
+
+    public static class ConcurrentNameEntity extends ConcurrentMetadataBase {
+    }
+
+    public static class FailedNestedRoot {
+        private InvalidNestedDate child;
+
+        public InvalidNestedDate getChild() {
+            return child;
+        }
+
+        public void setChild(final InvalidNestedDate value) {
+            child = value;
+        }
+    }
+
+    public static class InvalidNestedDate {
+        @JsonXmlField(dateFormat = "long")
+        private LocalDate date;
+
+        public LocalDate getDate() {
+            return date;
+        }
+
+        public void setDate(final LocalDate value) {
+            date = value;
+        }
+    }
+
+    /** Runs only in a child JVM, so a failed lock-order regression cannot poison the remaining tests. */
+    public static final class MetadataCallbackProbe {
+        private static final CountDownLatch CONSTRUCTOR_ENTERED = new CountDownLatch(1);
+        private static final CountDownLatch CALLBACK_ALLOWED = new CountDownLatch(1);
+        private static final AtomicReference<ImmutableMap<String, String>> CALLBACK_RESULT = new AtomicReference<>();
+
+        public static void main(final String[] args) {
+            try {
+                verifyCallbacks();
+                System.out.println("metadata-callback-check=passed");
+                System.exit(0);
+            } catch (final Throwable error) {
+                error.printStackTrace(System.err);
+                System.exit(1);
+            }
+        }
+
+        private static void verifyCallbacks() throws Exception {
+            ParserUtil.getBeanInfo(CallbackRoot.class); // Warm only the root; the nested leaf remains cold.
+            final Field field = ParserUtil.class.getDeclaredField("beanInfoPool");
+            field.setAccessible(true);
+            final Object beanInfoMonitor = field.get(null);
+            final AtomicReference<Throwable> failure = new AtomicReference<>();
+            final AtomicReference<ImmutableMap<String, String>> concurrentResult = new AtomicReference<>();
+            final CountDownLatch completed = new CountDownLatch(2);
+            final Thread callbackThread = new Thread(() -> {
+                try {
+                    ParserUtil.getBeanInfo(CallbackEntity.class);
+                } catch (final Throwable error) {
+                    failure.compareAndSet(null, error);
+                } finally {
+                    completed.countDown();
+                }
+            }, "metadata-constructor-callback");
+            final Thread queryThread = new Thread(() -> {
+                try {
+                    concurrentResult.set(QueryUtil.propToColumnNameMap(CallbackRoot.class, NamingPolicy.SNAKE_CASE));
+                } catch (final Throwable error) {
+                    failure.compareAndSet(null, error);
+                } finally {
+                    completed.countDown();
+                }
+            }, "metadata-nested-query");
+            callbackThread.setDaemon(true);
+            queryThread.setDaemon(true);
+
+            try {
+                callbackThread.start();
+                require(CONSTRUCTOR_ENTERED.await(10, TimeUnit.SECONDS), "Bean constructor did not reach its callback barrier");
+                queryThread.start();
+                awaitDependencyMonitor(queryThread, callbackThread, beanInfoMonitor);
+                // The query is now waiting for ParserUtil's monitor, while the constructor owns it.
+                // Only now allow the constructor to re-enter the same top-level QueryUtil mapping.
+                CALLBACK_ALLOWED.countDown();
+                require(completed.await(10, TimeUnit.SECONDS), "Metadata callbacks did not finish; possible policy/dependency lock inversion");
+                if (failure.get() != null) {
+                    throw new AssertionError("Metadata worker failed", failure.get());
+                }
+                require(concurrentResult.get() != null && concurrentResult.get().containsKey("child.name"), "Nested mapping was incomplete");
+                require(CALLBACK_RESULT.get() == concurrentResult.get(), "Concurrent builds did not return the published winner");
+            } finally {
+                CALLBACK_ALLOWED.countDown();
+            }
+        }
+
+        private static void awaitDependencyMonitor(final Thread waiting, final Thread owner, final Object monitor) throws InterruptedException {
+            final long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+            while (System.nanoTime() < deadline) {
+                final ThreadInfo info = ManagementFactory.getThreadMXBean().getThreadInfo(waiting.threadId());
+                if (info != null && info.getThreadState() == Thread.State.BLOCKED && info.getLockOwnerId() == owner.threadId() && info.getLockInfo() != null
+                        && info.getLockInfo().getIdentityHashCode() == System.identityHashCode(monitor)) {
+                    return;
+                }
+                require(waiting.isAlive(), "Nested query exited before reaching the dependency monitor");
+                Thread.sleep(1);
+            }
+            throw new AssertionError("Nested query did not reach the dependency-monitor barrier");
+        }
+
+        private static void require(final boolean condition, final String message) {
+            if (!condition) {
+                throw new AssertionError(message);
+            }
+        }
+
+        public static class CallbackRoot {
+            private CallbackLeaf child;
+
+            public CallbackLeaf getChild() {
+                return child;
+            }
+
+            public void setChild(final CallbackLeaf value) {
+                child = value;
+            }
+        }
+
+        public static class CallbackLeaf {
+            private String name;
+
+            public String getName() {
+                return name;
+            }
+
+            public void setName(final String value) {
+                name = value;
+            }
+        }
+
+        public static class CallbackEntity {
+            private String name;
+
+            public CallbackEntity() {
+                CONSTRUCTOR_ENTERED.countDown();
+                try {
+                    require(CALLBACK_ALLOWED.await(15, TimeUnit.SECONDS), "Metadata callback was not released");
+                } catch (final InterruptedException error) {
+                    Thread.currentThread().interrupt();
+                    throw new AssertionError(error);
+                }
+                CALLBACK_RESULT.set(QueryUtil.propToColumnNameMap(CallbackRoot.class, NamingPolicy.SNAKE_CASE));
+            }
+
+            public String getName() {
+                return name;
+            }
+
+            public void setName(final String value) {
+                name = value;
+            }
+        }
+    }
+
+    public static class MappingParent {
+        private String label;
+        private MappingChild child;
+
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(final String value) {
+            label = value;
+        }
+
+        public MappingChild getChild() {
+            return child;
+        }
+
+        public void setChild(final MappingChild value) {
+            child = value;
+        }
+    }
+
+    public static class MappingChild {
+        private String code;
+        private MappingParent parent;
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(final String value) {
+            code = value;
+        }
+
+        public MappingParent getParent() {
+            return parent;
+        }
+
+        public void setParent(final MappingParent value) {
+            parent = value;
+        }
+    }
+
+    private static final class UnmappedMap extends HashMap<String, String> {
+        private static final long serialVersionUID = 1L;
     }
 
     @lombok.Data
