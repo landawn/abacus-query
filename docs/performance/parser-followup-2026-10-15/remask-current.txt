@@ -1,0 +1,3 @@
+PASS: no-hash remasking changes dollar-quote boundaries
+first =[SELECT : $tag$ abc x$tag$]
+second=[SELECT : $              $]

@@ -1,0 +1,7 @@
+{
+  "src/main/java/com/landawn/abacus/query/SqlParser.java": "2b1ee937455fe04d3771f38adf8ce8526b5ebe2d93e33f3979c2a94c32969457",
+  "src/main/java/com/landawn/abacus/query/ParsedSql.java": "c5cc7547f1faf5e5e19c997489aff8903cc56f8afb069729339e5cf82e46d59f",
+  "src/test/java/com/landawn/abacus/query/SqlParserTest.java": "8eae97759dcc7c5b7ee23633e27480c873ebe1cc8eda9d4ac6cf28955fe8cbab",
+  "src/test/java/com/landawn/abacus/query/ParsedSqlTest.java": "6a419d795430821d9ee20bb815b6ae71a8d8a77392eaf9281604971092092b2a",
+  "pom.xml": "efdf7f72cbc61fe27f77b9cb7be159857a034050af298d9e979d414f3f650204"
+}

@@ -1,0 +1,43 @@
+Oct 15, 2026 6:18:21 PM com.landawn.abacus.logging.LoggerFactory getLogger
+INFO: Initialized with JDK Logger
+Oct 15, 2026 6:18:21 PM com.landawn.abacus.logging.LoggerFactory getLogger
+INFO: Initialized with JDK Logger
+Oct 15, 2026 6:18:33 PM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 1000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1243)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:568)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:527)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:338)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:870)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:833)
+	at com.landawn.abacus.query.ParserReviewProbe.lambda$addParse$0(ParserReviewProbe.java:152)
+	at com.landawn.abacus.query.ParserReviewProbe.run(ParserReviewProbe.java:58)
+	at com.landawn.abacus.query.ParserReviewProbe.main(ParserReviewProbe.java:36)
+
+Oct 15, 2026 6:18:33 PM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 2000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1243)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:568)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:527)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:338)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:870)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:833)
+	at com.landawn.abacus.query.ParserReviewProbe.lambda$addParse$0(ParserReviewProbe.java:152)
+	at com.landawn.abacus.query.ParserReviewProbe.run(ParserReviewProbe.java:58)
+	at com.landawn.abacus.query.ParserReviewProbe.main(ParserReviewProbe.java:45)
+
+Oct 15, 2026 6:18:33 PM com.landawn.abacus.util.Objectory logCreated
+WARNING: The 3000th cacheable object is created by createStringBuilder
+java.lang.RuntimeException: No error. It's only for debug to print stack trace:
+	at com.landawn.abacus.util.Objectory.logCreated(Objectory.java:1243)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:568)
+	at com.landawn.abacus.util.Objectory.createStringBuilder(Objectory.java:527)
+	at com.landawn.abacus.query.ParsedSql.<init>(ParsedSql.java:338)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:870)
+	at com.landawn.abacus.query.ParsedSql.parse(ParsedSql.java:833)
+	at com.landawn.abacus.query.ParserReviewProbe.lambda$addParse$0(ParserReviewProbe.java:152)
+	at com.landawn.abacus.query.ParserReviewProbe.run(ParserReviewProbe.java:58)
+	at com.landawn.abacus.query.ParserReviewProbe.main(ParserReviewProbe.java:36)
+

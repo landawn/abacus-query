@@ -1,0 +1,1977 @@
+{
+  "method": "Median of seven rounds in each of three forks; median of the three fork medians.",
+  "variants": {
+    "original": {
+      "index_dense_hash/128": {
+        "chars": 798,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 23135.156,
+            "bytes": 10208
+          },
+          {
+            "ns": 31777.344,
+            "bytes": 10208
+          },
+          {
+            "ns": 21614.258,
+            "bytes": 10208
+          }
+        ],
+        "ns": 23135.156,
+        "bytes": 10208
+      },
+      "index_dense_bracket/128": {
+        "chars": 3497,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 12058.203,
+            "bytes": 3608
+          },
+          {
+            "ns": 12968.359,
+            "bytes": 3608
+          },
+          {
+            "ns": 11761.523,
+            "bytes": 3608
+          }
+        ],
+        "ns": 12058.203,
+        "bytes": 3608
+      },
+      "matcher_dense_hash/128": {
+        "chars": 798,
+        "result": "128",
+        "forks": [
+          {
+            "ns": 19140.039,
+            "bytes": 10232
+          },
+          {
+            "ns": 18910.156,
+            "bytes": 10232
+          },
+          {
+            "ns": 17197.266,
+            "bytes": 10232
+          }
+        ],
+        "ns": 18910.156,
+        "bytes": 10232
+      },
+      "index_dense_hash/512": {
+        "chars": 3486,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 127673.438,
+            "bytes": 42080
+          },
+          {
+            "ns": 94131.25,
+            "bytes": 42080
+          },
+          {
+            "ns": 86545.313,
+            "bytes": 42080
+          }
+        ],
+        "ns": 94131.25,
+        "bytes": 42080
+      },
+      "index_dense_bracket/512": {
+        "chars": 14633,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 95207.813,
+            "bytes": 14744
+          },
+          {
+            "ns": 46208.594,
+            "bytes": 14744
+          },
+          {
+            "ns": 46346.094,
+            "bytes": 14744
+          }
+        ],
+        "ns": 46346.094,
+        "bytes": 14744
+      },
+      "matcher_dense_hash/512": {
+        "chars": 3486,
+        "result": "512",
+        "forks": [
+          {
+            "ns": 163706.25,
+            "bytes": 42104
+          },
+          {
+            "ns": 73389.063,
+            "bytes": 42104
+          },
+          {
+            "ns": 72997.656,
+            "bytes": 42104
+          }
+        ],
+        "ns": 73389.063,
+        "bytes": 42104
+      },
+      "index_dense_hash/1024": {
+        "chars": 7094,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 239962.5,
+            "bytes": 84696
+          },
+          {
+            "ns": 187621.875,
+            "bytes": 84696
+          },
+          {
+            "ns": 173481.25,
+            "bytes": 84696
+          }
+        ],
+        "ns": 187621.875,
+        "bytes": 84696
+      },
+      "index_dense_bracket/1024": {
+        "chars": 29529,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 173690.625,
+            "bytes": 29640
+          },
+          {
+            "ns": 92523.438,
+            "bytes": 29640
+          },
+          {
+            "ns": 93259.375,
+            "bytes": 29640
+          }
+        ],
+        "ns": 93259.375,
+        "bytes": 29640
+      },
+      "matcher_dense_hash/1024": {
+        "chars": 7094,
+        "result": "1024",
+        "forks": [
+          {
+            "ns": 292537.5,
+            "bytes": 84720
+          },
+          {
+            "ns": 145489.063,
+            "bytes": 84720
+          },
+          {
+            "ns": 141681.25,
+            "bytes": 84720
+          }
+        ],
+        "ns": 145489.063,
+        "bytes": 84720
+      },
+      "index_first_hash/1024": {
+        "chars": 7094,
+        "result": "14",
+        "forks": [
+          {
+            "ns": 4180.518,
+            "bytes": 35672
+          },
+          {
+            "ns": 2674.927,
+            "bytes": 35672
+          },
+          {
+            "ns": 2601.05,
+            "bytes": 35672
+          }
+        ],
+        "ns": 2674.927,
+        "bytes": 35672
+      },
+      "index_quarter_hash/1024": {
+        "chars": 7094,
+        "result": "1696",
+        "forks": [
+          {
+            "ns": 92450.781,
+            "bytes": 47960
+          },
+          {
+            "ns": 45962.5,
+            "bytes": 47960
+          },
+          {
+            "ns": 48901.563,
+            "bytes": 47960
+          }
+        ],
+        "ns": 48901.563,
+        "bytes": 47960
+      },
+      "index_middle_hash/1024": {
+        "chars": 7094,
+        "result": "3488",
+        "forks": [
+          {
+            "ns": 99956.25,
+            "bytes": 60248
+          },
+          {
+            "ns": 94854.688,
+            "bytes": 60248
+          },
+          {
+            "ns": 103378.125,
+            "bytes": 60248
+          }
+        ],
+        "ns": 99956.25,
+        "bytes": 60248
+      },
+      "matcher_first_hash/1024": {
+        "chars": 7094,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 2208.447,
+            "bytes": 35616
+          },
+          {
+            "ns": 2791.113,
+            "bytes": 35616
+          },
+          {
+            "ns": 2293.628,
+            "bytes": 35616
+          }
+        ],
+        "ns": 2293.628,
+        "bytes": 35616
+      },
+      "index_sparse_hash/20000": {
+        "chars": 20017,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 51916.406,
+            "bytes": 100216
+          },
+          {
+            "ns": 47341.406,
+            "bytes": 100216
+          },
+          {
+            "ns": 46341.406,
+            "bytes": 100216
+          }
+        ],
+        "ns": 47341.406,
+        "bytes": 100216
+      },
+      "matcher_sparse_hash/20000": {
+        "chars": 20017,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 6119.141,
+            "bytes": 100240
+          },
+          {
+            "ns": 7113.086,
+            "bytes": 100240
+          },
+          {
+            "ns": 6423.34,
+            "bytes": 100240
+          }
+        ],
+        "ns": 6423.34,
+        "bytes": 100240
+      },
+      "index_sparse_hash/1048576": {
+        "chars": 1048593,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 2285175,
+            "bytes": 5243096
+          },
+          {
+            "ns": 2388675,
+            "bytes": 5243096
+          },
+          {
+            "ns": 2269475,
+            "bytes": 5243096
+          }
+        ],
+        "ns": 2285175,
+        "bytes": 5243096
+      },
+      "matcher_sparse_hash/1048576": {
+        "chars": 1048593,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 237623.438,
+            "bytes": 5243120
+          },
+          {
+            "ns": 201540.625,
+            "bytes": 5243120
+          },
+          {
+            "ns": 221337.5,
+            "bytes": 5243120
+          }
+        ],
+        "ns": 221337.5,
+        "bytes": 5243120
+      },
+      "index_no_hash_control/1024": {
+        "chars": 14351,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 87050.781,
+            "bytes": 0
+          },
+          {
+            "ns": 81371.875,
+            "bytes": 0
+          },
+          {
+            "ns": 77835.938,
+            "bytes": 0
+          }
+        ],
+        "ns": 81371.875,
+        "bytes": 0
+      }
+    },
+    "previous": {
+      "index_dense_hash/128": {
+        "chars": 798,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 24076.563,
+            "bytes": 15144
+          },
+          {
+            "ns": 23275.781,
+            "bytes": 15144
+          },
+          {
+            "ns": 21739.453,
+            "bytes": 15144
+          }
+        ],
+        "ns": 23275.781,
+        "bytes": 15144
+      },
+      "index_dense_bracket/128": {
+        "chars": 3497,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 13860.156,
+            "bytes": 7744
+          },
+          {
+            "ns": 15562.891,
+            "bytes": 7744
+          },
+          {
+            "ns": 12994.531,
+            "bytes": 7744
+          }
+        ],
+        "ns": 13860.156,
+        "bytes": 7744
+      },
+      "matcher_dense_hash/128": {
+        "chars": 798,
+        "result": "128",
+        "forks": [
+          {
+            "ns": 17288.086,
+            "bytes": 15168
+          },
+          {
+            "ns": 18195.117,
+            "bytes": 15168
+          },
+          {
+            "ns": 17148.438,
+            "bytes": 15168
+          }
+        ],
+        "ns": 17288.086,
+        "bytes": 15168
+      },
+      "index_dense_hash/512": {
+        "chars": 3486,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 96815.625,
+            "bytes": 62440
+          },
+          {
+            "ns": 93578.125,
+            "bytes": 62440
+          },
+          {
+            "ns": 92201.563,
+            "bytes": 62440
+          }
+        ],
+        "ns": 93578.125,
+        "bytes": 62440
+      },
+      "index_dense_bracket/512": {
+        "chars": 14633,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 59697.656,
+            "bytes": 31200
+          },
+          {
+            "ns": 50904.688,
+            "bytes": 31200
+          },
+          {
+            "ns": 61844.531,
+            "bytes": 31200
+          }
+        ],
+        "ns": 59697.656,
+        "bytes": 31200
+      },
+      "matcher_dense_hash/512": {
+        "chars": 3486,
+        "result": "512",
+        "forks": [
+          {
+            "ns": 75878.906,
+            "bytes": 62464
+          },
+          {
+            "ns": 77131.25,
+            "bytes": 62464
+          },
+          {
+            "ns": 77092.969,
+            "bytes": 62464
+          }
+        ],
+        "ns": 77092.969,
+        "bytes": 62464
+      },
+      "index_dense_hash/1024": {
+        "chars": 7094,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 192084.375,
+            "bytes": 125568
+          },
+          {
+            "ns": 186787.5,
+            "bytes": 125568
+          },
+          {
+            "ns": 180634.375,
+            "bytes": 125568
+          }
+        ],
+        "ns": 186787.5,
+        "bytes": 125568
+      },
+      "index_dense_bracket/1024": {
+        "chars": 29529,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 103342.188,
+            "bytes": 62496
+          },
+          {
+            "ns": 99929.688,
+            "bytes": 62496
+          },
+          {
+            "ns": 104426.563,
+            "bytes": 62496
+          }
+        ],
+        "ns": 103342.188,
+        "bytes": 62496
+      },
+      "matcher_dense_hash/1024": {
+        "chars": 7094,
+        "result": "1024",
+        "forks": [
+          {
+            "ns": 161150,
+            "bytes": 125592
+          },
+          {
+            "ns": 153025,
+            "bytes": 125592
+          },
+          {
+            "ns": 185581.25,
+            "bytes": 125592
+          }
+        ],
+        "ns": 161150,
+        "bytes": 125592
+      },
+      "index_first_hash/1024": {
+        "chars": 7094,
+        "result": "14",
+        "forks": [
+          {
+            "ns": 312.827,
+            "bytes": 528
+          },
+          {
+            "ns": 308.02,
+            "bytes": 528
+          },
+          {
+            "ns": 337.939,
+            "bytes": 528
+          }
+        ],
+        "ns": 312.827,
+        "bytes": 528
+      },
+      "index_quarter_hash/1024": {
+        "chars": 7094,
+        "result": "1696",
+        "forks": [
+          {
+            "ns": 49669.531,
+            "bytes": 32816
+          },
+          {
+            "ns": 47228.125,
+            "bytes": 32816
+          },
+          {
+            "ns": 47803.125,
+            "bytes": 32816
+          }
+        ],
+        "ns": 47803.125,
+        "bytes": 32816
+      },
+      "index_middle_hash/1024": {
+        "chars": 7094,
+        "result": "3488",
+        "forks": [
+          {
+            "ns": 98140.625,
+            "bytes": 65616
+          },
+          {
+            "ns": 94925,
+            "bytes": 65616
+          },
+          {
+            "ns": 105415.625,
+            "bytes": 65616
+          }
+        ],
+        "ns": 98140.625,
+        "bytes": 65616
+      },
+      "matcher_first_hash/1024": {
+        "chars": 7094,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 153.531,
+            "bytes": 472
+          },
+          {
+            "ns": 174.011,
+            "bytes": 472
+          },
+          {
+            "ns": 167.593,
+            "bytes": 472
+          }
+        ],
+        "ns": 167.593,
+        "bytes": 472
+      },
+      "tokenize_dense_hash/1024": {
+        "chars": 7094,
+        "result": "3076",
+        "forks": [
+          {
+            "ns": 205409.375,
+            "bytes": 167712
+          },
+          {
+            "ns": 188371.875,
+            "bytes": 167712
+          },
+          {
+            "ns": 187025,
+            "bytes": 167712
+          }
+        ],
+        "ns": 188371.875,
+        "bytes": 167712
+      },
+      "index_sparse_hash/20000": {
+        "chars": 20017,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 43329.688,
+            "bytes": 448
+          },
+          {
+            "ns": 42151.563,
+            "bytes": 448
+          },
+          {
+            "ns": 44743.75,
+            "bytes": 448
+          }
+        ],
+        "ns": 43329.688,
+        "bytes": 448
+      },
+      "matcher_sparse_hash/20000": {
+        "chars": 20017,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 481.647,
+            "bytes": 472
+          },
+          {
+            "ns": 493.231,
+            "bytes": 472
+          },
+          {
+            "ns": 464.197,
+            "bytes": 472
+          }
+        ],
+        "ns": 481.647,
+        "bytes": 472
+      },
+      "index_sparse_hash/1048576": {
+        "chars": 1048593,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 2224800,
+            "bytes": 448
+          },
+          {
+            "ns": 2268375,
+            "bytes": 448
+          },
+          {
+            "ns": 2270400,
+            "bytes": 448
+          }
+        ],
+        "ns": 2268375,
+        "bytes": 448
+      },
+      "matcher_sparse_hash/1048576": {
+        "chars": 1048593,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 16554.883,
+            "bytes": 472
+          },
+          {
+            "ns": 16922.656,
+            "bytes": 472
+          },
+          {
+            "ns": 18367.773,
+            "bytes": 472
+          }
+        ],
+        "ns": 16922.656,
+        "bytes": 472
+      },
+      "index_no_hash_control/1024": {
+        "chars": 14351,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 82083.594,
+            "bytes": 0
+          },
+          {
+            "ns": 82557.031,
+            "bytes": 0
+          },
+          {
+            "ns": 81573.438,
+            "bytes": 0
+          }
+        ],
+        "ns": 82083.594,
+        "bytes": 0
+      },
+      "read_ordinary_control/1024": {
+        "chars": 14351,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 392875,
+            "bytes": 360
+          },
+          {
+            "ns": 397550,
+            "bytes": 360
+          },
+          {
+            "ns": 547875,
+            "bytes": 360
+          }
+        ],
+        "ns": 397550,
+        "bytes": 360
+      },
+      "read_disjoint_bracket_names/1024": {
+        "chars": 14351,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 325162.5,
+            "bytes": 68128
+          },
+          {
+            "ns": 295168.75,
+            "bytes": 68128
+          },
+          {
+            "ns": 383475,
+            "bytes": 68128
+          }
+        ],
+        "ns": 325162.5,
+        "bytes": 68128
+      },
+      "read_shared_first_word/8192": {
+        "chars": 32788,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 889925,
+            "bytes": 789504
+          },
+          {
+            "ns": 961737.5,
+            "bytes": 789504
+          },
+          {
+            "ns": 1128312.5,
+            "bytes": 789504
+          }
+        ],
+        "ns": 961737.5,
+        "bytes": 789504
+      },
+      "read_distinct_overlapping_regions/1000": {
+        "chars": 15010,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 26319500,
+            "bytes": 417800
+          },
+          {
+            "ns": 25617900,
+            "bytes": 417640
+          },
+          {
+            "ns": 27460500,
+            "bytes": 417800
+          }
+        ],
+        "ns": 26319500,
+        "bytes": 417800
+      },
+      "read_distinct_overlapping_regions/2000": {
+        "chars": 30010,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 105144700,
+            "bytes": 832824
+          },
+          {
+            "ns": 105192300,
+            "bytes": 832664
+          },
+          {
+            "ns": 111037800,
+            "bytes": 832824
+          }
+        ],
+        "ns": 105192300,
+        "bytes": 832824
+      },
+      "read_distinct_overlapping_regions/4000": {
+        "chars": 60010,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 412772300,
+            "bytes": 1662648
+          },
+          {
+            "ns": 415126000,
+            "bytes": 1662648
+          },
+          {
+            "ns": 412429900,
+            "bytes": 1662808
+          }
+        ],
+        "ns": 412772300,
+        "bytes": 1662648
+      },
+      "read_distinct_overlapping_regions/8000": {
+        "chars": 120010,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 1692414100,
+            "bytes": 3322552
+          },
+          {
+            "ns": 1703016300,
+            "bytes": 3322552
+          },
+          {
+            "ns": 2334442700,
+            "bytes": 3322680
+          }
+        ],
+        "ns": 1703016300,
+        "bytes": 3322552
+      },
+      "parse_named_repeated/1": {
+        "chars": 10,
+        "result": "4294967304",
+        "forks": [
+          {
+            "ns": 227.576,
+            "bytes": 432
+          },
+          {
+            "ns": 208.554,
+            "bytes": 432
+          },
+          {
+            "ns": 420.02,
+            "bytes": 432
+          }
+        ],
+        "ns": 227.576,
+        "bytes": 432
+      },
+      "parse_named_repeated/32": {
+        "chars": 134,
+        "result": "137438953542",
+        "forks": [
+          {
+            "ns": 4469.824,
+            "bytes": 5016
+          },
+          {
+            "ns": 3831.25,
+            "bytes": 5016
+          },
+          {
+            "ns": 4986.328,
+            "bytes": 5016
+          }
+        ],
+        "ns": 4469.824,
+        "bytes": 5016
+      },
+      "parse_named_repeated/1024": {
+        "chars": 4102,
+        "result": "4398046513158",
+        "forks": [
+          {
+            "ns": 116207.813,
+            "bytes": 137496
+          },
+          {
+            "ns": 115504.688,
+            "bytes": 137496
+          },
+          {
+            "ns": 134270.313,
+            "bytes": 137496
+          }
+        ],
+        "ns": 116207.813,
+        "bytes": 137496
+      },
+      "parse_named_unique/1024": {
+        "chars": 9136,
+        "result": "4398046513158",
+        "forks": [
+          {
+            "ns": 143189.063,
+            "bytes": 127152
+          },
+          {
+            "ns": 136126.563,
+            "bytes": 127152
+          },
+          {
+            "ns": 151296.875,
+            "bytes": 127152
+          }
+        ],
+        "ns": 143189.063,
+        "bytes": 127152
+      },
+      "parse_positional_control/1024": {
+        "chars": 2054,
+        "result": "4398046513158",
+        "forks": [
+          {
+            "ns": 141600,
+            "bytes": 48944
+          },
+          {
+            "ns": 132712.5,
+            "bytes": 48944
+          },
+          {
+            "ns": 137525,
+            "bytes": 48944
+          }
+        ],
+        "ns": 137525,
+        "bytes": 48944
+      }
+    },
+    "current": {
+      "index_dense_hash/128": {
+        "chars": 798,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 27474.219,
+            "bytes": 12552
+          },
+          {
+            "ns": 20805.078,
+            "bytes": 12552
+          },
+          {
+            "ns": 24029.688,
+            "bytes": 12552
+          }
+        ],
+        "ns": 24029.688,
+        "bytes": 12552
+      },
+      "index_dense_bracket/128": {
+        "chars": 3497,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 12187.891,
+            "bytes": 5680
+          },
+          {
+            "ns": 12300.781,
+            "bytes": 5680
+          },
+          {
+            "ns": 12865.039,
+            "bytes": 5680
+          }
+        ],
+        "ns": 12300.781,
+        "bytes": 5680
+      },
+      "matcher_dense_hash/128": {
+        "chars": 798,
+        "result": "128",
+        "forks": [
+          {
+            "ns": 17491.602,
+            "bytes": 12576
+          },
+          {
+            "ns": 17329.883,
+            "bytes": 12576
+          },
+          {
+            "ns": 20671.68,
+            "bytes": 12576
+          }
+        ],
+        "ns": 17491.602,
+        "bytes": 12576
+      },
+      "index_dense_hash/512": {
+        "chars": 3486,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 91000,
+            "bytes": 52168
+          },
+          {
+            "ns": 91770.313,
+            "bytes": 52168
+          },
+          {
+            "ns": 100748.438,
+            "bytes": 52168
+          }
+        ],
+        "ns": 91770.313,
+        "bytes": 52168
+      },
+      "index_dense_bracket/512": {
+        "chars": 14633,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 48007.031,
+            "bytes": 22992
+          },
+          {
+            "ns": 49021.875,
+            "bytes": 22992
+          },
+          {
+            "ns": 58059.375,
+            "bytes": 22992
+          }
+        ],
+        "ns": 49021.875,
+        "bytes": 22992
+      },
+      "matcher_dense_hash/512": {
+        "chars": 3486,
+        "result": "512",
+        "forks": [
+          {
+            "ns": 73438.281,
+            "bytes": 52192
+          },
+          {
+            "ns": 76482.031,
+            "bytes": 52192
+          },
+          {
+            "ns": 84877.344,
+            "bytes": 52192
+          }
+        ],
+        "ns": 76482.031,
+        "bytes": 52192
+      },
+      "index_dense_hash/1024": {
+        "chars": 7094,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 179181.25,
+            "bytes": 105056
+          },
+          {
+            "ns": 187668.75,
+            "bytes": 105056
+          },
+          {
+            "ns": 210293.75,
+            "bytes": 105056
+          }
+        ],
+        "ns": 187668.75,
+        "bytes": 105056
+      },
+      "index_dense_bracket/1024": {
+        "chars": 29529,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 110621.875,
+            "bytes": 46096
+          },
+          {
+            "ns": 100898.438,
+            "bytes": 46096
+          },
+          {
+            "ns": 106681.25,
+            "bytes": 46096
+          }
+        ],
+        "ns": 106681.25,
+        "bytes": 46096
+      },
+      "matcher_dense_hash/1024": {
+        "chars": 7094,
+        "result": "1024",
+        "forks": [
+          {
+            "ns": 149728.125,
+            "bytes": 105080
+          },
+          {
+            "ns": 156375,
+            "bytes": 105080
+          },
+          {
+            "ns": 159950,
+            "bytes": 105080
+          }
+        ],
+        "ns": 156375,
+        "bytes": 105080
+      },
+      "index_first_hash/1024": {
+        "chars": 7094,
+        "result": "14",
+        "forks": [
+          {
+            "ns": 306.476,
+            "bytes": 528
+          },
+          {
+            "ns": 318.353,
+            "bytes": 528
+          },
+          {
+            "ns": 344.72,
+            "bytes": 528
+          }
+        ],
+        "ns": 318.353,
+        "bytes": 528
+      },
+      "index_quarter_hash/1024": {
+        "chars": 7094,
+        "result": "1696",
+        "forks": [
+          {
+            "ns": 48833.594,
+            "bytes": 32816
+          },
+          {
+            "ns": 48028.906,
+            "bytes": 32816
+          },
+          {
+            "ns": 48787.5,
+            "bytes": 32816
+          }
+        ],
+        "ns": 48787.5,
+        "bytes": 32816
+      },
+      "index_middle_hash/1024": {
+        "chars": 7094,
+        "result": "3488",
+        "forks": [
+          {
+            "ns": 100339.063,
+            "bytes": 80608
+          },
+          {
+            "ns": 99182.813,
+            "bytes": 80608
+          },
+          {
+            "ns": 100837.5,
+            "bytes": 80608
+          }
+        ],
+        "ns": 100339.063,
+        "bytes": 80608
+      },
+      "matcher_first_hash/1024": {
+        "chars": 7094,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 171.024,
+            "bytes": 472
+          },
+          {
+            "ns": 164.862,
+            "bytes": 472
+          },
+          {
+            "ns": 170.981,
+            "bytes": 472
+          }
+        ],
+        "ns": 170.981,
+        "bytes": 472
+      },
+      "tokenize_dense_hash/1024": {
+        "chars": 7094,
+        "result": "3076",
+        "forks": [
+          {
+            "ns": 187234.375,
+            "bytes": 167712
+          },
+          {
+            "ns": 206212.5,
+            "bytes": 167712
+          },
+          {
+            "ns": 191087.5,
+            "bytes": 167712
+          }
+        ],
+        "ns": 191087.5,
+        "bytes": 167712
+      },
+      "index_sparse_hash/20000": {
+        "chars": 20017,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 40664.063,
+            "bytes": 448
+          },
+          {
+            "ns": 47068.75,
+            "bytes": 448
+          },
+          {
+            "ns": 44917.969,
+            "bytes": 448
+          }
+        ],
+        "ns": 44917.969,
+        "bytes": 448
+      },
+      "matcher_sparse_hash/20000": {
+        "chars": 20017,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 459.167,
+            "bytes": 472
+          },
+          {
+            "ns": 489.392,
+            "bytes": 472
+          },
+          {
+            "ns": 493.988,
+            "bytes": 472
+          }
+        ],
+        "ns": 489.392,
+        "bytes": 472
+      },
+      "index_sparse_hash/1048576": {
+        "chars": 1048593,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 2186025,
+            "bytes": 448
+          },
+          {
+            "ns": 2335250,
+            "bytes": 448
+          },
+          {
+            "ns": 2598875,
+            "bytes": 448
+          }
+        ],
+        "ns": 2335250,
+        "bytes": 448
+      },
+      "matcher_sparse_hash/1048576": {
+        "chars": 1048593,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 17663.086,
+            "bytes": 472
+          },
+          {
+            "ns": 19280.469,
+            "bytes": 472
+          },
+          {
+            "ns": 21019.922,
+            "bytes": 472
+          }
+        ],
+        "ns": 19280.469,
+        "bytes": 472
+      },
+      "index_no_hash_control/1024": {
+        "chars": 14351,
+        "result": "-1",
+        "forks": [
+          {
+            "ns": 79385.938,
+            "bytes": 0
+          },
+          {
+            "ns": 80604.688,
+            "bytes": 0
+          },
+          {
+            "ns": 106892.188,
+            "bytes": 0
+          }
+        ],
+        "ns": 80604.688,
+        "bytes": 0
+      },
+      "read_ordinary_control/1024": {
+        "chars": 14351,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 407300,
+            "bytes": 360
+          },
+          {
+            "ns": 406275,
+            "bytes": 360
+          },
+          {
+            "ns": 589350,
+            "bytes": 360
+          }
+        ],
+        "ns": 407300,
+        "bytes": 360
+      },
+      "read_disjoint_bracket_names/1024": {
+        "chars": 14351,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 277525,
+            "bytes": 43600
+          },
+          {
+            "ns": 272450,
+            "bytes": 43600
+          },
+          {
+            "ns": 521350,
+            "bytes": 43600
+          }
+        ],
+        "ns": 277525,
+        "bytes": 43600
+      },
+      "read_shared_first_word/8192": {
+        "chars": 32788,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 1342050,
+            "bytes": 789528
+          },
+          {
+            "ns": 1055925,
+            "bytes": 789528
+          },
+          {
+            "ns": 1435562.5,
+            "bytes": 789528
+          }
+        ],
+        "ns": 1342050,
+        "bytes": 789528
+      },
+      "read_distinct_overlapping_regions/1000": {
+        "chars": 15010,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 361237.5,
+            "bytes": 297200
+          },
+          {
+            "ns": 355568.75,
+            "bytes": 297200
+          },
+          {
+            "ns": 498931.25,
+            "bytes": 297224
+          }
+        ],
+        "ns": 361237.5,
+        "bytes": 297200
+      },
+      "read_distinct_overlapping_regions/2000": {
+        "chars": 30010,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 686518.75,
+            "bytes": 591704
+          },
+          {
+            "ns": 661250,
+            "bytes": 591704
+          },
+          {
+            "ns": 734525,
+            "bytes": 591704
+          }
+        ],
+        "ns": 686518.75,
+        "bytes": 591704
+      },
+      "read_distinct_overlapping_regions/4000": {
+        "chars": 60010,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 1291362.5,
+            "bytes": 1180904
+          },
+          {
+            "ns": 1350412.5,
+            "bytes": 1180904
+          },
+          {
+            "ns": 1352075,
+            "bytes": 1180904
+          }
+        ],
+        "ns": 1350412.5,
+        "bytes": 1180904
+      },
+      "read_distinct_overlapping_regions/8000": {
+        "chars": 120010,
+        "result": "1",
+        "forks": [
+          {
+            "ns": 2539125,
+            "bytes": 2359256
+          },
+          {
+            "ns": 2628275,
+            "bytes": 2359256
+          },
+          {
+            "ns": 3792475,
+            "bytes": 2359256
+          }
+        ],
+        "ns": 2628275,
+        "bytes": 2359256
+      },
+      "parse_named_repeated/1": {
+        "chars": 10,
+        "result": "4294967304",
+        "forks": [
+          {
+            "ns": 221.301,
+            "bytes": 432
+          },
+          {
+            "ns": 240.918,
+            "bytes": 432
+          },
+          {
+            "ns": 295.95,
+            "bytes": 432
+          }
+        ],
+        "ns": 240.918,
+        "bytes": 432
+      },
+      "parse_named_repeated/32": {
+        "chars": 134,
+        "result": "137438953542",
+        "forks": [
+          {
+            "ns": 3832.08,
+            "bytes": 5016
+          },
+          {
+            "ns": 4849.805,
+            "bytes": 5016
+          },
+          {
+            "ns": 4456.445,
+            "bytes": 5016
+          }
+        ],
+        "ns": 4456.445,
+        "bytes": 5016
+      },
+      "parse_named_repeated/1024": {
+        "chars": 4102,
+        "result": "4398046513158",
+        "forks": [
+          {
+            "ns": 119971.875,
+            "bytes": 137496
+          },
+          {
+            "ns": 130909.375,
+            "bytes": 137496
+          },
+          {
+            "ns": 140181.25,
+            "bytes": 137496
+          }
+        ],
+        "ns": 130909.375,
+        "bytes": 137496
+      },
+      "parse_named_unique/1024": {
+        "chars": 9136,
+        "result": "4398046513158",
+        "forks": [
+          {
+            "ns": 135484.375,
+            "bytes": 127152
+          },
+          {
+            "ns": 142928.125,
+            "bytes": 127152
+          },
+          {
+            "ns": 197200,
+            "bytes": 127152
+          }
+        ],
+        "ns": 142928.125,
+        "bytes": 127152
+      },
+      "parse_positional_control/1024": {
+        "chars": 2054,
+        "result": "4398046513158",
+        "forks": [
+          {
+            "ns": 128912.5,
+            "bytes": 48944
+          },
+          {
+            "ns": 126512.5,
+            "bytes": 48944
+          },
+          {
+            "ns": 297762.5,
+            "bytes": 48944
+          }
+        ],
+        "ns": 128912.5,
+        "bytes": 48944
+      }
+    }
+  },
+  "comparison": {
+    "index_dense_hash/128": {
+      "chars": 798,
+      "result": "-1",
+      "previous_ns": 23275.781,
+      "current_ns": 24029.688,
+      "speedup": 0.9686260179491303,
+      "previous_bytes": 15144,
+      "current_bytes": 12552,
+      "allocation_change_percent": -17.115689381933443,
+      "original_ns": 23135.156,
+      "original_bytes": 10208,
+      "allocation_vs_original_percent": 22.96238244514106
+    },
+    "index_dense_bracket/128": {
+      "chars": 3497,
+      "result": "-1",
+      "previous_ns": 13860.156,
+      "current_ns": 12300.781,
+      "speedup": 1.1267704058791064,
+      "previous_bytes": 7744,
+      "current_bytes": 5680,
+      "allocation_change_percent": -26.652892561983464,
+      "original_ns": 12058.203,
+      "original_bytes": 3608,
+      "allocation_vs_original_percent": 57.42793791574279
+    },
+    "matcher_dense_hash/128": {
+      "chars": 798,
+      "result": "128",
+      "previous_ns": 17288.086,
+      "current_ns": 17491.602,
+      "speedup": 0.988364930782212,
+      "previous_bytes": 15168,
+      "current_bytes": 12576,
+      "allocation_change_percent": -17.08860759493671,
+      "original_ns": 18910.156,
+      "original_bytes": 10232,
+      "allocation_vs_original_percent": 22.908522283033616
+    },
+    "index_dense_hash/512": {
+      "chars": 3486,
+      "result": "-1",
+      "previous_ns": 93578.125,
+      "current_ns": 91770.313,
+      "speedup": 1.0196993116935322,
+      "previous_bytes": 62440,
+      "current_bytes": 52168,
+      "allocation_change_percent": -16.45099295323511,
+      "original_ns": 94131.25,
+      "original_bytes": 42080,
+      "allocation_vs_original_percent": 23.973384030418245
+    },
+    "index_dense_bracket/512": {
+      "chars": 14633,
+      "result": "-1",
+      "previous_ns": 59697.656,
+      "current_ns": 49021.875,
+      "speedup": 1.2177758602664628,
+      "previous_bytes": 31200,
+      "current_bytes": 22992,
+      "allocation_change_percent": -26.30769230769231,
+      "original_ns": 46346.094,
+      "original_bytes": 14744,
+      "allocation_vs_original_percent": 55.94139989148128
+    },
+    "matcher_dense_hash/512": {
+      "chars": 3486,
+      "result": "512",
+      "previous_ns": 77092.969,
+      "current_ns": 76482.031,
+      "speedup": 1.0079879939380794,
+      "previous_bytes": 62464,
+      "current_bytes": 52192,
+      "allocation_change_percent": -16.44467213114754,
+      "original_ns": 73389.063,
+      "original_bytes": 42104,
+      "allocation_vs_original_percent": 23.959718791563756
+    },
+    "index_dense_hash/1024": {
+      "chars": 7094,
+      "result": "-1",
+      "previous_ns": 186787.5,
+      "current_ns": 187668.75,
+      "speedup": 0.9953042261964232,
+      "previous_bytes": 125568,
+      "current_bytes": 105056,
+      "allocation_change_percent": -16.33537206931702,
+      "original_ns": 187621.875,
+      "original_bytes": 84696,
+      "allocation_vs_original_percent": 24.038915651270433
+    },
+    "index_dense_bracket/1024": {
+      "chars": 29529,
+      "result": "-1",
+      "previous_ns": 103342.188,
+      "current_ns": 106681.25,
+      "speedup": 0.9687005729685394,
+      "previous_bytes": 62496,
+      "current_bytes": 46096,
+      "allocation_change_percent": -26.241679467485923,
+      "original_ns": 93259.375,
+      "original_bytes": 29640,
+      "allocation_vs_original_percent": 55.51956815114709
+    },
+    "matcher_dense_hash/1024": {
+      "chars": 7094,
+      "result": "1024",
+      "previous_ns": 161150,
+      "current_ns": 156375,
+      "speedup": 1.0305355715427658,
+      "previous_bytes": 125592,
+      "current_bytes": 105080,
+      "allocation_change_percent": -16.33225046181286,
+      "original_ns": 145489.063,
+      "original_bytes": 84720,
+      "allocation_vs_original_percent": 24.03210576015109
+    },
+    "index_first_hash/1024": {
+      "chars": 7094,
+      "result": "14",
+      "previous_ns": 312.827,
+      "current_ns": 318.353,
+      "speedup": 0.9826419100809478,
+      "previous_bytes": 528,
+      "current_bytes": 528,
+      "allocation_change_percent": 0,
+      "original_ns": 2674.927,
+      "original_bytes": 35672,
+      "allocation_vs_original_percent": -98.51984749943934
+    },
+    "index_quarter_hash/1024": {
+      "chars": 7094,
+      "result": "1696",
+      "previous_ns": 47803.125,
+      "current_ns": 48787.5,
+      "speedup": 0.9798232129131438,
+      "previous_bytes": 32816,
+      "current_bytes": 32816,
+      "allocation_change_percent": 0,
+      "original_ns": 48901.563,
+      "original_bytes": 47960,
+      "allocation_vs_original_percent": -31.57631359466222
+    },
+    "index_middle_hash/1024": {
+      "chars": 7094,
+      "result": "3488",
+      "previous_ns": 98140.625,
+      "current_ns": 100339.063,
+      "speedup": 0.9780899090118074,
+      "previous_bytes": 65616,
+      "current_bytes": 80608,
+      "allocation_change_percent": 22.84808583272373,
+      "original_ns": 99956.25,
+      "original_bytes": 60248,
+      "allocation_vs_original_percent": 33.79365290134113
+    },
+    "matcher_first_hash/1024": {
+      "chars": 7094,
+      "result": "1",
+      "previous_ns": 167.593,
+      "current_ns": 170.981,
+      "speedup": 0.9801849328287938,
+      "previous_bytes": 472,
+      "current_bytes": 472,
+      "allocation_change_percent": 0,
+      "original_ns": 2293.628,
+      "original_bytes": 35616,
+      "allocation_vs_original_percent": -98.67475292003593
+    },
+    "tokenize_dense_hash/1024": {
+      "chars": 7094,
+      "result": "3076",
+      "previous_ns": 188371.875,
+      "current_ns": 191087.5,
+      "speedup": 0.9857885785307778,
+      "previous_bytes": 167712,
+      "current_bytes": 167712,
+      "allocation_change_percent": 0
+    },
+    "index_sparse_hash/20000": {
+      "chars": 20017,
+      "result": "-1",
+      "previous_ns": 43329.688,
+      "current_ns": 44917.969,
+      "speedup": 0.9646404092758514,
+      "previous_bytes": 448,
+      "current_bytes": 448,
+      "allocation_change_percent": 0,
+      "original_ns": 47341.406,
+      "original_bytes": 100216,
+      "allocation_vs_original_percent": -99.55296559431628
+    },
+    "matcher_sparse_hash/20000": {
+      "chars": 20017,
+      "result": "1",
+      "previous_ns": 481.647,
+      "current_ns": 489.392,
+      "speedup": 0.9841742406904894,
+      "previous_bytes": 472,
+      "current_bytes": 472,
+      "allocation_change_percent": 0,
+      "original_ns": 6423.34,
+      "original_bytes": 100240,
+      "allocation_vs_original_percent": -99.52913008778931
+    },
+    "index_sparse_hash/1048576": {
+      "chars": 1048593,
+      "result": "-1",
+      "previous_ns": 2268375,
+      "current_ns": 2335250,
+      "speedup": 0.9713628091210791,
+      "previous_bytes": 448,
+      "current_bytes": 448,
+      "allocation_change_percent": 0,
+      "original_ns": 2285175,
+      "original_bytes": 5243096,
+      "allocation_vs_original_percent": -99.99145543015044
+    },
+    "matcher_sparse_hash/1048576": {
+      "chars": 1048593,
+      "result": "1",
+      "previous_ns": 16922.656,
+      "current_ns": 19280.469,
+      "speedup": 0.8777097694044682,
+      "previous_bytes": 472,
+      "current_bytes": 472,
+      "allocation_change_percent": 0,
+      "original_ns": 221337.5,
+      "original_bytes": 5243120,
+      "allocation_vs_original_percent": -99.99099772654449
+    },
+    "index_no_hash_control/1024": {
+      "chars": 14351,
+      "result": "-1",
+      "previous_ns": 82083.594,
+      "current_ns": 80604.688,
+      "speedup": 1.018347642509329,
+      "previous_bytes": 0,
+      "current_bytes": 0,
+      "allocation_change_percent": null,
+      "original_ns": 81371.875,
+      "original_bytes": 0,
+      "allocation_vs_original_percent": null
+    },
+    "read_ordinary_control/1024": {
+      "chars": 14351,
+      "result": "1",
+      "previous_ns": 397550,
+      "current_ns": 407300,
+      "speedup": 0.9760618708568622,
+      "previous_bytes": 360,
+      "current_bytes": 360,
+      "allocation_change_percent": 0
+    },
+    "read_disjoint_bracket_names/1024": {
+      "chars": 14351,
+      "result": "1",
+      "previous_ns": 325162.5,
+      "current_ns": 277525,
+      "speedup": 1.1716512025943608,
+      "previous_bytes": 68128,
+      "current_bytes": 43600,
+      "allocation_change_percent": -36.00281822451855
+    },
+    "read_shared_first_word/8192": {
+      "chars": 32788,
+      "result": "1",
+      "previous_ns": 961737.5,
+      "current_ns": 1342050,
+      "speedup": 0.7166182332998026,
+      "previous_bytes": 789504,
+      "current_bytes": 789528,
+      "allocation_change_percent": 0.003039883268485255
+    },
+    "read_distinct_overlapping_regions/1000": {
+      "chars": 15010,
+      "result": "1",
+      "previous_ns": 26319500,
+      "current_ns": 361237.5,
+      "speedup": 72.85926848679885,
+      "previous_bytes": 417800,
+      "current_bytes": 297200,
+      "allocation_change_percent": -28.865485878410723
+    },
+    "read_distinct_overlapping_regions/2000": {
+      "chars": 30010,
+      "result": "1",
+      "previous_ns": 105192300,
+      "current_ns": 686518.75,
+      "speedup": 153.2256766475788,
+      "previous_bytes": 832824,
+      "current_bytes": 591704,
+      "allocation_change_percent": -28.952095520782308
+    },
+    "read_distinct_overlapping_regions/4000": {
+      "chars": 60010,
+      "result": "1",
+      "previous_ns": 412772300,
+      "current_ns": 1350412.5,
+      "speedup": 305.66386196810237,
+      "previous_bytes": 1662648,
+      "current_bytes": 1180904,
+      "allocation_change_percent": -28.974503322410992
+    },
+    "read_distinct_overlapping_regions/8000": {
+      "chars": 120010,
+      "result": "1",
+      "previous_ns": 1703016300,
+      "current_ns": 2628275,
+      "speedup": 647.9597074126566,
+      "previous_bytes": 3322552,
+      "current_bytes": 2359256,
+      "allocation_change_percent": -28.99265383957873
+    },
+    "parse_named_repeated/1": {
+      "chars": 10,
+      "result": "4294967304",
+      "previous_ns": 227.576,
+      "current_ns": 240.918,
+      "speedup": 0.9446201612166795,
+      "previous_bytes": 432,
+      "current_bytes": 432,
+      "allocation_change_percent": 0
+    },
+    "parse_named_repeated/32": {
+      "chars": 134,
+      "result": "137438953542",
+      "previous_ns": 4469.824,
+      "current_ns": 4456.445,
+      "speedup": 1.0030021687690525,
+      "previous_bytes": 5016,
+      "current_bytes": 5016,
+      "allocation_change_percent": 0
+    },
+    "parse_named_repeated/1024": {
+      "chars": 4102,
+      "result": "4398046513158",
+      "previous_ns": 116207.813,
+      "current_ns": 130909.375,
+      "speedup": 0.8876966451027667,
+      "previous_bytes": 137496,
+      "current_bytes": 137496,
+      "allocation_change_percent": 0
+    },
+    "parse_named_unique/1024": {
+      "chars": 9136,
+      "result": "4398046513158",
+      "previous_ns": 143189.063,
+      "current_ns": 142928.125,
+      "speedup": 1.0018256588757462,
+      "previous_bytes": 127152,
+      "current_bytes": 127152,
+      "allocation_change_percent": 0
+    },
+    "parse_positional_control/1024": {
+      "chars": 2054,
+      "result": "4398046513158",
+      "previous_ns": 137525,
+      "current_ns": 128912.5,
+      "speedup": 1.0668088819936004,
+      "previous_bytes": 48944,
+      "current_bytes": 48944,
+      "allocation_change_percent": 0
+    }
+  }
+}

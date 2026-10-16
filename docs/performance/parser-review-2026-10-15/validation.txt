@@ -1,0 +1,33 @@
+Review revision: 33b655b87de09b33c4cad4a711956f0b93ff266a
+Production/test sources changed by review: none
+
+Runtime: Oracle Java 25+37-LTS-3491, Windows
+Compilation: javac --release 21, UTF-8
+Dependency: abacus-common 8.2.0; Lombok 1.18.48
+Tests: JUnit Platform Console Standalone 6.1.3
+
+Fresh production sources compiled: 82; exit 0 (existing warnings)
+Fresh test sources compiled: 88; exit 0 (existing warnings)
+Selected suite: com.landawn.abacus.AbacusQueryTestSuite
+Suite configuration: package com.landawn.abacus.query, excludes slow-test
+Successful suite XML timestamp: 2026-10-15T18:14:29
+JUnit XML: tests=6228 skipped=0 failures=0 errors=0
+Console: 256 containers successful; 6228 tests successful; none aborted or failed
+Console process exit: 0
+
+Successful local logs:
+.audit/parser-review-2026-10-15/compile-main-verified.log
+.audit/parser-review-2026-10-15/compile-tests-verified.log
+.audit/parser-review-2026-10-15/full-tests.log
+.audit/parser-review-2026-10-15/test-reports/TEST-junit-platform-suite.xml
+
+Maven offline attempt could not resolve the publishing extension in the sandbox.
+Sandboxed javac attempts also encountered Windows classpath real-path access errors.
+The successful fresh compilation and test execution ran outside that sandbox.
+
+Final diagnostic matrix: 95 cases x 3 fresh JVMs x 7 rounds = 1995 samples.
+Initial 80 ms protocol: separately preserved, excluded from final summary.
+Structural retention probe: exit 0; string identities and binding counts verified.
+No-hash remask boundary probe: exit 0; expected mask difference asserted.
+Final independent report checks: scanner, classifier, and ParsedSql reviewers all passed.
+No production optimization was implemented, so no before/after speedup is claimed.

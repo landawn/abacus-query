@@ -1,0 +1,39 @@
+{
+  "baselineCommit": "33b655b87de09b33c4cad4a711956f0b93ff266a",
+  "productionSources": 82,
+  "testSources": 88,
+  "baselineTestInvocations": 6228,
+  "implementationTestInvocations": 6252,
+  "newRegressionMethods": 24,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "corpora": [
+    {
+      "name": "tuning",
+      "records": 42000,
+      "byteIdentical": true,
+      "sha256": "ffcf3297f560e2d3961c45ac4f5e7dfa26dd64f46723b8eed8f03dd8db2f64dc"
+    },
+    {
+      "name": "classifier",
+      "records": 24000,
+      "byteIdentical": true,
+      "sha256": "21d3adca04562bd5ecc340d0ead314ebfbd3bcd2c9bbd642e1552abbb2dae60e"
+    },
+    {
+      "name": "edges",
+      "records": 35530,
+      "byteIdentical": true,
+      "sha256": "e96c42a54104eaffaa6f1a719918837d8cd6f34842ecb734b1a3bbd312216168"
+    }
+  ],
+  "totalCompatibilityRecords": 101530,
+  "cursorEquivalentToStatelessWalks": true,
+  "javadocDiagnostics": 0,
+  "layout": "Checked 6004 test methods in 88 files: 0 layout issues",
+  "testRunner": "JUnit Platform ConsoleLauncher 6.1.3, AbacusQueryTestSuite, assertions enabled",
+  "testLayoutMethod": "javac AST fallback; installed Python launcher had no Python runtime",
+  "compileRelease": 21,
+  "runtime": "Oracle JDK 25+37-LTS-3491"
+}

@@ -1,0 +1,9 @@
+{
+  "src/main/java/com/landawn/abacus/query/SqlParser.java": "4e3826e07c3695ce6cf9a6de84b64676d42eabb8648171f6816722d047c54aaf",
+  "src/main/java/com/landawn/abacus/query/ParsedSql.java": "f141147bb5946aa7b611f46c58d12c5427c12b53db4a8749617455e8e179a0c6",
+  "src/test/java/com/landawn/abacus/query/SqlParserTest.java": "46231bbbdd9262571791e727e5fdd3b9bc3cf3506b87ded732904c9c9964a45b",
+  "src/test/java/com/landawn/abacus/query/ParsedSqlTest.java": "a81b7705519419c115303f2f7ae531a52fa6852ae78d1c88513179d9741942e3",
+  "pom.xml": "efdf7f72cbc61fe27f77b9cb7be159857a034050af298d9e979d414f3f650204",
+  "docs/performance/parser-followup-2026-10-15/FollowupDifferential.java": "7e80c65ec224c36107a5a22709ce8840e9fc0c24d77c6a71799f7117605f518a",
+  "docs/performance/parser-followup-2026-10-15/FollowupProbe.java": "188edcdcc663ea468e12bdd6124749645eed4f694d8d067e15d7d1f676113eae"
+}

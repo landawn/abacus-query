@@ -1,0 +1,5892 @@
+[
+  {
+    "name": "walk_hash",
+    "scale": 64,
+    "sqlChars": 386,
+    "result": "130",
+    "before": {
+      "name": "walk_hash",
+      "scale": 64,
+      "sqlChars": 386,
+      "result": "130",
+      "ns": 186640.625,
+      "bytes": 228352,
+      "minNs": 183828.125,
+      "maxNs": 189078.125,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 186640.625,
+          "bytes": 228352
+        },
+        {
+          "fork": 2,
+          "ns": 183828.125,
+          "bytes": 228352
+        },
+        {
+          "fork": 3,
+          "ns": 189078.125,
+          "bytes": 228352
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_hash",
+      "scale": 64,
+      "sqlChars": 386,
+      "result": "130",
+      "ns": 193162.5,
+      "bytes": 188232,
+      "minNs": 187631.25,
+      "maxNs": 222725,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 187631.25,
+          "bytes": 188232
+        },
+        {
+          "fork": 2,
+          "ns": 193162.5,
+          "bytes": 188232
+        },
+        {
+          "fork": 3,
+          "ns": 222725,
+          "bytes": 188232
+        }
+      ]
+    },
+    "timeRatio": 0.9662363295153045,
+    "allocationReductionPercent": 17.56936659192825
+  },
+  {
+    "name": "tokenize_hash",
+    "scale": 64,
+    "sqlChars": 386,
+    "result": "196",
+    "before": {
+      "name": "tokenize_hash",
+      "scale": 64,
+      "sqlChars": 386,
+      "result": "196",
+      "ns": 10172.461,
+      "bytes": 10144,
+      "minNs": 10113.281,
+      "maxNs": 10802.246,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 10113.281,
+          "bytes": 10144
+        },
+        {
+          "fork": 2,
+          "ns": 10802.246,
+          "bytes": 10144
+        },
+        {
+          "fork": 3,
+          "ns": 10172.461,
+          "bytes": 10144
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_hash",
+      "scale": 64,
+      "sqlChars": 386,
+      "result": "196",
+      "ns": 10025.684,
+      "bytes": 10152,
+      "minNs": 9963.379,
+      "maxNs": 10174.414,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 10025.684,
+          "bytes": 10152
+        },
+        {
+          "fork": 2,
+          "ns": 9963.379,
+          "bytes": 10152
+        },
+        {
+          "fork": 3,
+          "ns": 10174.414,
+          "bytes": 10152
+        }
+      ]
+    },
+    "timeRatio": 1.014640098371343,
+    "allocationReductionPercent": -0.07886435331230283
+  },
+  {
+    "name": "walk_bracket_alias",
+    "scale": 64,
+    "sqlChars": 1713,
+    "result": "192",
+    "before": {
+      "name": "walk_bracket_alias",
+      "scale": 64,
+      "sqlChars": 1713,
+      "result": "192",
+      "ns": 72692.969,
+      "bytes": 122368,
+      "minNs": 68425.781,
+      "maxNs": 73973.438,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 68425.781,
+          "bytes": 122368
+        },
+        {
+          "fork": 2,
+          "ns": 73973.438,
+          "bytes": 122368
+        },
+        {
+          "fork": 3,
+          "ns": 72692.969,
+          "bytes": 122368
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_bracket_alias",
+      "scale": 64,
+      "sqlChars": 1713,
+      "result": "192",
+      "ns": 60233.594,
+      "bytes": 68184,
+      "minNs": 59114.844,
+      "maxNs": 63190.625,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 59114.844,
+          "bytes": 68184
+        },
+        {
+          "fork": 2,
+          "ns": 63190.625,
+          "bytes": 68184
+        },
+        {
+          "fork": 3,
+          "ns": 60233.594,
+          "bytes": 68184
+        }
+      ]
+    },
+    "timeRatio": 1.2068509310601656,
+    "allocationReductionPercent": 44.27955020920502
+  },
+  {
+    "name": "tokenize_bracket_alias",
+    "scale": 64,
+    "sqlChars": 1713,
+    "result": "320",
+    "before": {
+      "name": "tokenize_bracket_alias",
+      "scale": 64,
+      "sqlChars": 1713,
+      "result": "320",
+      "ns": 6804.199,
+      "bytes": 10792,
+      "minNs": 6565.234,
+      "maxNs": 7050.391,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 6804.199,
+          "bytes": 10792
+        },
+        {
+          "fork": 2,
+          "ns": 7050.391,
+          "bytes": 10792
+        },
+        {
+          "fork": 3,
+          "ns": 6565.234,
+          "bytes": 10792
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_bracket_alias",
+      "scale": 64,
+      "sqlChars": 1713,
+      "result": "320",
+      "ns": 6903.809,
+      "bytes": 10800,
+      "minNs": 6873.34,
+      "maxNs": 7053.32,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 6903.809,
+          "bytes": 10800
+        },
+        {
+          "fork": 2,
+          "ns": 7053.32,
+          "bytes": 10800
+        },
+        {
+          "fork": 3,
+          "ns": 6873.34,
+          "bytes": 10800
+        }
+      ]
+    },
+    "timeRatio": 0.985571732937571,
+    "allocationReductionPercent": -0.07412898443291327
+  },
+  {
+    "name": "walk_subscript_chain",
+    "scale": 64,
+    "sqlChars": 267,
+    "result": "66",
+    "before": {
+      "name": "walk_subscript_chain",
+      "scale": 64,
+      "sqlChars": 267,
+      "result": "66",
+      "ns": 26360.156,
+      "bytes": 24152,
+      "minNs": 25675.781,
+      "maxNs": 27056.25,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 25675.781,
+          "bytes": 24152
+        },
+        {
+          "fork": 2,
+          "ns": 26360.156,
+          "bytes": 24152
+        },
+        {
+          "fork": 3,
+          "ns": 27056.25,
+          "bytes": 24152
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_subscript_chain",
+      "scale": 64,
+      "sqlChars": 267,
+      "result": "66",
+      "ns": 25518.359,
+      "bytes": 16768,
+      "minNs": 25135.156,
+      "maxNs": 25555.078,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 25518.359,
+          "bytes": 16768
+        },
+        {
+          "fork": 2,
+          "ns": 25555.078,
+          "bytes": 16768
+        },
+        {
+          "fork": 3,
+          "ns": 25135.156,
+          "bytes": 16768
+        }
+      ]
+    },
+    "timeRatio": 1.0329878970665785,
+    "allocationReductionPercent": 30.573037429612455
+  },
+  {
+    "name": "tokenize_subscript_chain",
+    "scale": 64,
+    "sqlChars": 267,
+    "result": "131",
+    "before": {
+      "name": "tokenize_subscript_chain",
+      "scale": 64,
+      "sqlChars": 267,
+      "result": "131",
+      "ns": 9333.984,
+      "bytes": 4872,
+      "minNs": 9254.102,
+      "maxNs": 9435.352,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 9333.984,
+          "bytes": 4872
+        },
+        {
+          "fork": 2,
+          "ns": 9435.352,
+          "bytes": 4872
+        },
+        {
+          "fork": 3,
+          "ns": 9254.102,
+          "bytes": 4872
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_subscript_chain",
+      "scale": 64,
+      "sqlChars": 267,
+      "result": "131",
+      "ns": 9428.516,
+      "bytes": 4880,
+      "minNs": 9217.969,
+      "maxNs": 9627.734,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 9627.734,
+          "bytes": 4880
+        },
+        {
+          "fork": 2,
+          "ns": 9428.516,
+          "bytes": 4880
+        },
+        {
+          "fork": 3,
+          "ns": 9217.969,
+          "bytes": 4880
+        }
+      ]
+    },
+    "timeRatio": 0.9899738198460926,
+    "allocationReductionPercent": -0.16420361247947454
+  },
+  {
+    "name": "walk_hash",
+    "scale": 128,
+    "sqlChars": 798,
+    "result": "258",
+    "before": {
+      "name": "walk_hash",
+      "scale": 128,
+      "sqlChars": 798,
+      "result": "258",
+      "ns": 756312.5,
+      "bytes": 916480,
+      "minNs": 756037.5,
+      "maxNs": 805825,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 805825,
+          "bytes": 916480
+        },
+        {
+          "fork": 2,
+          "ns": 756312.5,
+          "bytes": 916480
+        },
+        {
+          "fork": 3,
+          "ns": 756037.5,
+          "bytes": 916480
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_hash",
+      "scale": 128,
+      "sqlChars": 798,
+      "result": "258",
+      "ns": 753800,
+      "bytes": 741320,
+      "minNs": 753237.5,
+      "maxNs": 757887.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 757887.5,
+          "bytes": 741320
+        },
+        {
+          "fork": 2,
+          "ns": 753237.5,
+          "bytes": 741320
+        },
+        {
+          "fork": 3,
+          "ns": 753800,
+          "bytes": 741320
+        }
+      ]
+    },
+    "timeRatio": 1.0033331122313611,
+    "allocationReductionPercent": 19.11225558659218
+  },
+  {
+    "name": "tokenize_hash",
+    "scale": 128,
+    "sqlChars": 798,
+    "result": "388",
+    "before": {
+      "name": "tokenize_hash",
+      "scale": 128,
+      "sqlChars": 798,
+      "result": "388",
+      "ns": 22235.547,
+      "bytes": 20304,
+      "minNs": 21719.922,
+      "maxNs": 22405.859,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 22405.859,
+          "bytes": 20304
+        },
+        {
+          "fork": 2,
+          "ns": 22235.547,
+          "bytes": 20304
+        },
+        {
+          "fork": 3,
+          "ns": 21719.922,
+          "bytes": 20304
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_hash",
+      "scale": 128,
+      "sqlChars": 798,
+      "result": "388",
+      "ns": 21087.109,
+      "bytes": 20312,
+      "minNs": 20691.797,
+      "maxNs": 21271.484,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 20691.797,
+          "bytes": 20312
+        },
+        {
+          "fork": 2,
+          "ns": 21087.109,
+          "bytes": 20312
+        },
+        {
+          "fork": 3,
+          "ns": 21271.484,
+          "bytes": 20312
+        }
+      ]
+    },
+    "timeRatio": 1.0544616144394188,
+    "allocationReductionPercent": -0.039401103230890466
+  },
+  {
+    "name": "walk_bracket_alias",
+    "scale": 128,
+    "sqlChars": 3497,
+    "result": "384",
+    "before": {
+      "name": "walk_bracket_alias",
+      "scale": 128,
+      "sqlChars": 3497,
+      "result": "384",
+      "ns": 299503.125,
+      "bytes": 473088,
+      "minNs": 287906.25,
+      "maxNs": 304884.375,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 287906.25,
+          "bytes": 473088
+        },
+        {
+          "fork": 2,
+          "ns": 299503.125,
+          "bytes": 473088
+        },
+        {
+          "fork": 3,
+          "ns": 304884.375,
+          "bytes": 473088
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_bracket_alias",
+      "scale": 128,
+      "sqlChars": 3497,
+      "result": "384",
+      "ns": 239487.5,
+      "bytes": 247592,
+      "minNs": 230256.25,
+      "maxNs": 240346.875,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 239487.5,
+          "bytes": 247592
+        },
+        {
+          "fork": 2,
+          "ns": 240346.875,
+          "bytes": 247592
+        },
+        {
+          "fork": 3,
+          "ns": 230256.25,
+          "bytes": 247592
+        }
+      ]
+    },
+    "timeRatio": 1.2506002400960383,
+    "allocationReductionPercent": 47.664705086580085
+  },
+  {
+    "name": "tokenize_bracket_alias",
+    "scale": 128,
+    "sqlChars": 3497,
+    "result": "640",
+    "before": {
+      "name": "tokenize_bracket_alias",
+      "scale": 128,
+      "sqlChars": 3497,
+      "result": "640",
+      "ns": 13529.297,
+      "bytes": 21528,
+      "minNs": 13195.703,
+      "maxNs": 14692.188,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 13195.703,
+          "bytes": 21528
+        },
+        {
+          "fork": 2,
+          "ns": 13529.297,
+          "bytes": 21528
+        },
+        {
+          "fork": 3,
+          "ns": 14692.188,
+          "bytes": 21528
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_bracket_alias",
+      "scale": 128,
+      "sqlChars": 3497,
+      "result": "640",
+      "ns": 13930.664,
+      "bytes": 21536,
+      "minNs": 13426.953,
+      "maxNs": 15294.922,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 13930.664,
+          "bytes": 21536
+        },
+        {
+          "fork": 2,
+          "ns": 13426.953,
+          "bytes": 21536
+        },
+        {
+          "fork": 3,
+          "ns": 15294.922,
+          "bytes": 21536
+        }
+      ]
+    },
+    "timeRatio": 0.9711882362534908,
+    "allocationReductionPercent": -0.03716090672612412
+  },
+  {
+    "name": "walk_subscript_chain",
+    "scale": 128,
+    "sqlChars": 523,
+    "result": "130",
+    "before": {
+      "name": "walk_subscript_chain",
+      "scale": 128,
+      "sqlChars": 523,
+      "result": "130",
+      "ns": 89459.375,
+      "bytes": 80984,
+      "minNs": 87160.938,
+      "maxNs": 92642.188,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 87160.938,
+          "bytes": 80984
+        },
+        {
+          "fork": 2,
+          "ns": 89459.375,
+          "bytes": 80984
+        },
+        {
+          "fork": 3,
+          "ns": 92642.188,
+          "bytes": 80984
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_subscript_chain",
+      "scale": 128,
+      "sqlChars": 523,
+      "result": "130",
+      "ns": 85315.625,
+      "bytes": 49536,
+      "minNs": 83917.188,
+      "maxNs": 89421.875,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 85315.625,
+          "bytes": 49536
+        },
+        {
+          "fork": 2,
+          "ns": 83917.188,
+          "bytes": 49536
+        },
+        {
+          "fork": 3,
+          "ns": 89421.875,
+          "bytes": 49536
+        }
+      ]
+    },
+    "timeRatio": 1.0485696494633896,
+    "allocationReductionPercent": 38.83236194803912
+  },
+  {
+    "name": "tokenize_subscript_chain",
+    "scale": 128,
+    "sqlChars": 523,
+    "result": "259",
+    "before": {
+      "name": "tokenize_subscript_chain",
+      "scale": 128,
+      "sqlChars": 523,
+      "result": "259",
+      "ns": 19784.18,
+      "bytes": 9416,
+      "minNs": 19014.453,
+      "maxNs": 20485.156,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 19014.453,
+          "bytes": 9416
+        },
+        {
+          "fork": 2,
+          "ns": 19784.18,
+          "bytes": 9416
+        },
+        {
+          "fork": 3,
+          "ns": 20485.156,
+          "bytes": 9416
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_subscript_chain",
+      "scale": 128,
+      "sqlChars": 523,
+      "result": "259",
+      "ns": 19499.609,
+      "bytes": 9424,
+      "minNs": 19477.148,
+      "maxNs": 19966.797,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 19477.148,
+          "bytes": 9424
+        },
+        {
+          "fork": 2,
+          "ns": 19499.609,
+          "bytes": 9424
+        },
+        {
+          "fork": 3,
+          "ns": 19966.797,
+          "bytes": 9424
+        }
+      ]
+    },
+    "timeRatio": 1.014593677237323,
+    "allocationReductionPercent": -0.08496176720475786
+  },
+  {
+    "name": "walk_hash",
+    "scale": 256,
+    "sqlChars": 1694,
+    "result": "514",
+    "before": {
+      "name": "walk_hash",
+      "scale": 256,
+      "sqlChars": 1694,
+      "result": "514",
+      "ns": 3286000,
+      "bytes": 3766272,
+      "minNs": 3226900,
+      "maxNs": 3355950,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 3286000,
+          "bytes": 3766272
+        },
+        {
+          "fork": 2,
+          "ns": 3355950,
+          "bytes": 3766272
+        },
+        {
+          "fork": 3,
+          "ns": 3226900,
+          "bytes": 3766272
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_hash",
+      "scale": 256,
+      "sqlChars": 1694,
+      "result": "514",
+      "ns": 3186350,
+      "bytes": 3007848,
+      "minNs": 3177500,
+      "maxNs": 3319750,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 3177500,
+          "bytes": 3007848
+        },
+        {
+          "fork": 2,
+          "ns": 3186350,
+          "bytes": 3007848
+        },
+        {
+          "fork": 3,
+          "ns": 3319750,
+          "bytes": 3007848
+        }
+      ]
+    },
+    "timeRatio": 1.0312740282768684,
+    "allocationReductionPercent": 20.137260399673735
+  },
+  {
+    "name": "tokenize_hash",
+    "scale": 256,
+    "sqlChars": 1694,
+    "result": "772",
+    "before": {
+      "name": "tokenize_hash",
+      "scale": 256,
+      "sqlChars": 1694,
+      "result": "772",
+      "ns": 45486.719,
+      "bytes": 41328,
+      "minNs": 44893.75,
+      "maxNs": 51243.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 44893.75,
+          "bytes": 41328
+        },
+        {
+          "fork": 2,
+          "ns": 45486.719,
+          "bytes": 41328
+        },
+        {
+          "fork": 3,
+          "ns": 51243.75,
+          "bytes": 41328
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_hash",
+      "scale": 256,
+      "sqlChars": 1694,
+      "result": "772",
+      "ns": 43841.406,
+      "bytes": 41336,
+      "minNs": 43292.188,
+      "maxNs": 44215.625,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 43292.188,
+          "bytes": 41336
+        },
+        {
+          "fork": 2,
+          "ns": 44215.625,
+          "bytes": 41336
+        },
+        {
+          "fork": 3,
+          "ns": 43841.406,
+          "bytes": 41336
+        }
+      ]
+    },
+    "timeRatio": 1.0375287462267975,
+    "allocationReductionPercent": -0.019357336430507164
+  },
+  {
+    "name": "walk_bracket_alias",
+    "scale": 256,
+    "sqlChars": 7209,
+    "result": "768",
+    "before": {
+      "name": "walk_bracket_alias",
+      "scale": 256,
+      "sqlChars": 7209,
+      "result": "768",
+      "ns": 1196662.5,
+      "bytes": 1896448,
+      "minNs": 1034912.5,
+      "maxNs": 1203487.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1203487.5,
+          "bytes": 1896448
+        },
+        {
+          "fork": 2,
+          "ns": 1034912.5,
+          "bytes": 1896448
+        },
+        {
+          "fork": 3,
+          "ns": 1196662.5,
+          "bytes": 1896448
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_bracket_alias",
+      "scale": 256,
+      "sqlChars": 7209,
+      "result": "768",
+      "ns": 989450,
+      "bytes": 960168,
+      "minNs": 906275,
+      "maxNs": 998062.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 989450,
+          "bytes": 960168
+        },
+        {
+          "fork": 2,
+          "ns": 998062.5,
+          "bytes": 960168
+        },
+        {
+          "fork": 3,
+          "ns": 906275,
+          "bytes": 960168
+        }
+      ]
+    },
+    "timeRatio": 1.2094219010561422,
+    "allocationReductionPercent": 49.37019100971922
+  },
+  {
+    "name": "tokenize_bracket_alias",
+    "scale": 256,
+    "sqlChars": 7209,
+    "result": "1280",
+    "before": {
+      "name": "tokenize_bracket_alias",
+      "scale": 256,
+      "sqlChars": 7209,
+      "result": "1280",
+      "ns": 30015.234,
+      "bytes": 43288,
+      "minNs": 28726.953,
+      "maxNs": 35553.516,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 30015.234,
+          "bytes": 43288
+        },
+        {
+          "fork": 2,
+          "ns": 28726.953,
+          "bytes": 43288
+        },
+        {
+          "fork": 3,
+          "ns": 35553.516,
+          "bytes": 43288
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_bracket_alias",
+      "scale": 256,
+      "sqlChars": 7209,
+      "result": "1280",
+      "ns": 28389.844,
+      "bytes": 43296,
+      "minNs": 27674.609,
+      "maxNs": 33845.313,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 27674.609,
+          "bytes": 43296
+        },
+        {
+          "fork": 2,
+          "ns": 33845.313,
+          "bytes": 43296
+        },
+        {
+          "fork": 3,
+          "ns": 28389.844,
+          "bytes": 43296
+        }
+      ]
+    },
+    "timeRatio": 1.0572525160758193,
+    "allocationReductionPercent": -0.018480872297172428
+  },
+  {
+    "name": "walk_subscript_chain",
+    "scale": 256,
+    "sqlChars": 1035,
+    "result": "258",
+    "before": {
+      "name": "walk_subscript_chain",
+      "scale": 256,
+      "sqlChars": 1035,
+      "result": "258",
+      "ns": 321100,
+      "bytes": 292952,
+      "minNs": 312787.5,
+      "maxNs": 339646.875,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 339646.875,
+          "bytes": 292952
+        },
+        {
+          "fork": 2,
+          "ns": 312787.5,
+          "bytes": 292952
+        },
+        {
+          "fork": 3,
+          "ns": 321100,
+          "bytes": 292952
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_subscript_chain",
+      "scale": 256,
+      "sqlChars": 1035,
+      "result": "258",
+      "ns": 300337.5,
+      "bytes": 164224,
+      "minNs": 296721.875,
+      "maxNs": 341868.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 300337.5,
+          "bytes": 164224
+        },
+        {
+          "fork": 2,
+          "ns": 341868.75,
+          "bytes": 164224
+        },
+        {
+          "fork": 3,
+          "ns": 296721.875,
+          "bytes": 164224
+        }
+      ]
+    },
+    "timeRatio": 1.0691305614517002,
+    "allocationReductionPercent": 43.94166962505803
+  },
+  {
+    "name": "tokenize_subscript_chain",
+    "scale": 256,
+    "sqlChars": 1035,
+    "result": "515",
+    "before": {
+      "name": "tokenize_subscript_chain",
+      "scale": 256,
+      "sqlChars": 1035,
+      "result": "515",
+      "ns": 40481.641,
+      "bytes": 18504,
+      "minNs": 39513.281,
+      "maxNs": 40973.438,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 40973.438,
+          "bytes": 18504
+        },
+        {
+          "fork": 2,
+          "ns": 39513.281,
+          "bytes": 18504
+        },
+        {
+          "fork": 3,
+          "ns": 40481.641,
+          "bytes": 18504
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_subscript_chain",
+      "scale": 256,
+      "sqlChars": 1035,
+      "result": "515",
+      "ns": 41217.969,
+      "bytes": 18512,
+      "minNs": 40232.422,
+      "maxNs": 48495.313,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 40232.422,
+          "bytes": 18512
+        },
+        {
+          "fork": 2,
+          "ns": 48495.313,
+          "bytes": 18512
+        },
+        {
+          "fork": 3,
+          "ns": 41217.969,
+          "bytes": 18512
+        }
+      ]
+    },
+    "timeRatio": 0.982135752491832,
+    "allocationReductionPercent": -0.043233895373973194
+  },
+  {
+    "name": "walk_hash",
+    "scale": 512,
+    "sqlChars": 3486,
+    "result": "1026",
+    "before": {
+      "name": "walk_hash",
+      "scale": 512,
+      "sqlChars": 3486,
+      "result": "1026",
+      "ns": 14286800,
+      "bytes": 15265792,
+      "minNs": 14258700,
+      "maxNs": 14662600,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 14662600,
+          "bytes": 15265792
+        },
+        {
+          "fork": 2,
+          "ns": 14286800,
+          "bytes": 15265792
+        },
+        {
+          "fork": 3,
+          "ns": 14258700,
+          "bytes": 15265792
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_hash",
+      "scale": 512,
+      "sqlChars": 3486,
+      "result": "1026",
+      "ns": 13537900,
+      "bytes": 12208984,
+      "minNs": 13294200,
+      "maxNs": 15807700,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 13294200,
+          "bytes": 12208984
+        },
+        {
+          "fork": 2,
+          "ns": 15807700,
+          "bytes": 12208984
+        },
+        {
+          "fork": 3,
+          "ns": 13537900,
+          "bytes": 12208984
+        }
+      ]
+    },
+    "timeRatio": 1.0553187717445098,
+    "allocationReductionPercent": 20.023907046552186
+  },
+  {
+    "name": "tokenize_hash",
+    "scale": 512,
+    "sqlChars": 3486,
+    "result": "1540",
+    "before": {
+      "name": "tokenize_hash",
+      "scale": 512,
+      "sqlChars": 3486,
+      "result": "1540",
+      "ns": 95960.938,
+      "bytes": 83376,
+      "minNs": 90984.375,
+      "maxNs": 99240.625,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 95960.938,
+          "bytes": 83376
+        },
+        {
+          "fork": 2,
+          "ns": 99240.625,
+          "bytes": 83376
+        },
+        {
+          "fork": 3,
+          "ns": 90984.375,
+          "bytes": 83376
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_hash",
+      "scale": 512,
+      "sqlChars": 3486,
+      "result": "1540",
+      "ns": 93979.688,
+      "bytes": 83384,
+      "minNs": 89562.5,
+      "maxNs": 104575,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 93979.688,
+          "bytes": 83384
+        },
+        {
+          "fork": 2,
+          "ns": 104575,
+          "bytes": 83384
+        },
+        {
+          "fork": 3,
+          "ns": 89562.5,
+          "bytes": 83384
+        }
+      ]
+    },
+    "timeRatio": 1.0210816830973093,
+    "allocationReductionPercent": -0.009595087315294569
+  },
+  {
+    "name": "walk_bracket_alias",
+    "scale": 512,
+    "sqlChars": 14633,
+    "result": "1536",
+    "before": {
+      "name": "walk_bracket_alias",
+      "scale": 512,
+      "sqlChars": 14633,
+      "result": "1536",
+      "ns": 4214850,
+      "bytes": 7593984,
+      "minNs": 3884150,
+      "maxNs": 4442400,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 4442400,
+          "bytes": 7593984
+        },
+        {
+          "fork": 2,
+          "ns": 4214850,
+          "bytes": 7593984
+        },
+        {
+          "fork": 3,
+          "ns": 3884150,
+          "bytes": 7593984
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_bracket_alias",
+      "scale": 512,
+      "sqlChars": 14633,
+      "result": "1536",
+      "ns": 3921100,
+      "bytes": 3810728,
+      "minNs": 3550300,
+      "maxNs": 3977300,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 3921100,
+          "bytes": 3810728
+        },
+        {
+          "fork": 2,
+          "ns": 3977300,
+          "bytes": 3810728
+        },
+        {
+          "fork": 3,
+          "ns": 3550300,
+          "bytes": 3810728
+        }
+      ]
+    },
+    "timeRatio": 1.0749152023666828,
+    "allocationReductionPercent": 49.81911997707659
+  },
+  {
+    "name": "tokenize_bracket_alias",
+    "scale": 512,
+    "sqlChars": 14633,
+    "result": "2560",
+    "before": {
+      "name": "tokenize_bracket_alias",
+      "scale": 512,
+      "sqlChars": 14633,
+      "result": "2560",
+      "ns": 59265.625,
+      "bytes": 86808,
+      "minNs": 57458.594,
+      "maxNs": 62743.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 62743.75,
+          "bytes": 86808
+        },
+        {
+          "fork": 2,
+          "ns": 57458.594,
+          "bytes": 86808
+        },
+        {
+          "fork": 3,
+          "ns": 59265.625,
+          "bytes": 86808
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_bracket_alias",
+      "scale": 512,
+      "sqlChars": 14633,
+      "result": "2560",
+      "ns": 57778.906,
+      "bytes": 86816,
+      "minNs": 57026.563,
+      "maxNs": 63778.125,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 57026.563,
+          "bytes": 86816
+        },
+        {
+          "fork": 2,
+          "ns": 63778.125,
+          "bytes": 86816
+        },
+        {
+          "fork": 3,
+          "ns": 57778.906,
+          "bytes": 86816
+        }
+      ]
+    },
+    "timeRatio": 1.025731172549373,
+    "allocationReductionPercent": -0.00921574048474795
+  },
+  {
+    "name": "walk_subscript_chain",
+    "scale": 512,
+    "sqlChars": 2059,
+    "result": "514",
+    "before": {
+      "name": "walk_subscript_chain",
+      "scale": 512,
+      "sqlChars": 2059,
+      "result": "514",
+      "ns": 1311237.5,
+      "bytes": 1110104,
+      "minNs": 1238425,
+      "maxNs": 1355975,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1311237.5,
+          "bytes": 1110104
+        },
+        {
+          "fork": 2,
+          "ns": 1355975,
+          "bytes": 1110104
+        },
+        {
+          "fork": 3,
+          "ns": 1238425,
+          "bytes": 1110104
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_subscript_chain",
+      "scale": 512,
+      "sqlChars": 2059,
+      "result": "514",
+      "ns": 1278400,
+      "bytes": 590208,
+      "minNs": 1138162.5,
+      "maxNs": 1309400,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1138162.5,
+          "bytes": 590208
+        },
+        {
+          "fork": 2,
+          "ns": 1278400,
+          "bytes": 590208
+        },
+        {
+          "fork": 3,
+          "ns": 1309400,
+          "bytes": 590208
+        }
+      ]
+    },
+    "timeRatio": 1.0256864048811014,
+    "allocationReductionPercent": 46.83308951233398
+  },
+  {
+    "name": "tokenize_subscript_chain",
+    "scale": 512,
+    "sqlChars": 2059,
+    "result": "1027",
+    "before": {
+      "name": "tokenize_subscript_chain",
+      "scale": 512,
+      "sqlChars": 2059,
+      "result": "1027",
+      "ns": 81142.188,
+      "bytes": 36680,
+      "minNs": 79910.156,
+      "maxNs": 82136.719,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 81142.188,
+          "bytes": 36680
+        },
+        {
+          "fork": 2,
+          "ns": 79910.156,
+          "bytes": 36680
+        },
+        {
+          "fork": 3,
+          "ns": 82136.719,
+          "bytes": 36680
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_subscript_chain",
+      "scale": 512,
+      "sqlChars": 2059,
+      "result": "1027",
+      "ns": 83084.375,
+      "bytes": 36688,
+      "minNs": 81626.563,
+      "maxNs": 92768.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 83084.375,
+          "bytes": 36688
+        },
+        {
+          "fork": 2,
+          "ns": 92768.75,
+          "bytes": 36688
+        },
+        {
+          "fork": 3,
+          "ns": 81626.563,
+          "bytes": 36688
+        }
+      ]
+    },
+    "timeRatio": 0.976623919960883,
+    "allocationReductionPercent": -0.021810250817884406
+  },
+  {
+    "name": "walk_hash",
+    "scale": 1024,
+    "sqlChars": 7094,
+    "result": "2050",
+    "before": {
+      "name": "walk_hash",
+      "scale": 1024,
+      "sqlChars": 7094,
+      "result": "2050",
+      "ns": 54550800,
+      "bytes": 61587456,
+      "minNs": 54199600,
+      "maxNs": 56476100,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 56476100,
+          "bytes": 61587456
+        },
+        {
+          "fork": 2,
+          "ns": 54199600,
+          "bytes": 61587456
+        },
+        {
+          "fork": 3,
+          "ns": 54550800,
+          "bytes": 61587456
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_hash",
+      "scale": 1024,
+      "sqlChars": 7094,
+      "result": "2050",
+      "ns": 55846000,
+      "bytes": 49302880,
+      "minNs": 55778900,
+      "maxNs": 57769400,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 55778900,
+          "bytes": 49302880
+        },
+        {
+          "fork": 2,
+          "ns": 57769400,
+          "bytes": 49302880
+        },
+        {
+          "fork": 3,
+          "ns": 55846000,
+          "bytes": 49302880
+        }
+      ]
+    },
+    "timeRatio": 0.9768076496078502,
+    "allocationReductionPercent": 19.94655535049215
+  },
+  {
+    "name": "tokenize_hash",
+    "scale": 1024,
+    "sqlChars": 7094,
+    "result": "3076",
+    "before": {
+      "name": "tokenize_hash",
+      "scale": 1024,
+      "sqlChars": 7094,
+      "result": "3076",
+      "ns": 190256.25,
+      "bytes": 167704,
+      "minNs": 183665.625,
+      "maxNs": 198765.625,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 183665.625,
+          "bytes": 167704
+        },
+        {
+          "fork": 2,
+          "ns": 198765.625,
+          "bytes": 167704
+        },
+        {
+          "fork": 3,
+          "ns": 190256.25,
+          "bytes": 167704
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_hash",
+      "scale": 1024,
+      "sqlChars": 7094,
+      "result": "3076",
+      "ns": 191125,
+      "bytes": 167712,
+      "minNs": 185306.25,
+      "maxNs": 193359.375,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 193359.375,
+          "bytes": 167712
+        },
+        {
+          "fork": 2,
+          "ns": 185306.25,
+          "bytes": 167712
+        },
+        {
+          "fork": 3,
+          "ns": 191125,
+          "bytes": 167712
+        }
+      ]
+    },
+    "timeRatio": 0.9954545454545455,
+    "allocationReductionPercent": -0.004770309593092592
+  },
+  {
+    "name": "walk_bracket_alias",
+    "scale": 1024,
+    "sqlChars": 29529,
+    "result": "3072",
+    "before": {
+      "name": "walk_bracket_alias",
+      "scale": 1024,
+      "sqlChars": 29529,
+      "result": "3072",
+      "ns": 17748600,
+      "bytes": 30441472,
+      "minNs": 17297900,
+      "maxNs": 17766100,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 17748600,
+          "bytes": 30441472
+        },
+        {
+          "fork": 2,
+          "ns": 17766100,
+          "bytes": 30441472
+        },
+        {
+          "fork": 3,
+          "ns": 17297900,
+          "bytes": 30441472
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_bracket_alias",
+      "scale": 1024,
+      "sqlChars": 29529,
+      "result": "3072",
+      "ns": 15931400,
+      "bytes": 15214056,
+      "minNs": 14834000,
+      "maxNs": 17379100,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 15931400,
+          "bytes": 15214056
+        },
+        {
+          "fork": 2,
+          "ns": 14834000,
+          "bytes": 15214056
+        },
+        {
+          "fork": 3,
+          "ns": 17379100,
+          "bytes": 15214056
+        }
+      ]
+    },
+    "timeRatio": 1.1140640496127145,
+    "allocationReductionPercent": 50.02194374831809
+  },
+  {
+    "name": "tokenize_bracket_alias",
+    "scale": 1024,
+    "sqlChars": 29529,
+    "result": "5120",
+    "before": {
+      "name": "tokenize_bracket_alias",
+      "scale": 1024,
+      "sqlChars": 29529,
+      "result": "5120",
+      "ns": 111121.875,
+      "bytes": 173944,
+      "minNs": 107040.625,
+      "maxNs": 117618.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 111121.875,
+          "bytes": 173944
+        },
+        {
+          "fork": 2,
+          "ns": 117618.75,
+          "bytes": 173944
+        },
+        {
+          "fork": 3,
+          "ns": 107040.625,
+          "bytes": 173944
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_bracket_alias",
+      "scale": 1024,
+      "sqlChars": 29529,
+      "result": "5120",
+      "ns": 115689.063,
+      "bytes": 173952,
+      "minNs": 112253.125,
+      "maxNs": 118732.813,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 115689.063,
+          "bytes": 173952
+        },
+        {
+          "fork": 2,
+          "ns": 112253.125,
+          "bytes": 173952
+        },
+        {
+          "fork": 3,
+          "ns": 118732.813,
+          "bytes": 173952
+        }
+      ]
+    },
+    "timeRatio": 0.9605218688649938,
+    "allocationReductionPercent": -0.004599181345720462
+  },
+  {
+    "name": "walk_subscript_chain",
+    "scale": 1024,
+    "sqlChars": 4107,
+    "result": "1026",
+    "before": {
+      "name": "walk_subscript_chain",
+      "scale": 1024,
+      "sqlChars": 4107,
+      "result": "1026",
+      "ns": 4763350,
+      "bytes": 4317272,
+      "minNs": 4687350,
+      "maxNs": 4766250,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 4766250,
+          "bytes": 4317272
+        },
+        {
+          "fork": 2,
+          "ns": 4687350,
+          "bytes": 4317272
+        },
+        {
+          "fork": 3,
+          "ns": 4763350,
+          "bytes": 4317272
+        }
+      ]
+    },
+    "after": {
+      "name": "walk_subscript_chain",
+      "scale": 1024,
+      "sqlChars": 4107,
+      "result": "1026",
+      "ns": 4619350,
+      "bytes": 2228608,
+      "minNs": 4200700,
+      "maxNs": 4712050,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 4619350,
+          "bytes": 2228608
+        },
+        {
+          "fork": 2,
+          "ns": 4200700,
+          "bytes": 2228608
+        },
+        {
+          "fork": 3,
+          "ns": 4712050,
+          "bytes": 2228608
+        }
+      ]
+    },
+    "timeRatio": 1.0311732170110512,
+    "allocationReductionPercent": 48.37925430688639
+  },
+  {
+    "name": "tokenize_subscript_chain",
+    "scale": 1024,
+    "sqlChars": 4107,
+    "result": "2051",
+    "before": {
+      "name": "tokenize_subscript_chain",
+      "scale": 1024,
+      "sqlChars": 4107,
+      "result": "2051",
+      "ns": 164889.063,
+      "bytes": 73032,
+      "minNs": 163501.563,
+      "maxNs": 165178.125,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 163501.563,
+          "bytes": 73032
+        },
+        {
+          "fork": 2,
+          "ns": 164889.063,
+          "bytes": 73032
+        },
+        {
+          "fork": 3,
+          "ns": 165178.125,
+          "bytes": 73032
+        }
+      ]
+    },
+    "after": {
+      "name": "tokenize_subscript_chain",
+      "scale": 1024,
+      "sqlChars": 4107,
+      "result": "2051",
+      "ns": 166803.125,
+      "bytes": 73040,
+      "minNs": 164781.25,
+      "maxNs": 169262.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 164781.25,
+          "bytes": 73040
+        },
+        {
+          "fork": 2,
+          "ns": 166803.125,
+          "bytes": 73040
+        },
+        {
+          "fork": 3,
+          "ns": 169262.5,
+          "bytes": 73040
+        }
+      ]
+    },
+    "timeRatio": 0.9885250231373063,
+    "allocationReductionPercent": -0.010954102311315588
+  },
+  {
+    "name": "early_hash",
+    "scale": 0,
+    "sqlChars": 11,
+    "result": "10",
+    "before": {
+      "name": "early_hash",
+      "scale": 0,
+      "sqlChars": 11,
+      "result": "10",
+      "ns": 109.369,
+      "bytes": 184,
+      "minNs": 104.865,
+      "maxNs": 110.699,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 104.865,
+          "bytes": 184
+        },
+        {
+          "fork": 2,
+          "ns": 109.369,
+          "bytes": 184
+        },
+        {
+          "fork": 3,
+          "ns": 110.699,
+          "bytes": 184
+        }
+      ]
+    },
+    "after": {
+      "name": "early_hash",
+      "scale": 0,
+      "sqlChars": 11,
+      "result": "10",
+      "ns": 121.704,
+      "bytes": 192,
+      "minNs": 110.608,
+      "maxNs": 136.429,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 136.429,
+          "bytes": 192
+        },
+        {
+          "fork": 2,
+          "ns": 110.608,
+          "bytes": 192
+        },
+        {
+          "fork": 3,
+          "ns": 121.704,
+          "bytes": 192
+        }
+      ]
+    },
+    "timeRatio": 0.8986475382896207,
+    "allocationReductionPercent": -4.3478260869565215
+  },
+  {
+    "name": "early_hash_block_comment",
+    "scale": 0,
+    "sqlChars": 17,
+    "result": "16",
+    "before": {
+      "name": "early_hash_block_comment",
+      "scale": 0,
+      "sqlChars": 17,
+      "result": "16",
+      "ns": 149.255,
+      "bytes": 304,
+      "minNs": 147.925,
+      "maxNs": 174.832,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 149.255,
+          "bytes": 304
+        },
+        {
+          "fork": 2,
+          "ns": 147.925,
+          "bytes": 304
+        },
+        {
+          "fork": 3,
+          "ns": 174.832,
+          "bytes": 304
+        }
+      ]
+    },
+    "after": {
+      "name": "early_hash_block_comment",
+      "scale": 0,
+      "sqlChars": 17,
+      "result": "16",
+      "ns": 147.037,
+      "bytes": 312,
+      "minNs": 142.929,
+      "maxNs": 256.912,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 256.912,
+          "bytes": 312
+        },
+        {
+          "fork": 2,
+          "ns": 147.037,
+          "bytes": 312
+        },
+        {
+          "fork": 3,
+          "ns": 142.929,
+          "bytes": 312
+        }
+      ]
+    },
+    "timeRatio": 1.0150846385603622,
+    "allocationReductionPercent": -2.6315789473684212
+  },
+  {
+    "name": "early_hash",
+    "scale": 1024,
+    "sqlChars": 1035,
+    "result": "10",
+    "before": {
+      "name": "early_hash",
+      "scale": 1024,
+      "sqlChars": 1035,
+      "result": "10",
+      "ns": 515.387,
+      "bytes": 5304,
+      "minNs": 509.863,
+      "maxNs": 562.903,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 562.903,
+          "bytes": 5304
+        },
+        {
+          "fork": 2,
+          "ns": 509.863,
+          "bytes": 5304
+        },
+        {
+          "fork": 3,
+          "ns": 515.387,
+          "bytes": 5304
+        }
+      ]
+    },
+    "after": {
+      "name": "early_hash",
+      "scale": 1024,
+      "sqlChars": 1035,
+      "result": "10",
+      "ns": 163.596,
+      "bytes": 448,
+      "minNs": 144.495,
+      "maxNs": 164.88,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 163.596,
+          "bytes": 448
+        },
+        {
+          "fork": 2,
+          "ns": 164.88,
+          "bytes": 448
+        },
+        {
+          "fork": 3,
+          "ns": 144.495,
+          "bytes": 448
+        }
+      ]
+    },
+    "timeRatio": 3.1503643120858698,
+    "allocationReductionPercent": 91.55354449472097
+  },
+  {
+    "name": "early_hash_block_comment",
+    "scale": 1024,
+    "sqlChars": 1041,
+    "result": "16",
+    "before": {
+      "name": "early_hash_block_comment",
+      "scale": 1024,
+      "sqlChars": 1041,
+      "result": "16",
+      "ns": 1743.701,
+      "bytes": 9520,
+      "minNs": 1611.035,
+      "maxNs": 1981.323,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1981.323,
+          "bytes": 9520
+        },
+        {
+          "fork": 2,
+          "ns": 1743.701,
+          "bytes": 9520
+        },
+        {
+          "fork": 3,
+          "ns": 1611.035,
+          "bytes": 9520
+        }
+      ]
+    },
+    "after": {
+      "name": "early_hash_block_comment",
+      "scale": 1024,
+      "sqlChars": 1041,
+      "result": "16",
+      "ns": 168.625,
+      "bytes": 720,
+      "minNs": 167.346,
+      "maxNs": 180.276,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 167.346,
+          "bytes": 720
+        },
+        {
+          "fork": 2,
+          "ns": 168.625,
+          "bytes": 720
+        },
+        {
+          "fork": 3,
+          "ns": 180.276,
+          "bytes": 720
+        }
+      ]
+    },
+    "timeRatio": 10.340702742772423,
+    "allocationReductionPercent": 92.43697478991596
+  },
+  {
+    "name": "early_hash",
+    "scale": 65536,
+    "sqlChars": 65547,
+    "result": "10",
+    "before": {
+      "name": "early_hash",
+      "scale": 65536,
+      "sqlChars": 65547,
+      "result": "10",
+      "ns": 18077.734,
+      "bytes": 327864,
+      "minNs": 17880.273,
+      "maxNs": 18627.539,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 18077.734,
+          "bytes": 327864
+        },
+        {
+          "fork": 2,
+          "ns": 18627.539,
+          "bytes": 327864
+        },
+        {
+          "fork": 3,
+          "ns": 17880.273,
+          "bytes": 327864
+        }
+      ]
+    },
+    "after": {
+      "name": "early_hash",
+      "scale": 65536,
+      "sqlChars": 65547,
+      "result": "10",
+      "ns": 164.755,
+      "bytes": 448,
+      "minNs": 135.196,
+      "maxNs": 177.945,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 177.945,
+          "bytes": 448
+        },
+        {
+          "fork": 2,
+          "ns": 135.196,
+          "bytes": 448
+        },
+        {
+          "fork": 3,
+          "ns": 164.755,
+          "bytes": 448
+        }
+      ]
+    },
+    "timeRatio": 109.72494916694487,
+    "allocationReductionPercent": 99.86335797769807
+  },
+  {
+    "name": "early_hash_block_comment",
+    "scale": 65536,
+    "sqlChars": 65553,
+    "result": "16",
+    "before": {
+      "name": "early_hash_block_comment",
+      "scale": 65536,
+      "sqlChars": 65553,
+      "result": "16",
+      "ns": 113235.938,
+      "bytes": 590128,
+      "minNs": 107457.813,
+      "maxNs": 135773.438,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 113235.938,
+          "bytes": 590128
+        },
+        {
+          "fork": 2,
+          "ns": 135773.438,
+          "bytes": 590128
+        },
+        {
+          "fork": 3,
+          "ns": 107457.813,
+          "bytes": 590128
+        }
+      ]
+    },
+    "after": {
+      "name": "early_hash_block_comment",
+      "scale": 65536,
+      "sqlChars": 65553,
+      "result": "16",
+      "ns": 206.619,
+      "bytes": 720,
+      "minNs": 171.405,
+      "maxNs": 233.167,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 206.619,
+          "bytes": 720
+        },
+        {
+          "fork": 2,
+          "ns": 233.167,
+          "bytes": 720
+        },
+        {
+          "fork": 3,
+          "ns": 171.405,
+          "bytes": 720
+        }
+      ]
+    },
+    "timeRatio": 548.0422323213257,
+    "allocationReductionPercent": 99.87799257110322
+  },
+  {
+    "name": "early_hash",
+    "scale": 1048576,
+    "sqlChars": 1048587,
+    "result": "10",
+    "before": {
+      "name": "early_hash",
+      "scale": 1048576,
+      "sqlChars": 1048587,
+      "result": "10",
+      "ns": 167515.625,
+      "bytes": 5243064,
+      "minNs": 166668.75,
+      "maxNs": 180881.25,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 180881.25,
+          "bytes": 5243064
+        },
+        {
+          "fork": 2,
+          "ns": 166668.75,
+          "bytes": 5243064
+        },
+        {
+          "fork": 3,
+          "ns": 167515.625,
+          "bytes": 5243064
+        }
+      ]
+    },
+    "after": {
+      "name": "early_hash",
+      "scale": 1048576,
+      "sqlChars": 1048587,
+      "result": "10",
+      "ns": 138.272,
+      "bytes": 448,
+      "minNs": 121.902,
+      "maxNs": 216.187,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 138.272,
+          "bytes": 448
+        },
+        {
+          "fork": 2,
+          "ns": 216.187,
+          "bytes": 448
+        },
+        {
+          "fork": 3,
+          "ns": 121.902,
+          "bytes": 448
+        }
+      ]
+    },
+    "timeRatio": 1211.4934693936589,
+    "allocationReductionPercent": 99.99145537800034
+  },
+  {
+    "name": "early_hash_block_comment",
+    "scale": 1048576,
+    "sqlChars": 1048593,
+    "result": "16",
+    "before": {
+      "name": "early_hash_block_comment",
+      "scale": 1048576,
+      "sqlChars": 1048593,
+      "result": "16",
+      "ns": 1492575,
+      "bytes": 9437488,
+      "minNs": 1437587.5,
+      "maxNs": 1892475,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1437587.5,
+          "bytes": 9437488
+        },
+        {
+          "fork": 2,
+          "ns": 1492575,
+          "bytes": 9437488
+        },
+        {
+          "fork": 3,
+          "ns": 1892475,
+          "bytes": 9437488
+        }
+      ]
+    },
+    "after": {
+      "name": "early_hash_block_comment",
+      "scale": 1048576,
+      "sqlChars": 1048593,
+      "result": "16",
+      "ns": 214.996,
+      "bytes": 720,
+      "minNs": 176.114,
+      "maxNs": 216.379,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 214.996,
+          "bytes": 720
+        },
+        {
+          "fork": 2,
+          "ns": 216.379,
+          "bytes": 720
+        },
+        {
+          "fork": 3,
+          "ns": 176.114,
+          "bytes": 720
+        }
+      ]
+    },
+    "timeRatio": 6942.338462110923,
+    "allocationReductionPercent": 99.99237085122651
+  },
+  {
+    "name": "multiline_markers_no_close",
+    "scale": 512,
+    "sqlChars": 1545,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_no_close",
+      "scale": 512,
+      "sqlChars": 1545,
+      "result": "1",
+      "ns": 125478.125,
+      "bytes": 10384,
+      "minNs": 124225,
+      "maxNs": 127818.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 127818.75,
+          "bytes": 10384
+        },
+        {
+          "fork": 2,
+          "ns": 124225,
+          "bytes": 10384
+        },
+        {
+          "fork": 3,
+          "ns": 125478.125,
+          "bytes": 10384
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_no_close",
+      "scale": 512,
+      "sqlChars": 1545,
+      "result": "1",
+      "ns": 104740.625,
+      "bytes": 10464,
+      "minNs": 103760.938,
+      "maxNs": 110518.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 104740.625,
+          "bytes": 10464
+        },
+        {
+          "fork": 2,
+          "ns": 103760.938,
+          "bytes": 10464
+        },
+        {
+          "fork": 3,
+          "ns": 110518.75,
+          "bytes": 10464
+        }
+      ]
+    },
+    "timeRatio": 1.1979890801682729,
+    "allocationReductionPercent": -0.7704160246533128
+  },
+  {
+    "name": "multiline_markers_final_close",
+    "scale": 512,
+    "sqlChars": 1546,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_final_close",
+      "scale": 512,
+      "sqlChars": 1546,
+      "result": "1",
+      "ns": 123310.938,
+      "bytes": 10384,
+      "minNs": 123062.5,
+      "maxNs": 129851.563,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 129851.563,
+          "bytes": 10384
+        },
+        {
+          "fork": 2,
+          "ns": 123310.938,
+          "bytes": 10384
+        },
+        {
+          "fork": 3,
+          "ns": 123062.5,
+          "bytes": 10384
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_final_close",
+      "scale": 512,
+      "sqlChars": 1546,
+      "result": "1",
+      "ns": 103551.563,
+      "bytes": 10464,
+      "minNs": 101973.438,
+      "maxNs": 103862.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 101973.438,
+          "bytes": 10464
+        },
+        {
+          "fork": 2,
+          "ns": 103551.563,
+          "bytes": 10464
+        },
+        {
+          "fork": 3,
+          "ns": 103862.5,
+          "bytes": 10464
+        }
+      ]
+    },
+    "timeRatio": 1.1908167721234686,
+    "allocationReductionPercent": -0.7704160246533128
+  },
+  {
+    "name": "raw_bracket_shared_suffix",
+    "scale": 512,
+    "sqlChars": 2068,
+    "result": "1",
+    "before": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 512,
+      "sqlChars": 2068,
+      "result": "1",
+      "ns": 460793.75,
+      "bytes": 64664,
+      "minNs": 454818.75,
+      "maxNs": 498568.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 498568.75,
+          "bytes": 64664
+        },
+        {
+          "fork": 2,
+          "ns": 460793.75,
+          "bytes": 64664
+        },
+        {
+          "fork": 3,
+          "ns": 454818.75,
+          "bytes": 64664
+        }
+      ]
+    },
+    "after": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 512,
+      "sqlChars": 2068,
+      "result": "1",
+      "ns": 39234.375,
+      "bytes": 51872,
+      "minNs": 38355.469,
+      "maxNs": 39846.094,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 39234.375,
+          "bytes": 51872
+        },
+        {
+          "fork": 2,
+          "ns": 38355.469,
+          "bytes": 51872
+        },
+        {
+          "fork": 3,
+          "ns": 39846.094,
+          "bytes": 51872
+        }
+      ]
+    },
+    "timeRatio": 11.744643568299482,
+    "allocationReductionPercent": 19.78225906222937
+  },
+  {
+    "name": "multiline_markers_no_close",
+    "scale": 1024,
+    "sqlChars": 3081,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_no_close",
+      "scale": 1024,
+      "sqlChars": 3081,
+      "result": "1",
+      "ns": 304828.125,
+      "bytes": 19600,
+      "minNs": 279465.625,
+      "maxNs": 329303.125,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 304828.125,
+          "bytes": 19600
+        },
+        {
+          "fork": 2,
+          "ns": 279465.625,
+          "bytes": 19600
+        },
+        {
+          "fork": 3,
+          "ns": 329303.125,
+          "bytes": 19600
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_no_close",
+      "scale": 1024,
+      "sqlChars": 3081,
+      "result": "1",
+      "ns": 205740.625,
+      "bytes": 19680,
+      "minNs": 204353.125,
+      "maxNs": 206646.875,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 204353.125,
+          "bytes": 19680
+        },
+        {
+          "fork": 2,
+          "ns": 206646.875,
+          "bytes": 19680
+        },
+        {
+          "fork": 3,
+          "ns": 205740.625,
+          "bytes": 19680
+        }
+      ]
+    },
+    "timeRatio": 1.4816136822759238,
+    "allocationReductionPercent": -0.40816326530612246
+  },
+  {
+    "name": "multiline_markers_final_close",
+    "scale": 1024,
+    "sqlChars": 3082,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_final_close",
+      "scale": 1024,
+      "sqlChars": 3082,
+      "result": "1",
+      "ns": 290818.75,
+      "bytes": 19600,
+      "minNs": 287831.25,
+      "maxNs": 313918.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 313918.75,
+          "bytes": 19600
+        },
+        {
+          "fork": 2,
+          "ns": 287831.25,
+          "bytes": 19600
+        },
+        {
+          "fork": 3,
+          "ns": 290818.75,
+          "bytes": 19600
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_final_close",
+      "scale": 1024,
+      "sqlChars": 3082,
+      "result": "1",
+      "ns": 213484.375,
+      "bytes": 19680,
+      "minNs": 203956.25,
+      "maxNs": 216906.25,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 216906.25,
+          "bytes": 19680
+        },
+        {
+          "fork": 2,
+          "ns": 213484.375,
+          "bytes": 19680
+        },
+        {
+          "fork": 3,
+          "ns": 203956.25,
+          "bytes": 19680
+        }
+      ]
+    },
+    "timeRatio": 1.3622484081094928,
+    "allocationReductionPercent": -0.40816326530612246
+  },
+  {
+    "name": "raw_bracket_shared_suffix",
+    "scale": 1024,
+    "sqlChars": 4116,
+    "result": "1",
+    "before": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 1024,
+      "sqlChars": 4116,
+      "result": "1",
+      "ns": 1710125,
+      "bytes": 126152,
+      "minNs": 1702175,
+      "maxNs": 1712425,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1710125,
+          "bytes": 126152
+        },
+        {
+          "fork": 2,
+          "ns": 1712425,
+          "bytes": 126152
+        },
+        {
+          "fork": 3,
+          "ns": 1702175,
+          "bytes": 126152
+        }
+      ]
+    },
+    "after": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 1024,
+      "sqlChars": 4116,
+      "result": "1",
+      "ns": 73304.688,
+      "bytes": 101072,
+      "minNs": 70045.313,
+      "maxNs": 77320.313,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 73304.688,
+          "bytes": 101072
+        },
+        {
+          "fork": 2,
+          "ns": 77320.313,
+          "bytes": 101072
+        },
+        {
+          "fork": 3,
+          "ns": 70045.313,
+          "bytes": 101072
+        }
+      ]
+    },
+    "timeRatio": 23.32899909484643,
+    "allocationReductionPercent": 19.88077874310356
+  },
+  {
+    "name": "multiline_markers_no_close",
+    "scale": 2048,
+    "sqlChars": 6153,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_no_close",
+      "scale": 2048,
+      "sqlChars": 6153,
+      "result": "1",
+      "ns": 665562.5,
+      "bytes": 38032,
+      "minNs": 659837.5,
+      "maxNs": 721700,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 665562.5,
+          "bytes": 38032
+        },
+        {
+          "fork": 2,
+          "ns": 659837.5,
+          "bytes": 38032
+        },
+        {
+          "fork": 3,
+          "ns": 721700,
+          "bytes": 38032
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_no_close",
+      "scale": 2048,
+      "sqlChars": 6153,
+      "result": "1",
+      "ns": 406793.75,
+      "bytes": 38112,
+      "minNs": 401725,
+      "maxNs": 409300,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 409300,
+          "bytes": 38112
+        },
+        {
+          "fork": 2,
+          "ns": 401725,
+          "bytes": 38112
+        },
+        {
+          "fork": 3,
+          "ns": 406793.75,
+          "bytes": 38112
+        }
+      ]
+    },
+    "timeRatio": 1.636117811544548,
+    "allocationReductionPercent": -0.2103491796381994
+  },
+  {
+    "name": "multiline_markers_final_close",
+    "scale": 2048,
+    "sqlChars": 6154,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_final_close",
+      "scale": 2048,
+      "sqlChars": 6154,
+      "result": "1",
+      "ns": 672037.5,
+      "bytes": 38032,
+      "minNs": 666912.5,
+      "maxNs": 678737.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 672037.5,
+          "bytes": 38032
+        },
+        {
+          "fork": 2,
+          "ns": 678737.5,
+          "bytes": 38032
+        },
+        {
+          "fork": 3,
+          "ns": 666912.5,
+          "bytes": 38032
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_final_close",
+      "scale": 2048,
+      "sqlChars": 6154,
+      "result": "1",
+      "ns": 403518.75,
+      "bytes": 38112,
+      "minNs": 401643.75,
+      "maxNs": 406550,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 403518.75,
+          "bytes": 38112
+        },
+        {
+          "fork": 2,
+          "ns": 401643.75,
+          "bytes": 38112
+        },
+        {
+          "fork": 3,
+          "ns": 406550,
+          "bytes": 38112
+        }
+      ]
+    },
+    "timeRatio": 1.665443055620092,
+    "allocationReductionPercent": -0.2103491796381994
+  },
+  {
+    "name": "raw_bracket_shared_suffix",
+    "scale": 2048,
+    "sqlChars": 8212,
+    "result": "1",
+    "before": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 2048,
+      "sqlChars": 8212,
+      "result": "1",
+      "ns": 6488200,
+      "bytes": 249080,
+      "minNs": 6459300,
+      "maxNs": 6655100,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 6655100,
+          "bytes": 249080
+        },
+        {
+          "fork": 2,
+          "ns": 6459300,
+          "bytes": 249080
+        },
+        {
+          "fork": 3,
+          "ns": 6488200,
+          "bytes": 249080
+        }
+      ]
+    },
+    "after": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 2048,
+      "sqlChars": 8212,
+      "result": "1",
+      "ns": 149337.5,
+      "bytes": 199424,
+      "minNs": 146042.188,
+      "maxNs": 156804.688,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 146042.188,
+          "bytes": 199424
+        },
+        {
+          "fork": 2,
+          "ns": 149337.5,
+          "bytes": 199424
+        },
+        {
+          "fork": 3,
+          "ns": 156804.688,
+          "bytes": 199424
+        }
+      ]
+    },
+    "timeRatio": 43.446555620657904,
+    "allocationReductionPercent": 19.935763610085115
+  },
+  {
+    "name": "multiline_markers_no_close",
+    "scale": 4096,
+    "sqlChars": 12297,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_no_close",
+      "scale": 4096,
+      "sqlChars": 12297,
+      "result": "1",
+      "ns": 1701975,
+      "bytes": 74896,
+      "minNs": 1683850,
+      "maxNs": 1794200,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1794200,
+          "bytes": 74896
+        },
+        {
+          "fork": 2,
+          "ns": 1683850,
+          "bytes": 74896
+        },
+        {
+          "fork": 3,
+          "ns": 1701975,
+          "bytes": 74896
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_no_close",
+      "scale": 4096,
+      "sqlChars": 12297,
+      "result": "1",
+      "ns": 808612.5,
+      "bytes": 74976,
+      "minNs": 801987.5,
+      "maxNs": 869200,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 808612.5,
+          "bytes": 74976
+        },
+        {
+          "fork": 2,
+          "ns": 801987.5,
+          "bytes": 74976
+        },
+        {
+          "fork": 3,
+          "ns": 869200,
+          "bytes": 74976
+        }
+      ]
+    },
+    "timeRatio": 2.1048091638454762,
+    "allocationReductionPercent": -0.10681478316599018
+  },
+  {
+    "name": "multiline_markers_final_close",
+    "scale": 4096,
+    "sqlChars": 12298,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_final_close",
+      "scale": 4096,
+      "sqlChars": 12298,
+      "result": "1",
+      "ns": 1786125,
+      "bytes": 74896,
+      "minNs": 1776575,
+      "maxNs": 1788975,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1788975,
+          "bytes": 74896
+        },
+        {
+          "fork": 2,
+          "ns": 1776575,
+          "bytes": 74896
+        },
+        {
+          "fork": 3,
+          "ns": 1786125,
+          "bytes": 74896
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_final_close",
+      "scale": 4096,
+      "sqlChars": 12298,
+      "result": "1",
+      "ns": 946562.5,
+      "bytes": 74976,
+      "minNs": 802850,
+      "maxNs": 970200,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 802850,
+          "bytes": 74976
+        },
+        {
+          "fork": 2,
+          "ns": 970200,
+          "bytes": 74976
+        },
+        {
+          "fork": 3,
+          "ns": 946562.5,
+          "bytes": 74976
+        }
+      ]
+    },
+    "timeRatio": 1.8869593925387917,
+    "allocationReductionPercent": -0.10681478316599018
+  },
+  {
+    "name": "raw_bracket_shared_suffix",
+    "scale": 4096,
+    "sqlChars": 16404,
+    "result": "1",
+    "before": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 4096,
+      "sqlChars": 16404,
+      "result": "1",
+      "ns": 25808500,
+      "bytes": 494888,
+      "minNs": 25430800,
+      "maxNs": 25964000,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 25430800,
+          "bytes": 494888
+        },
+        {
+          "fork": 2,
+          "ns": 25808500,
+          "bytes": 494888
+        },
+        {
+          "fork": 3,
+          "ns": 25964000,
+          "bytes": 494888
+        }
+      ]
+    },
+    "after": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 4096,
+      "sqlChars": 16404,
+      "result": "1",
+      "ns": 344281.25,
+      "bytes": 396080,
+      "minNs": 313190.625,
+      "maxNs": 361106.25,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 344281.25,
+          "bytes": 396080
+        },
+        {
+          "fork": 2,
+          "ns": 313190.625,
+          "bytes": 396080
+        },
+        {
+          "fork": 3,
+          "ns": 361106.25,
+          "bytes": 396080
+        }
+      ]
+    },
+    "timeRatio": 74.96342016882998,
+    "allocationReductionPercent": 19.96572961963111
+  },
+  {
+    "name": "multiline_markers_no_close",
+    "scale": 8192,
+    "sqlChars": 24585,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_no_close",
+      "scale": 8192,
+      "sqlChars": 24585,
+      "result": "1",
+      "ns": 4870850,
+      "bytes": 148624,
+      "minNs": 4866550,
+      "maxNs": 4878500,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 4878500,
+          "bytes": 148624
+        },
+        {
+          "fork": 2,
+          "ns": 4866550,
+          "bytes": 148624
+        },
+        {
+          "fork": 3,
+          "ns": 4870850,
+          "bytes": 148624
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_no_close",
+      "scale": 8192,
+      "sqlChars": 24585,
+      "result": "1",
+      "ns": 1622100,
+      "bytes": 148704,
+      "minNs": 1611475,
+      "maxNs": 1708125,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1611475,
+          "bytes": 148704
+        },
+        {
+          "fork": 2,
+          "ns": 1622100,
+          "bytes": 148704
+        },
+        {
+          "fork": 3,
+          "ns": 1708125,
+          "bytes": 148704
+        }
+      ]
+    },
+    "timeRatio": 3.002805005856606,
+    "allocationReductionPercent": -0.05382710733125202
+  },
+  {
+    "name": "multiline_markers_final_close",
+    "scale": 8192,
+    "sqlChars": 24586,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_final_close",
+      "scale": 8192,
+      "sqlChars": 24586,
+      "result": "1",
+      "ns": 5154800,
+      "bytes": 148624,
+      "minNs": 5078100,
+      "maxNs": 5194650,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 5194650,
+          "bytes": 148624
+        },
+        {
+          "fork": 2,
+          "ns": 5154800,
+          "bytes": 148624
+        },
+        {
+          "fork": 3,
+          "ns": 5078100,
+          "bytes": 148624
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_final_close",
+      "scale": 8192,
+      "sqlChars": 24586,
+      "result": "1",
+      "ns": 1715150,
+      "bytes": 148704,
+      "minNs": 1669825,
+      "maxNs": 2099575,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1669825,
+          "bytes": 148704
+        },
+        {
+          "fork": 2,
+          "ns": 1715150,
+          "bytes": 148704
+        },
+        {
+          "fork": 3,
+          "ns": 2099575,
+          "bytes": 148704
+        }
+      ]
+    },
+    "timeRatio": 3.0054514182433025,
+    "allocationReductionPercent": -0.05382710733125202
+  },
+  {
+    "name": "raw_bracket_shared_suffix",
+    "scale": 8192,
+    "sqlChars": 32788,
+    "result": "1",
+    "before": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 8192,
+      "sqlChars": 32788,
+      "result": "1",
+      "ns": 103952900,
+      "bytes": 986456,
+      "minNs": 101471900,
+      "maxNs": 111278000,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 101471900,
+          "bytes": 986456
+        },
+        {
+          "fork": 2,
+          "ns": 111278000,
+          "bytes": 986456
+        },
+        {
+          "fork": 3,
+          "ns": 103952900,
+          "bytes": 986456
+        }
+      ]
+    },
+    "after": {
+      "name": "raw_bracket_shared_suffix",
+      "scale": 8192,
+      "sqlChars": 32788,
+      "result": "1",
+      "ns": 746537.5,
+      "bytes": 789344,
+      "minNs": 699500,
+      "maxNs": 795112.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 746537.5,
+          "bytes": 789344
+        },
+        {
+          "fork": 2,
+          "ns": 699500,
+          "bytes": 789344
+        },
+        {
+          "fork": 3,
+          "ns": 795112.5,
+          "bytes": 789344
+        }
+      ]
+    },
+    "timeRatio": 139.24672236826683,
+    "allocationReductionPercent": 19.981833959142627
+  },
+  {
+    "name": "multiline_markers_no_close",
+    "scale": 16384,
+    "sqlChars": 49161,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_no_close",
+      "scale": 16384,
+      "sqlChars": 49161,
+      "result": "1",
+      "ns": 17747100,
+      "bytes": 296080,
+      "minNs": 16419300,
+      "maxNs": 17940600,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 16419300,
+          "bytes": 296080
+        },
+        {
+          "fork": 2,
+          "ns": 17747100,
+          "bytes": 296080
+        },
+        {
+          "fork": 3,
+          "ns": 17940600,
+          "bytes": 296080
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_no_close",
+      "scale": 16384,
+      "sqlChars": 49161,
+      "result": "1",
+      "ns": 3449200,
+      "bytes": 296160,
+      "minNs": 3313000,
+      "maxNs": 3709200,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 3709200,
+          "bytes": 296160
+        },
+        {
+          "fork": 2,
+          "ns": 3313000,
+          "bytes": 296160
+        },
+        {
+          "fork": 3,
+          "ns": 3449200,
+          "bytes": 296160
+        }
+      ]
+    },
+    "timeRatio": 5.145280064942596,
+    "allocationReductionPercent": -0.027019724398811132
+  },
+  {
+    "name": "multiline_markers_final_close",
+    "scale": 16384,
+    "sqlChars": 49162,
+    "result": "1",
+    "before": {
+      "name": "multiline_markers_final_close",
+      "scale": 16384,
+      "sqlChars": 49162,
+      "result": "1",
+      "ns": 19232000,
+      "bytes": 296080,
+      "minNs": 16721000,
+      "maxNs": 19611300,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 19232000,
+          "bytes": 296080
+        },
+        {
+          "fork": 2,
+          "ns": 19611300,
+          "bytes": 296080
+        },
+        {
+          "fork": 3,
+          "ns": 16721000,
+          "bytes": 296080
+        }
+      ]
+    },
+    "after": {
+      "name": "multiline_markers_final_close",
+      "scale": 16384,
+      "sqlChars": 49162,
+      "result": "1",
+      "ns": 3369050,
+      "bytes": 296160,
+      "minNs": 3263000,
+      "maxNs": 3579850,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 3579850,
+          "bytes": 296160
+        },
+        {
+          "fork": 2,
+          "ns": 3369050,
+          "bytes": 296160
+        },
+        {
+          "fork": 3,
+          "ns": 3263000,
+          "bytes": 296160
+        }
+      ]
+    },
+    "timeRatio": 5.708434128315104,
+    "allocationReductionPercent": -0.027019724398811132
+  },
+  {
+    "name": "quoted_literal",
+    "scale": 16,
+    "sqlChars": 25,
+    "result": "1",
+    "before": {
+      "name": "quoted_literal",
+      "scale": 16,
+      "sqlChars": 25,
+      "result": "1",
+      "ns": 569.196,
+      "bytes": 584,
+      "minNs": 551.532,
+      "maxNs": 604.083,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 604.083,
+          "bytes": 584
+        },
+        {
+          "fork": 2,
+          "ns": 569.196,
+          "bytes": 584
+        },
+        {
+          "fork": 3,
+          "ns": 551.532,
+          "bytes": 584
+        }
+      ]
+    },
+    "after": {
+      "name": "quoted_literal",
+      "scale": 16,
+      "sqlChars": 25,
+      "result": "1",
+      "ns": 533.264,
+      "bytes": 440,
+      "minNs": 530.249,
+      "maxNs": 769.867,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 769.867,
+          "bytes": 440
+        },
+        {
+          "fork": 2,
+          "ns": 530.249,
+          "bytes": 440
+        },
+        {
+          "fork": 3,
+          "ns": 533.264,
+          "bytes": 440
+        }
+      ]
+    },
+    "timeRatio": 1.0673812595637433,
+    "allocationReductionPercent": 24.65753424657534
+  },
+  {
+    "name": "unrecognized_ddl",
+    "scale": 16,
+    "sqlChars": 53,
+    "result": "53",
+    "before": {
+      "name": "unrecognized_ddl",
+      "scale": 16,
+      "sqlChars": 53,
+      "result": "53",
+      "ns": 371.338,
+      "bytes": 400,
+      "minNs": 366.339,
+      "maxNs": 401.495,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 401.495,
+          "bytes": 400
+        },
+        {
+          "fork": 2,
+          "ns": 366.339,
+          "bytes": 400
+        },
+        {
+          "fork": 3,
+          "ns": 371.338,
+          "bytes": 400
+        }
+      ]
+    },
+    "after": {
+      "name": "unrecognized_ddl",
+      "scale": 16,
+      "sqlChars": 53,
+      "result": "53",
+      "ns": 211.206,
+      "bytes": 400,
+      "minNs": 208.972,
+      "maxNs": 228.384,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 228.384,
+          "bytes": 400
+        },
+        {
+          "fork": 2,
+          "ns": 211.206,
+          "bytes": 400
+        },
+        {
+          "fork": 3,
+          "ns": 208.972,
+          "bytes": 400
+        }
+      ]
+    },
+    "timeRatio": 1.758179218393417,
+    "allocationReductionPercent": 0
+  },
+  {
+    "name": "quoted_literal",
+    "scale": 256,
+    "sqlChars": 265,
+    "result": "1",
+    "before": {
+      "name": "quoted_literal",
+      "scale": 256,
+      "sqlChars": 265,
+      "result": "1",
+      "ns": 1317.517,
+      "bytes": 2024,
+      "minNs": 1207.312,
+      "maxNs": 1359.875,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1359.875,
+          "bytes": 2024
+        },
+        {
+          "fork": 2,
+          "ns": 1317.517,
+          "bytes": 2024
+        },
+        {
+          "fork": 3,
+          "ns": 1207.312,
+          "bytes": 2024
+        }
+      ]
+    },
+    "after": {
+      "name": "quoted_literal",
+      "scale": 256,
+      "sqlChars": 265,
+      "result": "1",
+      "ns": 1273.267,
+      "bytes": 1160,
+      "minNs": 1270.605,
+      "maxNs": 1440.015,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1270.605,
+          "bytes": 1160
+        },
+        {
+          "fork": 2,
+          "ns": 1440.015,
+          "bytes": 1160
+        },
+        {
+          "fork": 3,
+          "ns": 1273.267,
+          "bytes": 1160
+        }
+      ]
+    },
+    "timeRatio": 1.0347531193378923,
+    "allocationReductionPercent": 42.687747035573125
+  },
+  {
+    "name": "unrecognized_ddl",
+    "scale": 256,
+    "sqlChars": 293,
+    "result": "293",
+    "before": {
+      "name": "unrecognized_ddl",
+      "scale": 256,
+      "sqlChars": 293,
+      "result": "293",
+      "ns": 406.86,
+      "bytes": 872,
+      "minNs": 405.945,
+      "maxNs": 455.914,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 455.914,
+          "bytes": 872
+        },
+        {
+          "fork": 2,
+          "ns": 405.945,
+          "bytes": 872
+        },
+        {
+          "fork": 3,
+          "ns": 406.86,
+          "bytes": 872
+        }
+      ]
+    },
+    "after": {
+      "name": "unrecognized_ddl",
+      "scale": 256,
+      "sqlChars": 293,
+      "result": "293",
+      "ns": 266.571,
+      "bytes": 872,
+      "minNs": 248.55,
+      "maxNs": 276.205,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 276.205,
+          "bytes": 872
+        },
+        {
+          "fork": 2,
+          "ns": 266.571,
+          "bytes": 872
+        },
+        {
+          "fork": 3,
+          "ns": 248.55,
+          "bytes": 872
+        }
+      ]
+    },
+    "timeRatio": 1.526272550277412,
+    "allocationReductionPercent": 0
+  },
+  {
+    "name": "quoted_literal",
+    "scale": 4096,
+    "sqlChars": 4105,
+    "result": "1",
+    "before": {
+      "name": "quoted_literal",
+      "scale": 4096,
+      "sqlChars": 4105,
+      "result": "1",
+      "ns": 14603.32,
+      "bytes": 25064,
+      "minNs": 14522.461,
+      "maxNs": 15000.977,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 14603.32,
+          "bytes": 25064
+        },
+        {
+          "fork": 2,
+          "ns": 14522.461,
+          "bytes": 25064
+        },
+        {
+          "fork": 3,
+          "ns": 15000.977,
+          "bytes": 25064
+        }
+      ]
+    },
+    "after": {
+      "name": "quoted_literal",
+      "scale": 4096,
+      "sqlChars": 4105,
+      "result": "1",
+      "ns": 15444.336,
+      "bytes": 12680,
+      "minNs": 15070.703,
+      "maxNs": 15941.211,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 15444.336,
+          "bytes": 12680
+        },
+        {
+          "fork": 2,
+          "ns": 15941.211,
+          "bytes": 12680
+        },
+        {
+          "fork": 3,
+          "ns": 15070.703,
+          "bytes": 12680
+        }
+      ]
+    },
+    "timeRatio": 0.9455453442608346,
+    "allocationReductionPercent": 49.40951165017555
+  },
+  {
+    "name": "unrecognized_ddl",
+    "scale": 4096,
+    "sqlChars": 4133,
+    "result": "4133",
+    "before": {
+      "name": "unrecognized_ddl",
+      "scale": 4096,
+      "sqlChars": 4133,
+      "result": "4133",
+      "ns": 1319.336,
+      "bytes": 8552,
+      "minNs": 1232.471,
+      "maxNs": 1576.147,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1232.471,
+          "bytes": 8552
+        },
+        {
+          "fork": 2,
+          "ns": 1576.147,
+          "bytes": 8552
+        },
+        {
+          "fork": 3,
+          "ns": 1319.336,
+          "bytes": 8552
+        }
+      ]
+    },
+    "after": {
+      "name": "unrecognized_ddl",
+      "scale": 4096,
+      "sqlChars": 4133,
+      "result": "4133",
+      "ns": 1531.909,
+      "bytes": 8552,
+      "minNs": 1420.63,
+      "maxNs": 1717.908,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1420.63,
+          "bytes": 8552
+        },
+        {
+          "fork": 2,
+          "ns": 1717.908,
+          "bytes": 8552
+        },
+        {
+          "fork": 3,
+          "ns": 1531.909,
+          "bytes": 8552
+        }
+      ]
+    },
+    "timeRatio": 0.8612365355905605,
+    "allocationReductionPercent": 0
+  },
+  {
+    "name": "quoted_literal",
+    "scale": 65536,
+    "sqlChars": 65545,
+    "result": "1",
+    "before": {
+      "name": "quoted_literal",
+      "scale": 65536,
+      "sqlChars": 65545,
+      "result": "1",
+      "ns": 220521.875,
+      "bytes": 393704,
+      "minNs": 206712.5,
+      "maxNs": 233496.875,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 220521.875,
+          "bytes": 393704
+        },
+        {
+          "fork": 2,
+          "ns": 206712.5,
+          "bytes": 393704
+        },
+        {
+          "fork": 3,
+          "ns": 233496.875,
+          "bytes": 393704
+        }
+      ]
+    },
+    "after": {
+      "name": "quoted_literal",
+      "scale": 65536,
+      "sqlChars": 65545,
+      "result": "1",
+      "ns": 219843.75,
+      "bytes": 197000,
+      "minNs": 218956.25,
+      "maxNs": 224540.625,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 224540.625,
+          "bytes": 197000
+        },
+        {
+          "fork": 2,
+          "ns": 218956.25,
+          "bytes": 197000
+        },
+        {
+          "fork": 3,
+          "ns": 219843.75,
+          "bytes": 197000
+        }
+      ]
+    },
+    "timeRatio": 1.0030845771144279,
+    "allocationReductionPercent": 49.962408306748216
+  },
+  {
+    "name": "unrecognized_ddl",
+    "scale": 65536,
+    "sqlChars": 65573,
+    "result": "65573",
+    "before": {
+      "name": "unrecognized_ddl",
+      "scale": 65536,
+      "sqlChars": 65573,
+      "result": "65573",
+      "ns": 36946.094,
+      "bytes": 311808,
+      "minNs": 34944.141,
+      "maxNs": 42813.672,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 34944.141,
+          "bytes": 311808
+        },
+        {
+          "fork": 2,
+          "ns": 42813.672,
+          "bytes": 311808
+        },
+        {
+          "fork": 3,
+          "ns": 36946.094,
+          "bytes": 311808
+        }
+      ]
+    },
+    "after": {
+      "name": "unrecognized_ddl",
+      "scale": 65536,
+      "sqlChars": 65573,
+      "result": "65573",
+      "ns": 13947.266,
+      "bytes": 98624,
+      "minNs": 12961.133,
+      "maxNs": 14677.539,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 13947.266,
+          "bytes": 98624
+        },
+        {
+          "fork": 2,
+          "ns": 12961.133,
+          "bytes": 98624
+        },
+        {
+          "fork": 3,
+          "ns": 14677.539,
+          "bytes": 98624
+        }
+      ]
+    },
+    "timeRatio": 2.6489846827328023,
+    "allocationReductionPercent": 68.37027914614121
+  },
+  {
+    "name": "quoted_literal",
+    "scale": 1048576,
+    "sqlChars": 1048585,
+    "result": "1",
+    "before": {
+      "name": "quoted_literal",
+      "scale": 1048576,
+      "sqlChars": 1048585,
+      "result": "1",
+      "ns": 3517450,
+      "bytes": 6291944,
+      "minNs": 3309750,
+      "maxNs": 3981300,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 3981300,
+          "bytes": 6291944
+        },
+        {
+          "fork": 2,
+          "ns": 3309750,
+          "bytes": 6291944
+        },
+        {
+          "fork": 3,
+          "ns": 3517450,
+          "bytes": 6291944
+        }
+      ]
+    },
+    "after": {
+      "name": "quoted_literal",
+      "scale": 1048576,
+      "sqlChars": 1048585,
+      "result": "1",
+      "ns": 3805500,
+      "bytes": 3146120,
+      "minNs": 3769600,
+      "maxNs": 4032800,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 4032800,
+          "bytes": 3146120
+        },
+        {
+          "fork": 2,
+          "ns": 3769600,
+          "bytes": 3146120
+        },
+        {
+          "fork": 3,
+          "ns": 3805500,
+          "bytes": 3146120
+        }
+      ]
+    },
+    "timeRatio": 0.9243069241886743,
+    "allocationReductionPercent": 49.99764778580356
+  },
+  {
+    "name": "unrecognized_ddl",
+    "scale": 1048576,
+    "sqlChars": 1048613,
+    "result": "1048613",
+    "before": {
+      "name": "unrecognized_ddl",
+      "scale": 1048576,
+      "sqlChars": 1048613,
+      "result": "1048613",
+      "ns": 491787.5,
+      "bytes": 4243968,
+      "minNs": 486168.75,
+      "maxNs": 522106.25,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 491787.5,
+          "bytes": 4243968
+        },
+        {
+          "fork": 2,
+          "ns": 486168.75,
+          "bytes": 4243968
+        },
+        {
+          "fork": 3,
+          "ns": 522106.25,
+          "bytes": 4243968
+        }
+      ]
+    },
+    "after": {
+      "name": "unrecognized_ddl",
+      "scale": 1048576,
+      "sqlChars": 1048613,
+      "result": "1048613",
+      "ns": 240003.125,
+      "bytes": 1081664,
+      "minNs": 177375,
+      "maxNs": 240887.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 177375,
+          "bytes": 1081664
+        },
+        {
+          "fork": 2,
+          "ns": 240887.5,
+          "bytes": 1081664
+        },
+        {
+          "fork": 3,
+          "ns": 240003.125,
+          "bytes": 1081664
+        }
+      ]
+    },
+    "timeRatio": 2.0490879025012694,
+    "allocationReductionPercent": 74.51290867414646
+  },
+  {
+    "name": "comment_boundaries",
+    "scale": 16,
+    "sqlChars": 104,
+    "result": "35",
+    "before": {
+      "name": "comment_boundaries",
+      "scale": 16,
+      "sqlChars": 104,
+      "result": "35",
+      "ns": 1318.384,
+      "bytes": 2288,
+      "minNs": 1280.078,
+      "maxNs": 1480.64,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 1480.64,
+          "bytes": 2288
+        },
+        {
+          "fork": 2,
+          "ns": 1280.078,
+          "bytes": 2288
+        },
+        {
+          "fork": 3,
+          "ns": 1318.384,
+          "bytes": 2288
+        }
+      ]
+    },
+    "after": {
+      "name": "comment_boundaries",
+      "scale": 16,
+      "sqlChars": 104,
+      "result": "35",
+      "ns": 736.316,
+      "bytes": 368,
+      "minNs": 694.116,
+      "maxNs": 786.243,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 736.316,
+          "bytes": 368
+        },
+        {
+          "fork": 2,
+          "ns": 786.243,
+          "bytes": 368
+        },
+        {
+          "fork": 3,
+          "ns": 694.116,
+          "bytes": 368
+        }
+      ]
+    },
+    "timeRatio": 1.79051385546423,
+    "allocationReductionPercent": 83.91608391608392
+  },
+  {
+    "name": "comment_free_control",
+    "scale": 16,
+    "sqlChars": 40,
+    "result": "35",
+    "before": {
+      "name": "comment_free_control",
+      "scale": 16,
+      "sqlChars": 40,
+      "result": "35",
+      "ns": 404.95,
+      "bytes": 424,
+      "minNs": 400.549,
+      "maxNs": 407.813,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 404.95,
+          "bytes": 424
+        },
+        {
+          "fork": 2,
+          "ns": 400.549,
+          "bytes": 424
+        },
+        {
+          "fork": 3,
+          "ns": 407.813,
+          "bytes": 424
+        }
+      ]
+    },
+    "after": {
+      "name": "comment_free_control",
+      "scale": 16,
+      "sqlChars": 40,
+      "result": "35",
+      "ns": 365.454,
+      "bytes": 424,
+      "minNs": 350.208,
+      "maxNs": 373.529,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 373.529,
+          "bytes": 424
+        },
+        {
+          "fork": 2,
+          "ns": 365.454,
+          "bytes": 424
+        },
+        {
+          "fork": 3,
+          "ns": 350.208,
+          "bytes": 424
+        }
+      ]
+    },
+    "timeRatio": 1.108073793144965,
+    "allocationReductionPercent": 0
+  },
+  {
+    "name": "ordinary_parentheses",
+    "scale": 16,
+    "sqlChars": 239,
+    "result": "1",
+    "before": {
+      "name": "ordinary_parentheses",
+      "scale": 16,
+      "sqlChars": 239,
+      "result": "1",
+      "ns": 7106.348,
+      "bytes": 864,
+      "minNs": 7098.535,
+      "maxNs": 7198.34,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 7106.348,
+          "bytes": 864
+        },
+        {
+          "fork": 2,
+          "ns": 7098.535,
+          "bytes": 864
+        },
+        {
+          "fork": 3,
+          "ns": 7198.34,
+          "bytes": 864
+        }
+      ]
+    },
+    "after": {
+      "name": "ordinary_parentheses",
+      "scale": 16,
+      "sqlChars": 239,
+      "result": "1",
+      "ns": 6759.277,
+      "bytes": 352,
+      "minNs": 6707.617,
+      "maxNs": 7032.617,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 7032.617,
+          "bytes": 352
+        },
+        {
+          "fork": 2,
+          "ns": 6707.617,
+          "bytes": 352
+        },
+        {
+          "fork": 3,
+          "ns": 6759.277,
+          "bytes": 352
+        }
+      ]
+    },
+    "timeRatio": 1.051347355641735,
+    "allocationReductionPercent": 59.25925925925926
+  },
+  {
+    "name": "mode_plain",
+    "scale": 16,
+    "sqlChars": 59,
+    "result": "1",
+    "before": {
+      "name": "mode_plain",
+      "scale": 16,
+      "sqlChars": 59,
+      "result": "1",
+      "ns": 2248.926,
+      "bytes": 640,
+      "minNs": 2222.51,
+      "maxNs": 2376.831,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 2248.926,
+          "bytes": 640
+        },
+        {
+          "fork": 2,
+          "ns": 2376.831,
+          "bytes": 640
+        },
+        {
+          "fork": 3,
+          "ns": 2222.51,
+          "bytes": 640
+        }
+      ]
+    },
+    "after": {
+      "name": "mode_plain",
+      "scale": 16,
+      "sqlChars": 59,
+      "result": "1",
+      "ns": 2287.866,
+      "bytes": 648,
+      "minNs": 2204.004,
+      "maxNs": 2345.752,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 2345.752,
+          "bytes": 648
+        },
+        {
+          "fork": 2,
+          "ns": 2287.866,
+          "bytes": 648
+        },
+        {
+          "fork": 3,
+          "ns": 2204.004,
+          "bytes": 648
+        }
+      ]
+    },
+    "timeRatio": 0.9829797724167412,
+    "allocationReductionPercent": -1.25
+  },
+  {
+    "name": "mode_inert_features",
+    "scale": 16,
+    "sqlChars": 71,
+    "result": "1",
+    "before": {
+      "name": "mode_inert_features",
+      "scale": 16,
+      "sqlChars": 71,
+      "result": "1",
+      "ns": 184915.625,
+      "bytes": 28944,
+      "minNs": 182934.375,
+      "maxNs": 189490.625,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 184915.625,
+          "bytes": 28944
+        },
+        {
+          "fork": 2,
+          "ns": 182934.375,
+          "bytes": 28944
+        },
+        {
+          "fork": 3,
+          "ns": 189490.625,
+          "bytes": 28944
+        }
+      ]
+    },
+    "after": {
+      "name": "mode_inert_features",
+      "scale": 16,
+      "sqlChars": 71,
+      "result": "1",
+      "ns": 21514.063,
+      "bytes": 1128,
+      "minNs": 21234.766,
+      "maxNs": 24191.797,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 24191.797,
+          "bytes": 1128
+        },
+        {
+          "fork": 2,
+          "ns": 21514.063,
+          "bytes": 1128
+        },
+        {
+          "fork": 3,
+          "ns": 21234.766,
+          "bytes": 1128
+        }
+      ]
+    },
+    "timeRatio": 8.595104746137446,
+    "allocationReductionPercent": 96.1028192371476
+  },
+  {
+    "name": "comment_boundaries",
+    "scale": 128,
+    "sqlChars": 776,
+    "result": "259",
+    "before": {
+      "name": "comment_boundaries",
+      "scale": 128,
+      "sqlChars": 776,
+      "result": "259",
+      "ns": 10184.18,
+      "bytes": 17408,
+      "minNs": 9944.434,
+      "maxNs": 10191.309,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 10184.18,
+          "bytes": 17408
+        },
+        {
+          "fork": 2,
+          "ns": 10191.309,
+          "bytes": 17408
+        },
+        {
+          "fork": 3,
+          "ns": 9944.434,
+          "bytes": 17408
+        }
+      ]
+    },
+    "after": {
+      "name": "comment_boundaries",
+      "scale": 128,
+      "sqlChars": 776,
+      "result": "259",
+      "ns": 5052.148,
+      "bytes": 2048,
+      "minNs": 5003.174,
+      "maxNs": 5632.422,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 5052.148,
+          "bytes": 2048
+        },
+        {
+          "fork": 2,
+          "ns": 5632.422,
+          "bytes": 2048
+        },
+        {
+          "fork": 3,
+          "ns": 5003.174,
+          "bytes": 2048
+        }
+      ]
+    },
+    "timeRatio": 2.0158118883294787,
+    "allocationReductionPercent": 88.23529411764706
+  },
+  {
+    "name": "comment_free_control",
+    "scale": 128,
+    "sqlChars": 264,
+    "result": "259",
+    "before": {
+      "name": "comment_free_control",
+      "scale": 128,
+      "sqlChars": 264,
+      "result": "259",
+      "ns": 3233.789,
+      "bytes": 3632,
+      "minNs": 2986.426,
+      "maxNs": 3284.424,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 2986.426,
+          "bytes": 3632
+        },
+        {
+          "fork": 2,
+          "ns": 3233.789,
+          "bytes": 3632
+        },
+        {
+          "fork": 3,
+          "ns": 3284.424,
+          "bytes": 3632
+        }
+      ]
+    },
+    "after": {
+      "name": "comment_free_control",
+      "scale": 128,
+      "sqlChars": 264,
+      "result": "259",
+      "ns": 2806.787,
+      "bytes": 3632,
+      "minNs": 2753.369,
+      "maxNs": 3134.229,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 3134.229,
+          "bytes": 3632
+        },
+        {
+          "fork": 2,
+          "ns": 2806.787,
+          "bytes": 3632
+        },
+        {
+          "fork": 3,
+          "ns": 2753.369,
+          "bytes": 3632
+        }
+      ]
+    },
+    "timeRatio": 1.1521319572878173,
+    "allocationReductionPercent": 0
+  },
+  {
+    "name": "ordinary_parentheses",
+    "scale": 128,
+    "sqlChars": 1807,
+    "result": "1",
+    "before": {
+      "name": "ordinary_parentheses",
+      "scale": 128,
+      "sqlChars": 1807,
+      "result": "1",
+      "ns": 51919.531,
+      "bytes": 4448,
+      "minNs": 51770.313,
+      "maxNs": 51941.406,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 51919.531,
+          "bytes": 4448
+        },
+        {
+          "fork": 2,
+          "ns": 51941.406,
+          "bytes": 4448
+        },
+        {
+          "fork": 3,
+          "ns": 51770.313,
+          "bytes": 4448
+        }
+      ]
+    },
+    "after": {
+      "name": "ordinary_parentheses",
+      "scale": 128,
+      "sqlChars": 1807,
+      "result": "1",
+      "ns": 48439.063,
+      "bytes": 352,
+      "minNs": 48321.094,
+      "maxNs": 48606.25,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 48321.094,
+          "bytes": 352
+        },
+        {
+          "fork": 2,
+          "ns": 48606.25,
+          "bytes": 352
+        },
+        {
+          "fork": 3,
+          "ns": 48439.063,
+          "bytes": 352
+        }
+      ]
+    },
+    "timeRatio": 1.0718525046613723,
+    "allocationReductionPercent": 92.0863309352518
+  },
+  {
+    "name": "mode_plain",
+    "scale": 128,
+    "sqlChars": 283,
+    "result": "1",
+    "before": {
+      "name": "mode_plain",
+      "scale": 128,
+      "sqlChars": 283,
+      "result": "1",
+      "ns": 11926.563,
+      "bytes": 1536,
+      "minNs": 11717.383,
+      "maxNs": 12194.922,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 12194.922,
+          "bytes": 1536
+        },
+        {
+          "fork": 2,
+          "ns": 11717.383,
+          "bytes": 1536
+        },
+        {
+          "fork": 3,
+          "ns": 11926.563,
+          "bytes": 1536
+        }
+      ]
+    },
+    "after": {
+      "name": "mode_plain",
+      "scale": 128,
+      "sqlChars": 283,
+      "result": "1",
+      "ns": 11616.406,
+      "bytes": 1544,
+      "minNs": 11595.898,
+      "maxNs": 11624.023,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 11624.023,
+          "bytes": 1544
+        },
+        {
+          "fork": 2,
+          "ns": 11616.406,
+          "bytes": 1544
+        },
+        {
+          "fork": 3,
+          "ns": 11595.898,
+          "bytes": 1544
+        }
+      ]
+    },
+    "timeRatio": 1.0266999104542316,
+    "allocationReductionPercent": -0.5208333333333334
+  },
+  {
+    "name": "mode_inert_features",
+    "scale": 128,
+    "sqlChars": 295,
+    "result": "1",
+    "before": {
+      "name": "mode_inert_features",
+      "scale": 128,
+      "sqlChars": 295,
+      "result": "1",
+      "ns": 999950,
+      "bytes": 29840,
+      "minNs": 995762.5,
+      "maxNs": 1010525,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 999950,
+          "bytes": 29840
+        },
+        {
+          "fork": 2,
+          "ns": 1010525,
+          "bytes": 29840
+        },
+        {
+          "fork": 3,
+          "ns": 995762.5,
+          "bytes": 29840
+        }
+      ]
+    },
+    "after": {
+      "name": "mode_inert_features",
+      "scale": 128,
+      "sqlChars": 295,
+      "result": "1",
+      "ns": 103495.313,
+      "bytes": 2024,
+      "minNs": 101815.625,
+      "maxNs": 109657.813,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 103495.313,
+          "bytes": 2024
+        },
+        {
+          "fork": 2,
+          "ns": 101815.625,
+          "bytes": 2024
+        },
+        {
+          "fork": 3,
+          "ns": 109657.813,
+          "bytes": 2024
+        }
+      ]
+    },
+    "timeRatio": 9.661790191407025,
+    "allocationReductionPercent": 93.2171581769437
+  },
+  {
+    "name": "comment_boundaries",
+    "scale": 512,
+    "sqlChars": 3080,
+    "result": "1027",
+    "before": {
+      "name": "comment_boundaries",
+      "scale": 512,
+      "sqlChars": 3080,
+      "result": "1027",
+      "ns": 40158.203,
+      "bytes": 69248,
+      "minNs": 39855.469,
+      "maxNs": 40263.281,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 40158.203,
+          "bytes": 69248
+        },
+        {
+          "fork": 2,
+          "ns": 40263.281,
+          "bytes": 69248
+        },
+        {
+          "fork": 3,
+          "ns": 39855.469,
+          "bytes": 69248
+        }
+      ]
+    },
+    "after": {
+      "name": "comment_boundaries",
+      "scale": 512,
+      "sqlChars": 3080,
+      "result": "1027",
+      "ns": 21043.359,
+      "bytes": 7808,
+      "minNs": 20312.5,
+      "maxNs": 21139.258,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 20312.5,
+          "bytes": 7808
+        },
+        {
+          "fork": 2,
+          "ns": 21043.359,
+          "bytes": 7808
+        },
+        {
+          "fork": 3,
+          "ns": 21139.258,
+          "bytes": 7808
+        }
+      ]
+    },
+    "timeRatio": 1.9083551727649564,
+    "allocationReductionPercent": 88.72458410351202
+  },
+  {
+    "name": "comment_free_control",
+    "scale": 512,
+    "sqlChars": 1032,
+    "result": "1027",
+    "before": {
+      "name": "comment_free_control",
+      "scale": 512,
+      "sqlChars": 1032,
+      "result": "1027",
+      "ns": 12317.969,
+      "bytes": 13760,
+      "minNs": 12217.578,
+      "maxNs": 12904.492,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 12317.969,
+          "bytes": 13760
+        },
+        {
+          "fork": 2,
+          "ns": 12904.492,
+          "bytes": 13760
+        },
+        {
+          "fork": 3,
+          "ns": 12217.578,
+          "bytes": 13760
+        }
+      ]
+    },
+    "after": {
+      "name": "comment_free_control",
+      "scale": 512,
+      "sqlChars": 1032,
+      "result": "1027",
+      "ns": 12134.961,
+      "bytes": 13760,
+      "minNs": 11714.063,
+      "maxNs": 12318.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 12134.961,
+          "bytes": 13760
+        },
+        {
+          "fork": 2,
+          "ns": 12318.75,
+          "bytes": 13760
+        },
+        {
+          "fork": 3,
+          "ns": 11714.063,
+          "bytes": 13760
+        }
+      ]
+    },
+    "timeRatio": 1.0150810538245651,
+    "allocationReductionPercent": 0
+  },
+  {
+    "name": "ordinary_parentheses",
+    "scale": 512,
+    "sqlChars": 7183,
+    "result": "1",
+    "before": {
+      "name": "ordinary_parentheses",
+      "scale": 512,
+      "sqlChars": 7183,
+      "result": "1",
+      "ns": 206493.75,
+      "bytes": 16736,
+      "minNs": 205496.875,
+      "maxNs": 208034.375,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 208034.375,
+          "bytes": 16736
+        },
+        {
+          "fork": 2,
+          "ns": 205496.875,
+          "bytes": 16736
+        },
+        {
+          "fork": 3,
+          "ns": 206493.75,
+          "bytes": 16736
+        }
+      ]
+    },
+    "after": {
+      "name": "ordinary_parentheses",
+      "scale": 512,
+      "sqlChars": 7183,
+      "result": "1",
+      "ns": 198496.875,
+      "bytes": 352,
+      "minNs": 193684.375,
+      "maxNs": 200112.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 200112.5,
+          "bytes": 352
+        },
+        {
+          "fork": 2,
+          "ns": 193684.375,
+          "bytes": 352
+        },
+        {
+          "fork": 3,
+          "ns": 198496.875,
+          "bytes": 352
+        }
+      ]
+    },
+    "timeRatio": 1.040287158173145,
+    "allocationReductionPercent": 97.89674952198853
+  },
+  {
+    "name": "mode_plain",
+    "scale": 512,
+    "sqlChars": 1051,
+    "result": "1",
+    "before": {
+      "name": "mode_plain",
+      "scale": 512,
+      "sqlChars": 1051,
+      "result": "1",
+      "ns": 45638.281,
+      "bytes": 4608,
+      "minNs": 44995.313,
+      "maxNs": 46433.594,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 44995.313,
+          "bytes": 4608
+        },
+        {
+          "fork": 2,
+          "ns": 46433.594,
+          "bytes": 4608
+        },
+        {
+          "fork": 3,
+          "ns": 45638.281,
+          "bytes": 4608
+        }
+      ]
+    },
+    "after": {
+      "name": "mode_plain",
+      "scale": 512,
+      "sqlChars": 1051,
+      "result": "1",
+      "ns": 43950.781,
+      "bytes": 4616,
+      "minNs": 43650,
+      "maxNs": 44207.031,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 43950.781,
+          "bytes": 4616
+        },
+        {
+          "fork": 2,
+          "ns": 43650,
+          "bytes": 4616
+        },
+        {
+          "fork": 3,
+          "ns": 44207.031,
+          "bytes": 4616
+        }
+      ]
+    },
+    "timeRatio": 1.0383952221463368,
+    "allocationReductionPercent": -0.1736111111111111
+  },
+  {
+    "name": "mode_inert_features",
+    "scale": 512,
+    "sqlChars": 1063,
+    "result": "1",
+    "before": {
+      "name": "mode_inert_features",
+      "scale": 512,
+      "sqlChars": 1063,
+      "result": "1",
+      "ns": 3835800,
+      "bytes": 32912,
+      "minNs": 3752900,
+      "maxNs": 4247300,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 3835800,
+          "bytes": 32912
+        },
+        {
+          "fork": 2,
+          "ns": 4247300,
+          "bytes": 32912
+        },
+        {
+          "fork": 3,
+          "ns": 3752900,
+          "bytes": 32912
+        }
+      ]
+    },
+    "after": {
+      "name": "mode_inert_features",
+      "scale": 512,
+      "sqlChars": 1063,
+      "result": "1",
+      "ns": 367775,
+      "bytes": 5096,
+      "minNs": 362406.25,
+      "maxNs": 395843.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 395843.75,
+          "bytes": 5096
+        },
+        {
+          "fork": 2,
+          "ns": 367775,
+          "bytes": 5096
+        },
+        {
+          "fork": 3,
+          "ns": 362406.25,
+          "bytes": 5096
+        }
+      ]
+    },
+    "timeRatio": 10.429746448236013,
+    "allocationReductionPercent": 84.51628585318424
+  },
+  {
+    "name": "comment_boundaries",
+    "scale": 1024,
+    "sqlChars": 6152,
+    "result": "2051",
+    "before": {
+      "name": "comment_boundaries",
+      "scale": 1024,
+      "sqlChars": 6152,
+      "result": "2051",
+      "ns": 82167.188,
+      "bytes": 138368,
+      "minNs": 81581.25,
+      "maxNs": 83055.469,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 81581.25,
+          "bytes": 138368
+        },
+        {
+          "fork": 2,
+          "ns": 82167.188,
+          "bytes": 138368
+        },
+        {
+          "fork": 3,
+          "ns": 83055.469,
+          "bytes": 138368
+        }
+      ]
+    },
+    "after": {
+      "name": "comment_boundaries",
+      "scale": 1024,
+      "sqlChars": 6152,
+      "result": "2051",
+      "ns": 40999.219,
+      "bytes": 15488,
+      "minNs": 40941.016,
+      "maxNs": 41014.844,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 40941.016,
+          "bytes": 15488
+        },
+        {
+          "fork": 2,
+          "ns": 41014.844,
+          "bytes": 15488
+        },
+        {
+          "fork": 3,
+          "ns": 40999.219,
+          "bytes": 15488
+        }
+      ]
+    },
+    "timeRatio": 2.0041159320620228,
+    "allocationReductionPercent": 88.80666049953747
+  },
+  {
+    "name": "comment_free_control",
+    "scale": 1024,
+    "sqlChars": 2056,
+    "result": "2051",
+    "before": {
+      "name": "comment_free_control",
+      "scale": 1024,
+      "sqlChars": 2056,
+      "result": "2051",
+      "ns": 25039.453,
+      "bytes": 27264,
+      "minNs": 24229.297,
+      "maxNs": 25234.375,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 25234.375,
+          "bytes": 27264
+        },
+        {
+          "fork": 2,
+          "ns": 24229.297,
+          "bytes": 27264
+        },
+        {
+          "fork": 3,
+          "ns": 25039.453,
+          "bytes": 27264
+        }
+      ]
+    },
+    "after": {
+      "name": "comment_free_control",
+      "scale": 1024,
+      "sqlChars": 2056,
+      "result": "2051",
+      "ns": 22777.344,
+      "bytes": 27264,
+      "minNs": 21295.703,
+      "maxNs": 22809.766,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 22809.766,
+          "bytes": 27264
+        },
+        {
+          "fork": 2,
+          "ns": 21295.703,
+          "bytes": 27264
+        },
+        {
+          "fork": 3,
+          "ns": 22777.344,
+          "bytes": 27264
+        }
+      ]
+    },
+    "timeRatio": 1.0993139937650325,
+    "allocationReductionPercent": 0
+  },
+  {
+    "name": "ordinary_parentheses",
+    "scale": 1024,
+    "sqlChars": 14351,
+    "result": "1",
+    "before": {
+      "name": "ordinary_parentheses",
+      "scale": 1024,
+      "sqlChars": 14351,
+      "result": "1",
+      "ns": 411918.75,
+      "bytes": 33120,
+      "minNs": 409406.25,
+      "maxNs": 430137.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 409406.25,
+          "bytes": 33120
+        },
+        {
+          "fork": 2,
+          "ns": 430137.5,
+          "bytes": 33120
+        },
+        {
+          "fork": 3,
+          "ns": 411918.75,
+          "bytes": 33120
+        }
+      ]
+    },
+    "after": {
+      "name": "ordinary_parentheses",
+      "scale": 1024,
+      "sqlChars": 14351,
+      "result": "1",
+      "ns": 390025,
+      "bytes": 352,
+      "minNs": 384425,
+      "maxNs": 391362.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 390025,
+          "bytes": 352
+        },
+        {
+          "fork": 2,
+          "ns": 391362.5,
+          "bytes": 352
+        },
+        {
+          "fork": 3,
+          "ns": 384425,
+          "bytes": 352
+        }
+      ]
+    },
+    "timeRatio": 1.0561342221652459,
+    "allocationReductionPercent": 98.93719806763285
+  },
+  {
+    "name": "mode_plain",
+    "scale": 1024,
+    "sqlChars": 2075,
+    "result": "1",
+    "before": {
+      "name": "mode_plain",
+      "scale": 1024,
+      "sqlChars": 2075,
+      "result": "1",
+      "ns": 89184.375,
+      "bytes": 8704,
+      "minNs": 87609.375,
+      "maxNs": 89443.75,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 89184.375,
+          "bytes": 8704
+        },
+        {
+          "fork": 2,
+          "ns": 87609.375,
+          "bytes": 8704
+        },
+        {
+          "fork": 3,
+          "ns": 89443.75,
+          "bytes": 8704
+        }
+      ]
+    },
+    "after": {
+      "name": "mode_plain",
+      "scale": 1024,
+      "sqlChars": 2075,
+      "result": "1",
+      "ns": 88162.5,
+      "bytes": 8712,
+      "minNs": 86814.063,
+      "maxNs": 88260.938,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 88260.938,
+          "bytes": 8712
+        },
+        {
+          "fork": 2,
+          "ns": 86814.063,
+          "bytes": 8712
+        },
+        {
+          "fork": 3,
+          "ns": 88162.5,
+          "bytes": 8712
+        }
+      ]
+    },
+    "timeRatio": 1.0115908124202466,
+    "allocationReductionPercent": -0.09191176470588236
+  },
+  {
+    "name": "mode_inert_features",
+    "scale": 1024,
+    "sqlChars": 2087,
+    "result": "1",
+    "before": {
+      "name": "mode_inert_features",
+      "scale": 1024,
+      "sqlChars": 2087,
+      "result": "1",
+      "ns": 7464300,
+      "bytes": 37008,
+      "minNs": 7433900,
+      "maxNs": 7475000,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 7475000,
+          "bytes": 37008
+        },
+        {
+          "fork": 2,
+          "ns": 7433900,
+          "bytes": 37008
+        },
+        {
+          "fork": 3,
+          "ns": 7464300,
+          "bytes": 37008
+        }
+      ]
+    },
+    "after": {
+      "name": "mode_inert_features",
+      "scale": 1024,
+      "sqlChars": 2087,
+      "result": "1",
+      "ns": 704950,
+      "bytes": 9192,
+      "minNs": 701775,
+      "maxNs": 707037.5,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 704950,
+          "bytes": 9192
+        },
+        {
+          "fork": 2,
+          "ns": 701775,
+          "bytes": 9192
+        },
+        {
+          "fork": 3,
+          "ns": 707037.5,
+          "bytes": 9192
+        }
+      ]
+    },
+    "timeRatio": 10.58841052556919,
+    "allocationReductionPercent": 75.1621271076524
+  },
+  {
+    "name": "positional",
+    "scale": 1,
+    "sqlChars": 8,
+    "result": "4294967304",
+    "before": {
+      "name": "positional",
+      "scale": 1,
+      "sqlChars": 8,
+      "result": "4294967304",
+      "ns": 254.562,
+      "bytes": 480,
+      "minNs": 248.083,
+      "maxNs": 256.073,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 256.073,
+          "bytes": 480
+        },
+        {
+          "fork": 2,
+          "ns": 248.083,
+          "bytes": 480
+        },
+        {
+          "fork": 3,
+          "ns": 254.562,
+          "bytes": 480
+        }
+      ]
+    },
+    "after": {
+      "name": "positional",
+      "scale": 1,
+      "sqlChars": 8,
+      "result": "4294967304",
+      "ns": 259.372,
+      "bytes": 352,
+      "minNs": 237.72,
+      "maxNs": 278.616,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 259.372,
+          "bytes": 352
+        },
+        {
+          "fork": 2,
+          "ns": 237.72,
+          "bytes": 352
+        },
+        {
+          "fork": 3,
+          "ns": 278.616,
+          "bytes": 352
+        }
+      ]
+    },
+    "timeRatio": 0.9814552071927579,
+    "allocationReductionPercent": 26.666666666666668
+  },
+  {
+    "name": "named_repeated",
+    "scale": 1,
+    "sqlChars": 10,
+    "result": "4294967304",
+    "before": {
+      "name": "named_repeated",
+      "scale": 1,
+      "sqlChars": 10,
+      "result": "4294967304",
+      "ns": 332.666,
+      "bytes": 664,
+      "minNs": 292.209,
+      "maxNs": 367.865,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 332.666,
+          "bytes": 664
+        },
+        {
+          "fork": 2,
+          "ns": 292.209,
+          "bytes": 664
+        },
+        {
+          "fork": 3,
+          "ns": 367.865,
+          "bytes": 664
+        }
+      ]
+    },
+    "after": {
+      "name": "named_repeated",
+      "scale": 1,
+      "sqlChars": 10,
+      "result": "4294967304",
+      "ns": 234.29,
+      "bytes": 432,
+      "minNs": 233.899,
+      "maxNs": 235.199,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 233.899,
+          "bytes": 432
+        },
+        {
+          "fork": 2,
+          "ns": 234.29,
+          "bytes": 432
+        },
+        {
+          "fork": 3,
+          "ns": 235.199,
+          "bytes": 432
+        }
+      ]
+    },
+    "timeRatio": 1.4198898800631696,
+    "allocationReductionPercent": 34.93975903614458
+  },
+  {
+    "name": "positional",
+    "scale": 2,
+    "sqlChars": 10,
+    "result": "8589934602",
+    "before": {
+      "name": "positional",
+      "scale": 2,
+      "sqlChars": 10,
+      "result": "8589934602",
+      "ns": 415.259,
+      "bytes": 488,
+      "minNs": 404.773,
+      "maxNs": 450.623,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 404.773,
+          "bytes": 488
+        },
+        {
+          "fork": 2,
+          "ns": 415.259,
+          "bytes": 488
+        },
+        {
+          "fork": 3,
+          "ns": 450.623,
+          "bytes": 488
+        }
+      ]
+    },
+    "after": {
+      "name": "positional",
+      "scale": 2,
+      "sqlChars": 10,
+      "result": "8589934602",
+      "ns": 397.15,
+      "bytes": 352,
+      "minNs": 380.67,
+      "maxNs": 453.754,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 453.754,
+          "bytes": 352
+        },
+        {
+          "fork": 2,
+          "ns": 380.67,
+          "bytes": 352
+        },
+        {
+          "fork": 3,
+          "ns": 397.15,
+          "bytes": 352
+        }
+      ]
+    },
+    "timeRatio": 1.0455973813420623,
+    "allocationReductionPercent": 27.868852459016395
+  },
+  {
+    "name": "named_repeated",
+    "scale": 2,
+    "sqlChars": 14,
+    "result": "8589934602",
+    "before": {
+      "name": "named_repeated",
+      "scale": 2,
+      "sqlChars": 14,
+      "result": "8589934602",
+      "ns": 483.942,
+      "bytes": 968,
+      "minNs": 433.002,
+      "maxNs": 537.36,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 483.942,
+          "bytes": 968
+        },
+        {
+          "fork": 2,
+          "ns": 433.002,
+          "bytes": 968
+        },
+        {
+          "fork": 3,
+          "ns": 537.36,
+          "bytes": 968
+        }
+      ]
+    },
+    "after": {
+      "name": "named_repeated",
+      "scale": 2,
+      "sqlChars": 14,
+      "result": "8589934602",
+      "ns": 340.314,
+      "bytes": 536,
+      "minNs": 338.147,
+      "maxNs": 350.403,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 340.314,
+          "bytes": 536
+        },
+        {
+          "fork": 2,
+          "ns": 338.147,
+          "bytes": 536
+        },
+        {
+          "fork": 3,
+          "ns": 350.403,
+          "bytes": 536
+        }
+      ]
+    },
+    "timeRatio": 1.422045522664363,
+    "allocationReductionPercent": 44.62809917355372
+  },
+  {
+    "name": "positional",
+    "scale": 16,
+    "sqlChars": 38,
+    "result": "68719476774",
+    "before": {
+      "name": "positional",
+      "scale": 16,
+      "sqlChars": 38,
+      "result": "68719476774",
+      "ns": 2087.354,
+      "bytes": 1072,
+      "minNs": 2077.686,
+      "maxNs": 2247.974,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 2077.686,
+          "bytes": 1072
+        },
+        {
+          "fork": 2,
+          "ns": 2087.354,
+          "bytes": 1072
+        },
+        {
+          "fork": 3,
+          "ns": 2247.974,
+          "bytes": 1072
+        }
+      ]
+    },
+    "after": {
+      "name": "positional",
+      "scale": 16,
+      "sqlChars": 38,
+      "result": "68719476774",
+      "ns": 2172.925,
+      "bytes": 824,
+      "minNs": 2165.991,
+      "maxNs": 2200.342,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 2165.991,
+          "bytes": 824
+        },
+        {
+          "fork": 2,
+          "ns": 2200.342,
+          "bytes": 824
+        },
+        {
+          "fork": 3,
+          "ns": 2172.925,
+          "bytes": 824
+        }
+      ]
+    },
+    "timeRatio": 0.9606194415361781,
+    "allocationReductionPercent": 23.134328358208954
+  },
+  {
+    "name": "named_repeated",
+    "scale": 16,
+    "sqlChars": 70,
+    "result": "68719476774",
+    "before": {
+      "name": "named_repeated",
+      "scale": 16,
+      "sqlChars": 70,
+      "result": "68719476774",
+      "ns": 2531.689,
+      "bytes": 5616,
+      "minNs": 2472.29,
+      "maxNs": 2805.225,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 2531.689,
+          "bytes": 5616
+        },
+        {
+          "fork": 2,
+          "ns": 2472.29,
+          "bytes": 5616
+        },
+        {
+          "fork": 3,
+          "ns": 2805.225,
+          "bytes": 5616
+        }
+      ]
+    },
+    "after": {
+      "name": "named_repeated",
+      "scale": 16,
+      "sqlChars": 70,
+      "result": "68719476774",
+      "ns": 2014.331,
+      "bytes": 2608,
+      "minNs": 2009.521,
+      "maxNs": 2037.061,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 2009.521,
+          "bytes": 2608
+        },
+        {
+          "fork": 2,
+          "ns": 2037.061,
+          "bytes": 2608
+        },
+        {
+          "fork": 3,
+          "ns": 2014.331,
+          "bytes": 2608
+        }
+      ]
+    },
+    "timeRatio": 1.2568386228479829,
+    "allocationReductionPercent": 53.56125356125356
+  },
+  {
+    "name": "positional",
+    "scale": 128,
+    "sqlChars": 262,
+    "result": "549755814150",
+    "before": {
+      "name": "positional",
+      "scale": 128,
+      "sqlChars": 262,
+      "result": "549755814150",
+      "ns": 16133.008,
+      "bytes": 8024,
+      "minNs": 15654.297,
+      "maxNs": 21902.344,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 15654.297,
+          "bytes": 8024
+        },
+        {
+          "fork": 2,
+          "ns": 16133.008,
+          "bytes": 8024
+        },
+        {
+          "fork": 3,
+          "ns": 21902.344,
+          "bytes": 8024
+        }
+      ]
+    },
+    "after": {
+      "name": "positional",
+      "scale": 128,
+      "sqlChars": 262,
+      "result": "549755814150",
+      "ns": 16554.297,
+      "bytes": 6208,
+      "minNs": 16398.047,
+      "maxNs": 16928.32,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 16554.297,
+          "bytes": 6208
+        },
+        {
+          "fork": 2,
+          "ns": 16928.32,
+          "bytes": 6208
+        },
+        {
+          "fork": 3,
+          "ns": 16398.047,
+          "bytes": 6208
+        }
+      ]
+    },
+    "timeRatio": 0.9745510787924127,
+    "allocationReductionPercent": 22.6321036889332
+  },
+  {
+    "name": "named_repeated",
+    "scale": 128,
+    "sqlChars": 518,
+    "result": "549755814150",
+    "before": {
+      "name": "named_repeated",
+      "scale": 128,
+      "sqlChars": 518,
+      "result": "549755814150",
+      "ns": 19900,
+      "bytes": 42928,
+      "minNs": 18475.391,
+      "maxNs": 25153.125,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 19900,
+          "bytes": 42928
+        },
+        {
+          "fork": 2,
+          "ns": 18475.391,
+          "bytes": 42928
+        },
+        {
+          "fork": 3,
+          "ns": 25153.125,
+          "bytes": 42928
+        }
+      ]
+    },
+    "after": {
+      "name": "named_repeated",
+      "scale": 128,
+      "sqlChars": 518,
+      "result": "549755814150",
+      "ns": 15581.055,
+      "bytes": 17880,
+      "minNs": 15541.211,
+      "maxNs": 15682.227,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 15581.055,
+          "bytes": 17880
+        },
+        {
+          "fork": 2,
+          "ns": 15541.211,
+          "bytes": 17880
+        },
+        {
+          "fork": 3,
+          "ns": 15682.227,
+          "bytes": 17880
+        }
+      ]
+    },
+    "timeRatio": 1.2771920771732082,
+    "allocationReductionPercent": 58.34886321282147
+  },
+  {
+    "name": "positional",
+    "scale": 1024,
+    "sqlChars": 2054,
+    "result": "4398046513158",
+    "before": {
+      "name": "positional",
+      "scale": 1024,
+      "sqlChars": 2054,
+      "result": "4398046513158",
+      "ns": 139850,
+      "bytes": 64488,
+      "minNs": 130156.25,
+      "maxNs": 150204.688,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 139850,
+          "bytes": 64488
+        },
+        {
+          "fork": 2,
+          "ns": 130156.25,
+          "bytes": 64488
+        },
+        {
+          "fork": 3,
+          "ns": 150204.688,
+          "bytes": 64488
+        }
+      ]
+    },
+    "after": {
+      "name": "positional",
+      "scale": 1024,
+      "sqlChars": 2054,
+      "result": "4398046513158",
+      "ns": 135762.5,
+      "bytes": 48944,
+      "minNs": 132428.125,
+      "maxNs": 136821.875,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 136821.875,
+          "bytes": 48944
+        },
+        {
+          "fork": 2,
+          "ns": 135762.5,
+          "bytes": 48944
+        },
+        {
+          "fork": 3,
+          "ns": 132428.125,
+          "bytes": 48944
+        }
+      ]
+    },
+    "timeRatio": 1.030107724887211,
+    "allocationReductionPercent": 24.103709217218707
+  },
+  {
+    "name": "named_repeated",
+    "scale": 1024,
+    "sqlChars": 4102,
+    "result": "4398046513158",
+    "before": {
+      "name": "named_repeated",
+      "scale": 1024,
+      "sqlChars": 4102,
+      "result": "4398046513158",
+      "ns": 162518.75,
+      "bytes": 339912,
+      "minNs": 149614.063,
+      "maxNs": 178040.625,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 162518.75,
+          "bytes": 339912
+        },
+        {
+          "fork": 2,
+          "ns": 149614.063,
+          "bytes": 339912
+        },
+        {
+          "fork": 3,
+          "ns": 178040.625,
+          "bytes": 339912
+        }
+      ]
+    },
+    "after": {
+      "name": "named_repeated",
+      "scale": 1024,
+      "sqlChars": 4102,
+      "result": "4398046513158",
+      "ns": 126470.313,
+      "bytes": 137496,
+      "minNs": 123043.75,
+      "maxNs": 129515.625,
+      "forks": [
+        {
+          "fork": 1,
+          "ns": 123043.75,
+          "bytes": 137496
+        },
+        {
+          "fork": 2,
+          "ns": 126470.313,
+          "bytes": 137496
+        },
+        {
+          "fork": 3,
+          "ns": 129515.625,
+          "bytes": 137496
+        }
+      ]
+    },
+    "timeRatio": 1.2850347733384673,
+    "allocationReductionPercent": 59.54953046670903
+  }
+]

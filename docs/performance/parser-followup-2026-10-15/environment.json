@@ -1,0 +1,16 @@
+{
+  "platform": "win32",
+  "release": "10.0.26100",
+  "architecture": "x64",
+  "processor": "AMD Ryzen 7 PRO 7840U w/ Radeon 780M Graphics  ",
+  "logicalProcessors": 16,
+  "memoryBytes": 64065466368,
+  "java": "25+37-LTS-3491",
+  "compileRelease": 21,
+  "dependency": "abacus-common 8.2.0",
+  "benchmarkJvmFlags": [
+    "-Xms256m",
+    "-Xmx1024m",
+    "-Xbatch"
+  ]
+}
