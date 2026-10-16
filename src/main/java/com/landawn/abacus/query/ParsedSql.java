@@ -18,8 +18,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -275,9 +277,6 @@ public final class ParsedSql {
      */
     private final int[] positionalParameterOffsets;
 
-    /** Cached hash code. This object is immutable, so {@code sql.hashCode()} is computed once. */
-    private final int hashCode;
-
     /**
      * Parses a nonblank SQL string whose outer argument validation has already completed.
      *
@@ -293,8 +292,6 @@ public final class ParsedSql {
         // String.trim() also strips control characters (U+0000..U+001F) that Strings.isBlank does not treat as blank.
         N.checkArgument(Strings.isNotBlank(this.sql), "sql must not be null, empty, or blank");
 
-        hashCode = this.sql.hashCode();
-
         final List<String> tokens = SqlParser.tokenize(this.sql);
         // The tokenizer can split an adjacent question mark and MyBatis binding as ?#, {name}.
         // Repair only that boundary before either scanner runs; ordinary SQL needs no extra token pass.
@@ -303,11 +300,19 @@ public final class ParsedSql {
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && isOpSqlPrefixWord(firstOpWord);
         dataOperation = isOpSqlPrefix;
 
-        List<String> namedParameterList = null;
-        // Ordinary bindings record their token once; bracket groups retain the scanner's owned
-        // offset array. This avoids a token-index entry per array element and preserves source
-        // positions for raw sub-query rewriting when operators/quoted '?' require token alignment.
-        IntList questionMarkTokenIndexes = null;
+        if (!isOpSqlPrefix) {
+            // These statements keep their original text apart from normalization. Rebuilding their
+            // tokens would copy an arbitrarily large DDL body into a builder that is never consumed.
+            parameterizedSql = normalizeSql(this.sql);
+            namedParameters = ImmutableList.empty();
+            parameterCount = 0;
+            positionalParameterOffsets = N.EMPTY_INT_ARRAY;
+            return;
+        }
+
+        ArrayList<String> namedParameterList = null;
+        // Bracket groups retain the scanner's owned offsets. Ordinary bindings compact the classifier's
+        // owned array below, rather than allocating a second growing collection of the same token indexes.
         int[][] subscriptParameterOffsets = null;
         int paramCount = 0;
         int type = 0; // Bit flags: QUESTION_MARK_TYPE, NAMED_PARAMETER_TYPE, IBATIS_PARAMETER_TYPE
@@ -321,16 +326,17 @@ public final class ParsedSql {
         // one pass so the per-token lookup below stays O(1).
         // Without an opening bracket there cannot be a chain. Avoid its scan and per-token array
         // for ordinary SQL; quoted/commented brackets may cause harmless extra work, never a bypass.
-        final boolean[] chainedSubscripts = isOpSqlPrefix && this.sql.indexOf('[') >= 0 ? markChainedSubscriptTokens(words) : null;
+        final boolean[] chainedSubscripts = this.sql.indexOf('[') >= 0 ? markChainedSubscriptTokens(words) : null;
         // Classify the original tokens once, before named/MyBatis conversion changes their text or joins
         // split bindings. The same forward state machine handles bracket interiors below.
-        final int[] positionalTokenIndexes = isOpSqlPrefix && this.sql.indexOf('?') >= 0 ? new QuestionMarkClassifier(words, null, chainedSubscripts).classify()
+        final int[] positionalTokenIndexes = this.sql.indexOf('?') >= 0 ? new QuestionMarkClassifier(words, null, chainedSubscripts).classify()
                 : N.EMPTY_INT_ARRAY;
         int positionalTokenCursor = 0;
+        int positionalTokenCount = 0;
         boolean lastSourceTokenEndsWithQuestionMark = false;
         // Whether the current output line holds an H2 "//" line comment (see the line-break rule below). Only SQL that
         // contains "//" can set it, so the output of any other statement is unchanged.
-        final boolean mayHoldDoubleSlashComment = isOpSqlPrefix && this.sql.indexOf("//") >= 0;
+        final boolean mayHoldDoubleSlashComment = this.sql.indexOf("//") >= 0;
         boolean lineHoldsDoubleSlashComment = false;
         // Source offset of every token, aligned lazily, once, when a collapsed gap may have to keep its line break and
         // the SQL contains a line break somewhere.
@@ -343,168 +349,179 @@ public final class ParsedSql {
                 // A MyBatis binding may join following tokens and advance i; offset 0 of word stays at this token.
                 final int tokenIndex = i;
 
-                if (isOpSqlPrefix) {
-                    final boolean chainedSubscript = chainedSubscripts != null && chainedSubscripts[i];
+                final boolean chainedSubscript = chainedSubscripts != null && chainedSubscripts[i];
 
-                    if (word.indexOf('?') >= 0 && (chainedSubscript || isParameterSubscriptToken(word))) {
-                        // Positional placeholders embedded in a subscript-shaped token ("ARRAY[?]", "arr[?, ?]",
-                        // standalone "[?]"): the tokenizer keeps the bracket region glued to the preceding
-                        // identifier, so the "?" never surfaces as its own token. Kept independent of the
-                        // marker chain below so a token that also carries a "#{...}" or ":name" marker still
-                        // reaches the mixed-style guard.
-                        final int[] embedded = findSubscriptPositionalParameterIndexes(word, word.indexOf('[') + 1);
+                if (word.indexOf('?') >= 0 && (chainedSubscript || isParameterSubscriptToken(word))) {
+                    // Positional placeholders embedded in a subscript-shaped token ("ARRAY[?]", "arr[?, ?]",
+                    // standalone "[?]"): the tokenizer keeps the bracket region glued to the preceding
+                    // identifier, so the "?" never surfaces as its own token. Kept independent of the
+                    // marker chain below so a token that also carries a "#{...}" or ":name" marker still
+                    // reaches the mixed-style guard.
+                    final int[] embedded = findSubscriptPositionalParameterIndexes(word, word.indexOf('[') + 1);
 
-                        if (embedded.length > 0) {
-                            if (subscriptParameterOffsets == null) {
-                                subscriptParameterOffsets = new int[size][];
-                            }
-                            subscriptParameterOffsets[i] = embedded;
-                            paramCount += embedded.length;
-                            type |= QUESTION_MARK_TYPE;
-                            questionMarkFromSubscript = true;
+                    if (embedded.length > 0) {
+                        if (subscriptParameterOffsets == null) {
+                            subscriptParameterOffsets = new int[size][];
                         }
-                    }
-
-                    while (positionalTokenCursor < positionalTokenIndexes.length && positionalTokenIndexes[positionalTokenCursor] < i) {
-                        positionalTokenCursor++; // A MyBatis binding may have joined several original tokens.
-                    }
-
-                    if (positionalTokenCursor < positionalTokenIndexes.length && positionalTokenIndexes[positionalTokenCursor] == i) {
-                        positionalTokenCursor++;
-                        if (questionMarkTokenIndexes == null) {
-                            questionMarkTokenIndexes = new IntList();
-                        }
-                        questionMarkTokenIndexes.add(i);
-                        paramCount++;
+                        subscriptParameterOffsets[i] = embedded;
+                        paramCount += embedded.length;
                         type |= QUESTION_MARK_TYPE;
-                    } else if (mayContainIbatisParameter(word, chainedSubscript)) {
-                        // A token may contain multiple iBatis markers and literal text between them
-                        // (for example "#{a}x#{b}"). Scan the complete unquoted token instead of only
-                        // consuming markers at its beginning, so no embedded binding is left as SQL text.
-                        // The marker positions are collected once for the whole token: the quoted-region check
-                        // behind them scans it under both escape readings, so asking for the next marker one at
-                        // a time made a token that holds many of them ("ARRAY[#{a},#{b},...]") take quadratic
-                        // time. Only a marker whose '}' lives in a following token ("#{ name }") replaces the
-                        // text being scanned, and the positions are then recollected for what remains.
-                        int[] markerIndexes = findUnquotedIbatisMarkerIndexes(word);
-                        final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
-                        int copiedFrom = 0;
-                        int markerCursor = 0;
+                        questionMarkFromSubscript = true;
+                    }
+                }
 
-                        while (markerCursor < markerIndexes.length) {
-                            int markerStartIndex = markerIndexes[markerCursor++];
+                while (positionalTokenCursor < positionalTokenIndexes.length && positionalTokenIndexes[positionalTokenCursor] < i) {
+                    positionalTokenCursor++; // A MyBatis binding may have joined several original tokens.
+                }
 
-                            if (markerStartIndex < copiedFrom) {
-                                continue; // part of a marker that was already consumed
-                            }
+                if (positionalTokenCursor < positionalTokenIndexes.length && positionalTokenIndexes[positionalTokenCursor] == i) {
+                    positionalTokenCursor++;
+                    // A joined MyBatis marker may skip classified tokens. Compact only the accepted
+                    // prefix; its write cursor never overtakes the unread classifier positions.
+                    positionalTokenIndexes[positionalTokenCount++] = i;
+                    paramCount++;
+                    type |= QUESTION_MARK_TYPE;
+                } else if (mayContainIbatisParameter(word, chainedSubscript)) {
+                    // A token may contain multiple iBatis markers and literal text between them
+                    // (for example "#{a}x#{b}"). Scan the complete unquoted token instead of only
+                    // consuming markers at its beginning, so no embedded binding is left as SQL text.
+                    // The marker positions are collected once for the whole token: the quoted-region check
+                    // behind them scans it under both escape readings, so asking for the next marker one at
+                    // a time made a token that holds many of them ("ARRAY[#{a},#{b},...]") take quadratic
+                    // time. Only a marker whose '}' lives in a following token ("#{ name }") replaces the
+                    // text being scanned, and the positions are then recollected for what remains.
+                    int[] markerIndexes = findUnquotedIbatisMarkerIndexes(word);
+                    final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
+                    int copiedFrom = 0;
+                    int markerCursor = 0;
 
-                            appendAfterConvertedMarker(rebuilt, word, copiedFrom, markerStartIndex);
+                    while (markerCursor < markerIndexes.length) {
+                        int markerStartIndex = markerIndexes[markerCursor++];
 
-                            // The '}' is searched outside quoted regions and comments: a quote balanced inside the marker
-                            // belongs to its property path or attributes ("#{map['k']}", "ARRAY[#{a, 'x'}]"), while a '}'
-                            // inside a literal cannot close it ("ARRAY[#{a, '}']" must not become "ARRAY[?']"). A quote left
-                            // open, or a second "#{" before the '}', makes the marker malformed.
-                            int closingIndex = findIbatisClosingBraceIndex(word, markerStartIndex + 2);
+                        if (markerStartIndex < copiedFrom) {
+                            continue; // part of a marker that was already consumed
+                        }
 
-                            if (closingIndex == MALFORMED_IBATIS_MARKER) {
+                        appendAfterConvertedMarker(rebuilt, word, copiedFrom, markerStartIndex);
+
+                        // The '}' is searched outside quoted regions and comments: a quote balanced inside the marker
+                        // belongs to its property path or attributes ("#{map['k']}", "ARRAY[#{a, 'x'}]"), while a '}'
+                        // inside a literal cannot close it ("ARRAY[#{a, '}']" must not become "ARRAY[?']"). A quote left
+                        // open, or a second "#{" before the '}', makes the marker malformed.
+                        int closingIndex = findIbatisClosingBraceIndex(word, markerStartIndex + 2);
+
+                        if (closingIndex == MALFORMED_IBATIS_MARKER) {
+                            throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
+                        }
+
+                        if (closingIndex < 0) {
+                            // A bracket token ends at its closing ']', so an opener inside an open group ("ARRAY[#{a]")
+                            // whose '}' is not in the token cannot be closed by a later token either: joining would
+                            // swallow the SQL after the group into the name. An opener outside every group, before it
+                            // ("#{list[0]" + "}") or after a closed one ("#{a[0]}#{b" + " }"), continues in the next token.
+                            if (isInsideOpenBracketGroup(word, markerStartIndex)) {
                                 throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
                             }
 
+                            // The '}' is in a following token: join tokens until it appears, and continue
+                            // in that joined text, whose marker now starts at 0. The text taken from this token
+                            // may still hold a '}' inside a balanced literal, so only the joined tokens are searched.
+                            final StringBuilder ibatisTokenBuilder = new StringBuilder();
+                            ibatisTokenBuilder.append(word, markerStartIndex, word.length());
+
+                            while (closingIndex < 0 && i < size - 1) {
+                                final String nextWord = words.get(++i);
+
+                                // Each joined token is searched like the opening one: a quote balanced within a property
+                                // path belongs to the binding ("#{ map['k'] }"), while a quoted literal or identifier token
+                                // never does ("#{ x AND d = '}'" must not leave an unbalanced quote), and a new "#{" before
+                                // the '}' means this marker was never closed (no swallowing the SQL up to a later "#{y}").
+                                final int braceIndex = findIbatisContinuationClosingBraceIndex(nextWord);
+
+                                if (braceIndex == MALFORMED_IBATIS_MARKER) {
+                                    throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
+                                }
+
+                                if (braceIndex >= 0) {
+                                    closingIndex = ibatisTokenBuilder.length() + braceIndex;
+                                }
+
+                                ibatisTokenBuilder.append(nextWord);
+                            }
+
                             if (closingIndex < 0) {
-                                // A bracket token ends at its closing ']', so an opener inside an open group ("ARRAY[#{a]")
-                                // whose '}' is not in the token cannot be closed by a later token either: joining would
-                                // swallow the SQL after the group into the name. An opener outside every group, before it
-                                // ("#{list[0]" + "}") or after a closed one ("#{a[0]}#{b" + " }"), continues in the next token.
-                                if (isInsideOpenBracketGroup(word, markerStartIndex)) {
-                                    throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
-                                }
-
-                                // The '}' is in a following token: join tokens until it appears, and continue
-                                // in that joined text, whose marker now starts at 0. The text taken from this token
-                                // may still hold a '}' inside a balanced literal, so only the joined tokens are searched.
-                                final StringBuilder ibatisTokenBuilder = new StringBuilder();
-                                ibatisTokenBuilder.append(word, markerStartIndex, word.length());
-
-                                while (closingIndex < 0 && i < size - 1) {
-                                    final String nextWord = words.get(++i);
-
-                                    // Each joined token is searched like the opening one: a quote balanced within a property
-                                    // path belongs to the binding ("#{ map['k'] }"), while a quoted literal or identifier token
-                                    // never does ("#{ x AND d = '}'" must not leave an unbalanced quote), and a new "#{" before
-                                    // the '}' means this marker was never closed (no swallowing the SQL up to a later "#{y}").
-                                    final int braceIndex = findIbatisContinuationClosingBraceIndex(nextWord);
-
-                                    if (braceIndex == MALFORMED_IBATIS_MARKER) {
-                                        throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
-                                    }
-
-                                    if (braceIndex >= 0) {
-                                        closingIndex = ibatisTokenBuilder.length() + braceIndex;
-                                    }
-
-                                    ibatisTokenBuilder.append(nextWord);
-                                }
-
-                                if (closingIndex < 0) {
-                                    throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
-                                }
-
-                                word = ibatisTokenBuilder.toString();
-                                markerStartIndex = 0;
-                                markerIndexes = findUnquotedIbatisMarkerIndexes(word);
-                                markerCursor = 0; // the marker being handled is skipped by the copiedFrom guard
+                                throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
                             }
 
-                            // Content between "#{" and "}"; empty for the literal "#{}".
-                            final String content = word.substring(markerStartIndex + 2, closingIndex);
-                            final String namedParameter = extractIbatisNamedParameter(content);
-
-                            if (namedParameter.isEmpty() && !Strings.isBlank(content)) {
-                                // "#{:id}", "#{, mode=IN}": the name ends at the first ':' or ',', so nothing is left to bind.
-                                // Keeping the text verbatim would let the named-marker scan below convert the ":id" inside it.
-                                throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: empty property name in: " + this.sql);
-                            }
-
-                            if (!namedParameter.isEmpty()) {
-                                if (namedParameterList == null) {
-                                    namedParameterList = new ArrayList<>();
-                                }
-                                namedParameterList.add(namedParameter);
-                                appendConvertedMarker(rebuilt, sb);
-                                paramCount++;
-                                type |= IBATIS_PARAMETER_TYPE;
-                            } else {
-                                // Empty or blank "#{...}" content — keep verbatim, no parameter, and keep
-                                // scanning so a subsequent marker in the same token ("#{}#{a}", "#{ }#{a}")
-                                // is still extracted instead of being lost.
-                                rebuilt.append(word, markerStartIndex, closingIndex + 1);
-                            }
-
-                            copiedFrom = closingIndex + 1;
+                            word = ibatisTokenBuilder.toString();
+                            markerStartIndex = 0;
+                            markerIndexes = findUnquotedIbatisMarkerIndexes(word);
+                            markerCursor = 0; // the marker being handled is skipped by the copiedFrom guard
                         }
 
-                        appendAfterConvertedMarker(rebuilt, word, copiedFrom, word.length());
-                        word = rebuilt.toString();
+                        // Content between "#{" and "}"; empty for the literal "#{}".
+                        final String content = word.substring(markerStartIndex + 2, closingIndex);
+                        final String namedParameter = extractIbatisNamedParameter(content);
+
+                        if (namedParameter.isEmpty() && !Strings.isBlank(content)) {
+                            // "#{:id}", "#{, mode=IN}": the name ends at the first ':' or ',', so nothing is left to bind.
+                            // Keeping the text verbatim would let the named-marker scan below convert the ":id" inside it.
+                            throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: empty property name in: " + this.sql);
+                        }
+
+                        if (!namedParameter.isEmpty()) {
+                            if (namedParameterList == null) {
+                                namedParameterList = new ArrayList<>(2);
+                            }
+                            namedParameterList.add(namedParameter);
+                            appendConvertedMarker(rebuilt, sb);
+                            paramCount++;
+                            type |= IBATIS_PARAMETER_TYPE;
+                        } else {
+                            // Empty or blank "#{...}" content — keep verbatim, no parameter, and keep
+                            // scanning so a subsequent marker in the same token ("#{}#{a}", "#{ }#{a}")
+                            // is still extracted instead of being lost.
+                            rebuilt.append(word, markerStartIndex, closingIndex + 1);
+                        }
+
+                        copiedFrom = closingIndex + 1;
                     }
 
-                    // The tokenizer can keep adjacent markers in one token (for example
-                    // ":id#{name}" or "#{name}:id"). Scan the rebuilt token even when it
-                    // originally contained an iBatis marker so the mixed-style guard below
-                    // sees both styles instead of silently leaving the :named marker in SQL.
-                    if (mayContainNamedParameter(word, chainedSubscript)) {
+                    appendAfterConvertedMarker(rebuilt, word, copiedFrom, word.length());
+                    word = rebuilt.toString();
+                }
+
+                // The tokenizer can keep adjacent markers in one token (for example
+                // ":id#{name}" or "#{name}:id"). Scan the rebuilt token even when it
+                // originally contained an iBatis marker so the mixed-style guard below
+                // sees both styles instead of silently leaving the :named marker in SQL.
+                if (mayContainNamedParameter(word, chainedSubscript)) {
+                    final boolean gluedToClosedValue = followsClosedValueToken(words, tokenIndex, null);
+
+                    // Ambiguous quote readings leave the whole token verbatim, even when its first name is
+                    // malformed. Let that scan decide before attempting any throwing name validation.
+                    if (word.charAt(0) == _PREFIX_OF_NAMED_PARAMETER && !gluedToClosedValue && word.indexOf('\\') < 0
+                            && findNamedParameterEndIndex(word, 1) == word.length()) {
+                        // The whole token is one valid Unicode name. No quote/marker index array or
+                        // rebuilt token is needed; retain the same odd-question-mark separation rule.
+                        if (namedParameterList == null) {
+                            namedParameterList = new ArrayList<>(2);
+                        }
+                        namedParameterList.add(word.substring(1));
+                        word = (trailingQuestionMarkCount(sb) & 1) == 0 ? SK.QUESTION_MARK : " ?";
+                        paramCount++;
+                        type |= NAMED_PARAMETER_TYPE;
+                    } else {
                         // A single tokenized word may contain one or more ':named' markers because
                         // ':' is not a token separator. Extract markers at safe boundaries so
                         // constructs such as ":a:b" and "array[:ids]" are parameterized, while
                         // PostgreSQL casts such as "::int" and quoted literal tokens are preserved.
-                        // The candidate positions are collected once for the whole token: the quoted-region
-                        // check behind them scans the token under both escape readings, so asking for the
-                        // next marker one at a time made a token that holds many of them
-                        // ("ARRAY[:id0,:id1,...]") take quadratic time.
+                        // Collect candidates once: asking for the next marker separately would rescan
+                        // the dual quote readings and make large ARRAY[:id0,:id1,...] tokens quadratic.
                         final int[] markerIndexes = findUnquotedNamedParameterMarkerIndexes(word);
 
                         if (markerIndexes.length > 0) {
                             final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
-                            final boolean gluedToClosedValue = followsClosedValueToken(words, tokenIndex, null);
                             int copiedFrom = 0;
                             int searchFrom = 0;
 
@@ -519,7 +536,7 @@ public final class ParsedSql {
 
                                 final int parameterEndIndex = findNamedParameterEndIndex(word, parameterStartIndex + 1);
                                 if (namedParameterList == null) {
-                                    namedParameterList = new ArrayList<>();
+                                    namedParameterList = new ArrayList<>(2);
                                 }
                                 namedParameterList.add(word.substring(parameterStartIndex + 1, parameterEndIndex));
                                 appendConvertedMarker(rebuilt, sb);
@@ -534,60 +551,59 @@ public final class ParsedSql {
                             word = rebuilt.toString();
                         }
                     }
+                }
 
-                    if (Integer.bitCount(type) > 1) {
-                        throw new IllegalArgumentException(mixedParameterStyleMessage(type, questionMarkFromSubscript));
-                    }
+                if (Integer.bitCount(type) > 1) {
+                    throw new IllegalArgumentException(mixedParameterStyleMessage(type, questionMarkFromSubscript));
+                }
 
-                    // A '?' that ends the output but not the source token was converted from a marker
-                    // ("#{a}?|x"). Keep it apart from a following source '?' so the pair is not read as
-                    // a pgJDBC "??" escape; two adjacent source question marks stay verbatim.
-                    if (!lastSourceTokenEndsWithQuestionMark && word.startsWith(SK.QUESTION_MARK) && sb.length() > 0 && sb.charAt(sb.length() - 1) == '?') {
-                        sb.append(' ');
-                    }
+                // A '?' that ends the output but not the source token was converted from a marker
+                // ("#{a}?|x"). Keep it apart from a following source '?' so the pair is not read as
+                // a pgJDBC "??" escape; two adjacent source question marks stay verbatim.
+                if (!lastSourceTokenEndsWithQuestionMark && word.startsWith(SK.QUESTION_MARK) && sb.length() > 0 && sb.charAt(sb.length() - 1) == '?') {
+                    sb.append(' ');
+                }
 
-                    lastSourceTokenEndsWithQuestionMark = words.get(i).endsWith(SK.QUESTION_MARK);
+                lastSourceTokenEndsWithQuestionMark = words.get(i).endsWith(SK.QUESTION_MARK);
 
-                    // The tokenizer collapses a whitespace run, line breaks and line comments included, into " ".
-                    // Between two string literals that changes the SQL: the standard (and PostgreSQL) concatenate
-                    // adjacent literals only when a line break separates them ('a'\n'b' is 'ab', 'a' 'b' is a syntax
-                    // error), so keep a line break that the original gap contained.
-                    // H2 also reads "//" as a line comment, which the tokenizer does not: it emits two '/' tokens and reads
-                    // the comment text as SQL. Collapsing the line break that ends such a comment lets it swallow the rest
-                    // of the statement on H2 ("x = ? // c\nAND id = 42" runs as "x = ?"), so after an output line that
-                    // holds "//" the first gap whose original text contained a line break keeps one, too. If that line break
-                    // lies inside a block comment the tokenizer dropped, the comment opened inside the "//" comment, where H2
-                    // reads "/*" as comment text and the lines after it as SQL: the gap is then kept as written (and the
-                    // flag stays set), so H2 reads exactly the source there and any marker in it fails loudly instead of
-                    // those lines silently disappearing. This is dialect-neutral and fail-closed: only source text is ever
-                    // kept, and a "//" that H2 would read as quoted text (inside "$$...$$", which is not modelled) also counts.
-                    if (SK.SPACE.equals(word) && i > 0 && i + 1 < size) {
-                        if (lineHoldsDoubleSlashComment || sb.length() > 0 && sb.charAt(sb.length() - 1) == '\'' && words.get(i - 1).endsWith("'")
-                                && words.get(i + 1).startsWith("'")) {
-                            if (tokenSourceOffsets == null) {
-                                // Empty when the SQL has no line break at all (or, defensively, cannot be aligned).
-                                final int[] aligned = containsLineBreak(this.sql, 0, this.sql.length()) ? alignTokenSourceOffsets(this.sql, words) : null;
-                                tokenSourceOffsets = aligned == null ? N.EMPTY_INT_ARRAY : aligned;
-                            }
+                // The tokenizer collapses a whitespace run, line breaks and line comments included, into " ".
+                // Between two string literals that changes the SQL: the standard (and PostgreSQL) concatenate
+                // adjacent literals only when a line break separates them ('a'\n'b' is 'ab', 'a' 'b' is a syntax
+                // error), so keep a line break that the original gap contained.
+                // H2 also reads "//" as a line comment, which the tokenizer does not: it emits two '/' tokens and reads
+                // the comment text as SQL. Collapsing the line break that ends such a comment lets it swallow the rest
+                // of the statement on H2 ("x = ? // c\nAND id = 42" runs as "x = ?"), so after an output line that
+                // holds "//" the first gap whose original text contained a line break keeps one, too. If that line break
+                // lies inside a block comment the tokenizer dropped, the comment opened inside the "//" comment, where H2
+                // reads "/*" as comment text and the lines after it as SQL: the gap is then kept as written (and the
+                // flag stays set), so H2 reads exactly the source there and any marker in it fails loudly instead of
+                // those lines silently disappearing. This is dialect-neutral and fail-closed: only source text is ever
+                // kept, and a "//" that H2 would read as quoted text (inside "$$...$$", which is not modelled) also counts.
+                if (SK.SPACE.equals(word) && i > 0 && i + 1 < size) {
+                    if (lineHoldsDoubleSlashComment
+                            || sb.length() > 0 && sb.charAt(sb.length() - 1) == '\'' && words.get(i - 1).endsWith("'") && words.get(i + 1).startsWith("'")) {
+                        if (tokenSourceOffsets == null) {
+                            // Empty when the SQL has no line break at all (or, defensively, cannot be aligned).
+                            final int[] aligned = containsLineBreak(this.sql, 0, this.sql.length()) ? alignTokenSourceOffsets(this.sql, words) : null;
+                            tokenSourceOffsets = aligned == null ? N.EMPTY_INT_ARRAY : aligned;
+                        }
 
-                            final int gapStart = tokenSourceOffsets.length > 0 && tokenSourceOffsets[i - 1] >= 0
-                                    ? tokenSourceOffsets[i - 1] + words.get(i - 1).length()
-                                    : -1;
-                            final int gapEnd = gapStart >= 0 ? tokenSourceOffsets[i + 1] : -1;
+                        final int gapStart = tokenSourceOffsets.length > 0 && tokenSourceOffsets[i - 1] >= 0
+                                ? tokenSourceOffsets[i - 1] + words.get(i - 1).length()
+                                : -1;
+                        final int gapEnd = gapStart >= 0 ? tokenSourceOffsets[i + 1] : -1;
 
-                            if (gapEnd >= 0 && containsLineBreak(this.sql, gapStart, gapEnd)) {
-                                if (lineHoldsDoubleSlashComment && firstLineBreakInDroppedBlockComment(this.sql, gapStart, gapEnd)) {
-                                    word = this.sql.substring(gapStart, gapEnd);
-                                } else {
-                                    word = "\n";
-                                    lineHoldsDoubleSlashComment = false;
-                                }
+                        if (gapEnd >= 0 && containsLineBreak(this.sql, gapStart, gapEnd)) {
+                            if (lineHoldsDoubleSlashComment && firstLineBreakInDroppedBlockComment(this.sql, gapStart, gapEnd)) {
+                                word = this.sql.substring(gapStart, gapEnd);
+                            } else {
+                                word = "\n";
+                                lineHoldsDoubleSlashComment = false;
                             }
                         }
-                    } else if (mayHoldDoubleSlashComment && !lineHoldsDoubleSlashComment) {
-                        lineHoldsDoubleSlashComment = sb.length() > 0 && sb.charAt(sb.length() - 1) == '/' && word.startsWith("/")
-                                || mayHoldH2LineComment(word);
                     }
+                } else if (mayHoldDoubleSlashComment && !lineHoldsDoubleSlashComment) {
+                    lineHoldsDoubleSlashComment = sb.length() > 0 && sb.charAt(sb.length() - 1) == '/' && word.startsWith("/") || mayHoldH2LineComment(word);
                 }
 
                 sb.append(word);
@@ -614,21 +630,9 @@ public final class ParsedSql {
                 }
             }
 
-            final String tmpSql = Strings.stripToEmpty(isOpSqlPrefix ? sb.toString() : this.sql);
-            // Strip ALL trailing semicolons (and any whitespace between them) so SQL like
-            // "SELECT * FROM x;;" or "SELECT * FROM x ; ;" both produce a clean parameterized form.
-            int endIdx = tmpSql.length();
-            while (endIdx > 0) {
-                final char ch = tmpSql.charAt(endIdx - 1);
-                if (ch == ';' || Character.isWhitespace(ch)) {
-                    endIdx--;
-                } else {
-                    break;
-                }
-            }
-            parameterizedSql = endIdx == tmpSql.length() ? tmpSql : tmpSql.substring(0, endIdx);
+            parameterizedSql = normalizeSql(sb, this.sql);
             parameterCount = paramCount;
-            namedParameters = namedParameterList == null ? ImmutableList.empty() : ImmutableList.wrap(namedParameterList);
+            namedParameters = compactNamedParameters(namedParameterList);
             if ((type & QUESTION_MARK_TYPE) == 0) {
                 positionalParameterOffsets = N.EMPTY_INT_ARRAY;
             } else {
@@ -636,11 +640,105 @@ public final class ParsedSql {
                 // directly; rediscovering their markers character by character would duplicate that work.
                 final int[] directOffsets = subscriptParameterOffsets == null ? allQuestionMarkOffsets(this.sql, paramCount) : null;
                 positionalParameterOffsets = directOffsets != null ? directOffsets
-                        : resolvePositionalParameterOffsets(this.sql, words, questionMarkTokenIndexes, null, subscriptParameterOffsets, paramCount);
+                        : resolvePositionalParameterOffsets(this.sql, words,
+                                positionalTokenCount == 0 ? null : IntList.of(positionalTokenIndexes, positionalTokenCount), null, subscriptParameterOffsets,
+                                paramCount);
             }
         } finally {
             Objectory.recycle(sb);
         }
+    }
+
+    /** Normalizes an unconverted statement without constructing a temporary copy of its token stream. */
+    private static String normalizeSql(final String sql) {
+        final int start = normalizedSqlStart(sql);
+        return sql.substring(start, normalizedSqlEnd(sql, start));
+    }
+
+    /**
+     * Materializes only the normalized builder range. Reuse the original String when the result is
+     * identical, avoiding both a temporary copy and a second retained text payload in cached statements.
+     */
+    private static String normalizeSql(final StringBuilder rebuilt, final String original) {
+        final int start = normalizedSqlStart(rebuilt);
+        final int end = normalizedSqlEnd(rebuilt, start);
+
+        if (original.length() == end - start) {
+            if (start == 0 && end == rebuilt.length()) {
+                if (original.contentEquals(rebuilt)) {
+                    return original;
+                }
+            } else {
+                int index = 0;
+                while (index < original.length() && original.charAt(index) == rebuilt.charAt(start + index)) {
+                    index++;
+                }
+                if (index == original.length()) {
+                    return original;
+                }
+            }
+        }
+
+        return rebuilt.substring(start, end);
+    }
+
+    /** Matches Strings.stripToEmpty's Character.isWhitespace(char) rule, not String.trim's control-character rule. */
+    private static int normalizedSqlStart(final CharSequence sql) {
+        int start = 0;
+        while (start < sql.length() && Character.isWhitespace(sql.charAt(start))) {
+            start++;
+        }
+        return start;
+    }
+
+    /** Strips every trailing semicolon and intervening whitespace after the leading strip has completed. */
+    private static int normalizedSqlEnd(final CharSequence sql, final int start) {
+        int end = sql.length();
+        while (end > start) {
+            final char ch = sql.charAt(end - 1);
+            if (ch != ';' && !Character.isWhitespace(ch)) {
+                break;
+            }
+            end--;
+        }
+        return end;
+    }
+
+    /** Compacts privately owned name storage before publishing its immutable view. */
+    private static ImmutableList<String> compactNamedParameters(final ArrayList<String> names) {
+        if (names == null) {
+            return ImmutableList.empty();
+        }
+
+        final int size = names.size();
+        if (size >= 32) {
+            // An early repeat selects common large repetitive statements without building a map for
+            // small or distinct-name lists. Bound the local cache even when the rest has unique names.
+            final String first = names.get(0);
+            boolean repeated = false;
+            for (int i = 1; i < 16 && !repeated; i++) {
+                repeated = first.equals(names.get(i));
+            }
+
+            if (repeated) {
+                final Map<String, String> reused = new HashMap<>();
+                for (int i = 0; i < size; i++) {
+                    final String name = names.get(i);
+                    final String existing = reused.get(name);
+                    if (existing != null) {
+                        names.set(i, existing);
+                    } else if (reused.size() < 16) {
+                        reused.put(name, name);
+                    }
+                }
+            }
+        }
+
+        // The initial capacity is two; a singleton's one spare reference does not warrant another array.
+        if (size > 2) {
+            names.trimToSize();
+        }
+        return ImmutableList.wrap(names);
     }
 
     /**
@@ -3906,7 +4004,8 @@ public final class ParsedSql {
      */
     @Override
     public int hashCode() {
-        return hashCode;
+        // String caches its hash lazily; oversized uncached SQL need not be hashed unless requested.
+        return sql.hashCode();
     }
 
     /**

@@ -100,6 +100,201 @@ public class SqlParserTest extends TestBase {
     }
 
     @Nested
+    class ClassificationScanning {
+
+        @Test
+        void testBracketRegionAnswersKeepBothCommentReadings() {
+            final String prefix = "SELECT '" + "[/*[ordinary".repeat(32);
+
+            assertReadGatesReject(prefix + "*/ UPDATE t SET a = 1 RETURNING a]'");
+            assertReadGatesReject(prefix + "*/ WITH c AS (SELECT 1) DELETE FROM t]'");
+            assertFalse(SqlParser.isReadOrInsertQuery(prefix + "*/ INSERT INTO t VALUES (1) ON CONFLICT(id) DO UPDATE SET a = 1]'"));
+            assertReadGatesReject("SELECT * FROM [/* /* */ x */ DELETE FROM t RETURNING *]");
+        }
+
+        @Test
+        void testBracketRegionBoundariesKeepExtendedAndBoundedAnswersSeparate() throws Exception {
+            // The flat reading reaches UPDATE before the raw '['; the nesting reading reaches WITH after it.
+            // UPDATE extends to EOF but needs RETURNING. WITH ends at ']' and must not see the later UPDATE.
+            final String separate = "[/*[/* */ UPDATE x [ */ WITH x ] UPDATE ]";
+            for (final boolean allowInsert : List.of(false, true)) {
+                assertFalse(hasBracketedStatement(separate, allowInsert));
+                assertTrue(hasBracketedStatement("[/*[/* */ UPDATE x [ */ WITH UPDATE x ]", allowInsert));
+                assertFalse(hasBracketedStatement("[UPDATE x ] RETURNING", allowInsert));
+
+                for (final String opener : List.of("/*", "--", "[", "'", "\"", "`", "$tag$", "$$")) {
+                    assertTrue(hasBracketedStatement("[UPDATE x " + opener + " ] RETURNING", allowInsert), opener);
+                }
+            }
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT '" + separate + "'"));
+            assertTrue(SqlParser.isReadOrInsertQuery("SELECT '" + separate + "'"));
+        }
+
+        @Test
+        void testBracketRegionIndexesKeepInterleavedAndDisjointAnswers() throws Exception {
+            final String prefix = "[/*".repeat(16);
+            final String firstRegion = "*/ UPDATE x ".repeat(8) + "] ";
+            final String overlapping = prefix + firstRegion + "*/ UPDATE x ".repeat(8) + "]";
+            final String withInside = prefix + firstRegion + "*/ UPDATE x ".repeat(3) + "*/ WITH x " + "*/ UPDATE x ".repeat(4) + "]";
+
+            for (final boolean allowInsert : List.of(false, true)) {
+                // Flat starts revisit the first region while distinct nesting starts walk backward through the second.
+                assertFalse(hasBracketedStatement(overlapping, allowInsert));
+                assertTrue(hasBracketedStatement(withInside, allowInsert));
+                assertFalse(hasBracketedStatement(prefix + "*/ UPDATE x ] ".repeat(16), allowInsert));
+                assertFalse(hasBracketedStatement(overlapping + " [update date]".repeat(256), allowInsert));
+                assertTrue(hasBracketedStatement(overlapping + " [update date]".repeat(256) + " [WITH UPDATE]", allowInsert));
+            }
+            assertReadGatesReject("SELECT '" + withInside + "'");
+
+            // The last nesting start is initially checked before earlier UPDATE words enter its cached interval.
+            assertFalse(hasBracketedStatement(prefix + firstRegion + "*/ UPDATE x ".repeat(7) + "*/ WITH x ] UPDATE", false));
+        }
+
+        @Test
+        void testBracketRegionKeywordBoundariesAndVetoesRemainExact() throws Exception {
+            for (final boolean allowInsert : List.of(false, true)) {
+                for (final String word : List.of("RETURNINGly", "_RETURNING", "1RETURNING", "RETURNING$", "éRETURNING")) {
+                    assertFalse(hasBracketedStatement("[UPDATE x " + word + "]", allowInsert), word);
+                }
+                assertTrue(hasBracketedStatement("[UPDATE x returning]", allowInsert));
+                assertTrue(hasBracketedStatement("[WITH DELETE]", allowInsert));
+                assertTrue(hasBracketedStatement("[EXPLAIN MERGE]", allowInsert));
+                // A dollar opener inside a letter-led identifier is skipped with that identifier. Underscore- and
+                // digit-led text follows the existing character scan and can expose the same raw opener.
+                assertFalse(hasBracketedStatement("[UPDATE a$tag$ ] RETURNING", allowInsert));
+                assertTrue(hasBracketedStatement("[UPDATE _a$tag$ ] RETURNING", allowInsert));
+                assertTrue(hasBracketedStatement("[UPDATE 1$tag$ ] RETURNING", allowInsert));
+            }
+            assertTrue(hasBracketedStatement("[WITH INSERT]", false));
+            assertFalse(hasBracketedStatement("[WITH INSERT]", true));
+            assertFalse(hasBracketedStatement("[INSERT UPDATE]", false));
+            assertTrue(hasBracketedStatement("[INSERT UPDATE]", true));
+            assertTrue(hasBracketedStatement("[INSERT RETURNING]", false));
+            assertFalse(hasBracketedStatement("[INSERT RETURNING]", true));
+
+            final String prefix = "[/*".repeat(12) + "*/ UPDATE x ".repeat(11);
+            assertTrue(hasBracketedStatement(prefix + "*/ WITH INSERT]", false));
+            assertFalse(hasBracketedStatement(prefix + "*/ WITH INSERT]", true));
+            assertFalse(hasBracketedStatement(prefix + "*/ INSERT UPDATE]", false));
+            assertTrue(hasBracketedStatement(prefix + "*/ INSERT UPDATE]", true));
+        }
+
+        @Test
+        void testBracketRegionsConvergingAfterCommentsStayLinear() {
+            // Comment ends were already cached; the expensive region after their shared end must be cached too.
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+                for (final String body : List.of("[/*".repeat(32768) + "*/ UPDATE " + "x".repeat(32768),
+                        "[/*[ordinary".repeat(16384) + "*/ UPDATE " + "x".repeat(16384), "[/*".repeat(16384) + "*/ " + "ordinary".repeat(16384),
+                        "[/*[ordinary".repeat(16384) + "*/ " + "ordinary".repeat(16384))) {
+                    final String sql = "SELECT '" + body + "]'";
+                    assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+                    assertTrue(SqlParser.isReadOrInsertQuery(sql));
+                }
+            });
+        }
+
+        @Test
+        void testBracketRegionsWithDistinctStartsShareTheirSuffix() {
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+                for (final String body : List.of("[/*".repeat(32768) + "*/ UPDATE x ".repeat(32768) + "]",
+                        "[/*".repeat(16384) + ("*/ UPDATE x ".repeat(4096) + "] ").repeat(4), "[/*".repeat(4096) + "*/ UPDATE x ] ".repeat(4096))) {
+                    final String sql = "SELECT '" + body + "'";
+                    assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+                    assertTrue(SqlParser.isReadOrInsertQuery(sql));
+                }
+            });
+        }
+
+        @Test
+        void testEquivalentMasksStillCheckDistinctModesAndVetoes() {
+            final String sql = "SELECT " + "a,".repeat(256) + "1 FROM t /* \\ ' \" ` E' $ [ -- */";
+            assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+            assertTrue(SqlParser.isReadOrInsertQuery(sql));
+            assertTrue(BATCHES.isSyntacticallyReadQuery(sql));
+
+            // Later quote modes and extra dialect readings must still reject, even after accepting an earlier mask.
+            assertReadGatesReject("SELECT $$'$$; DELETE FROM t; -- '");
+            assertReadGatesReject("SELECT * FROM #x it's\na; DELETE FROM t WHERE c = 'q' -- '");
+            assertReadGatesReject("SELECT 1 -- x\r'\n; DELETE FROM t; -- '");
+        }
+
+        @Test
+        void testMarkerBoundaryFailuresStayLinear() {
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+                for (final String markers : List.of("#{\n".repeat(32768), "#{\r".repeat(32768), "#{".repeat(32768))) {
+                    for (final String closer : List.of("", "}")) {
+                        final String sql = "SELECT 1\n" + markers + closer;
+                        assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+                        assertTrue(SqlParser.isReadOrInsertQuery(sql));
+                    }
+                }
+            });
+        }
+
+        @Test
+        void testMarkerBoundaryRulesPreserveLineBreaksAndMetadata() throws Exception {
+            assertEquals("SELECT #{      }, #{ }", mask("SELECT #{p, x=1}, #{q}", 0, 0));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT #{ user.id, jdbcType=VARCHAR }"));
+
+            for (final String lineBreak : List.of("\n", "\r", "\r\n")) {
+                final String sql = "SELECT #{p" + lineBreak + "}";
+                assertSame(sql, mask(sql, 0, 0));
+                assertReadGatesReject("SELECT 1\n#{" + lineBreak + "; DELETE FROM t");
+            }
+        }
+
+        @Test
+        void testMaskingKeepsBlankRegionsAndAllocatesForDelimiters() throws Exception {
+            final String blank = "SELECT ' \n\r ', [  ], #{ }";
+            assertSame(blank, mask(blank, 0, 0));
+            assertEquals("SELECT (,x )", mask("SELECT ([x])", 8, 0));
+            assertEquals("SELECT a _ x", mask("SELECT a # x", 0, 8));
+            assertEquals("SELECT _{?}", mask("SELECT #{?}", 0, 8));
+
+            // Lexing-error exits construct a String immediately; their delimiter must force a non-null mask.
+            assertEquals(" ".repeat(8), mask("SELECT '", 0, 1));
+            assertEquals(" ".repeat(8), mask("SELECT [", 0, 4));
+            assertEquals(" ".repeat(8), mask("SELECT :", 0, 4));
+            assertEquals("SELECT 1   ", mask("SELECT 1 /*", 0, 4));
+            assertEquals(" ".repeat(11), mask("SELECT 1 /*", 0, 1));
+        }
+
+        @Test
+        void testNestedStatementChecksKeepCompanionState() {
+            final String expressions = "SELECT " + "COALESCE(a,b), (c = ?),".repeat(128) + "1";
+            assertTrue(SqlParser.isSyntacticallyReadQuery(expressions + " FROM t OPTION (MERGE JOIN)"));
+            assertTrue(SqlParser.isReadOrInsertQuery(expressions + " FROM t WHERE (update required)"));
+            assertReadGatesReject(expressions + " FROM OLD TABLE (DELETE FROM t)");
+            assertReadGatesReject(expressions + " FROM NEW TABLE (WITH c AS (SELECT 1) UPDATE t SET a = 1)");
+        }
+
+        @Test
+        void testRemaskingPreservesParameterBoundaryChanges() throws Exception {
+            // Removing a parameter name exposes a dollar-quote opener even though the SQL contains no '#'.
+            final String sql = "SELECT :x$tag$ abc x$tag$";
+            final String first = mask(sql, 16, 0);
+            assertEquals("SELECT : $tag$ abc x$tag$", first);
+            assertNotEquals(first, mask(first, 16, 0));
+            assertReadGatesReject(sql);
+        }
+
+        private boolean hasBracketedStatement(final String sql, final boolean allowInsert) throws Exception {
+            final var method = SqlParser.class.getDeclaredMethod("containsBracketedDataChangeStatement", String.class, boolean.class);
+            method.setAccessible(true);
+            return (Boolean) method.invoke(null, sql, allowInsert);
+        }
+
+        private String mask(final String sql, final int quoteMode, final int reading) throws Exception {
+            final Class<?> memoType = Class.forName("com.landawn.abacus.query.SqlParser$HashScanMemo");
+            final var method = SqlParser.class.getDeclaredMethod("maskQuotedRegionsForClassification", String.class, SqlParser.TokenizerConfig.class, int.class,
+                    boolean.class, memoType, int.class);
+            method.setAccessible(true);
+            return (String) method.invoke(null, sql, SqlParser.defaultTokenizerConfig(), quoteMode, false, null, reading);
+        }
+    }
+
+    @Nested
     class QueryClassification {
         // Regression: "SELECT @1INTO x FROM t" is "SELECT @ 1 INTO x" (a SELECT INTO) to PostgreSQL <= 14, whose '@' is the
         // absolute-value operator; a digit after '@' now starts a literal, not a variable name.
@@ -5914,6 +6109,356 @@ public class SqlParserTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> SqlParser.indexOfToken("SELECT 1", null, 0, true));
             assertThrows(IllegalArgumentException.class, () -> SqlParser.nextToken(null, 0));
             assertThrows(IllegalArgumentException.class, () -> SqlParser.nextTokenEndIndex(null, 0));
+        }
+    }
+
+    @Nested
+    class TokenCursorAndMemoization {
+        @Test
+        void testCommentBoundaryRangesPreserveCustomAndOverlappingOperators() {
+            final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(
+                    SqlParser.TokenizerConfig.builder().withSeparator("@!^~&|+%").withSeparator("+~-").withSeparator("π+~").withSeparator("A+B").build());
+
+            // The candidate's left side spans four separately emitted separator tokens.
+            assertEquals(List.of("1", "@", "!", "^", "~", " ", "&", "|", "+", "%", "2"), tokenizer.tokenize("1@!^~/**/&|+%2"));
+            assertEquals(List.of("1π", " ", "+", "~", "2"), tokenizer.tokenize("1π/**/+~2"));
+            assertEquals(List.of("xA", " ", "+", "By"), tokenizer.tokenize("xA/**/+By"));
+            assertEquals("1+ ~-x", String.join("", tokenizer.tokenize("1+/**/~-x")));
+            // A candidate ending at the first '-' of '--' must not hide the comment opener.
+            assertEquals("1+~ 2", String.join("", tokenizer.tokenize("1+/**/~--x\n2")));
+            assertEquals("1- -2", String.join("", tokenizer.tokenize("1-/**/-2")));
+            assertEquals("1/ *2", String.join("", tokenizer.tokenize("1//**/*2")));
+            assertEquals("doc ? ?", String.join("", tokenizer.tokenize("doc ?/**/?")));
+        }
+
+        @Test
+        void testCursorBoundsAndTextAreIndependentAndLazy() throws Exception {
+            final String sql = " /* lead */ SELECT value -- tail\r\nFROM #temp";
+            final SqlParser.TokenCursor cursor = SqlParser.cursor(sql);
+            final var text = SqlParser.TokenCursor.class.getDeclaredField("token");
+            final var context = SqlParser.TokenCursor.class.getDeclaredField("memo");
+            text.setAccessible(true);
+            context.setAccessible(true);
+
+            assertNoCurrentToken(cursor);
+            assertNull(context.get(cursor));
+            for (final String expected : List.of("SELECT", "value", "FROM", "#temp")) {
+                assertTrue(cursor.next());
+                assertEquals(sql.indexOf(expected), cursor.startIndex());
+                assertEquals(sql.indexOf(expected) + expected.length(), cursor.endIndex());
+                assertNull(text.get(cursor), "Bounds-only access must not materialize token text");
+                assertEquals(expected, cursor.token());
+                assertSame(cursor.token(), cursor.token());
+                if (!expected.startsWith("#")) {
+                    assertNull(context.get(cursor), "Ordinary tokens need no context memo");
+                }
+            }
+            assertNotNull(context.get(cursor));
+            assertFalse(cursor.next());
+            assertNoCurrentToken(cursor);
+            assertFalse(cursor.next());
+            assertNull(text.get(cursor));
+        }
+
+        @Test
+        void testCursorCustomSeparatorsAndIndependentPositions() {
+            final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(" ->").withSeparator("AND").build());
+            final String sql = "alpha ->betaANDgamma";
+            final SqlParser.TokenCursor first = tokenizer.cursor(sql);
+            final SqlParser.TokenCursor second = tokenizer.cursor(sql);
+            int end = 0;
+            for (final String expected : List.of("alpha", " ->", "beta", "AND", "gamma")) {
+                assertTrue(first.next());
+                assertEquals(end, first.startIndex());
+                end += expected.length();
+                assertEquals(end, first.endIndex());
+                assertEquals(expected, first.token());
+            }
+            assertFalse(first.next());
+            assertTrue(second.next());
+            assertEquals("alpha", second.token());
+            assertEquals(0, second.startIndex());
+            assertEquals(List.of("alpha", " ->", "beta", "AND", "gamma"), tokenizer.tokenize(sql));
+
+            final SqlParser.Tokenizer newlines = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator("\n->").build());
+            assertCursorTokens(newlines, "a\n->b", List.of("a", "\n->", "b"));
+            // next-token APIs consume a line-comment terminator even if it could begin a custom separator.
+            assertCursorTokens(newlines, "a-- comment\n->b", List.of("a", "->", "b"));
+            assertCursorTokens(SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withoutSeparator(' ').build()), "a b", List.of("a b"));
+        }
+
+        @Test
+        void testCursorEmptyInputAndValidation() {
+            assertThrows(IllegalArgumentException.class, () -> SqlParser.cursor(null));
+            assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenizer().cursor(null));
+            for (final String sql : List.of("", " \t\r\n", "-- Keep comments\n/* retained only by tokenize */", "/* unfinished")) {
+                final SqlParser.TokenCursor cursor = SqlParser.cursor(sql);
+                assertNoCurrentToken(cursor);
+                assertFalse(cursor.next(), sql);
+                assertFalse(cursor.next(), sql);
+                assertNoCurrentToken(cursor);
+            }
+        }
+
+        @Test
+        void testCursorReleasesMemoAtExhaustionWithoutDroppingSource() throws Exception {
+            final var context = SqlParser.TokenCursor.class.getDeclaredField("memo");
+            final var source = SqlParser.TokenCursor.class.getDeclaredField("sql");
+            final var configuration = SqlParser.TokenCursor.class.getDeclaredField("tokenizerConfig");
+            for (final var field : List.of(context, source, configuration)) {
+                field.setAccessible(true);
+            }
+
+            for (final String sql : List.of("FROM #temp /* tail */", "SELECT x[0] [1] -- tail")) {
+                final SqlParser.TokenCursor cursor = SqlParser.cursor(sql);
+                Object activeMemo = null;
+                while (cursor.next()) {
+                    activeMemo = context.get(cursor);
+                }
+                assertNotNull(activeMemo, "The walk must have allocated context before exhaustion");
+                assertNull(context.get(cursor), "An exhausted cursor must release its context tables");
+                assertSame(sql, source.get(cursor));
+                assertSame(SqlParser.defaultTokenizerConfig(), configuration.get(cursor));
+                assertNoCurrentToken(cursor);
+                assertFalse(cursor.next());
+                assertNull(context.get(cursor));
+                assertNoCurrentToken(cursor);
+            }
+
+            // The first advance can create context while skipping a hash comment, then reach EOF.
+            final SqlParser.TokenCursor commentOnly = SqlParser.cursor("# trailing comment");
+            assertFalse(commentOnly.next());
+            assertNull(context.get(commentOnly));
+            assertNoCurrentToken(commentOnly);
+        }
+
+        @Test
+        void testCursorRetainsContextAcrossHashAndBracketWalks() throws Exception {
+            final StringBuilder tables = new StringBuilder("SELECT 1 FROM #t0");
+            final StringBuilder aliases = new StringBuilder("SELECT [order-id0] [alias-id0]");
+            for (int i = 1; i < 256; i++) {
+                tables.append(", #t").append(i);
+                aliases.append(", [order-id").append(i).append("] [alias-id").append(i).append(']');
+            }
+            final var context = SqlParser.TokenCursor.class.getDeclaredField("memo");
+            context.setAccessible(true);
+            for (final String sql : List.of(tables.toString(), aliases.toString(), "SELECT x[0]" + " /* gap */ [1]".repeat(256),
+                    "SELECT [a]]b] [c], x[1] -- c\n[2 /* ] */], [q] [:id /* ] */] FROM [t]")) {
+                final List<String> expected = SqlParser.tokenize(sql).stream().filter(token -> !token.isBlank()).toList();
+                final List<String> actual = new ArrayList<>();
+                final SqlParser.TokenCursor cursor = SqlParser.cursor(sql);
+                Object memo = null;
+                while (cursor.next()) {
+                    actual.add(cursor.token());
+                    assertEquals(cursor.token(), sql.substring(cursor.startIndex(), cursor.endIndex()));
+                    final Object current = context.get(cursor);
+                    if (memo != null) {
+                        assertSame(memo, current, "The complete walk must reuse its contextual scan");
+                    } else {
+                        memo = current;
+                    }
+                }
+                assertNotNull(memo);
+                assertEquals(expected, actual, sql);
+            }
+        }
+
+        @Test
+        void testMemoFullScanTablesStayLazyAndAvoidGrowthCopies() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var constructor = memoClass.getDeclaredConstructor(String.class, boolean.class);
+            final var rememberHash = memoClass.getDeclaredMethod("rememberHashIdentifierState", String.class, int.class, boolean.class, boolean.class);
+            final var subscript = memoClass.getDeclaredMethod("isSubscriptBracket", int.class, SqlParser.TokenizerConfig.class);
+            final var group = memoClass.getDeclaredMethod("groupOpenerAt", int.class, SqlParser.TokenizerConfig.class);
+            final var backward = memoClass.getDeclaredMethod("rememberBackwardSkipResult", int.class, int.class);
+            final var block = memoClass.getDeclaredMethod("lastBlockCommentOpenerEnd", int.class);
+            final var line = memoClass.getDeclaredMethod("lineCommentOpenerAt", String.class, int.class, SqlParser.TokenizerConfig.class);
+            constructor.setAccessible(true);
+            for (final var method : List.of(rememberHash, subscript, group, backward, block, line)) {
+                method.setAccessible(true);
+            }
+
+            final String sql = "SELECT x[0] [1] FROM /*x*/ #temp WHERE f(1) " + "x".repeat(4096);
+            final Object memo = constructor.newInstance(sql, true);
+            final List<String> tables = List.of("hashIdentifierStates", "lineCommentOpeners", "subscriptBrackets", "blockCommentOpenerEnds", "groupOpeners",
+                    "backwardSkipResults");
+            for (final String name : tables) {
+                final var field = memoClass.getDeclaredField(name);
+                field.setAccessible(true);
+                assertNull(field.get(memo), name + " must remain lazy even for a complete scan");
+            }
+
+            rememberHash.invoke(memo, sql, sql.indexOf('#'), true, true);
+            assertEquals(true, subscript.invoke(memo, sql.indexOf("[1]"), SqlParser.defaultTokenizerConfig()));
+            assertEquals(sql.indexOf('('), group.invoke(memo, sql.indexOf(')'), SqlParser.defaultTokenizerConfig()));
+            backward.invoke(memo, 4, -1);
+            assertEquals(sql.indexOf("/*") + 1, block.invoke(memo, sql.indexOf("*/")));
+            assertEquals(-1, line.invoke(memo, sql, 5, SqlParser.defaultTokenizerConfig()));
+            for (final String name : tables) {
+                final var field = memoClass.getDeclaredField(name);
+                field.setAccessible(true);
+                final Object values = field.get(memo);
+                assertNotNull(values, name);
+                assertEquals(sql.length(), java.lang.reflect.Array.getLength(values), name + " should allocate its final size once");
+            }
+            final var blockFrontier = memoClass.getDeclaredField("blockCommentPassEnd");
+            blockFrontier.setAccessible(true);
+            assertTrue(blockFrontier.getInt(memo) < 128, "Full-size storage must not force scanning an unused block-comment tail");
+        }
+
+        @Test
+        void testMemoGrowthKeepsEarlierRawBlockAndLineCommentAnswers() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var constructor = memoClass.getDeclaredConstructor(String.class);
+            final var block = memoClass.getDeclaredMethod("lastBlockCommentOpenerEnd", int.class);
+            final var line = memoClass.getDeclaredMethod("lineCommentOpenerAt", String.class, int.class, SqlParser.TokenizerConfig.class);
+            constructor.setAccessible(true);
+            block.setAccessible(true);
+            line.setAccessible(true);
+
+            final String raw = "*/ '/*' " + "x".repeat(61) + " /* outer /* inner */ " + "x".repeat(129) + "/*tail*/";
+            final Object blockMemo = constructor.newInstance(raw);
+            for (int i = 0; i < raw.length(); i++) {
+                final int opener = raw.lastIndexOf("/*", i - 1);
+                assertEquals(opener < 0 ? -1 : opener + 1, block.invoke(blockMemo, i), "raw opener at " + i);
+            }
+            for (int i = raw.length() - 1; i >= 0; i--) {
+                final int opener = raw.lastIndexOf("/*", i - 1);
+                assertEquals(opener < 0 ? -1 : opener + 1, block.invoke(blockMemo, i), "cached raw opener at " + i);
+            }
+
+            final String sql = " ".repeat(63) + "-- first\n SELECT '#quoted' /* -- ignored */ " + " ".repeat(75) + "# tail\n";
+            final Object lineMemo = constructor.newInstance(sql);
+            final int first = sql.indexOf("-- first");
+            final int firstEnd = sql.indexOf('\n');
+            final int tail = sql.indexOf("# tail");
+            for (int i = 0; i < sql.length(); i++) {
+                final int expected = i >= first && i < firstEnd ? first : i >= tail && i < sql.length() - 1 ? tail : -1;
+                assertEquals(expected, line.invoke(lineMemo, sql, i, SqlParser.defaultTokenizerConfig()), "line opener at " + i);
+            }
+            assertEquals(first, line.invoke(lineMemo, sql, first + 1, SqlParser.defaultTokenizerConfig()));
+        }
+
+        @Test
+        void testMemoGrowthPreservesGroupAndUnknownStates() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var constructor = memoClass.getDeclaredConstructor(String.class);
+            final var group = memoClass.getDeclaredMethod("groupOpenerAt", int.class, SqlParser.TokenizerConfig.class);
+            final var remember = memoClass.getDeclaredMethod("rememberBackwardSkipResult", int.class, int.class);
+            final var lookup = memoClass.getDeclaredMethod("backwardSkipResult", int.class);
+            constructor.setAccessible(true);
+            group.setAccessible(true);
+            remember.setAccessible(true);
+            lookup.setAccessible(true);
+            final String sql = " ".repeat(61) + "[a]]b]" + " ".repeat(129) + "(1)";
+            final Object memo = constructor.newInstance(sql);
+
+            // The first doubled closer consumes its partner beyond the requested frontier and the
+            // initial storage boundary; growing the table later must retain both distinct answers.
+            assertEquals(61, group.invoke(memo, 63, SqlParser.defaultTokenizerConfig()));
+            assertEquals(-1, group.invoke(memo, 64, SqlParser.defaultTokenizerConfig()));
+            assertEquals(61, group.invoke(memo, 66, SqlParser.defaultTokenizerConfig()));
+            assertEquals(sql.lastIndexOf('('), group.invoke(memo, sql.length() - 1, SqlParser.defaultTokenizerConfig()));
+            assertEquals(61, group.invoke(memo, 63, SqlParser.defaultTokenizerConfig()));
+
+            remember.invoke(memo, 4, -1);
+            remember.invoke(memo, 128, 12);
+            assertEquals(-1, lookup.invoke(memo, 4));
+            assertEquals(12, lookup.invoke(memo, 128));
+            assertEquals(Integer.MIN_VALUE, lookup.invoke(memo, 127));
+            assertEquals(Integer.MIN_VALUE, lookup.invoke(memo, sql.length() - 1));
+        }
+
+        @Test
+        void testMemoGrowthPromotesDensePrefixesAndPreservesCachedAnswers() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var constructor = memoClass.getDeclaredConstructor(String.class);
+            final var rememberHash = memoClass.getDeclaredMethod("rememberHashIdentifierState", String.class, int.class, boolean.class, boolean.class);
+            final var hashState = memoClass.getDeclaredMethod("hashIdentifierState", String.class, int.class, boolean.class);
+            final var subscript = memoClass.getDeclaredMethod("isSubscriptBracket", int.class, SqlParser.TokenizerConfig.class);
+            final var rememberBackward = memoClass.getDeclaredMethod("rememberBackwardSkipResult", int.class, int.class);
+            final var backwardResult = memoClass.getDeclaredMethod("backwardSkipResult", int.class);
+            final var tables = List.of(memoClass.getDeclaredField("hashIdentifierStates"), memoClass.getDeclaredField("subscriptBrackets"),
+                    memoClass.getDeclaredField("backwardSkipResults"));
+            constructor.setAccessible(true);
+            for (final var method : List.of(rememberHash, hashState, subscript, rememberBackward, backwardResult)) {
+                method.setAccessible(true);
+            }
+            for (final var field : tables) {
+                field.setAccessible(true);
+            }
+
+            for (final int extraTail : new int[] { 0, 1 }) {
+                final String sql = "FROM #t, x[0] ;\n".repeat(64) + " ".repeat(extraTail);
+                final Object memo = constructor.newInstance(sql);
+                final Object[] finalTables = new Object[tables.size()];
+                // For 1024 chars, planning the next 512-char table promotes it to the final size.
+                // At 1025 chars, 512 is still below half; that intermediate table remains useful.
+                final int[][] steps = { { 0, 64 }, { 64, 128 }, { 128, 256 }, { 256, extraTail == 0 ? sql.length() : 512 }, { 1008, sql.length() } };
+                for (final int[] step : steps) {
+                    final int hash = step[0] + 5;
+                    final int bracket = step[0] + 10;
+                    rememberHash.invoke(memo, sql, hash, true, true);
+                    assertEquals(true, subscript.invoke(memo, bracket, SqlParser.defaultTokenizerConfig()));
+                    rememberBackward.invoke(memo, hash, -1);
+                    for (int i = 0; i < tables.size(); i++) {
+                        final Object values = tables.get(i).get(memo);
+                        assertEquals(step[1], java.lang.reflect.Array.getLength(values), tables.get(i).getName());
+                        if (finalTables[i] != null) {
+                            assertSame(finalTables[i], values, "Later positions must reuse a promoted table");
+                        } else if (step[1] == sql.length()) {
+                            finalTables[i] = values;
+                        }
+                    }
+                }
+                assertEquals(1, hashState.invoke(memo, sql, 5, true));
+                assertEquals(true, subscript.invoke(memo, 10, SqlParser.defaultTokenizerConfig()));
+                assertEquals(-1, backwardResult.invoke(memo, 5));
+                assertEquals(Integer.MIN_VALUE, backwardResult.invoke(memo, sql.length() - 1));
+            }
+        }
+
+        @Test
+        void testMemoStorageDependsOnVisitedPrefixInsteadOfUnusedTail() throws Exception {
+            final var context = SqlParser.TokenCursor.class.getDeclaredField("memo");
+            context.setAccessible(true);
+            final String tail = "x".repeat(1_048_576);
+            for (final String prefix : List.of("FROM /*x*/ #temp ", "DELETE TOP " + " ".repeat(96) + "(1) PERCENT #temp ", "SELECT x[1] [2] ")) {
+                final SqlParser.TokenCursor cursor = SqlParser.cursor(prefix + tail);
+                while (cursor.next() && cursor.endIndex() < prefix.length()) {
+                    // Only bounds are needed. Once the inert tail is reached, it also needs no memo table growth.
+                }
+                final Object memo = context.get(cursor);
+                assertNotNull(memo);
+                int allocatedTables = 0;
+                for (final String name : List.of("hashIdentifierStates", "lineCommentOpeners", "subscriptBrackets", "blockCommentOpenerEnds", "groupOpeners",
+                        "backwardSkipResults")) {
+                    final var field = memo.getClass().getDeclaredField(name);
+                    field.setAccessible(true);
+                    final Object values = field.get(memo);
+                    if (values != null) {
+                        allocatedTables++;
+                        assertTrue(java.lang.reflect.Array.getLength(values) <= 256, name + " allocated storage for the unvisited tail");
+                    }
+                }
+                assertTrue(allocatedTables > 0);
+            }
+        }
+
+        private void assertCursorTokens(final SqlParser.Tokenizer tokenizer, final String sql, final List<String> expected) {
+            final List<String> actual = new ArrayList<>();
+            final SqlParser.TokenCursor cursor = tokenizer.cursor(sql);
+            while (cursor.next()) {
+                actual.add(cursor.token());
+                assertEquals(cursor.token(), sql.substring(cursor.startIndex(), cursor.endIndex()));
+            }
+            assertEquals(expected, actual, sql);
+        }
+
+        private void assertNoCurrentToken(final SqlParser.TokenCursor cursor) {
+            assertThrows(IllegalStateException.class, cursor::startIndex);
+            assertThrows(IllegalStateException.class, cursor::endIndex);
+            assertThrows(IllegalStateException.class, cursor::token);
         }
     }
 

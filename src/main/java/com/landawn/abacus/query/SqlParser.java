@@ -19,11 +19,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.IntPredicate;
 
@@ -387,6 +389,21 @@ public final class SqlParser {
     public static Tokenizer tokenizer(final TokenizerConfig tokenizerConfig) {
         N.checkArgNotNull(tokenizerConfig, cs.tokenizerConfig);
         return new Tokenizer(tokenizerConfig);
+    }
+
+    /**
+     * Creates a cursor that scans the SQL once with the default separator configuration.
+     * A cursor shares lexical context between tokens and exposes their source bounds without
+     * allocating their text unless {@link TokenCursor#token()} is called.
+     *
+     * @param sql the SQL statement to scan; must not be {@code null}
+     * @return a new cursor positioned before the first token
+     * @throws IllegalArgumentException if {@code sql} is {@code null}
+     * @see Tokenizer#cursor(String)
+     */
+    public static TokenCursor cursor(final String sql) {
+        N.checkArgNotNull(sql, cs.sql);
+        return new TokenCursor(sql, DEFAULT_TOKENIZER_CONFIG);
     }
 
     /**
@@ -802,6 +819,21 @@ public final class SqlParser {
         }
 
         /**
+         * Creates a cursor using this tokenizer's immutable separator configuration.
+         * Each cursor owns its position and lexical context; creating or advancing one never
+         * changes this tokenizer or another cursor.
+         *
+         * @param sql the SQL statement to scan; must not be {@code null}
+         * @return a new cursor positioned before the first token
+         * @throws IllegalArgumentException if {@code sql} is {@code null}
+         * @see SqlParser#cursor(String)
+         */
+        public TokenCursor cursor(final String sql) {
+            N.checkArgNotNull(sql, cs.sql);
+            return new TokenCursor(sql, tokenizerConfig);
+        }
+
+        /**
          * Finds a token from the beginning using case-insensitive matching.
          *
          * @param sql the SQL statement to search; must not be {@code null}
@@ -855,11 +887,14 @@ public final class SqlParser {
         /**
          * Returns the next token at or after a character index.
          *
+         * <p>Use {@link #cursor(String)} for a consecutive walk that retains lexical context and exposes text and bounds together.</p>
+         *
          * @param sql the SQL statement to scan; must not be {@code null}
          * @param fromIndex the starting character index
          * @return the next token, or an empty string if none remains
          * @throws IllegalArgumentException if {@code sql} is {@code null}
          * @see SqlParser#nextToken(String, int)
+         * @see #cursor(String)
          */
         public String nextToken(final String sql, final int fromIndex) {
             N.checkArgNotNull(sql, cs.sql);
@@ -870,11 +905,14 @@ public final class SqlParser {
         /**
          * Returns the index immediately after the next token.
          *
+         * <p>Use {@link #cursor(String)} for consecutive bounds lookups that retain lexical context between tokens.</p>
+         *
          * @param sql the SQL statement to scan; must not be {@code null}
          * @param fromIndex the starting character index
          * @return the next token's exclusive end index, or {@code sql.length()} if none remains
          * @throws IllegalArgumentException if {@code sql} is {@code null}
          * @see SqlParser#nextTokenEndIndex(String, int)
+         * @see #cursor(String)
          */
         public int nextTokenEndIndex(final String sql, final int fromIndex) {
             N.checkArgNotNull(sql, cs.sql);
@@ -933,6 +971,112 @@ public final class SqlParser {
     }
 
     /**
+     * A forward-only cursor over one SQL string. It applies the same comment, whitespace and
+     * separator rules as {@link Tokenizer#nextToken(String, int)} and starts at source index zero.
+     * Ordinary whitespace and comments are skipped, including block comments under the
+     * {@code -- Keep comments} marker; configured multi-character whitespace-prefixed separators
+     * remain complete tokens. The line terminator ending a line comment is consumed with that
+     * comment, just as in the stateless next-token methods.
+     *
+     * <p>Call {@link #next()} before accessing the current token. Bounds refer to the original SQL;
+     * token text is materialized only on the first {@link #token()} call for that position. A cursor
+     * retains its source string and immutable configuration until the cursor itself is released.
+     * Lexical context is released when {@link #next()} first returns {@code false}. It is mutable
+     * and not thread-safe; use a separate cursor for each independent walk. The {@link Tokenizer}
+     * that created it remains thread-safe.</p>
+     *
+     * <pre>{@code
+     * SqlParser.TokenCursor cursor = SqlParser.cursor("SELECT * FROM #first, #second");
+     * while (cursor.next()) {
+     *     int start = cursor.startIndex();
+     *     int end = cursor.endIndex();
+     *     // cursor.token() is optional when only source positions are needed.
+     * }
+     * }</pre>
+     */
+    public static final class TokenCursor {
+        private final String sql;
+        private final TokenizerConfig tokenizerConfig;
+        private HashScanMemo memo;
+        private int nextIndex;
+        private int startIndex = -1;
+        private int endIndex = -1;
+        private String token;
+        private boolean exhausted;
+
+        private TokenCursor(final String sql, final TokenizerConfig tokenizerConfig) {
+            this.sql = sql;
+            this.tokenizerConfig = tokenizerConfig;
+        }
+
+        /**
+         * Advances to the next token, sharing previously computed lexical context.
+         * Once no token remains, subsequent calls also return {@code false}.
+         *
+         * @return {@code true} when a current token is available, or {@code false} at the end
+         */
+        public boolean next() {
+            if (exhausted) {
+                return false;
+            }
+            final long bounds = nextTokenBounds(sql, nextIndex, tokenizerConfig, memo, false, this);
+            startIndex = (int) (bounds >>> 32);
+            endIndex = (int) bounds;
+            token = null;
+            if (startIndex == endIndex) {
+                startIndex = endIndex = -1;
+                memo = null;
+                exhausted = true;
+                return false;
+            }
+            nextIndex = endIndex;
+            return true;
+        }
+
+        /**
+         * Returns the current token's inclusive source start without materializing token text.
+         *
+         * @return the current token's first character index
+         * @throws IllegalStateException before the first successful {@link #next()} or after it returns {@code false}
+         */
+        public int startIndex() {
+            checkCurrentToken();
+            return startIndex;
+        }
+
+        /**
+         * Returns the current token's exclusive source end without materializing token text.
+         *
+         * @return the index immediately after the current token
+         * @throws IllegalStateException before the first successful {@link #next()} or after it returns {@code false}
+         */
+        public int endIndex() {
+            checkCurrentToken();
+            return endIndex;
+        }
+
+        /**
+         * Returns the current token's text, creating it on demand and reusing it until the next advance.
+         *
+         * @return the current token's source text
+         * @throws IllegalStateException before the first successful {@link #next()} or after it returns {@code false}
+         */
+        public String token() {
+            checkCurrentToken();
+            if (token == null) {
+                token = tokenText(sql, startIndex, endIndex);
+            }
+            return token;
+        }
+
+        private void checkCurrentToken() {
+            if (startIndex < 0) {
+                throw new IllegalStateException("No current token; call next() and check its result first");
+            }
+        }
+    }
+
+    /**
      * Tokenizes a SQL statement into a list of lexical SQL tokens.
      * This method preserves the semantic meaning
      * of SQL constructs such as keywords, operators, identifiers, and literals.
@@ -975,11 +1119,17 @@ public final class SqlParser {
 
         for (int index = 0; index < sqlLength; index++) {
             final char ch = sql.charAt(index);
+            if (ch < 128 && tokenizerConfig.asciiCharacterKinds[ch] == 0) {
+                if (tokenStart < 0) {
+                    tokenStart = index;
+                }
+                continue;
+            }
             String separator = null;
             boolean hashWord = ch == '#' && index + 1 < sqlLength && sql.charAt(index + 1) == '{';
             if (ch == '#' && !hashWord && hashIdentifierPrefixStart(sql, sqlLength, index) >= 0) {
                 if (memo == null) {
-                    memo = new HashScanMemo(sql);
+                    memo = new HashScanMemo(sql, true);
                 }
                 hashWord = isLikelyHashPrefixedIdentifier(sql, sqlLength, index, tokenizerConfig, memo);
             }
@@ -1011,7 +1161,7 @@ public final class SqlParser {
                     // Boundary lookahead can be the first hash-context probe in this scan.
                     final int next = index + 1;
                     if (memo == null && next < sqlLength && sql.charAt(next) == '#' && hashIdentifierPrefixStart(sql, sqlLength, next) >= 0) {
-                        memo = new HashScanMemo(sql);
+                        memo = new HashScanMemo(sql, true);
                     }
                     appendSpaceAfterSkippedBlockCommentIfNeeded(sql, sqlLength, index, tokens, tokenizerConfig, memo);
                 }
@@ -1022,7 +1172,7 @@ public final class SqlParser {
                     tokenStart = index;
                 }
                 if (ch == '[' && memo == null) {
-                    memo = new HashScanMemo(sql);
+                    memo = new HashScanMemo(sql, true);
                 }
                 index = quotedTokenEndIndex(sql, index + 1, ch == '[' ? ']' : ch, tokenizerConfig, memo);
                 tokens.add(tokenText(sql, tokenStart, index < sqlLength ? index + 1 : sqlLength));
@@ -1520,6 +1670,9 @@ public final class SqlParser {
      * configuration, the whitespace separators are space, horizontal tab, line feed, carriage
      * return, and form feed.
      *
+     * <p>For a consecutive walk through the same SQL, {@link #cursor(String)} retains lexical context
+     * between tokens and exposes both source bounds and optional token text from each advance.</p>
+     *
      * <p>The method handles:</p>
      * <ul>
      *   <li>Whitespace skipping (only between tokens; once a token has begun accumulating,
@@ -1543,6 +1696,7 @@ public final class SqlParser {
      * @param fromIndex the starting position for extraction (0-based); negative values are treated as {@code 0}
      * @return the next token found, or an empty string if no more tokens exist
      * @throws IllegalArgumentException if {@code sql} is {@code null}
+     * @see #cursor(String)
      */
     public static String nextToken(final String sql, final int fromIndex) {
         N.checkArgNotNull(sql, cs.sql);
@@ -1581,6 +1735,9 @@ public final class SqlParser {
      * of {@code sql} is returned, consistent with {@link #nextToken(String, int)} returning an empty
      * string in that case.</p>
      *
+     * <p>For consecutive bounds lookups, {@link #cursor(String)} retains lexical context between
+     * advances and materializes token text only when requested.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String sql = "SELECT   name,   age FROM users";
@@ -1594,6 +1751,7 @@ public final class SqlParser {
      * @return the index immediately after the next token, or the length of {@code sql} if no further token exists
      * @throws IllegalArgumentException if {@code sql} is {@code null}
      * @see #nextToken(String, int)
+     * @see #cursor(String)
      */
     public static int nextTokenEndIndex(final String sql, final int fromIndex) {
         N.checkArgNotNull(sql, cs.sql);
@@ -1615,8 +1773,13 @@ public final class SqlParser {
      * Search also exposes whitespace separators; extraction skips them. A longer configured separator
      * always wins before whitespace is skipped (for example, " ->" starts at its leading blank).
      */
-    private static long nextTokenBounds(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, HashScanMemo memo,
+    private static long nextTokenBounds(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo,
             final boolean includeWhitespace) {
+        return nextTokenBounds(sql, fromIndex, tokenizerConfig, memo, includeWhitespace, null);
+    }
+
+    private static long nextTokenBounds(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, HashScanMemo memo,
+            final boolean includeWhitespace, final TokenCursor cursor) {
         final int len = sql.length();
         int start = -1;
         for (int index = Math.max(0, fromIndex); index < len; index++) {
@@ -1634,6 +1797,9 @@ public final class SqlParser {
                 // possible hash-prefixed name; callers scanning several tokens can share it.
                 if (memo == null) {
                     memo = new HashScanMemo(sql);
+                    if (cursor != null) {
+                        cursor.memo = memo;
+                    }
                 }
                 hashWord = isLikelyHashPrefixedIdentifier(sql, len, index, tokenizerConfig, memo);
             }
@@ -1653,6 +1819,9 @@ public final class SqlParser {
             } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
                 if (ch == '[' && memo == null) {
                     memo = new HashScanMemo(sql);
+                    if (cursor != null) {
+                        cursor.memo = memo;
+                    }
                 }
                 final int close = quotedTokenEndIndex(sql, index + 1, ch == '[' ? ']' : ch, tokenizerConfig, memo);
                 return tokenBounds(start < 0 ? index : start, close < len ? close + 1 : len);
@@ -1770,34 +1939,74 @@ public final class SqlParser {
     /** Keeps comment removal from creating a different operator, comment opener, or pgJDBC {@code ??} escape. */
     private static boolean wouldMergeAcrossComment(final List<String> tokens, final String sql, final int nextIndex, final TokenizerConfig tokenizerConfig) {
         final int maxSuffixLength = Math.max(1, tokenizerConfig.maxSeparatorLength - 1);
-        final StringBuilder suffix = new StringBuilder(maxSuffixLength);
+        int suffixLength = 0;
 
-        for (int i = tokens.size() - 1; i >= 0 && suffix.length() < maxSuffixLength; i--) {
+        for (int i = tokens.size() - 1; i >= 0 && suffixLength < maxSuffixLength; i--) {
             final String token = tokens.get(i);
 
             if (SK.SPACE.equals(token)) {
                 break;
             }
 
-            suffix.insert(0, token.substring(Math.max(0, token.length() - (maxSuffixLength - suffix.length()))));
-        }
+            for (int offset = token.length() - 1; offset >= 0 && suffixLength < maxSuffixLength; offset--) {
+                final char first = token.charAt(offset);
+                suffixLength++;
 
-        final int suffixLength = suffix.length();
-        final String joined = suffix + sql.substring(nextIndex, Math.min(sql.length(), nextIndex + Math.max(2, tokenizerConfig.maxSeparatorLength)));
+                if (suffixLength == 1) {
+                    final char next = sql.charAt(nextIndex);
+                    if (first == '-' && next == '-' || first == '/' && next == '*' || first == '?' && next == '?') {
+                        return true;
+                    }
+                }
 
-        for (int start = 0; start < suffixLength; start++) {
-            if ((joined.startsWith("--", start) || joined.startsWith("/*", start) || joined.startsWith("??", start)) && start + 2 > suffixLength) {
-                return true;
-            }
+                final String[] candidates = first < 128 ? tokenizerConfig.asciiMultiCharSeparators[first]
+                        : tokenizerConfig.nonAsciiMultiCharSeparators.get(first);
+                if (candidates == null) {
+                    continue;
+                }
 
-            final String separator = matchMultiCharSeparator(joined, joined.length(), start, tokenizerConfig);
-
-            if (separator != null && start + separator.length() > suffixLength) {
-                return true;
+                for (final String candidate : candidates) {
+                    if (candidate.length() <= suffixLength) {
+                        // Buckets are longest-first; no remaining candidate reaches across the boundary.
+                        break;
+                    }
+                    if (matchesCommentBoundarySeparator(tokens, i, offset, suffixLength, sql, nextIndex, candidate)) {
+                        return true;
+                    }
+                }
             }
         }
 
         return false;
+    }
+
+    /** Compares the two sides of a removed comment without constructing their concatenation. */
+    private static boolean matchesCommentBoundarySeparator(final List<String> tokens, final int tokenIndex, final int tokenOffset, final int suffixLength,
+            final String sql, final int nextIndex, final String candidate) {
+        final int rightLength = candidate.length() - suffixLength;
+        if (rightLength > sql.length() - nextIndex || !sql.regionMatches(nextIndex, candidate, suffixLength, rightLength)) {
+            return false;
+        }
+
+        // Apply the same overlapping-comment rule as matchMultiCharSeparator. A crossing candidate's
+        // following character is always on the source side of the boundary.
+        final int after = nextIndex + rightLength;
+        final char last = candidate.charAt(candidate.length() - 1);
+        if (after < sql.length() && (last == '-' && sql.charAt(after) == '-' || last == '/' && sql.charAt(after) == '*')) {
+            return false;
+        }
+
+        int candidateOffset = 0;
+        for (int i = tokenIndex; i < tokens.size(); i++) {
+            final String token = tokens.get(i);
+            final int offset = i == tokenIndex ? tokenOffset : 0;
+            final int count = token.length() - offset;
+            if (!token.regionMatches(offset, candidate, candidateOffset, count)) {
+                return false;
+            }
+            candidateOffset += count;
+        }
+        return true;
     }
 
     /**
@@ -2695,6 +2904,7 @@ public final class SqlParser {
 
         private final String str;
         private final int length;
+        private final boolean fullScan;
 
         /** Per position: hash classification for both flavors and comma-list context; {@code null} until first use. */
         private byte[] hashIdentifierStates;
@@ -2712,8 +2922,10 @@ public final class SqlParser {
         /** Subscript roles at bracket openers already visited by the lazy lexical prefix scan. */
         private boolean[] subscriptBrackets;
 
-        /** Per position {@code i}: the largest {@code q <= i} with {@code "/*"} at {@code q - 1}, or -1; built on first use. */
+        /** Per visited position {@code i}: the largest {@code q <= i} with {@code "/*"} at {@code q - 1}, or -1. */
         private int[] blockCommentOpenerEnds;
+        private int blockCommentPassEnd;
+        private int lastBlockCommentOpener = -1;
         private int bracketPassEnd;
         private boolean bracketChainOpen;
 
@@ -2739,20 +2951,55 @@ public final class SqlParser {
         private int[] backwardSkipResults;
 
         HashScanMemo(final String str) {
+            this(str, false);
+        }
+
+        HashScanMemo(final String str, final boolean fullScan) {
             this.str = str;
             length = str.length();
+            this.fullScan = fullScan;
+        }
+
+        /**
+         * Early lookups grow with their prefix. Once the next geometric capacity would reach half
+         * the source length, allocate the final size to avoid another large copy during dense scans.
+         * Complete scans allocate the final size on first use; tables remain lazy in either mode.
+         */
+        private int grownCapacity(final int oldCapacity, final int required) {
+            if (fullScan) {
+                return length;
+            }
+            final long nextCapacity = Math.max(required, Math.max(64L, oldCapacity + (long) oldCapacity));
+            return nextCapacity >= length - length / 2 ? length : (int) nextCapacity;
+        }
+
+        private int[] grow(final int[] values, final int required, final int initialValue) {
+            final int oldCapacity = values == null ? 0 : values.length;
+            if (oldCapacity >= required) {
+                return values;
+            }
+            final int capacity = grownCapacity(oldCapacity, required);
+            final int[] grown = values == null ? new int[capacity] : Arrays.copyOf(values, capacity);
+            if (initialValue != 0) {
+                Arrays.fill(grown, oldCapacity, capacity, initialValue);
+            }
+            return grown;
+        }
+
+        private void ensureHashStateCapacity(final int required) {
+            if (hashIdentifierStates == null) {
+                hashIdentifierStates = new byte[grownCapacity(0, required)];
+            } else if (hashIdentifierStates.length < required) {
+                hashIdentifierStates = Arrays.copyOf(hashIdentifierStates, grownCapacity(hashIdentifierStates.length, required));
+            }
         }
 
         int backwardSkipResult(final int position) {
-            return backwardSkipResults == null ? UNKNOWN : backwardSkipResults[position];
+            return backwardSkipResults == null || position >= backwardSkipResults.length ? UNKNOWN : backwardSkipResults[position];
         }
 
         void rememberBackwardSkipResult(final int position, final int result) {
-            if (backwardSkipResults == null) {
-                backwardSkipResults = new int[length];
-                Arrays.fill(backwardSkipResults, UNKNOWN);
-            }
-
+            backwardSkipResults = grow(backwardSkipResults, position + 1, UNKNOWN);
             backwardSkipResults[position] = result;
         }
 
@@ -2789,9 +3036,10 @@ public final class SqlParser {
          */
         private void extendGroupPass(final int toIndex, final TokenizerConfig tokenizerConfig) {
             if (groupOpeners == null) {
-                groupOpeners = new int[length];
                 groupPassOpenParentheses = new IntList(8);
             }
+            // A doubled delimiter or comment opener can consume one character beyond the frontier.
+            groupOpeners = grow(groupOpeners, toIndex < length - 1 ? toIndex + 2 : length, 0);
 
             extendingGroupPass = true;
 
@@ -2874,19 +3122,13 @@ public final class SqlParser {
 
         /** The end ({@code *}) of the last {@code /*} that ends at or before {@code position}, or -1. */
         int lastBlockCommentOpenerEnd(final int position) {
-            if (blockCommentOpenerEnds == null) {
-                final int[] ends = new int[length];
-                int last = -1;
-
-                for (int i = 0; i < length; i++) {
-                    if (i >= 1 && str.charAt(i) == '*' && str.charAt(i - 1) == '/') {
-                        last = i;
-                    }
-
-                    ends[i] = last;
+            blockCommentOpenerEnds = grow(blockCommentOpenerEnds, position + 1, 0);
+            for (int i = blockCommentPassEnd; i <= position; i++) {
+                if (i >= 1 && str.charAt(i) == '*' && str.charAt(i - 1) == '/') {
+                    lastBlockCommentOpener = i;
                 }
-
-                blockCommentOpenerEnds = ends;
+                blockCommentOpenerEnds[i] = lastBlockCommentOpener;
+                blockCommentPassEnd = i + 1;
             }
 
             return blockCommentOpenerEnds[position];
@@ -2899,7 +3141,9 @@ public final class SqlParser {
          */
         boolean isSubscriptBracket(final int opening, final TokenizerConfig tokenizerConfig) {
             if (subscriptBrackets == null) {
-                subscriptBrackets = new boolean[length];
+                subscriptBrackets = new boolean[grownCapacity(0, opening + 1)];
+            } else if (subscriptBrackets.length <= opening) {
+                subscriptBrackets = Arrays.copyOf(subscriptBrackets, grownCapacity(subscriptBrackets.length, opening + 1));
             }
 
             while (bracketPassEnd <= opening) {
@@ -2940,7 +3184,7 @@ public final class SqlParser {
          * if it has not been classified yet under the requested flavor.
          */
         int hashIdentifierState(final String scanned, final int index, final boolean lineCommentAware) {
-            if (scanned != str || hashIdentifierStates == null || index < 0 || index >= length) {
+            if (scanned != str || hashIdentifierStates == null || index < 0 || index >= hashIdentifierStates.length) {
                 return -1;
             }
 
@@ -2958,9 +3202,7 @@ public final class SqlParser {
                 return;
             }
 
-            if (hashIdentifierStates == null) {
-                hashIdentifierStates = new byte[length];
-            }
+            ensureHashStateCapacity(index + 1);
 
             byte bits = lineCommentAware ? LINE_AWARE_KNOWN : BLOCK_ONLY_KNOWN;
 
@@ -2972,7 +3214,8 @@ public final class SqlParser {
         }
 
         int hashListContextState(final String scanned, final int comma) {
-            if (scanned != str || hashIdentifierStates == null || (hashIdentifierStates[comma] & LIST_CONTEXT_KNOWN) == 0) {
+            if (scanned != str || hashIdentifierStates == null || comma >= hashIdentifierStates.length
+                    || (hashIdentifierStates[comma] & LIST_CONTEXT_KNOWN) == 0) {
                 return -1;
             }
 
@@ -2984,9 +3227,7 @@ public final class SqlParser {
                 return;
             }
 
-            if (hashIdentifierStates == null) {
-                hashIdentifierStates = new byte[length];
-            }
+            ensureHashStateCapacity(comma + 1);
 
             // Comma-list traversal always skips block comments only, independently of the caller's
             // line-comment mode. Spare bits share the existing per-position cache without another array.
@@ -3026,9 +3267,8 @@ public final class SqlParser {
          * {@link #isHashLineCommentStartForBackwardScan} says so.
          */
         private void extendLineCommentPass(final int toIndex, final TokenizerConfig tokenizerConfig) {
-            if (lineCommentOpeners == null) {
-                lineCommentOpeners = new int[length];
-            }
+            // Escaped delimiters and block-comment markers can consume one following character.
+            lineCommentOpeners = grow(lineCommentOpeners, toIndex < length - 1 ? toIndex + 2 : length, 0);
 
             extendingPass = true;
 
@@ -3881,6 +4121,8 @@ public final class SqlParser {
         final int quoteAxes = lexicalAxes(sql);
         final int commentModes = sql.indexOf("--") >= 0 ? 2 : 1;
         boolean hasInvalidMode = false;
+        String acceptedMysqlMask = null;
+        String acceptedStandardMask = null;
         for (int noEscapeQuotes = 0; noEscapeQuotes <= quoteAxes; noEscapeQuotes++) {
             if (isSkippedLexicalMode(noEscapeQuotes, quoteAxes)) {
                 continue;
@@ -3902,13 +4144,27 @@ public final class SqlParser {
                 // comment; the scanners below classify it on the masked text, where MySQL-mode masking broke
                 // non-comment "--" pairs (e.g. "--@from #t"). If that changes a '#' from comment to identifier,
                 // unmasked quotes on its line become visible and can hide a later statement: fail closed.
+                // Parameter masking can also expose a dollar-quote opener (":x$tag$"), even without '#'.
                 if (maskedSql != sql && !maskedSql
                         .equals(maskQuotedRegionsForClassification(maskedSql, tokenizerConfig, noEscapeQuotes, mysqlCommentRules, maskedMemo, false))) {
                     return false;
                 }
 
+                // Different modes may produce the same text, for example when their distinguishing characters
+                // occur inside a comment. Keep every mask and stability check, but classify that text only once
+                // per comment policy while it remains the latest accepted result. All other inputs are fixed here.
+                if (maskedSql.equals(mysqlCommentRules ? acceptedMysqlMask : acceptedStandardMask)) {
+                    continue;
+                }
+
                 if (!isAcceptedMaskedQuery(maskedSql, tokenizerConfig, allowInsert, mysqlCommentRules, maskedMemo, knownAllowedLeadingVerb)) {
                     return false;
+                }
+
+                if (mysqlCommentRules) {
+                    acceptedMysqlMask = maskedSql;
+                } else {
+                    acceptedStandardMask = maskedSql;
                 }
             }
         }
@@ -4033,21 +4289,24 @@ public final class SqlParser {
      * </ul>
      * The region ends at the next {@code ]} unless a quote, {@code [}, dollar quote or comment opener comes first, which
      * could hide the real end of the statement; it then runs to the end of the text. A bracketed SQL Server/SQLite name
-     * such as {@code [Update Date]} or {@code [update-date]} therefore stays accepted. Linear time: regions that end at a
-     * {@code ]} cannot overlap, an extended region is answered from the last position of each word, and comment ends are
-     * cached across brackets.
+     * such as {@code [Update Date]} or {@code [update-date]} therefore stays accepted. Comment skipping can make regions
+     * overlap even when their first words differ. Their physical bounds and last word positions are cached, so
+     * overlapping scans reuse covered suffixes; summaries before the current raw bracket are retired. An extended region is
+     * answered from the last position of each word in the whole text, and comment ends are cached.
      */
     private static boolean containsBracketedDataChangeStatement(final String sql, final boolean allowInsert) {
         final RawCommentSkipper flat = new RawCommentSkipper(sql, false);
         final RawCommentSkipper nesting = new RawCommentSkipper(sql, true);
-        final int[][] lastWords = new int[1][]; // computed on the first region that runs to the end of the text
+        final BracketStatementMemo statementMemo = new BracketStatementMemo();
 
-        for (int open = sql.indexOf('['); open >= 0; open = sql.indexOf('[', open + 1)) {
+        for (int open = sql.indexOf('['), nextOpen; open >= 0; open = nextOpen) {
+            nextOpen = sql.indexOf('[', open + 1);
+            statementMemo.discardBefore(open + 1);
             final int start = firstWordInBracket(sql, open, flat);
             final int nestedStart = firstWordInBracket(sql, open, nesting);
 
-            if (isBracketedStatementSource(sql, start, allowInsert, lastWords)
-                    || nestedStart != start && isBracketedStatementSource(sql, nestedStart, allowInsert, lastWords)) {
+            if (isBracketedStatementSource(sql, start, nextOpen, allowInsert, statementMemo)
+                    || nestedStart != start && isBracketedStatementSource(sql, nestedStart, nextOpen, allowInsert, statementMemo)) {
                 return true;
             }
         }
@@ -4067,10 +4326,24 @@ public final class SqlParser {
     }
 
     /** Applies the rules of {@link #containsBracketedDataChangeStatement} to the region whose first word starts at {@code start}. */
-    private static boolean isBracketedStatementSource(final String sql, final int start, final boolean allowInsert, final int[][] lastWords) {
+    private static boolean isBracketedStatementSource(final String sql, final int start, final int nextOpen, final boolean allowInsert,
+            final BracketStatementMemo memo) {
         final int len = sql.length();
 
         if (start >= len || !Character.isLetter(sql.charAt(start))) {
+            return false;
+        }
+
+        if (start == memo.lastStatementStart) {
+            return false; // This qualifying first word's region was already checked without triggering a veto.
+        }
+
+        if (start == memo.lastRepeatedStart) {
+            return false; // This first word was already found not to be a statement-source verb.
+        }
+
+        if (memo.repeatedStarts != null && memo.repeatedStarts.contains(start)) {
+            memo.lastRepeatedStart = start;
             return false;
         }
 
@@ -4080,47 +4353,170 @@ public final class SqlParser {
 
         if (!(with || upsertCheck || matchesToken(sql, start, end, "UPDATE", false) || matchesToken(sql, start, end, "DELETE", false)
                 || matchesToken(sql, start, end, "UPSERT", false) || !allowInsert && matchesToken(sql, start, end, "INSERT", false))) {
+            if (nextOpen >= 0 && start > nextOpen) {
+                // A start before the next '[' cannot recur. Remember comment-skipping jumps past long nonkeywords;
+                // qualifying verbs instead share region summaries, including regions whose first words differ.
+                if (memo.lastRepeatedStart >= 0) {
+                    if (memo.repeatedStarts == null) {
+                        memo.repeatedStarts = new HashSet<>();
+                        memo.repeatedStarts.add(memo.lastRepeatedStart);
+                    }
+                    memo.repeatedStarts.add(start);
+                }
+                memo.lastRepeatedStart = start;
+            }
             return false;
         }
 
-        final boolean[] seen = new boolean[BRACKET_WORD_KINDS];
-        int i = end;
+        final int seen = memo.wordKindsAfter(sql, end);
+        final boolean statementSource = with
+                ? (seen & ((1 << BRACKET_WORD_UPDATE) | (1 << BRACKET_WORD_OTHER_VERB) | (allowInsert ? 0 : 1 << BRACKET_WORD_INSERT))) != 0
+                : (seen & (1 << (upsertCheck ? BRACKET_WORD_UPDATE : BRACKET_WORD_RETURNING))) != 0;
+        if (!statementSource) {
+            memo.lastStatementStart = start;
+        }
+        return statementSource;
+    }
 
-        while (i < len && sql.charAt(i) != ']' && !opensRawRegion(sql, i)) {
-            if (Character.isLetter(sql.charAt(i)) && !isIdentifierChar(sql.charAt(i - 1))) {
-                final int wordEnd = identifierEnd(sql, i);
-                final int kind = bracketWordKind(sql, i, wordEnd);
+    private static final class BracketStatementMemo {
+        private int[] lastWords; // computed on the first region that runs to the end of the text
+        private int lastStatementStart = -1; // the last qualifying first word whose region did not trigger a veto
+        private int lastRepeatedStart = -1;
+        private Set<Integer> repeatedStarts; // only nonkeyword starts that can recur after comment-skipping jumps
+        private BracketRegion region; // one reusable summary suffices for ordinary, disjoint bracketed names
+        private TreeMap<Integer, BracketRegion> regions; // keyed by physical stop; only needed for live disjoint regions
 
-                if (kind >= 0) {
-                    seen[kind] = true;
+        /** Future first words cannot precede the next raw bracket, even under the nesting comment reading. */
+        void discardBefore(final int fromIndex) {
+            if (regions == null) {
+                if (region != null && region.stop < fromIndex) {
+                    region.from = -1; // Keep the object for the next ordinary region instead of allocating per bracket.
+                }
+                return;
+            }
+
+            while (!regions.isEmpty()) {
+                final Integer first = regions.firstKey();
+                if (first >= fromIndex) {
+                    break;
+                }
+                final BracketRegion expired = regions.remove(first);
+                expired.from = -1;
+                region = expired;
+            }
+
+            if (regions.size() == 1) {
+                region = regions.get(regions.firstKey());
+                regions = null;
+            } else if (regions.isEmpty()) {
+                regions = null;
+            }
+        }
+
+        /** Queries start at identifier ends, so overlapping scans follow the same word boundaries to the same stop. */
+        int wordKindsAfter(final String sql, final int fromIndex) {
+            if (region != null && region.from >= 0 && fromIndex >= region.from && fromIndex <= region.stop) {
+                return region.wordKindsAfter(fromIndex);
+            }
+
+            BracketRegion suffix = region != null && region.from > fromIndex ? region : null;
+            if (regions != null) {
+                final Integer after = regions.ceilingKey(fromIndex);
+                suffix = after == null ? null : regions.get(after);
+                if (suffix != null && fromIndex >= suffix.from) {
+                    region = suffix;
+                    return region.wordKindsAfter(fromIndex);
+                }
+            }
+
+            final int len = sql.length();
+            final int limit = suffix == null ? len : suffix.from;
+            int returning = -1;
+            int update = -1;
+            int otherVerb = -1;
+            int insert = -1;
+            int i = fromIndex;
+
+            while (i < limit && sql.charAt(i) != ']' && !opensRawRegion(sql, i)) {
+                if (Character.isLetter(sql.charAt(i)) && !isIdentifierChar(sql.charAt(i - 1))) {
+                    final int end = identifierEnd(sql, i);
+                    switch (bracketWordKind(sql, i, end)) {
+                        case BRACKET_WORD_RETURNING -> returning = i;
+                        case BRACKET_WORD_UPDATE -> update = i;
+                        case BRACKET_WORD_OTHER_VERB -> otherVerb = i;
+                        case BRACKET_WORD_INSERT -> insert = i;
+                        default -> {
+                            // An ordinary identifier contributes no statement-source word.
+                        }
+                    }
+                    i = end;
+                } else {
+                    i++;
+                }
+            }
+
+            if (suffix != null && i == suffix.from) {
+                // Extending the covered prefix leaves its physical stop (and any index key) unchanged.
+                suffix.from = fromIndex;
+                suffix.returning = Math.max(returning, suffix.returning);
+                suffix.update = Math.max(update, suffix.update);
+                suffix.otherVerb = Math.max(otherVerb, suffix.otherVerb);
+                suffix.insert = Math.max(insert, suffix.insert);
+                region = suffix;
+            } else {
+                if (i < len && sql.charAt(i) != ']') {
+                    // A raw opener extends the word search to EOF, but only starts at or before that physical opener may
+                    // share this summary. A later start can end at a ']' and must get its own bounded summary.
+                    if (lastWords == null) {
+                        lastWords = lastBracketWordPositions(sql);
+                    }
+                    returning = lastWords[BRACKET_WORD_RETURNING];
+                    update = lastWords[BRACKET_WORD_UPDATE];
+                    otherVerb = lastWords[BRACKET_WORD_OTHER_VERB];
+                    insert = lastWords[BRACKET_WORD_INSERT];
                 }
 
-                i = wordEnd;
-            } else {
-                i++;
+                if (regions == null && region != null && region.from >= 0) {
+                    regions = new TreeMap<>();
+                    regions.put(region.stop, region);
+                }
+                if (region == null || region.from >= 0) {
+                    region = new BracketRegion();
+                }
+                region.from = fromIndex;
+                region.stop = i;
+                region.returning = returning;
+                region.update = update;
+                region.otherVerb = otherVerb;
+                region.insert = insert;
+                if (regions != null) {
+                    regions.put(region.stop, region);
+                }
             }
+
+            return region.wordKindsAfter(fromIndex);
         }
+    }
 
-        if (i < len && sql.charAt(i) != ']') {
-            // The region may extend past the next ']': every such word up to the end of the text counts.
-            if (lastWords[0] == null) {
-                lastWords[0] = lastBracketWordPositions(sql);
-            }
+    /** A covered interval and its last relevant words, including words past its stop when that stop extends the reading. */
+    private static final class BracketRegion {
+        private int from = -1;
+        private int stop;
+        private int returning;
+        private int update;
+        private int otherVerb;
+        private int insert;
 
-            for (int kind = 0; kind < BRACKET_WORD_KINDS; kind++) {
-                seen[kind] |= lastWords[0][kind] >= end;
-            }
+        int wordKindsAfter(final int fromIndex) {
+            return (returning >= fromIndex ? 1 << BRACKET_WORD_RETURNING : 0) | (update >= fromIndex ? 1 << BRACKET_WORD_UPDATE : 0)
+                    | (otherVerb >= fromIndex ? 1 << BRACKET_WORD_OTHER_VERB : 0) | (insert >= fromIndex ? 1 << BRACKET_WORD_INSERT : 0);
         }
-
-        return with ? seen[BRACKET_WORD_UPDATE] || seen[BRACKET_WORD_OTHER_VERB] || !allowInsert && seen[BRACKET_WORD_INSERT]
-                : upsertCheck ? seen[BRACKET_WORD_UPDATE] : seen[BRACKET_WORD_RETURNING];
     }
 
     private static final int BRACKET_WORD_RETURNING = 0;
     private static final int BRACKET_WORD_UPDATE = 1;
     private static final int BRACKET_WORD_OTHER_VERB = 2; // DELETE, UPSERT, MERGE
     private static final int BRACKET_WORD_INSERT = 3;
-    private static final int BRACKET_WORD_KINDS = 4;
 
     private static int bracketWordKind(final String sql, final int start, final int end) {
         if (matchesToken(sql, start, end, "RETURNING", false)) {
@@ -4529,9 +4925,18 @@ public final class SqlParser {
         int leadingEnd = 0; // tsqlHashReading: end of the whitespace and comments leading the current statement
         int previousBracket = -1; // bracketsArePunctuation: the last '[' masked, which bounds the look-back for its '('
         int sqliteStatementLead = -1; // sqliteReading: first token position of the current statement (-1: not yet computed)
+        SingleLineMarkerScanner markers = null;
 
         while (index < len) {
             final char ch = sql.charAt(index);
+            int markerEnd = -1;
+
+            if (ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{') {
+                if (markers == null) {
+                    markers = new SingleLineMarkerScanner();
+                }
+                markerEnd = markers.end(sql, index + 2);
+            }
 
             if (oracleReading && ch == '`') {
                 // Oracle has no backtick-quoted names; blank the character so the scanners downstream cannot read one.
@@ -4576,8 +4981,7 @@ public final class SqlParser {
                     previousBracket = index;
                 }
             } else if (mysqlReading
-                    && (ch == '#' && !(index + 1 < len && sql.charAt(index + 1) == '{' && isSingleLineMarker(sql, index + 2))
-                            || ch == '-' && index + 1 < len && sql.charAt(index + 1) == '-' && isMySqlDashCommentStart(sql, len, index))
+                    && (ch == '#' && markerEnd < 0 || ch == '-' && index + 1 < len && sql.charAt(index + 1) == '-' && isMySqlDashCommentStart(sql, len, index))
                     || sqliteReading && ch == '-' && index + 1 < len && sql.charAt(index + 1) == '-') {
                 // MySQL/MariaDB end '#' and "-- " comments, and SQLite every "--" comment, only at '\n' (a lone '\r'
                 // stays inside the comment), unlike the scanners downstream, so blank the whole comment here for them.
@@ -4658,7 +5062,7 @@ public final class SqlParser {
                 index = endIndex;
                 continue;
             } else if (sqliteReading && (ch == ':' || ch == '@' || ch == '#' || ch == '$' && (index == 0 || !isByteLexerIdentifierChar(sql.charAt(index - 1))))
-                    && !(ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{' && isSingleLineMarker(sql, index + 2))) {
+                    && !(ch == '#' && markerEnd >= 0)) {
                 // SQLite reads each of these as a parameter prefix (never '#' as a comment, never "::" as a cast), and a
                 // Tcl-style "(...)" suffix swallows everything up to its ')': ":a(') ; DELETE FROM t ; --'" runs the DELETE.
                 if (sqliteStatementLead < 0) {
@@ -4699,13 +5103,13 @@ public final class SqlParser {
                 masked = maskRange(sql, masked, start, index);
                 continue;
             } else if (ch == '#' && index + 1 < len && sql.charAt(index + 1) == '{') {
-                final int endIndex = sql.indexOf('}', index + 2);
+                final int endIndex = markerEnd;
 
                 // A MySQL reader sees "#{" as a line comment that ends at the line break, so a marker
                 // spanning lines must not hide the text after that break.
                 // SQL Server (H2 MSSQLServer/Oracle modes) has no such markers: there '#' is a name character and
                 // "{...}" plain text, so only a body that can be nothing but a parameter expression stays hidden.
-                if (endIndex >= 0 && !containsLineBreak(sql, index + 2, endIndex) && (!tsqlHashReading || isPlainMarkerBody(sql, index + 2, endIndex))) {
+                if (endIndex >= 0 && (!tsqlHashReading || isPlainMarkerBody(sql, index + 2, endIndex))) {
                     masked = maskRange(sql, masked, index + 2, endIndex);
                     index = endIndex + 1;
                     continue;
@@ -4890,9 +5294,31 @@ public final class SqlParser {
         return true;
     }
 
-    private static boolean isSingleLineMarker(final String sql, final int fromIndex) {
-        final int endIndex = sql.indexOf('}', fromIndex);
-        return endIndex >= 0 && !containsLineBreak(sql, fromIndex, endIndex);
+    /**
+     * Finds a marker's closing '}' before any line break. Failed openers can overlap ("#{#{..."), so the next
+     * delimiter or end-of-input is reused for all starts up to it instead of searching the remaining text again.
+     * One instance belongs to one masking pass and its SQL string.
+     */
+    private static final class SingleLineMarkerScanner {
+        private int searchedFrom = -1;
+        private int boundary;
+
+        int end(final String sql, final int fromIndex) {
+            if (searchedFrom < 0 || fromIndex < searchedFrom || fromIndex > boundary) {
+                searchedFrom = fromIndex;
+                boundary = fromIndex;
+
+                while (boundary < sql.length()) {
+                    final char ch = sql.charAt(boundary);
+                    if (ch == '}' || ch == ENTER || ch == ENTER_2) {
+                        break;
+                    }
+                    boundary++;
+                }
+            }
+
+            return boundary < sql.length() && sql.charAt(boundary) == '}' ? boundary : -1;
+        }
     }
 
     /**
@@ -5307,10 +5733,19 @@ public final class SqlParser {
         if (fromIndex >= toIndex) {
             return chars;
         }
+        int index = fromIndex;
         if (chars == null) {
+            // Remasking quoted interiors commonly changes nothing. Keep the original String and null-array sentinel
+            // until a character actually needs replacing; callers that immediately write a delimiter mask one here.
+            while (index < toIndex && (sql.charAt(index) == ' ' || sql.charAt(index) == ENTER || sql.charAt(index) == ENTER_2)) {
+                index++;
+            }
+            if (index == toIndex) {
+                return null;
+            }
             chars = sql.toCharArray();
         }
-        for (int index = fromIndex; index < toIndex; index++) {
+        for (; index < toIndex; index++) {
             if (chars[index] != ENTER && chars[index] != ENTER_2) {
                 chars[index] = ' ';
             }
@@ -5321,7 +5756,8 @@ public final class SqlParser {
     private static HashScanMemo hashScanMemo(final String sql) {
         // A "*/" needs the memo too: it holds the block-comment opener table of skipBackwardWhitespaceAndBlockComments.
         // Without '#' or "--" its line-comment pass finds no comment, so the classification is the same as without one.
-        return sql.indexOf('#') >= 0 || sql.indexOf("--") >= 0 || sql.indexOf("*/") >= 0 ? new HashScanMemo(sql) : null;
+        // Classification can make several complete passes; retain exact-size lazy tables rather than repeatedly growing them.
+        return sql.indexOf('#') >= 0 || sql.indexOf("--") >= 0 || sql.indexOf("*/") >= 0 ? new HashScanMemo(sql, true) : null;
     }
 
     /**
@@ -6566,7 +7002,7 @@ public final class SqlParser {
                     if (with) {
                         topGroup(groups).startCteList(false);
                     } else {
-                        collectNestedDataChangeVerb(sql, index, end, topGroup(groups), companionWords, statementStartKeywords, tokenizerConfig, memo);
+                        collectNestedDataChangeVerb(sql, index, end, groups, companionWords, statementStartKeywords, tokenizerConfig, memo);
                     }
                 }
 
@@ -6575,7 +7011,7 @@ public final class SqlParser {
                     if (group.cteListStartsStatement) {
                         statementStartKeywords.add(sql.substring(index, end));
                     } else {
-                        collectNestedDataChangeVerb(sql, index, end, group, companionWords, statementStartKeywords, tokenizerConfig, memo);
+                        collectNestedDataChangeVerb(sql, index, end, groups, companionWords, statementStartKeywords, tokenizerConfig, memo);
                     }
                 }
 
@@ -6714,7 +7150,7 @@ public final class SqlParser {
      * {@code OPTION (MERGE JOIN)} and text such as {@code (update required)} that another lexical reading exposes from a
      * comment or literal accepted.</p>
      */
-    private static void collectNestedDataChangeVerb(final String sql, final int index, final int end, final ParenthesizedGroup group,
+    private static void collectNestedDataChangeVerb(final String sql, final int index, final int end, final List<ParenthesizedGroup> groups,
             final int[] companionWords, final List<String> statementStartKeywords, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
         final boolean delete = matchesToken(sql, index, end, "DELETE", false);
         final boolean function = matchesToken(sql, index, end, "INSERT", false) || matchesToken(sql, index, end, "MERGE", false)
@@ -6749,6 +7185,7 @@ public final class SqlParser {
         if (delete) {
             statementStartKeywords.add(sql.substring(index, end));
         } else {
+            final ParenthesizedGroup group = topGroup(groups);
             group.nestedVerb = sql.substring(index, end);
             group.companionWordsAtVerb = companionWords.clone();
         }

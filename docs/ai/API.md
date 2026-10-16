@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.9.5)
-- Build: b55692d075a5dfafa1a21e15adb0751427e4f167
+- Build: 33b655b87de09b33c4cad4a711956f0b93ff266a
 - Java: 21
-- Generated: 2026-10-14
+- Generated: 2026-10-15
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -7516,7 +7516,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
   - `includeSubEntityProperties` (`boolean`) — true to include nested entity properties, false for top-level only
-  - `excludedPropNames` (`Set<String>`) — set of property names to exclude (nullable). When sub-entity properties are included, excluding a root such as "address" also excludes descendants such as "address.street".
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude (nullable). When sub-entity properties are included, excluding a root such as "address" also excludes descendants such as "address.street". When includeSubEntityProperties is true, null entries in this set are ignored.
 - **Returns:** an immutable list of property names suitable for SELECT operations
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
@@ -8380,6 +8380,8 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 ##### attributes(...) -> ImmutableMap<String, String>
 - **Signature:** `public ImmutableMap<String, String> attributes(final String id)`
 - **Summary:** Retrieves the attributes associated with the specified SQL identifier.
+- **Contract:**
+  - If a caller supplied an "id" entry in the attributes map to #add(String, ParsedSql, Map), it is present in the returned map; it is informational only and is ignored by the saveTo methods, which always write the canonical identifier.
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** an immutable map of attribute names to values, or null if the id is null, empty, exceeds #MAX_ID_LENGTH characters, or is not found
@@ -8424,7 +8426,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Parameters:**
   - `id` (`String`) — the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)
   - `sql` (`ParsedSql`) — the parsed SQL to associate with the identifier (must not be null)
-  - `attributes` (`Map<String, String>`) — additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
+  - `attributes` (`Map<String, String>`) — additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null. The key "id" (#ID) is reserved: a caller-supplied "id" entry is stored and returned by #attributes(String), but is ignored by the saveTo methods, which always write the canonical identifier
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if id is null/empty, contains whitespace, exceeds #MAX_ID_LENGTH characters, or already exists; if sql is null; or if attributes contains a null/empty/invalid or namespace-qualified XML attribute name, or a null value
   - `com.landawn.abacus.exception.UncheckedException` — if attributes is nonempty and the XML parser cannot be configured to validate its attribute names
@@ -8453,7 +8455,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Parameters:**
   - `id` (`String`) — the SQL identifier (must not be null or empty, must not contain whitespace, and must not exceed #MAX_ID_LENGTH characters)
   - `sql` (`String`) — the SQL string to parse and store (must not be null or blank)
-  - `attributes` (`Map<String, String>`) — additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null
+  - `attributes` (`Map<String, String>`) — additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null. The key "id" (#ID) is reserved: a caller-supplied "id" entry is stored and returned by #attributes(String), but is ignored by the saveTo methods, which always write the canonical identifier
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if id is null/empty, contains whitespace, exceeds #MAX_ID_LENGTH characters, or already exists; if sql is null or is rejected by ParsedSql#parse(String) (blank SQL, mixed parameter styles, or malformed parameters); or if attributes contains a null/empty/invalid or namespace-qualified XML attribute name, or a null value
   - `com.landawn.abacus.exception.UncheckedException` — if attributes is nonempty and the XML parser cannot be configured to validate its attribute names
@@ -8805,6 +8807,15 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 - **Returns:** a tokenizer bound to the supplied configuration
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if tokenizerConfig is null
+##### cursor(...) -> TokenCursor
+- **Signature:** `public static TokenCursor cursor(final String sql)`
+- **Summary:** Creates a cursor that scans the SQL once with the default separator configuration.
+- **Parameters:**
+  - `sql` (`String`) — the SQL statement to scan; must not be null
+- **Returns:** a new cursor positioned before the first token
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if sql is null
+- **See also:** Tokenizer#cursor(String)
 ##### tokenize(...) -> List<String>
 - **Signature:** `public static List<String> tokenize(final String sql)`
 - **Summary:** Tokenizes a SQL statement into a list of lexical SQL tokens.
@@ -8885,11 +8896,13 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     String token2 = SqlParser.nextToken(sql, 13);   // Returns: ","
     String token3 = SqlParser.nextToken(sql, 14);   // Returns: "age" (skips spaces after comma)
     ```
+- **See also:** #cursor(String)
 ##### nextTokenEndIndex(...) -> int
 - **Signature:** `public static int nextTokenEndIndex(final String sql, final int fromIndex)`
 - **Summary:** Returns the position just past the next token in a SQL statement, scanning from the specified index.
 - **Contract:**
   - If no further token exists (only trailing whitespace and/or comments remain), the length of sql is returned, consistent with #nextToken(String, int) returning an empty string in that case.
+  - For consecutive bounds lookups, #cursor(String) retains lexical context between advances and materializes token text only when requested.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to scan (must not be null)
   - `fromIndex` (`int`) — the starting position for scanning (0-based); negative values are treated as 0
@@ -8903,7 +8916,7 @@ A utility class for parsing SQL statements into lexical SQL tokens.
     int end2 = SqlParser.nextTokenEndIndex(sql, 13);   // 14 (just past ",")
     int end3 = SqlParser.nextTokenEndIndex(sql, 14);   // 20 (just past "age")
     ```
-- **See also:** #nextToken(String, int)
+- **See also:** #nextToken(String, int), #cursor(String)
 ##### isFunctionName(...) -> boolean
 - **Signature:** `public static boolean isFunctionName(final List<String> tokens, final int index)`
 - **Summary:** Determines if a token at a specific position in a parsed token list represents a function name.
@@ -9229,6 +9242,15 @@ Instance-scoped, thread-safe SQL tokenizer.
     // Result: ["select", " ", "id", " ", "from", " ", "orders"]
     ```
 - **See also:** SqlParser#tokenize(String)
+##### cursor(...) -> TokenCursor
+- **Signature:** `public TokenCursor cursor(final String sql)`
+- **Summary:** Creates a cursor using this tokenizer's immutable separator configuration.
+- **Parameters:**
+  - `sql` (`String`) — the SQL statement to scan; must not be null
+- **Returns:** a new cursor positioned before the first token
+- **Throws:**
+  - `java.lang.IllegalArgumentException` — if sql is null
+- **See also:** SqlParser#cursor(String)
 ##### indexOfToken(...) -> int
 - **Signature:** `public int indexOfToken(final String sql, final String token)`
 - **Summary:** Finds a token from the beginning using case-insensitive matching.
@@ -9269,7 +9291,7 @@ Instance-scoped, thread-safe SQL tokenizer.
 - **Returns:** the next token, or an empty string if none remains
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if sql is null
-- **See also:** SqlParser#nextToken(String, int)
+- **See also:** SqlParser#nextToken(String, int), #cursor(String)
 ##### nextTokenEndIndex(...) -> int
 - **Signature:** `public int nextTokenEndIndex(final String sql, final int fromIndex)`
 - **Summary:** Returns the index immediately after the next token.
@@ -9279,7 +9301,7 @@ Instance-scoped, thread-safe SQL tokenizer.
 - **Returns:** the next token's exclusive end index, or sql.length() if none remains
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if sql is null
-- **See also:** SqlParser#nextTokenEndIndex(String, int)
+- **See also:** SqlParser#nextTokenEndIndex(String, int), #cursor(String)
 ##### isSyntacticallyReadQuery(...) -> boolean
 - **Signature:** `public boolean isSyntacticallyReadQuery(final String sql)`
 - **Summary:** Lexically classifies the statement as SELECT-only using this tokenizer's configured separator rules and its semicolon-less batch setting.
@@ -9305,6 +9327,53 @@ Instance-scoped, thread-safe SQL tokenizer.
   - `sql` (`String`) — the SQL statement to classify; may be empty or null
 - **Returns:** true if the SQL text has an accepted SELECT-or-INSERT-only shape, false otherwise
 - **See also:** SqlParser#isReadOrInsertQuery(String), #isSyntacticallyReadQuery(String)
+
+### Class TokenCursor (com.landawn.abacus.query.SqlParser.TokenCursor)
+A forward-only cursor over one SQL string.
+
+**Thread-safety:** not-thread-safe
+**Nullability:** unspecified
+
+#### Public Fields
+- (none)
+
+#### Public Constructors
+- (none)
+
+#### Public Static Methods
+- (none)
+
+#### Public Instance Methods
+##### next(...) -> boolean
+- **Signature:** `public boolean next()`
+- **Summary:** Advances to the next token, sharing previously computed lexical context.
+- **Parameters:**
+  - (none)
+- **Returns:** true when a current token is available, or false at the end
+##### startIndex(...) -> int
+- **Signature:** `public int startIndex()`
+- **Summary:** Returns the current token's inclusive source start without materializing token text.
+- **Parameters:**
+  - (none)
+- **Returns:** the current token's first character index
+- **Throws:**
+  - `java.lang.IllegalStateException` — before the first successful #next() or after it returns false
+##### endIndex(...) -> int
+- **Signature:** `public int endIndex()`
+- **Summary:** Returns the current token's exclusive source end without materializing token text.
+- **Parameters:**
+  - (none)
+- **Returns:** the index immediately after the current token
+- **Throws:**
+  - `java.lang.IllegalStateException` — before the first successful #next() or after it returns false
+##### token(...) -> String
+- **Signature:** `public String token()`
+- **Summary:** Returns the current token's text, creating it on demand and reusing it until the next advance.
+- **Parameters:**
+  - (none)
+- **Returns:** the current token's source text
+- **Throws:**
+  - `java.lang.IllegalStateException` — before the first successful #next() or after it returns false
 
 ### Class cs (com.landawn.abacus.query.cs)
 Internal constants container providing the standardized parameter-name string literals used by argument-validation calls (e.g., N.checkArgNotNull(condition, cs.condition)) throughout the Abacus Query framework.

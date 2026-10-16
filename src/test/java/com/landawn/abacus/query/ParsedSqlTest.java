@@ -1472,6 +1472,25 @@ public class ParsedSqlTest extends TestBase {
         }
 
         @Test
+        void testParse_RepeatedMybatisBindingsKeepNamesAndAttributesSeparate() {
+            final String sql = "SELECT " + "#{ id, jdbcType=BIGINT },#{ name:VARCHAR },".repeat(20) + "#{id}";
+            final ParsedSql parsed = ParsedSql.parse(sql, null);
+            final List<String> expected = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                expected.add("id");
+                expected.add("name");
+            }
+            expected.add("id");
+
+            assertEquals("SELECT " + "?,".repeat(40) + "?", parsed.parameterizedSql());
+            assertEquals(expected, parsed.namedParameters());
+            assertEquals(41, parsed.parameterCount());
+            assertSame(parsed.namedParameters().get(0), parsed.namedParameters().get(40));
+            assertSame(parsed.namedParameters().get(1), parsed.namedParameters().get(39));
+            assertThrows(UnsupportedOperationException.class, () -> parsed.namedParameters().set(0, "changed"));
+        }
+
+        @Test
         void testParse_SimpleIbatisInsertProducesPlaceholders() {
             ParsedSql parsed = ParsedSql.parse("INSERT INTO t (id) VALUES (#{id})");
             assertEquals("INSERT INTO t (id) VALUES (?)", parsed.parameterizedSql());
@@ -1712,6 +1731,39 @@ public class ParsedSqlTest extends TestBase {
             assertEquals("b", parsed.namedParameters().get(1));
         }
 
+        @Test
+        void testParse_AmbiguousQuoteTokensKeepMalformedNamedTextVerbatim() {
+            // The two quote readings disagree about ':x', so the entire token is opaque, including earlier malformed names.
+            for (final String name : List.of("\uD800", "\uDC00", "valid\uD800", "valid\uDC00", "valid.\uD800", "valid.\uDC00", "first:\uD800",
+                    "first:valid.\uDC00")) {
+                final String sql = "SELECT * FROM t WHERE a = :" + name + "['\\'':x]";
+                final ParsedSql parsed = ParsedSql.parse(sql, null);
+                assertEquals(sql, parsed.parameterizedSql(), sql);
+                assertEquals(List.of(), parsed.namedParameters(), sql);
+                assertEquals(0, parsed.parameterCount(), sql);
+                assertArrayEquals(new int[0], parsed.positionalParameterOffsets(), sql);
+
+                final ParsedSql withBinding = ParsedSql.parse(sql + " AND id = :id", null);
+                assertEquals(sql + " AND id = ?", withBinding.parameterizedSql(), sql);
+                assertEquals(List.of("id"), withBinding.namedParameters(), sql);
+                assertEquals(1, withBinding.parameterCount(), sql);
+            }
+        }
+
+        @Test
+        void testParse_AmbiguousQuoteTokensPreserveLaterMixedStyleErrors() {
+            for (final String name : List.of("\uD800", "\uDC00", "valid\uD800", "valid.\uDC00")) {
+                for (final String laterStyles : List.of(" AND b = :id AND c = #{name}", " AND b = :id AND c = ?")) {
+                    final String sql = "SELECT * FROM t WHERE a = :" + name + "['\\'':x]" + laterStyles;
+                    final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql, null), sql);
+                    final String foundStyles = laterStyles.endsWith("?") ? "found positional '?' and named ':propName'"
+                            : "found named ':propName' and iBatis/MyBatis '#{propName}'";
+                    assertTrue(error.getMessage().startsWith("Cannot mix parameter styles"), sql);
+                    assertTrue(error.getMessage().contains(foundStyles), sql);
+                }
+            }
+        }
+
         // Regression: a ':' glued to a closed value (backtick, bracket, MyBatis-joined token) and the classifier's named-marker lookups.
         @Test
         void testParse_colonGluedToClosedValueVariants() {
@@ -1832,6 +1884,38 @@ public class ParsedSqlTest extends TestBase {
         }
 
         @Test
+        void testParse_RepeatedNamedBindingsKeepEveryOccurrenceAndImmutableStorage() {
+            final String sql = "SELECT " + ":id,:name,".repeat(24) + ":id";
+            final ParsedSql parsed = ParsedSql.parse(sql, null);
+            final List<String> expected = new ArrayList<>();
+            for (int i = 0; i < 24; i++) {
+                expected.add("id");
+                expected.add("name");
+            }
+            expected.add("id");
+
+            assertEquals("SELECT " + "?,".repeat(48) + "?", parsed.parameterizedSql());
+            assertEquals(expected, parsed.namedParameters());
+            assertEquals(49, parsed.parameterCount());
+            for (int i = 2; i < expected.size(); i++) {
+                assertSame(parsed.namedParameters().get(i % 2), parsed.namedParameters().get(i));
+            }
+            assertThrows(UnsupportedOperationException.class, () -> parsed.namedParameters().clear());
+
+            // A repeated prefix followed by many distinct names must retain all names after the reuse cache fills.
+            final StringBuilder varied = new StringBuilder("SELECT :id,:id");
+            final List<String> variedNames = new ArrayList<>(List.of("id", "id"));
+            for (int i = 0; i < 40; i++) {
+                varied.append(",:p").append(i);
+                variedNames.add("p" + i);
+            }
+            final ParsedSql distinct = ParsedSql.parse(varied.toString(), null);
+            assertEquals("SELECT " + "?,".repeat(41) + "?", distinct.parameterizedSql());
+            assertEquals(variedNames, distinct.namedParameters());
+            assertEquals(42, distinct.parameterCount());
+        }
+
+        @Test
         void testParse_ThreeAdjacentNamedParameters_extractsAllParameters() {
             ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE a=:a:b:c");
             assertEquals("SELECT * FROM t WHERE a=? ? ?", parsed.parameterizedSql());
@@ -1840,6 +1924,19 @@ public class ParsedSqlTest extends TestBase {
             assertEquals("a", parsed.namedParameters().get(0));
             assertEquals("b", parsed.namedParameters().get(1));
             assertEquals("c", parsed.namedParameters().get(2));
+        }
+
+        @Test
+        void testParse_UnambiguousQuoteTokensStillRejectMalformedNames() {
+            for (final String name : List.of("\uD800", "\uDC00", "valid\uD800", "valid\uDC00", "valid.\uD800", "valid.\uDC00")) {
+                // Backslashes alone do not suppress validation: both readings must disagree about marker positions.
+                // E-prefixed literals always use backslash escapes, so they cannot produce that disagreement.
+                for (final String suffix : List.of("", "[':x']", "['\\'']", "[E'\\'':x]", "[e'\\'':x]")) {
+                    final String sql = "SELECT * FROM t WHERE a = :" + name + suffix + " AND b = :id AND c = #{name}";
+                    final IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse(sql, null), sql);
+                    assertTrue(error.getMessage().startsWith("Malformed named parameter: unpaired "), sql);
+                }
+            }
         }
 
         @Test
@@ -1858,6 +1955,29 @@ public class ParsedSqlTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :\uDC00 FROM users"));
             assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :valid\uD800 FROM users"));
             assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT arr[:\uD800] FROM users"));
+        }
+
+        @Test
+        void testParse_WholeTokenNamedBindingsRetainUnicodeAndEscapeBoundaries() {
+            final String supplementary = new String(Character.toChars(0x10400));
+            final String sql = "SELECT :user.address.city, :" + supplementary + "name, :_a1, payload?:key, payload??:key";
+            final ParsedSql parsed = ParsedSql.parse(sql, null);
+            assertEquals("SELECT ?, ?, ?, payload? ?, payload???", parsed.parameterizedSql());
+            assertEquals(List.of("user.address.city", supplementary + "name", "_a1", "key", "key"), parsed.namedParameters());
+            assertEquals(5, parsed.parameterCount());
+            assertEquals(5, ParsedSql.parse(parsed.parameterizedSql(), null).parameterCount());
+
+            final ParsedSql boundaries = ParsedSql.parse("SELECT f():name, [q]:name, 'q':name, :id::\"int\", :a:b", null);
+            assertEquals("SELECT f():name, [q]:name, 'q':name, ?::\"int\", ? ?", boundaries.parameterizedSql());
+            assertEquals(List.of("id", "a", "b"), boundaries.namedParameters());
+            assertEquals(3, boundaries.parameterCount());
+            final ParsedSql invalidStarts = ParsedSql.parse("SELECT :, :1name, :., :\uD83D\uDE00, :_ok", null);
+            assertEquals("SELECT :, :1name, :., :\uD83D\uDE00, ?", invalidStarts.parameterizedSql());
+            assertEquals(List.of("_ok"), invalidStarts.namedParameters());
+            assertEquals(1, invalidStarts.parameterCount());
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :id\uD800", null));
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :id, ?", null));
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT :id, #{name}", null));
         }
 
         @Test
@@ -2254,6 +2374,25 @@ public class ParsedSqlTest extends TestBase {
             assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE scn ? key").parameterCount());
             assertEquals(0, ParsedSql.parse("SELECT * FROM t WHERE skip ? 'key'").parameterCount());
             assertEquals(1, ParsedSql.parse("SELECT * FROM t WHERE doc ? 'key' AND x = ?").parameterCount());
+        }
+
+        @Test
+        void testParse_PositionalMetadataKeepsFallbackOffsetsAndOwnership() {
+            final String sql = "SELECT #{ }, '?', ?, ARRAY[? /* ? */, ?], doc ? 'key', ?";
+            final ParsedSql parsed = ParsedSql.parse(sql, null);
+            final int array = sql.indexOf("ARRAY[");
+            final int[] expected = { sql.indexOf("?, ARRAY"), sql.indexOf('?', array), sql.indexOf(", ?]") + 2, sql.lastIndexOf('?') };
+            assertEquals(sql, parsed.parameterizedSql());
+            assertEquals(4, parsed.parameterCount());
+            assertArrayEquals(expected, parsed.positionalParameterOffsets());
+            assertArrayEquals(expected, QueryUtil.positionalParameterOffsets(sql));
+            final int[] exposed = parsed.positionalParameterOffsets();
+            exposed[0] = -1;
+            assertArrayEquals(expected, parsed.positionalParameterOffsets());
+
+            final String direct = "SELECT " + "?,".repeat(127) + "?";
+            final int[] directExpected = java.util.stream.IntStream.range(0, 128).map(i -> 7 + 2 * i).toArray();
+            assertArrayEquals(directExpected, ParsedSql.parse(direct, null).positionalParameterOffsets());
         }
 
         @Test
@@ -3268,6 +3407,16 @@ public class ParsedSqlTest extends TestBase {
         }
 
         @Test
+        void testParse_NormalizedBuilderRangesKeepLiteralContentsAndLineBreaks() {
+            final String[][] cases = { { " \tSELECT :id\u2003 ; \n;\u2003", "SELECT ?" }, { "SELECT ?\u2003;\u2003", "SELECT ?" },
+                    { "SELECT '\u2003;'\u2003;", "SELECT '\u2003;'" }, { "SELECT 1 /* tail */", "SELECT 1" }, { "SELECT 'a'\n'b';\u2003", "SELECT 'a'\n'b'" },
+                    { "SELECT 1 // c\nWHERE id = :id;\u2003", "SELECT 1 // c\nWHERE id = ?" } };
+            for (final String[] c : cases) {
+                assertEquals(c[1], ParsedSql.parse(c[0], null).parameterizedSql(), c[0]);
+            }
+        }
+
+        @Test
         void testParse_ParenthesizedCommentOnlySqlHasNoOperationPrefix() {
             ParsedSql parsed = ParsedSql.parse("(/* comment only */)");
 
@@ -3326,6 +3475,41 @@ public class ParsedSqlTest extends TestBase {
             assertEquals("SELECT * FROM users", parsed.parameterizedSql());
             assertFalse(parsed.parameterizedSql().endsWith(";"));
             assertFalse(parsed.parameterizedSql().endsWith(" "));
+        }
+
+        @Test
+        void testParse_UnchangedRenderedSqlSharesOriginalText() {
+            for (final String sql : List.of("SELECT * FROM t WHERE id = ?", "SELECT ARRAY[?, ?]", "SELECT 'a'\n'b'", "SELECT " + "x".repeat(4000),
+                    "\u0001SELECT ?\u0000")) {
+                final ParsedSql parsed = ParsedSql.parse(sql, null);
+                assertEquals(sql.trim(), parsed.parameterizedSql(), sql);
+                assertSame(parsed.originalSql(), parsed.parameterizedSql(), sql);
+            }
+            final ParsedSql converted = ParsedSql.parse("SELECT :id", null);
+            assertEquals("SELECT ?", converted.parameterizedSql());
+            assertNotSame(converted.originalSql(), converted.parameterizedSql());
+        }
+
+        @Test
+        void testParse_UnrecognizedSqlKeepsTextAndMarkerSyntax() {
+            final String[][] cases = { { "\u2003SET @v = :value\u2003 ;\t;\u2003", "SET @v = :value" },
+                    { "\uFEFFGRANT SELECT ON t TO :role ; ;", "\uFEFFGRANT SELECT ON t TO :role" },
+                    { "/* leading */ CREATE TABLE t (x VARCHAR DEFAULT '#{broken') ;", "/* leading */ CREATE TABLE t (x VARCHAR DEFAULT '#{broken')" },
+                    { "SET @v = :\uD800;", "SET @v = :\uD800" }, { "; \u2003;", "" } };
+            for (final String[] c : cases) {
+                final ParsedSql parsed = ParsedSql.parse(c[0], null);
+                assertFalse(parsed.isDataOperation(), c[0]);
+                assertEquals(c[1], parsed.parameterizedSql(), c[0]);
+                assertEquals(0, parsed.parameterCount(), c[0]);
+                assertEquals(List.of(), parsed.namedParameters(), c[0]);
+                assertArrayEquals(new int[0], parsed.positionalParameterOffsets(), c[0]);
+            }
+
+            final String large = "CREATE TABLE t (x VARCHAR DEFAULT '" + "x".repeat(70_000) + "')";
+            final ParsedSql parsed = ParsedSql.parse(large, null);
+            assertSame(parsed.originalSql(), parsed.parameterizedSql());
+            assertEquals(large, parsed.parameterizedSql());
+            assertFalse(parsed.isDataOperation());
         }
 
         @Test

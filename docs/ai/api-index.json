@@ -2,10 +2,10 @@
   "library": {
     "name": "abacus-query",
     "version": "4.9.5",
-    "generated_at": "2026-10-14",
+    "generated_at": "2026-10-15",
     "java_target": "21",
     "source": {
-      "git_sha": "b55692d075a5dfafa1a21e15adb0751427e4f167"
+      "git_sha": "33b655b87de09b33c4cad4a711956f0b93ff266a"
     }
   },
   "packages": [
@@ -17551,7 +17551,7 @@
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "set of property names to exclude (nullable). When sub-entity properties are included, excluding a root such as \"address\" also excludes descendants such as \"address.street\".",
+                  "javadoc": "set of property names to exclude (nullable). When sub-entity properties are included, excluding a root such as \"address\" also excludes descendants such as \"address.street\". When includeSubEntityProperties is true, null entries in this set are ignored.",
                   "nullability": "unspecified"
                 }
               ],
@@ -19344,7 +19344,9 @@
               "throws": [],
               "javadoc_summary": "Retrieves the attributes associated with the specified SQL identifier.",
               "returns": "an immutable map of attribute names to values, or null if the id is null, empty, exceeds #MAX_ID_LENGTH characters, or is not found",
-              "contract": [],
+              "contract": [
+                "If a caller supplied an \"id\" entry in the attributes map to #add(String, ParsedSql, Map), it is present in the returned map; it is informational only and is ignored by the saveTo methods, which always write the canonical identifier."
+              ],
               "examples": [
                 "// Given XML: <sql id=\"batchInsert\" batchSize=\"100\" timeout=\"30\">...</sql>\nSqlMapper mapper = SqlMapper.loadFrom(\"sql/queries.xml\");\n\nImmutableMap<String, String> attrs = mapper.attributes(\"batchInsert\");\nif (attrs != null) {\n    String batchSize = attrs.get(\"batchSize\");   // \"100\"\n    String timeout = attrs.get(\"timeout\");       // \"30\"\n}\n\n// Returns null for unknown ids\nImmutableMap<String, String> unknown = mapper.attributes(\"nonExistentId\");\n// unknown is null"
               ],
@@ -19413,7 +19415,7 @@
                 {
                   "name": "attributes",
                   "type": "Map<String, String>",
-                  "javadoc": "additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null",
+                  "javadoc": "additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null. The key \"id\" (#ID) is reserved: a caller-supplied \"id\" entry is stored and returned by #attributes(String), but is ignored by the saveTo methods, which always write the canonical identifier",
                   "nullability": "unspecified"
                 }
               ],
@@ -19497,7 +19499,7 @@
                 {
                   "name": "attributes",
                   "type": "Map<String, String>",
-                  "javadoc": "additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null",
+                  "javadoc": "additional XML attributes for the SQL (e.g., batchSize, fetchSize, resultSetType, timeout); may be null or empty, but keys must be valid non-namespace XML attribute names and values must be non-null. The key \"id\" (#ID) is reserved: a caller-supplied \"id\" entry is stored and returned by #attributes(String), but is ignored by the saveTo methods, which always write the canonical identifier",
                   "nullability": "unspecified"
                 }
               ],
@@ -20341,6 +20343,38 @@
               "see_also": []
             },
             {
+              "name": "cursor",
+              "kind": "static",
+              "modifiers": [
+                "public",
+                "static"
+              ],
+              "signature": "public static TokenCursor cursor(final String sql)",
+              "return_type": "TokenCursor",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to scan; must not be null",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if sql is null"
+                }
+              ],
+              "javadoc_summary": "Creates a cursor that scans the SQL once with the default separator configuration.",
+              "returns": "a new cursor positioned before the first token",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "Tokenizer#cursor(String)"
+              ]
+            },
+            {
               "name": "tokenize",
               "kind": "static",
               "modifiers": [
@@ -20546,7 +20580,9 @@
               "examples": [
                 "String sql = \"SELECT   name,   age FROM users\";\nString token1 = SqlParser.nextToken(sql, 6);    // Returns: \"name\" (skips spaces after SELECT)\nString token2 = SqlParser.nextToken(sql, 13);   // Returns: \",\"\nString token3 = SqlParser.nextToken(sql, 14);   // Returns: \"age\" (skips spaces after comma)"
               ],
-              "see_also": []
+              "see_also": [
+                "#cursor(String)"
+              ]
             },
             {
               "name": "nextTokenEndIndex",
@@ -20581,13 +20617,15 @@
               "javadoc_summary": "Returns the position just past the next token in a SQL statement, scanning from the specified index.",
               "returns": "the index immediately after the next token, or the length of sql if no further token exists",
               "contract": [
-                "If no further token exists (only trailing whitespace and/or comments remain), the length of sql is returned, consistent with #nextToken(String, int) returning an empty string in that case."
+                "If no further token exists (only trailing whitespace and/or comments remain), the length of sql is returned, consistent with #nextToken(String, int) returning an empty string in that case.",
+                "For consecutive bounds lookups, #cursor(String) retains lexical context between advances and materializes token text only when requested."
               ],
               "examples": [
                 "String sql = \"SELECT   name,   age FROM users\";\nint end1 = SqlParser.nextTokenEndIndex(sql, 6);    // 13 (just past \"name\")\nint end2 = SqlParser.nextTokenEndIndex(sql, 13);   // 14 (just past \",\")\nint end3 = SqlParser.nextTokenEndIndex(sql, 14);   // 20 (just past \"age\")"
               ],
               "see_also": [
-                "#nextToken(String, int)"
+                "#nextToken(String, int)",
+                "#cursor(String)"
               ]
             },
             {
@@ -21294,6 +21332,37 @@
               ]
             },
             {
+              "name": "cursor",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public TokenCursor cursor(final String sql)",
+              "return_type": "TokenCursor",
+              "type_params": [],
+              "params": [
+                {
+                  "name": "sql",
+                  "type": "String",
+                  "javadoc": "the SQL statement to scan; must not be null",
+                  "nullability": "unspecified"
+                }
+              ],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalArgumentException",
+                  "condition": "if sql is null"
+                }
+              ],
+              "javadoc_summary": "Creates a cursor using this tokenizer's immutable separator configuration.",
+              "returns": "a new cursor positioned before the first token",
+              "contract": [],
+              "examples": [],
+              "see_also": [
+                "SqlParser#cursor(String)"
+              ]
+            },
+            {
               "name": "indexOfToken",
               "kind": "instance",
               "modifiers": [
@@ -21456,7 +21525,8 @@
               "contract": [],
               "examples": [],
               "see_also": [
-                "SqlParser#nextToken(String, int)"
+                "SqlParser#nextToken(String, int)",
+                "#cursor(String)"
               ]
             },
             {
@@ -21493,7 +21563,8 @@
               "contract": [],
               "examples": [],
               "see_also": [
-                "SqlParser#nextTokenEndIndex(String, int)"
+                "SqlParser#nextTokenEndIndex(String, int)",
+                "#cursor(String)"
               ]
             },
             {
@@ -21581,6 +21652,107 @@
                 "SqlParser#isReadOrInsertQuery(String)",
                 "#isSyntacticallyReadQuery(String)"
               ]
+            }
+          ],
+          "fields": []
+        },
+        {
+          "fqn": "com.landawn.abacus.query.SqlParser.TokenCursor",
+          "name": "TokenCursor",
+          "kind": "class",
+          "modifiers": [
+            "public",
+            "static",
+            "final"
+          ],
+          "javadoc_summary": "A forward-only cursor over one SQL string.",
+          "thread_safety": "not-thread-safe",
+          "nullability": "unspecified",
+          "type_params": [],
+          "constructors": [],
+          "methods": [
+            {
+              "name": "next",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public boolean next()",
+              "return_type": "boolean",
+              "type_params": [],
+              "params": [],
+              "throws": [],
+              "javadoc_summary": "Advances to the next token, sharing previously computed lexical context.",
+              "returns": "true when a current token is available, or false at the end",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "startIndex",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public int startIndex()",
+              "return_type": "int",
+              "type_params": [],
+              "params": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "before the first successful #next() or after it returns false"
+                }
+              ],
+              "javadoc_summary": "Returns the current token's inclusive source start without materializing token text.",
+              "returns": "the current token's first character index",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "endIndex",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public int endIndex()",
+              "return_type": "int",
+              "type_params": [],
+              "params": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "before the first successful #next() or after it returns false"
+                }
+              ],
+              "javadoc_summary": "Returns the current token's exclusive source end without materializing token text.",
+              "returns": "the index immediately after the current token",
+              "contract": [],
+              "examples": [],
+              "see_also": []
+            },
+            {
+              "name": "token",
+              "kind": "instance",
+              "modifiers": [
+                "public"
+              ],
+              "signature": "public String token()",
+              "return_type": "String",
+              "type_params": [],
+              "params": [],
+              "throws": [
+                {
+                  "type": "java.lang.IllegalStateException",
+                  "condition": "before the first successful #next() or after it returns false"
+                }
+              ],
+              "javadoc_summary": "Returns the current token's text, creating it on demand and reusing it until the next advance.",
+              "returns": "the current token's source text",
+              "contract": [],
+              "examples": [],
+              "see_also": []
             }
           ],
           "fields": []
