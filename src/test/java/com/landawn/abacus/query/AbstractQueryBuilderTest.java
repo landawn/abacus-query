@@ -12,6 +12,7 @@ import static com.landawn.abacus.query.QueryTestSupport.assertSql;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,12 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.AbstractCollection;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -45,6 +48,7 @@ import com.landawn.abacus.TestBase;
 import com.landawn.abacus.annotation.Column;
 import com.landawn.abacus.annotation.Table;
 import com.landawn.abacus.query.AbstractQueryBuilder.SP;
+import com.landawn.abacus.query.QueryUtil.ColumnInfo;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
 import com.landawn.abacus.query.condition.Clause;
 import com.landawn.abacus.query.condition.Condition;
@@ -7490,11 +7494,280 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         @Test
         @SuppressWarnings("deprecation")
+        void testFailedJournalConversionKeepsEnclosingMutationChanges() {
+            final List<Integer> values = IntStream.range(0, 5000).boxed().toList();
+            final Condition membership = Filters.in("id", values);
+            final Map<String, Object> prior = priorProperties(40, "id1", false);
+            for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                final List<Object> enclosingBindings = new ArrayList<>(prior.values());
+                enclosingBindings.add(7);
+                final List<Object> bindings = new ArrayList<>(enclosingBindings);
+                bindings.add(8);
+                bindings.addAll(values);
+                final List<String> markers = IntStream.rangeClosed(1, values.size()).mapToObj(i -> parameterToken(dsl, i == 1 ? "id1_2" : "id" + i)).toList();
+                final String expected = updatePrefix(dsl, prior) + ", extra = " + parameterToken(dsl, "extra") + ", extra = " + parameterToken(dsl, "extra_2")
+                        + " WHERE id IN (" + String.join(", ", markers) + ")";
+                final SqlBuilder builder = dsl.update("records").set(prior);
+                final FailingAliasMap aliases = new FailingAliasMap();
+                aliases.put("seeded", Collections.emptyMap());
+                builder._aliasPropColumnNameMap = aliases;
+
+                // Converting the open journals never changes the live collections: the alias map rejects any change
+                // while the large clauses run, the first of which fails while taking the snapshot.
+                mutateAtomicallyAsLibrary(builder, () -> {
+                    builder.set("extra", 7);
+                    builder.addPropColumnMapForAlias(Account.class, "acc");
+                    final Map<String, ColumnInfo> accountColumns = aliases.get("acc");
+                    assertNotNull(accountColumns);
+                    aliases.snapshotsBeforeFailure = 0;
+                    aliases.frozen = true;
+
+                    final OutOfMemoryError failure = assertThrows(OutOfMemoryError.class, () -> builder.where(membership));
+                    assertEquals("injected snapshot failure", failure.getMessage());
+                    aliases.frozen = false;
+                    // Only the nested clause is undone: the enclosing mutation's binding, name and alias remain.
+                    assertEquals(enclosingBindings, builder.parameters());
+                    assertSame(accountColumns, builder._aliasPropColumnNameMap.get("acc"));
+                    builder.set("extra", 8);
+
+                    aliases.frozen = true;
+                    builder.where(membership);
+                    aliases.frozen = false;
+                    assertEquals(1, convertedMutationLevels(builder));
+                });
+                assertSql(expected, bindings, builder.build());
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testJournalConversionAboveConvertedLevelRestoresEveryLevel() {
+            final Map<String, Object> prior = priorProperties(40, "id1", false);
+            final Map<String, Object> wide = new LinkedHashMap<>();
+            for (int i = 0; i < 3000; i++) {
+                wide.put("wide" + i, i);
+            }
+            final Map<String, Object> mid = new LinkedHashMap<>();
+            for (int i = 0; i < 50; i++) {
+                mid.put("mid" + i, i);
+            }
+            final Map<String, Object> widened = new LinkedHashMap<>(prior);
+            widened.putAll(wide);
+            final Condition membership = Filters.in("id", IntStream.range(0, 5000).boxed().toList());
+            for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                for (final boolean failOuter : new boolean[] { false, true }) {
+                    final SqlBuilder builder = dsl.update("records").set(prior);
+                    final Runnable outer = () -> {
+                        // A large clause converts this level into a snapshot; the level stays open below new journaling levels.
+                        builder.set(wide);
+                        assertEquals(1, convertedMutationLevels(builder));
+                        final IllegalStateException upperFailure = assertThrows(IllegalStateException.class, () -> mutateAtomicallyAsLibrary(builder, () -> {
+                            // The lowest level above the converted one journals again, under a budget sized for the current state.
+                            builder.set(mid);
+                            assertNotNull(mutationUndoEntries(builder));
+                            assertEquals(1, convertedMutationLevels(builder));
+                            // The next large clause converts the levels above the converted one as well.
+                            builder.where(membership);
+                            assertNull(mutationUndoEntries(builder));
+                            assertEquals(2, convertedMutationLevels(builder));
+                            throw new IllegalStateException("upper failure after the second conversion");
+                        }));
+                        assertEquals("upper failure after the second conversion", upperFailure.getMessage());
+                        // The upper level restored its own snapshot: the converted level's clause remains, the upper level's are gone.
+                        assertEquals(new ArrayList<>(widened.values()), builder.parameters());
+                        // Parameters roll back by length, so reusing names of the undone clauses shows which names were restored.
+                        builder.set("mid0", 8000).where(Filters.eq("id", 9000));
+                        if (failOuter) {
+                            throw new IllegalStateException("outer failure after the upper failure");
+                        }
+                    };
+
+                    final Map<String, Object> kept = new LinkedHashMap<>(failOuter ? prior : widened);
+                    if (failOuter) {
+                        assertThrows(IllegalStateException.class, () -> mutateAtomicallyAsLibrary(builder, outer));
+                        // The converted level restores the snapshot it took itself, not one taken by the later conversion.
+                        assertEquals(new ArrayList<>(prior.values()), builder.parameters());
+                        builder.set("wide0", 8000).where(Filters.eq("id", 9000));
+                        kept.put("wide0", 8000);
+                    } else {
+                        mutateAtomicallyAsLibrary(builder, outer);
+                        kept.put("mid0", 8000);
+                    }
+                    final List<Object> bindings = new ArrayList<>(kept.values());
+                    bindings.add(9000);
+                    // No restore leaves a name of an undone clause behind, so the final clauses generate unsuffixed names.
+                    assertSql(updatePrefix(dsl, kept) + " WHERE id = " + parameterToken(dsl, "id"), bindings, builder.build());
+                }
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testJournalConversionRestoresReplacedAliasMaps() {
+            final Condition membership = Filters.in("id", IntStream.range(0, 5000).boxed().toList());
+            final Map<String, Object> prior = priorProperties(40, "id1", false);
+            for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                // The level opened without an alias map, which a registration inside it creates.
+                final SqlBuilder created = dsl.update("records").set(prior);
+                try {
+                    assertNull(created._aliasPropColumnNameMap);
+                    assertThrows(IllegalStateException.class, () -> mutateAtomicallyAsLibrary(created, () -> {
+                        created.addPropColumnMapForAlias(Account.class, "acc");
+                        created.where(membership);
+                        assertEquals(1, convertedMutationLevels(created));
+                        throw new IllegalStateException("failure after the conversion");
+                    }));
+                    assertNull(created._aliasPropColumnNameMap);
+                } finally {
+                    created.build();
+                }
+
+                // The level's alias map was replaced by a copy (by a failed inner checkpoint) before the conversion.
+                final SqlBuilder replaced = dsl.update("records").set(prior);
+                try {
+                    final Map<String, Map<String, ColumnInfo>> aliases = new HashMap<>();
+                    aliases.put("seeded", Collections.emptyMap());
+                    replaced._aliasPropColumnNameMap = aliases;
+                    assertThrows(IllegalStateException.class, () -> mutateAtomicallyAsLibrary(replaced, () -> {
+                        replaced.addPropColumnMapForAlias(Account.class, "acc");
+                        assertThrows(IllegalStateException.class, () -> replaced.mutateAtomically(() -> {
+                            throw new IllegalStateException("inner failure");
+                        }));
+                        assertNotSame(aliases, replaced._aliasPropColumnNameMap);
+                        replaced.addPropColumnMapForAlias(Account.class, "acc2");
+                        replaced.where(membership);
+                        assertEquals(1, convertedMutationLevels(replaced));
+                        throw new IllegalStateException("failure after the conversion");
+                    }));
+                    assertEquals(Set.of("seeded"), replaced._aliasPropColumnNameMap.keySet());
+                    assertEquals(new ArrayList<>(prior.values()), replaced.parameters());
+                } finally {
+                    replaced.build();
+                }
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testJournaledAdoptionRestoresOrderedNamesBeforeRetry() {
+            // "Aa" and "BB" share a hash code: their bucket keeps insertion order, which re-inserting cleared entries in reverse would flip.
+            final Map<String, Object> prior = new LinkedHashMap<>();
+            prior.put("Aa", 1);
+            prior.put("BB", 2);
+            prior.putAll(priorProperties(40, "id1", false));
+            for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                final SqlBuilder builder = dsl.update("records").set(prior);
+                final SqlBuilder child = dsl.update("other").set("child", 1);
+                try {
+                    final List<Map.Entry<String, Integer>> occurrences = orderedEntries(builder._namedParameterNameOccurrences);
+                    final List<String> names = new ArrayList<>(builder._generatedNamedParameterNames);
+
+                    // Adopting a child's names clears the journaled collections, which converts the open journal into snapshots.
+                    assertThrows(IllegalStateException.class, () -> mutateAtomicallyAsLibrary(builder, () -> {
+                        builder.adoptNamedParameterOccurrences(child);
+                        assertNull(mutationUndoEntries(builder));
+                        assertEquals(1, convertedMutationLevels(builder));
+                        assertEquals(orderedEntries(child._namedParameterNameOccurrences), orderedEntries(builder._namedParameterNameOccurrences));
+                        throw new IllegalStateException("failure after adopting a child's names");
+                    }));
+                    assertEquals(occurrences, orderedEntries(builder._namedParameterNameOccurrences));
+                    assertEquals(names, new ArrayList<>(builder._generatedNamedParameterNames));
+
+                    // The retry renders exactly what a builder without the failed adoption renders.
+                    final SP expected = dsl.update("records").set(prior).set("Aa", 3).build();
+                    assertTrue(expected.query().endsWith(" = " + parameterToken(dsl, "Aa_2")));
+                    assertSql(expected.query(), expected.parameters(), builder.set("Aa", 3).build());
+                } finally {
+                    child.build();
+                }
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testJournaledSubQueryNamesRestoreBeforeRetry() {
+            final Condition members = Filters.in("id", Filters.subQuery("archive", "id", Filters.eq("id1", 5)));
+            final Map<String, Object> prior = priorProperties(40, "id1", false);
+            for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                final List<Object> subQueryBindings = new ArrayList<>(prior.values());
+                subQueryBindings.add(5);
+                // The sub-query continues this builder's numbering ...
+                assertSql(updatePrefix(dsl, prior) + " WHERE id IN (SELECT id FROM archive WHERE id1 = " + parameterToken(dsl, "id1_2") + ")", subQueryBindings,
+                        dsl.update("records").set(prior).where(members).build());
+
+                final List<Object> bindings = new ArrayList<>(prior.values());
+                bindings.add(9000);
+                final String expected = updatePrefix(dsl, prior) + " WHERE id1 = " + parameterToken(dsl, "id1_2");
+
+                // ... and its names reach this builder through journaled merges, which a failure later in the clause undoes.
+                final SqlBuilder failedClause = dsl.update("records").set(prior);
+                assertThrows(IllegalArgumentException.class, () -> failedClause.where(Filters.and(members, Filters.eq("bad -- column", 1))));
+                assertEquals(new ArrayList<>(prior.values()), failedClause.parameters());
+                assertSql(expected, bindings, failedClause.where(Filters.eq("id1", 9000)).build());
+
+                // A successful sub-query clause stays journaled for its enclosing mutation, whose failure undoes it as well.
+                final SqlBuilder failedOuter = dsl.update("records").set(prior);
+                assertThrows(IllegalStateException.class, () -> mutateAtomicallyAsLibrary(failedOuter, () -> {
+                    failedOuter.where(members);
+                    assertNotNull(mutationUndoEntries(failedOuter));
+                    throw new IllegalStateException("outer failure after a successful sub-query clause");
+                }));
+                assertEquals(new ArrayList<>(prior.values()), failedOuter.parameters());
+                assertSql(expected, bindings, failedOuter.where(Filters.eq("id1", 9000)).build());
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
+        void testLargeClauseInsideNestedLibraryMutationsRestoresEveryLevel() {
+            final Condition membership = Filters.in("id", IntStream.range(0, 5000).boxed().toList());
+            final Map<String, Object> prior = priorProperties(40, "id1", false);
+            for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
+                final List<Object> bindings = new ArrayList<>(prior.values());
+                bindings.add(9000);
+                final String expected = updatePrefix(dsl, prior) + " WHERE id1 = " + parameterToken(dsl, "id1_2");
+
+                // An enclosing mutation records its own clause before a nested large clause outgrows every open journal.
+                final SqlBuilder failedOuter = dsl.update("records").set(prior);
+                final IllegalStateException outerFailure = assertThrows(IllegalStateException.class, () -> mutateAtomicallyAsLibrary(failedOuter, () -> {
+                    failedOuter.set("id1", 7);
+                    mutateAtomicallyAsLibrary(failedOuter, () -> failedOuter.where(membership));
+                    // The open journals did not grow with the 5,000 bindings: they became flat snapshots.
+                    assertNull(mutationUndoEntries(failedOuter));
+                    throw new IllegalStateException("outer failure after successful nested clauses");
+                }));
+                assertEquals("outer failure after successful nested clauses", outerFailure.getMessage());
+                assertEquals(new ArrayList<>(prior.values()), failedOuter.parameters());
+                assertSql(expected, bindings, failedOuter.where(Filters.eq("id1", 9000)).build());
+
+                // A nested large clause that fails after outgrowing the journal leaves its enclosing mutation usable,
+                // including the change the enclosing mutation recorded before it.
+                final SqlBuilder continuedOuter = dsl.update("records").set(prior);
+                final List<Object> enclosingBindings = new ArrayList<>(prior.values());
+                enclosingBindings.add(7);
+                mutateAtomicallyAsLibrary(continuedOuter, () -> {
+                    continuedOuter.set("id1", 7);
+                    assertThrows(IllegalArgumentException.class, () -> continuedOuter.where(Filters.and(membership, Filters.eq("bad -- column", 1))));
+                    assertEquals(enclosingBindings, continuedOuter.parameters());
+                    // A later small clause is journaled again and still restores its generated names.
+                    assertThrows(IllegalArgumentException.class, () -> continuedOuter.where(Filters.and(Filters.eq("id1", 5), Filters.eq("bad -- column", 1))));
+                    assertEquals(enclosingBindings, continuedOuter.parameters());
+                    continuedOuter.where(Filters.eq("id1", 9000));
+                });
+                final List<Object> continuedBindings = new ArrayList<>(enclosingBindings);
+                continuedBindings.add(9000);
+                assertSql(updatePrefix(dsl, prior) + ", id1 = " + parameterToken(dsl, "id1_2") + " WHERE id1 = " + parameterToken(dsl, "id1_3"),
+                        continuedBindings, continuedOuter.build());
+            }
+        }
+
+        @Test
+        @SuppressWarnings("deprecation")
         void testLargeNamedInRestoresSmallAndAccumulatedStateBeforeRetry() {
             final List<Integer> values = IntStream.range(0, 5000).boxed().toList();
             final Condition membership = Filters.in("id", values);
-            // Exercise nearby history sizes without tying the behavioral contract to a private optimization cutoff.
-            for (final int priorCount : new int[] { 1, 15, 16, 17 }) {
+            // Exercise nearby and larger history sizes without tying the behavioral contract to a private optimization cutoff.
+            for (final int priorCount : new int[] { 1, 15, 16, 17, 64, 200 }) {
                 final Map<String, Object> prior = priorProperties(priorCount, "id1", false);
                 for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
                     final SqlBuilder builder = dsl.update("records").set(prior);
@@ -7541,7 +7814,7 @@ public class AbstractQueryBuilderTest extends TestBase {
         void testRepeatedNamedOrRestoresSuffixesBeforeRetry() {
             final List<Condition> comparisons = IntStream.range(0, 2000).mapToObj(i -> (Condition) Filters.eq("id", i)).toList();
             final Condition disjunction = Filters.or(comparisons);
-            for (final int priorCount : new int[] { 1, 15, 16, 17 }) {
+            for (final int priorCount : new int[] { 1, 15, 16, 17, 64, 200 }) {
                 final Map<String, Object> prior = priorProperties(priorCount, "id", true);
                 final int firstSuffix = priorCount == 1 ? 2 : 3;
                 for (final Dsl dsl : new Dsl[] { NSB, MSC }) {
@@ -7563,6 +7836,60 @@ public class AbstractQueryBuilderTest extends TestBase {
             }
         }
 
+        /** The number of open journaled checkpoints of {@code builder} converted into flat snapshots. */
+        private int convertedMutationLevels(final SqlBuilder builder) {
+            final Object convertedLevels = mutationJournalField(builder, "convertedLevels");
+            return convertedLevels == null ? 0 : (Integer) convertedLevels;
+        }
+
+        /** Runs {@code mutation} under the checkpoint the library's own clauses use (the protected overload always copies). */
+        private void mutateAtomicallyAsLibrary(final SqlBuilder builder, final Runnable mutation) {
+            try {
+                final var mutateAtomically = AbstractQueryBuilder.class.getDeclaredMethod("mutateAtomically", boolean.class, Runnable.class);
+                mutateAtomically.setAccessible(true);
+                mutateAtomically.invoke(builder, false, mutation);
+            } catch (final InvocationTargetException e) {
+                if (e.getCause() instanceof final RuntimeException runtimeException) {
+                    throw runtimeException;
+                }
+                if (e.getCause() instanceof final Error error) {
+                    throw error;
+                }
+                throw new AssertionError(e.getCause());
+            } catch (final ReflectiveOperationException e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        /** The named field of the rollback journal of {@code builder}, or {@code null} if it has none. */
+        private Object mutationJournalField(final SqlBuilder builder, final String name) {
+            try {
+                final var journalField = AbstractQueryBuilder.class.getDeclaredField("_mutationJournal");
+                journalField.setAccessible(true);
+                final Object journal = journalField.get(builder);
+
+                if (journal == null) {
+                    return null;
+                }
+
+                final var field = journal.getClass().getDeclaredField(name);
+                field.setAccessible(true);
+                return field.get(journal);
+            } catch (final ReflectiveOperationException e) {
+                throw new AssertionError(e);
+            }
+        }
+
+        /** The undo entries held for the open journaled checkpoints of {@code builder}, or {@code null} if none are. */
+        private Object mutationUndoEntries(final SqlBuilder builder) {
+            return mutationJournalField(builder, "undo");
+        }
+
+        /** The entries of {@code map} in its iteration order, detached from the map. */
+        private <K, V> List<Map.Entry<K, V>> orderedEntries(final Map<K, V> map) {
+            return map.entrySet().stream().map(entry -> Map.entry(entry.getKey(), entry.getValue())).toList();
+        }
+
         @SuppressWarnings("deprecation")
         private String parameterToken(final Dsl dsl, final String name) {
             return dsl == MSC ? "#{" + name + "}" : ":" + name;
@@ -7578,6 +7905,32 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         private String updatePrefix(final Dsl dsl, final Map<String, Object> properties) {
             return "UPDATE records SET " + properties.keySet().stream().map(name -> name + " = " + parameterToken(dsl, name)).collect(Collectors.joining(", "));
+        }
+    }
+
+    /** An alias map that fails one snapshot on demand and rejects any change while frozen, to check a rollback-journal conversion. */
+    private static final class FailingAliasMap extends HashMap<String, Map<String, ColumnInfo>> {
+        private int snapshotsBeforeFailure = -1;
+        private boolean frozen;
+
+        @Override
+        public Set<Map.Entry<String, Map<String, ColumnInfo>>> entrySet() {
+            if (snapshotsBeforeFailure >= 0 && snapshotsBeforeFailure-- == 0) {
+                throw new OutOfMemoryError("injected snapshot failure");
+            }
+            return super.entrySet();
+        }
+
+        @Override
+        public Map<String, ColumnInfo> put(final String key, final Map<String, ColumnInfo> value) {
+            assertFalse(frozen, () -> "alias map changed while frozen: put " + key);
+            return super.put(key, value);
+        }
+
+        @Override
+        public Map<String, ColumnInfo> remove(final Object key) {
+            assertFalse(frozen, () -> "alias map changed while frozen: remove " + key);
+            return super.remove(key);
         }
     }
 

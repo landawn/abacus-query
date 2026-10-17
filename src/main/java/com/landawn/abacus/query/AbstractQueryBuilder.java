@@ -666,9 +666,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     private int _openMutationCheckpoints = 0; //NOSONAR
 
-    /** Only exact built-in mutations may restore appended bindings and journaled map/set changes. */
-    private int _journaledMutationDepth;
-    private ArrayList<Object> _mutationUndo;
+    /**
+     * Only exact built-in mutations may restore appended bindings and journaled map/set changes. Created by this builder's
+     * first journaled mutation and kept: a builder that never journals pays one field, and a chain of journaled clauses
+     * does not reallocate it.
+     */
+    private MutationJournal _mutationJournal;
     private static final Object ABSENT_MUTATION_VALUE = new Object();
 
     /** Bound the flat snapshots used before named-parameter history is large enough to favor incremental undo. */
@@ -6815,12 +6818,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // here must not suppress an enclosing checkpoint's journal: its successful writes still
         // need to be undone if that enclosing mutation fails later.
         final boolean journalState = !copySql && getClass() == SqlBuilder.class && shouldJournalMutation();
-        final MutationCheckpoint checkpoint = new MutationCheckpoint(this, copySql, _openMutationCheckpoints > 0, journalState);
+        final MutationJournal journal = journalState ? mutationJournal() : null;
+        final MutationCheckpoint checkpoint = new MutationCheckpoint(this, copySql, _openMutationCheckpoints > 0, journalState ? journal.levels : -1);
+
+        if (journalState && journal.open(_aliasPropColumnNameMap) == journal.convertedLevels) {
+            // The lowest journaling level: its journal may grow to an eighth of the snapshot that replaces it (see reserveMutationUndo).
+            // An entry takes three slots of a growing list, so a larger journal allocated more than converting it (measured on
+            // mid-size IN lists after a SET history).
+            journal.budget = (int) Math.min(Integer.MAX_VALUE - 8, Math.max(MUTATION_SNAPSHOT_REFERENCE_LIMIT, journaledStateReferences() / 8));
+        }
 
         _openMutationCheckpoints++;
-        if (journalState) {
-            _journaledMutationDepth++;
-        }
 
         try {
             mutation.run();
@@ -6830,19 +6838,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             throw e;
         } finally {
             _openMutationCheckpoints--;
-            if (journalState && --_journaledMutationDepth == 0) {
-                _mutationUndo = null;
+            if (journalState) {
+                journal.close();
             }
         }
     }
 
     private boolean shouldJournalMutation() {
         if (_sqlPolicy == SqlPolicy.NAMED_SQL || _sqlPolicy == SqlPolicy.IBATIS_SQL) {
-            // Flat map snapshots store both keys and values. Count references, not just bindings:
-            // QME placeholders and registered aliases can also contribute state without a value.
-            final long snapshotReferences = _parameters.size() + 2L * _namedParameterNameOccurrences.size() + _generatedNamedParameterNames.size()
-                    + 2L * _renderedNamedParameterTokens.size() + (_aliasPropColumnNameMap == null ? 0 : 2L * _aliasPropColumnNameMap.size());
-            return snapshotReferences > MUTATION_SNAPSHOT_REFERENCE_LIMIT;
+            return mutationSnapshotReferences() > MUTATION_SNAPSHOT_REFERENCE_LIMIT;
         }
 
         // Ordinary positional bindings only need length rollback, with no per-binding undo entry.
@@ -6850,9 +6854,36 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 || !_renderedNamedParameterTokens.isEmpty() || _aliasPropColumnNameMap != null && !_aliasPropColumnNameMap.isEmpty();
     }
 
+    /**
+     * The references a flat snapshot of the rollback state holds. Flat map snapshots store both keys and values. Count
+     * references, not just bindings: QME placeholders and registered aliases can also contribute state without a value.
+     */
+    private long mutationSnapshotReferences() {
+        return _parameters.size() + journaledStateReferences();
+    }
+
+    /** The references of {@link #mutationSnapshotReferences()} in the journaled collections: the parameters roll back by length instead. */
+    private long journaledStateReferences() {
+        return 2L * _namedParameterNameOccurrences.size() + _generatedNamedParameterNames.size() + 2L * _renderedNamedParameterTokens.size()
+                + (_aliasPropColumnNameMap == null ? 0 : 2L * _aliasPropColumnNameMap.size());
+    }
+
+    private MutationJournal mutationJournal() {
+        if (_mutationJournal == null) {
+            _mutationJournal = new MutationJournal();
+        }
+
+        return _mutationJournal;
+    }
+
+    /** Whether an open checkpoint journals, so every change of the journaled collections must be recorded. */
+    private boolean isJournalingMutation() {
+        return _mutationJournal != null && _mutationJournal.levels > _mutationJournal.convertedLevels;
+    }
+
     /** Records only changed entries; nested successful changes remain available to an outer rollback. */
     private <K, V> void putWithMutationUndo(final Map<K, V> target, final K key, final V value) {
-        if (_journaledMutationDepth > 0) {
+        if (isJournalingMutation()) {
             final V oldValue = target.get(key);
             recordMutationUndo(target, key, oldValue != null || target.containsKey(key) ? oldValue : ABSENT_MUTATION_VALUE);
         }
@@ -6860,68 +6891,217 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     private <T> void addWithMutationUndo(final Set<T> target, final T value) {
-        if (_journaledMutationDepth > 0 && !target.contains(value)) {
+        if (isJournalingMutation() && !target.contains(value)) {
             recordMutationUndo(target, value, ABSENT_MUTATION_VALUE);
         }
         target.add(value);
     }
 
     private void recordMutationUndo(final Object target, final Object key, final Object previousValue) {
-        if (_mutationUndo == null) {
-            _mutationUndo = new ArrayList<>();
+        if (reserveMutationUndo(1)) {
+            appendMutationUndo(target, key, previousValue);
         }
-        // Allocate before writing any part of the triple, so a failed growth cannot corrupt rollback.
-        if (_mutationUndo.size() > Integer.MAX_VALUE - 3) {
-            throw new OutOfMemoryError("Mutation journal exceeds maximum array size");
-        }
-        _mutationUndo.ensureCapacity(_mutationUndo.size() + 3);
-        _mutationUndo.add(target);
-        _mutationUndo.add(key);
-        _mutationUndo.add(previousValue);
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    /**
+     * Makes room for {@code entries} undo triples before any part of one is written, so a failed growth cannot corrupt
+     * rollback. A journal that would outgrow the snapshot it replaces (a large clause after a moderate history) is
+     * converted into flat snapshots instead; those already cover the pending change, so nothing is recorded then.
+     *
+     * @param entries the number of undo triples about to be appended
+     * @return whether the caller must append its entries with {@link #appendMutationUndo(Object, Object, Object)}
+     */
+    private boolean reserveMutationUndo(final int entries) {
+        if (!isJournalingMutation()) {
+            return false;
+        }
+
+        final MutationJournal journal = _mutationJournal;
+        final long required = journal.undoSize() + 3L * entries;
+
+        if (required > journal.budget) {
+            convertMutationJournalToSnapshots();
+            return false;
+        }
+
+        if (journal.undo == null) {
+            journal.undo = new ArrayList<>();
+        }
+
+        journal.undo.ensureCapacity((int) required);
+        return true;
+    }
+
+    /** Appends one undo triple into space reserved by {@link #reserveMutationUndo(int)}. */
+    private void appendMutationUndo(final Object target, final Object key, final Object previousValue) {
+        final ArrayList<Object> undo = _mutationJournal.undo;
+        undo.add(target);
+        undo.add(key);
+        undo.add(previousValue);
+    }
+
     private void restoreMutationUndo(final int offset) {
-        if (_mutationUndo == null) {
+        final ArrayList<Object> undo = _mutationJournal.undo;
+
+        if (undo == null) {
             return;
         }
-        for (int i = _mutationUndo.size() - 3; i >= offset; i -= 3) {
-            final Object target = _mutationUndo.get(i);
-            final Object key = _mutationUndo.get(i + 1);
-            final Object previousValue = _mutationUndo.get(i + 2);
-            if (target instanceof final Map map) {
-                if (previousValue == ABSENT_MUTATION_VALUE) {
-                    map.remove(key);
-                } else {
-                    map.put(key, previousValue);
+        for (int i = undo.size() - 3; i >= offset; i -= 3) {
+            applyMutationValue(undo.get(i), undo.get(i + 1), undo.get(i + 2));
+        }
+        if (undo.size() > offset) {
+            undo.subList(offset, undo.size()).clear();
+        }
+    }
+
+    /** Restores the journaled collections to their state when journal level {@code level} was opened. */
+    @SuppressWarnings("unchecked")
+    private void restoreJournalLevel(final int level) {
+        final MutationJournal journal = _mutationJournal;
+        final JournalConversion conversion = journal.conversions[level];
+        final Object openAliasMap = journal.aliasMaps[level];
+
+        if (conversion == null) {
+            restoreMutationUndo(journal.offsets[level]);
+            _aliasPropColumnNameMap = (Map<String, Map<String, ColumnInfo>>) openAliasMap;
+            return;
+        }
+
+        conversion.restoreJournaledState(this);
+
+        if (openAliasMap != conversion.aliasMap) {
+            _aliasPropColumnNameMap = conversion.replacedAliasMap(openAliasMap);
+        }
+
+        final ArrayList<Object> undo = conversion.undo;
+
+        if (undo != null) {
+            for (int i = undo.size() - 3; i >= journal.offsets[level]; i -= 3) {
+                final Object target = undo.get(i);
+
+                // The level's alias map was restored as a copy; changes of other alias maps are not part of its state.
+                if (target == openAliasMap) {
+                    applyMutationValue(_aliasPropColumnNameMap, undo.get(i + 1), undo.get(i + 2));
+                } else if (target == _namedParameterNameOccurrences || target == _generatedNamedParameterNames || target == _renderedNamedParameterTokens) {
+                    applyMutationValue(target, undo.get(i + 1), undo.get(i + 2));
                 }
-            } else if (previousValue == ABSENT_MUTATION_VALUE) {
-                ((Set) target).remove(key);
+            }
+        }
+    }
+
+    /**
+     * Stops journaling at every journaling level: a flat snapshot of the journaled collections taken now, together with
+     * the journal recorded so far, replaces their journals. A converted level restores that snapshot and then undoes the
+     * entries after its own offset, so all levels share one snapshot, and the journal no longer grows. Journal entries
+     * only add keys or replace values ({@link #clearWithMutationUndo(Map)} converts instead of journaling a clear), so the
+     * restored collections keep the iteration order they had when the level was opened.
+     *
+     * <p>Taking the snapshot does not change any live state, and the conversion is published only after it is complete:
+     * a failure (such as an allocation failure) leaves the journal in place, so every level still restores exactly.</p>
+     */
+    private void convertMutationJournalToSnapshots() {
+        final MutationJournal journal = _mutationJournal;
+        final JournalConversion conversion = new JournalConversion(this, journal);
+
+        Arrays.fill(journal.conversions, journal.convertedLevels, journal.levels, conversion);
+        journal.convertedLevels = journal.levels;
+        // The conversion keeps the entries; the levels opened later journal into a new list.
+        journal.undo = null;
+    }
+
+    /** Sets {@code key} in a journaled map or set to {@code value}, removing it for the absent marker. */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private static void applyMutationValue(final Object target, final Object key, final Object value) {
+        if (target instanceof final Map map) {
+            if (value == ABSENT_MUTATION_VALUE) {
+                map.remove(key);
             } else {
-                ((Set) target).add(key);
+                map.put(key, value);
             }
-        }
-        while (_mutationUndo.size() > offset) {
-            _mutationUndo.remove(_mutationUndo.size() - 1);
+        } else if (value == ABSENT_MUTATION_VALUE) {
+            ((Set) target).remove(key);
+        } else {
+            ((Set) target).add(key);
         }
     }
 
+    /**
+     * Clears a journaled map. Its every entry would have to be journaled, so the journal is converted into the flat
+     * snapshots instead, which also keep the iteration order that re-inserting the entries one by one could change.
+     */
     private void clearWithMutationUndo(final Map<?, ?> target) {
-        if (_journaledMutationDepth > 0) {
-            for (final Map.Entry<?, ?> entry : target.entrySet()) {
-                recordMutationUndo(target, entry.getKey(), entry.getValue());
-            }
+        if (!target.isEmpty() && isJournalingMutation()) {
+            convertMutationJournalToSnapshots();
         }
         target.clear();
     }
 
+    /** Clears a journaled set; see {@link #clearWithMutationUndo(Map)}. */
     private void clearWithMutationUndo(final Set<?> target) {
-        if (_journaledMutationDepth > 0) {
-            for (final Object value : target) {
-                recordMutationUndo(target, value, value);
-            }
+        if (!target.isEmpty() && isJournalingMutation()) {
+            convertMutationJournalToSnapshots();
         }
         target.clear();
+    }
+
+    /**
+     * The undo journal of a builder's open journaled checkpoints (see {@link #mutateAtomically(boolean, Runnable)}): one
+     * level per checkpoint, outermost first. The levels live here rather than in linked checkpoints, so the journal never
+     * retains a checkpoint and opening a level allocates nothing. The outermost
+     * {@link #convertedLevels} levels hold flat snapshots instead of journal entries (see
+     * {@link AbstractQueryBuilder#convertMutationJournalToSnapshots()}); only the levels above them journal.
+     */
+    private static final class MutationJournal {
+        /** The number of open journaled checkpoints. */
+        int levels;
+        /** The number of outermost open levels converted into snapshots. */
+        int convertedLevels;
+        /** Per level: the undo size when the level was opened. */
+        int[] offsets = new int[4];
+        /** Per level: the alias map when the level was opened, restored by reference or snapshotted on conversion. */
+        Object[] aliasMaps = new Object[4];
+        /** Per converted level: the conversion it restores from (the levels converted together share one). */
+        JournalConversion[] conversions = new JournalConversion[4];
+        /** Undo triples (target, key, previous value) recorded since the lowest journaling level was opened, or {@code null}. */
+        ArrayList<Object> undo;
+        /** The undo slots allowed before the journaling levels switch to a snapshot; set when the lowest one opens. */
+        int budget;
+
+        int undoSize() {
+            return undo == null ? 0 : undo.size();
+        }
+
+        /** Opens the level of a new journaled checkpoint and returns its index. */
+        int open(final Map<String, Map<String, ColumnInfo>> aliasMap) {
+            if (levels == offsets.length) {
+                // Allocate every grown array before replacing any, so a failed growth leaves the levels consistent.
+                final int[] grownOffsets = Arrays.copyOf(offsets, levels * 2);
+                final Object[] grownAliasMaps = Arrays.copyOf(aliasMaps, levels * 2);
+                final JournalConversion[] grownConversions = Arrays.copyOf(conversions, levels * 2);
+                offsets = grownOffsets;
+                aliasMaps = grownAliasMaps;
+                conversions = grownConversions;
+            }
+
+            offsets[levels] = undoSize();
+            aliasMaps[levels] = aliasMap;
+            return levels++;
+        }
+
+        /** Closes the innermost level; the undo entries are released once no journaling level remains. */
+        void close() {
+            levels--;
+            aliasMaps[levels] = null;
+            conversions[levels] = null;
+
+            if (convertedLevels > levels) {
+                convertedLevels = levels;
+            }
+
+            if (levels == convertedLevels) {
+                undo = null;
+            }
+        }
     }
 
     private void mergeNamedParameterState(final Map<String, Integer> occurrences, final Set<String> names, final Map<String, String> tokens) {
@@ -6936,26 +7116,151 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
     }
 
-    /** Snapshot of the mutable state touched while initializing or rendering a structured clause. */
-    private static final class MutationCheckpoint {
-        private static final Object[] EMPTY_SNAPSHOT = new Object[0];
+    /**
+     * Flat snapshots of the collections a {@link MutationJournal} records the changes of: the named-parameter bookkeeping
+     * and the alias map. A checkpoint that does not journal takes them upfront (see {@link MutationCheckpoint}), and a
+     * converted journal takes them when it stops journaling (see {@link JournalConversion}).
+     */
+    private static class JournaledStateSnapshot {
+        static final Object[] EMPTY_SNAPSHOT = new Object[0];
 
+        private final Object[] namedParameterNameOccurrences;
+        private final Object[] generatedNamedParameterNames;
+        private final Object[] renderedNamedParameterTokens;
+        private final Object[] aliasPropColumnNameMap;
+
+        /**
+         * Captures the journaled collections of {@code builder}.
+         *
+         * @param builder the builder to capture, or {@code null} to capture nothing (a checkpoint restoring them through its journal level)
+         * @param aliasMap the builder's alias map, which is captured as well
+         */
+        JournaledStateSnapshot(final AbstractQueryBuilder<?> builder, final Map<?, ?> aliasMap) {
+            namedParameterNameOccurrences = builder == null ? null : snapshot(builder._namedParameterNameOccurrences);
+            generatedNamedParameterNames = builder == null ? null : snapshot(builder._generatedNamedParameterNames);
+            renderedNamedParameterTokens = builder == null ? null : snapshot(builder._renderedNamedParameterTokens);
+            aliasPropColumnNameMap = builder == null || aliasMap == null ? null : snapshot(aliasMap);
+        }
+
+        /** Restores the captured collections into {@code builder}; the alias map is replaced by a new map (or {@code null}). */
+        final void restoreJournaledState(final AbstractQueryBuilder<?> builder) {
+            restore(builder._namedParameterNameOccurrences, namedParameterNameOccurrences);
+            restore(builder._generatedNamedParameterNames, generatedNamedParameterNames);
+            restore(builder._renderedNamedParameterTokens, renderedNamedParameterTokens);
+            builder._aliasPropColumnNameMap = restoredMap(aliasPropColumnNameMap);
+        }
+
+        /** A new map holding the snapshot of an alias map, or {@code null} for none. */
+        static Map<String, Map<String, ColumnInfo>> restoredMap(final Object[] snapshot) {
+            if (snapshot == null) {
+                return null;
+            }
+            final Map<String, Map<String, ColumnInfo>> result = new HashMap<>();
+            restore(result, snapshot);
+            return result;
+        }
+
+        // Checkpoints are read once, only on failure: flat snapshots avoid allocating a second
+        // hash table and one node per entry on every successful clause. Copy keys AND values;
+        // saving Map.Entry instances would retain live nodes whose values can subsequently change.
+        static Object[] snapshot(final Map<?, ?> values) {
+            if (values.isEmpty()) {
+                return EMPTY_SNAPSHOT;
+            }
+            final Object[] result = new Object[values.size() * 2];
+            int i = 0;
+            for (final Map.Entry<?, ?> entry : values.entrySet()) {
+                result[i++] = entry.getKey();
+                result[i++] = entry.getValue();
+            }
+            return result;
+        }
+
+        static Object[] snapshot(final Collection<?> values) {
+            return values.isEmpty() ? EMPTY_SNAPSHOT : values.toArray();
+        }
+
+        @SuppressWarnings("unchecked")
+        static <K, V> void restore(final Map<K, V> target, final Object[] values) {
+            target.clear();
+            for (int i = 0; i < values.length; i += 2) {
+                target.put((K) values[i], (V) values[i + 1]);
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        static <T> void restore(final Collection<T> target, final Object[] values) {
+            target.clear();
+            for (final Object value : values) {
+                target.add((T) value);
+            }
+        }
+    }
+
+    /**
+     * A journal converted into a flat snapshot (see {@link #convertMutationJournalToSnapshots()}): the journaled
+     * collections when the conversion happened, and the journal entries recorded before it.
+     */
+    private static final class JournalConversion extends JournaledStateSnapshot {
+        /** The journal of the converted levels, frozen at the conversion, or {@code null} if none was recorded. */
+        final ArrayList<Object> undo;
+        /** The alias map that was current at the conversion, which the snapshot holds. */
+        final Object aliasMap;
+        /**
+         * The other alias maps the converted levels were opened with (replaced before the conversion), each followed by
+         * its snapshot; or {@code null}.
+         */
+        private final Object[] replacedAliasMaps;
+
+        JournalConversion(final AbstractQueryBuilder<?> builder, final MutationJournal journal) {
+            super(builder, builder._aliasPropColumnNameMap);
+            undo = journal.undo;
+            aliasMap = builder._aliasPropColumnNameMap;
+            Object[] replaced = null;
+            int size = 0;
+
+            for (int level = journal.convertedLevels; level < journal.levels; level++) {
+                final Object openAliasMap = journal.aliasMaps[level];
+
+                if (openAliasMap != null && openAliasMap != aliasMap && indexOf(replaced, size, openAliasMap) < 0) {
+                    replaced = replaced == null ? new Object[4] : size == replaced.length ? Arrays.copyOf(replaced, size * 2) : replaced;
+                    replaced[size++] = openAliasMap;
+                    replaced[size++] = snapshot((Map<?, ?>) openAliasMap);
+                }
+            }
+
+            replacedAliasMaps = replaced;
+        }
+
+        /** A new map holding the snapshot of {@code openAliasMap}, a replaced alias map of a converted level; {@code null} for none. */
+        Map<String, Map<String, ColumnInfo>> replacedAliasMap(final Object openAliasMap) {
+            return openAliasMap == null ? null
+                    : restoredMap((Object[]) replacedAliasMaps[indexOf(replacedAliasMaps, replacedAliasMaps.length, openAliasMap) + 1]);
+        }
+
+        private static int indexOf(final Object[] replaced, final int size, final Object aliasMap) {
+            for (int i = 0; i < size; i += 2) {
+                if (replaced[i] == aliasMap) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+    }
+
+    /** Snapshot of the mutable state touched while initializing or rendering a structured clause. */
+    private static final class MutationCheckpoint extends JournaledStateSnapshot {
         /** The buffer length at capture: an append-only mutation is undone by truncating back to it. */
         private final int sqlLength;
         /** The full SQL text at capture, taken only when the mutation may rewrite text before {@link #sqlLength}. */
         private final String sql;
         /** Whether another checkpoint of the same builder was open at capture (this one runs nested inside it). */
         private final boolean nested;
-        private final boolean journalState;
+        /** This checkpoint's level in the builder's {@link MutationJournal}, or {@code -1} when it takes flat snapshots. */
+        private final int journalLevel;
         private final int parameterSize;
-        private final int mutationUndoOffset;
-        private final Map<String, Map<String, ColumnInfo>> aliasMapReference;
         private final Object[] parameters;
-        private final Object[] namedParameterNameOccurrences;
-        private final Object[] generatedNamedParameterNames;
-        private final Object[] renderedNamedParameterTokens;
         private final Object[] calledOperations;
-        private final Object[] aliasPropColumnNameMap;
         private final OperationType operation;
         private final Class<?> entityClass;
         private final BeanInfo entityInfo;
@@ -6984,21 +7289,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
          * recorded length is an exact restore for the append-only mutations.
          *
          * @param nested whether this checkpoint opens inside another open checkpoint of the same builder
+         * @param journalLevel the journal level this checkpoint opens, or {@code -1} to take flat snapshots of the collections
          */
-        MutationCheckpoint(final AbstractQueryBuilder<?> builder, final boolean mayRewritePrefix, final boolean nested, final boolean journalState) {
+        MutationCheckpoint(final AbstractQueryBuilder<?> builder, final boolean mayRewritePrefix, final boolean nested, final int journalLevel) {
+            super(journalLevel >= 0 ? null : builder, builder._aliasPropColumnNameMap);
             sqlLength = builder._sb.length();
             sql = mayRewritePrefix ? builder._sb.toString() : null;
             this.nested = nested;
-            this.journalState = journalState;
+            this.journalLevel = journalLevel;
             parameterSize = builder._parameters.size();
-            mutationUndoOffset = builder._mutationUndo == null ? 0 : builder._mutationUndo.size();
-            aliasMapReference = builder._aliasPropColumnNameMap;
-            parameters = journalState ? null : snapshot(builder._parameters);
-            namedParameterNameOccurrences = journalState ? null : snapshot(builder._namedParameterNameOccurrences);
-            generatedNamedParameterNames = journalState ? null : snapshot(builder._generatedNamedParameterNames);
-            renderedNamedParameterTokens = journalState ? null : snapshot(builder._renderedNamedParameterTokens);
+            parameters = journalLevel >= 0 ? null : snapshot(builder._parameters);
             calledOperations = snapshot(builder.calledOpSet);
-            aliasPropColumnNameMap = journalState || builder._aliasPropColumnNameMap == null ? null : snapshot(builder._aliasPropColumnNameMap);
             operation = builder._op;
             entityClass = builder._entityClass;
             entityInfo = builder._entityInfo;
@@ -7047,21 +7348,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 builder._sb.append(sql);
             }
 
-            if (journalState) {
-                while (builder._parameters.size() > parameterSize) {
-                    builder._parameters.remove(builder._parameters.size() - 1);
+            if (journalLevel >= 0) {
+                if (builder._parameters.size() > parameterSize) {
+                    builder._parameters.subList(parameterSize, builder._parameters.size()).clear();
                 }
-                builder.restoreMutationUndo(mutationUndoOffset);
-                builder._aliasPropColumnNameMap = aliasMapReference;
+                builder.restoreJournalLevel(journalLevel);
             } else {
                 restore(builder._parameters, parameters);
-                restore(builder._namedParameterNameOccurrences, namedParameterNameOccurrences);
-                restore(builder._generatedNamedParameterNames, generatedNamedParameterNames);
-                restore(builder._renderedNamedParameterTokens, renderedNamedParameterTokens);
-                builder._aliasPropColumnNameMap = aliasPropColumnNameMap == null ? null : new HashMap<>();
-                if (aliasPropColumnNameMap != null) {
-                    restore(builder._aliasPropColumnNameMap, aliasPropColumnNameMap);
-                }
+                restoreJournaledState(builder);
             }
             restore(builder.calledOpSet, calledOperations);
             builder._op = operation;
@@ -7084,42 +7378,6 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             builder._hasCompletedSetOperation = hasCompletedSetOperation;
             builder._hasSetOperation = hasSetOperation;
             builder._setListStarted = setListStarted;
-        }
-
-        // Checkpoints are read once, only on failure: flat snapshots avoid allocating a second
-        // hash table and one node per entry on every successful clause. Copy keys AND values;
-        // saving Map.Entry instances would retain live nodes whose values can subsequently change.
-        private static Object[] snapshot(final Map<?, ?> values) {
-            if (values.isEmpty()) {
-                return EMPTY_SNAPSHOT;
-            }
-            final Object[] result = new Object[values.size() * 2];
-            int i = 0;
-            for (final Map.Entry<?, ?> entry : values.entrySet()) {
-                result[i++] = entry.getKey();
-                result[i++] = entry.getValue();
-            }
-            return result;
-        }
-
-        private static Object[] snapshot(final Collection<?> values) {
-            return values.isEmpty() ? EMPTY_SNAPSHOT : values.toArray();
-        }
-
-        @SuppressWarnings("unchecked")
-        private static <K, V> void restore(final Map<K, V> target, final Object[] values) {
-            target.clear();
-            for (int i = 0; i < values.length; i += 2) {
-                target.put((K) values[i], (V) values[i + 1]);
-            }
-        }
-
-        @SuppressWarnings("unchecked")
-        private static <T> void restore(final Collection<T> target, final Object[] values) {
-            target.clear();
-            for (final Object value : values) {
-                target.add((T) value);
-            }
         }
     }
 
@@ -11240,7 +11498,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         final String sanitized = sanitizeNamedParameterName(propName);
         final Integer inherited = _namingParent == null || _namedParameterNameOccurrences.containsKey(sanitized) ? null
                 : _namingParent.namedParameterOccurrence(sanitized);
-        if (_journaledMutationDepth > 0) {
+        if (isJournalingMutation()) {
             final Integer localPrevious = _namedParameterNameOccurrences.get(sanitized);
             recordMutationUndo(_namedParameterNameOccurrences, sanitized,
                     localPrevious != null || _namedParameterNameOccurrences.containsKey(sanitized) ? localPrevious : ABSENT_MUTATION_VALUE);
