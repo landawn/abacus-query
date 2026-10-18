@@ -1,9 +1,10 @@
+## 4.9.5
+* Improvements and bug fixes
+
 ## 4.9.4
-* Naming convention improvements
 * Improvements and bug fixes
 
 ## 4.9.3
-* Naming convention improvements
 * Improvements and bug fixes
 
 ## 4.9.2
