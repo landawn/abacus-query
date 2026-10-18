@@ -2116,7 +2116,7 @@ Base class for fluent SQL builders.
 - **Signature:** `@Beta public SubQuery toSubQuery()`
 - **Summary:** Finalizes and consumes this builder, validates that the resulting statement is a complete, syntactic SELECT query candidate (as classified by SqlParser.isSyntacticallyReadQuery; a syntactic check, not a read-only guarantee), rejects semicolons outside quoted text or comments, and captures it as a reusable SubQuery.
 - **Contract:**
-  - Arrays (including nested arrays), Dates and Calendars are copied when captured and whenever bindings are returned or composed into a parent, so mutating a returned binding cannot alter the snapshot or another parent. Other application-defined values remain shared by reference.
+  - Arrays (including nested arrays), Dates and Calendars are copied when captured and whenever bindings are returned or composed into a parent, so mutating a returned binding cannot alter the snapshot or another parent. All other values remain shared by reference.
   - If the captured SQL contains generated placeholders, an enclosing builder must use the same SQL policy; compatibility is checked when the snapshot is composed.
 - **Parameters:**
   - (none)
@@ -16519,7 +16519,7 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Summary:** Returns this subquery's parameter values.
 - **Contract:**
   - Raw and builder-backed bindings were snapshotted at construction (see #SubQuery(String, java.util.Collection) and SqlBuilder#toSubQuery()); when any of them is an array, Date, or Calendar, a fresh list holding fresh defensive copies of those bindings is built on every call, so mutating a returned element never affects this subquery or a later call.
-  - Builder-backed snapshots also give each parent its own copies of these mutable bindings. Arrays are copied recursively, including nested arrays, dates and calendars. Other application-defined values remain shared by reference.
+  - Builder-backed snapshots also give each parent its own copies of these mutable bindings. Arrays are copied recursively, including nested arrays, dates and calendars. All other values remain shared by reference.
 - **Parameters:**
   - (none)
 - **Returns:** an immutable list of parameter values (array/Date/Calendar bindings are defensive copies), or an empty immutable list when none were captured

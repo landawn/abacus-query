@@ -34,7 +34,7 @@ import com.landawn.abacus.util.N;
  * <p>The parameter list originates from the defensively copied {@link AbstractQueryBuilder.SP}
  * returned by the source builder. Arrays (including nested arrays), {@code Date}s and {@code Calendar}s
  * are additionally copied at capture and whenever bindings are exposed or composed into a parent;
- * other application-defined values remain shared by reference. The placeholder maps and set are retained by reference rather
+ * all other values remain shared by reference. The placeholder maps and set are retained by reference rather
  * than copied or wrapped: ownership transfers from the consumed builder to this snapshot, and
  * package code must treat those collections as read-only after construction. Parent composition
  * creates working copies for metadata that may require collision rewriting, allowing the same
@@ -49,7 +49,7 @@ final class SubQuerySnapshot extends SubQuery {
     private final ImmutableList<Object> parameters;
 
     /** Whether array/date/calendar bindings require fresh defensive copies on each read or composition. */
-    private final boolean rebuildParametersPerCall;
+    private final boolean copyParametersOnRead;
 
     /** SQL policy used to render the stored query and any generated placeholders. */
     final SqlPolicy sqlPolicy;
@@ -79,7 +79,7 @@ final class SubQuerySnapshot extends SubQuery {
      *
      * @param sql the complete, syntactically validated SELECT text
      * @param parameters the source bindings; {@code null} means no parameters. The list is defensively copied, as are
-     *        arrays (recursively), {@code Date}s and {@code Calendar}s; other values remain shared by reference
+     *        arrays (recursively), {@code Date}s and {@code Calendar}s; all other values remain shared by reference
      * @param sqlPolicy the non-null policy used to render {@code sql}
      * @param hasGeneratedParameterPlaceholder whether {@code sql} contains a generated placeholder
      * @param requiresSetOperationIsolation whether its own compound or terminal clauses require branch isolation
@@ -106,7 +106,7 @@ final class SubQuerySnapshot extends SubQuery {
             }
         }
 
-        rebuildParametersPerCall = mutableParameters;
+        copyParametersOnRead = mutableParameters;
         this.parameters = parameters == null ? ImmutableList.empty() : mutableParameters ? snapshotParameters(parameters) : ImmutableList.copyOf(parameters);
         this.sqlPolicy = sqlPolicy;
         this.hasGeneratedParameterPlaceholder = hasGeneratedParameterPlaceholder;
@@ -120,7 +120,7 @@ final class SubQuerySnapshot extends SubQuery {
     @Override
     public ImmutableList<Object> parameters() {
         // An immutable list alone does not protect its array/date/calendar elements, including from parent builders.
-        return rebuildParametersPerCall ? snapshotParameters(parameters) : parameters;
+        return copyParametersOnRead ? snapshotParameters(parameters) : parameters;
     }
 
     /** Copies supported mutable bindings using the same rules as other conditions, including nested arrays. */

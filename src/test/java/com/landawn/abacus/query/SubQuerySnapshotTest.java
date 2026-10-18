@@ -57,6 +57,8 @@ public class SubQuerySnapshotTest extends TestBase {
         assertEquals(expected, value, scenario);
         final List<Object> firstRead = value.parameters();
         final List<Object> secondRead = value.parameters();
+        assertNotSame(firstRead, secondRead, scenario);
+        assertThrows(UnsupportedOperationException.class, firstRead::clear, scenario);
         assertNotSame(firstRead.get(0), secondRead.get(0), scenario);
         mutate.accept(firstRead.get(0));
 
@@ -106,10 +108,28 @@ public class SubQuerySnapshotTest extends TestBase {
 
         assertEquals(Arrays.asList(1, null, "active", opaque), value.parameters());
         assertSame(value.parameters(), value.parameters());
-        // Application-defined values have no general copy contract; only arrays, dates and calendars are isolated.
+        // All other values, including mutable JDK types such as StringBuilder, remain shared by reference.
         assertSame(opaque, value.parameters().get(3));
         assertEquals(List.of(), snapshot(null).parameters());
         assertEquals(List.of(), snapshot(List.of()).parameters());
+    }
+
+    @Test
+    void testSnapshotRejectsDirectObjectArrayCycle() {
+        final Object[] cycle = new Object[1];
+        cycle[0] = cycle;
+
+        // Exercise the constructor's documented rejection, not only the shared value-copying helper.
+        assertThrows(IllegalArgumentException.class, () -> snapshot(List.of((Object) cycle)));
+    }
+
+    @Test
+    void testSnapshotRejectsIndirectObjectArrayCycle() {
+        final Object[] first = new Object[1];
+        final Object[] second = new Object[] { first };
+        first[0] = second;
+
+        assertThrows(IllegalArgumentException.class, () -> snapshot(List.of((Object) first)));
     }
 
     @Test

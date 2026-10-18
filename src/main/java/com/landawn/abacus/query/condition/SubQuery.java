@@ -1370,7 +1370,7 @@ public class SubQuery extends AbstractCondition {
      * {@code Calendar}, a fresh list holding fresh defensive copies of those bindings is built on every call,
      * so mutating a returned element never affects this subquery or a later call. Builder-backed snapshots also
      * give each parent its own copies of these mutable bindings. Arrays are copied recursively, including nested
-     * arrays, dates and calendars. Other application-defined values remain shared by reference.
+     * arrays, dates and calendars. All other values remain shared by reference.
      * Raw and builder-backed subqueries without these mutable binding types return the same immutable list each time.
      *
      * <p><b>Usage Examples:</b></p>

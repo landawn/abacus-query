@@ -11069,7 +11069,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>{@link #build()} runs before SELECT validation, so once finalization begins this builder is
      * consumed even if the completed SQL is subsequently rejected. The returned snapshot receives the
      * parameter list already stabilized by {@link SP} and defensively copies arrays, {@code Date}s and {@code Calendar}s;
-     * each parent receives fresh copies of those values. Other application-defined values remain shared by reference.
+     * each parent receives fresh copies of those values. All other values remain shared by reference.
      * The source builder's generated-placeholder maps
      * and set are retained by reference as ownership-transferred metadata and must be treated as read-only.
      * Parent builders create working copies for collision rewriting, so the snapshot can be reused.</p>
@@ -11100,7 +11100,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * safely composed into an enclosing builder without losing binding order.
      * Arrays (including nested arrays), {@code Date}s and {@code Calendar}s are copied when captured and
      * whenever bindings are returned or composed into a parent, so mutating a returned binding cannot alter
-     * the snapshot or another parent. Other application-defined values remain shared by reference.
+     * the snapshot or another parent. All other values remain shared by reference.
      *
      * <p>Finalization begins before SELECT validation, so this builder is consumed whether snapshot
      * creation succeeds or the built SQL is rejected. If the captured SQL contains generated
