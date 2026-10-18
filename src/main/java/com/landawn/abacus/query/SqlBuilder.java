@@ -129,6 +129,15 @@ import com.landawn.abacus.util.Strings;
  */
 public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // 1. A structured SubQuery whose trailing condition is clause text or a Join renders in SubQuery.toString(), but every
+    //    builder rejects it: PSC.select("x").from("y").where(Filters.exists(Filters.subQuery("t", List.of("a"), "ORDER BY a")))
+    //    throws IllegalArgumentException ("WHERE condition type ...SqlExpression is not allowed"), as does
+    //    new SubQuery("t", List.of("a"), new CrossJoin("u")), although Filters.subQuery documents such text as appended verbatim.
+    //    Note: rendering it naively would let LIMIT/ORDER BY text leak into a set operation that uses the subquery as an operand.
+    // See also the known issues listed under the AbstractQueryBuilder class declaration.
+
     /** Logger for this builder; shadows the inherited logger so SqlBuilder-level diagnostics are logged under this class. */
     protected static final Logger logger = LoggerFactory.getLogger(SqlBuilder.class);
 

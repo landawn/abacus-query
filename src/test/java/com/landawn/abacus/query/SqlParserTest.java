@@ -2894,6 +2894,23 @@ public class SqlParserTest extends TestBase {
             assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT 1;\n#TODO: delete later\nSELECT 2"));
         }
 
+        @Test
+        void testHashLabelLeadingContextAcrossCommentsAndLineBreaks() {
+            for (final String lineBreak : List.of("\n", "\r\n", "\r")) {
+                for (final String gap : List.of(" ", " /* gap */ ", lineBreak, " -- gap" + lineBreak, " # note" + lineBreak)) {
+                    final String prefix = "SELECT 1; # note" + lineBreak + "#first:" + gap + "#:" + gap;
+                    final String read = prefix + "SELECT 2";
+                    assertTrue(SqlParser.isSyntacticallyReadQuery(read), read);
+                    assertTrue(SqlParser.isReadOrInsertQuery(read), read);
+
+                    // Stopping look-ahead at each '#' must still inspect the statement after a label, including its own hashes.
+                    assertAllReadGatesReject(prefix + "DELETE FROM t");
+                    assertAllReadGatesReject(prefix + "SELECT a # INTO new_t FROM t");
+                    assertAllReadGatesReject(read + "; #last: UPDATE t SET a = 1");
+                }
+            }
+        }
+
         // Controls: suffix column lists, following CTEs, quoted and dollar-quoted mark values, MariaDB's CYCLE ... RESTRICT,
         // Oracle's SEARCH ordering options and its CYCLE form without USING all end the clause in the right place.
         @Test
@@ -6950,6 +6967,19 @@ public class SqlParserTest extends TestBase {
      */
     @Nested
     class HashScanMemoLinearity {
+
+        @Test
+        void testStatementLeadingHashLabelChainAvoidsRepeatedSuffixScans() {
+            final String sql = "SELECT 1;" + "#x:\n".repeat(16_000);
+
+            // The T-SQL reading rescanned every remaining line after each label: several seconds for this 64 KB input.
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+                assertTrue(SqlParser.isReadOrInsertQuery(sql));
+                // A statement after the long chain must remain visible to every read gate.
+                assertAllReadGatesReject(sql + "DELETE FROM t");
+            });
+        }
 
         @Test
         void testBracketQuotedListElementBeforeHashIdentifierIsLinear() {

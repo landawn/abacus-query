@@ -195,6 +195,19 @@ import com.landawn.abacus.util.Strings;
  */
 public final class ParsedSql {
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // 1. MySQL arithmetic can be mistaken for a dash-line comment, removing both the expression and the WHERE restriction:
+    //    UPDATE account SET credit = credit --debit WHERE id = 42 -> UPDATE account SET credit = credit.
+    // 2. Dollar-quoted literal contents can be rewritten and counted as parameters:
+    //    SELECT ARRAY[$$:x$$], :id -> SELECT ARRAY[$$?$$], ? (two parameters instead of one).
+    // 3. Removing flat comments can expose SQL that belongs to a nested comment under H2 and other nesting dialects:
+    //    DELETE FROM t WHERE id = 1 /* /* */ OR 1=1 --*/ -> DELETE FROM t WHERE id = 1 OR 1=1.
+    //    The rewritten statement can delete all rows instead of only the row with id = 1.
+    // 4. Leading Unicode whitespace that String.trim() keeps (U+3000, U+2028, U+2000-U+200A) defeats statement recognition:
+    //    "<U+3000>SELECT * FROM t WHERE a = :a" is not a data operation, so :a is left unconverted (fails at execution).
+    // See also the known read-classification issues listed under the SqlParser class declaration.
+
     /**
      * The maximum length (in {@code char}s, as given: surrounding whitespace included) of a SQL string that
      * {@link #parse(String)} looks up in or stores into its cache. Longer SQL is parsed on every call and never cached.

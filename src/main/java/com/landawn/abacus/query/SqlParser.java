@@ -150,6 +150,32 @@ import com.landawn.abacus.util.Strings;
  */
 public final class SqlParser {
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // Read classification still accepts mutation-bearing SELECTs in both default and semicolonless-batch modes:
+    // 1. SELECT ARRAY[1, (SELECT MAX(a) FROM OLD TABLE (DELETE FROM t))] is accepted although it deletes rows in H2.
+    // 2. SELECT 1 AS from INTO new_t is accepted: the alias "from" is mistaken for the FROM clause, hiding the table-creating INTO.
+    // 3. SELECT $INTO t FROM x (also $.5INTO; batch mode: SELECT $DELETE FROM t) is accepted: SQL Server reads a bare '$' as a
+    //    money literal, so the glued INTO (or DELETE) is a separate keyword and the statement creates table t.
+    // 4. isReadOrInsertQuery accepts INSERT INTO x SELECT a FROM (UPDATE value SET a = 1 OUTPUT inserted.a) AS d (and the
+    //    MERGE value USING ... form): the JSON "VALUE" exemption also covers nested UPDATE/MERGE, and VALUE is not reserved in T-SQL.
+    // 5. SELECT a INTO ..t FROM x, SELECT a INTO .dbo.t FROM x and (DELETE ..t OUTPUT deleted.a) are accepted: a reserved word
+    //    followed by '.' is taken for a qualifier, missing SQL Server names with omitted leading parts (batch mode too:
+    //    SELECT 1 DELETE .dbo.t WHERE 1 = 1, SELECT 1 EXEC ..p).
+    // 6. SELECT 2 #1INTO t and SELECT a#1INTO t FROM x are accepted: PostgreSQL 14 and older read '#' as XOR and 1INTO as 1 INTO,
+    //    while the T-SQL reading glues the '#' to the literal.
+    // 7. SELECT a IS DISTINCT<NBSP>FROM b INTO t FROM x is accepted: a no-break space after DISTINCT resets the IS DISTINCT FROM
+    //    exemption, so that FROM ends the select list and the INTO is not seen.
+    // 8. SELECT 1;\n#x : DELETE FROM t (also #x/**/: DELETE ...) is accepted by the default config: a T-SQL label is only
+    //    recognized with ':' directly after its name (whether SQL Server allows blanks before the colon is unverified).
+    // 9. #purge 1\nSELECT 1 is accepted by the default config: SQL Server runs a bare procedure name that opens a batch, here a
+    //    temporary procedure (#name, ##name), while MySQL reads the line as a comment. Semicolonless-batch mode rejects
+    //    #fetch-style names but still accepts #@p 1\nSELECT 1 (and #1p, #$p).
+    // 10. Classification is quadratic for "SELECT 1 " + "[--".repeat(n) + "\n" + "(".repeat(n) + "x" (about 6 s at 96 KB;
+    //    also "[/*".repeat(n) + "*/" + "(".repeat(n)): firstWordInBracket re-walks the same '(' run for every '['.
+    // See the known issues listed under the ParsedSql class declaration for arithmetic/comment handling,
+    // dollar-quoted literal rewriting, and nested-comment rewriting that can remove UPDATE/DELETE restrictions.
+
     private static final String KEEP_COMMENTS = "-- Keep comments";
 
     private static final char TAB = '\t';
@@ -5140,7 +5166,9 @@ public final class SqlParser {
                 masked = maskRange(sql, masked, index, index + 1);
             } else if (ch == '#' && tsqlHashReading) {
                 if (leadingEnd <= index) {
-                    leadingEnd = skipLeadingWhitespaceAndComments(sql, leadingEnd, tokenizerConfig, memo);
+                    // Only inspect the prefix through this '#'. Scanning all later hash lines and restarting after
+                    // every label made a chain of statement-leading labels quadratic.
+                    leadingEnd = skipLeadingWhitespaceAndComments(sql, leadingEnd, index + 1, tokenizerConfig, memo);
                 }
 
                 if (leadingEnd > index) {
@@ -5165,6 +5193,8 @@ public final class SqlParser {
                         index++;
                     } while (index < len && sql.charAt(index) != ENTER && sql.charAt(index) != ENTER_2);
 
+                    // The bounded look-ahead stopped inside this comment; resume leading-context checks after its body.
+                    leadingEnd = index;
                     continue;
                 }
 
@@ -8102,41 +8132,47 @@ public final class SqlParser {
         return "TRUE".equalsIgnoreCase(word) || "FALSE".equalsIgnoreCase(word) || "NULL".equalsIgnoreCase(word) ? index + word.length() : -1;
     }
 
-    private static int skipLeadingWhitespaceAndComments(final String sql, int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
-        while (fromIndex < sql.length()) {
-            while (fromIndex < sql.length() && Character.isWhitespace(sql.charAt(fromIndex))) {
+    private static int skipLeadingWhitespaceAndComments(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
+        return skipLeadingWhitespaceAndComments(sql, fromIndex, sql.length(), tokenizerConfig, memo);
+    }
+
+    /** Skips leading trivia up to {@code toIndex} (exclusive), retaining the full SQL as context for hash classification. */
+    private static int skipLeadingWhitespaceAndComments(final String sql, int fromIndex, final int toIndex, final TokenizerConfig tokenizerConfig,
+            final HashScanMemo memo) {
+        while (fromIndex < toIndex) {
+            while (fromIndex < toIndex && Character.isWhitespace(sql.charAt(fromIndex))) {
                 fromIndex++;
             }
 
-            if (fromIndex >= sql.length()) {
+            if (fromIndex >= toIndex) {
                 break;
             }
 
-            if ((fromIndex + 1 < sql.length()) && sql.charAt(fromIndex) == '-' && sql.charAt(fromIndex + 1) == '-') {
+            if ((fromIndex + 1 < toIndex) && sql.charAt(fromIndex) == '-' && sql.charAt(fromIndex + 1) == '-') {
                 fromIndex += 2;
 
-                while (fromIndex < sql.length() && sql.charAt(fromIndex) != '\n' && sql.charAt(fromIndex) != '\r') {
+                while (fromIndex < toIndex && sql.charAt(fromIndex) != '\n' && sql.charAt(fromIndex) != '\r') {
                     fromIndex++;
                 }
 
                 continue;
             }
 
-            if ((fromIndex + 1 < sql.length()) && sql.charAt(fromIndex) == '/' && sql.charAt(fromIndex + 1) == '*') {
+            if ((fromIndex + 1 < toIndex) && sql.charAt(fromIndex) == '/' && sql.charAt(fromIndex + 1) == '*') {
                 fromIndex += 2;
 
-                while ((fromIndex + 1 < sql.length()) && !(sql.charAt(fromIndex) == '*' && sql.charAt(fromIndex + 1) == '/')) {
+                while ((fromIndex + 1 < toIndex) && !(sql.charAt(fromIndex) == '*' && sql.charAt(fromIndex + 1) == '/')) {
                     fromIndex++;
                 }
 
-                fromIndex = Math.min(fromIndex + 2, sql.length());
+                fromIndex = Math.min(fromIndex + 2, toIndex);
                 continue;
             }
 
             if (sql.charAt(fromIndex) == '#' && isClassificationHashCommentStart(sql, sql.length(), fromIndex, tokenizerConfig, memo)) {
                 do {
                     fromIndex++;
-                } while (fromIndex < sql.length() && sql.charAt(fromIndex) != '\n' && sql.charAt(fromIndex) != '\r');
+                } while (fromIndex < toIndex && sql.charAt(fromIndex) != '\n' && sql.charAt(fromIndex) != '\r');
 
                 continue;
             }

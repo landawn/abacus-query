@@ -171,6 +171,38 @@ import com.landawn.abacus.util.u.Optional;
  */
 public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<This>> { // NOSONAR
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // A caller fragment that ends inside a line comment under the target database's reading can swallow the clause the
+    // builder appends next, silently widening an UPDATE/DELETE:
+    // 1. MySQL: where(Filters.expr("status = 0 ## stale\nAND id = 42")) -> "... WHERE status = 0 ## stale AND id = 42".
+    //    The tokenizer keeps "##", "#>", "#>>", "#-" and "?#" as data and joins lines, so MySQL's '#' comment drops AND id = 42;
+    //    a SET value such as SqlExpression.of("flag ## toggle") swallows the WHERE, and "?#" swallows a LIMIT.
+    // 2. Dialect-agnostic default: deleteFrom("account ##archived").where(...) -> "DELETE FROM account ##archived WHERE id = 1",
+    //    which deletes every row on MySQL ("#archived" and "## archived" do get a line feed).
+    // 3. Oracle: set("name = q'[it's]' -- x").where(...) keeps the WHERE inside the comment (q'[...]' literals are not read);
+    //    join(...) and orderBy(...).limit(n) fragments with such a literal swallow ON/FETCH the same way.
+    // 4. MySQL with NO_BACKSLASH_ESCAPES: innerJoin("d ON d.path = 'C:\\' -- don't").where(...) swallows the WHERE (the
+    //    comment guard also accepts such text, as tests pin MySQL's 'it\'s -- fine').
+    // 5. Nested block comments (PostgreSQL, SQL Server, H2, Db2): from("t /* /* */ ' */ -- c").where(...) swallows the WHERE;
+    //    PostgreSQL's '#' XOR operator ("t.f # 1 = 0 AND t.n = 'a\nb' -- c") and, under the default dialect, subscripts such
+    //    as u.j['a]'] hide a trailing comment the same way.
+    // 6. join(Account.class, "o ##") appends the alias without the trailing-comment check (MySQL loses ON and WHERE).
+    // 7. An unterminated "/*" in a raw condition or SET expression is silently dropped with all text after it:
+    //    deleteFrom("account").where("status = 0 /* only\nAND id = 42") -> "DELETE FROM account WHERE status = 0 ".
+    //    Under the default dialect, a "/*" whose state depends on the reading (after 'x\' or inside $$...) is emitted as
+    //    written, and SQLite then swallows the following LIMIT/ORDER BY.
+    // 8. Default dialect: innerJoin("u ## ON u.id = t.id") is accepted as a complete join, but on MySQL the ON is inside a
+    //    comment, so the query becomes a cross join (also "u $$#$$ ON ...").
+    // Other open issues:
+    // 9. Child-placeholder renaming ignores dollar-quoted strings: a UNION / IN / Criteria-union child containing $$it's$$
+    //    (or $$a /* b$$) keeps its colliding ":id" (MSC: "#{id}"), so the compound SQL binds two same-named placeholders to
+    //    different values (NSC/MSC, PostgreSQL, H2, default dialect).
+    // 10. select(Map) does not apply the duplicate sub-entity table-reference check the other select paths apply.
+    // 11. After a failed mutation that grew a HashMap (e.g. a large IN), the retried builder iterates its name maps in a
+    //    different order, so second-level composition may pick different (still unique) suffixes than a fresh builder.
+    // See also the known issues listed under the SqlParser, ParsedSql, DynamicQuery, QueryUtil and SqlBuilder class declarations.
+
     /** Shared logger for builder lifecycle and pooled-resource usage diagnostics. */
     protected static final Logger logger = LoggerFactory.getLogger(AbstractQueryBuilder.class);
 
@@ -9324,8 +9356,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         mergeNamedParameterState(parentOccurrences.values, childParameterNames, childParameterTokens);
 
-        if (N.notEmpty(subQuery.parameters)) {
-            _parameters.addAll(subQuery.parameters);
+        // Each parent needs its own mutable binding values; copying references from the snapshot would let one parent alter every reuse.
+        final List<Object> subParameters = subQuery.parameters();
+        if (N.notEmpty(subParameters)) {
+            _parameters.addAll(subParameters);
         }
 
         _hasGeneratedParameterPlaceholder |= subQuery.hasGeneratedParameterPlaceholder;
@@ -11034,7 +11068,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p>{@link #build()} runs before SELECT validation, so once finalization begins this builder is
      * consumed even if the completed SQL is subsequently rejected. The returned snapshot receives the
-     * parameter list already stabilized by {@link SP}; the source builder's generated-placeholder maps
+     * parameter list already stabilized by {@link SP} and defensively copies arrays, {@code Date}s and {@code Calendar}s;
+     * each parent receives fresh copies of those values. Other application-defined values remain shared by reference.
+     * The source builder's generated-placeholder maps
      * and set are retained by reference as ownership-transferred metadata and must be treated as read-only.
      * Parent builders create working copies for collision rewriting, so the snapshot can be reused.</p>
      *
@@ -11062,6 +11098,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * captures it as a reusable {@link SubQuery}. The returned snapshot retains
      * the rendered SQL, parameter values, SQL policy, and generated-placeholder metadata so it can be
      * safely composed into an enclosing builder without losing binding order.
+     * Arrays (including nested arrays), {@code Date}s and {@code Calendar}s are copied when captured and
+     * whenever bindings are returned or composed into a parent, so mutating a returned binding cannot alter
+     * the snapshot or another parent. Other application-defined values remain shared by reference.
      *
      * <p>Finalization begins before SELECT validation, so this builder is consumed whether snapshot
      * creation succeeds or the built SQL is rejected. If the captured SQL contains generated

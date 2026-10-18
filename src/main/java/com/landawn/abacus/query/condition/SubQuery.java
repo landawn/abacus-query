@@ -117,6 +117,13 @@ import com.landawn.abacus.util.Strings;
  */
 public class SubQuery extends AbstractCondition {
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // 1. Raw text that ParsedSql does not recognize as a query (DuckDB FROM-first, PIVOT) is checked for named/MyBatis markers
+    //    with ParsedSql's reading, which treats a marker inside a dollar-quoted string as a parameter, so
+    //    new SubQuery("FROM u SELECT $$:x$$") is rejected although the ":x" is literal text (over-strict, fails closed).
+    // See also the known issues listed under the SqlBuilder class declaration (structured subqueries with clause text).
+
     // For Kryo
     /** The entity/table name of a structured subquery, or the optional name associated with raw SQL;
      *  empty for unnamed raw SQL and builder-backed snapshots. */
@@ -1358,11 +1365,13 @@ public class SubQuery extends AbstractCondition {
      * the values captured from their source builder.
      * For a structured subquery the list is built afresh on every call (it is not memoized here), so
      * mutable parameter values such as arrays or {@code Date}s come from the condition's own per-call
-     * defensive copies and are never shared between callers. Raw bindings were snapshotted at construction
-     * (see {@link #SubQuery(String, java.util.Collection)}); when any of them is an array, {@code Date}, or
+     * defensive copies and are never shared between callers. Raw and builder-backed bindings were snapshotted at construction
+     * (see {@link #SubQuery(String, java.util.Collection)} and {@link SqlBuilder#toSubQuery()}); when any of them is an array, {@code Date}, or
      * {@code Calendar}, a fresh list holding fresh defensive copies of those bindings is built on every call,
-     * so mutating a returned element never affects this subquery or a later call. A raw subquery whose bindings
-     * are all scalars returns the same immutable list each time.
+     * so mutating a returned element never affects this subquery or a later call. Builder-backed snapshots also
+     * give each parent its own copies of these mutable bindings. Arrays are copied recursively, including nested
+     * arrays, dates and calendars. Other application-defined values remain shared by reference.
+     * Raw and builder-backed subqueries without these mutable binding types return the same immutable list each time.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1391,7 +1400,7 @@ public class SubQuery extends AbstractCondition {
      * // returns ["active"]
      * }</pre>
      *
-     * @return an immutable list of parameter values (array/{@code Date}/{@code Calendar} raw bindings are
+     * @return an immutable list of parameter values (array/{@code Date}/{@code Calendar} bindings are
      *         defensive copies), or an empty immutable list when none were captured
      */
     @Override

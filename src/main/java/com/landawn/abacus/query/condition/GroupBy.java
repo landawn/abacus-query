@@ -80,6 +80,12 @@ import com.landawn.abacus.util.N;
  */
 public class GroupBy extends Clause {
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // 1. A sort item that renders to nothing under the dialect-neutral reading is not rejected by the condition itself:
+    //    Filters.groupBy("#tmp ## x", "b").toString() -> "GROUP BY , b" (validation treats #tmp as a SQL Server temp name,
+    //    rendering strips it as a MySQL comment). OrderBy behaves the same; query builders reject such a sort list.
+
     /**
      * Default constructor for serialization frameworks like Kryo.
      * This constructor creates an uninitialized GroupBy instance and should not be used 
