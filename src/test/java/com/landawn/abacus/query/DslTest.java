@@ -668,6 +668,29 @@ public class DslTest extends TestBase {
             assertSql("SELECT COUNT(*) FROM users", List.of(), factory.dsl.select("COUNT(*)").from("users").build());
         }
 
+        // Regression: the factories released a builder they could not return only on RuntimeException | Error, so a checked
+        // exception thrown sneakily by a named-parameter handler (Kotlin, @SneakyThrows) leaked its pooled buffer and the
+        // active-builder count.
+        @Test
+        void testSneakyCheckedHandlerFailureReleasesAllocatedBuilder() {
+            final java.io.IOException handlerFailure = new java.io.IOException("handler I/O failure");
+            final Dsl sneakyDsl = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+                if ("firstName".equals(name)) {
+                    throw DslTest.<RuntimeException> sneakyThrow(handlerFailure);
+                }
+
+                sb.append(':').append(name);
+            }).build());
+            final int before = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
+            final Throwable failure = assertThrows(Throwable.class, () -> sneakyDsl.insertInto(com.landawn.abacus.query.entity.Account.class));
+            assertTrue(failure == handlerFailure, String.valueOf(failure));
+            assertEquals(before, AbstractQueryBuilder.activeStringBuilderCounter.get(), "A rejected factory must release its pooled builder");
+
+            // Control: a handler that does not throw renders the statement.
+            assertTrue(NSC.insertInto(com.landawn.abacus.query.entity.Account.class).build().query().startsWith("INSERT INTO account ("));
+        }
+
         @ParameterizedTest(name = "{0}")
         @EnumSource(value = Factory.class, names = { "NAC", "NLC" })
         void testTableNamePreservation(final Factory factory) {
@@ -9015,6 +9038,12 @@ public class DslTest extends TestBase {
         Factory(final Dsl dsl) {
             this.dsl = dsl;
         }
+    }
+
+    /** Throws {@code failure}, even a checked exception, without declaring it (as Kotlin or Lombok {@code @SneakyThrows} code can). */
+    @SuppressWarnings("unchecked")
+    private static <E extends Throwable> RuntimeException sneakyThrow(final Throwable failure) throws E {
+        throw (E) failure;
     }
 
     @lombok.Data

@@ -466,4 +466,22 @@ public class UsingTest extends TestBase {
         assertEquals("USING (\"a--b\")", new Using("\"a--b\"").toString());
         assertEquals("USING (`x#y`)", new Using("`x#y`").toString());
     }
+
+    // Regression: a closed block comment did not swallow the closing parenthesis, so it was accepted and then silently stripped
+    // at render time: "/* x */" rendered USING (), "id", "/* x */" rendered USING (id, ) and "a/* x */" rendered USING (a).
+    @Test
+    void testUsingRejectsCompleteBlockCommentInColumnName() {
+        for (final String[] columnNames : new String[][] { { "/* x */" }, { "id", "/* x */" }, { "a/* x */" }, { "a/**/b" } }) {
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new Using(columnNames));
+            assertTrue(e.getMessage().startsWith("SQL comment token is not allowed in USING column names"), e.getMessage());
+            assertThrows(IllegalArgumentException.class, () -> new Using(Arrays.asList(columnNames)));
+            assertThrows(IllegalArgumentException.class, () -> Filters.using(columnNames));
+        }
+
+        // Still accepted: comment openers inside quoted identifiers, and names whose rendering changes only whitespace.
+        assertEquals("USING (\"a/* x */\")", new Using("\"a/* x */\"").toString());
+        assertEquals("USING ([a--b], id)", new Using("[a--b]", "id").toString());
+        assertEquals("USING (a b)", new Using("a\tb").toString());
+        assertEquals("USING (##tmp)", new Using("##tmp").toString());
+    }
 }

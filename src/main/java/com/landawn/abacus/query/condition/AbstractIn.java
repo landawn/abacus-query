@@ -217,7 +217,9 @@ public abstract class AbstractIn extends ComposableCondition {
         int rowIndex = 0;
 
         for (final Object row : valueRowsCopy) {
-            N.checkArgNotNull(row, "value row");
+            if (row == null) {
+                throw new IllegalArgumentException("valueRows[" + rowIndex + "] must not be null");
+            }
 
             // Each tuple is wrapped unmodifiable so values() is immutable in depth, not just at the
             // outer ImmutableList level (a mutated tuple would silently desync the memoized parameters).

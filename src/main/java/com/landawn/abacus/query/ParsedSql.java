@@ -281,7 +281,9 @@ public final class ParsedSql {
      * Parses a nonblank SQL string whose outer argument validation has already completed.
      *
      * @param inputSql the nonblank SQL string
-     * @throws IllegalArgumentException if a recognized data-operation statement mixes parameter styles,
+     * @throws IllegalArgumentException if {@code inputSql} is empty after {@link String#trim()} (it holds only control
+     *         characters that the outer blank check does not treat as blank); or if a recognized data-operation
+     *         statement mixes parameter styles,
      *         contains an iBatis/MyBatis marker without a closing brace or with an empty property name
      *         ({@code #{:id}}), or contains an unpaired UTF-16
      *         surrogate in a prospective colon-style name, its preceding boundary, or immediately after
@@ -925,7 +927,8 @@ public final class ParsedSql {
      * @param inputSql the nonblank SQL; its surrounding whitespace is kept in the cache key
      * @param cache the cache to consult and fill, or {@code null} to parse without caching
      * @return the cached instance, or a newly parsed one
-     * @throws IllegalArgumentException if the SQL is rejected by parameter detection (see {@link #parse(String)})
+     * @throws IllegalArgumentException if the SQL is empty after {@link String#trim()} or is rejected by parameter
+     *         detection (see {@link #parse(String)})
      */
     static ParsedSql parse(final String inputSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache) {
         return parse(inputSql, cache, null);
@@ -960,7 +963,8 @@ public final class ParsedSql {
      * @param cache the cache to consult and fill, or {@code null} to parse without caching
      * @param front the lock-free mirror of {@code cache} to consult first and keep filled, or {@code null} for none
      * @return the cached instance, or a newly parsed one
-     * @throws IllegalArgumentException if the SQL is rejected by parameter detection (see {@link #parse(String)})
+     * @throws IllegalArgumentException if the SQL is empty after {@link String#trim()} or is rejected by parameter
+     *         detection (see {@link #parse(String)})
      */
     static ParsedSql parse(final String inputSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache,
             final ConcurrentMap<String, ParsedSql> front) {
@@ -1636,7 +1640,7 @@ public final class ParsedSql {
     /**
      * Returns the index of the last token of the return-value marker of a JDBC call escape, or {@code -1} if
      * {@code slot} (the text of the token at {@code index}, without a glued opening brace) does not start one.
-     * A MyBatis binding may span tokens up to the one holding its unquoted {@code '}'}, which must end that token.
+     * A MyBatis binding may span tokens up to the one holding its unquoted <code>'}'</code>, which must end that token.
      */
     private static int jdbcCallReturnSlotEnd(final String slot, final List<String> words, final int index) {
         if (SK.QUESTION_MARK.equals(slot)) {
@@ -1989,7 +1993,7 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the indexes of every {@code "#{"} in {@code token} that lies outside single-, double- or
+     * Returns the indexes of every <code>"#{"</code> in {@code token} that lies outside single-, double- or
      * backtick-quoted regions, in ascending order, so a marker inside a literal element of a subscript
      * ({@code "ARRAY['#{x}']"}) is not mistaken for a binding. A token that holds none, and one whose quoting
      * is ambiguous between the two escape readings (see
@@ -3614,13 +3618,14 @@ public final class ParsedSql {
      * the left operand of a JSON existence operator: clause openers, CASE parts, and operator-like keywords
      * that take a value on their right ({@code INTERVAL ? DAY}, {@code ILIKE ? ESCAPE '!'},
      * {@code SIMILAR TO ? ...}; keywords that are also plausible column names, such as the {@code OF} of
-     * {@code AS OF ?}, the {@code ZONE} of {@code AT TIME ZONE ?} and the {@code RANGE}/{@code GROUPS} of a window
-     * frame, are handled by {@code isContextualPlaceholderKeyword}).
+     * {@code AS OF ?} and the {@code ZONE} of {@code AT TIME ZONE ?}, are handled by {@code isContextualPlaceholderKeyword},
+     * and the {@code RANGE}/{@code GROUPS} of a window frame by the classifier's {@code leadsMarkerAsKeyword}).
      * Without this list such a {@code ?} followed by an identifier-like word ({@code DAY}, {@code ESCAPE}, an alias) would be dropped from the parameter count.
      * {@code VALUES} is not listed: its rows are parenthesized, and where a bare {@code VALUES ?} is accepted
      * (DB2) no operand can follow the bare {@code ?}, which therefore stays a placeholder, while {@code values ? 'k'}
      * tests a column named {@code values}. A {@code ?} glued to a non-JSON operator after it ({@code VALUES ?-1},
-     * {@code VALUES ?||'x'}) is handled by the classifier's {@code leadsMarkerAsKeyword}.
+     * {@code VALUES ?||'x'}), and a row-constructor {@code VALUES ?} before a postfix clause
+     * ({@code VALUES ? FORMAT JSON}), are handled by the classifier's {@code leadsMarkerAsKeyword}.
      */
     private static boolean isPlaceholderLeadingKeyword(final String word) {
         // Length dispatch avoids testing every keyword for identifiers, punctuation and quoted text.
@@ -3781,15 +3786,15 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the index of the {@code '}'} in {@code token} that closes a MyBatis marker whose content (or, for a
+     * Returns the index of the <code>'}'</code> in {@code token} that closes a MyBatis marker whose content (or, for a
      * token that continues a split marker, whose remaining content) starts at {@code fromIndex}; {@code -1} if the
      * token holds none; or {@link #MALFORMED_IBATIS_MARKER} if the marker cannot be closed: a quoted region in it is
      * not closed within the token (or the backslash-escape readings disagree on where it ends), or another
-     * {@code "#{"} opens before the {@code '}'}. Quoted regions ({@code '}, {@code "}, {@code `}) and block and
-     * dash-line comments are skipped, so a {@code '}'} inside them never closes the marker.
+     * <code>"#{"</code> opens before the <code>'}'</code>. Quoted regions ({@code '}, {@code "}, {@code `}) and block and
+     * dash-line comments are skipped, so a <code>'}'</code> inside them never closes the marker.
      *
      * @param token the token holding the marker or continuing it
-     * @param fromIndex the index right after the marker's {@code "#{"}, or {@code 0} for a continuation token
+     * @param fromIndex the index right after the marker's <code>"#{"</code>, or {@code 0} for a continuation token
      * @return the closing brace index, {@code -1}, or {@link #MALFORMED_IBATIS_MARKER}
      */
     private static int findIbatisClosingBraceIndex(final String token, final int fromIndex) {
@@ -3822,7 +3827,7 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the index of the {@code '}'} that closes a split MyBatis marker in {@code token}, a token that continues
+     * Returns the index of the <code>'}'</code> that closes a split MyBatis marker in {@code token}, a token that continues
      * it, as {@link #findIbatisClosingBraceIndex(String, int)} does from the token's start. A comment or whitespace token
      * never closes the marker ({@code -1}). A token that starts with a quote is a standalone literal or quoted
      * identifier, never part of a property path (unlike the {@code ['k']} of {@code map['k']}), so it makes the marker
@@ -3838,7 +3843,7 @@ public final class ParsedSql {
 
     /**
      * Returns {@code true} if the constructor would continue a MyBatis marker of {@code token} into the following
-     * tokens: walking its unquoted markers in order, as the constructor does, one of them has no closing {@code '}'}
+     * tokens: walking its unquoted markers in order, as the constructor does, one of them has no closing <code>'}'</code>
      * in the token (<code>#{ name</code>, <code>#{a}#{ b</code>). A token whose markers all close, or one that holds a malformed
      * marker the constructor rejects, returns {@code false}.
      */

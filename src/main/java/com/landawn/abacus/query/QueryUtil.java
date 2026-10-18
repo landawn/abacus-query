@@ -160,15 +160,21 @@ public final class QueryUtil {
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
     private static ImmutableList<String> getNoExclusionPropNames(final Class<?> entityClass, final int slot) {
-        final AtomicReferenceArray<ImmutableList<String>> cache = noExclusionPropNamesPool.computeIfAbsent(entityClass, cls -> new AtomicReferenceArray<>(5));
+        AtomicReferenceArray<ImmutableList<String>> cache = noExclusionPropNamesPool.get(entityClass);
 
-        ImmutableList<String> result = cache.get(slot);
+        ImmutableList<String> result = cache == null ? null : cache.get(slot);
 
         if (result == null) {
             final ImmutableList<String> candidate = ImmutableList.copyOf(SqlBuilder.loadPropNamesByClass(entityClass)[slot]);
 
+            if (cache == null) {
+                // Create the holder only after loadPropNamesByClass accepted the class: a rejected class (a non-bean,
+                // a Map subclass, an anonymous class) must not stay a key that pins its class loader.
+                cache = noExclusionPropNamesPool.computeIfAbsent(entityClass, cls -> new AtomicReferenceArray<>(5));
+            }
+
             // Publish the first completed immutable snapshot atomically. A plain array element read
-            // outside the writer's synchronized block has no happens-before edge and can expose a
+            // without synchronization has no happens-before edge and can expose a
             // stale/null reference; AtomicReferenceArray provides both safe publication and the
             // stable reference identity required by builder fast paths.
             if (cache.compareAndSet(slot, null, candidate)) {
@@ -733,8 +739,10 @@ public final class QueryUtil {
      * Terminates a trailing SQL line comment before a renderer appends a separator, keyword, or closing parenthesis.
      * Quoted text and block comments are skipped using the query builder's default lexical rules.
      * Complete fragments are checked with both standard and backslash-escaped string literals;
-     * PostgreSQL {@code E'...'} literals retain their escape semantics in both readings.
-     * This helper does not validate the SQL or change a fragment whose final line is outside a comment.
+     * PostgreSQL {@code E'...'} literals retain their escape semantics in both readings. PostgreSQL dollar-quoted strings
+     * are read both as quoted text and as plain text ({@code $$'$$ -- c} gets a newline), while an H2 {@code //}
+     * comment is never recognized here.
+     * This helper does not validate the SQL or change a fragment whose final line is outside a comment under every reading.
      *
      * @param sql the non-null SQL fragment to compose with generated syntax
      * @return {@code sql}, or {@code sql} followed by a newline when it ends inside a {@code --} or {@code #} comment
@@ -757,12 +765,14 @@ public final class QueryUtil {
     /**
      * Returns the character offsets, in {@code sql} itself, of exactly the positional {@code ?} placeholders that
      * {@link ParsedSql#parameterCount()} counts, in ascending order: a {@code ?} inside a quoted literal, a quoted
-     * identifier or a comment, and a PostgreSQL JSON {@code ?} operator, is never listed. This is the classification
+     * identifier or a comment, and a PostgreSQL JSON {@code ?} operator, is never listed; text that {@link ParsedSql} does
+     * not recognize as a data operation statement carries none. This is the classification
      * raw sub-queries validate their bindings with, so the offsets line up with those bindings.
      *
      * @param sql the non-blank SQL text to scan
      * @return a fresh array of offsets into {@code sql} (empty if it carries no positional placeholder)
-     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, or contains malformed placeholder text
+     * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank, or is a recognized data operation
+     *         statement that mixes parameter styles or contains malformed placeholder text
      * @throws IllegalStateException if the placeholders cannot be aligned back onto {@code sql} (defensive; not expected)
      */
     @Internal
@@ -848,11 +858,15 @@ public final class QueryUtil {
     public static ImmutableMap<String, String> columnToPropNameMap(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, cs.entityClass);
 
-        // Backing map is a ConcurrentHashMap, so computeIfAbsent runs the (expensive)
-        // metadata build at most once per class even under concurrent first-touch.
-        return column2PropNameMapPool.computeIfAbsent(entityClass, cls -> {
-            final BeanInfo entityInfo = ParserUtil.getBeanInfo(cls);
-            final Table tableAnno = cls.getAnnotation(Table.class);
+        ImmutableMap<String, String> result = column2PropNameMapPool.get(entityClass);
+
+        if (result == null) {
+            // ParserUtil may run user constructors or class initializers while holding its metadata lock. Build without
+            // a query-cache lock (computeIfAbsent would hold this class's bin lock) so a callback into this method cannot
+            // reverse the lock order or fail as a recursive update. Racing cold builds may duplicate work, but every
+            // caller receives the published winner, and a failed build publishes nothing.
+            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
+            final Table tableAnno = entityClass.getAnnotation(Table.class);
             final String[] columnFieldArray = tableAnno == null ? N.EMPTY_STRING_ARRAY : tableAnno.columnFields();
             final String[] nonColumnFieldArray = tableAnno == null ? N.EMPTY_STRING_ARRAY : tableAnno.nonColumnFields();
             final Set<String> columnFields = columnFieldArray.length == 0 ? N.emptySet() : N.toSet(columnFieldArray);
@@ -879,8 +893,12 @@ public final class QueryUtil {
                 }
             }
 
-            return ImmutableMap.copyOf(map);
-        });
+            final ImmutableMap<String, String> built = ImmutableMap.copyOf(map);
+            final ImmutableMap<String, String> cached = column2PropNameMapPool.putIfAbsent(entityClass, built);
+            result = cached == null ? built : cached;
+        }
+
+        return result;
     }
 
     /**
@@ -1142,9 +1160,13 @@ public final class QueryUtil {
         // is just a value read instead of repeated reflective BeanInfo.getPropInfo lookups.
         // The array mirrors idPropNames(entityClass) order and may contain null
         // elements where an id name does not resolve, exactly as the original per-call code.
-        final PropInfo[] idPropInfos = idPropInfosPool.computeIfAbsent(entityClass, cls -> {
-            final Collection<String> idPropNames = idPropNames(cls);
-            final BeanInfo entityInfo = ParserUtil.getBeanInfo(cls);
+        PropInfo[] idPropInfos = idPropInfosPool.get(entityClass);
+
+        if (idPropInfos == null) {
+            // Resolve outside any cache lock, then publish the winner: ParserUtil may run a user constructor holding its
+            // metadata lock, and that constructor may call back into this method (see columnToPropNameMap).
+            final Collection<String> idPropNames = idPropNames(entityClass);
+            final BeanInfo entityInfo = ParserUtil.getBeanInfo(entityClass);
             final PropInfo[] resolved = new PropInfo[idPropNames.size()];
             int i = 0;
 
@@ -1152,8 +1174,9 @@ public final class QueryUtil {
                 resolved[i++] = entityInfo.getPropInfo(idPropName);
             }
 
-            return resolved;
-        });
+            final PropInfo[] cached = idPropInfosPool.putIfAbsent(entityClass, resolved);
+            idPropInfos = cached == null ? resolved : cached;
+        }
 
         // Determine the base property names based on whether ID fields have default values.
         // val[2] includes ID fields, val[3] excludes them.

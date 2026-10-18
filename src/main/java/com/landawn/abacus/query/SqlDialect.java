@@ -76,11 +76,11 @@ public class SqlDialect {
 
     /**
      * Optional descriptor of the target database product. When set, query builders branch on
-     * {@link ProductInfo#name()} to emit product-specific SQL: Oracle, DB2 and SQL Server dialects
+     * {@link ProductInfo#name()} to emit product-specific SQL. For example, Oracle, DB2 and SQL Server dialects
      * render pagination with {@code OFFSET ... ROWS} / {@code FETCH ... ROWS ONLY} instead of
-     * {@code LIMIT}/{@code OFFSET}, and a {@code null} {@code identifierQuote} defaults to
-     * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB. When {@code null}, builders use the default
-     * SQL syntax.
+     * {@code LIMIT}/{@code OFFSET}, a {@code null} {@code identifierQuote} defaults to
+     * {@link IdentifierQuote#BACKTICK} for MySQL/MariaDB, and inlined {@link SqlPolicy#RAW_SQL} literals
+     * follow the product's literal syntax (see that constant). When {@code null}, builders use the default SQL syntax.
      */
     private ProductInfo productInfo;
 

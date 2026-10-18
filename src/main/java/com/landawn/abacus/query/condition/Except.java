@@ -127,7 +127,7 @@ public class Except extends Clause {
      * // Find employees who are not managers
      * SubQuery managers = Filters.subQuery("SELECT employee_id FROM employees WHERE is_manager = true");
      * Except notManagers = new Except(managers);
-     * // When combined with all employees query:
+     * // When combined with a Sales-employees query:
      * // SELECT employee_id FROM employees WHERE department = 'Sales'
      * // EXCEPT
      * // SELECT employee_id FROM employees WHERE is_manager = true

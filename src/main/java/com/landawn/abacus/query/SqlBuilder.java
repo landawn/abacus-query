@@ -338,7 +338,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
                     if (N.notEmpty(subSP.parameters())) {
                         _parameters.addAll(subSP.parameters());
                     }
-                } catch (final RuntimeException | Error e) {
+                } catch (final Throwable e) { // NOSONAR - also a checked exception thrown sneakily by a named-parameter handler,
+                    // which would otherwise skip the release and leak the pooled buffer and the active-builder count.
                     releaseFailedSubQueryBuilder(subBuilder, e);
                     throw e;
                 } finally {
@@ -654,7 +655,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
             }
 
             return subBuilder.from(subQuery.entityName());
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedSubQueryBuilder(subBuilder, e);
             throw e;
         }
@@ -671,7 +672,7 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
         try {
             subBuilder.build();
-        } catch (final RuntimeException | Error cleanupFailure) {
+        } catch (final Throwable cleanupFailure) { // NOSONAR - the rendering failure stays the primary exception
             if (cleanupFailure != failure) {
                 failure.addSuppressed(cleanupFailure);
             }

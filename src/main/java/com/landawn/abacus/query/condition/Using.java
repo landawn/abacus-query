@@ -145,8 +145,8 @@ public class Using extends Cell {
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
      *                                  {@code ,}, {@code (}, or {@code )}, or an unquoted name containing a SQL comment
-     *                                  token ({@code --}, {@code #}, or {@code /*}) whose rendering would drop the closing
-     *                                  parenthesis
+     *                                  token ({@code --}, {@code #}, or {@code /*}), which rendering would strip (a closed
+     *                                  block comment included)
      */
     @Beta
     public Using(final String... columnNames) {
@@ -190,8 +190,8 @@ public class Using extends Cell {
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
      *                                  {@code ,}, {@code (}, or {@code )}, or an unquoted name containing a SQL comment
-     *                                  token ({@code --}, {@code #}, or {@code /*}) whose rendering would drop the closing
-     *                                  parenthesis
+     *                                  token ({@code --}, {@code #}, or {@code /*}), which rendering would strip (a closed
+     *                                  block comment included)
      */
     @Beta
     public Using(final Collection<String> columnNames) {
@@ -209,7 +209,8 @@ public class Using extends Cell {
      * The returned list contains the unqualified column names (no table prefixes) that were passed to
      * the constructor, after validation. This is a convenient structured alternative to inspecting the
      * parenthesized column-list expression returned by {@link #condition()} (for example
-     * {@code (company_id, branch_id)}; only {@link #toString()} adds the {@code USING} keyword).
+     * {@code (company_id, branch_id)}; only rendering this {@code Using} itself ({@link #toString()},
+     * {@link #toSql(NamingPolicy)}) adds the {@code USING} keyword).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -252,8 +253,7 @@ public class Using extends Cell {
      * @param columnNames the names to copy
      * @return a validated column and expression snapshot
      * @throws IllegalArgumentException if {@code columnNames} is null or empty, a name is null, empty,
-     *         blank, qualified, contains comma or parentheses, or an unquoted SQL comment token
-     *         removes the rendered closing parenthesis
+     *         blank, qualified, contains comma or parentheses, or contains an unquoted SQL comment token
      */
     private static Prepared prepare(final String... columnNames) {
         N.checkArgNotEmpty(columnNames, cs.columnNames);
@@ -276,8 +276,8 @@ public class Using extends Cell {
      * @param columnNames the names to copy
      * @return a validated column and expression snapshot
      * @throws IllegalArgumentException if {@code columnNames} is null, empty, or yields no elements,
-     *         a name is null, empty, blank, qualified, contains comma or parentheses, or an unquoted
-     *         SQL comment token removes the rendered closing parenthesis
+     *         a name is null, empty, blank, qualified, contains comma or parentheses, or contains an
+     *         unquoted SQL comment token
      */
     private static Prepared prepare(final Collection<String> columnNames) {
         N.checkArgNotEmpty(columnNames, cs.columnNames);
@@ -322,8 +322,8 @@ public class Using extends Cell {
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
      *                                  {@code ,}, {@code (}, or {@code )}, or an unquoted name containing a SQL comment
-     *                                  token ({@code --}, {@code #}, or {@code /*}) whose rendering would drop the closing
-     *                                  parenthesis
+     *                                  token ({@code --}, {@code #}, or {@code /*}), which rendering would strip (a closed
+     *                                  block comment included)
      */
     static Condition createUsingCondition(final String... columnNames) {
         return prepare(columnNames).condition;
@@ -356,8 +356,8 @@ public class Using extends Cell {
      * @throws IllegalArgumentException if {@code columnNames} is {@code null}, empty, contains a {@code null}, empty,
      *                                  or blank entry, a qualified (dotted) column name, or a name containing
      *                                  {@code ,}, {@code (}, or {@code )}, or an unquoted name containing a SQL comment
-     *                                  token ({@code --}, {@code #}, or {@code /*}) whose rendering would drop the closing
-     *                                  parenthesis
+     *                                  token ({@code --}, {@code #}, or {@code /*}), which rendering would strip (a closed
+     *                                  block comment included)
      */
     static Condition createUsingCondition(final Collection<String> columnNames) {
         return prepare(columnNames).condition;
@@ -368,20 +368,60 @@ public class Using extends Cell {
      *
      * @param columnNames the validated non-empty column snapshot
      * @return the parenthesized USING expression
-     * @throws IllegalArgumentException if an unquoted SQL comment token in a name removes the
-     *         rendered closing parenthesis
+     * @throws IllegalArgumentException if a name contains an unquoted SQL comment token, which rendering
+     *         would strip
      */
     private static Condition createUsingConditionFromSnapshot(final List<String> columnNames) {
-        final SqlExpression expr = Filters.expr(parenthesizeColumnNames(concatPropNames(columnNames)));
+        final String columnList = parenthesizeColumnNames(concatPropNames(columnNames));
+        final SqlExpression expr = Filters.expr(columnList);
 
-        // SqlExpression rendering strips SQL comments (--, #, /*); a comment token in a column name would
-        // also swallow the closing parenthesis and render "USING (a". Reject it, as the query builder's
-        // using(...) does.
-        if (!expr.toSql(NamingPolicy.NO_CHANGE).endsWith(")")) {
+        // SqlExpression rendering strips SQL comments (--, #, /*): a line comment in a column name swallows the
+        // closing parenthesis ("USING (a"), and even a closed block comment silently drops text ("/* x */" renders
+        // "USING ()", "a/* x */" renders "USING (a)"). Rendering otherwise changes only whitespace, so reject any
+        // name whose rendering loses other text, as the query builder's using(...) does. Quoted identifiers such
+        // as "a--b" render unchanged and stay accepted.
+        if (!equalsIgnoringWhitespace(columnList, expr.toSql(NamingPolicy.NO_CHANGE))) {
             throw new IllegalArgumentException("SQL comment token is not allowed in USING column names: " + columnNames);
         }
 
         return expr;
+    }
+
+    /**
+     * Compares two strings while skipping whitespace and space characters (the tokenizer collapses whitespace runs and
+     * renders a non-ASCII space glued inside a word as a plain space).
+     *
+     * @param a the first string
+     * @param b the second string
+     * @return {@code true} if both strings hold the same non-space characters in the same order
+     */
+    private static boolean equalsIgnoringWhitespace(final String a, final String b) {
+        final int aLen = a.length();
+        final int bLen = b.length();
+        int i = 0;
+        int j = 0;
+
+        while (true) {
+            while (i < aLen && isSpace(a.charAt(i))) {
+                i++;
+            }
+
+            while (j < bLen && isSpace(b.charAt(j))) {
+                j++;
+            }
+
+            if (i == aLen || j == bLen) {
+                return i == aLen && j == bLen;
+            }
+
+            if (a.charAt(i++) != b.charAt(j++)) {
+                return false;
+            }
+        }
+    }
+
+    private static boolean isSpace(final char ch) {
+        return Character.isWhitespace(ch) || Character.isSpaceChar(ch);
     }
 
     /**

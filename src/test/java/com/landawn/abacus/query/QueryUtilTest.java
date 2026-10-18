@@ -1601,6 +1601,46 @@ public class QueryUtilTest extends TestBase {
             assertSame(parent, QueryUtil.registerEntityPropColumnNameMap(MappingParent.class, NamingPolicy.SNAKE_CASE, null));
             assertTrue(QueryUtil.registerEntityPropColumnNameMap(MappingParent.class, NamingPolicy.SNAKE_CASE, Set.of(MappingParent.class)).isEmpty());
         }
+
+        @Test
+        void testRecursiveMetadataCallbacksReturnThePublishedWinner() {
+            // ParserUtil runs a bean constructor while it builds the bean's metadata. A constructor that asks QueryUtil about its
+            // own class re-enters the cold cache on the same thread, which a computeIfAbsent build rejected as a "Recursive update".
+            RecursiveMetadataCallback.callback = () -> QueryUtil.columnToPropNameMap(RecursiveColumnCallback.class);
+            final ImmutableMap<String, String> columns = QueryUtil.columnToPropNameMap(RecursiveColumnCallback.class);
+            assertEquals("name", columns.get("CALLBACK_NAME"));
+            assertSame(columns, RecursiveMetadataCallback.callbackResult);
+
+            final RecursiveInsertCallback entity = new RecursiveInsertCallback();
+            RecursiveMetadataCallback.callback = () -> QueryUtil.insertPropNames(new RecursiveInsertCallback(), null);
+            final ImmutableList<String> insertNames = QueryUtil.insertPropNames(entity, null);
+            assertEquals(List.of("name"), insertNames);
+            assertSame(insertNames, RecursiveMetadataCallback.callbackResult);
+
+            RecursiveMetadataCallback.callback = () -> QueryUtil.selectPropNames(RecursiveSelectCallback.class, false, null);
+            final ImmutableList<String> selectNames = QueryUtil.selectPropNames(RecursiveSelectCallback.class, false, null);
+            assertEquals(List.of("name", "id"), selectNames);
+            assertSame(selectNames, RecursiveMetadataCallback.callbackResult);
+        }
+
+        @Test
+        void testRejectedClassesDoNotBecomePropNameCacheKeys() throws Exception {
+            final Map<?, ?> cache = metadataCache("noExclusionPropNamesPool");
+            final Class<?> anonymousMap = new HashMap<String, Object>() {
+            }.getClass();
+
+            for (final Class<?> rejected : List.of(anonymousMap, UnmappedMap.class, String.class)) {
+                assertThrows(IllegalArgumentException.class, () -> QueryUtil.selectPropNames(rejected, false, null));
+                assertThrows(IllegalArgumentException.class, () -> QueryUtil.insertPropNames(rejected, null));
+                assertThrows(IllegalArgumentException.class, () -> QueryUtil.updatePropNames(rejected, null));
+                assertFalse(cache.containsKey(rejected), "A rejected class must not pin its class loader: " + rejected.getName());
+            }
+
+            // An accepted class is cached, and every no-exclusion call returns its one stable list.
+            final ImmutableList<String> names = QueryUtil.selectPropNames(ExclusionLeaf.class, false, null);
+            assertTrue(cache.containsKey(ExclusionLeaf.class));
+            assertSame(names, QueryUtil.selectPropNames(ExclusionLeaf.class, false, Collections.emptySet()));
+        }
     }
 
     @Nested
@@ -1934,13 +1974,20 @@ public class QueryUtilTest extends TestBase {
 
     /** Runs only in a child JVM, so a failed lock-order regression cannot poison the remaining tests. */
     public static final class MetadataCallbackProbe {
-        private static final CountDownLatch CONSTRUCTOR_ENTERED = new CountDownLatch(1);
-        private static final CountDownLatch CALLBACK_ALLOWED = new CountDownLatch(1);
-        private static final AtomicReference<ImmutableMap<String, String>> CALLBACK_RESULT = new AtomicReference<>();
+        private static final AtomicReference<Supplier<?>> CALLBACK = new AtomicReference<>();
+        private static final AtomicReference<Object> CALLBACK_RESULT = new AtomicReference<>();
+        private static volatile CountDownLatch constructorEntered;
+        private static volatile CountDownLatch callbackAllowed;
 
         public static void main(final String[] args) {
             try {
-                verifyCallbacks();
+                ParserUtil.getBeanInfo(CallbackRoot.class); // Warm only the root; the nested leaf remains cold.
+                // Every metadata cache gets its own cold classes: ParserUtil runs a bean constructor only on the bean's first lookup.
+                verifyCallbacks(CallbackEntity.class, () -> QueryUtil.propToColumnNameMap(CallbackRoot.class, NamingPolicy.SNAKE_CASE), "child.name");
+                verifyCallbacks(ColumnCallbackEntity.class, () -> QueryUtil.columnToPropNameMap(ColumnCallbackTarget.class), "TARGET_NAME");
+                verifyCallbacks(InsertCallbackEntity.class, () -> QueryUtil.insertPropNames(new InsertCallbackTarget(), null), "name");
+                verifyCallbacks(SelectCallbackEntity.class, () -> QueryUtil.selectPropNames(SelectCallbackRoot.class, true, null), "child.name");
+                verifyCallbacks(SubEntityCallbackEntity.class, () -> AbstractQueryBuilder.getSubEntityPropNames(SubEntityCallbackRoot.class), "child");
                 System.out.println("metadata-callback-check=passed");
                 System.exit(0);
             } catch (final Throwable error) {
@@ -1949,17 +1996,21 @@ public class QueryUtilTest extends TestBase {
             }
         }
 
-        private static void verifyCallbacks() throws Exception {
-            ParserUtil.getBeanInfo(CallbackRoot.class); // Warm only the root; the nested leaf remains cold.
+        private static void verifyCallbacks(final Class<?> callbackEntity, final Supplier<?> query, final String expected) throws Exception {
+            final String name = callbackEntity.getSimpleName();
             final Field field = ParserUtil.class.getDeclaredField("beanInfoPool");
             field.setAccessible(true);
             final Object beanInfoMonitor = field.get(null);
             final AtomicReference<Throwable> failure = new AtomicReference<>();
-            final AtomicReference<ImmutableMap<String, String>> concurrentResult = new AtomicReference<>();
+            final AtomicReference<Object> concurrentResult = new AtomicReference<>();
             final CountDownLatch completed = new CountDownLatch(2);
+            constructorEntered = new CountDownLatch(1);
+            callbackAllowed = new CountDownLatch(1);
+            CALLBACK_RESULT.set(null);
+            CALLBACK.set(query);
             final Thread callbackThread = new Thread(() -> {
                 try {
-                    ParserUtil.getBeanInfo(CallbackEntity.class);
+                    ParserUtil.getBeanInfo(callbackEntity);
                 } catch (final Throwable error) {
                     failure.compareAndSet(null, error);
                 } finally {
@@ -1968,7 +2019,7 @@ public class QueryUtilTest extends TestBase {
             }, "metadata-constructor-callback");
             final Thread queryThread = new Thread(() -> {
                 try {
-                    concurrentResult.set(QueryUtil.propToColumnNameMap(CallbackRoot.class, NamingPolicy.SNAKE_CASE));
+                    concurrentResult.set(query.get());
                 } catch (final Throwable error) {
                     failure.compareAndSet(null, error);
                 } finally {
@@ -1980,20 +2031,23 @@ public class QueryUtilTest extends TestBase {
 
             try {
                 callbackThread.start();
-                require(CONSTRUCTOR_ENTERED.await(10, TimeUnit.SECONDS), "Bean constructor did not reach its callback barrier");
+                require(constructorEntered.await(10, TimeUnit.SECONDS), name + ": bean constructor did not reach its callback barrier");
                 queryThread.start();
                 awaitDependencyMonitor(queryThread, callbackThread, beanInfoMonitor);
                 // The query is now waiting for ParserUtil's monitor, while the constructor owns it.
                 // Only now allow the constructor to re-enter the same top-level QueryUtil mapping.
-                CALLBACK_ALLOWED.countDown();
-                require(completed.await(10, TimeUnit.SECONDS), "Metadata callbacks did not finish; possible policy/dependency lock inversion");
+                callbackAllowed.countDown();
+                require(completed.await(10, TimeUnit.SECONDS), name + ": metadata callbacks did not finish; possible policy/dependency lock inversion");
                 if (failure.get() != null) {
-                    throw new AssertionError("Metadata worker failed", failure.get());
+                    throw new AssertionError(name + ": metadata worker failed", failure.get());
                 }
-                require(concurrentResult.get() != null && concurrentResult.get().containsKey("child.name"), "Nested mapping was incomplete");
-                require(CALLBACK_RESULT.get() == concurrentResult.get(), "Concurrent builds did not return the published winner");
+                final Object result = concurrentResult.get();
+                require(result instanceof Map<?, ?> map ? map.containsKey(expected) : result instanceof Collection<?> names && names.contains(expected),
+                        name + ": metadata was incomplete: " + result);
+                require(CALLBACK_RESULT.get() == result, name + ": concurrent builds did not return the published winner");
+                System.out.println(name + "=passed");
             } finally {
-                CALLBACK_ALLOWED.countDown();
+                callbackAllowed.countDown();
             }
         }
 
@@ -2045,14 +2099,20 @@ public class QueryUtilTest extends TestBase {
             private String name;
 
             public CallbackEntity() {
-                CONSTRUCTOR_ENTERED.countDown();
+                final Supplier<?> callback = CALLBACK.getAndSet(null);
+
+                if (callback == null) {
+                    return;
+                }
+
+                constructorEntered.countDown();
                 try {
-                    require(CALLBACK_ALLOWED.await(15, TimeUnit.SECONDS), "Metadata callback was not released");
+                    require(callbackAllowed.await(15, TimeUnit.SECONDS), "Metadata callback was not released");
                 } catch (final InterruptedException error) {
                     Thread.currentThread().interrupt();
                     throw new AssertionError(error);
                 }
-                CALLBACK_RESULT.set(QueryUtil.propToColumnNameMap(CallbackRoot.class, NamingPolicy.SNAKE_CASE));
+                CALLBACK_RESULT.set(callback.get());
             }
 
             public String getName() {
@@ -2063,6 +2123,93 @@ public class QueryUtilTest extends TestBase {
                 name = value;
             }
         }
+
+        public static class ColumnCallbackEntity extends CallbackEntity {
+        }
+
+        public static class InsertCallbackEntity extends CallbackEntity {
+        }
+
+        public static class SelectCallbackEntity extends CallbackEntity {
+        }
+
+        public static class SubEntityCallbackEntity extends CallbackEntity {
+        }
+
+        public static class ColumnCallbackTarget {
+            @Column("TARGET_NAME")
+            private String name;
+
+            public String getName() {
+                return name;
+            }
+
+            public void setName(final String value) {
+                name = value;
+            }
+        }
+
+        public static class InsertCallbackTarget extends CallbackLeaf {
+            private long id;
+
+            public long getId() {
+                return id;
+            }
+
+            public void setId(final long value) {
+                id = value;
+            }
+        }
+
+        public static class SelectCallbackRoot extends CallbackRoot {
+        }
+
+        public static class SubEntityCallbackRoot extends CallbackRoot {
+        }
+    }
+
+    /** A bean whose constructor, run by ParserUtil while it builds the bean's metadata, asks QueryUtil about its own class. */
+    public static class RecursiveMetadataCallback {
+        private static Supplier<?> callback;
+        private static Object callbackResult;
+
+        @Column("CALLBACK_NAME")
+        private String name;
+        private long id;
+
+        public RecursiveMetadataCallback() {
+            final Supplier<?> action = callback;
+            callback = null; // Call back once: the callback may construct this class again.
+
+            if (action != null) {
+                callbackResult = action.get();
+            }
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String value) {
+            name = value;
+        }
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long value) {
+            id = value;
+        }
+    }
+
+    public static class RecursiveColumnCallback extends RecursiveMetadataCallback {
+    }
+
+    public static class RecursiveInsertCallback extends RecursiveMetadataCallback {
+    }
+
+    public static class RecursiveSelectCallback extends RecursiveMetadataCallback {
     }
 
     public static class MappingParent {

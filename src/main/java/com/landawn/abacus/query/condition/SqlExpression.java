@@ -2103,7 +2103,7 @@ public class SqlExpression extends ComposableCondition {
     /**
      * Renders a SQL function call of the form {@code "FUNC(arg1, arg2, ...)"}.
      * Each argument is converted via {@link N#stringOf(Object)} and emitted verbatim
-     * (i.e. without quoting or escaping). String arguments that represent literal
+     * (i.e. without quoting or escaping; a trailing line comment is ended with a newline). String arguments that represent literal
      * values must therefore be pre-quoted by the caller (e.g. {@code "'foo'"}).
      *
      * @param functionName the function name, emitted verbatim as supplied
@@ -2245,7 +2245,8 @@ public class SqlExpression extends ComposableCondition {
      * expressions, such as {@code -- comment} or {@code # comment}. A leading
      * {@code #name} or {@code ##name} is retained during construction because it can reference a
      * SQL Server temporary table; use a SQL Server query builder to render that form, since this
-     * dialect-neutral rendering still treats it as a hash comment.
+     * dialect-neutral rendering still treats {@code #name} as a hash comment and converts the name in
+     * {@code ##name} like an identifier ({@code ##tmpTable} renders as {@code ##tmp_table} under {@code SNAKE_CASE}).
      * The tokenizer reads a backslash before a quote as an escape, as MySQL does. In standard SQL the backslash
      * is an ordinary character, and {@link #renderValue(Object)} renders the value {@code C:\} as {@code 'C:\'}.
      * Where the two readings place a quote boundary differently, this rendering cannot tell which one applies. The

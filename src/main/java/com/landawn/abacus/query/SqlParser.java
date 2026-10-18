@@ -3975,8 +3975,8 @@ public final class SqlParser {
      *       {@code INSERT} ({@code FROM FINAL TABLE (INSERT ...)}) is accepted like a top-level one;</li>
      *   <li>a CockroachDB statement source in square brackets: a bracketed {@code UPDATE}, {@code DELETE} or
      *       {@code UPSERT} with {@code RETURNING} ({@code SELECT * FROM [DELETE ... RETURNING *]}), a bracketed
-     *       {@code WITH} or {@code EXPLAIN} with a data-change verb, or a bracketed {@code INSERT} with an {@code UPDATE}
-     *       word (an upsert);
+     *       {@code WITH} or {@code EXPLAIN} with a data-change verb other than {@code INSERT}, or a bracketed {@code INSERT}
+     *       with an {@code UPDATE} word (an upsert);
      *       no lexical reading models CockroachDB exactly, so these are matched in the raw text, even inside a
      *       literal or comment;</li>
      *   <li>a procedure invocation introduced by {@code CALL}, JDBC {@code {call ...}} /
@@ -4282,7 +4282,8 @@ public final class SqlParser {
      * <li>{@code UPDATE}, {@code DELETE} or {@code UPSERT} (or, unless {@code allowInsert}, {@code INSERT}) with a
      *     {@code RETURNING} word in its region: without one the statement yields no rows, which CockroachDB rejects as a
      *     data source;</li>
-     * <li>{@code WITH} or {@code EXPLAIN} with a data-change verb word in its region (the statement after a CTE list, a
+     * <li>{@code WITH} or {@code EXPLAIN} with a data-change verb word ({@code UPDATE}, {@code DELETE}, {@code UPSERT},
+     *     {@code MERGE} or, unless {@code allowInsert}, {@code INSERT}) in its region (the statement after a CTE list, a
      *     data-modifying CTE, or the statement {@code EXPLAIN ANALYZE} executes, none of which needs {@code RETURNING});</li>
      * <li>{@code INSERT} under {@code allowInsert} with an {@code UPDATE} word in its region
      *     ({@code ON CONFLICT ... DO UPDATE}), an upsert as at the top level.</li>
@@ -4841,6 +4842,13 @@ public final class SqlParser {
         return !containsMutationQueryKeyword(sql, tokenizerConfig, memo) && !containsSelectIntoClause(sql, tokenizerConfig, memo);
     }
 
+    /** Masks under the default reading, or under {@code READING_MYSQL} when {@code mysqlReading}; see the {@code int} overload. */
+    private static String maskQuotedRegionsForClassification(final String sql, final TokenizerConfig tokenizerConfig, final int noEscapeQuotes,
+            final boolean mysqlCommentRules, final HashScanMemo memo, final boolean mysqlReading) {
+        return maskQuotedRegionsForClassification(sql, tokenizerConfig, noEscapeQuotes, mysqlCommentRules, memo,
+                mysqlReading ? READING_MYSQL : READING_DEFAULT);
+    }
+
     /**
      * Replaces the contents of quoted strings and identifiers with same-length whitespace under one
      * fixed quote convention, retaining their delimiters for context-sensitive token checks.
@@ -4901,12 +4909,6 @@ public final class SqlParser {
      *         or {@code sqliteReading}; nesting is allowed for {@code h2Reading} and {@code READING_NESTED_COMMENTS}
      *         and ends the comment at the first {@code *}{@code /} for {@code oracleReading})
      */
-    private static String maskQuotedRegionsForClassification(final String sql, final TokenizerConfig tokenizerConfig, final int noEscapeQuotes,
-            final boolean mysqlCommentRules, final HashScanMemo memo, final boolean mysqlReading) {
-        return maskQuotedRegionsForClassification(sql, tokenizerConfig, noEscapeQuotes, mysqlCommentRules, memo,
-                mysqlReading ? READING_MYSQL : READING_DEFAULT);
-    }
-
     private static String maskQuotedRegionsForClassification(final String sql, final TokenizerConfig tokenizerConfig, final int noEscapeQuotes,
             final boolean mysqlCommentRules, final HashScanMemo memo, final int reading) {
         final boolean mysqlReading = (reading & READING_MYSQL) != 0;
@@ -6608,7 +6610,7 @@ public final class SqlParser {
 
     /**
      * Returns the end of the numeric-literal token at {@code index}. "SELECT 1INTO t" is "SELECT 1 INTO t" to SQL Server
-     * and PostgreSQL <= 14, so only the literal is consumed and a word glued to it is scanned as its own token. Under the
+     * and PostgreSQL &lt;= 14, so only the literal is consumed and a word glued to it is scanned as its own token. Under the
      * other reading of a bare exponent marker ("1e" is a float to SQL Server), the split that exposes an INTO wins.
      */
     private static int numericLiteralTokenEnd(final String sql, final int index) {

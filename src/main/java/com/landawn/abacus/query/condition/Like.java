@@ -55,7 +55,7 @@ package com.landawn.abacus.query.condition;
  * // Find all products containing "phone" anywhere in the name
  * Like phoneProducts = new Like("product_name", "%phone%");
  * // SQL: product_name LIKE '%phone%'
- * // Matches: "iPhone", "Smartphone", "Headphones", etc.
+ * // Matches: "Telephone", "Smartphone", "Headphones", etc. ("iPhone" only under a case-insensitive collation)
  *
  * // Find all 5-letter words starting with 'A' and ending with 'E'
  * Like pattern = new Like("word", "A___E");

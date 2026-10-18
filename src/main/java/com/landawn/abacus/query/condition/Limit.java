@@ -170,7 +170,7 @@ public class Limit extends Clause {
     }
 
     /**
-     * Immutable carrier for the values a {@link #Limit(String)} needs, computed once by {@link #prepare(String)}
+     * Immutable carrier for the values a {@link Limit#Limit(String)} needs, computed once by {@link Limit#prepare(String)}
      * so they can be handed to the private constructor before its mandatory {@code super(...)} call.
      */
     private record Prepared(String conditionExpr, String expr, int count, int offset, boolean resolved) {

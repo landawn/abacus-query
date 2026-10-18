@@ -372,7 +372,7 @@ public final class Dsl {
             instance._multiSelects = selectionSnapshots;
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -619,7 +619,7 @@ public final class Dsl {
             }
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -731,7 +731,7 @@ public final class Dsl {
             instance._propOrColumnNames = propOrColumnNames;
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -753,7 +753,7 @@ public final class Dsl {
      * @param entityClass the entity class to generate INSERT INTO for
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no insertable property,
-     *                                  or resolves to a blank mapped table name
+     *                                  or resolves to a blank mapped table name (or one that contains an unterminated block comment)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @throws IllegalStateException if a named-parameter handler emits an empty token under {@code NAMED_SQL}
@@ -780,7 +780,7 @@ public final class Dsl {
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no insertable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name
+     *                                  or the class resolves to a blank mapped table name (or one that contains an unterminated block comment)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @throws IllegalStateException if a named-parameter handler emits an empty token under {@code NAMED_SQL}
@@ -791,7 +791,7 @@ public final class Dsl {
 
         try {
             return builder.into(entityClass);
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(builder, e);
             throw e;
         }
@@ -855,7 +855,7 @@ public final class Dsl {
             instance._propsList = propsList;
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -933,7 +933,7 @@ public final class Dsl {
             instance.setEntityClass(entityClass);
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -1008,7 +1008,7 @@ public final class Dsl {
             instance._propOrColumnNames = propOrColumnNames;
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -1081,7 +1081,7 @@ public final class Dsl {
             instance.setEntityClass(entityClass);
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -1119,7 +1119,7 @@ public final class Dsl {
             instance._tableName = SqlBuilder.getTableName(entityClass, instance._namingPolicy);
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -1396,7 +1396,7 @@ public final class Dsl {
             instance._propOrColumnNames = propOrColumnNames;
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -1421,7 +1421,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment under this DSL's dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
+     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1448,7 +1449,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment under this DSL's dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if {@code tableAlias}
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
+     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if {@code tableAlias}
      *                                  contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
@@ -1488,7 +1490,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment, such as {@code t -- note}),
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment, such as {@code t -- note}),
      *         or if two included sub-entity properties would read the same table reference (same table and alias; a
      *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1525,7 +1527,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
      *                                  or resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment, such as {@code t -- note}), or if {@code tableAlias}
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment, such as {@code t -- note}), or if {@code tableAlias}
      *                                  contains a line break or a SQL comment token,
      *         or if two included sub-entity properties would read the same table reference (same table and alias; a
      *         self-referencing sub-entity property is not expanded)
@@ -1556,7 +1558,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment under this DSL's dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
+     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1585,7 +1588,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment under this DSL's dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
+     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if
      *                                  {@code tableAlias} contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
@@ -1621,7 +1625,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment, such as {@code t -- note}),
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment, such as {@code t -- note}),
      *         or if two included sub-entity properties would read the same table reference (same table and alias; a
      *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1666,7 +1670,7 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
      *                                  or the class resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment, such as {@code t -- note}), or if
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment, such as {@code t -- note}), or if
      *                                  {@code tableAlias} contains a line break or a SQL comment token,
      *         or if two included sub-entity properties would read the same table reference (same table and alias; a
      *         self-referencing sub-entity property is not expanded)
@@ -1689,7 +1693,7 @@ public final class Dsl {
             builder.checkEntityTableAlias(entityClass, tableAlias);
 
             return includesSubEntityTables ? builder.from(entityClass, selectTableNames) : builder.from(entityClass, tableAlias);
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(builder, e);
             throw e;
         }
@@ -1812,7 +1816,9 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code selection} is {@code null}, has a {@code null}, empty, or blank
      *                                  included property name, carries a blank, quoted, or comment-bearing table or
      *                                  class alias, resolves to no selectable property, or has an entity class that is
-     *                                  not a valid entity bean class,
+     *                                  not a valid entity bean class and lists no included property names (or that is
+     *                                  neither a bean nor a {@code Map} type and has a table alias; otherwise the included
+     *                                  property names of a non-bean class are rendered as written),
      *         or if two included sub-entity properties would read the same table reference (same table and alias),
      *         or a selected sub-entity property references the entity's own class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1863,7 +1869,10 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a {@code null} element,
      *                                  a {@code null}, empty, or blank included property name, or a blank, quoted, or
      *                                  comment-bearing table or class alias, resolves to no properties in total, or
-     *                                  contains an entity class that is not a valid entity bean class,
+     *                                  contains a selection whose entity class is not a valid entity bean class and that
+     *                                  lists no included property names (or whose class is neither a bean nor a
+     *                                  {@code Map} type and that has a table alias; otherwise the included property names
+     *                                  of a non-bean class are rendered as written),
      *         or if two included sub-entity properties would read the same table reference (same table and alias),
      *         or a selected sub-entity property references the entity's own class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1900,7 +1909,7 @@ public final class Dsl {
      *                                  blank, quoted, or contains a line break or SQL comment token; if the two
      *                                  selections together resolve to no selectable property; if either entity class
      *                                  is not a valid entity bean class; or if the generated FROM clause is blank, or lists a mapped table
-     *                                  name that may end inside a line comment (such as {@code t -- note})
+     *                                  name that contains an unterminated block comment or may end inside a line comment (such as {@code t -- note})
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
@@ -1943,7 +1952,7 @@ public final class Dsl {
      *                                  selections together resolve to no selectable property after exclusions are
      *                                  applied; if either entity class is not a valid entity bean class; or if the
      *                                  generated FROM clause is blank, or lists a mapped table
-     *                                  name that may end inside a line comment (such as {@code t -- note})
+     *                                  name that contains an unterminated block comment or may end inside a line comment (such as {@code t -- note})
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @deprecated hard to read at the call site (positional arguments) and limited to exactly two
@@ -1989,7 +1998,7 @@ public final class Dsl {
      *                                  included property name, carries a blank, quoted, or comment-bearing table or
      *                                  class alias, resolves to no selectable property, has an entity class that is
      *                                  not a valid entity bean class, or produces a blank generated FROM clause,
-     *                                  or lists a mapped table name that may end inside a line comment (such as {@code t -- note}),
+     *                                  or lists a mapped table name that contains an unterminated block comment or may end inside a line comment (such as {@code t -- note}),
      *         or if two included sub-entity properties would read the same table reference (same table and alias),
      *         or a selected sub-entity property references the entity's own class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -2045,7 +2054,7 @@ public final class Dsl {
      *                                  comment-bearing table or class alias, resolves to no properties in total,
      *                                  contains an entity class that is not a valid entity bean class, or produces a
      *                                  blank generated FROM clause,
-     *                                  or lists a mapped table name that may end inside a line comment (such as {@code t -- note}),
+     *                                  or lists a mapped table name that contains an unterminated block comment or may end inside a line comment (such as {@code t -- note}),
      *         or if two included sub-entity properties would read the same table reference (same table and alias),
      *         or a selected sub-entity property references the entity's own class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -2059,7 +2068,7 @@ public final class Dsl {
 
         try {
             return builder.from(fromClause);
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(builder, e);
             throw e;
         }
@@ -2100,7 +2109,7 @@ public final class Dsl {
 
         try {
             return builder.from(tableName);
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(builder, e);
             throw e;
         }
@@ -2125,7 +2134,8 @@ public final class Dsl {
      * @return a new SqlBuilder instance configured for SELECT operation
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class,
      *                                  or resolves to a blank mapped table name
-     *                                  (or one that ends inside a line comment under this DSL's dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
+     *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
+     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -2139,7 +2149,7 @@ public final class Dsl {
             // allocated a builder backed by a pooled StringBuilder; release that builder on failure so
             // the rejected call cannot leak the pooled buffer.
             return builder.from(entityClass);
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(builder, e);
             throw e;
         }
@@ -2204,7 +2214,7 @@ public final class Dsl {
             instance.append(condition);
 
             return instance;
-        } catch (final RuntimeException | Error e) {
+        } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
             releaseFailedBuilder(instance, e);
             throw e;
         }
@@ -2254,11 +2264,15 @@ public final class Dsl {
     /**
      * Closes a builder that cannot be returned to the caller, preserving the original failure if
      * finalization itself also fails.
+     *
+     * <p>Callers catch {@code Throwable}, not {@code RuntimeException | Error}: a user callback (a named-parameter
+     * handler written in Kotlin or with {@code @SneakyThrows}, a value's {@code toString()}) can throw a checked
+     * exception sneakily, and it must not skip this cleanup. Precise rethrow keeps their signatures unchanged.</p>
      */
     private static void releaseFailedBuilder(final SqlBuilder builder, final Throwable failure) {
         try {
             builder.build();
-        } catch (final RuntimeException | Error cleanupFailure) {
+        } catch (final Throwable cleanupFailure) { // NOSONAR - a sneaky checked cleanup failure must not replace the original failure
             // A user-supplied renderer may throw the same cached exception instance on the
             // original attempt and during cleanup. Throwable rejects self-suppression, so keep
             // the original failure primary without trying to attach it to itself.

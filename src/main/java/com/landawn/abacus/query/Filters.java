@@ -274,12 +274,15 @@ public final class Filters {
      * // Create a NOT LIKE condition
      * Like likeCondition = Filters.like("name", "%test%");
      * Not notLike = Filters.not(likeCondition);
+     * // SQL fragment: NOT (name LIKE '%test%')
      *
      * // Create a NOT IN condition
      * Not notIn = Filters.not(Filters.in("status", Arrays.asList("inactive", "deleted")));
+     * // SQL fragment: NOT (status IN ('inactive', 'deleted'))
      *
      * // Create a NOT BETWEEN condition
      * Not notBetween = Filters.not(Filters.between("age", 18, 65));
+     * // SQL fragment: NOT (age BETWEEN 18 AND 65)
      *
      * // Create a complex negated condition
      * Not complexNot = Filters.not(Filters.and(
@@ -287,6 +290,7 @@ public final class Filters {
      *     Filters.greaterThan("age", 18),
      *     Filters.like("email", "%@company.com")
      * ));
+     * // SQL fragment: NOT (((status = 'active') AND (age > 18) AND (email LIKE '%@company.com')))
      * }</pre>
      *
      * @param condition the condition to negate (must not be {@code null} and must be a composable condition)
@@ -2330,6 +2334,12 @@ public final class Filters {
      * Creates an {@code IS TRUE} predicate without turning the boolean literal into a bind parameter.
      * The target database must support SQL boolean literals and the {@code IS TRUE} predicate.
      *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Is condition = Filters.isTrue("active");
+     * // SQL fragment: active IS TRUE
+     * }</pre>
+     *
      * @param propName the property or column to test
      * @return an {@link Is} condition rendering {@code propName IS TRUE}
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank
@@ -2341,6 +2351,12 @@ public final class Filters {
     /**
      * Creates an {@code IS FALSE} predicate without turning the boolean literal into a bind parameter.
      * The target database must support SQL boolean literals and the {@code IS FALSE} predicate.
+     *
+     * <p><b>Usage Examples:</b></p>
+     * <pre>{@code
+     * Is condition = Filters.isFalse("deleted");
+     * // SQL fragment: deleted IS FALSE
+     * }</pre>
      *
      * @param propName the property or column to test
      * @return an {@link Is} condition rendering {@code propName IS FALSE}

@@ -201,7 +201,8 @@ public class SubQuery extends AbstractCondition {
      *
      * @param sql complete raw query-expression text (must not be {@code null}, empty, blank, or contain a parameter placeholder)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
-     *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
+     *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder
+     *         (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments);
      *         or contains a positional placeholder without a corresponding binding (including a {@code ?} outside quoted text and
      *         comments in text that does not start with a recognized query keyword)
      */
@@ -244,7 +245,8 @@ public class SubQuery extends AbstractCondition {
      *                   {@code SubQuery} bindings are inlined as described above
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters}
      *         is {@code null}; the SQL contains malformed placeholder text such as an unclosed {@code #{...}} marker;
-     *         the SQL contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder; the number of positional
+     *         the SQL contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder (in text that does not start with
+     *         a recognized query keyword, any such marker outside quoted text and comments); the number of positional
      *         placeholders differs from the number of bindings; the SQL does not start with a recognized query keyword
      *         ({@code SELECT}, {@code WITH}, {@code VALUES}, {@code TABLE}, ...) but contains a {@code ?} outside quoted text and comments; an object-array binding contains a cycle; a binding is a
      *         {@link SqlExpression} that is blank, comment-only, or contains parameter markers of its own (such as
@@ -273,7 +275,8 @@ public class SubQuery extends AbstractCondition {
      *            stored as the empty string
      * @param sql complete raw query-expression text (must not be {@code null}, empty, or blank)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
-     *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder;
+     *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder
+     *         (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments);
      *         or contains a positional placeholder without a corresponding binding
      * @deprecated the entity name is unused when rendering raw query-expression text; it is only exposed by
      *             {@link #entityName()} and participates in {@link #equals(Object)}/{@link #hashCode()}. Use
@@ -311,7 +314,8 @@ public class SubQuery extends AbstractCondition {
      * @param parameters the positional bindings
      * @param validateBindings whether placeholders must match the bindings
      * @throws IllegalArgumentException if {@code sql} is null, empty, or blank; {@code parameters} is null;
-     *         binding validation is enabled and the SQL has malformed, named, or mismatched placeholders;
+     *         binding validation is enabled and the SQL has malformed, named, or mismatched placeholders, or a
+     *         {@link Condition} binding cannot be inlined (see {@link #inlineConditionBindings(String, List, List)});
      *         or a binding is a cyclic object array
      */
     private SubQuery(final String entityName, final String sql, final Collection<?> parameters, final boolean validateBindings) {
@@ -833,7 +837,8 @@ public class SubQuery extends AbstractCondition {
     /**
      * Finds the start of a top-level {@code AS} alias keyword in a select item: an {@code AS} (any case)
      * surrounded by whitespace, outside parentheses, quoted strings/identifiers (dollar-quoted strings included) and
-     * comments, and followed by a non-blank alias. The first such keyword is taken, as the query builders do.
+     * {@code --} or block comments (a {@code #} comment is not skipped), and followed by a non-blank alias. The first
+     * such keyword is taken, as the query builders do.
      *
      * @param item the select item to scan
      * @return the index of the {@code AS} keyword, or {@code -1} if the item carries no explicit alias
@@ -1217,19 +1222,19 @@ public class SubQuery extends AbstractCondition {
         return false;
     }
 
+    /** A tokenizer token that is a string literal with an introducer or prefix, such as N'..', E'..', _utf8'..' or U&amp;'..'. */
+    private static final Pattern PREFIXED_STRING_LITERAL_TOKEN = Pattern.compile("(?s)[\\p{Alnum}_&]+'.*");
+
     /**
      * Checks the raw SQL against its positional bindings.
      *
      * @param sql the non-blank raw SQL to inspect
      * @param parameters the non-null binding snapshot
      * @throws IllegalArgumentException if SQL placeholder syntax is malformed, named or MyBatis placeholders
-     *         are present, the text is not a statement {@link ParsedSql} recognizes as a query yet contains a
-     *         {@code ?} outside quoted text and comments, or the positional placeholder count differs from the
-     *         binding count
+     *         are present (also in text {@link ParsedSql} does not recognize as a query), the text is not a statement
+     *         ParsedSql recognizes as a query yet contains a {@code ?} outside quoted text and comments, or the
+     *         positional placeholder count differs from the binding count
      */
-    /** A tokenizer token that is a string literal with an introducer or prefix, such as N'..', E'..', _utf8'..' or U&amp;'..'. */
-    private static final Pattern PREFIXED_STRING_LITERAL_TOKEN = Pattern.compile("(?s)[\\p{Alnum}_&]+'.*");
-
     private static void validateRawBindings(final String sql, final Collection<?> parameters) {
         // ParsedSql supplies the project's quote/comment-aware placeholder scan and also distinguishes
         // PostgreSQL JSON question-mark operators from JDBC parameters.
@@ -1253,9 +1258,34 @@ public class SubQuery extends AbstractCondition {
             }
         }
 
+        // The named-parameter list of such text is empty without inspection too, yet a builder embeds the text in a recognized
+        // statement, whose parse reads a ':x' or '#{x}' in it as a marker that collides with the builder's generated names
+        // ("x = :x ... b = :x"). Reject those markers as for a recognized query.
+        if (!parsedSql.isDataOperation() && (sql.indexOf(':') >= 0 || sql.indexOf("#{") >= 0) && containsNamedOrIbatisMarker(sql)) {
+            throw new IllegalArgumentException("Raw subqueries support positional '?' bindings only; named and MyBatis placeholders are not supported: " + sql);
+        }
+
         if (parsedSql.parameterCount() != parameters.size()) {
             throw new IllegalArgumentException(
                     "Raw subquery placeholder count (" + parsedSql.parameterCount() + ") does not match binding count (" + parameters.size() + ")");
+        }
+    }
+
+    /**
+     * Returns whether {@link ParsedSql} reads a named or MyBatis marker in {@code sql} once the text is part of a recognized
+     * query, as when a builder embeds it. ParsedSql inspects markers only in a statement it recognizes, so its own scan
+     * (casts, delimiters, quoted and commented text) runs on the text behind a {@code SELECT} keyword; the
+     * separating space leaves every token of {@code sql} as it was. A marker ParsedSql rejects as malformed (an unclosed
+     * <code>#{</code>) counts as one.
+     *
+     * @param sql the raw text, which ParsedSql does not recognize as a query
+     * @return {@code true} if the text holds a named or MyBatis marker
+     */
+    private static boolean containsNamedOrIbatisMarker(final String sql) {
+        try {
+            return !ParsedSql.parse("SELECT " + sql).namedParameters().isEmpty();
+        } catch (final IllegalArgumentException e) {
+            return true;
         }
     }
 

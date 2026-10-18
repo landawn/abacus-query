@@ -1416,8 +1416,8 @@ public abstract class AbstractCondition implements Condition {
      * Use the public {@link OrderBy} or {@link GroupBy} constructors instead.
      * Use a {@link java.util.LinkedHashMap} to preserve the desired column order.</p>
      *
-     * @param orders map of property names to their sort directions (must not be {@code null} or empty; keys must not be {@code null}, empty, blank, or comment-only
-     *               and entries and values must not be {@code null})
+     * @param orders map of property names to their sort directions (must not be {@code null} or empty; keys must not be {@code null}, empty, blank, or comment-only,
+     *               nor end inside an unterminated block comment, and entries and values must not be {@code null})
      * @return a comma-separated string of {@code "propName direction"} entries in map iteration order
      * @throws IllegalArgumentException if {@code orders} is {@code null}/empty, contains a {@code null} entry,
      *                                  {@code null}, empty, blank, or comment-only keys, keys that end inside an unterminated block comment, or {@code null} values

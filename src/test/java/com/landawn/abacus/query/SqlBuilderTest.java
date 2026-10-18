@@ -1302,6 +1302,36 @@ public class SqlBuilderTest extends TestBase {
             assertStagedInputsReleased(incompleteJoin);
         }
 
+        // Regression: the structured-subquery cleanup caught only RuntimeException/Error, so a checked exception thrown sneakily by
+        // a named-parameter handler skipped it and leaked the subquery builder's pooled buffer and active-builder count.
+        @Test
+        void testFailedStructuredSubQueryRenderingReleasesBuilderOnSneakyCheckedException() {
+            final java.io.IOException handlerFailure = new java.io.IOException("boom");
+            final Dsl sneakyDsl = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+                if ("boom".equals(name)) {
+                    throw SqlBuilderTest.<RuntimeException> sneakyThrow(handlerFailure);
+                }
+
+                sb.append(':').append(name);
+            }).build());
+            final SubQuery subQuery = Filters.subQuery("orders", Arrays.asList("id"), Filters.eq("boom", 1));
+            final SqlBuilder outer = sneakyDsl.select("id").from("t");
+
+            try {
+                final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
+                assertSame(handlerFailure, assertThrows(Throwable.class, () -> outer.where(Filters.in("id", subQuery))));
+                assertEquals(activeBuilderCount, AbstractQueryBuilder.activeStringBuilderCounter.get(),
+                        "A sneaky checked failure must release the structured subquery's builder");
+            } finally {
+                try {
+                    outer.build(); // releases the outer builder; its own rollback is not under test here
+                } catch (final RuntimeException ignored) {
+                    // closing only
+                }
+            }
+        }
+
         @Test
         void testFailedStructuredSubQueryRenderingReleasesNestedAndOuterBuilders() {
             final int activeBuilderCount = AbstractQueryBuilder.activeStringBuilderCounter.get();
@@ -6485,6 +6515,12 @@ public class SqlBuilderTest extends TestBase {
         public void setAddress(final BfxAddress address) {
             this.address = address;
         }
+    }
+
+    /** Throws {@code failure}, even a checked exception, without declaring it (as Kotlin or Lombok {@code @SneakyThrows} code can). */
+    @SuppressWarnings("unchecked")
+    private static <E extends Throwable> RuntimeException sneakyThrow(final Throwable failure) throws E {
+        throw (E) failure;
     }
 
     private static Condition unsupportedCondition() {

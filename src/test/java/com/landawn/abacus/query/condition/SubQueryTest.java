@@ -1154,6 +1154,30 @@ public class SubQueryTest extends TestBase {
                     new SubQuery("SELECT id FROM t WHERE d = ?", Arrays.asList(innerExpr)).rawSql());
         }
 
+        // Regression: ParsedSql does not inspect text it does not recognize as a query (DuckDB FROM-first, PIVOT), so its named and
+        // MyBatis markers were accepted and then collided with a builder's generated names ("x = :x ... b = :x").
+        @Test
+        void testRawSubQueryNamedMarkersInUnrecognizedTextAreRejected() {
+            for (final String sql : Arrays.asList("FROM u SELECT a WHERE b = :x", "FROM u SELECT a WHERE b=:x", "FROM u SELECT a WHERE b = #{x}",
+                    "PIVOT t ON c USING sum(v) WHERE k = :k", "FROM u SELECT a WHERE b = #{ x }", "FROM u SELECT a WHERE b = #{x",
+                    "FROM u SELECT a WHERE b = (:x)",
+                    // The check follows ParsedSql, which reads a marker inside a dollar-quoted string as a parameter too.
+                    "FROM u SELECT $$:x$$", "FROM u SELECT $$ :x #{y} $$")) {
+                IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql), sql);
+                assertTrue(e.getMessage().contains("named and MyBatis placeholders are not supported"), e.getMessage());
+                e = assertThrows(IllegalArgumentException.class, () -> new SubQuery(sql, Arrays.asList(1)), sql);
+                assertTrue(e.getMessage().contains("named and MyBatis placeholders are not supported"), e.getMessage());
+            }
+
+            // Still accepted, as in a recognized query: casts, assignment operators, slices, quoted or commented markers,
+            // non-name colons, and a ':' glued to a closing quote, bracket or parenthesis.
+            for (final String sql : Arrays.asList("FROM u SELECT a::int", "FROM u SELECT a :: int", "FROM u SELECT STRUCT_PACK(a := 1)", "FROM u SELECT a[1:n]",
+                    "FROM u SELECT a WHERE b = ':x' AND c = \"#{y}\"", "FROM u SELECT a -- :x #{y}\n", "FROM u SELECT {'a': 1}", "FROM u SELECT a WHERE b = :1",
+                    "FROM u SELECT col[0]:x", "FROM u SELECT {'a':b}", "FROM u SELECT \"x\":y", "FROM u SELECT map['k']:v", "FROM u SELECT CAST(a AS INT):x")) {
+                assertEquals(sql, new SubQuery(sql).rawSql(), sql);
+            }
+        }
+
         // Regression: placeholders were only counted after SELECT/WITH/...; TABLE (and BOM-prefixed) text counted 0, rejecting its bindings and accepting an unbound '?'.
         @Test
         void testRawSubQueryPlaceholdersOutsideSelectPrefixAreValidated() {

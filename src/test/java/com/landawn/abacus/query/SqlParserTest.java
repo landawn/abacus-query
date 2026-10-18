@@ -2995,6 +2995,22 @@ public class SqlParserTest extends TestBase {
         }
 
         @Test
+        void testQualifiedAsColumnDoesNotHideFromBeforeIntoVariable() {
+            // A qualified column named AS is not an alias introducer: FROM still ends the select list before INTO @v.
+            for (final String sql : List.of("SELECT t.as FROM t INTO @v", "SELECT t.AS FROM t INTO @v", "SELECT db.t.as FROM db.t INTO @v",
+                    "SELECT t.as /* column */ FROM t INTO @v", "SELECT t.as, t.id FROM t INTO @v, @id")) {
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+                assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+                assertTrue(BATCHES.isSyntacticallyReadQuery(sql), sql);
+                assertTrue(BATCHES.isReadOrInsertQuery(sql), sql);
+            }
+
+            // The same column must not exempt file-writing INTO clauses from either classification mode.
+            assertAllReadGatesReject("SELECT t.as FROM t INTO OUTFILE '/tmp/x'");
+            assertAllReadGatesReject("SELECT t.as FROM t INTO DUMPFILE '/tmp/x'");
+        }
+
+        @Test
         void testTrailingIntoOutfileIsNotReadOnly() {
             // Regression (2026-09-19): MySQL accepts (and since 8.0.20 prefers) "SELECT ... FROM t INTO
             // OUTFILE 'f'"; only the select-list position was rejected before.

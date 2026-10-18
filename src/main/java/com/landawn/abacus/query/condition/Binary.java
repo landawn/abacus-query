@@ -49,7 +49,7 @@ import com.landawn.abacus.util.Strings;
  * <p>Common subclasses include:</p>
  * <ul>
  *   <li>{@link Equal} - property = value</li>
- *   <li>{@link NotEqual} - property != or &lt;&gt; value</li>
+ *   <li>{@link NotEqual} - property != value</li>
  *   <li>{@link GreaterThan} - property &gt; value</li>
  *   <li>{@link GreaterThanOrEqual} - property &gt;= value</li>
  *   <li>{@link LessThan} - property &lt; value</li>

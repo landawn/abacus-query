@@ -14,11 +14,15 @@
 package com.landawn.abacus.query;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
 
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.ImmutableSet;
+import com.landawn.abacus.util.ImmutableSortedSet;
 import com.landawn.abacus.util.N;
 
 /**
@@ -95,7 +99,11 @@ public final class Selection {
         classAlias = builder.classAlias;
         includedPropNames = builder.includedPropNames == null ? null : ImmutableList.copyOf(builder.includedPropNames);
         includeSubEntityProperties = builder.includeSubEntityProperties;
-        excludedPropNames = builder.excludedPropNames == null ? null : ImmutableSet.copyOf(builder.excludedPropNames);
+        // A SortedSet keeps its comparator (e.g. String.CASE_INSENSITIVE_ORDER), so exclusions match exactly as when the
+        // same set is passed to select(Class, Set); ImmutableSet.copyOf would re-hash it into exact String.equals matching.
+        excludedPropNames = builder.excludedPropNames == null ? null
+                : builder.excludedPropNames instanceof SortedSet ? ImmutableSortedSet.copyOf(builder.excludedPropNames)
+                        : ImmutableSet.copyOf(builder.excludedPropNames);
     }
 
     /**
@@ -152,8 +160,8 @@ public final class Selection {
     /**
      * Returns the property names to exclude from this selection.
      *
-     * @return the immutable excluded property names; {@code null} or an empty set means no properties
-     *         are excluded
+     * @return the immutable excluded property names (a {@link SortedSet} supplied to the builder keeps its
+     *         comparator); {@code null} or an empty set means no properties are excluded
      */
     public Set<String> excludedPropNames() {
         return excludedPropNames;
@@ -189,7 +197,8 @@ public final class Selection {
      * Compares this selection with another object for equality.
      * Two selections are equal only when every attribute is equal: the entity class, table alias,
      * class alias, included property names, the sub-entity-properties flag, and excluded
-     * property names.
+     * property names. Excluded names kept in a sorted set with a comparator (such as a case-insensitive
+     * {@code TreeSet}) equal only names kept with an equal comparator, in the same order.
      *
      * @param obj the object to compare with
      * @return {@code true} if {@code obj} is a {@code Selection} with equal attributes, {@code false} otherwise
@@ -206,7 +215,45 @@ public final class Selection {
 
         return includeSubEntityProperties == other.includeSubEntityProperties && Objects.equals(entityClass, other.entityClass)
                 && Objects.equals(tableAlias, other.tableAlias) && Objects.equals(classAlias, other.classAlias)
-                && Objects.equals(includedPropNames, other.includedPropNames) && Objects.equals(excludedPropNames, other.excludedPropNames);
+                && Objects.equals(includedPropNames, other.includedPropNames) && excludedPropNamesEqual(excludedPropNames, other.excludedPropNames);
+    }
+
+    /**
+     * Compares excluded-name sets symmetrically. A sorted set with a comparator matches names by that comparator, which can
+     * disagree with {@code String.equals} ({@link String#CASE_INSENSITIVE_ORDER}), so {@code Set.equals} between it and a
+     * hash set could depend on the direction. Such a set equals only another one with an equal comparator and the same
+     * names in the same order; equal sets therefore hold the same names, which keeps {@link #hashCode()} consistent.
+     */
+    private static boolean excludedPropNamesEqual(final Set<String> a, final Set<String> b) {
+        if (a == b) {
+            return true;
+        }
+
+        if (a == null || b == null) {
+            return false;
+        }
+
+        final Comparator<?> comparatorA = a instanceof final SortedSet<String> sortedA ? sortedA.comparator() : null;
+        final Comparator<?> comparatorB = b instanceof final SortedSet<String> sortedB ? sortedB.comparator() : null;
+
+        if (comparatorA == null && comparatorB == null) {
+            return a.equals(b);
+        }
+
+        if (!Objects.equals(comparatorA, comparatorB) || a.size() != b.size()) {
+            return false;
+        }
+
+        final Iterator<String> iterA = a.iterator();
+        final Iterator<String> iterB = b.iterator();
+
+        while (iterA.hasNext()) {
+            if (!Objects.equals(iterA.next(), iterB.next())) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -297,7 +344,10 @@ public final class Selection {
         }
 
         /**
-         * Sets the property names to exclude. Passing {@code null} means no exclusions.
+         * Sets the property names to exclude. Passing {@code null} means no exclusions. The built selection's copy of
+         * a {@link SortedSet} keeps its comparator, so, for example, a {@code TreeSet} ordered by
+         * {@link String#CASE_INSENSITIVE_ORDER} excludes properties exactly as it does when passed directly to
+         * {@code select(Class, Set)}.
          *
          * @param excludedPropNames the excluded property names
          * @return this builder

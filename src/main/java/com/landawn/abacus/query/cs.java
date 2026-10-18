@@ -320,6 +320,11 @@ public final class cs { // NOSONAR
     public static final String props = "props";
 
     /**
+     * Parameter name for the list of entities or property maps to insert.
+     */
+    public static final String propsList = "propsList";
+
+    /**
      * Parameter name for the converter applied to a name that follows a delimited qualifier in a raw SQL expression.
      */
     public static final String qualifiedPartConverter = "qualifiedPartConverter";

@@ -3172,6 +3172,21 @@ public class ParsedSqlTest extends TestBase {
 
     @Nested
     class SqlNormalization {
+        @Test
+        void testParse_manyFlatCommentsContainingGlobsAvoidRepeatedSuffixScans() {
+            // Treating each glob's "/*" as a nested opener repeatedly rescanned the remaining SQL, making parsing quadratic.
+            final String sql = "SELECT 0" + " + 1 /* /var/log/*.log */".repeat(16_000) + " FROM files WHERE id = :id";
+            final String expectedSql = "SELECT 0" + " + 1".repeat(16_000) + " FROM files WHERE id = ?";
+
+            assertTimeoutPreemptively(java.time.Duration.ofSeconds(5), () -> {
+                // Bypass the cache so the timeout always exercises the parser, including the binding after the comments.
+                final ParsedSql parsed = ParsedSql.parse(sql, null);
+                assertEquals(expectedSql, parsed.parameterizedSql());
+                assertEquals(List.of("id"), parsed.namedParameters());
+                assertEquals(1, parsed.parameterCount());
+            });
+        }
+
         // Regression: a block comment that opens on a "//" line and closes on a later line mid-statement was dropped,
         // losing the lines H2 reads as SQL in between ("AND id = :id" below) while the kept line break let the rest run.
         @Test

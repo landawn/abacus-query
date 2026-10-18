@@ -85,6 +85,19 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertNotNull(sql);
             assertTrue(sql.contains("DELETE FROM"));
         }
+
+        @Test
+        void testDeleteKeepsHashCommentAcrossBareCarriageReturn() {
+            // A bare CR does not end a MySQL hash comment. Stripping only up to CR exposed the commented OR clause.
+            for (final String product : List.of("MySQL", "MariaDB")) {
+                final Dsl mysql = lexDialect(PSB, product);
+
+                for (final String prefix : List.of("##", "#>")) {
+                    assertSql("DELETE FROM account WHERE id = 1 " + prefix + " c OR 1=1", List.of(),
+                            mysql.deleteFrom("account").where("id = 1 " + prefix + " c\r OR 1=1").build());
+                }
+            }
+        }
     }
 
     @Nested
@@ -277,6 +290,19 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("INSERT INTO account_backup (id, name) SELECT id, name FROM account",
                     PSC.select("id", "name").into("account_backup").from("account").build().query());
             assertEquals("INSERT INTO stats (count(*)) SELECT count(*) FROM account", PSC.select("count(*)").into("stats").from("account").build().query());
+        }
+
+        // Regression: the protected toInsertPropsList reported a null or empty propsList as "All elements in propsList are null".
+        @Test
+        void testToInsertPropsListReportsEmptyAndAllNullInputsDistinctly() {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.toInsertPropsList(null));
+            assertEquals("'propsList' cannot be null or empty", e.getMessage());
+            e = assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.toInsertPropsList(List.of()));
+            assertEquals("'propsList' cannot be null or empty", e.getMessage());
+            e = assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.toInsertPropsList(Arrays.asList(null, null)));
+            assertEquals("All elements in propsList are null", e.getMessage());
+
+            assertEquals(List.of(Map.of("id", 1)), AbstractQueryBuilder.toInsertPropsList(Arrays.asList(null, Map.of("id", 1))));
         }
     }
 
@@ -2585,6 +2611,38 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.getFromClause(List.of(
                     Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("id", "homeAddress.city", "workAddress.city")).build()),
                     NamingPolicy.SNAKE_CASE));
+
+            // The select paths, whose FROM clause the caller writes, qualify both properties' columns with the same "ad", so
+            // they are rejected the same way (they used to project both from "ad" silently).
+            final String sameReference = "Sub-entity properties 'homeAddress' and 'workAddress' of SubEntityPerson map to the same table reference 'address ad'";
+            e = assertThrows(IllegalArgumentException.class,
+                    () -> PSC.select(Selection.builder(SubEntityPerson.class).tableAlias("p").includeSubEntityProperties(true).build()).from("person p"));
+            assertTrue(e.getMessage().startsWith(sameReference), e.getMessage());
+            e = assertThrows(IllegalArgumentException.class, () -> PSC.select(List.of(Selection.builder(SubEntityAddress.class).tableAlias("x").build(),
+                    Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("id", "homeAddress.city", "workAddress.city")).build()))
+                    .from("person p, address x"));
+            assertTrue(e.getMessage().startsWith(sameReference), e.getMessage());
+            e = assertThrows(IllegalArgumentException.class, () -> PSC.select(SubEntityPerson.class, true).from("person p"));
+            assertTrue(e.getMessage().startsWith(sameReference), e.getMessage());
+            e = assertThrows(IllegalArgumentException.class, () -> PSC.select("id", "homeAddress", "workAddress").from(SubEntityPerson.class));
+            assertTrue(e.getMessage().startsWith(sameReference), e.getMessage());
+
+            // The rejected from() leaves the builder reusable.
+            final SqlBuilder rejected = PSC.select(SubEntityPerson.class, true);
+            assertThrows(IllegalArgumentException.class, () -> rejected.from("person p"));
+            assertEquals(0, rejected._sb.length());
+            assertNull(rejected._tableName);
+
+            // Controls: one of the two properties alone is still projected, and without an entity class the names are plain columns.
+            assertEquals("SELECT p.id AS \"id\", ad.city AS \"homeAddress.city\" FROM person p",
+                    PSC.select(Selection.builder(SubEntityPerson.class).tableAlias("p").includedPropNames(List.of("id", "homeAddress.city")).build())
+                            .from("person p")
+                            .build()
+                            .query());
+            assertEquals("SELECT p.id AS \"id\", ad.id AS \"homeAddress.id\", ad.city AS \"homeAddress.city\" FROM person p",
+                    PSC.select("id", "homeAddress").from(SubEntityPerson.class).build().query());
+            assertEquals("SELECT id, home_address AS \"homeAddress\", work_address AS \"workAddress\" FROM person p",
+                    PSC.select("id", "homeAddress", "workAddress").from("person p").build().query());
 
             // One of the two properties alone is fine, and a sub-entity table that is also selected directly is listed once.
             assertEquals("SELECT p.id AS \"id\", ad.city AS \"homeAddress.city\" FROM person p, address ad", PSC
@@ -6531,6 +6589,42 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertThrows(IllegalStateException.class, () -> PSC.select("*").from("users").forUpdate().forUpdate());
         }
 
+        // Regression: limit(int) and append(String) rendered the lazy statement prefix outside a mutation checkpoint. On an
+        // UPDATE (LIMIT-style dialect) either can be the call that first renders the staged SET list; a failure there left
+        // "UPDATE account SET " behind, and every later call failed with "set() must be called ...", while where(...)
+        // restored the builder.
+        @Test
+        void testLimitAndAppendRenderingFailuresOnUpdateAreAtomic() {
+            final boolean[] failFirstRender = { true };
+            final Dsl throwingNamedDsl = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+                if (failFirstRender[0]) {
+                    failFirstRender[0] = false;
+                    throw new IllegalStateException("named renderer failed");
+                }
+
+                sb.append(':').append(name);
+            }).build());
+            final SqlBuilder update = throwingNamedDsl.update(Account.class);
+
+            final IllegalStateException e = assertThrows(IllegalStateException.class, () -> update.limit(10));
+            assertEquals("named renderer failed", e.getMessage());
+            assertEquals(0, update._sb.length());
+            assertTrue(update.calledOpSet.isEmpty());
+            assertTrue(update._namedParameterNameOccurrences.isEmpty());
+            assertTrue(update._generatedNamedParameterNames.isEmpty());
+
+            final String expected = NSC.update(Account.class).limit(10).build().query();
+            assertTrue(expected.startsWith("UPDATE account SET id = :id, gui = :gui, ") && expected.endsWith(" LIMIT 10"), expected);
+            assertEquals(expected, update.limit(10).build().query());
+
+            failFirstRender[0] = true;
+            final SqlBuilder appended = throwingNamedDsl.update(Account.class);
+            assertThrows(IllegalStateException.class, () -> appended.append("LIMIT 5"));
+            assertEquals(0, appended._sb.length());
+            assertTrue(appended._generatedNamedParameterNames.isEmpty());
+            assertEquals(NSC.update(Account.class).append("LIMIT 5").build().query(), appended.append("LIMIT 5").build().query());
+        }
+
         @Test
         void testSet_ObjectMapHonorsExcludedProperties() {
             java.util.Map<String, Object> props = new java.util.LinkedHashMap<>();
@@ -6943,6 +7037,33 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("", AbstractQueryBuilder.tableAlias((Class<?>) null));
         }
 
+        // Regression: a Criteria / clause sort item that passes the dialect-free validation as a SQL Server temporary-table
+        // name ("#tmp ## x") but renders as a MySQL comment left an empty list item ("GROUP BY , b"), a syntax error.
+        @Test
+        void testRawSortListItemRenderingOnlyCommentsIsRejected() {
+            for (final String item : new String[] { "#tmp ## x", "#tmp ##q'x'" }) {
+                final SqlBuilder builder = Dsl.NSB.select("a").from("t");
+                final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                        () -> builder.append(Criteria.builder().groupBy(item, "b").build()), item);
+                // "#tmp ## x" reaches the per-item check; "#tmp ##q'x'" is already rejected as a sort spec of nothing but comments.
+                assertTrue(e.getMessage()
+                        .startsWith(item.contains("q'") ? "SQL expression must contain more than comments: "
+                                : "SQL expression must contain more than comments in each comma-separated item: "),
+                        e.getMessage());
+                assertThrows(IllegalArgumentException.class, () -> Dsl.NSB.select("a").from("t").append(Criteria.builder().orderBy(item, "b").build()), item);
+                assertThrows(IllegalArgumentException.class, () -> Dsl.NSB.select("a").from("t").append(Filters.groupBy("b", item)), item);
+                assertThrows(IllegalArgumentException.class, () -> Dsl.NSB.select("a").from("t").append(Filters.orderBy("b", item)), item);
+                // The failed call leaves the builder usable.
+                assertEquals("SELECT a FROM t GROUP BY b", builder.groupBy("b").build().query());
+            }
+
+            // Items with content, including commas inside parentheses and quoted text, and a kept '#' operator, are accepted.
+            assertEquals("SELECT a FROM t GROUP BY coalesce(a, b), ', ', c",
+                    Dsl.NSB.select("a").from("t").append(Criteria.builder().groupBy("coalesce(a, b)", "', '", "c").build()).build().query());
+            assertEquals("SELECT a FROM t ORDER BY a ## q , b",
+                    Dsl.NSB.select("a").from("t").append(Criteria.builder().orderBy("a ## q", "b").build()).build().query());
+        }
+
         @Test
         void testUnselectedConditionalArgumentsRemainLazy() {
             final SqlBuilder builder = Dsl.PSC.select("id").from("account");
@@ -7173,6 +7294,25 @@ public class AbstractQueryBuilderTest extends TestBase {
 
                 assertEquals("tableNames[1] must not contain an unterminated block comment: u /* open", error.getMessage());
                 assertSql("SELECT * FROM t, u WHERE id = ?", List.of(8), builder.from(List.of("t", "u")).where(Filters.eq("id", 8)).build());
+            }
+
+            // Regression: the single-element shortcut delegated to from(String), whose rejection names its own argument
+            // ("expr must not contain ..."), while the same element at index 1 was reported as "tableNames[1]".
+            @Test
+            void testFromCollectionNamesSingleUnterminatedCommentElementByIndex() {
+                final SqlBuilder builder = PSB.select("*");
+                IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> builder.from(List.of(" t /* open ")));
+                assertEquals("tableNames[0] must not contain an unterminated block comment: t /* open", error.getMessage());
+
+                error = assertThrows(IllegalArgumentException.class, () -> builder.from("t /* open", "u"));
+                assertEquals("tableNames[0] must not contain an unterminated block comment: t /* open", error.getMessage());
+                error = assertThrows(IllegalArgumentException.class, () -> builder.from(new String[] { "t /* open" }));
+                assertEquals("tableNames[0] must not contain an unterminated block comment: t /* open", error.getMessage());
+
+                // from(String) keeps naming its own argument; a closed comment is still accepted and the builder stays reusable.
+                error = assertThrows(IllegalArgumentException.class, () -> builder.from("t /* open"));
+                assertEquals("expr must not contain an unterminated block comment: t /* open", error.getMessage());
+                assertSql("SELECT * FROM t /* c */ WHERE id = ?", List.of(8), builder.from(List.of("t /* c */")).where(Filters.eq("id", 8)).build());
             }
 
             @Test
@@ -7834,6 +7974,31 @@ public class AbstractQueryBuilderTest extends TestBase {
                             bindings, builder.where(Filters.and(disjunction, Filters.eq("id", 9000))).build());
                 }
             }
+        }
+
+        // Regression: mutateAtomically caught only RuntimeException | Error, so a checked exception thrown sneakily by a user
+        // callback (a Kotlin or @SneakyThrows named-parameter handler) skipped the restore: the buffer kept
+        // "... WHERE (a = :a) AND (boom = ", the binding and the WHERE slot, and a retry failed with "'WHERE' has already been set".
+        @Test
+        void testSneakyCheckedHandlerFailureRestoresStateBeforeRetry() {
+            final java.io.IOException handlerFailure = new java.io.IOException("handler I/O failure");
+            final Dsl sneakyDsl = Dsl.forDialect(NSB.sqlDialect().toBuilder().namedParameterHandler((sb, name) -> {
+                if ("boom".equals(name)) {
+                    throw AbstractQueryBuilderTest.<RuntimeException> sneakyThrow(handlerFailure);
+                }
+
+                sb.append(':').append(name);
+            }).build());
+            final SqlBuilder builder = sneakyDsl.select("id").from("t");
+
+            assertSame(handlerFailure, assertThrows(Throwable.class, () -> builder.where(Filters.and(Filters.eq("a", 1), Filters.eq("boom", 2)))));
+            assertEquals("SELECT id FROM t", builder._sb.toString());
+            assertTrue(builder._parameters.isEmpty());
+            assertTrue(builder._generatedNamedParameterNames.isEmpty());
+            assertTrue(builder._namedParameterNameOccurrences.isEmpty());
+            assertFalse(builder.calledOpSet.contains("WHERE"), builder.calledOpSet.toString());
+
+            assertSql("SELECT id FROM t WHERE c = :c", List.of(3), builder.where(Filters.eq("c", 3)).build());
         }
 
         /** The number of open journaled checkpoints of {@code builder} converted into flat snapshots. */
@@ -8551,6 +8716,12 @@ public class AbstractQueryBuilderTest extends TestBase {
         assertEquals(values, result.parameters());
         assertEquals(values.size(), names.size(), result.query());
         assertEquals(values.size(), new HashSet<>(names).size(), result.query());
+    }
+
+    /** Throws {@code failure}, even a checked exception, without declaring it (as Kotlin or Lombok {@code @SneakyThrows} code can). */
+    @SuppressWarnings("unchecked")
+    private static <E extends Throwable> RuntimeException sneakyThrow(final Throwable failure) throws E {
+        throw (E) failure;
     }
 
     @Table("quoted_columns")

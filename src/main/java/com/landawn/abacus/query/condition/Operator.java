@@ -88,16 +88,16 @@ public enum Operator {
     /**
      * NOT operator symbol ({@code !}).
      * A non-standard programmatic token; prefer {@link #NOT} for standard SQL.
-     * <p><b>&#9888;&#65039;</b> This is a parse-only token: {@link #of(String)} recognizes it, but condition
-     * constructors do not accept it.</p>
+     * <p><b>&#9888;&#65039;</b> This is a parse-only token: {@link #of(String)} recognizes it, but no public
+     * condition constructor or factory accepts it.</p>
      */
     NOT_OP(SK.EXCLAMATION),
 
     /**
      * XOR (exclusive OR) operator.
      * True when exactly one condition is true.
-     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any condition
-     * constructor; {@link ComposableCondition#xor(Condition)} composes the equivalent AND/OR/NOT
+     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any public condition
+     * constructor or factory; {@link ComposableCondition#xor(Condition)} composes the equivalent AND/OR/NOT
      * expansion instead of using this operator.
      */
     XOR(SK.XOR),
@@ -123,7 +123,7 @@ public enum Operator {
     /**
      * AND operator symbol ({@code &&}).
      * A non-standard programmatic token; prefer {@link #AND} for standard SQL.
-     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any condition constructor.
+     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any public condition constructor or factory.
      */
     AND_OP(SK.AND_OP),
 
@@ -137,7 +137,7 @@ public enum Operator {
      * OR operator symbol ({@code ||}).
      * A non-standard programmatic token; note that in standard SQL {@code ||} is string concatenation —
      * use {@link #OR} for logical OR.
-     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any condition constructor.
+     * Parse-only token: recognized by {@code Operator.of(...)} but not accepted by any public condition constructor or factory.
      */
     OR_OP(SK.OR_OP),
 

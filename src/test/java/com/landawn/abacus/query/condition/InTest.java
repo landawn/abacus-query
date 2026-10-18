@@ -451,7 +451,11 @@ public class InTest extends TestBase {
 
     @Test
     void testMultiColumn_RejectsNullRow() {
-        assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), null)));
+        final IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), null)));
+
+        // The rejected row is named by its index, like the other valueRows[r] messages.
+        assertEquals("valueRows[1] must not be null", ex.getMessage());
     }
 
     @Test
