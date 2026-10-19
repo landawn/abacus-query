@@ -199,25 +199,6 @@ public class ParsedSqlTest extends TestBase {
             } finally {
                 cache.close();
             }
-
-            // The public entry point's mirror of the shared pool obeys the same bound.
-            final java.lang.reflect.Field frontField = ParsedSql.class.getDeclaredField("poolFront");
-            frontField.setAccessible(true);
-            final java.util.Map<?, ?> poolFront = (java.util.Map<?, ?>) frontField.get(null);
-            final java.lang.reflect.Field poolField = ParsedSql.class.getDeclaredField("pool");
-            poolField.setAccessible(true);
-            final KeyedObjectPool<?, ?> pool = (KeyedObjectPool<?, ?>) poolField.get(null);
-            assertNotNull(pool);
-
-            for (int i = 0; i < pool.capacity() + 500; i++) {
-                ParsedSql.parse("SELECT * FROM front_bound_t WHERE id = ? AND k = " + i);
-                assertTrue(poolFront.size() <= pool.capacity(), "shared front size " + poolFront.size() + " after statement " + i);
-            }
-
-            final String fresh = "SELECT * FROM front_bound_t WHERE id = ? AND fresh = 1";
-            final ParsedSql cached = ParsedSql.parse(fresh);
-            assertSame(cached, poolFront.get(fresh));
-            assertSame(cached, ParsedSql.parse(fresh));
         }
 
         // The front is keyed by the pool's own key instance (the entry's originalSql()) rather than retaining an equal copy passed by the caller.

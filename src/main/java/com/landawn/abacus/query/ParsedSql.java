@@ -23,7 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
@@ -45,16 +44,13 @@ import com.landawn.abacus.util.Strings;
  * This class handles SQL parsing to extract named parameters (e.g., {@code :userId}, {@code #{userId}}) and converts
  * them to standard JDBC parameter placeholders ({@code ?}).
  *
- * <p>The class maintains an internal cache (a keyed object pool behind a lock-free mirror of its entries) of parsed SQL
- * statements for performance optimization, so repeated calls to {@link #parse(String)} with the same SQL string
- * typically return the same cached instance. The cache is bounded: a statement evicted from both the pool and the
- * mirror (which is reset wholesale when full) is parsed again on its next use, yielding a new, equal instance. Hits
- * served by the mirror do not refresh the pool's access times, so when many distinct statements are parsed this can
- * also affect frequently used ones, at most once per statement per mirror reset. Only SQL whose
- * length as given (surrounding whitespace included) does not exceed {@link #MAX_CACHEABLE_SQL_LENGTH} characters is cached;
- * longer SQL is parsed fresh on
- * every call, so that oversized statements (for example a batch {@code INSERT} with thousands of inlined rows) neither
- * evict the small, frequently reused statements nor pin large strings in memory. Supported parameter formats include:</p>
+ * <p>The class maintains an internal cache (a keyed object pool) of parsed SQL statements for performance
+ * optimization, so repeated calls to {@link #parse(String)} with the same SQL string typically return the same cached
+ * instance. The cache is bounded: a statement evicted from the pool is parsed again on its next use, yielding a new,
+ * equal instance. Only SQL whose length as given (surrounding whitespace included) does not exceed
+ * {@link #MAX_CACHEABLE_SQL_LENGTH} characters is cached; longer SQL is parsed fresh on every call, so that oversized
+ * statements (for example a batch {@code INSERT} with thousands of inlined rows) neither evict the small, frequently
+ * reused statements nor pin large strings in memory. Supported parameter formats include:</p>
  * <ul>
  *   <li>Named parameters: {@code :paramName} or a dotted property path such as
  *       {@code :user.address.city}</li>
@@ -222,26 +218,8 @@ public final class ParsedSql {
 
     private static final int FACTOR = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
-    /**
-     * Lock-free mirror of the entries of {@link #pool}, consulted before it by {@link #parse(String)}. The pool serves
-     * every lookup under one exclusive lock, so cache hits (the hot path of every query execution) would otherwise
-     * serialize across threads and aggregate throughput would fall as threads are added; a hit here is a plain
-     * {@code ConcurrentHashMap} read. The pool stays the authority on capacity: the mirror only ever holds instances
-     * the pool admitted, and instead of evicting entry by entry it is dropped wholesale once it holds as many entries
-     * as the pool's capacity (see {@link #mirror(String, ParsedSql, KeyedObjectPool, ConcurrentMap)}).
-     *
-     * <p>Trade-off: hits served here never reach the pool, so they do not refresh its last-access times. Under churn
-     * the pool's least-recently-accessed eviction may therefore drop the hottest statements first, and an entry may
-     * stay here past the pool's idle expiry until the next wholesale reset. Both effects are bounded: the mirror holds at
-     * most the pool's capacity plus one entry per concurrent caller (see
-     * {@link #mirror(String, ParsedSql, KeyedObjectPool, ConcurrentMap)}), and after each reset a statement the pool
-     * evicted meanwhile is parsed (and pooled) again at most once.</p>
-     */
-    private static final ConcurrentMap<String, ParsedSql> poolFront = new ConcurrentHashMap<>();
-
-    /** The parse cache, or {@code null} if it could not be created because the JVM was already shutting down. */
-    private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = createCache(
-            () -> PoolFactory.createKeyedObjectPool(1000 * FACTOR, EVICT_TIME));
+    /** The bounded cache of parsed SQL statements. */
+    private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = PoolFactory.createKeyedObjectPool(1000 * FACTOR, EVICT_TIME);
 
     private static final String PREFIX_OF_NAMED_PARAMETER = ":";
 
@@ -905,21 +883,39 @@ public final class ParsedSql {
      *         directly after a {@code '?'} opening the content of a standalone bracket group
      */
     public static ParsedSql parse(final String sql) {
-        N.checkArgument(Strings.isNotBlank(sql), "sql must not be null, empty, or blank");
+        N.checkArgNotNull(sql, cs.sql);
 
-        return parse(sql, pool, poolFront);
+        if (sql.length() > MAX_CACHEABLE_SQL_LENGTH) {
+            return new ParsedSql(sql);
+        }
+
+        ParsedSql result = null;
+
+        final PoolableAdapter<ParsedSql> w = pool.get(sql);
+
+        if (w != null) {
+            result = w.value();
+        }
+
+        if (result != null) {
+            return result;
+        }
+
+        result = new ParsedSql(sql);
+
+        pool.put(sql, Poolable.wrap(result, LIVE_TIME, MAX_IDLE_TIME));
+
+        return result;
     }
 
     /**
-     * Creates the parse cache, or returns {@code null} if it cannot be created, as happens once the JVM has begun
+     * Creates a parse cache, or returns {@code null} if it cannot be created, as happens once the JVM has begun
      * shutting down. Creating a pool registers JVM shutdown hooks and schedules its evictor on a shared executor that
      * the JVM stops at shutdown, so a pool created during shutdown fails in several ways: an
      * {@code ExceptionInInitializerError} (or later {@code NoClassDefFoundError}) when the pool classes are first
      * initialized and the runtime refuses their shutdown hook, or a {@code RejectedExecutionException} when they are
-     * already initialized and the executor has terminated. Letting any of these escape the static initializer would make
-     * this class unusable for the rest of the JVM's life ({@code NoClassDefFoundError}) when its first use happens
-     * inside a shutdown hook. The cache is only an optimization, so whatever {@code factory} throws leaves it absent
-     * and every parse runs uncached instead.
+     * already initialized and the executor has terminated. This helper turns any of those failures into an absent
+     * cache, so a caller that can parse without caching does not fail merely because the JVM is shutting down.
      *
      * @param factory creates the pool
      * @return the new pool, or {@code null} if {@code factory} threw
@@ -927,7 +923,7 @@ public final class ParsedSql {
     static KeyedObjectPool<String, PoolableAdapter<ParsedSql>> createCache(final Supplier<KeyedObjectPool<String, PoolableAdapter<ParsedSql>>> factory) {
         try {
             return factory.get();
-        } catch (final Throwable e) { // NOSONAR - no failure to build an optional cache may fail this class's static initialization
+        } catch (final Throwable e) { // NOSONAR - no failure to build an optional cache may fail the caller
             return null;
         }
     }
@@ -969,7 +965,7 @@ public final class ParsedSql {
      * that closes it, after which its {@code get}/{@code put} throw {@code IllegalStateException}; shutdown hooks
      * run concurrently, so code that still parses SQL while the JVM stops (another shutdown hook, a
      * {@code @PreDestroy} flush, a graceful request drain) must keep working, merely without caching. A cache
-     * that could not be created at all, typically because shutdown had already begun when this class was initialized
+     * that could not be created at all, typically because shutdown had already begun when the cache was initialized
      * ({@code cache} is {@code null}, see {@link #createCache(Supplier)}), is a permanent miss as well.</p>
      *
      * @param inputSql the nonblank SQL; its surrounding whitespace is kept in the cache key
