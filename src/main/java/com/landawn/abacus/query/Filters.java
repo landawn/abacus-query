@@ -540,7 +540,7 @@ public final class Filters {
      * @param entity the entity object whose properties will be used
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null}, is a map (use {@link #anyEqual(Map)}),
-     *                                  or its class declares no selectable property;
+     *                                  or its class is not a bean class or declares no selectable property;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
@@ -711,7 +711,7 @@ public final class Filters {
      * @param entity the entity object whose properties will be used
      * @return an {@link And} condition
      * @throws IllegalArgumentException if {@code entity} is {@code null}, is a map (use {@link #allEqual(Map)}),
-     *                                  or its class declares no selectable property;
+     *                                  or its class is not a bean class or declares no selectable property;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
@@ -924,8 +924,9 @@ public final class Filters {
      * @param entitiesOrPropMaps collection of property maps or entity objects (must not be empty)
      * @return an {@link Or} condition
      * @throws IllegalArgumentException if {@code entitiesOrPropMaps} is {@code null} or empty, if all elements are {@code null}, if maps and entities
-     *                                  are mixed, if a map is empty, if a map key is not a non-blank {@link String}, if the first entity class declares
-     *                                  no selectable property, or if a selected property is unreadable from an entity;
+     *                                  are mixed, if a map is empty, if a map key is not a non-blank {@link String}, if the first entity class is not a
+     *                                  bean class or declares no selectable property, or if a selected property is unreadable
+     *                                  from an entity;
      *                                  if a condition-valued entry is invalid as a scalar operand, including a structured
      *                                  {@link SubQuery} whose known, non-wildcard projection contains more than one column;
      *                                  or if a value is a cyclic object array
@@ -2626,7 +2627,7 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, or if {@code propOrColumnName}
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), or if {@code propOrColumnName}
      *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
      *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
      *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
@@ -2646,7 +2647,7 @@ public final class Filters {
      *
      * @param propNames the property/column names to group by ascending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2669,7 +2670,7 @@ public final class Filters {
      * @param propNames collection of property/column names to group by ascending
      * @return a {@link GroupBy} clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
-     *                                  or if any property name is {@code null}, empty, blank, or comment-only,
+     *                                  or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2690,7 +2691,7 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, or if {@code propOrColumnName}
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), or if {@code propOrColumnName}
      *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
      *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
      *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
@@ -2710,7 +2711,7 @@ public final class Filters {
      *
      * @param propNames the property/column names to group by descending
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2733,7 +2734,7 @@ public final class Filters {
      * @param propNames collection of property/column names to group by descending
      * @return a {@link GroupBy} clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
-     *                                  or if any property name is {@code null}, empty, blank, or comment-only,
+     *                                  or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2756,7 +2757,7 @@ public final class Filters {
      *
      * @param propNames the property/column names to group by
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2781,7 +2782,7 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to group by
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2804,7 +2805,7 @@ public final class Filters {
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return a {@link GroupBy} clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
-     *                                  if any property name is {@code null}, empty, blank, or comment-only, if {@code direction} is {@code null},
+     *                                  if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), if {@code direction} is {@code null},
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2826,7 +2827,7 @@ public final class Filters {
      * @param propName the property/column name to group by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, if {@code direction} is {@code null},
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), if {@code direction} is {@code null},
      *                                  or if {@code propName} begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2850,7 +2851,7 @@ public final class Filters {
      * @param propName2 second property name
      * @param direction2 second property sort direction
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only, or its direction is {@code null}
+     * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), or its direction is {@code null}
      *                                  (null, empty or blank names and null directions are checked pair by pair in signature order), if the names are not distinct, or if {@code propName1} begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
@@ -2880,7 +2881,7 @@ public final class Filters {
      * @param propName3 third property name
      * @param direction3 third property sort direction
      * @return a {@link GroupBy} clause
-     * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only, or its direction is {@code null}
+     * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), or its direction is {@code null}
      *                                  (null, empty or blank names and null directions are checked pair by pair in signature order), if the names are not distinct, or if {@code propName1} begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
@@ -2912,7 +2913,7 @@ public final class Filters {
      * @param groupings map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return a {@link GroupBy} clause
      * @throws IllegalArgumentException if {@code groupings} is {@code null} or empty, if any map entry is {@code null},
-     *                                  if any property name is {@code null}, empty, blank, or comment-only, if any sort direction is {@code null},
+     *                                  if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), if any sort direction is {@code null},
      *                                  or if the first key begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -2999,7 +3000,7 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, or if {@code propOrColumnName}
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), or if {@code propOrColumnName}
      *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
      *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
      *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
@@ -3019,7 +3020,7 @@ public final class Filters {
      *
      * @param propNames the property/column names to order by ascending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3042,7 +3043,7 @@ public final class Filters {
      * @param propNames collection of property/column names to order by ascending
      * @return an {@link OrderBy} clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
-     *                                  or if any property name is {@code null}, empty, blank, or comment-only,
+     *                                  or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3063,7 +3064,7 @@ public final class Filters {
      *
      * @param propOrColumnName the property/column name to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only, or if {@code propOrColumnName}
+     * @throws IllegalArgumentException if {@code propOrColumnName} is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), or if {@code propOrColumnName}
      *                                  begins with a SQL clause keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or
      *                                  {@code UNION}) or with {@code ON}/{@code USING}, matched case-insensitively as a whole token
      *                                  (so {@code where_x} is accepted), which cannot be nested inside a clause
@@ -3083,7 +3084,7 @@ public final class Filters {
      *
      * @param propNames the property/column names to order by descending
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3106,7 +3107,7 @@ public final class Filters {
      * @param propNames collection of property/column names to order by descending
      * @return an {@link OrderBy} clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
-     *                                  or if any property name is {@code null}, empty, blank, or comment-only,
+     *                                  or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3128,7 +3129,7 @@ public final class Filters {
      *
      * @param propNames the property/column names to order by
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3154,7 +3155,7 @@ public final class Filters {
      *
      * @param propNames collection of property/column names to order by
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only,
+     * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, or if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment),
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3177,7 +3178,7 @@ public final class Filters {
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return an {@link OrderBy} clause
      * @throws IllegalArgumentException if {@code propNames} is {@code null}, empty, or yields an empty snapshot,
-     *                                  if any property name is {@code null}, empty, blank, or comment-only, if {@code direction} is {@code null},
+     *                                  if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), if {@code direction} is {@code null},
      *                                  or if the first property name begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3199,7 +3200,7 @@ public final class Filters {
      * @param propName the property/column name to order by
      * @param direction the sort direction ({@code ASC} or {@code DESC})
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only, if {@code direction} is {@code null},
+     * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), if {@code direction} is {@code null},
      *                                  or if {@code propName} begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -3223,7 +3224,7 @@ public final class Filters {
      * @param propName2 second property name
      * @param direction2 second property sort direction
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only, or its direction is {@code null}
+     * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), or its direction is {@code null}
      *                                  (null, empty or blank names and null directions are checked pair by pair in signature order), if the names are not distinct, or if {@code propName1} begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
@@ -3253,7 +3254,7 @@ public final class Filters {
      * @param propName3 third property name
      * @param direction3 third property sort direction
      * @return an {@link OrderBy} clause
-     * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only, or its direction is {@code null}
+     * @throws IllegalArgumentException if a property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), or its direction is {@code null}
      *                                  (null, empty or blank names and null directions are checked pair by pair in signature order), if the names are not distinct, or if {@code propName1} begins with a SQL clause
      *                                  keyword (for example {@code WHERE}, {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with
      *                                  {@code ON}/{@code USING}, matched case-insensitively as a whole token (so {@code where_x} is
@@ -3321,7 +3322,7 @@ public final class Filters {
      * @param orders map of property names to sort directions (should be a {@link java.util.LinkedHashMap} to preserve order)
      * @return an {@link OrderBy} clause
      * @throws IllegalArgumentException if {@code orders} is {@code null} or empty, if any map entry is {@code null},
-     *                                  if any property name is {@code null}, empty, blank, or comment-only, if any sort direction is {@code null},
+     *                                  if any property name is {@code null}, empty, blank, or comment-only (or ends inside an unterminated block comment), if any sort direction is {@code null},
      *                                  or if the first key begins with a SQL clause keyword (for example {@code WHERE},
      *                                  {@code JOIN}, {@code LIMIT}, or {@code UNION}) or with {@code ON}/{@code USING}, matched
      *                                  case-insensitively as a whole token (so {@code where_x} is accepted), which cannot be nested
@@ -5032,6 +5033,8 @@ public final class Filters {
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; {@code parameters} is {@code null};
      *         the SQL contains malformed placeholder text such as an unclosed {@code #{...}} marker; a named
      *         ({@code :name}) or MyBatis {@code #{...}} marker is present; the placeholder and binding counts differ;
+     *         the SQL is not a statement {@link ParsedSql} recognizes (a query such as {@code SELECT}, {@code WITH},
+     *         {@code VALUES} or {@code TABLE}, or a DML statement) but contains a {@code ?} outside quoted text and comments;
      *         an object-array binding contains a direct or indirect cycle; a binding is a {@link SqlExpression} that is
      *         blank, comment-only, or contains parameter markers of its own (such as {@link #QME}); or a binding is any
      *         other {@link Condition} (a predicate, or a structured or builder-backed subquery)

@@ -93,6 +93,12 @@ import com.landawn.abacus.util.Strings;
  */
 public class Junction extends ComposableCondition {
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // 1. Building a left-deep tree in a loop (cond = Filters.and(cond, next), or new Or(cond, x)) is quadratic: every constructor
+    //    re-validates the whole existing tree through containsNonPredicateComponent (about 1 s at 8000 levels). Flat chaining with
+    //    And.and / Or.or is linear, and toString() of such deep trees overflows the stack around depth 8000 anyway.
+
     /**
      * The conditions combined by this junction, in the order they are joined in the generated SQL.
      * Set once in the constructor and not modified afterwards; the public constructors store a

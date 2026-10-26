@@ -40,9 +40,9 @@ import com.landawn.abacus.util.Strings;
  * <p><b>Important:</b> Always call {@link Builder#build()} to generate the final SQL string and
  * release resources. A builder is one-shot: {@code build()} closes it and every retained clause handle.</p>
  *
- * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation ({@code FROM}
- * table, alias and join fragments must also not open an unterminated {@code /*} block comment, which would swallow
- * the clauses rendered after them); a
+ * <p>String arguments are SQL fragments and are appended verbatim after blank-input validation (placeholder prefixes
+ * and postfixes are only null-checked; {@code FROM} table, alias and join fragments are additionally rejected if they
+ * open an unterminated {@code /*} block comment, which would swallow the clauses rendered after them); a
  * fragment that ends inside a {@code --} or {@code #} line comment is followed by a line feed, so the
  * comment cannot hide the separator or clause emitted after it. This class does not quote identifiers,
  * escape literals, or collect parameter values. Placeholder
@@ -77,6 +77,9 @@ public final class DynamicQuery {
     //    comment from the line-feed check: where().append("x = 1 /* /* */ '-- */ -- c'").and("tenant = 1") gets no line feed.
     // 4. FromClause.append(table, alias) repairs a table that ends inside a line comment with a line feed before the alias:
     //    append("#tmp", "h") reads table "h" on MySQL, and append("main.-- x", "t") reads "main.t".
+    // 5. A placeholder prefix is appended right after the previous fragment, and only the prefix itself is checked for a trailing
+    //    comment: where().append("x = 1 -").appendPlaceholders(1, "- ", "").and("tenant = 1") -> "WHERE x = 1 -- ? AND tenant = 1"
+    //    (a trailing '/' plus a leading '*' opens a block comment the same way).
     // See also the known issues listed under the AbstractQueryBuilder class declaration.
 
     /** Internal logger; emits a debug message with the length of the built SQL when {@link Builder#build()} completes and debug logging is enabled. */

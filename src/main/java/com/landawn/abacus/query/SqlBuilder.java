@@ -449,9 +449,11 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     }
 
     /**
-     * Copies an entirely ordinary positional list together. Mixed lists append bindings directly,
-     * avoiding temporary sublists and arrays while expressions keep their original positions.
-     * Subclasses retain individual setter calls so their hooks still run.
+     * Bulk-binds a {@code PARAMETERIZED_SQL} IN list of more than 16 values: a list without {@link Condition}
+     * elements is bound with one {@code addAll}; a mixed list binds each run of plain values directly,
+     * avoiding temporary sublists and arrays, while each condition element is rendered at its original position.
+     * Returns {@code false} without rendering anything for 16 or fewer values, another SQL policy, or a subclass,
+     * so subclasses retain individual setter calls and their hooks still run.
      * @throws IllegalArgumentException if a condition in {@code values} contains an unsupported condition type, an unsafe column, or an incompatible subquery
      * @throws IllegalStateException if rendering a condition in {@code values} encounters an incomplete or out-of-order structured subquery
      * @throws UnsupportedOperationException if a structured subquery's entity metadata configures a LocalDate or LocalTime property with date format {@code long}

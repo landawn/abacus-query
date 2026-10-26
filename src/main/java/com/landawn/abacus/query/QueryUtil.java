@@ -65,6 +65,15 @@ public final class QueryUtil {
     //    or literal can hide an unclosed "/*": hasUnterminatedBlockComment("a // it's\n/* x 'y'") and
     //    hasUnterminatedBlockComment("n = q'[it's]' /* x '") return false, and the H2/Oracle builders accept such FROM/JOIN/append
     //    text (the database then rejects the unterminated comment at execution).
+    // 2. hasUnterminatedBlockComment applies backslash escapes to all quote kinds at once (or to none), never per quote kind, so it
+    //    misses readings where they apply only inside E'...' (PostgreSQL standard_conforming_strings) or inside '...' and "..." but not
+    //    `...` (MySQL): hasUnterminatedBlockComment("E'\\'' \"a\\\" /* \" '") and ("'\\'' `a\\` /* ` '") (Java literals) return false,
+    //    and a PostgreSQL builder accepts from("account a, (SELECT E'\\'' AS q, 1 AS \"a\\\") b /* \" '").where(...), whose WHERE
+    //    PostgreSQL reads as comment text (the database normally rejects the unterminated comment, unless a later fragment closes it).
+    // Other open issues:
+    // 3. selectPropNames(cls, true, excludedPropNames) matches exclusions by exact String equality, while selectPropNames(cls, false, ...),
+    //    insertPropNames and updatePropNames use the set's own contains: a case-insensitive TreeSet holding "FIRSTNAME" excludes
+    //    firstName only on the latter paths (Dsl and Selection inherit the difference when sub-entity properties are included).
     // See also the known issues listed under the AbstractQueryBuilder class declaration.
 
     /**
@@ -1122,7 +1131,7 @@ public final class QueryUtil {
     /**
      * Returns the property names to be used for INSERT operations on the given entity instance.
      * This method considers ID fields and excludes non-insertable properties ({@code @ReadOnly}, read-only ID
-     * ({@code @ReadOnlyId}) and non-column properties).
+     * ({@code @ReadOnlyId}), non-column and sub-entity properties).
      *
      * <p>The method intelligently handles ID fields:</p>
      * <ul>
@@ -1224,7 +1233,7 @@ public final class QueryUtil {
      * Returns the property names to be used for INSERT operations on the given entity class.
      * This method returns all insertable properties (including writable ID fields) excluding those specified in {@code excludedPropNames}.
      * {@code @ReadOnly} and read-only ID ({@code @ReadOnlyId}) properties, as well as properties excluded from column
-     * mapping, are never insertable.
+     * mapping and sub-entity properties, are never insertable.
      *
      * <p>Unlike the instance-based version, this method does not check for default ID values since no
      * entity instance is provided. It returns all insertable properties including IDs.</p>
@@ -1272,7 +1281,9 @@ public final class QueryUtil {
      * <p>When {@code includeSubEntityProperties} is {@code true}, the method returns nested properties using
      * dot notation (e.g., {@code "address.street"}). This is useful for building SELECT statements
      * that need to retrieve data for nested entity relationships. A sub-entity excluded by the parent's
-     * {@code @Table} column configuration or non-column metadata contributes no nested properties.</p>
+     * {@code @Table} column configuration or non-column metadata contributes no nested properties. A sub-entity
+     * property itself (such as {@code "address"}) is never listed: it is omitted when {@code includeSubEntityProperties}
+     * is {@code false}, and only its nested properties are listed when it is {@code true}.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1440,6 +1451,7 @@ public final class QueryUtil {
      *   <li>Annotated with {@code @NonUpdatable}</li>
      *   <li>Excluded from column mapping (e.g. {@code transient}, annotated with {@code @NonColumn},
      *       or filtered out by the {@code @Table} {@code columnFields}/{@code nonColumnFields} configuration)</li>
+     *   <li>Sub-entity properties (bean or bean-collection properties not marked with {@code @Column})</li>
      *   <li>Listed in the {@code excludedPropNames} parameter</li>
      * </ul>
      *

@@ -2060,6 +2060,20 @@ public class CriteriaTest extends TestBase {
         }
 
         @Test
+        void testSelectModifierRejectsUnterminatedBlockComment() {
+            // Regression: selectModifier("/* x") was accepted and the Criteria rendered " /* x WHERE a = 1", swallowing every
+            // later clause; distinctOn(...) and the builders' selectModifier(...) already rejected it.
+            final Criteria.Builder builder = Criteria.builder().selectModifier("DISTINCT");
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> builder.selectModifier("/* x"));
+            assertEquals("selectModifier must not contain an unterminated block comment: /* x", e.getMessage());
+            assertThrows(IllegalArgumentException.class, () -> Criteria.builder().selectModifier("DISTINCT /* x"));
+
+            // A rejected call leaves the previous modifier in place; closed comments are still accepted.
+            assertEquals("DISTINCT", builder.build().selectModifier());
+            assertEquals("DISTINCT /* hint */", Criteria.builder().selectModifier("DISTINCT /* hint */").build().selectModifier());
+        }
+
+        @Test
         void testDistinctOnNull() {
             Criteria criteria = Criteria.builder().distinctOn(null).build();
             assertEquals("DISTINCT", criteria.selectModifier());

@@ -484,10 +484,9 @@ public final class SqlMapper {
      * @return an immutable snapshot of all SQL identifiers in this mapper, maintaining insertion order
      */
     public ImmutableSet<String> ids() {
-        // The LinkedHashSet copy is load-bearing: ImmutableSet.copyOf only preserves iteration
-        // order for List/LinkedHashSet/SortedSet sources, and a raw LinkedHashMap keySet() view
-        // is none of those. Wrapping the private copy keeps the documented insertion order
-        // without paying for a second defensive copy inside copyOf.
+        // Snapshot the keys into a private LinkedHashSet, which keeps the documented insertion
+        // order, and wrap it: nothing else references the copy, so wrap(...) is safe and makes
+        // exactly one copy.
         return ImmutableSet.wrap(new LinkedHashSet<>(sqlMap.keySet()));
     }
 
@@ -876,8 +875,9 @@ public final class SqlMapper {
      * {@code id} attribute and is protected from being overridden: any stray {@code id}
      * entry in a SQL's attributes map is ignored when emitting attributes.</p>
      *
-     * <p>Structure of the output (the actual output is written on a single line, prefixed by an XML declaration,
-     * with attributes in name order; the {@code id} attribute is sorted together with the others):</p>
+     * <p>Structure of the output (the actual output adds no indentation or line breaks between elements, so it is a
+     * single line unless a SQL body contains line breaks; it is prefixed by an XML declaration, with attributes in
+     * name order; the {@code id} attribute is sorted together with the others):</p>
      * <pre>{@code
      * <sqlMapper>
      *     <sql fetchSize="100" id="findUser">select * from users where id = ?</sql>

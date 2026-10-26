@@ -2223,7 +2223,7 @@ public class SqlExpression extends ComposableCondition {
      * whitespace and words included ({@code $$aB cD$$} stays {@code $$aB cD$$} under {@code SNAKE_CASE}), in a
      * subscript or array constructor too ({@code ARRAY[$$a  b$$]}). From one whose text a
      * server without dollar quotes reads differently, because it holds a quote character, a {@code [}, a {@code #} or a
-     * comment opener ({@code $$it's$$}), or that is never closed, the rest of the literal (in a subscript, the rest of
+     * comment opener ({@code $$it's$$}), or that is never closed, the rest of the literal (in a subscript, at least the rest of
      * the subscript) is copied exactly as written, as described below for a backslash before a quote.
      * Bind names and MyBatis attributes inside a {@code #{...}} or {@code ${...}} marker are also
      * protected when the marker contains whitespace; tokenization can still normalize whitespace

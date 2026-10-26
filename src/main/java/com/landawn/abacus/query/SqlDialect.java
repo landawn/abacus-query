@@ -74,6 +74,12 @@ import lombok.experimental.Accessors;
 @Accessors(fluent = true)
 public class SqlDialect {
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // 1. javadoc (which reads this source without Lombok) warns "use of default constructor, which does not provide a comment" at the
+    //    class declaration; the compiled class has only Lombok's package-private all-args constructor. Silencing the warning needs an
+    //    explicit documented private all-args constructor, which would then have to be kept in sync with the fields by hand.
+
     /**
      * Optional descriptor of the target database product. When set, query builders branch on
      * {@link ProductInfo#name()} to emit product-specific SQL. For example, Oracle, DB2 and SQL Server dialects

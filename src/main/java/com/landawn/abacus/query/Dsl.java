@@ -22,6 +22,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.landawn.abacus.annotation.Beta;
@@ -32,7 +34,6 @@ import com.landawn.abacus.query.condition.Condition;
 import com.landawn.abacus.util.Array;
 import com.landawn.abacus.util.Beans;
 import com.landawn.abacus.util.ImmutableList;
-import com.landawn.abacus.util.Maps;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 import com.landawn.abacus.util.OperationType;
@@ -253,6 +254,19 @@ public final class Dsl {
      */
     private SqlBuilder createSqlBuilderInstance() {
         return new SqlBuilder(sqlDialect);
+    }
+
+    /**
+     * Copies caller-owned excluded property names. A {@link SortedSet} keeps its comparator (for example
+     * {@code String.CASE_INSENSITIVE_ORDER}), as {@link Selection} does, so the exclusions match exactly as when the same set
+     * is passed to the corresponding {@code select(...)} overload (such as {@link #select(Class, Set)}); a plain
+     * {@code HashSet} copy matched them case-sensitively instead.
+     *
+     * @param excludedPropNames the non-empty excluded property names to copy
+     * @return a mutable copy of {@code excludedPropNames}
+     */
+    private static Set<String> snapshotExcludedPropNames(final Set<String> excludedPropNames) {
+        return excludedPropNames instanceof final SortedSet<String> sorted ? new TreeSet<>(sorted) : new HashSet<>(excludedPropNames);
     }
 
     /**
@@ -581,7 +595,7 @@ public final class Dsl {
     public SqlBuilder insert(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, SqlBuilder.INSERTION_PART_MSG);
 
-        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? Collections.emptySet() : new HashSet<>(excludedPropNames);
+        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? Collections.emptySet() : snapshotExcludedPropNames(excludedPropNames);
         final Object entitySnapshot;
 
         // Validate and snapshot every form before allocating a builder backed by a pooled SQL buffer.
@@ -595,7 +609,8 @@ public final class Dsl {
             AbstractQueryBuilder.checkSqlFragmentKeysNotBlank(propsSnapshot, "entity map");
 
             if (N.notEmpty(excludedPropNameSnapshot)) {
-                Maps.removeKeys(propsSnapshot, excludedPropNameSnapshot);
+                // Ask the exclusion set (it may keep a case-insensitive comparator), as for beans, rather than looking each name up in the map.
+                propsSnapshot.keySet().removeIf(excludedPropNameSnapshot::contains);
             }
 
             N.checkArgument(!propsSnapshot.isEmpty(), "entity map must contain at least one non-excluded property");
@@ -1681,7 +1696,7 @@ public final class Dsl {
             final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
         // One snapshot so the generated FROM table list and the projection observe the same exclusions.
-        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? null : new HashSet<>(excludedPropNames);
+        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? null : snapshotExcludedPropNames(excludedPropNames);
         final boolean includesSubEntityTables = SqlBuilder.hasSubEntityToInclude(entityClass, includeSubEntityProperties);
         final List<String> selectTableNames = includesSubEntityTables
                 ? SqlBuilder.buildFromTableRefs(entityClass, tableAlias, excludedPropNameSnapshot, namingPolicy)

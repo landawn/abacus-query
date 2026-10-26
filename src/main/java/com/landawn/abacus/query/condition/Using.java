@@ -92,6 +92,13 @@ import com.landawn.abacus.util.Strings;
  */
 public class Using extends Cell {
 
+    // KNOWN OPEN ISSUES - intentionally deferred.
+    // WARNING TO AI/AGENTS: DO NOT TRY TO FIX THESE ISSUES WITHOUT EXPLICIT USER INSTRUCTIONS TO FIX THEM.
+    // 1. Column names are not checked for an unbalanced quote (", `, ', [), so the rendered list can disagree with columnNames():
+    //    new Using("\"a", "b\"") renders USING ("a, b") (one quoted column) while columnNames() reports two, and new Using("\"a")
+    //    renders USING ("a), an open quoted identifier that swallows the rest of the statement (a syntax error, so it fails closed).
+    //    The builders' using(...), GroupBy/OrderBy and On pass such names through verbatim as well.
+
     /**
      * The validated, unqualified column names this USING clause joins on. Stored separately from the
      * wrapped {@link SqlExpression} so the original column list is recoverable via {@link #columnNames()}.

@@ -134,7 +134,8 @@ public class Having extends Clause {
      * @throws IllegalArgumentException if {@code condition} is {@code null}, has a null operator, is or contains a
      *             {@link Criteria}, is a standalone {@link SubQuery} or another clause, contains an
      *             {@code ON}/{@code USING} condition or an {@code ANY}/{@code ALL}/{@code SOME} quantified-subquery
-     *             operand, or is a blank or comment-only {@link SqlExpression} — none of which can be nested inside a clause.
+     *             operand (a comparison wrapping one, such as {@code a = ANY (subquery)}, is accepted),
+     *             or is a blank or comment-only {@link SqlExpression} — none of which can be nested inside a clause.
      *             An empty {@link Junction} is accepted and renders its Boolean identity (for example {@code HAVING 1 = 0})
      */
     public Having(final Condition condition) {

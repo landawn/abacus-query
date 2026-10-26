@@ -122,6 +122,9 @@ public class SubQuery extends AbstractCondition {
     // 1. Raw text that ParsedSql does not recognize as a query (DuckDB FROM-first, PIVOT) is checked for named/MyBatis markers
     //    with ParsedSql's reading, which treats a marker inside a dollar-quoted string as a parameter, so
     //    new SubQuery("FROM u SELECT $$:x$$") is rejected although the ":x" is literal text (over-strict, fails closed).
+    // 2. The dedicated rejection of a SqlExpression binding that contains parameter markers is unreachable for ordinary expressions
+    //    (ParsedSql counts placeholders only in recognized statements): new SubQuery("SELECT id FROM t WHERE a = ?", Arrays.asList(Filters.QME))
+    //    is still rejected, but only by the later re-scan, with the generic "left mismatched placeholders" message.
     // See also the known issues listed under the SqlBuilder class declaration (structured subqueries with clause text).
 
     // For Kryo
@@ -254,8 +257,9 @@ public class SubQuery extends AbstractCondition {
      *         is {@code null}; the SQL contains malformed placeholder text such as an unclosed {@code #{...}} marker;
      *         the SQL contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder (in text that does not start with
      *         a recognized query keyword, any such marker outside quoted text and comments); the number of positional
-     *         placeholders differs from the number of bindings; the SQL does not start with a recognized query keyword
-     *         ({@code SELECT}, {@code WITH}, {@code VALUES}, {@code TABLE}, ...) but contains a {@code ?} outside quoted text and comments; an object-array binding contains a cycle; a binding is a
+     *         placeholders differs from the number of bindings; the SQL is not a statement {@link ParsedSql} recognizes (a
+     *         query such as {@code SELECT}, {@code WITH}, {@code VALUES} or {@code TABLE}, or a DML statement) but contains
+     *         a {@code ?} outside quoted text and comments; an object-array binding contains a cycle; a binding is a
      *         {@link SqlExpression} that is blank, comment-only, or contains parameter markers of its own (such as
      *         {@link Filters#QME}); or a binding is any other {@link Condition} (a predicate, or a structured or
      *         builder-backed subquery), whose SQL would depend on the enclosing builder's policy

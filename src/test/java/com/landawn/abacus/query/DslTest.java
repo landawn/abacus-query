@@ -7734,6 +7734,31 @@ public class DslTest extends TestBase {
             assertNotNull(builder);
         }
 
+        // Regression: selectFrom(Class, Set) and insert(Object, Set) copied the exclusions into a HashSet, dropping a SortedSet's
+        // comparator, so a case-insensitive TreeSet excluded "firstName" through select(Class, Set) but not through selectFrom.
+        @Test
+        void testSelectFromAndInsertKeepCaseInsensitiveExclusions() {
+            final Set<String> excluded = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            excluded.addAll(Arrays.asList("FIRSTNAME", "LASTNAME"));
+
+            final String viaSelect = Dsl.PSC.select(com.landawn.abacus.query.entity.Account.class, excluded).from("account acc").build().query();
+            assertFalse(viaSelect.contains("first_name"), viaSelect);
+            assertEquals(viaSelect, Dsl.PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, "acc", excluded).build().query());
+
+            final com.landawn.abacus.query.entity.Account account = new com.landawn.abacus.query.entity.Account();
+            account.setFirstName("f");
+            account.setLastName("l");
+            account.setEmailAddress("e");
+            final String expectedInsert = Dsl.PSC.insert(account, Set.of("firstName", "lastName")).into("account").build().query();
+            assertFalse(expectedInsert.contains("first_name"), expectedInsert);
+            assertEquals(expectedInsert, Dsl.PSC.insert(account, excluded).into("account").build().query());
+
+            final Map<String, Object> props = new java.util.LinkedHashMap<>();
+            props.put("firstName", "f");
+            props.put("emailAddress", "e");
+            assertEquals("INSERT INTO account (email_address) VALUES (?)", Dsl.PSC.insert((Object) props, excluded).into("account").build().query());
+        }
+
         @Test
         void testSelectFrom_EntityClassWithSubEntities() {
             SqlBuilder builder = Dsl.PSB.selectFrom(User.class, true);

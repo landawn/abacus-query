@@ -167,7 +167,9 @@ public class Minus extends Clause {
      * }</pre>
      *
      * @param subQuery the subquery to perform the MINUS operation with (must not be {@code null}). The subquery must
-     *            have the same number of columns with compatible types as the main query.
+     *            have the same number of columns with compatible types as the main query. It is not checked here to be a
+     *            {@code SELECT} query (raw subquery text is kept verbatim); the query builders reject a non-{@code SELECT}
+     *            operand when this clause, or a {@link Criteria} carrying it, is appended.
      * @throws IllegalArgumentException if {@code subQuery} is {@code null}
      * @see Except
      * @see Union

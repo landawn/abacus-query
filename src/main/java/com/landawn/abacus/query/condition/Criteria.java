@@ -928,8 +928,14 @@ public class Criteria extends AbstractCondition {
          * @param selectModifier the custom SELECT modifier; {@code null}, empty, or blank means no modifier,
          *                       and any surrounding whitespace is stripped
          * @return this Builder instance for method chaining
+         * @throws IllegalArgumentException if {@code selectModifier} contains an unterminated block comment, which
+         *         would swallow every clause rendered after it
          */
         public Builder selectModifier(final String selectModifier) {
+            if (selectModifier != null && QueryUtil.hasUnterminatedBlockComment(selectModifier)) {
+                throw new IllegalArgumentException("selectModifier must not contain an unterminated block comment: " + selectModifier);
+            }
+
             // Normalize blank to null so a Criteria built with selectModifier("") equals one built with
             // no modifier at all -- the two already render identically and share a hash code. Surrounding
             // whitespace is stripped so selectModifier(" DISTINCT ") renders (and compares) like distinct();
@@ -2618,7 +2624,8 @@ public class Criteria extends AbstractCondition {
          * pagination syntax whichever accepted form was passed (for example
          * {@code OFFSET m ROWS FETCH NEXT n ROWS ONLY} on Oracle, DB2 or SQL Server, {@code LIMIT n OFFSET m}
          * elsewhere); an expression whose numbers exceed the {@code int} range is re-rendered only when it is a
-         * generic {@code LIMIT count [OFFSET offset]} form.
+         * generic {@code LIMIT count [OFFSET offset]} or MySQL {@code LIMIT offset, count} form (SQL Server builders
+         * also normalize such a {@code FETCH}-form expression); any other out-of-range form is emitted as written.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
