@@ -1,3 +1,6 @@
+## 4.9.6
+* Improvements and bug fixes
+
 ## 4.9.5
 * Improvements and bug fixes
 
