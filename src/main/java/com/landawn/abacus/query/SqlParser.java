@@ -174,9 +174,8 @@ public final class SqlParser {
     // 9. #purge 1\nSELECT 1 is accepted by the default config: SQL Server runs a bare procedure name that opens a batch, here a
     //    temporary procedure (#name, ##name), while MySQL reads the line as a comment. Semicolonless-batch mode rejects
     //    #fetch-style names but still accepts #@p 1\nSELECT 1 (and #1p, #$p).
-    // 10. Classification is quadratic for "SELECT 1 " + "[--".repeat(n) + "\n" + "(".repeat(n) + "x" (about 6 s at 96 KB;
-    //    also "[/*".repeat(n) + "*/" + "(".repeat(n)): firstWordInBracket re-walks the same '(' run for every '['.
-    // Other open issues:
+    // Issue 10 (quadratic bracket-prefix scanning) is resolved; retain existing issue numbers.
+    // Other open issue:
     // 11. The backward MERGE target/alias scan excludes '@', which SQL Server permits within regular identifiers:
     //    MERGE INTO t@x USING #s AS s ON 1 = 1 WHEN MATCHED THEN UPDATE SET a = ? is tokenized without the source or
     //    anything after it, so ParsedSql emits "MERGE INTO t@x USING" with zero parameters (also dbo.t@x and an a@x alias).
@@ -353,6 +352,7 @@ public final class SqlParser {
      * Splits a search token on every Java/SQL whitespace character rather than only a literal
      * space. Empty components are omitted so differently formatted composite keywords such as
      * {@code "ORDER  BY"}, {@code "ORDER\tBY"}, and {@code "ORDER\nBY"} are equivalent.
+     * Keep the whitespace/component rule in sync with {@link #hasMultipleTokenComponents(String)}.
      */
     private static String[] splitTokenComponents(final String token) {
         final List<String> components = new ArrayList<>();
@@ -1557,7 +1557,10 @@ public final class SqlParser {
 
     private static int indexOfToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive,
             final TokenizerConfig tokenizerConfig) {
-        final HashScanMemo memo = sql.indexOf('#') >= 0 || sql.indexOf('[') >= 0 ? new HashScanMemo(sql) : null;
+        if (fromIndex >= sql.length() || sql.isEmpty()) {
+            return N.INDEX_NOT_FOUND;
+        }
+
         final String trimmedToken = token.trim();
         String searchToken = token;
         String[] componentTokens = null;
@@ -1595,14 +1598,19 @@ public final class SqlParser {
         if (componentTokens == null || componentTokens.length <= 1) {
             final int sqlLength = sql.length();
             final int startIndex = Math.max(0, fromIndex);
+            final boolean compositeFallback = !caseSensitive && !tokenizerConfig.caseInsensitiveSeparators.isEmpty() && searchToken.equals(trimmedToken)
+                    && tokenizerConfig.caseInsensitiveSeparators.contains(searchToken) && hasMultipleTokenComponents(searchToken);
+            // Only a configured, case-bearing composite can need two source passes. Preserve one
+            // memo for that uncommon fallback, avoiding duplicate contextual tables. Ordinary
+            // searches retain lazy allocation without inspecting the unvisited source suffix.
+            final HashScanMemo memo = compositeFallback && (sql.indexOf('#') >= 0 || sql.indexOf('[') >= 0) ? new HashScanMemo(sql) : null;
             // Public fromIndex can be inside a quote/comment: scan from zero, then filter starts.
-            final int result = findToken(sql, searchToken, startIndex, caseSensitive, tokenizerConfig, memo, 0);
+            final int result = findToken(sql, searchToken, startIndex, caseSensitive, tokenizerConfig, memo);
             // Separator recognition is case-sensitive even when search is not. A letter-bearing
             // separator such as "order by" can therefore appear as separate ORDER/BY tokens in SQL.
             // Keep whitespace-prefixed separators verbatim, and avoid this extra scan for the default
             // punctuation-only configuration. A composite match must precede any whole-token match.
-            if (!caseSensitive && result != startIndex && !tokenizerConfig.caseInsensitiveSeparators.isEmpty() && searchToken.equals(trimmedToken)
-                    && tokenizerConfig.caseInsensitiveSeparators.contains(searchToken)) {
+            if (compositeFallback && result != startIndex) {
                 String[] separatedTokens = compositeTokens.get(searchToken);
 
                 if (separatedTokens == null) {
@@ -1622,7 +1630,27 @@ public final class SqlParser {
             return result;
         }
 
-        return indexOfCompositeToken(sql, componentTokens, fromIndex, sql.length(), caseSensitive, tokenizerConfig, memo);
+        return indexOfCompositeToken(sql, componentTokens, fromIndex, sql.length(), caseSensitive, tokenizerConfig, null);
+    }
+
+    /**
+     * Checks the whitespace split used by configured-separator fallback without allocating its components.
+     * Must equal {@code splitTokenComponents(token).length > 1}: both ignore empty components and split
+     * on {@link Character#isWhitespace(char)}. This invariant controls fallback eligibility, not just allocation.
+     */
+    private static boolean hasMultipleTokenComponents(final String token) {
+        boolean firstComponent = false;
+        boolean gap = false;
+        for (int i = 0; i < token.length(); i++) {
+            if (Character.isWhitespace(token.charAt(i))) {
+                gap = firstComponent;
+            } else if (gap) {
+                return true;
+            } else {
+                firstComponent = true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1703,9 +1731,13 @@ public final class SqlParser {
 
     /** Compares source ranges without allocating the tokens preceding a match. */
     private static int findToken(final String sql, final String token, final int fromIndex, final boolean caseSensitive, final TokenizerConfig tokenizerConfig,
-            final HashScanMemo memo, final int scanFrom) {
-        for (int index = scanFrom; index < sql.length();) {
-            final long bounds = nextTokenBounds(sql, index, tokenizerConfig, memo, true);
+            HashScanMemo memo) {
+        for (int index = 0; index < sql.length();) {
+            long bounds = nextSearchTokenBounds(sql, index, tokenizerConfig, memo, true);
+            if (bounds < 0) {
+                memo = new HashScanMemo(sql);
+                bounds = resumeSearchTokenBounds(sql, bounds, tokenizerConfig, memo, true);
+            }
             final int start = (int) (bounds >>> 32);
             final int end = (int) bounds;
             if (start == end) {
@@ -1717,6 +1749,30 @@ public final class SqlParser {
             index = end;
         }
         return N.INDEX_NOT_FOUND;
+    }
+
+    /**
+     * A search allocates context only when the scanner first needs it. Its negative response carries
+     * the suspended token start and scan position; ordinary packed bounds are always nonnegative.
+     */
+    private static long nextSearchTokenBounds(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, final HashScanMemo memo,
+            final boolean includeWhitespace) {
+        return nextTokenBounds(sql, fromIndex, tokenizerConfig, memo, includeWhitespace, null, true, -1);
+    }
+
+    /**
+     * The sign bit tags a suspension. start + 1 encodes the no-token-yet value -1 as zero and otherwise
+     * fits in the remaining 31 bits: a token starts before the String's at-most-Integer.MAX_VALUE length.
+     */
+    private static long deferredSearchTokenBounds(final int start, final int index) {
+        return ((long) (Integer.MIN_VALUE | (start + 1)) << 32) | index;
+    }
+
+    /** Resumes at the contextual character, retaining any token prefix without reading it again. */
+    private static long resumeSearchTokenBounds(final String sql, final long deferred, final TokenizerConfig tokenizerConfig, final HashScanMemo memo,
+            final boolean includeWhitespace) {
+        final int start = ((int) (deferred >>> 32) & Integer.MAX_VALUE) - 1;
+        return nextTokenBounds(sql, (int) deferred, tokenizerConfig, memo, includeWhitespace, null, false, start);
     }
 
     private static boolean matchesToken(final String sql, final int start, final int end, final String token, final boolean caseSensitive) {
@@ -1745,34 +1801,113 @@ public final class SqlParser {
         return false;
     }
 
-    /** Finds a composite token starting before {@code toIndex}, reusing the caller's lexical memo. */
+    /** Finds a composite token starting before {@code toIndex}, sharing a lazy memo across candidate retries. */
     private static int indexOfCompositeToken(final String sql, final String[] componentTokens, final int fromIndex, final int toIndex,
-            final boolean caseSensitive, final TokenizerConfig tokenizerConfig, final HashScanMemo memo) {
-        int result = findToken(sql, componentTokens[0], Math.max(0, fromIndex), caseSensitive, tokenizerConfig, memo, 0);
+            final boolean caseSensitive, final TokenizerConfig tokenizerConfig, HashScanMemo memo) {
+        // Built-in composites contain at most three components. Keep their small, allocation-free
+        // candidate loop; long arbitrary patterns need a streaming matcher for overlapping prefixes.
+        if (componentTokens.length > 8) {
+            return indexOfLongCompositeToken(sql, componentTokens, fromIndex, toIndex, caseSensitive, tokenizerConfig, memo);
+        }
 
-        while (result >= 0 && result < toIndex) {
-            int tmpIndex = result + componentTokens[0].length();
+        for (int index = 0; index < sql.length();) {
+            long bounds = nextSearchTokenBounds(sql, index, tokenizerConfig, memo, true);
+            if (bounds < 0) {
+                memo = new HashScanMemo(sql);
+                bounds = resumeSearchTokenBounds(sql, bounds, tokenizerConfig, memo, true);
+            }
+            final int start = (int) (bounds >>> 32);
+            final int end = (int) bounds;
+            if (start == end || start >= toIndex) {
+                break;
+            }
+            // On a mismatch, resume after this first token, retaining overlapping candidates.
+            index = end;
+            if (start < fromIndex || !matchesToken(sql, start, end, componentTokens[0], caseSensitive)) {
+                continue;
+            }
+
+            int tmpIndex = end;
             boolean matched = true;
 
             for (int i = 1; i < componentTokens.length; i++) {
-                final long bounds = nextTokenBounds(sql, tmpIndex, tokenizerConfig, memo, false);
-                final int start = (int) (bounds >>> 32);
-                final int end = (int) bounds;
-                if (start == end || !matchesToken(sql, start, end, componentTokens[i], caseSensitive)) {
+                long nextBounds = nextSearchTokenBounds(sql, tmpIndex, tokenizerConfig, memo, false);
+                if (nextBounds < 0) {
+                    memo = new HashScanMemo(sql);
+                    nextBounds = resumeSearchTokenBounds(sql, nextBounds, tokenizerConfig, memo, false);
+                }
+                final int nextStart = (int) (nextBounds >>> 32);
+                final int nextEnd = (int) nextBounds;
+                if (nextStart == nextEnd || !matchesToken(sql, nextStart, nextEnd, componentTokens[i], caseSensitive)) {
                     matched = false;
                     break;
                 }
-                tmpIndex = end;
+                tmpIndex = nextEnd;
             }
 
             if (matched) {
-                return result;
+                return start;
+            }
+        }
+
+        return N.INDEX_NOT_FOUND;
+    }
+
+    /**
+     * Matches long component sequences with a failure function, so every source token is scanned once
+     * even when many candidate prefixes overlap. Only source start positions, never token strings, are
+     * retained in the ring. Comparisons use the same Unicode case rules as ordinary token matching.
+     */
+    private static int indexOfLongCompositeToken(final String sql, final String[] components, final int fromIndex, final int toIndex,
+            final boolean caseSensitive, final TokenizerConfig tokenizerConfig, HashScanMemo memo) {
+        final int count = components.length;
+        final int[] fallback = new int[count];
+        final int[] starts = new int[count];
+
+        for (int i = 1, matched = 0; i < count; i++) {
+            final String component = components[i];
+            while (matched > 0 && !matchesToken(component, 0, component.length(), components[matched], caseSensitive)) {
+                matched = fallback[matched - 1];
+            }
+            if (matchesToken(component, 0, component.length(), components[matched], caseSensitive)) {
+                matched++;
+            }
+            fallback[i] = matched;
+        }
+
+        int matched = 0;
+        int slot = 0;
+        for (int index = 0; index < sql.length();) {
+            long bounds = nextSearchTokenBounds(sql, index, tokenizerConfig, memo, false);
+            if (bounds < 0) {
+                memo = new HashScanMemo(sql);
+                bounds = resumeSearchTokenBounds(sql, bounds, tokenizerConfig, memo, false);
+            }
+            final int start = (int) (bounds >>> 32);
+            final int end = (int) bounds;
+            if (start == end) {
+                break;
+            }
+            index = end;
+            if (start < fromIndex) {
+                continue;
             }
 
-            // The first component ends at a known token boundary. Resume the scan there, keeping
-            // overlapping candidates while avoiding quadratic prefix scans on repeated near-matches.
-            final int nextStart = result + componentTokens[0].length();
-            result = findToken(sql, componentTokens[0], nextStart, caseSensitive, tokenizerConfig, memo, nextStart);
+            starts[slot] = start;
+            while (matched > 0 && !matchesToken(sql, start, end, components[matched], caseSensitive)) {
+                matched = fallback[matched - 1];
+            }
+            if (matched == 0 && start >= toIndex) {
+                break;
+            }
+            if (matchesToken(sql, start, end, components[matched], caseSensitive)) {
+                matched++;
+            }
+            slot = slot + 1 == count ? 0 : slot + 1;
+            if (matched == count) {
+                final int result = starts[slot];
+                return result < toIndex ? result : N.INDEX_NOT_FOUND;
+            }
         }
 
         return N.INDEX_NOT_FOUND;
@@ -1895,8 +2030,13 @@ public final class SqlParser {
 
     private static long nextTokenBounds(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, HashScanMemo memo,
             final boolean includeWhitespace, final TokenCursor cursor) {
+        return nextTokenBounds(sql, fromIndex, tokenizerConfig, memo, includeWhitespace, cursor, false, -1);
+    }
+
+    private static long nextTokenBounds(final String sql, final int fromIndex, final TokenizerConfig tokenizerConfig, HashScanMemo memo,
+            final boolean includeWhitespace, final TokenCursor cursor, final boolean deferMemo, final int tokenStart) {
         final int len = sql.length();
-        int start = -1;
+        int start = tokenStart;
         for (int index = Math.max(0, fromIndex); index < len; index++) {
             final char ch = sql.charAt(index);
             if (ch < 128 && tokenizerConfig.asciiCharacterKinds[ch] == 0) {
@@ -1911,6 +2051,9 @@ public final class SqlParser {
                 // Markers and punctuation operators need no context memo. Allocate only for a
                 // possible hash-prefixed name; callers scanning several tokens can share it.
                 if (memo == null) {
+                    if (deferMemo) {
+                        return deferredSearchTokenBounds(start, index);
+                    }
                     memo = new HashScanMemo(sql);
                     if (cursor != null) {
                         cursor.memo = memo;
@@ -1933,6 +2076,9 @@ public final class SqlParser {
                 index = close < 0 ? len : close + 1;
             } else if (ch == SK._SINGLE_QUOTE || ch == SK._DOUBLE_QUOTE || ch == SK._BACKTICK || ch == '[') {
                 if (ch == '[' && memo == null) {
+                    if (deferMemo) {
+                        return deferredSearchTokenBounds(start, index);
+                    }
                     memo = new HashScanMemo(sql);
                     if (cursor != null) {
                         cursor.memo = memo;
@@ -3167,6 +3313,9 @@ public final class SqlParser {
      * unquoted identifier root.</p>
      */
     private static final class HashScanMemo {
+        private static final int SPARSE_PREFIX_CAPACITY = 256;
+        private static final int LARGE_SCAN_THRESHOLD = 32 * 1024;
+
         private static final byte LINE_AWARE_KNOWN = 1;
         private static final byte LINE_AWARE_IDENTIFIER = 2;
         private static final byte BLOCK_ONLY_KNOWN = 4;
@@ -3235,11 +3384,14 @@ public final class SqlParser {
         /**
          * Early lookups grow with their prefix. Once the next geometric capacity would reach half
          * the source length, allocate the final size to avoid another large copy during dense scans.
-         * Complete scans allocate the final size on first use; tables remain lazy in either mode.
+         * Complete scans of large inputs first allow a small prefix: one early hash or bracket followed
+         * by a large literal need not reserve tables for that literal. On overflow they promote directly
+         * to the final size, adding at most one small discarded array per table on dense scans. Smaller
+         * complete scans allocate the final size immediately. Tables remain lazy in either mode.
          */
         private int grownCapacity(final int oldCapacity, final int required) {
             if (fullScan) {
-                return length;
+                return oldCapacity == 0 && length > LARGE_SCAN_THRESHOLD && required <= SPARSE_PREFIX_CAPACITY ? SPARSE_PREFIX_CAPACITY : length;
             }
             final long nextCapacity = Math.max(required, Math.max(64L, oldCapacity + (long) oldCapacity));
             return nextCapacity >= length - length / 2 ? length : (int) nextCapacity;
@@ -4570,8 +4722,8 @@ public final class SqlParser {
         for (int open = sql.indexOf('['), nextOpen; open >= 0; open = nextOpen) {
             nextOpen = sql.indexOf('[', open + 1);
             statementMemo.discardBefore(open + 1);
-            final int start = firstWordInBracket(sql, open, flat);
-            final int nestedStart = firstWordInBracket(sql, open, nesting);
+            final int start = flat.skip(open + 1);
+            final int nestedStart = nesting.skip(open + 1);
 
             if (isBracketedStatementSource(sql, start, nextOpen, allowInsert, statementMemo)
                     || nestedStart != start && isBracketedStatementSource(sql, nestedStart, nextOpen, allowInsert, statementMemo)) {
@@ -4580,17 +4732,6 @@ public final class SqlParser {
         }
 
         return false;
-    }
-
-    /** The position of the first word after the {@code [} at {@code open}, past whitespace, comments and {@code (}s. */
-    private static int firstWordInBracket(final String sql, final int open, final RawCommentSkipper skipper) {
-        int index = skipper.skip(open + 1);
-
-        while (index < sql.length() && sql.charAt(index) == '(') {
-            index = skipper.skip(index + 1);
-        }
-
-        return index;
     }
 
     /** Applies the rules of {@link #containsBracketedDataChangeStatement} to the region whose first word starts at {@code start}. */
@@ -4842,12 +4983,14 @@ public final class SqlParser {
     }
 
     /**
-     * Skips whitespace (in the lenient sense of {@link #isLenientWhitespace}), {@code /*...*}{@code /} and {@code --}
+     * Skips whitespace (in the lenient sense of {@link #isLenientWhitespace}), opening parentheses, {@code /*...*}{@code /} and {@code --}
      * comments in raw text, read independently of any dialect: line comments end at {@code \n} or {@code \r}, the
      * earliest end any dialect uses, and block comments end at the first {@code *}{@code /} or, with {@code nesting},
      * where their nesting level returns to zero (CockroachDB, PostgreSQL). The end of the last comment searched for, the
-     * nesting comment ends and the skip result after every comment end a skip has passed are cached, so that brackets
-     * inside one long comment ({@code [/*[/*...}) or a run of comments ({@code -- [\n-- [\n...}) do not each rescan it.
+     * nesting comment ends and the complete prefix result after every comment end a skip has passed are cached, so that brackets
+     * inside one long comment ({@code [/*[/*...}) or a run of comments ({@code -- [\n-- [\n...}) do not each rescan it or
+     * a shared run of opening parentheses after it. The first result is stored inline; further results use lazy pages
+     * rather than allocating one slot for every character of an otherwise unrelated SQL tail.
      */
     private static final class RawCommentSkipper {
         private final String sql;
@@ -4859,7 +5002,9 @@ public final class SqlParser {
         private int blockEnd; // sql.indexOf("*/", f) for every f in [blockSearchFrom, blockEnd] (or after it, if -1)
         private int lineSearchFrom = -1;
         private int lineEnd; // the first '\n' or '\r' at or after every f in [lineSearchFrom, lineEnd] (or -1)
-        private int[] finalSkips; // 1 + what skip(...) reaches after leaving a comment that ends at the index (0: unknown)
+        private int firstFinalSkipIndex = -1;
+        private int firstFinalSkipResult; // 1 + the complete prefix end (0: unknown)
+        private int[][] finalSkips; // lazy 256-position pages of further comment-end results, encoded in the same way
 
         RawCommentSkipper(final String sql, final boolean nesting) {
             this.sql = sql;
@@ -4873,7 +5018,7 @@ public final class SqlParser {
             while (index < len) {
                 final char ch = sql.charAt(index);
 
-                if (isLenientWhitespace(ch)) {
+                if (ch == '(' || isLenientWhitespace(ch)) {
                     index++;
                     continue;
                 } else if (ch == '/' && index + 1 < len && sql.charAt(index + 1) == '*') {
@@ -4884,8 +5029,9 @@ public final class SqlParser {
                     break;
                 }
 
-                if (finalSkips != null && finalSkips[index] != 0) {
-                    index = finalSkips[index] - 1;
+                final int cached = finalSkipAt(index);
+                if (cached != 0) {
+                    index = cached - 1;
                     break;
                 }
 
@@ -4904,20 +5050,17 @@ public final class SqlParser {
         /**
          * Records {@code result} for every comment end the walk that reached it passed from {@code commentEnd} on. A skip
          * continues from a comment end the same way however it got there, so a later walk that reaches any of them jumps
-         * to the result: each comment end is walked once, which keeps a run of comment lines that each hold a {@code [}
-         * ({@code "-- [\n".repeat(n)}) linear instead of rescanning the rest of the run for every bracket.
+         * to the result, including intervening opening parentheses. Each comment end is walked once, which keeps a run
+         * of comment lines that each hold a {@code [} ({@code "-- [\n".repeat(n)}), or brackets that jump through one
+         * comment to a shared parenthesis prefix, linear instead of rescanning the suffix for every bracket.
          */
         private void recordFinalSkip(int commentEnd, final int result) {
-            if (finalSkips == null) {
-                finalSkips = new int[sql.length() + 1];
-            }
-
             // Replay the walk's comment ends up to the result, or up to one recorded by an earlier walk it jumped from.
-            while (finalSkips[commentEnd] == 0) {
-                finalSkips[commentEnd] = result + 1;
+            while (finalSkipAt(commentEnd) == 0) {
+                rememberFinalSkip(commentEnd, result + 1);
                 int index = commentEnd;
 
-                while (index < result && isLenientWhitespace(sql.charAt(index))) {
+                while (index < result && (sql.charAt(index) == '(' || isLenientWhitespace(sql.charAt(index)))) {
                     index++;
                 }
 
@@ -4927,6 +5070,42 @@ public final class SqlParser {
 
                 commentEnd = sql.charAt(index) == '/' ? blockCommentEnd(index + 2) : lineCommentEnd(index + 2);
             }
+        }
+
+        private int finalSkipAt(final int index) {
+            if (index == firstFinalSkipIndex) {
+                return firstFinalSkipResult;
+            }
+            if (finalSkips == null) {
+                return 0;
+            }
+            final int pageIndex = index >>> 8;
+            if (pageIndex >= finalSkips.length) {
+                return 0;
+            }
+            final int[] page = finalSkips[pageIndex];
+            return page == null ? 0 : page[index & 255];
+        }
+
+        private void rememberFinalSkip(final int index, final int result) {
+            if (firstFinalSkipIndex < 0) {
+                firstFinalSkipIndex = index;
+                firstFinalSkipResult = result;
+                return;
+            }
+            final int pageIndex = index >>> 8;
+            if (finalSkips == null) {
+                finalSkips = new int[Math.min((sql.length() >>> 8) + 1, Math.max(4, pageIndex + 1))][];
+            } else if (pageIndex >= finalSkips.length) {
+                finalSkips = java.util.Arrays.copyOf(finalSkips,
+                        Math.min((sql.length() >>> 8) + 1, Math.max(finalSkips.length * 2, pageIndex + 1)));
+            }
+            int[] page = finalSkips[pageIndex];
+            if (page == null) {
+                page = new int[(int) Math.min(256L, (long) sql.length() + 1 - ((long) pageIndex << 8))];
+                finalSkips[pageIndex] = page;
+            }
+            page[index & 255] = result;
         }
 
         private int blockCommentEnd(final int from) {

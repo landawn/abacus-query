@@ -1427,6 +1427,30 @@ public class ParsedSqlTest extends TestBase {
         }
 
         @Test
+        void testParse_IbatisMetadataRangesPreserveWhitespaceAndBlankBodyRules() {
+            final String[][] bindings = { { "#{\u2003id\u2003}", "id" }, { "#{\u2003id\u2003,jdbcType=VARCHAR}", "id\u2003" },
+                    { "#{\u0000id\u0000,jdbcType=VARCHAR}", "id" }, { "#{\u0000id\u0000}", "\u0000id\u0000" } };
+            for (final String[] binding : bindings) {
+                final ParsedSql whole = ParsedSql.parse("SELECT " + binding[0], null);
+                assertEquals("SELECT ?", whole.parameterizedSql());
+                assertEquals(List.of(binding[1]), whole.namedParameters());
+
+                final ParsedSql embedded = ParsedSql.parse("SELECT ARRAY[" + binding[0] + "]", null);
+                assertEquals("SELECT ARRAY[?]", embedded.parameterizedSql());
+                assertEquals(List.of(binding[1]), embedded.namedParameters());
+            }
+
+            for (final String blank : List.of("#{}", "#{ }", "#{\u2003}")) {
+                final ParsedSql parsed = ParsedSql.parse("SELECT " + blank + "#{id}", null);
+                assertEquals("SELECT " + blank + "?", parsed.parameterizedSql());
+                assertEquals(List.of("id"), parsed.namedParameters());
+            }
+            for (final String malformed : List.of("#{\u2003:VARCHAR}", "#{\u0000,jdbcType=VARCHAR}")) {
+                assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT " + malformed, null));
+            }
+        }
+
+        @Test
         void testParse_IbatisNamedParameterWithSuffix() {
             ParsedSql parsed = ParsedSql.parse("SELECT * FROM users WHERE id = #{id}::int");
             assertEquals("SELECT * FROM users WHERE id = ?::int", parsed.parameterizedSql());
@@ -1546,6 +1570,27 @@ public class ParsedSqlTest extends TestBase {
             assertEquals("SELECT * FROM t LIMIT ? OFFSET ?", parsed.parameterizedSql());
             assertEquals(2, parsed.parameterCount());
             assertEquals(Arrays.asList("maxRows", "startRow"), parsed.namedParameters());
+        }
+
+        @Test
+        void testParse_LiteralBearingAndWholeMybatisTokensDiscardLargeMetadata() {
+            final String metadata = "x".repeat(65_536);
+            final ParsedSql whole = ParsedSql.parse("SELECT #{id,typeHandler=" + metadata + "}", null);
+            assertEquals("SELECT ?", whole.parameterizedSql());
+            assertEquals(List.of("id"), whole.namedParameters());
+
+            final String literal = "y".repeat(32_768);
+            final ParsedSql embedded = ParsedSql.parse("SELECT ARRAY['" + literal + "',#{ id,typeHandler=" + metadata + "}]", null);
+            assertEquals("SELECT ARRAY['" + literal + "',?]", embedded.parameterizedSql());
+            assertEquals(List.of("id"), embedded.namedParameters());
+
+            final ParsedSql joined = ParsedSql.parse("SELECT prefix#{ id,typeHandler=" + metadata + " }suffix#{next}", null);
+            assertEquals("SELECT prefix?suffix?", joined.parameterizedSql());
+            assertEquals(List.of("id", "next"), joined.namedParameters());
+
+            final ParsedSql adjacent = ParsedSql.parse("SELECT #{}#{ id,typeHandler=" + metadata + " }#{next}", null);
+            assertEquals("SELECT #{}? ?", adjacent.parameterizedSql());
+            assertEquals(List.of("id", "next"), adjacent.namedParameters());
         }
 
         @Test
@@ -2042,6 +2087,39 @@ public class ParsedSqlTest extends TestBase {
             assertEquals("SELECT " + "?,".repeat(41) + "?", distinct.parameterizedSql());
             assertEquals(variedNames, distinct.namedParameters());
             assertEquals(42, distinct.parameterCount());
+        }
+
+        @Test
+        void testParse_RepeatedNamesAfterUniqueHeaderShareStorage() {
+            final String sql = "SELECT :tenantId," + ":id,".repeat(999) + ":id";
+            assertTrue(sql.length() <= ParsedSql.MAX_CACHEABLE_SQL_LENGTH);
+            final ParsedSql parsed = ParsedSql.parse(sql);
+            assertSame(parsed, ParsedSql.parse(sql));
+            assertEquals(1_001, parsed.parameterCount());
+            assertEquals("tenantId", parsed.namedParameters().get(0));
+            assertEquals("SELECT " + "?,".repeat(1_000) + "?", parsed.parameterizedSql());
+            for (int i = 1; i < parsed.namedParameters().size(); i++) {
+                assertEquals("id", parsed.namedParameters().get(i));
+                assertSame(parsed.namedParameters().get(1), parsed.namedParameters().get(i));
+            }
+
+            final ParsedSql mybatis = ParsedSql.parse("SELECT #{tenantId}," + "#{id,jdbcType=BIGINT},".repeat(63) + "#{id}", null);
+            assertEquals(65, mybatis.parameterCount());
+            assertEquals("tenantId", mybatis.namedParameters().get(0));
+            for (int i = 2; i < mybatis.namedParameters().size(); i++) {
+                assertSame(mybatis.namedParameters().get(1), mybatis.namedParameters().get(i));
+            }
+
+            // Equal lengths and final characters deliberately collide in the sample's cheap filter.
+            // Distinct names remain distinct, while a later genuine repeat still enables sharing.
+            final ParsedSql colliding = ParsedSql.parse("SELECT :a0,:b0,:c0,:b0," + ":c0,".repeat(29) + ":c0", null);
+            assertEquals(34, colliding.parameterCount());
+            assertEquals(List.of("a0", "b0", "c0", "b0"), colliding.namedParameters().subList(0, 4));
+            assertSame(colliding.namedParameters().get(1), colliding.namedParameters().get(3));
+            for (int i = 4; i < colliding.namedParameters().size(); i++) {
+                assertEquals("c0", colliding.namedParameters().get(i));
+                assertSame(colliding.namedParameters().get(2), colliding.namedParameters().get(i));
+            }
         }
 
         @Test

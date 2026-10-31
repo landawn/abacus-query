@@ -393,7 +393,7 @@ public final class ParsedSql {
                     // time. Only a marker whose '}' lives in a following token ("#{ name }") replaces the
                     // text being scanned, and the positions are then recollected for what remains.
                     int[] markerIndexes = findUnquotedIbatisMarkerIndexes(word);
-                    final StringBuilder rebuilt = new StringBuilder(word.length() + 4);
+                    StringBuilder rebuilt = null;
                     int copiedFrom = 0;
                     int markerCursor = 0;
 
@@ -404,7 +404,10 @@ public final class ParsedSql {
                             continue; // part of a marker that was already consumed
                         }
 
-                        appendAfterConvertedMarker(rebuilt, word, copiedFrom, markerStartIndex);
+                        // A split marker replaces word below. Retain only the source range before it;
+                        // defer allocating output until the marker's surviving text is known.
+                        final String prefixWord = word;
+                        final int prefixEnd = markerStartIndex;
 
                         // The '}' is searched outside quoted regions and comments: a quote balanced inside the marker
                         // belongs to its property path or attributes ("#{map['k']}", "ARRAY[#{a, 'x'}]"), while a '}'
@@ -461,24 +464,43 @@ public final class ParsedSql {
                             markerCursor = 0; // the marker being handled is skipped by the copiedFrom guard
                         }
 
-                        // Content between "#{" and "}"; empty for the literal "#{}".
-                        final String content = word.substring(markerStartIndex + 2, closingIndex);
-                        final String namedParameter = extractIbatisNamedParameter(content);
+                        // Extract only the property name, without copying the discarded attributes.
+                        // Null distinguishes a blank body (kept verbatim) from an empty name before ':' or ','.
+                        final String namedParameter = extractIbatisNamedParameter(word, markerStartIndex + 2, closingIndex);
 
-                        if (namedParameter.isEmpty() && !Strings.isBlank(content)) {
+                        if (namedParameter != null && namedParameter.isEmpty()) {
                             // "#{:id}", "#{, mode=IN}": the name ends at the first ':' or ',', so nothing is left to bind.
                             // Keeping the text verbatim would let the named-marker scan below convert the ":id" inside it.
                             throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: empty property name in: " + this.sql);
                         }
 
-                        if (!namedParameter.isEmpty()) {
+                        if (namedParameter != null) {
                             if (namedParameterList == null) {
                                 namedParameterList = new ArrayList<>(2);
                             }
                             namedParameterList.add(namedParameter);
-                            appendConvertedMarker(rebuilt, sb);
                             paramCount++;
                             type |= IBATIS_PARAMETER_TYPE;
+                        }
+
+                        if (rebuilt == null && copiedFrom == prefixEnd && closingIndex + 1 == word.length()) {
+                            // A whole-token marker (including a joined one) becomes a shared literal.
+                            // No rewrite buffer or additional metadata copy is needed here. Cross-token
+                            // joining above may already have materialized the complete marker.
+                            if (namedParameter != null) {
+                                word = (trailingQuestionMarkCount(sb) & 1) == 0 ? SK.QUESTION_MARK : " ?";
+                            }
+                            break;
+                        }
+
+                        if (rebuilt == null) {
+                            final int replacementLength = namedParameter == null ? closingIndex - markerStartIndex + 1 : 1;
+                            rebuilt = new StringBuilder(prefixEnd - copiedFrom + replacementLength + word.length() - closingIndex - 1 + 4);
+                        }
+                        appendAfterConvertedMarker(rebuilt, prefixWord, copiedFrom, prefixEnd);
+
+                        if (namedParameter != null) {
+                            appendConvertedMarker(rebuilt, sb);
                         } else {
                             // Empty or blank "#{...}" content — keep verbatim, no parameter, and keep
                             // scanning so a subsequent marker in the same token ("#{}#{a}", "#{ }#{a}")
@@ -489,8 +511,10 @@ public final class ParsedSql {
                         copiedFrom = closingIndex + 1;
                     }
 
-                    appendAfterConvertedMarker(rebuilt, word, copiedFrom, word.length());
-                    word = rebuilt.toString();
+                    if (rebuilt != null) {
+                        appendAfterConvertedMarker(rebuilt, word, copiedFrom, word.length());
+                        word = rebuilt.toString();
+                    }
                 }
 
                 // The tokenizer can keep adjacent markers in one token (for example
@@ -715,7 +739,10 @@ public final class ParsedSql {
         return end;
     }
 
-    /** Compacts privately owned name storage before publishing its immutable view. */
+    /**
+     * Compacts privately owned name storage before publishing its immutable view. The list may be null;
+     * every stored name is nonnull and nonempty, enforced by the constructor before adding it to the list.
+     */
     private static ImmutableList<String> compactNamedParameters(final ArrayList<String> names) {
         if (names == null) {
             return ImmutableList.empty();
@@ -725,10 +752,20 @@ public final class ParsedSql {
         if (size >= 32) {
             // An early repeat selects common large repetitive statements without building a map for
             // small or distinct-name lists. Bound the local cache even when the rest has unique names.
-            final String first = names.get(0);
             boolean repeated = false;
-            for (int i = 1; i < 16 && !repeated; i++) {
-                repeated = first.equals(names.get(i));
+            long seenFingerprints = 0;
+            for (int i = 0; i < 16 && !repeated; i++) {
+                final String name = names.get(i);
+                // Avoid pairwise comparisons for ordinary distinct names without hashing their full
+                // contents or allocating a sample set. Validated names are nonempty, so their final
+                // character is available. Collisions still require exact equality.
+                final long fingerprint = 1L << ((31 * name.length() + name.charAt(name.length() - 1)) & 63);
+                if ((seenFingerprints & fingerprint) != 0) {
+                    for (int j = 0; j < i && !repeated; j++) {
+                        repeated = name.equals(names.get(j));
+                    }
+                }
+                seenFingerprints |= fingerprint;
             }
 
             if (repeated) {
@@ -4000,24 +4037,43 @@ public final class ParsedSql {
     /**
      * Extracts the property name of a MyBatis inline parameter, {@code propertyName [':' jdbcType] [',' attributes]}:
      * like MyBatis's own parser, the name ends at the first comma or colon, so {@code #{id:BIGINT}} and
-     * {@code #{name:VARCHAR,javaType=String}} bind {@code id} and {@code name}.
+     * {@code #{name:VARCHAR,javaType=String}} bind {@code id} and {@code name}. Reads the content range directly
+     * so name extraction creates no additional String containing the discarded metadata. The caller may
+     * already have materialized the complete marker when joining multiple tokens.
+     *
+     * @return the property name, {@code null} for entirely blank content, or an empty String for a nonblank
+     *         marker with no name before its comma or colon (which the caller rejects)
      */
-    private static String extractIbatisNamedParameter(final String content) {
-        final String trimmed = Strings.stripToEmpty(content);
-
-        if (Strings.isEmpty(trimmed)) {
-            return Strings.EMPTY;
+    private static String extractIbatisNamedParameter(final String token, int start, int end) {
+        // Match Strings.stripToEmpty around the complete body, including Unicode whitespace.
+        while (start < end && Character.isWhitespace(token.charAt(start))) {
+            start++;
+        }
+        while (end > start && Character.isWhitespace(token.charAt(end - 1))) {
+            end--;
         }
 
-        for (int index = 0, len = trimmed.length(); index < len; index++) {
-            final char ch = trimmed.charAt(index);
+        if (start == end) {
+            return null;
+        }
+
+        for (int index = start; index < end; index++) {
+            final char ch = token.charAt(index);
 
             if (ch == SK._COMMA || ch == _PREFIX_OF_NAMED_PARAMETER) {
-                return trimmed.substring(0, index).trim();
+                end = index;
+                // Historically only the delimited name uses String.trim(), not Unicode stripping.
+                while (start < end && token.charAt(start) <= ' ') {
+                    start++;
+                }
+                while (end > start && token.charAt(end - 1) <= ' ') {
+                    end--;
+                }
+                break;
             }
         }
 
-        return trimmed;
+        return token.substring(start, end);
     }
 
     private static boolean isNamedParameterIdentifierStart(final int codePoint) {

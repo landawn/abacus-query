@@ -108,6 +108,36 @@ public class SqlParserTest extends TestBase {
     class ClassificationScanning {
 
         @Test
+        void testBracketPrefixesConvergingOnParenthesesStayLinear() {
+            // Every raw '[' reaches the same parenthesis prefix after its comment. The complete prefix must be reused.
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+                for (final String body : List.of("[/*".repeat(16384) + "*/" + "(".repeat(16384) + "x",
+                        "[--".repeat(16384) + "\n" + "(".repeat(16384) + "x",
+                        "[--".repeat(16384) + "\n" + "( /* c */ ".repeat(16384) + "x")) {
+                    final String sql = "SELECT '" + body + "'";
+                    assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+                    assertTrue(SqlParser.isReadOrInsertQuery(sql));
+                }
+            });
+        }
+
+        @Test
+        void testBracketPrefixesKeepCommentReadingsAndDifferentDestinations() throws Exception {
+            final String ordinary = "[/* a */ ((ordinary] ".repeat(1024);
+            for (final boolean allowInsert : List.of(false, true)) {
+                assertFalse(hasBracketedStatement(ordinary, allowInsert));
+                assertTrue(hasBracketedStatement(ordinary + "[/* b */ ((DELETE FROM t RETURNING x]", allowInsert));
+                assertTrue(hasBracketedStatement("[/* /* */ ((ordinary */ ((DELETE FROM t RETURNING x]", allowInsert));
+                assertTrue(hasBracketedStatement("[/* /* */ ((DELETE FROM t RETURNING x */ ((ordinary]", allowInsert));
+                assertFalse(hasBracketedStatement("[/* [--\n */ ((ordinary] [--\n ( /* next */ ordinary]", allowInsert));
+            }
+            final String insert = ordinary + "[/* b */ ((INSERT INTO t VALUES (1) RETURNING x]";
+            assertTrue(hasBracketedStatement(insert, false));
+            assertFalse(hasBracketedStatement(insert, true));
+            assertReadGatesReject("SELECT '" + ordinary + "[/* b */ ((DELETE FROM t RETURNING x]'");
+        }
+
+        @Test
         void testBracketRegionAnswersKeepBothCommentReadings() {
             final String prefix = "SELECT '" + "[/*[ordinary".repeat(32);
 
@@ -5530,6 +5560,30 @@ public class SqlParserTest extends TestBase {
         }
 
         @Test
+        void testEarlyTokenSearchKeepsLazyContextAndOutOfRangeSemantics() {
+            final String sql = "SELECT '" + "x".repeat(1_048_576) + "' FROM #first, ##second WHERE value = 1";
+            assertEquals(0, SqlParser.indexOfToken(sql, "SELECT"));
+            assertEquals(0, SqlParser.indexOfToken(sql, "SELECT", -1));
+            assertEquals(sql.indexOf("##second"), SqlParser.indexOfToken(sql, "##second"));
+            assertEquals(-1, SqlParser.indexOfToken(sql, "SELECT", sql.length()));
+            assertEquals(-1, SqlParser.indexOfToken(sql, "SELECT", Integer.MAX_VALUE));
+            assertEquals(-1, SqlParser.indexOfToken("", "SELECT", -1));
+
+            final String bracketed = "SELECT [not FROM] x FROM #first, [another] a, ##second";
+            assertEquals(bracketed.indexOf("FROM #first"), SqlParser.indexOfToken(bracketed, "FROM", bracketed.indexOf("not FROM")));
+            assertEquals(bracketed.indexOf("##second"), SqlParser.indexOfToken(bracketed, "##second"));
+
+            // Suspension before a contextual bracket preserves both no-token-yet and an existing
+            // token prefix, at source index zero and after earlier tokens. A long prefix is resumed.
+            for (final String word : List.of("[first name]", "x[1]", "x".repeat(65_536) + "[1]")) {
+                assertEquals(0, SqlParser.indexOfToken(word + " FROM t", word));
+                assertEquals(7, SqlParser.indexOfToken("SELECT " + word + " FROM t", word));
+            }
+            assertEquals(7, SqlParser.indexOfToken("SELECT a#ignored\nFROM #first", "a"));
+            assertEquals(22, SqlParser.indexOfToken("SELECT a#ignored\nFROM #first", "#first"));
+        }
+
+        @Test
         void testGlobalHashTempTableIsOneIdentifierWhileDoubleHashOperatorRemainsAnOperator() {
             final String sql = "SELECT * FROM ##global_temp, #local_temp";
             final List<String> tokens = SqlParser.tokenize(sql);
@@ -5988,6 +6042,72 @@ public class SqlParserTest extends TestBase {
 
             // The anchored form is unaffected.
             assertTrue(SqlParser.tokenize("SELECT * FROM .a, #t").contains("SELECT"));
+        }
+
+        @Test
+        void testLongCompositeSearchPreservesConfiguredSeparatorFallback() {
+            final String target = "a ".repeat(8) + "b";
+            final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer(SqlParser.TokenizerConfig.builder().withSeparator(target).build());
+            final String prefix = "SELECT ";
+            final String separate = "A ".repeat(12) + "B";
+            final String sql = prefix + separate + " " + target;
+            final int compositeStart = prefix.length() + 4 * "A ".length();
+            final int wholeStart = sql.lastIndexOf(target);
+
+            assertEquals(compositeStart, tokenizer.indexOfToken(sql, target, 0, false));
+            assertEquals(compositeStart, tokenizer.indexOfToken(sql, target, compositeStart, false));
+            assertEquals(wholeStart, tokenizer.indexOfToken(sql, target, compositeStart + 1, false));
+            assertEquals(wholeStart, tokenizer.indexOfToken(sql, target, 0, true));
+            assertEquals(-1, tokenizer.indexOfToken(sql, target, wholeStart + 1, false));
+
+            final String context = "SELECT * FROM #a, [table b] b, ##c WHERE ";
+            final String contextualSql = context + separate + " " + target;
+            assertEquals(context.length() + 4 * "A ".length(), tokenizer.indexOfToken(contextualSql, target, 0, false));
+            assertEquals(contextualSql.lastIndexOf(target), tokenizer.indexOfToken(contextualSql, target, context.length() + separate.length(), false));
+        }
+
+        @Test
+        void testLongCompositeSearchPreservesQuotedComponentsAndHashContext() {
+            final String target = "[first name] + ".repeat(5) + "[last name]";
+            final String prefix = "SELECT '" + target + "' /* " + target + " */ ";
+            final String sql = prefix + "[first name] /* gap */ + ".repeat(5) + "[last name] FROM t";
+            assertEquals(prefix.length(), SqlParser.indexOfToken(sql, target, 0, true));
+            assertEquals(prefix.length(), SqlParser.indexOfToken(sql, target, prefix.indexOf("/*") + 1, false));
+            assertEquals(-1, SqlParser.indexOfToken(sql, target, prefix.length() + 1, false));
+
+            final String tables = "SELECT * FROM ignored WHERE x = 1; SELECT * FROM #a, #b, [table c] c, ##d WHERE x = 1";
+            final String tableTarget = "FROM #a , #b , [table c] c , ##d WHERE x = 1";
+            assertEquals(tables.indexOf("FROM #a"), SqlParser.indexOfToken(tables, tableTarget));
+            assertEquals(-1, SqlParser.indexOfToken(tables, tableTarget, tables.indexOf("#a")));
+        }
+
+        @Test
+        void testLongCompositeSearchPreservesUnicodeCaseAndOverlappingStarts() {
+            final String sql = "SELECT " + "ς ".repeat(16) + "END";
+            final String target = "Σ ".repeat(8) + "end";
+            final int start = "SELECT ".length() + 8 * "ς ".length();
+            assertEquals(start, SqlParser.indexOfToken(sql, target));
+            assertEquals(start, SqlParser.indexOfToken(sql, target, start));
+            assertEquals(-1, SqlParser.indexOfToken(sql, target, start + 1));
+            assertEquals(-1, SqlParser.indexOfToken(sql, target, 0, true));
+
+            final String mixed = "a b a b a b a b a c a b a b a b a b a b d";
+            final String overlapping = "a b a b a b a b a b d";
+            assertEquals(mixed.lastIndexOf(overlapping), SqlParser.indexOfToken(mixed, overlapping));
+        }
+
+        @Test
+        void testLongCompositeSearchStreamsRepeatedPrefixes() {
+            final int repetitions = 16_384;
+            final String prefix = "SELECT ";
+            final String sql = prefix + "a + ".repeat(2 * repetitions) + "c FROM t";
+            final String missing = "a + ".repeat(repetitions) + "b";
+            final String present = "a + ".repeat(repetitions) + "c";
+
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+                assertEquals(-1, SqlParser.indexOfToken(sql, missing));
+                assertEquals(prefix.length() + repetitions * "a + ".length(), SqlParser.indexOfToken(sql, present));
+            });
         }
 
         @Test
@@ -6646,6 +6766,65 @@ public class SqlParserTest extends TestBase {
                 assertNotNull(memo);
                 assertEquals(expected, actual, sql);
             }
+        }
+
+        @Test
+        void testMemoFullScanLargeSparsePrefixPromotesWithoutLosingAnswers() throws Exception {
+            final Class<?> memoClass = Class.forName(SqlParser.class.getName() + "$HashScanMemo");
+            final var constructor = memoClass.getDeclaredConstructor(String.class, boolean.class);
+            final var rememberHash = memoClass.getDeclaredMethod("rememberHashIdentifierState", String.class, int.class, boolean.class, boolean.class);
+            final var hash = memoClass.getDeclaredMethod("hashIdentifierState", String.class, int.class, boolean.class);
+            final var subscript = memoClass.getDeclaredMethod("isSubscriptBracket", int.class, SqlParser.TokenizerConfig.class);
+            final var group = memoClass.getDeclaredMethod("groupOpenerAt", int.class, SqlParser.TokenizerConfig.class);
+            final var backward = memoClass.getDeclaredMethod("rememberBackwardSkipResult", int.class, int.class);
+            final var backwardResult = memoClass.getDeclaredMethod("backwardSkipResult", int.class);
+            final var block = memoClass.getDeclaredMethod("lastBlockCommentOpenerEnd", int.class);
+            final var line = memoClass.getDeclaredMethod("lineCommentOpenerAt", String.class, int.class, SqlParser.TokenizerConfig.class);
+            constructor.setAccessible(true);
+            for (final var method : List.of(rememberHash, hash, subscript, group, backward, backwardResult, block, line)) {
+                method.setAccessible(true);
+            }
+
+            final String prefix = "SELECT x[0] [1] FROM /*early*/ #temp WHERE f(1) -- first\n";
+            final String sql = prefix + " ".repeat(512) + "/*late*/ FROM #later WHERE x[2] = g(2) -- last\n" + "x".repeat(65_536);
+            final Object memo = constructor.newInstance(sql, true);
+            final List<String> tables = List.of("hashIdentifierStates", "lineCommentOpeners", "subscriptBrackets", "blockCommentOpenerEnds", "groupOpeners",
+                    "backwardSkipResults");
+            rememberHash.invoke(memo, sql, sql.indexOf("#temp"), true, true);
+            assertEquals(true, subscript.invoke(memo, sql.indexOf("[1]"), SqlParser.defaultTokenizerConfig()));
+            assertEquals(sql.indexOf('('), group.invoke(memo, sql.indexOf(')'), SqlParser.defaultTokenizerConfig()));
+            backward.invoke(memo, 4, -1);
+            assertEquals(sql.indexOf("/*early") + 1, block.invoke(memo, sql.indexOf("*/")));
+            assertEquals(sql.indexOf("-- first"), line.invoke(memo, sql, sql.indexOf("first"), SqlParser.defaultTokenizerConfig()));
+            for (final String name : tables) {
+                final var field = memoClass.getDeclaredField(name);
+                field.setAccessible(true);
+                assertTrue(java.lang.reflect.Array.getLength(field.get(memo)) <= 256, name + " must not reserve the unused tail");
+            }
+
+            final int later = sql.indexOf("#later");
+            rememberHash.invoke(memo, sql, later, false, true);
+            assertEquals(true, subscript.invoke(memo, sql.indexOf("[2]"), SqlParser.defaultTokenizerConfig()));
+            assertEquals(sql.lastIndexOf('('), group.invoke(memo, sql.lastIndexOf(')'), SqlParser.defaultTokenizerConfig()));
+            backward.invoke(memo, later, 4);
+            assertEquals(sql.indexOf("/*late") + 1, block.invoke(memo, later));
+            assertEquals(sql.indexOf("-- last"), line.invoke(memo, sql, sql.indexOf("last"), SqlParser.defaultTokenizerConfig()));
+            assertEquals(1, hash.invoke(memo, sql, sql.indexOf("#temp"), true));
+            assertEquals(1, hash.invoke(memo, sql, later, false));
+            assertEquals(-1, backwardResult.invoke(memo, 4));
+            assertEquals(4, backwardResult.invoke(memo, later));
+            assertEquals(Integer.MIN_VALUE, backwardResult.invoke(memo, later + 1));
+            assertEquals(sql.indexOf("-- first"), line.invoke(memo, sql, sql.indexOf("first"), SqlParser.defaultTokenizerConfig()));
+            for (final String name : tables) {
+                final var field = memoClass.getDeclaredField(name);
+                field.setAccessible(true);
+                assertEquals(sql.length(), java.lang.reflect.Array.getLength(field.get(memo)), name + " must promote directly to final size");
+            }
+
+            final String sparse = "SELECT * FROM #temp WHERE x = '" + "x".repeat(65_536) + "'";
+            final List<String> expected = SqlParser.tokenize(sparse);
+            assertTrue(expected.contains("#temp"));
+            assertCursorTokens(SqlParser.tokenizer(), sparse, expected.stream().filter(word -> !word.equals(" ")).toList());
         }
 
         @Test
