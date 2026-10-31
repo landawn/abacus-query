@@ -111,8 +111,7 @@ public class SqlParserTest extends TestBase {
         void testBracketPrefixesConvergingOnParenthesesStayLinear() {
             // Every raw '[' reaches the same parenthesis prefix after its comment. The complete prefix must be reused.
             assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
-                for (final String body : List.of("[/*".repeat(16384) + "*/" + "(".repeat(16384) + "x",
-                        "[--".repeat(16384) + "\n" + "(".repeat(16384) + "x",
+                for (final String body : List.of("[/*".repeat(16384) + "*/" + "(".repeat(16384) + "x", "[--".repeat(16384) + "\n" + "(".repeat(16384) + "x",
                         "[--".repeat(16384) + "\n" + "( /* c */ ".repeat(16384) + "x")) {
                     final String sql = "SELECT '" + body + "'";
                     assertTrue(SqlParser.isSyntacticallyReadQuery(sql));

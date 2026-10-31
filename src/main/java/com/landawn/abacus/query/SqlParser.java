@@ -5097,8 +5097,7 @@ public final class SqlParser {
             if (finalSkips == null) {
                 finalSkips = new int[Math.min((sql.length() >>> 8) + 1, Math.max(4, pageIndex + 1))][];
             } else if (pageIndex >= finalSkips.length) {
-                finalSkips = java.util.Arrays.copyOf(finalSkips,
-                        Math.min((sql.length() >>> 8) + 1, Math.max(finalSkips.length * 2, pageIndex + 1)));
+                finalSkips = java.util.Arrays.copyOf(finalSkips, Math.min((sql.length() >>> 8) + 1, Math.max(finalSkips.length * 2, pageIndex + 1)));
             }
             int[] page = finalSkips[pageIndex];
             if (page == null) {

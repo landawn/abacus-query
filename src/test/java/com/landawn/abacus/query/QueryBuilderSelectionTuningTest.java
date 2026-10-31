@@ -2,10 +2,13 @@ package com.landawn.abacus.query;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,8 +51,7 @@ class QueryBuilderSelectionTuningTest {
             assertEquals(1, builder.calls);
             final String clause = variant < 2 ? "GROUP BY" : "ORDER BY";
             final String direction = variant % 2 == 0 ? "ASC" : "DESC";
-            assertEquals("SELECT * FROM t " + clause + " changed " + direction + ", second " + direction + ", extra " + direction,
-                    builder.build().query());
+            assertEquals("SELECT * FROM t " + clause + " changed " + direction + ", second " + direction + ", extra " + direction, builder.build().query());
             builder.received.clear();
             assertThrows(IllegalStateException.class, () -> builder.orderByAsc((String[]) null));
             assertEquals(1, builder.calls);
@@ -60,9 +62,11 @@ class QueryBuilderSelectionTuningTest {
     void testFiniteLexicalPlansKeepReadingOrderAndAllFailClosedVariants() throws Exception {
         final SqlBuilder owner = Dsl.PSC.select("id").from("t");
         final SqlBuilder postgres = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build())
-                .select("id").from("t");
+                .select("id")
+                .from("t");
         final SqlBuilder mysql = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build())
-                .select("id").from("t");
+                .select("id")
+                .from("t");
         try {
             final String allFlags = "##t 'C:\\x' $$v$$ \"q\"\r x";
             final Object[] base = readings(owner, allFlags, true, true);
@@ -90,6 +94,97 @@ class QueryBuilderSelectionTuningTest {
     }
 
     @Test
+    void testLexicalHelperFallbacksKeepClonedAndEmptyPlansUncached() throws Exception {
+        final SqlBuilder owner = Dsl.PSC.select("id").from("t");
+        try {
+            final Object[] base = readings(owner, "##t 'C:\\x' $$v$$", true, true);
+            final Object[] original = base.clone();
+            final Map<?, ?> cache = lexicalPlanCache(base);
+            final int cacheSize = cache.size();
+            assertEquals(25, cacheSize);
+            final Method lfOnly = method("withLineFeedOnlyLineComments", base.getClass());
+            final Method failClosed = method("withFailClosedVariants", base.getClass(), String.class);
+            final String ansi = "\"C:\\x\"";
+            final Object[] cachedLf = (Object[]) lfOnly.invoke(null, (Object) base);
+            final Object[] cachedBoth = (Object[]) failClosed.invoke(null, base, ansi + '\r');
+
+            for (int attempt = 0; attempt < 16; attempt++) {
+                final Object[] clone = base.clone();
+                assertSame(clone, failClosed.invoke(null, clone, "plain"));
+                final Object[] clonedLf = (Object[]) lfOnly.invoke(null, (Object) clone);
+                assertArrayEquals(new int[] { 10, 8, 26, 15, 13, 31 }, flags(clonedLf));
+                assertNotSame(cachedLf, clonedLf);
+                assertArrayEquals(new int[] { 2, 0, 18, 7, 3, 5, 1, 23, 19 }, flags((Object[]) failClosed.invoke(null, clone, ansi)));
+                assertArrayEquals(new int[] { 2, 0, 18, 7, 5, 23, 10, 8, 26, 15, 13, 31 }, flags((Object[]) failClosed.invoke(null, clone, "\r")));
+                final Object[] clonedBoth = (Object[]) failClosed.invoke(null, clone, ansi + '\r');
+                assertArrayEquals(new int[] { 2, 0, 18, 7, 3, 5, 1, 23, 19, 10, 8, 26, 15, 11, 13, 9, 31, 27 }, flags(clonedBoth));
+                assertNotSame(cachedBoth, clonedBoth);
+                assertArrayEquals(original, clone);
+                assertFalse(cache.containsKey(clone));
+                assertFalse(cache.containsKey(clonedLf));
+                assertFalse(cache.containsKey(clonedBoth));
+            }
+
+            final Object[] empty = Arrays.copyOf(base, 0);
+            final Object[] emptyLf = (Object[]) lfOnly.invoke(null, (Object) empty);
+            assertEquals(0, emptyLf.length);
+            assertNotSame(empty, emptyLf);
+            assertSame(empty, failClosed.invoke(null, empty, "plain"));
+            for (final String sql : List.of(ansi, "\r", ansi + '\r')) {
+                final Object[] result = (Object[]) failClosed.invoke(null, empty, sql);
+                assertEquals(0, result.length);
+                assertNotSame(empty, result);
+                assertFalse(cache.containsKey(result));
+            }
+            assertFalse(cache.containsKey(empty));
+            assertEquals(cacheSize, cache.size());
+            assertArrayEquals(original, base);
+            assertSame(cachedLf, lfOnly.invoke(null, (Object) base));
+            assertSame(cachedBoth, failClosed.invoke(null, base, ansi + '\r'));
+        } finally {
+            owner.build();
+        }
+    }
+
+    @Test
+    void testLexicalHelperFallbacksPreserveComposedPlanOrder() throws Exception {
+        final SqlBuilder owner = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("MySQL")).build())
+                .select("id")
+                .from("t");
+        try {
+            final Object[] base = readings(owner, "t", true, true);
+            final Map<?, ?> cache = lexicalPlanCache(base);
+            final int cacheSize = cache.size();
+            final Method lfOnly = method("withLineFeedOnlyLineComments", base.getClass());
+            final Method failClosed = method("withFailClosedVariants", base.getClass(), String.class);
+            final String ansi = "\"C:\\x\"";
+            final Object[] lf = (Object[]) lfOnly.invoke(null, (Object) base);
+            final Object[] expanded = (Object[]) failClosed.invoke(null, base, ansi + '\r');
+            final Object[] lfSnapshot = lf.clone();
+            final Object[] expandedSnapshot = expanded.clone();
+
+            assertArrayEquals(new int[] { 13 }, flags((Object[]) lfOnly.invoke(null, (Object) lf)));
+            assertArrayEquals(new int[] { 13, 9, 13, 9 }, flags((Object[]) failClosed.invoke(null, lf, ansi + '\r')));
+            assertArrayEquals(new int[] { 13, 9, 13, 9 }, flags((Object[]) lfOnly.invoke(null, (Object) expanded)));
+            assertArrayEquals(new int[] { 5, 1, 1, 13, 9, 9 }, flags((Object[]) failClosed.invoke(null, expanded, ansi)));
+            assertArrayEquals(new int[] { 5, 1, 13, 9, 13, 9, 13, 9 }, flags((Object[]) failClosed.invoke(null, expanded, "\r")));
+            // Existing LF-only and ANSI variants are retained, including duplicates, when widening a derived plan again.
+            assertArrayEquals(new int[] { 5, 1, 1, 13, 9, 9, 13, 9, 9, 13, 9, 9 }, flags((Object[]) failClosed.invoke(null, expanded, ansi + '\r')));
+
+            assertArrayEquals(new int[] { 5 }, flags(base));
+            assertArrayEquals(lfSnapshot, lf);
+            assertArrayEquals(expandedSnapshot, expanded);
+            assertFalse(cache.containsKey(lf));
+            assertFalse(cache.containsKey(expanded));
+            assertEquals(cacheSize, cache.size());
+            assertSame(lf, lfOnly.invoke(null, (Object) base));
+            assertSame(expanded, failClosed.invoke(null, base, ansi + '\r'));
+        } finally {
+            owner.build();
+        }
+    }
+
+    @Test
     void testNullDirectionalArraysRemainMutableForOverridesAndBuiltInValidationCanRetry() {
         for (int variant = 0; variant < 4; variant++) {
             final TrackingBuilder builder = new TrackingBuilder();
@@ -109,8 +204,8 @@ class QueryBuilderSelectionTuningTest {
     void testWideProjectionKeepsTheSmallProjectionRootSemanticsAndOrder() throws Exception {
         final BeanInfo info = ParserUtil.getBeanInfo(WideRoot.class);
         assertTrue(info.subEntityPropNameList.size() >= 8);
-        final List<String> candidates = Arrays.asList("id", "left", " left ", "LEFT", "left.id", "LEFT.id", "right", "RIGHT", "right.id",
-                "right.id.deep", "\u2007right\u202F", "right AS r", "left + right", "*", "count(*)", "excluded", "self", " id ", null, "", ".");
+        final List<String> candidates = Arrays.asList("id", "left", " left ", "LEFT", "left.id", "LEFT.id", "right", "RIGHT", "right.id", "right.id.deep",
+                "\u2007right\u202F", "right AS r", "left + right", "*", "count(*)", "excluded", "self", " id ", null, "", ".");
 
         for (final NamingPolicy policy : NamingPolicy.values()) {
             for (final String first : candidates) {
@@ -141,13 +236,13 @@ class QueryBuilderSelectionTuningTest {
 
         final List<String> mixed = wide("left");
         mixed.add("left.id");
-        assertEquals("selection_root, selection_child c", AbstractQueryBuilder.getFromClause(
-                List.of(Selection.builder(WideRoot.class).includedPropNames(mixed).build()), NamingPolicy.SNAKE_CASE));
+        assertEquals("selection_root, selection_child c",
+                AbstractQueryBuilder.getFromClause(List.of(Selection.builder(WideRoot.class).includedPropNames(mixed).build()), NamingPolicy.SNAKE_CASE));
 
         final List<String> duplicates = wide("right");
         duplicates.add("other0.id");
-        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder.getFromClause(
-                List.of(Selection.builder(WideRoot.class).includedPropNames(duplicates).build()), NamingPolicy.SNAKE_CASE));
+        assertThrows(IllegalArgumentException.class, () -> AbstractQueryBuilder
+                .getFromClause(List.of(Selection.builder(WideRoot.class).includedPropNames(duplicates).build()), NamingPolicy.SNAKE_CASE));
 
         final List<String> projected = wide("left");
         final String expectedColumns = String.join(", ", Collections.nCopies(31, "id AS \"id\"")) + ", left AS \"left\"";
@@ -156,8 +251,8 @@ class QueryBuilderSelectionTuningTest {
     }
 
     private static Map<?, ?> listedRoots(final BeanInfo info, final Collection<String> selections, final NamingPolicy policy) throws Exception {
-        return (Map<?, ?>) method("listedSubEntityProps", Class.class, BeanInfo.class, Collection.class, Collection.class, NamingPolicy.class)
-                .invoke(null, WideRoot.class, info, info.subEntityPropNameList, selections, policy);
+        return (Map<?, ?>) method("listedSubEntityProps", Class.class, BeanInfo.class, Collection.class, Collection.class, NamingPolicy.class).invoke(null,
+                WideRoot.class, info, info.subEntityPropNameList, selections, policy);
     }
 
     private static String fromClause(final String item) {
@@ -182,6 +277,12 @@ class QueryBuilderSelectionTuningTest {
 
     private static Object[] readings(final SqlBuilder owner, final String sql, final boolean explicitBackslash, final boolean defaultHash) throws Exception {
         return (Object[]) method("lexicalReadings", String.class, boolean.class, boolean.class).invoke(owner, sql, explicitBackslash, defaultHash);
+    }
+
+    private static Map<?, ?> lexicalPlanCache(final Object[] readings) throws Exception {
+        final Field field = readings[0].getClass().getDeclaredField("PLAN_VARIANTS");
+        field.setAccessible(true);
+        return (Map<?, ?>) field.get(null);
     }
 
     private static int[] flags(final Object[] readings) throws Exception {
@@ -251,32 +352,97 @@ class QueryBuilderSelectionTuningTest {
         private Child excluded;
         private WideRoot self;
 
-        public int getId() { return id; }
-        public void setId(final int value) { id = value; }
-        public int getLeftId() { return leftId; }
-        public void setLeftId(final int value) { leftId = value; }
-        public Child getLeft() { return left; }
-        public void setLeft(final Child value) { left = value; }
-        public Child getRight() { return right; }
-        public void setRight(final Child value) { right = value; }
-        public Child getOther0() { return other0; }
-        public void setOther0(final Child value) { other0 = value; }
-        public Child getOther1() { return other1; }
-        public void setOther1(final Child value) { other1 = value; }
-        public Child getOther2() { return other2; }
-        public void setOther2(final Child value) { other2 = value; }
-        public Child getOther3() { return other3; }
-        public void setOther3(final Child value) { other3 = value; }
-        public Child getExcluded() { return excluded; }
-        public void setExcluded(final Child value) { excluded = value; }
-        public WideRoot getSelf() { return self; }
-        public void setSelf(final WideRoot value) { self = value; }
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int value) {
+            id = value;
+        }
+
+        public int getLeftId() {
+            return leftId;
+        }
+
+        public void setLeftId(final int value) {
+            leftId = value;
+        }
+
+        public Child getLeft() {
+            return left;
+        }
+
+        public void setLeft(final Child value) {
+            left = value;
+        }
+
+        public Child getRight() {
+            return right;
+        }
+
+        public void setRight(final Child value) {
+            right = value;
+        }
+
+        public Child getOther0() {
+            return other0;
+        }
+
+        public void setOther0(final Child value) {
+            other0 = value;
+        }
+
+        public Child getOther1() {
+            return other1;
+        }
+
+        public void setOther1(final Child value) {
+            other1 = value;
+        }
+
+        public Child getOther2() {
+            return other2;
+        }
+
+        public void setOther2(final Child value) {
+            other2 = value;
+        }
+
+        public Child getOther3() {
+            return other3;
+        }
+
+        public void setOther3(final Child value) {
+            other3 = value;
+        }
+
+        public Child getExcluded() {
+            return excluded;
+        }
+
+        public void setExcluded(final Child value) {
+            excluded = value;
+        }
+
+        public WideRoot getSelf() {
+            return self;
+        }
+
+        public void setSelf(final WideRoot value) {
+            self = value;
+        }
     }
 
     @Table(name = "selection_child", alias = "c")
     public static class Child {
         private int id;
-        public int getId() { return id; }
-        public void setId(final int value) { id = value; }
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int value) {
+            id = value;
+        }
     }
 }

@@ -1315,8 +1315,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /** Resolves a wide projection once; null keeps unusual metadata names on the general prefix-matching path. */
-    private static Set<String> indexSelectedSubEntityRoots(final Class<?> entityClass, final BeanInfo entityInfo,
-            final Collection<String> subEntityPropNames, final Collection<String> selectPropNames, final NamingPolicy namingPolicy) {
+    private static Set<String> indexSelectedSubEntityRoots(final Class<?> entityClass, final BeanInfo entityInfo, final Collection<String> subEntityPropNames,
+            final Collection<String> selectPropNames, final NamingPolicy namingPolicy) {
         for (final String root : subEntityPropNames) {
             if (root.indexOf(SK._PERIOD) >= 0 || !root.equals(stripSelectItemPadding(root))) {
                 return null;
@@ -3153,28 +3153,28 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         private static final LexicalReading[] VALUES = createValues();
 
         /** The MySQL family's only reading: backslash escapes in both string forms (its comment rules come from the dialect family). */
-        static final LexicalReading[] MYSQL_ONLY = { VALUES[5] };
+        private static final LexicalReading[] MYSQL_ONLY = { VALUES[5] };
 
         /** The standard reading alone: doubled-quote escapes only, {@code ##} as one token. */
-        static final LexicalReading[] STANDARD_ONLY = { VALUES[2] };
+        private static final LexicalReading[] STANDARD_ONLY = { VALUES[2] };
 
         /**
          * The legacy dialect-agnostic reading of the trailing-comment check: standard strings, and the second {@code '#'}
          * of {@code ##} may open a hash comment.
          */
-        static final LexicalReading[] HASH_PAIR_COMMENT_ONLY = { VALUES[0] };
+        private static final LexicalReading[] HASH_PAIR_COMMENT_ONLY = { VALUES[0] };
 
         /** The dollar-quote reading of the trailing-comment check: standard strings, {@code ##} as one token. */
-        static final LexicalReading[] DOLLAR_QUOTES_ONLY = { VALUES[18] };
+        private static final LexicalReading[] DOLLAR_QUOTES_ONLY = { VALUES[18] };
 
         /** {@link #DOLLAR_QUOTES_ONLY} and its variant with backslash escapes in single-quoted strings. */
-        static final LexicalReading[] DOLLAR_QUOTES_WITH_BACKSLASH_ESCAPES = { DOLLAR_QUOTES_ONLY[0], VALUES[19] };
+        private static final LexicalReading[] DOLLAR_QUOTES_WITH_BACKSLASH_ESCAPES = { DOLLAR_QUOTES_ONLY[0], VALUES[19] };
 
         // The flags describe a finite grammar, never SQL text. These private arrays are only read after publication.
         // Dialect-plan bits: backslash reading, hash-pair comment reading, dollar-quote reading, default dialect.
-        static final LexicalReading[][] DIALECT_PLANS = createDialectPlans();
-        static final LexicalReading[][] TRAILING_PLANS = createTrailingPlans();
-        static final Map<LexicalReading[], Variants> PLAN_VARIANTS = createPlanVariants();
+        private static final LexicalReading[][] DIALECT_PLANS = createDialectPlans();
+        private static final LexicalReading[][] TRAILING_PLANS = createTrailingPlans();
+        private static final Map<LexicalReading[], Variants> PLAN_VARIANTS = createPlanVariants();
 
         private static LexicalReading[] createValues() {
             final LexicalReading[] values = new LexicalReading[32];
@@ -3252,8 +3252,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         private static final class Variants {
-            final LexicalReading[] lineFeedOnly;
-            final LexicalReading[][] failClosed;
+            private final LexicalReading[] lineFeedOnly;
+            private final LexicalReading[][] failClosed;
 
             Variants(final LexicalReading[] readings) {
                 lineFeedOnly = new LexicalReading[readings.length];
@@ -3271,8 +3271,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 final LexicalReading[] ansi = ansiReadings.size() == readings.length ? readings : ansiReadings.toArray(new LexicalReading[0]);
                 final LexicalReading[] bothLineEndings = withBothLineEndings(readings);
-                failClosed = new LexicalReading[][] { readings, ansi, bothLineEndings,
-                        ansi == readings ? bothLineEndings : withBothLineEndings(ansi) };
+                failClosed = new LexicalReading[][] { readings, ansi, bothLineEndings, ansi == readings ? bothLineEndings : withBothLineEndings(ansi) };
             }
 
             private static LexicalReading[] withBothLineEndings(final LexicalReading[] readings) {
@@ -3287,8 +3286,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         private int flags() {
-            return (backslashEscapes ? 1 : 0) | (hashPairTokens ? 2 : 0) | (doubleQuotedBackslashEscapes ? 4 : 0)
-                    | (lineFeedOnlyLineComments ? 8 : 0) | (dollarQuotes ? 16 : 0);
+            return (backslashEscapes ? 1 : 0) | (hashPairTokens ? 2 : 0) | (doubleQuotedBackslashEscapes ? 4 : 0) | (lineFeedOnlyLineComments ? 8 : 0)
+                    | (dollarQuotes ? 16 : 0);
         }
 
         LexicalReading withDoubleQuotedBackslashEscapes(final boolean escapes) {
@@ -3306,8 +3305,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
     /** Returns {@code readings} with only {@code '\n'} ending a line comment (see {@link LexicalReading#lineFeedOnlyLineComments()}). */
     private static LexicalReading[] withLineFeedOnlyLineComments(final LexicalReading[] readings) {
-        // Every caller supplies an unmodified private base plan registered by LexicalReading's static initialization.
-        return LexicalReading.PLAN_VARIANTS.get(readings).lineFeedOnly;
+        final LexicalReading.Variants variants = LexicalReading.PLAN_VARIANTS.get(readings);
+
+        if (variants != null) {
+            return variants.lineFeedOnly;
+        }
+
+        // Derived or otherwise unregistered plans remain composable without adding arbitrary arrays to the cache.
+        final LexicalReading[] result = new LexicalReading[readings.length];
+
+        for (int i = 0; i < readings.length; i++) {
+            result[i] = readings[i].withLineFeedOnlyLineComments();
+        }
+
+        return result;
     }
 
     /**
@@ -3326,7 +3337,29 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return readings;
         }
 
-        return LexicalReading.PLAN_VARIANTS.get(readings).failClosed[(ansiQuoteVariants ? 1 : 0) | (lineFeedOnlyVariants ? 2 : 0)];
+        final LexicalReading.Variants variants = LexicalReading.PLAN_VARIANTS.get(readings);
+
+        if (variants != null) {
+            return variants.failClosed[(ansiQuoteVariants ? 1 : 0) | (lineFeedOnlyVariants ? 2 : 0)];
+        }
+
+        final List<LexicalReading> result = new ArrayList<>(readings.length * 4);
+
+        for (final LexicalReading reading : readings) {
+            result.add(reading);
+
+            if (ansiQuoteVariants && reading.doubleQuotedBackslashEscapes()) {
+                result.add(reading.withDoubleQuotedBackslashEscapes(false));
+            }
+        }
+
+        if (lineFeedOnlyVariants) {
+            for (int i = 0, size = result.size(); i < size; i++) {
+                result.add(result.get(i).withLineFeedOnlyLineComments());
+            }
+        }
+
+        return result.toArray(new LexicalReading[0]);
     }
 
     /** Reports whether {@code sql} contains a {@code '\r'} that is not part of a {@code "\r\n"} line break. */
@@ -8095,6 +8128,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         String last = null;
         String beforeLast = null;
         int depth = 0;
+        int distinctFromPrefix = 0;
+        boolean afterQualificationDot = false;
 
         for (final String token : _tokenizer.tokenize(_sb.substring(_firstSelectKeywordEndIdx, firstOperandProjectionEnd()))) {
             if (token.isBlank()) {
@@ -8105,7 +8140,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 depth++;
             } else if (SK.PARENTHESIS_R.equals(token)) {
                 depth--;
-            } else if (depth == 0 && (SK.COMMA.equals(token) || SK.FROM.equalsIgnoreCase(token))) {
+            } else if (depth == 0 && (SK.COMMA.equals(token) || SK.FROM.equalsIgnoreCase(token) && distinctFromPrefix != 3)) {
                 if (last != null && SK.AS.equalsIgnoreCase(beforeLast)) {
                     if (result == null) {
                         result = N.newHashMap();
@@ -8120,7 +8155,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 last = null;
                 beforeLast = null;
+                distinctFromPrefix = 0;
+                afterQualificationDot = false;
                 continue;
+            }
+
+            if (depth != 0) {
+                distinctFromPrefix = 0;
+                afterQualificationDot = false;
+            } else if (!token.startsWith("/*")) {
+                // Retained comments separate operator words, but keep their existing effect on AS/label tracking below.
+                distinctFromPrefix = afterQualificationDot ? 0 : advanceDistinctFromPrefix(distinctFromPrefix, token);
+                int end = token.length();
+
+                while (end > 0 && Character.isWhitespace(token.charAt(end - 1))) {
+                    end--;
+                }
+
+                afterQualificationDot = end > 0 && token.charAt(end - 1) == '.';
             }
 
             beforeLast = last;
@@ -8128,6 +8180,40 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return result;
+    }
+
+    /** Tracks IS, IS NOT, then IS [NOT] DISTINCT; a following FROM belongs to the expression. */
+    private static int advanceDistinctFromPrefix(int prefix, final String token) {
+        // Configured separators may combine operator words into one token. Only whole keyword sequences qualify;
+        // quoted/qualified identifiers and arbitrary SQL tokens reset the prefix without parsing their contents.
+        for (int start = 0, length = token.length(); start < length;) {
+            if (SqlParser.isTokenWhitespace(token.charAt(start))) {
+                start++;
+                continue;
+            }
+
+            int end = start + 1;
+
+            while (end < length && end - start <= DISTINCT.length() && !SqlParser.isTokenWhitespace(token.charAt(end))) {
+                end++;
+            }
+
+            final int wordLength = end - start;
+
+            if (wordLength == 2 && token.regionMatches(true, start, "IS", 0, 2)) {
+                prefix = 1;
+            } else if (prefix == 1 && wordLength == 3 && token.regionMatches(true, start, "NOT", 0, 3)) {
+                prefix = 2;
+            } else if ((prefix == 1 || prefix == 2) && wordLength == 8 && token.regionMatches(true, start, DISTINCT, 0, 8)) {
+                prefix = 3;
+            } else {
+                return 0;
+            }
+
+            start = end;
+        }
+
+        return prefix;
     }
 
     /**
@@ -8169,9 +8255,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (--depth < 0) {
                     return length;
                 }
-            } else if (depth == 0 && ch == 'F' && i > _firstSelectKeywordEndIdx && SqlParser.isTokenWhitespace(_sb.charAt(i - 1))
-                    && i + 4 < length && _sb.charAt(i + 1) == 'R' && _sb.charAt(i + 2) == 'O' && _sb.charAt(i + 3) == 'M'
+            } else if (depth == 0 && (ch == 'F' || ch == 'f') && i > _firstSelectKeywordEndIdx && SqlParser.isTokenWhitespace(_sb.charAt(i - 1))
+                    && i + 4 < length && (_sb.charAt(i + 1) | 0x20) == 'r' && (_sb.charAt(i + 2) | 0x20) == 'o' && (_sb.charAt(i + 3) | 0x20) == 'm'
                     && SqlParser.isTokenWhitespace(_sb.charAt(i + 4))) {
+                if (hasDistinctBeforeFrom(i)) {
+                    // The token consumer distinguishes IS [NOT] DISTINCT FROM from the clause. Retain its complete
+                    // input here instead of duplicating that grammar (a false positive only forfeits this shortcut).
+                    return length;
+                }
+
                 // The complete FROM token and its preceding context are identical to the full input. Nothing after
                 // this built-in whitespace boundary can affect them, and the consuming loop stops at this FROM.
                 return i + 4;
@@ -8179,6 +8271,31 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return length;
+    }
+
+    /** Conservative ASCII check used only at a candidate FROM boundary under the default tokenizer. */
+    private boolean hasDistinctBeforeFrom(final int fromIndex) {
+        int end = fromIndex;
+
+        // The consumer also ignores standalone isBlank() tokens, including ASCII control whitespace that is not a
+        // built-in separator. Skip it conservatively here; an opaque token can only cause an unnecessary fallback.
+        while (end > _firstSelectKeywordEndIdx && Character.isWhitespace(_sb.charAt(end - 1))) {
+            end--;
+        }
+
+        final int start = end - DISTINCT.length();
+
+        if (start < _firstSelectKeywordEndIdx || start > _firstSelectKeywordEndIdx && !Character.isWhitespace(_sb.charAt(start - 1))) {
+            return false;
+        }
+
+        for (int i = 0; i < DISTINCT.length(); i++) {
+            if ((_sb.charAt(start + i) | 0x20) != (DISTINCT.charAt(i) | 0x20)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private String unquoteResultColumnLabel(final String label) {

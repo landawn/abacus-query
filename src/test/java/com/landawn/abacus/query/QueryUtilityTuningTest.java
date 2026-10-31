@@ -50,10 +50,10 @@ class QueryUtilityTuningTest {
         assertEquals("All specified entities are null.",
                 assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(null, null), null)).getMessage());
         assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(List.of(), null)).getMessage().contains("entities"));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(List.of(new Row(1), Map.of("id", 2)), null))
-                .getMessage().contains("maps require the map overload"));
-        assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(List.of(new NoProperties(), Map.of("id", 2))))
-                .getMessage().contains("NoProperties"));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(List.of(new Row(1), Map.of("id", 2)), null)).getMessage()
+                .contains("maps require the map overload"));
+        assertTrue(assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(List.of(new NoProperties(), Map.of("id", 2)))).getMessage()
+                .contains("NoProperties"));
     }
 
     @Test
