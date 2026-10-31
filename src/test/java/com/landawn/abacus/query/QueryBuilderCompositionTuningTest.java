@@ -104,6 +104,32 @@ class QueryBuilderCompositionTuningTest {
     }
 
     @Test
+    void testCompoundOrderByKeepsLabelsAfterDecimalOperands() throws ReflectiveOperationException {
+        final List<Dsl> dsls = new ArrayList<>(List.of(Dsl.PSC));
+        for (final String separator : List.of(".", ". ", " . ", ". \u001c", "+1.", "-1.", "IS NOT DISTINCT")) {
+            dsls.add(Dsl.forDialect(
+                    Dsl.PSC.sqlDialect().toBuilder().tokenizerConfig(SqlParser.TokenizerConfig.builder().withSeparator(separator).build()).build()));
+        }
+
+        for (final Dsl dsl : dsls) {
+            for (final String operand : List.of("1.", "10.", "0.", "0001.", "+1.", "-1.", "123456789012345678901234567890.", "1.0", "(1.)")) {
+                for (final String operator : List.of("IS DISTINCT FROM", "IS NOT DISTINCT FROM", "is distinct from", "is not distinct from")) {
+                    final String expression = operand + " " + operator + " 2";
+                    final Map<String, String> columns = new LinkedHashMap<>();
+                    columns.put(expression, "resultFlag");
+                    columns.put("y", "firstName");
+                    final SqlBuilder builder = dsl.select(columns).from("t").where(Filters.eq("active", 42)).union("SELECT true, y FROM u");
+                    final Set<?> labels = resultLabels(builder);
+                    final SP result = builder.orderBy("resultFlag", "firstName").build();
+                    assertEquals(Set.of("resultFlag", "firstName"), labels, expression);
+                    assertTrue(result.query().endsWith(" ORDER BY \"resultFlag\", \"firstName\""), result.query());
+                    assertEquals(List.of(42), result.parameters());
+                }
+            }
+        }
+    }
+
+    @Test
     void testCompoundOrderByKeepsLabelsAfterDistinctFromOperators() throws ReflectiveOperationException {
         final Dsl pg = Dsl.forDialect(Dsl.PSC.sqlDialect().toBuilder().productInfo(SqlDialect.ProductInfo.of("PostgreSQL")).build());
         for (final Dsl dsl : List.of(Dsl.PSC, pg)) {
@@ -150,6 +176,37 @@ class QueryBuilderCompositionTuningTest {
         assertEquals(expectedCalls, calls);
         assertEquals(47, result.parameters().size());
         assertTrue(result.query().contains("id = @id"));
+    }
+
+    @Test
+    void testDecimalPointContextPreservesQualification() throws ReflectiveOperationException {
+        final List<Dsl> dsls = new ArrayList<>(List.of(Dsl.PSB));
+        for (final String separator : List.of(".", ". ", " . ", ". \u001c")) {
+            dsls.add(Dsl.forDialect(
+                    Dsl.PSB.sqlDialect().toBuilder().tokenizerConfig(SqlParser.TokenizerConfig.builder().withSeparator(separator).build()).build()));
+        }
+
+        for (final Dsl dsl : dsls) {
+            for (final String operand : List.of("1. ", "10.\t", "-1./*kept*/", "1. /*kept*/ ", "1. \u001c ")) {
+                final SqlBuilder builder = rawProjection(dsl,
+                        "SELECT-- Keep comments\nid AS head, " + operand + "IS NOT DISTINCT FROM 2 AS result, y AS later FROM t");
+                try {
+                    assertEquals(Set.of("head", "result", "later"), resultLabels(builder), operand);
+                } finally {
+                    builder.build();
+                }
+            }
+
+            for (final String operand : List.of("q. ", "q . ", "q1. ", "q.1. ", "q . 1. ", "\"1\". ", "1 . ", "1 /*kept*/ . ")) {
+                final SqlBuilder builder = rawProjection(dsl,
+                        "SELECT-- Keep comments\nid AS head, " + operand + "IS DISTINCT FROM t AS late, y AS after FROM u");
+                try {
+                    assertEquals(Set.of("head"), resultLabels(builder), operand);
+                } finally {
+                    builder.build();
+                }
+            }
+        }
     }
 
     @Test

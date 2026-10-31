@@ -8130,9 +8130,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         int depth = 0;
         int distinctFromPrefix = 0;
         boolean afterQualificationDot = false;
+        String adjacentUnqualifiedToken = null;
 
         for (final String token : _tokenizer.tokenize(_sb.substring(_firstSelectKeywordEndIdx, firstOperandProjectionEnd()))) {
             if (token.isBlank()) {
+                adjacentUnqualifiedToken = null;
                 continue;
             }
 
@@ -8157,14 +8159,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 beforeLast = null;
                 distinctFromPrefix = 0;
                 afterQualificationDot = false;
+                adjacentUnqualifiedToken = null;
                 continue;
             }
 
             if (depth != 0) {
                 distinctFromPrefix = 0;
                 afterQualificationDot = false;
+                adjacentUnqualifiedToken = null;
             } else if (!token.startsWith("/*")) {
                 // Retained comments separate operator words, but keep their existing effect on AS/label tracking below.
+                final boolean qualifiedToken = afterQualificationDot;
                 distinctFromPrefix = afterQualificationDot ? 0 : advanceDistinctFromPrefix(distinctFromPrefix, token);
                 int end = token.length();
 
@@ -8172,7 +8177,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     end--;
                 }
 
-                afterQualificationDot = end > 0 && token.charAt(end - 1) == '.';
+                // A decimal point qualifies nothing, including when a configured separator splits "1." into "1", ".".
+                // Only adjacent unqualified digits may join a separate dot; whitespace/comments and q.1. cannot do so.
+                afterQualificationDot = end > 0 && token.charAt(end - 1) == '.' && (qualifiedToken || !isDecimalIntegerToken(token, end - 1) && !(end == 1
+                        && adjacentUnqualifiedToken != null && isDecimalIntegerToken(adjacentUnqualifiedToken, adjacentUnqualifiedToken.length())));
+                adjacentUnqualifiedToken = qualifiedToken ? null : token;
+            } else {
+                adjacentUnqualifiedToken = null;
             }
 
             beforeLast = last;
@@ -8214,6 +8225,29 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return prefix;
+    }
+
+    /** Recognizes the integer part before a decimal point, including a sign combined by a configured separator. */
+    private static boolean isDecimalIntegerToken(final String token, final int end) {
+        if (end == 0) {
+            return false;
+        }
+
+        final int start = token.charAt(0) == '+' || token.charAt(0) == '-' ? 1 : 0;
+
+        if (start == end) {
+            return false;
+        }
+
+        for (int i = start; i < end; i++) {
+            final char ch = token.charAt(i);
+
+            if (ch < '0' || ch > '9') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
