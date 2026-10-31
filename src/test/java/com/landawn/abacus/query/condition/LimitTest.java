@@ -644,4 +644,20 @@ public class LimitTest extends TestBase {
         assertEquals(0, limit.offset());
         assertEquals(10, limit.count());
     }
+
+    @Test
+    void testStateFieldsAreFinalForSafePublication() {
+        // Like every other condition, Limit must be safe to share across threads without synchronization,
+        // which the Java memory model guarantees only for final fields.
+        for (final java.lang.reflect.Field field : Limit.class.getDeclaredFields()) {
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                assertTrue(java.lang.reflect.Modifier.isFinal(field.getModifiers()), field.getName());
+            }
+        }
+
+        final Limit uninitialized = new Limit();
+        assertEquals(0, uninitialized.count());
+        assertEquals(0, uninitialized.offset());
+        assertFalse(uninitialized.isResolved());
+    }
 }

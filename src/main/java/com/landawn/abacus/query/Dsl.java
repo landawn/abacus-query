@@ -277,8 +277,10 @@ public final class Dsl {
      * @return a snapshot copy of {@code selections}, detached from later caller mutations
      * @throws IllegalArgumentException if {@code selections} is {@code null} or empty, contains a
      *         {@code null} element, a {@code null}, empty, or blank included property name, or an
-     *         unsafe (whitespace-only, quoted, or comment-bearing) table or class alias, or resolves
-     *         to no properties in total
+     *         unsafe (whitespace-only, quoted, or comment-bearing) table or class alias, contains a
+     *         selection that has a table alias but whose entity class is neither a bean nor a {@code Map}
+     *         type, or that lists no included property names and whose entity class is not a valid entity
+     *         bean class, or resolves to no properties in total
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -302,14 +304,19 @@ public final class Dsl {
 
         boolean hasSelectedProperty = false;
 
+        // Resolve every selection (no early exit) so that a non-bean selection is rejected here whatever its position,
+        // instead of only by the later from(...) call.
         for (final Selection selection : snapshots) {
-            final Collection<String> selectedPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
-                    : QueryUtil.selectPropNames(selection.entityClass(), selection.includesSubEntityProperties(), selection.excludedPropNames());
+            final Class<?> entityClass = selection.entityClass();
 
-            if (!selectedPropNames.isEmpty()) {
-                hasSelectedProperty = true;
-                break;
+            if (Strings.isNotEmpty(selection.tableAlias()) && !Map.class.isAssignableFrom(entityClass) && !Beans.isBeanClass(entityClass)) {
+                throw new IllegalArgumentException("A selection with a table alias requires a bean or Map entity class, but got: " + entityClass.getName());
             }
+
+            final Collection<String> selectedPropNames = N.notEmpty(selection.includedPropNames()) ? selection.includedPropNames()
+                    : QueryUtil.selectPropNames(entityClass, selection.includesSubEntityProperties(), selection.excludedPropNames());
+
+            hasSelectedProperty |= !selectedPropNames.isEmpty();
         }
 
         N.checkArgument(hasSelectedProperty, "Selections must resolve to at least one property in total");
@@ -606,6 +613,7 @@ public final class Dsl {
             entitySnapshot = entity;
         } else if (entity instanceof Map) {
             final Map<String, Object> propsSnapshot = new LinkedHashMap<>((Map<String, Object>) entity);
+            N.checkArgument(!propsSnapshot.isEmpty(), "entity map must not be empty");
             AbstractQueryBuilder.checkSqlFragmentKeysNotBlank(propsSnapshot, "entity map");
 
             if (N.notEmpty(excludedPropNameSnapshot)) {
@@ -704,7 +712,7 @@ public final class Dsl {
      *
      * @param entityClass the entity class to generate INSERT for
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or declares no insertable property
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, or declares no insertable property
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -729,7 +737,8 @@ public final class Dsl {
      * @param entityClass the entity class to generate INSERT for
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null} or no insertable property remains after exclusions are applied
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, or no insertable property
+     *                                  remains after exclusions are applied
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -767,7 +776,7 @@ public final class Dsl {
      *
      * @param entityClass the entity class to generate INSERT INTO for
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no insertable property,
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, declares no insertable property,
      *                                  or resolves to a blank mapped table name (or one that contains an unterminated block comment)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
@@ -794,8 +803,9 @@ public final class Dsl {
      * @param entityClass the entity class to generate INSERT INTO for
      * @param excludedPropNames set of property names to exclude from the insert
      * @return a new SqlBuilder instance configured for INSERT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no insertable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name (or one that contains an unterminated block comment)
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, no insertable property
+     *                                  remains after exclusions are applied, or the class resolves to a blank mapped table name
+     *                                  (or one that contains an unterminated block comment)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @throws IllegalStateException if a named-parameter handler emits an empty token under {@code NAMED_SQL}
@@ -973,7 +983,8 @@ public final class Dsl {
      *
      * @param entityClass the entity class to update
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if entityClass is null or declares no updatable property
+     * @throws IllegalArgumentException if entityClass is null, is not a valid entity bean class, or declares no updatable property, or if its mapped table name
+     *                                  contains an unterminated block comment
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1004,7 +1015,9 @@ public final class Dsl {
      * @param entityClass the entity class to update
      * @param excludedPropNames set of property names to exclude from the update
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if entityClass is null or no updatable property remains after exclusions are applied
+     * @throws IllegalArgumentException if entityClass is null, is not a valid entity bean class, or no updatable property remains after
+     *                                  exclusions are applied, or
+     *                                  if its mapped table name contains an unterminated block comment
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1013,6 +1026,7 @@ public final class Dsl {
         final Collection<String> propOrColumnNames = QueryUtil.updatePropNames(entityClass, excludedPropNames);
         N.checkArgNotEmpty(propOrColumnNames, "No updatable properties remain after exclusions are applied");
         final String tableName = SqlBuilder.getTableName(entityClass, namingPolicy);
+        checkNoUnterminatedBlockComment(tableName);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
@@ -1119,19 +1133,23 @@ public final class Dsl {
      *
      * @param entityClass the entity class to delete from
      * @return a new SqlBuilder instance configured for DELETE operation
-     * @throws IllegalArgumentException if entityClass is null or is not a valid entity bean class
+     * @throws IllegalArgumentException if entityClass is null or is not a valid entity bean class, or if its mapped table name
+     *                                  contains an unterminated block comment
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder deleteFrom(final Class<?> entityClass) {
         N.checkArgNotNull(entityClass, SqlBuilder.DELETION_PART_MSG);
+        // Resolve and check the table name before allocating the pooled builder, as update(Class) does.
+        final String tableName = SqlBuilder.getTableName(entityClass, namingPolicy);
+        checkNoUnterminatedBlockComment(tableName);
 
         final SqlBuilder instance = createSqlBuilderInstance();
 
         try {
             instance._op = OperationType.DELETE;
             instance.setEntityClass(entityClass);
-            instance._tableName = SqlBuilder.getTableName(entityClass, instance._namingPolicy);
+            instance._tableName = tableName;
 
             return instance;
         } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
@@ -1310,7 +1328,7 @@ public final class Dsl {
      *
      * @param entityClass the entity class to select properties from
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null or declares no selectable property
+     * @throws IllegalArgumentException if entityClass is null, is not a valid entity bean class, or declares no selectable property
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1341,7 +1359,7 @@ public final class Dsl {
      * @param entityClass the entity class to select properties from
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null or declares no selectable property
+     * @throws IllegalArgumentException if entityClass is null, is not a valid entity bean class, or declares no selectable property
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1367,7 +1385,8 @@ public final class Dsl {
      * @param entityClass the entity class to select properties from
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null or no selectable property remains after exclusions are applied
+     * @throws IllegalArgumentException if entityClass is null, is not a valid entity bean class, or no selectable property remains after
+     *                                  exclusions are applied
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1394,7 +1413,8 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if entityClass is null or no selectable property remains after exclusions are applied
+     * @throws IllegalArgumentException if entityClass is null, is not a valid entity bean class, or no selectable property remains after
+     *                                  exclusions are applied
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1422,7 +1442,9 @@ public final class Dsl {
      *
      * <p>This is a convenience method that combines select() and from() operations.
      * The table name is automatically derived from the entity class name or @Table annotation.
-     * All property names are rendered according to this DSL's naming policy with appropriate aliases.</p>
+     * All property names are rendered according to this DSL's naming policy with appropriate aliases.
+     * If the entity class declares a {@code @Table} alias, that alias is applied to the table and qualifies the
+     * selected columns, as with {@link #selectFrom(Class, String)}; the example below assumes an entity without one.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1434,10 +1456,11 @@ public final class Dsl {
      *
      * @param entityClass the entity class to select from
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, declares no selectable property,
      *                                  or resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
-     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
+     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if the entity's {@code @Table}
+     *                                  alias contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1460,9 +1483,10 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param tableAlias the table alias to use
+     * @param tableAlias the table alias to use; a {@code null}, empty, or blank alias renders the table without one
+     *        (the entity's {@code @Table} alias is not applied, unlike {@link #selectFrom(Class)})
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, declares no selectable property,
      *                                  or resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
      *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if {@code tableAlias}
@@ -1478,7 +1502,7 @@ public final class Dsl {
      * Creates a SELECT FROM statement with optional sub-entity properties.
      *
      * <p>This convenience method combines SELECT and FROM operations with control over
-     * sub-entity inclusion.</p>
+     * sub-entity inclusion. The entity's {@code @Table} alias, if it declares one, is used as the table alias.</p>
      *
      * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
      * no relationship or join predicate is inferred. A {@code JOIN} binds tighter than the comma, so the {@code ON}
@@ -1503,9 +1527,10 @@ public final class Dsl {
      * @param entityClass the entity class to select from
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, declares no selectable property,
      *                                  or resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment, such as {@code t -- note}),
+     *         or if the entity's {@code @Table} alias contains a line break or a SQL comment token,
      *         or if two included sub-entity properties would read the same table reference (same table and alias; a
      *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1536,14 +1561,15 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, a {@code null}, empty, or blank alias falls back to the entity's
+     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, for an entity that declares a mapped sub-entity
+     *        property, a {@code null}, empty, or blank alias falls back to the entity's
      *        {@code @Table} alias, keeping the parent columns qualified next to the sub-entity tables)
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, declares no selectable property,
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, declares no selectable property,
      *                                  or resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment, such as {@code t -- note}), or if {@code tableAlias}
-     *                                  contains a line break or a SQL comment token,
+     *                                  (or the {@code @Table} alias it falls back to) contains a line break or a SQL comment token,
      *         or if two included sub-entity properties would read the same table reference (same table and alias; a
      *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1557,7 +1583,7 @@ public final class Dsl {
      * Creates a SELECT FROM statement with excluded properties.
      *
      * <p>This convenience method creates a complete SELECT FROM statement while excluding
-     * specific properties from the selection.</p>
+     * specific properties from the selection. The entity's {@code @Table} alias, if it declares one, is used as the table alias.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1571,10 +1597,11 @@ public final class Dsl {
      * @param entityClass the entity class to select from
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, no selectable property
+     *                                  remains after exclusions are applied, or the class resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
-     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
+     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if the entity's {@code @Table}
+     *                                  alias contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -1598,11 +1625,12 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param tableAlias the table alias to use
+     * @param tableAlias the table alias to use; a {@code null}, empty, or blank alias renders the table without one
+     *        (the entity's {@code @Table} alias is not applied, unlike {@link #selectFrom(Class, Set)})
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, no selectable property
+     *                                  remains after exclusions are applied, or the class resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
      *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if
      *                                  {@code tableAlias} contains a line break or a SQL comment token
@@ -1617,7 +1645,7 @@ public final class Dsl {
      * Creates a SELECT FROM statement with sub-entities and exclusions.
      *
      * <p>This method provides control over both sub-entity inclusion and property exclusion
-     * while automatically determining the appropriate table alias.</p>
+     * while using the entity's {@code @Table} alias (if it declares one) as the table alias.</p>
      *
      * <p><b>&#9888;&#65039;</b> Included sub-entity tables are emitted as comma-separated table references;
      * no relationship or join predicate is inferred. A {@code JOIN} binds tighter than the comma, so the {@code ON}
@@ -1638,9 +1666,10 @@ public final class Dsl {
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, no selectable property
+     *                                  remains after exclusions are applied, or the class resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment, such as {@code t -- note}),
+     *         or if the entity's {@code @Table} alias contains a line break or a SQL comment token,
      *         or if two included sub-entity properties would read the same table reference (same table and alias; a
      *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1678,15 +1707,16 @@ public final class Dsl {
      * }</pre>
      *
      * @param entityClass the entity class to select from
-     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, a {@code null}, empty, or blank alias falls back to the entity's
+     * @param tableAlias the table alias to use (with {@code includeSubEntityProperties}, for an entity that declares a mapped sub-entity
+     *        property, a {@code null}, empty, or blank alias falls back to the entity's
      *        {@code @Table} alias, keeping the parent columns qualified next to the sub-entity tables)
      * @param includeSubEntityProperties whether to include properties of nested entity objects
      * @param excludedPropNames set of property names to exclude from selection
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, no selectable property remains after exclusions are applied,
-     *                                  or the class resolves to a blank mapped table name
+     * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class, no selectable property
+     *                                  remains after exclusions are applied, or the class resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment, such as {@code t -- note}), or if
-     *                                  {@code tableAlias} contains a line break or a SQL comment token,
+     *                                  {@code tableAlias} (or the {@code @Table} alias it falls back to) contains a line break or a SQL comment token,
      *         or if two included sub-entity properties would read the same table reference (same table and alias; a
      *         self-referencing sub-entity property is not expanded)
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1704,8 +1734,9 @@ public final class Dsl {
         final SqlBuilder builder = select(entityClass, includeSubEntityProperties, excludedPropNameSnapshot);
 
         try {
-            // The sub-entity path does not go through from(Class, String), so check the alias here for both paths.
-            builder.checkEntityTableAlias(entityClass, tableAlias);
+            // The sub-entity path does not go through from(Class, String), so check the alias here for both paths; that
+            // path falls back to the entity's @Table alias when tableAlias is null, empty, or blank, so check the alias it renders.
+            builder.checkEntityTableAlias(entityClass, includesSubEntityTables ? SqlBuilder.tableAlias(tableAlias, entityClass) : tableAlias);
 
             return includesSubEntityTables ? builder.from(entityClass, selectTableNames) : builder.from(entityClass, tableAlias);
         } catch (final Throwable e) { // NOSONAR - a sneakily thrown checked exception must release the builder too
@@ -1833,9 +1864,10 @@ public final class Dsl {
      *                                  class alias, resolves to no selectable property, or has an entity class that is
      *                                  not a valid entity bean class and lists no included property names (or that is
      *                                  neither a bean nor a {@code Map} type and has a table alias; otherwise the included
-     *                                  property names of a non-bean class are rendered as written),
-     *         or if two included sub-entity properties would read the same table reference (same table and alias),
-     *         or a selected sub-entity property references the entity's own class
+     *                                  property names of a non-bean class are rendered as written); two included
+     *                                  sub-entity properties that would read the same table reference (same table and
+     *                                  alias), or a selected sub-entity property that references the entity's own class,
+     *                                  are rejected by the {@code from(...)} call that renders the selection
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      * @see #select(List)
@@ -1887,9 +1919,10 @@ public final class Dsl {
      *                                  contains a selection whose entity class is not a valid entity bean class and that
      *                                  lists no included property names (or whose class is neither a bean nor a
      *                                  {@code Map} type and that has a table alias; otherwise the included property names
-     *                                  of a non-bean class are rendered as written),
-     *         or if two included sub-entity properties would read the same table reference (same table and alias),
-     *         or a selected sub-entity property references the entity's own class
+     *                                  of a non-bean class are rendered as written); two included sub-entity properties
+     *                                  that would read the same table reference (same table and alias), or a selected
+     *                                  sub-entity property that references the entity's own class, are rejected by the
+     *                                  {@code from(...)} call that renders the selections
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -2133,7 +2166,8 @@ public final class Dsl {
     /**
      * Creates a COUNT(*) query for an entity class.
      *
-     * <p>The table name is derived from the entity class name or @Table annotation.
+     * <p>The table name is derived from the entity class name or @Table annotation, and the entity's
+     * {@code @Table} alias, if it declares one, is used as the table alias (as by {@code from(Class)}).
      * This is a convenient way to count rows with entity class mapping for proper
      * property name conversion in WHERE conditions.</p>
      *
@@ -2150,7 +2184,8 @@ public final class Dsl {
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}, is not a valid entity bean class,
      *                                  or resolves to a blank mapped table name
      *                                  (or one that contains an unterminated block comment or ends inside a line comment under this DSL's
-     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL)
+     *                                  dialect, such as {@code t -- note}, or {@code #tmp} on MySQL), or if its {@code @Table} alias
+     *                                  contains a line break or a SQL comment token
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
@@ -2301,8 +2336,7 @@ public final class Dsl {
      * Rejects an UPDATE/DELETE/COUNT target table name that opens a block comment it never closes. Checked here, before a
      * builder is allocated, so the failure surfaces at the call that received the bad name and no pooled builder is
      * leaked. The builder re-checks the same text later as a backstop: {@code from(String)} for the COUNT query, and the
-     * UPDATE/DELETE statement initialization for a table name set by other means (an entity's {@code @Table} name, which
-     * {@code update(Class)}/{@code deleteFrom(Class)} do not check here).
+     * UPDATE/DELETE statement initialization for a table name set by other means.
      *
      * @throws IllegalArgumentException if {@code tableName} contains an unterminated block comment
      */

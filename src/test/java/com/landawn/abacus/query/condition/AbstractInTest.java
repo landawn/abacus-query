@@ -303,7 +303,7 @@ public class AbstractInTest extends TestBase {
         assertEquals("values must not contain null elements; null found at index 2", ex.getMessage());
 
         ex = assertThrows(IllegalArgumentException.class, () -> new TestAbstractIn("id", Arrays.asList(1, Filters.gt("a", 1), 3)));
-        assertTrue(ex.getMessage().startsWith("values[1] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+        assertTrue(ex.getMessage().startsWith("values[1] must be a literal value, SqlExpression, or scalar SubQuery, not"), ex.getMessage());
 
         ex = assertThrows(IllegalArgumentException.class,
                 () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(null, 4))));
@@ -311,7 +311,7 @@ public class AbstractInTest extends TestBase {
 
         ex = assertThrows(IllegalArgumentException.class,
                 () -> new TestRowAbstractIn(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, Filters.gt("a", 1)))));
-        assertTrue(ex.getMessage().startsWith("valueRows[1][1] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+        assertTrue(ex.getMessage().startsWith("valueRows[1][1] must be a literal value, SqlExpression, or scalar SubQuery, not"), ex.getMessage());
 
         final TestAbstractIn scalars = new TestAbstractIn("id", Arrays.asList(1, 2));
         assertEquals(scalars.values(), scalars.parameters());

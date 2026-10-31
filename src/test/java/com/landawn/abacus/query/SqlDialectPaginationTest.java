@@ -2,6 +2,7 @@ package com.landawn.abacus.query;
 
 import static com.landawn.abacus.query.Dsl.PSC;
 import static com.landawn.abacus.query.QueryTestSupport.assertSql;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,7 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.SqlDialect.IdentifierQuote;
@@ -388,16 +392,69 @@ public class SqlDialectPaginationTest extends TestBase {
     }
 
     @Test
-    void testUnresolvedFetchLimitRejectedOnUpdateAndDelete() {
-        final Dsl mysql = dslFor("MySQL");
-        assertThrows(IllegalStateException.class, () -> mysql.deleteFrom("t").fetchFirstRows(5));
-        assertThrows(IllegalStateException.class, () -> mysql.deleteFrom("t").append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
-        assertThrows(IllegalStateException.class,
-                () -> mysql.update("t").set("a").append(Criteria.builder().where(Filters.eq("b", 1)).limit("FETCH NEXT 99999999999 ROWS ONLY").build()));
-        final SqlBuilder builder = mysql.update("t").set("a");
-        assertThrows(IllegalStateException.class, () -> builder.append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")));
-        assertEquals("UPDATE t SET a = ? LIMIT 5", builder.limit(5).build().query());
-        assertEquals("UPDATE t SET a = ? LIMIT 99999999999", mysql.update("t").set("a").append(new Limit("LIMIT 99999999999")).build().query());
+    void testExplicitFetchRejectedOnUpdateAndDeleteWithoutChangingBuilder() {
+        for (final String product : List.of("MySQL", "MariaDB", "SQLite")) {
+            final Dsl dsl = dslFor(product);
+            final SqlBuilder delete = dsl.deleteFrom("t");
+            assertThrows(IllegalStateException.class, () -> delete.fetchFirstRows(5), product);
+            assertEquals("DELETE FROM t LIMIT 5", delete.limit(5).build().query(), product);
+
+            final SqlBuilder update = dsl.update("t").set("a");
+            assertThrows(IllegalStateException.class, () -> update.fetchFirstRows(5), product);
+            assertEquals("UPDATE t SET a = ? LIMIT 5", update.limit(5).build().query(), product);
+        }
+    }
+
+    @Test
+    void testResolvedFetchAndLargeNativeLimitsOnUpdateAndDelete() {
+        for (final String product : List.of("MySQL", "MariaDB", "SQLite")) {
+            final Dsl dsl = dslFor(product);
+            // These controls distinguish explicit FETCH from a Limit expression that should convert to LIMIT.
+            for (final String count : List.of("10", "2147483647")) {
+                assertSql("UPDATE t SET a = ? LIMIT " + count, List.of(1),
+                        dsl.update("t").set("a", 1).append(new Limit("FETCH FIRST " + count + " ROWS ONLY")).build());
+                assertSql("DELETE FROM t LIMIT " + count, List.of(), dsl.deleteFrom("t").append(new Limit("FETCH NEXT " + count + " ROWS ONLY")).build());
+            }
+            assertSql("UPDATE t SET a = ? LIMIT 99999999999", List.of(1), dsl.update("t").set("a", 1).append(new Limit("LIMIT 99999999999")).build());
+            assertSql("DELETE FROM t LIMIT 99999999999", List.of(), dsl.deleteFrom("t").append(new Limit("LIMIT 99999999999")).build());
+        }
+    }
+
+    // Intended behavior for KNOWN OPEN ISSUES #14: crossing the int boundary must not change FETCH-to-LIMIT conversion.
+    // Keep the desired SQL here instead of treating the current rejection as the contract.
+    @Disabled("Known open issue #14 in AbstractQueryBuilder: large FETCH limits are rejected before conversion on UPDATE/DELETE")
+    @ParameterizedTest
+    @CsvSource({ "MySQL, 2147483648", "MySQL, 99999999999", "MariaDB, 2147483648", "MariaDB, 99999999999", "SQLite, 2147483648", "SQLite, 99999999999" })
+    void testKnownOpenIssueLargeFetchLimitOnUpdateAndDelete(final String product, final String count) {
+        final Dsl dsl = dslFor(product);
+        final String first = "FETCH FIRST " + count + " ROWS ONLY";
+        final String next = "FETCH NEXT " + count + " ROWS ONLY";
+
+        assertAll(product + ": " + count,
+                () -> assertSql("UPDATE t SET a = ? LIMIT " + count, List.of(1), dsl.update("t").set("a", 1).append(new Limit(first)).build()),
+                () -> assertSql("DELETE FROM t LIMIT " + count, List.of(), dsl.deleteFrom("t").append(new Limit(next)).build()),
+                () -> assertSql("UPDATE t SET a = ? WHERE b = ? LIMIT " + count, List.of(1, 2),
+                        dsl.update("t").set("a", 1).append(Criteria.builder().where(Filters.eq("b", 2)).limit(next).build()).build()),
+                () -> assertSql("DELETE FROM t WHERE b = ? LIMIT " + count, List.of(2),
+                        dsl.deleteFrom("t").append(Criteria.builder().where(Filters.eq("b", 2)).limit(first).build()).build()));
+    }
+
+    // Regression: an out-of-int-range FETCH-form Limit was emitted verbatim on MySQL and SQLite, which have no FETCH clause
+    // (a resolved one, and the comma form, were already rendered as LIMIT there).
+    @Test
+    void testUnresolvedFetchLimitRendersLimitSyntaxOnMySqlAndSqlite() {
+        for (final String product : List.of("MySQL", "MariaDB", "SQLite")) {
+            final Dsl dsl = dslFor(product);
+            assertEquals("SELECT * FROM t LIMIT 99999999999", dsl.select("*").from("t").append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")).build().query(),
+                    product);
+            assertEquals("SELECT * FROM t LIMIT 99999999999 OFFSET 5",
+                    dsl.select("*").from("t").append(new Limit("OFFSET 5 ROWS FETCH NEXT 99999999999 ROWS ONLY")).build().query(), product);
+            assertEquals("SELECT * FROM t LIMIT 10", dsl.select("*").from("t").append(new Limit("FETCH FIRST 10 ROWS ONLY")).build().query(), product);
+        }
+
+        // PostgreSQL supports the SQL-standard FETCH clause, so the expression is still emitted as written there.
+        assertEquals("SELECT * FROM t FETCH FIRST 99999999999 ROWS ONLY",
+                dslFor("PostgreSQL").select("*").from("t").append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")).build().query());
     }
 
     @Test

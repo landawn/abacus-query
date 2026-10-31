@@ -61,7 +61,7 @@ import com.landawn.abacus.util.Strings;
  * <pre>{@code
  * new Limit(10);                                      // LIMIT 10
  * new Limit(20, 50);                                  // LIMIT 20 OFFSET 50
- * new Limit("OFFSET 50 ROWS FETCH NEXT 20 ROWS ONLY");
+ * new Limit("OFFSET 50 ROWS FETCH NEXT 20 ROWS ONLY");   // count() -> 20; offset() -> 50
  * new Limit("20, 10");                                // MySQL form: toString() -> "LIMIT 20, 10"; count() -> 10; offset() -> 20
  * new Limit("? OFFSET ?");                            // throws: raw placeholders cannot carry bindings
  * new Limit("LIMIT 1.0");                             // throws IllegalArgumentException
@@ -71,13 +71,13 @@ import com.landawn.abacus.util.Strings;
  */
 public class Limit extends Clause {
 
-    private int count;
+    private final int count;
 
-    private int offset;
+    private final int offset;
 
-    private String expr;
+    private final String expr;
 
-    private boolean isResolved;
+    private final boolean isResolved;
 
     /**
      * Creates an uninitialized instance for serialization frameworks like Kryo.
@@ -85,6 +85,10 @@ public class Limit extends Clause {
      * <p>Application code should use one of the public constructors.</p>
      */
     Limit() {
+        count = 0;
+        offset = 0;
+        expr = null;
+        isResolved = false;
     }
 
     /**
@@ -129,6 +133,7 @@ public class Limit extends Clause {
 
         this.count = count;
         this.offset = offset;
+        this.expr = null;
         this.isResolved = true;
     }
 
@@ -143,6 +148,7 @@ public class Limit extends Clause {
      * normalized expression is retained but its numeric values remain unresolved. Floating-point and negative
      * numbers, placeholders, misspelled keywords, and unrelated SQL are rejected.</p>
      *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * new Limit("10 OFFSET 20");                         // LIMIT 10 OFFSET 20
      * new Limit("20, 10");                               // LIMIT 20, 10

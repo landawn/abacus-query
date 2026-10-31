@@ -481,6 +481,12 @@ public class CriteriaTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("ON users.id = orders.user_id")));
             assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where(Filters.expr("   ")));
             assertThrows(IllegalArgumentException.class, () -> Criteria.builder().where("   "));
+
+            // the rejection of a raw expression that repeats the clause keyword says how to fix it
+            assertTrue(
+                    whereEx.getMessage()
+                            .endsWith("a raw expression must not begin with a clause keyword: pass only the clause body to the builder method for that clause"),
+                    "was: " + whereEx.getMessage());
         }
 
         @Test

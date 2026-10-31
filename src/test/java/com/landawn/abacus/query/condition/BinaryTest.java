@@ -275,10 +275,10 @@ public class BinaryTest extends TestBase {
             assertEquals("propValue[2] must not be null for NOT IN", ex.getMessage());
 
             ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.IN, Arrays.asList(1, Filters.eq("a", 1))));
-            assertTrue(ex.getMessage().startsWith("propValue[1] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+            assertTrue(ex.getMessage().startsWith("propValue[1] must be a literal value, SqlExpression, or scalar SubQuery, not"), ex.getMessage());
 
             ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.IN, new Object[] { Filters.eq("a", 1) }));
-            assertTrue(ex.getMessage().startsWith("propValue[0] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+            assertTrue(ex.getMessage().startsWith("propValue[0] must be a literal value, SqlExpression, or scalar SubQuery, not"), ex.getMessage());
 
             final Condition quantified = Filters.any(Filters.subQuery("t", Arrays.asList("id"), Filters.eq("x", 1)));
             ex = assertThrows(IllegalArgumentException.class, () -> new Binary("id", Operator.NOT_IN, Arrays.asList(1, 2, quantified)));

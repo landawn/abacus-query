@@ -1641,6 +1641,33 @@ public class QueryUtilTest extends TestBase {
             assertTrue(cache.containsKey(ExclusionLeaf.class));
             assertSame(names, QueryUtil.selectPropNames(ExclusionLeaf.class, false, Collections.emptySet()));
         }
+
+        // Regression: abacus.query.maxNestedPropDepth=0 mapped no sub-entity column, while selections that include sub-entity
+        // properties still list one level of them (and its table), so those columns were qualified with the property name
+        // ("devices.id ... FROM account acc, device"). The property is read once, by QueryUtil's static initializer.
+        @Test
+        void testZeroMaxNestedPropDepthStillMapsOneSubEntityLevel(@TempDir final Path directory) throws Exception {
+            final Path output = directory.resolve("depth0.txt");
+            final Path javaBin = Path.of(System.getProperty("java.home"), "bin");
+            final Path java = javaBin.resolve(Files.isRegularFile(javaBin.resolve("java.exe")) ? "java.exe" : "java");
+            final Process child = new ProcessBuilder(java.toString(), "-Dfile.encoding=UTF-8", "-Dabacus.query.maxNestedPropDepth=0", "-cp",
+                    metadataProbeClasspath(), ZeroNestedDepthProbe.class.getName()).redirectErrorStream(true).redirectOutput(output.toFile()).start();
+            final boolean completed;
+
+            try {
+                completed = child.waitFor(40, TimeUnit.SECONDS);
+            } finally {
+                if (child.isAlive()) {
+                    child.destroyForcibly();
+                    assertTrue(child.waitFor(5, TimeUnit.SECONDS), "Depth probe did not terminate after being killed");
+                }
+            }
+
+            final String diagnostic = Files.readString(output, StandardCharsets.UTF_8);
+            assertTrue(completed, "Depth probe timed out:\n" + diagnostic);
+            assertEquals(0, child.exitValue(), diagnostic);
+            assertTrue(diagnostic.contains("depth0-check=passed"), diagnostic);
+        }
     }
 
     @Nested
@@ -1969,6 +1996,22 @@ public class QueryUtilTest extends TestBase {
 
         public void setDate(final LocalDate value) {
             date = value;
+        }
+    }
+
+    /** Runs only in a child JVM started with {@code -Dabacus.query.maxNestedPropDepth=0} (read once by QueryUtil). */
+    public static final class ZeroNestedDepthProbe {
+        public static void main(final String[] args) {
+            final String sql = PSC.selectFrom(Account.class, true).build().query();
+
+            if (!sql.contains("device.name AS \"devices.name\"") || sql.contains("devices.name AS")
+                    || !QueryUtil.propToColumnInfoMap(Account.class, null).containsKey("devices.name")) {
+                System.out.println("unexpected: " + sql);
+                System.exit(1);
+            }
+
+            System.out.println("depth0-check=passed");
+            System.exit(0);
         }
     }
 

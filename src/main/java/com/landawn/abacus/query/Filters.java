@@ -323,6 +323,10 @@ public final class Filters {
      * {@code UNION}, {@code BETWEEN}, {@code EXISTS}) are <b>not</b> binary {@code propName OP value}
      * predicates and are rejected with an {@link IllegalArgumentException}.</p>
      *
+     * <p>The result is always a plain {@link Binary}, never one of the typed subclasses (such as {@link Equal}
+     * or {@link In}) returned by the convenience factories. Condition equality is class-sensitive, so
+     * {@code Filters.binary("x", Operator.EQUAL, 1)} is not {@code equals} to {@code Filters.equal("x", 1)}.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Binary condition = Filters.binary("price", Operator.GREATER_THAN, 100);
@@ -705,6 +709,7 @@ public final class Filters {
      * <pre>{@code
      * User user = new User("John", "john@example.com", 25);
      * And condition = Filters.allEqual(user);
+     * // If User's only selectable properties are name, email and age, in that order:
      * // SQL fragment: ((name = 'John') AND (email = 'john@example.com') AND (age = 25))
      * }</pre>
      *
@@ -951,6 +956,7 @@ public final class Filters {
             for (final Object entityOrMap : elements) {
                 if (entityOrMap != null) {
                     N.checkArgument(entityOrMap instanceof Map, "All non-null elements must be Map when the first non-null element is Map");
+                    N.checkArgument(N.notEmpty((Map<?, ?>) entityOrMap), "Map elements of entitiesOrPropMaps must not be empty");
                     condList.add(and(equalConditions((Map<?, ?>) entityOrMap)));
                 }
             }
@@ -964,6 +970,12 @@ public final class Filters {
     /**
      * Returns the selectable top-level property names of an entity class, rejecting a class that has none
      * with a message naming the class (instead of the downstream 'includedPropNames' check).
+     *
+     * @param entityClass the entity class whose selectable properties are listed
+     * @return the non-empty, immutable list of selectable top-level property names
+     * @throws IllegalArgumentException if {@code entityClass} is not a bean class or declares no selectable property
+     * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
+     *         for a {@code LocalDate} or {@code LocalTime} property
      */
     private static Collection<String> selectablePropNames(final Class<?> entityClass) {
         final Collection<String> propNames = QueryUtil.selectPropNames(entityClass, false, null);
@@ -1249,7 +1261,7 @@ public final class Filters {
      * EntityId id = EntityId.of("companyId", 1, "userId", 100);
      * And condition = Filters.idToCond(id);
      * // SQL fragment: ((companyId = 1) AND (userId = 100))
-     * // (EntityId orders its keys alphabetically, regardless of insertion order)
+     * // (EntityId orders its keys by natural, case-sensitive String order, regardless of insertion order)
      * }</pre>
      *
      * @param entityId the {@link EntityId} containing key-value pairs (must not be {@code null}). Entries are
@@ -1297,6 +1309,7 @@ public final class Filters {
         final List<Condition> conditions = new ArrayList<>();
 
         for (final EntityId entityId : entityIds) {
+            N.checkArgument(entityId != null, "entityIds must not contain null");
             conditions.add(idToCond(entityId));
         }
 
@@ -2194,6 +2207,8 @@ public final class Filters {
 
     /**
      * Creates a compound condition to check that a property is neither null nor an empty string.
+     * On Oracle, where {@code ''} is {@code NULL}, the {@code != ''} comparison is never true, so this
+     * condition matches no rows there; use {@link #isNotNull(String)} for Oracle.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3119,7 +3134,7 @@ public final class Filters {
 
     /**
      * Creates an {@link OrderBy} clause with the specified property names.
-     * Orders results by the given columns in the database default order.
+     * Orders results by the given columns; no explicit sort direction keyword is emitted, so SQL's default ordering direction applies.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3530,7 +3545,7 @@ public final class Filters {
      * @param joinEntity the entity/table name to join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return a {@link Join} clause
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
@@ -3556,7 +3571,7 @@ public final class Filters {
      * @param joinEntities collection of entity/table names to join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return a {@link Join} clause
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
@@ -3609,7 +3624,7 @@ public final class Filters {
      * @param joinEntity the entity/table name to left join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return a {@link LeftJoin} clause
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
@@ -3635,7 +3650,7 @@ public final class Filters {
      * @param joinEntities collection of entity/table names to left join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return a {@link LeftJoin} clause
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
@@ -3688,7 +3703,7 @@ public final class Filters {
      * @param joinEntity the entity/table name to right join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return a {@link RightJoin} clause
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
@@ -3714,7 +3729,7 @@ public final class Filters {
      * @param joinEntities collection of entity/table names to right join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return a {@link RightJoin} clause
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
@@ -3802,7 +3817,7 @@ public final class Filters {
      * @param joinEntity the entity/table name to full join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return a {@link FullJoin} clause
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
@@ -3828,7 +3843,7 @@ public final class Filters {
      * @param joinEntities collection of entity/table names to full join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return a {@link FullJoin} clause
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
@@ -3845,7 +3860,7 @@ public final class Filters {
      * Creates an {@link InnerJoin} clause for the specified entity/table without a join condition.
      *
      * <p><b>This factory always throws {@link IllegalArgumentException}:</b> a qualified {@code INNER JOIN} requires an
-     * {@code ON}/{@code USING} predicate, so a {@link InnerJoin} cannot be built from an entity name alone. Use
+     * {@code ON}/{@code USING} predicate, so an {@link InnerJoin} cannot be built from an entity name alone. Use
      * {@link #innerJoin(String, Condition)} with {@link #on(String, String)} / {@link #using(String...)} to supply the
      * predicate, or {@link #crossJoin(String)} for an unconditional join.</p>
      *
@@ -3881,7 +3896,7 @@ public final class Filters {
      * @param joinEntity the entity/table name to inner join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return an {@link InnerJoin} clause
      * @throws IllegalArgumentException if {@code joinEntity} is {@code null}, empty, or blank, or contains an unterminated block comment; if {@code joinCondition} is {@code null};
      *                                  or if {@code joinCondition} is or contains a
@@ -3907,7 +3922,7 @@ public final class Filters {
      * @param joinEntities collection of entity/table names to inner join
      * @param joinCondition the join condition (must not be {@code null}); a plain predicate is rendered with an {@code ON}
      *                      prefix, an {@link On}/{@link Using} supplies its own keyword — use {@link #crossJoin(String)} /
-     *                      {@link #naturalJoin(String)} for an unconditional join
+     *                      {@link #naturalJoin(String)} for a join without an explicit condition
      * @return an {@link InnerJoin} clause
      * @throws IllegalArgumentException if {@code joinEntities} is {@code null}, empty, or contains a {@code null}/empty/blank element or an element containing an unterminated block comment;
      *                                  if {@code joinCondition} is {@code null}; or if {@code joinCondition} is or contains a
@@ -4133,6 +4148,10 @@ public final class Filters {
      * holds a collection, which would otherwise render {@code id IN (?)} bound to the whole collection.
      * Unlike {@link #binary(String, Operator, Object)} with {@code IN}, which unpacks any array, a lone {@code byte[]} stays a
      * single (binary) value here: {@code in(String, byte[])} is the overload for byte membership.
+     *
+     * @param values the non-{@code null} varargs array
+     * @return the lone collection itself, a list of the elements of a lone non-{@code byte[]} array, or a fixed-size
+     *         list view of {@code values}
      */
     private static Collection<?> toInValues(final Object[] values) {
         if (values.length == 1) {
@@ -5013,6 +5032,7 @@ public final class Filters {
      * {@code (sql)} with its own bindings taking its place, so they render the same under every SQL policy
      * (see {@link SubQuery#SubQuery(String, Collection)}).</p>
      *
+     * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * SubQuery subQuery = Filters.subQuery(
      *     "SELECT user_id FROM orders WHERE status = ? AND total > ?",

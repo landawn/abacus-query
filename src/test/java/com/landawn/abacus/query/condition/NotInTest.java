@@ -334,7 +334,7 @@ public class NotInTest extends TestBase {
         assertEquals("values must not contain null elements; null found at index 1", ex.getMessage());
 
         ex = assertThrows(IllegalArgumentException.class, () -> new NotIn("id", Arrays.asList(Filters.eq("a", 1), 2)));
-        assertTrue(ex.getMessage().startsWith("values[0] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+        assertTrue(ex.getMessage().startsWith("values[0] must be a literal value, SqlExpression, or scalar SubQuery, not"), ex.getMessage());
 
         final NotIn condition = new NotIn("id", Arrays.asList(1, 2, 3));
         assertEquals(Arrays.asList(1, 2, 3), condition.parameters());

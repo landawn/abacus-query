@@ -75,7 +75,7 @@ public abstract class AbstractIn extends ComposableCondition {
 
     private final boolean rowValueConstructor;
 
-    private List<?> values;
+    private final List<?> values;
 
     /**
      * Whether {@link #values} holds at least one array, {@code Date}, {@code Calendar} or nested
@@ -101,6 +101,7 @@ public abstract class AbstractIn extends ComposableCondition {
      */
     AbstractIn() {
         propNames = ImmutableList.empty();
+        values = null;
         rowValueConstructor = false;
         rebuildPerCall = false;
     }

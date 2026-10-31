@@ -150,7 +150,9 @@ import com.landawn.abacus.util.Strings;
  * comment that opens on such a line (comment text to H2) and continues past its line break is kept as written rather
  * than dropped (see
  * {@link #parameterizedSql()}), so on H2 the comment neither swallows the rest of the statement nor hides lines that H2
- * runs; markers in such kept text are not converted, so a binding there fails loudly. For an
+ * runs; markers in such kept text are not converted, so a binding there fails loudly. A line holding a hash operator
+ * ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}), which the tokenizer keeps as SQL but MySQL reads as the
+ * start of a {@code #} line comment, is handled the same way. For an
  * unrecognized operation the token stream is not used to rebuild the SQL and no parameter
  * conversion is performed, so its comments remain in the normalized parameterized SQL.</p>
  *
@@ -218,8 +220,12 @@ public final class ParsedSql {
 
     private static final int FACTOR = Math.min(Math.max(1, IOUtil.MAX_MEMORY_IN_MB / 1024), 8);
 
-    /** The bounded cache of parsed SQL statements. */
-    private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = PoolFactory.createKeyedObjectPool(1000 * FACTOR, EVICT_TIME);
+    /**
+     * The bounded cache of parsed SQL statements, or {@code null} if it could not be created because the JVM was already
+     * shutting down when this class was initialized (see {@link #createCache(Supplier)}).
+     */
+    private static final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> pool = createCache(
+            () -> PoolFactory.createKeyedObjectPool(1000 * FACTOR, EVICT_TIME));
 
     private static final String PREFIX_OF_NAMED_PARAMETER = ":";
 
@@ -269,11 +275,12 @@ public final class ParsedSql {
     private final int[] positionalParameterOffsets;
 
     /**
-     * Parses a nonblank SQL string whose outer argument validation has already completed.
+     * Parses a non-null SQL string. {@link #parse(String)} only rejects {@code null}, so this constructor is where empty
+     * and blank SQL is rejected.
      *
-     * @param inputSql the nonblank SQL string
-     * @throws IllegalArgumentException if {@code inputSql} is empty after {@link String#trim()} (it holds only control
-     *         characters that the outer blank check does not treat as blank); or if a recognized data-operation
+     * @param inputSql the SQL string (not {@code null})
+     * @throws IllegalArgumentException if {@code inputSql} is empty or blank after {@link String#trim()} (including SQL
+     *         made up only of control characters); or if a recognized data-operation
      *         statement mixes parameter styles,
      *         contains an iBatis/MyBatis marker without a closing brace or with an empty property name
      *         ({@code #{:id}}), or contains an unpaired UTF-16
@@ -286,9 +293,9 @@ public final class ParsedSql {
         N.checkArgument(Strings.isNotBlank(this.sql), "sql must not be null, empty, or blank");
 
         final List<String> tokens = SqlParser.tokenize(this.sql);
-        // The tokenizer can split an adjacent question mark and MyBatis binding as ?#, {name}.
+        // The tokenizer can split an adjacent question mark or '#' and MyBatis binding as ?#, {name} or ##, {name}.
         // Repair only that boundary before either scanner runs; ordinary SQL needs no extra token pass.
-        final List<String> words = this.sql.indexOf("?#{") >= 0 ? restoreEscapedIbatisOpeners(tokens) : tokens;
+        final List<String> words = this.sql.indexOf("?#{") >= 0 || this.sql.indexOf("##{") >= 0 ? restoreEscapedIbatisOpeners(tokens) : tokens;
         final String firstOpWord = resolveFirstOpWord(words);
         final boolean isOpSqlPrefix = Strings.isNotEmpty(firstOpWord) && isOpSqlPrefixWord(firstOpWord);
         dataOperation = isOpSqlPrefix;
@@ -327,10 +334,12 @@ public final class ParsedSql {
         int positionalTokenCursor = 0;
         int positionalTokenCount = 0;
         boolean lastSourceTokenEndsWithQuestionMark = false;
-        // Whether the current output line holds an H2 "//" line comment (see the line-break rule below). Only SQL that
-        // contains "//" can set it, so the output of any other statement is unchanged.
+        // Whether the current output line holds an H2 "//" line comment or a hash operator that MySQL reads as a "#" line
+        // comment (see the line-break rule below). Only SQL that contains "//" or '#' can set it, so the output of any
+        // other statement is unchanged.
         final boolean mayHoldDoubleSlashComment = this.sql.indexOf("//") >= 0;
-        boolean lineHoldsDoubleSlashComment = false;
+        final boolean mayHoldHashOperator = this.sql.indexOf('#') >= 0;
+        boolean lineHoldsDialectLineComment = false;
         // Source offset of every token, aligned lazily, once, when a collapsed gap may have to keep its line break and
         // the SQL contains a line break somewhere.
         int[] tokenSourceOffsets = null;
@@ -488,7 +497,10 @@ public final class ParsedSql {
                 // ":id#{name}" or "#{name}:id"). Scan the rebuilt token even when it
                 // originally contained an iBatis marker so the mixed-style guard below
                 // sees both styles instead of silently leaving the :named marker in SQL.
-                if (mayContainNamedParameter(word, chainedSubscript)) {
+                // A split MyBatis marker joined later tokens (i > tokenIndex); a quote in a joined closing token ("}'x'")
+                // must not make the whole word look quoted, so only the unquoted first token decides. The named-marker
+                // scanners still skip quoted regions themselves.
+                if (mayContainNamedParameter(word, chainedSubscript || i > tokenIndex)) {
                     final boolean gluedToClosedValue = followsClosedValueToken(words, tokenIndex, null);
 
                     // Ambiguous quote readings leave the whole token verbatim, even when its first name is
@@ -572,8 +584,11 @@ public final class ParsedSql {
                 // flag stays set), so H2 reads exactly the source there and any marker in it fails loudly instead of
                 // those lines silently disappearing. This is dialect-neutral and fail-closed: only source text is ever
                 // kept, and a "//" that H2 would read as quoted text (inside "$$...$$", which is not modelled) also counts.
+                // MySQL has the same hazard with '#': the tokenizer keeps a hash operator ("?#", "##", "#>", "#-") as SQL,
+                // where MySQL opens a "#" line comment ("SET a = ?# note\nWHERE id = 42" must not run as "SET a = ?"),
+                // so a line holding one is treated exactly like a line holding "//".
                 if (SK.SPACE.equals(word) && i > 0 && i + 1 < size) {
-                    if (lineHoldsDoubleSlashComment
+                    if (lineHoldsDialectLineComment
                             || sb.length() > 0 && sb.charAt(sb.length() - 1) == '\'' && words.get(i - 1).endsWith("'") && words.get(i + 1).startsWith("'")) {
                         if (tokenSourceOffsets == null) {
                             // Empty when the SQL has no line break at all (or, defensively, cannot be aligned).
@@ -587,16 +602,18 @@ public final class ParsedSql {
                         final int gapEnd = gapStart >= 0 ? tokenSourceOffsets[i + 1] : -1;
 
                         if (gapEnd >= 0 && containsLineBreak(this.sql, gapStart, gapEnd)) {
-                            if (lineHoldsDoubleSlashComment && firstLineBreakInDroppedBlockComment(this.sql, gapStart, gapEnd)) {
+                            if (lineHoldsDialectLineComment && firstLineBreakInDroppedBlockComment(this.sql, gapStart, gapEnd)) {
                                 word = this.sql.substring(gapStart, gapEnd);
                             } else {
                                 word = "\n";
-                                lineHoldsDoubleSlashComment = false;
+                                lineHoldsDialectLineComment = false;
                             }
                         }
                     }
-                } else if (mayHoldDoubleSlashComment && !lineHoldsDoubleSlashComment) {
-                    lineHoldsDoubleSlashComment = sb.length() > 0 && sb.charAt(sb.length() - 1) == '/' && word.startsWith("/") || mayHoldH2LineComment(word);
+                } else if (!lineHoldsDialectLineComment) {
+                    lineHoldsDialectLineComment = mayHoldDoubleSlashComment
+                            && (sb.length() > 0 && sb.charAt(sb.length() - 1) == '/' && word.startsWith("/") || mayHoldH2LineComment(word))
+                            || mayHoldHashOperator && isHashOperatorToken(word);
                 }
 
                 sb.append(word);
@@ -610,7 +627,8 @@ public final class ParsedSql {
             // "// a"); a "/*" that opens on a later line ("// a\n/* b\nAND y = 2") is a real unterminated comment, which H2
             // now reports instead of running the truncated statement; and complete comments ("// a\n/* b */") are merely
             // kept. Markers in the kept text stay unconverted: a binding there fails loudly rather than silently disappearing.
-            if (lineHoldsDoubleSlashComment && containsLineBreak(this.sql, 0, this.sql.length())) {
+            // A line holding a hash operator is handled the same way, because MySQL reads a "/*" in its "#" comment as text.
+            if (lineHoldsDialectLineComment && containsLineBreak(this.sql, 0, this.sql.length())) {
                 final int[] offsets = tokenSourceOffsets == null ? alignTokenSourceOffsets(this.sql, words) : tokenSourceOffsets;
                 final int tailStart = offsets == null ? -1 : endOfLastAlignedToken(words, offsets);
 
@@ -873,7 +891,7 @@ public final class ParsedSql {
      *
      * @param sql the SQL string to parse (must not be {@code null}, empty, or blank)
      * @return a {@code ParsedSql} instance for the given SQL (typically a cached instance, unless the SQL is longer
-     *         than {@link #MAX_CACHEABLE_SQL_LENGTH} characters)
+     *         than {@link #MAX_CACHEABLE_SQL_LENGTH} characters or the JVM is shutting down, which closes the cache)
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank (including SQL made up only of
      *         characters that {@link String#trim()} removes, such as control characters); or if parameter detection
      *         in a recognized data-operation statement finds mixed styles ({@code ?}, {@code :propName},
@@ -885,27 +903,9 @@ public final class ParsedSql {
     public static ParsedSql parse(final String sql) {
         N.checkArgNotNull(sql, cs.sql);
 
-        if (sql.length() > MAX_CACHEABLE_SQL_LENGTH) {
-            return new ParsedSql(sql);
-        }
-
-        ParsedSql result = null;
-
-        final PoolableAdapter<ParsedSql> w = pool.get(sql);
-
-        if (w != null) {
-            result = w.value();
-        }
-
-        if (result != null) {
-            return result;
-        }
-
-        result = new ParsedSql(sql);
-
-        pool.put(sql, Poolable.wrap(result, LIVE_TIME, MAX_IDLE_TIME));
-
-        return result;
+        // The pool closes itself in a JVM shutdown hook (and is null if shutdown had begun before this class was
+        // initialized); the helper treats both as a cache miss, so parsing keeps working while the JVM stops.
+        return parse(sql, pool);
     }
 
     /**
@@ -929,14 +929,15 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the instance cached in {@code cache} for an already validated SQL string, parsing and caching it on a
+     * Returns the instance cached in {@code cache} for a non-null SQL string, parsing and caching it on a
      * miss, without a lock-free mirror in front of the cache. Equivalent to
-     * {@link #parse(String, KeyedObjectPool, ConcurrentMap) parse(inputSql, cache, null)}.
+     * {@link #parse(String, KeyedObjectPool, ConcurrentMap) parse(inputSql, cache, null)}; {@link #parse(String)}
+     * delegates here with the class's own cache.
      *
-     * @param inputSql the nonblank SQL; its surrounding whitespace is kept in the cache key
+     * @param inputSql the SQL (not {@code null}); its surrounding whitespace is kept in the cache key
      * @param cache the cache to consult and fill, or {@code null} to parse without caching
      * @return the cached instance, or a newly parsed one
-     * @throws IllegalArgumentException if the SQL is empty after {@link String#trim()} or is rejected by parameter
+     * @throws IllegalArgumentException if the SQL is empty or blank after {@link String#trim()} or is rejected by parameter
      *         detection (see {@link #parse(String)})
      */
     static ParsedSql parse(final String inputSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache) {
@@ -944,13 +945,14 @@ public final class ParsedSql {
     }
 
     /**
-     * Returns the instance cached in {@code cache} for an already validated SQL string, parsing and caching it on a
+     * Returns the instance cached in {@code cache} for a non-null SQL string, parsing and caching it on a
      * miss. SQL longer than {@link #MAX_CACHEABLE_SQL_LENGTH} characters as given (surrounding whitespace included, so
      * that no cached key exceeds the limit) is neither looked up nor stored: it is parsed and returned directly. The SQL
      * is cached exactly as given, so variants of one statement that differ only in surrounding whitespace are separate
      * (equal-valued) entries.
      *
-     * <p>{@code front}, when given, is a lock-free mirror of the entries of {@code cache}: it is consulted first, and
+     * <p>{@code front}, when given, is a lock-free mirror of the entries of {@code cache} ({@link #parse(String)} gives
+     * none; only tests supply one): it is consulted first, and
      * refreshed from every cache hit and every successful cache insertion (see
      * {@link #mirror(String, ParsedSql, KeyedObjectPool, ConcurrentMap)}). It keeps serving instances the cache has
      * since evicted or, at JVM shutdown, closed, which is harmless because {@code ParsedSql} is immutable and
@@ -968,11 +970,11 @@ public final class ParsedSql {
      * that could not be created at all, typically because shutdown had already begun when the cache was initialized
      * ({@code cache} is {@code null}, see {@link #createCache(Supplier)}), is a permanent miss as well.</p>
      *
-     * @param inputSql the nonblank SQL; its surrounding whitespace is kept in the cache key
+     * @param inputSql the SQL (not {@code null}); its surrounding whitespace is kept in the cache key
      * @param cache the cache to consult and fill, or {@code null} to parse without caching
      * @param front the lock-free mirror of {@code cache} to consult first and keep filled, or {@code null} for none
      * @return the cached instance, or a newly parsed one
-     * @throws IllegalArgumentException if the SQL is empty after {@link String#trim()} or is rejected by parameter
+     * @throws IllegalArgumentException if the SQL is empty or blank after {@link String#trim()} or is rejected by parameter
      *         detection (see {@link #parse(String)})
      */
     static ParsedSql parse(final String inputSql, final KeyedObjectPool<String, PoolableAdapter<ParsedSql>> cache,
@@ -1097,7 +1099,10 @@ public final class ParsedSql {
      * after its last token is kept as written whenever it contains a {@code /*} (on that line or a later one) and goes
      * on to a later line (complete comments there are kept too); an unterminated {@code /*} on a later line then makes
      * H2 report it instead of running the truncated statement. Kept text is not converted, so a marker in it fails
-     * loudly. A {@code ?} converted
+     * loudly. A line holding a hash operator token ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}) is
+     * treated exactly like a line holding {@code //}, since MySQL reads its {@code #} as the start of a line comment
+     * ({@code SET a = ?# c\nWHERE id = 42} keeps its line break instead of running as {@code SET a = ?} on MySQL).
+     * A {@code ?} converted
      * from a named or iBatis marker that would otherwise pair with an adjacent {@code ?} is separated from it by
      * one space ({@code payload?:key} becomes {@code payload? ?}, {@code :a:b} becomes {@code ? ?},
      * {@code #{a}?|x} becomes {@code ? ?|x}), so the output never forms a pgJDBC {@code ??} escape absent from
@@ -1214,7 +1219,8 @@ public final class ParsedSql {
      * Returns the character offsets, in {@link #originalSql()}, of exactly the positional {@code '?'} markers that
      * {@link #parameterCount()} counted as JDBC parameters, in ascending order. A {@code '?'} inside a quoted
      * literal, a quoted or bracket-quoted identifier ({@code [what?]}) or a comment, and a PostgreSQL JSON
-     * {@code ?} operator, is never listed; a {@code '?'} inside an array subscript ({@code arr[?]}) is. This is
+     * {@code ?} operator, is never listed; a {@code '?'} inside an array subscript ({@code arr[?]}) is, unless the
+     * subscript's quoting is ambiguous ({@code ARRAY['a\'', ?]}, see the class documentation). This is
      * the single classification the query builders use to rewrite the placeholders of a raw sub-query, so the
      * text they substitute is, by construction, the text this parser bound.
      *
@@ -1231,8 +1237,8 @@ public final class ParsedSql {
 
     /**
      * If classification counted every question mark in the source, their literal offsets are already
-     * the answer. Any extra mark (operator, quoted text, metadata or comment) forces token alignment.
-     * This is a consequence of classification, not a competing rule for deciding what binds.
+     * the answer. Any extra mark (operator, quoted text, metadata or comment) forces token alignment, signalled by a
+     * {@code null} result. This is a consequence of classification, not a competing rule for deciding what binds.
      */
     private static int[] allQuestionMarkOffsets(final String sql, final int count) {
         final int[] offsets = new int[count];
@@ -1484,6 +1490,27 @@ public final class ParsedSql {
         final char first = word.charAt(0);
 
         return !(first == '"' || first == '`' || isStringLiteralToken(word)) || word.indexOf('\\') >= 0;
+    }
+
+    /**
+     * Returns {@code true} if the emitted token {@code word} is an operator token that holds {@code '#'} ({@code ?#},
+     * {@code ##}, {@code #>}, {@code #>>}, {@code #-}): SQL to the tokenizer, but the start of a {@code #} line comment
+     * to MySQL. Names ({@code #temp}), quoted text and MyBatis markers do not qualify.
+     */
+    private static boolean isHashOperatorToken(final String word) {
+        if (word.indexOf('#') < 0) {
+            return false;
+        }
+
+        for (int i = 0, len = word.length(); i < len; i++) {
+            final char ch = word.charAt(i);
+
+            if (Character.isLetterOrDigit(ch) || ch == '_' || ch == '$' || ch == '{' || ch == '\'' || ch == '"' || ch == '`' || ch == '[') {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -1895,8 +1922,8 @@ public final class ParsedSql {
     /**
      * Returns {@code true} if {@code token} ends with a subscript glued to an identifier ({@code "x[?]"},
      * {@code "arr[:ids]"}), which is what opens a subscript chain. A bracket that follows a qualification
-     * dot ({@code "t.[a]"}) or sits inside a quoted region ({@code "N'a[?]'"}) is a quoted identifier, and a
-     * token that starts with {@code '['} is a standalone group rather than a chain root.
+     * dot ({@code "t.[a]"}) or sits inside a quoted region ({@code "N'a[?]'"}) belongs to a quoted identifier or
+     * literal, and a token that starts with {@code '['} is a standalone group rather than a chain root.
      */
     private static boolean isIdentifierGluedSubscriptToken(final String token) {
         final int bracketIndex = token.indexOf('[');
@@ -1918,9 +1945,10 @@ public final class ParsedSql {
 
     /**
      * Keeps the MyBatis opener intact when longest-match tokenization borrows its '#' for a preceding
-     * question mark ({@code ?#{name}}, {@code ??#{name}}, {@code @??#{name}}). Moving that character to the next token preserves the exact SQL,
+     * question mark ({@code ?#{name}}, {@code ??#{name}}, {@code @??#{name}}) or a preceding '#' ({@code ##{name}}, where
+     * {@code ##} is the PostgreSQL closest-point operator). Moving that character to the next token preserves the exact SQL,
      * so source offsets still follow from the resulting token lengths. The copy is lazy and the scan is linear.
-     * Legitimate {@code ?#} operators without an immediately adjacent '{' are left unchanged.
+     * Legitimate {@code ?#} and {@code ##} operators without an immediately adjacent '{' are left unchanged.
      *
      * @param tokens the original tokenizer output, including whitespace and comments
      * @return the original list, or a corrected copy if a MyBatis opener crossed that token boundary
@@ -1929,12 +1957,14 @@ public final class ParsedSql {
         List<String> result = tokens;
 
         for (int i = 0, size = tokens.size(); i + 1 < size; i++) {
-            if (tokens.get(i).equals("?#") && tokens.get(i + 1).startsWith("{")) {
+            final String token = tokens.get(i);
+
+            if ((token.equals("?#") || token.equals("##")) && tokens.get(i + 1).startsWith("{")) {
                 if (result == tokens) {
                     result = new ArrayList<>(tokens);
                 }
 
-                result.set(i, SK.QUESTION_MARK);
+                result.set(i, token.substring(0, 1));
                 result.set(i + 1, "#" + tokens.get(i + 1));
             }
         }
@@ -2003,8 +2033,9 @@ public final class ParsedSql {
 
     /**
      * Returns the indexes of every <code>"#{"</code> in {@code token} that lies outside single-, double- or
-     * backtick-quoted regions, in ascending order, so a marker inside a literal element of a subscript
-     * ({@code "ARRAY['#{x}']"}) is not mistaken for a binding. A token that holds none, and one whose quoting
+     * backtick-quoted regions and outside block and dash-line comments, in ascending order, so a marker inside a
+     * literal element of a subscript ({@code "ARRAY['#{x}']"}) is not mistaken for a binding. A token that holds
+     * none, and one whose quoting
      * is ambiguous between the two escape readings (see
      * {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}), yields an empty array: it is verbatim.
      *
@@ -2103,8 +2134,8 @@ public final class ParsedSql {
 
     /**
      * Returns the indexes at or after {@code fromIndex} of every {@code marker} character that lies outside
-     * single-, double- or backtick-quoted regions of {@code token} under both escape readings of
-     * {@link #skipQuotedRegion(String, int, boolean)} (backslash + doubled quote, and doubled quote only), or
+     * single-, double- or backtick-quoted regions and outside block and dash-line comments of {@code token} under both
+     * escape readings of {@link #skipQuotedRegion(String, int, boolean)} (backslash + doubled quote, and doubled quote only), or
      * {@code null} when the two readings disagree on that set. Agreement means the marker positions do not
      * depend on which dialect the literal is read under ({@code 'it''s :x', :id} and {@code 'a\\', :id} both
      * yield the {@code ':'} of {@code :id}); disagreement ({@code 'a\'', :id}: one literal under the backslash
@@ -2215,7 +2246,7 @@ public final class ParsedSql {
 
     /**
      * Returns the indexes of the {@code '?'} characters from {@code fromIndex} that are outside single-, double-
-     * or backtick-quoted regions under both escape readings (see
+     * or backtick-quoted regions and block or dash-line comments under both escape readings (see
      * {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}), so a {@code '?'} inside a literal
      * in a subscript ({@code "ARRAY['a?', ?]"}, {@code "ARRAY['it''s ?', ?]"}, {@code "ARRAY[E'it\'s ?', ?]"})
      * is not mistaken for a placeholder. An ambiguous token ({@code "ARRAY['a\'?', ?]"}) yields no indexes at
@@ -2252,8 +2283,9 @@ public final class ParsedSql {
 
     /**
      * Returns the indexes of every {@code ':'} of {@code token} that lies outside single-, double- and
-     * backtick-quoted regions, so a marker inside a literal element of a subscript ({@code "ARRAY[':x']"})
-     * is not mistaken for a binding, or an empty array when the token holds none or its quoting is ambiguous
+     * backtick-quoted regions and block or dash-line comments, so a marker inside a literal element of a
+     * subscript ({@code "ARRAY[':x']"}) is not mistaken for a binding, or an empty array when the token holds
+     * none or its quoting is ambiguous
      * between the two escape readings (see {@link #findUnambiguousUnquotedMarkerIndexes(String, int, char)}),
      * in which case the token is verbatim. Collected once for the whole token: which of these indexes really
      * starts a parameter is then decided per marker by {@link #isNamedParameterStart(String, int, int, boolean)},
@@ -2276,9 +2308,13 @@ public final class ParsedSql {
      * {@code fromIndex} is where the scan resumed, that is the end of the previously extracted parameter, so
      * the second marker of {@code ":a:b"} is a parameter although a name character precedes it.
      *
+     * @param token the token holding the prospective marker
+     * @param index the index of the prospective marker's {@code ':'} in {@code token}
+     * @param fromIndex the index where the scan resumed (the end of the previously extracted parameter, or {@code 0})
      * @param tokenFollowsClosedValue whether the token directly continues a previous token that ends with a closing
      *        quote, parenthesis or bracket (see {@link #followsClosedValueToken(List, int, IntList)}), which then
      *        rejects a marker at index 0 like one glued to such a character inside the token
+     * @return {@code true} if the {@code ':'} at {@code index} starts a named parameter
      * @throws IllegalArgumentException if the character after the prospective colon or the preceding name-boundary
      *         character is an unpaired UTF-16 surrogate
      */
@@ -2329,6 +2365,7 @@ public final class ParsedSql {
      * @param words the tokens or bracket-interior words
      * @param index the index of the token to check
      * @param wordOffsets the source offsets of bracket-interior {@code words}, or {@code null} for tokenizer output
+     * @return {@code true} if the token at {@code index} is glued to a preceding closed value
      */
     private static boolean followsClosedValueToken(final List<String> words, final int index, final IntList wordOffsets) {
         if (index <= 0) {
@@ -2373,7 +2410,7 @@ public final class ParsedSql {
      * quote boundaries. Plain comma-separated bindings need neither tokenization nor operand checks.</p>
      *
      * @throws IllegalArgumentException if operand classification encounters an unpaired UTF-16 surrogate immediately
-     *         after a prospective colon-style marker
+     *         after or before a prospective colon-style marker
      */
     private static int[] findSubscriptPositionalParameterIndexes(final String token, final int fromIndex) {
         final int[] commaSeparated = commaSeparatedSubscriptBindings(token, fromIndex);
@@ -2434,7 +2471,7 @@ public final class ParsedSql {
      * methods would neither expose these operands nor preserve the subscript ambiguity contract.
      *
      * @throws IllegalArgumentException if operand classification encounters an unpaired UTF-16 surrogate immediately
-     *         after a prospective colon-style marker
+     *         after or before a prospective colon-style marker
      */
     private static int[] collectSubscriptPositionalParameterIndexes(final String token, final int fromIndex, final boolean backslashEscapes) {
         final List<String> words = new ArrayList<>();
@@ -2551,14 +2588,15 @@ public final class ParsedSql {
          * a {@code ?} could be either a binding or a JSON operator, their presence settles it as the operator.
          * Computed once, only for such an ambiguous {@code ?}.
          *
-         * @throws IllegalArgumentException if a prospective colon-style marker is followed by an unpaired UTF-16 surrogate
+         * @throws IllegalArgumentException if a prospective colon-style marker is followed or preceded by an unpaired UTF-16
+         *         surrogate, or a standalone bracket token's first non-whitespace {@code ':'} or {@code '?'} is followed by one
          */
         private boolean containsNamedMarker() {
             if (namedMarkerPresent == null) {
                 boolean found = false;
 
                 for (int i = 0, size = words.size(); i < size && !found; i++) {
-                    found = containsNamedOrIbatisMarker(words.get(i), chainedSubscripts != null && chainedSubscripts[i],
+                    found = containsNamedOrIbatisMarker(words, i, chainedSubscripts != null && chainedSubscripts[i],
                             followsClosedValueToken(words, i, wordOffsets));
                 }
 
@@ -2572,7 +2610,8 @@ public final class ParsedSql {
          * Classifies positional markers while tracking SQL operand and constructor context.
          *
          * @throws IllegalArgumentException if a prospective colon-style operand marker, or the first non-whitespace
-         *         {@code ':'} or {@code '?'} in a standalone bracket group, is followed by an unpaired UTF-16 surrogate
+         *         {@code ':'} or {@code '?'} in a standalone bracket group, is followed by an unpaired UTF-16 surrogate, or
+         *         a prospective colon-style marker is preceded by one
          */
         private int[] classify() {
             IntList indexes = null;
@@ -2782,6 +2821,7 @@ public final class ParsedSql {
          * @param markerIndex the index of {@code marker} in the words
          * @param next the index of the non-comment word after the marker, or {@code -1}
          * @param jsonObjectScope whether the marker sits directly in a {@code JSON_OBJECT}/{@code JSON_OBJECTAGG} argument list
+         * @return {@code true} if {@code previousWord} leads the marker as a keyword, so the marker is a placeholder
          */
         private boolean leadsMarkerAsKeyword(final String wordBeforePrevious, final String previousWord, final String marker, final int markerIndex,
                 final int next, final boolean jsonObjectScope) {
@@ -3440,6 +3480,9 @@ public final class ParsedSql {
         /**
          * Builds matching-parenthesis indexes at most once; never rescans nested expression suffixes.
          *
+         * @param opening the index of a {@code (} word
+         * @return the index of the matching {@code )}, or {@code 0} if {@code opening} has none (callers therefore
+         *         require a result greater than {@code opening})
          * @throws IllegalArgumentException if scanning a split MyBatis binding encounters a standalone bracket
          *         group whose first non-whitespace {@code ':'} or {@code '?'} is followed by an unpaired UTF-16 surrogate
          */
@@ -3671,6 +3714,7 @@ public final class ParsedSql {
      * @param nextWord the non-comment word directly after the {@code ?} (empty if none)
      * @param namedMarkerPresent reports whether the statement contains a named or MyBatis marker; consulted only for
      *            the ambiguous {@code SELECT skip ?} position
+     * @return {@code true} if {@code previousWord} acts as a keyword here, so the {@code ?} is a placeholder
      */
     private static boolean isContextualPlaceholderKeyword(final String wordBeforePrevious, final String previousWord, final String nextWord,
             final BooleanSupplier namedMarkerPresent) {
@@ -3697,17 +3741,29 @@ public final class ParsedSql {
     /**
      * Returns {@code true} if the token holds a named ({@code :name}) or MyBatis ({@code #{...}}) marker that the
      * constructor would convert: the same pre-filters and unquoted-marker scanners, so quoted text, casts
-     * ({@code ::int}) and qualified names are not mistaken for markers.
+     * ({@code ::int}) and qualified names are not mistaken for markers, and an empty or blank {@code #{}} (kept as
+     * text) is not a marker.
      *
-     * @param token a source token
+     * @param words the source tokens
+     * @param index the index of the token to inspect in {@code words}
      * @param chainedSubscript whether the token continues an identifier-rooted subscript chain
      * @param followsClosedValue whether the token directly continues a token ending with a closing quote,
      *        parenthesis or bracket, as {@link #followsClosedValueToken(List, int, IntList)} reports
-     * @throws IllegalArgumentException if a prospective colon-style marker is followed by an unpaired UTF-16 surrogate
+     * @return {@code true} if the token holds a named or MyBatis marker
+     * @throws IllegalArgumentException if a prospective colon-style marker is followed or preceded by an unpaired UTF-16
+     *         surrogate, or the token is a standalone bracket group whose first non-whitespace {@code ':'} or
+     *         {@code '?'} is followed by one
      */
-    private static boolean containsNamedOrIbatisMarker(final String token, final boolean chainedSubscript, final boolean followsClosedValue) {
-        if (mayContainIbatisParameter(token, chainedSubscript) && findUnquotedIbatisMarkerIndexes(token).length > 0) {
-            return true;
+    private static boolean containsNamedOrIbatisMarker(final List<String> words, final int index, final boolean chainedSubscript,
+            final boolean followsClosedValue) {
+        final String token = words.get(index);
+
+        if (mayContainIbatisParameter(token, chainedSubscript)) {
+            for (final int markerIndex : findUnquotedIbatisMarkerIndexes(token)) {
+                if (!isBlankIbatisMarker(words, index, markerIndex)) {
+                    return true;
+                }
+            }
         }
 
         if (mayContainNamedParameter(token, chainedSubscript)) {
@@ -3724,8 +3780,43 @@ public final class ParsedSql {
     }
 
     /**
+     * Returns {@code true} if the <code>#{</code> at {@code markerIndex} of {@code words[index]} is closed with empty or blank
+     * content, which the constructor keeps as text and does not bind. The closing <code>'}'</code> is looked up as the
+     * constructor does: in the same token, or else in the following tokens it would join ({@code #{ }} is split by the
+     * tokenizer). A malformed or unclosed marker is not blank.
+     */
+    private static boolean isBlankIbatisMarker(final List<String> words, final int index, final int markerIndex) {
+        final String token = words.get(index);
+        final int closingIndex = findIbatisClosingBraceIndex(token, markerIndex + 2);
+
+        if (closingIndex >= 0) {
+            return Strings.isBlank(token.substring(markerIndex + 2, closingIndex));
+        }
+
+        if (closingIndex == MALFORMED_IBATIS_MARKER || !Strings.isBlank(token.substring(markerIndex + 2))) {
+            return false;
+        }
+
+        for (int k = index + 1, size = words.size(); k < size; k++) {
+            final String nextWord = words.get(k);
+            final int braceIndex = findIbatisContinuationClosingBraceIndex(nextWord);
+
+            if (braceIndex >= 0) {
+                return Strings.isBlank(nextWord.substring(0, braceIndex));
+            }
+
+            if (braceIndex == MALFORMED_IBATIS_MARKER || !Strings.isBlank(nextWord)) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Returns {@code true} if {@code word} is a string literal, optionally with a prefix made of letters, digits,
-     * {@code _} and {@code &} ({@code 'a'}, {@code E'a'}, {@code N'a'}, {@code U&'a'}, {@code _utf8mb4'a'}).
+     * {@code _} and {@code &} that starts with neither a digit nor {@code &} ({@code 'a'}, {@code E'a'}, {@code N'a'},
+     * {@code U&'a'}, {@code _utf8mb4'a'}).
      */
     private static boolean isStringLiteralToken(final String word) {
         final int quote = word.indexOf('\'');
@@ -3763,7 +3854,7 @@ public final class ParsedSql {
         // a literal/placeholder here misclassifies the operator as a JDBC placeholder and then
         // falsely reports mixed parameter styles when the expression contains a named parameter.
         return word.equals(SK.QUESTION_MARK) || isCompactQuestionMarkOperator(word) || firstChar == '\'' || firstChar == '"' || firstChar == '`'
-                || firstChar == '(' || firstChar == '['
+                || firstChar == '$' || firstChar == '(' || firstChar == '['
                 || (firstChar == _PREFIX_OF_NAMED_PARAMETER && word.length() >= 2 && isNamedParameterIdentifierStart(namedParameterCodePointAt(word, 1)))
                 || word.startsWith(LEFT_OF_IBATIS_NAMED_PARAMETER) || (startsWithSqlExpressionWord(word) && !isSqlExpressionBoundaryWord(word));
     }

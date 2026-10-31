@@ -41,8 +41,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.annotation.Column;
@@ -258,6 +261,38 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertTrue(ibatisDup.contains("VALUES (#{id}, #{id_2})"), "Duplicate iBATIS placeholders not de-duplicated: " + ibatisDup);
         }
 
+        // Regression: parentheses inside a dollar-quoted DISTINCT ON expression closed (or extended) its list and leaked
+        // expression text into the INSERT target columns. Cast bare literals so the PostgreSQL expressions are valid.
+        @ParameterizedTest
+        @ValueSource(strings = { "$$)$$::text", "$tag$)$tag$::text", "$$($$::text", "$tag$($tag$::text", "concat(name, $$)($$)",
+                "concat(name, $outer$) $inner$ ( $outer$)", "concat(name, $tag$')('$tag$), id" })
+        void testInsertSelectDistinctOnDollarQuotedExpressions(final String expression) {
+            for (final Dsl dsl : List.of(PSC, lexDialect(PSC, "PostgreSQL"))) {
+                final String selectItem = "DISTINCT ON (" + expression + ") id";
+                assertSql("INSERT INTO bk (id) SELECT " + selectItem + " FROM t", List.of(), dsl.select(selectItem).into("bk").from("t").build());
+            }
+        }
+
+        // Intended behavior for KNOWN OPEN ISSUES #12: standard PostgreSQL strings do not use backslash escapes,
+        // and ARRAY brackets must not hide their quoted elements or end the DISTINCT ON list prematurely.
+        @Disabled("Known open issue #12 in AbstractQueryBuilder: DISTINCT ON scanning is not dialect-aware")
+        @ParameterizedTest
+        @ValueSource(strings = { "'\\'::text", "ARRAY[']', ')']", "ARRAY[$$]$$, $$)$$]", "ARRAY[$tag$]$tag$, $other$)$other$]" })
+        void testKnownOpenIssueInsertSelectDistinctOnPostgreSqlLiterals(final String expression) {
+            final Dsl pg = lexDialect(PSC, "PostgreSQL");
+            final String selectItem = "DISTINCT ON (" + expression + ") id";
+
+            assertSql("INSERT INTO bk (id) SELECT " + selectItem + " FROM t WHERE active = ?", List.of(true),
+                    pg.select(selectItem).into("bk").from("t").where(Filters.eq("active", true)).build());
+        }
+
+        @Test
+        void testInsertSelectDistinctOnDollarQuotesKeepAliasesAndBindings() {
+            final String selectItem = "DISTINCT ON ($tag$) AS ($tag$::text) id AS copy_id";
+            assertSql("INSERT INTO bk (id, name) SELECT " + selectItem + ", name FROM t WHERE active = ?", List.of(true),
+                    PSC.select(selectItem, "name").into("bk").from("t").where(Filters.eq("active", true)).build());
+        }
+
         // Regression: a sole-wildcard INSERT ... SELECT omits the target column list, so into() no longer validated the
         // wildcard item and its comment token was only rejected later, by from().
         @Test
@@ -271,6 +306,32 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("INSERT INTO bk (\"*\") SELECT \"*\" FROM t", PSC.select("\"*\"").into("bk").from("t").build().query());
             assertEquals("INSERT INTO bk SELECT `t`.* FROM t", PSC.select("`t`.*").into("bk").from("t").build().query());
             assertEquals("INSERT INTO bk SELECT [t].* FROM t", PSC.select("[t].*").into("bk").from("t").build().query());
+        }
+
+        // Regression: a set quantifier written into the first select item was copied into the INSERT target column list,
+        // rendering the invalid "INSERT INTO bk (DISTINCT id, name) SELECT DISTINCT id, name FROM t".
+        @Test
+        void testInsertSelectTargetColumnListOmitsLeadingSetQuantifier() {
+            assertEquals("INSERT INTO bk (id, name) SELECT DISTINCT id, name FROM t", PSC.select("DISTINCT id", "name").into("bk").from("t").build().query());
+            assertEquals("INSERT INTO bk (id, name) SELECT distinct id, name FROM t", PSC.select("distinct id, name").into("bk").from("t").build().query());
+            assertEquals("INSERT INTO bk (id) SELECT ALL id FROM t", PSC.select("ALL id").into("bk").from("t").build().query());
+            assertEquals("INSERT INTO bk (id) SELECT DISTINCTROW id FROM t", PSC.select("DISTINCTROW id").into("bk").from("t").build().query());
+            assertEquals("INSERT INTO bk (id, name) SELECT DISTINCT id AS i, name FROM t",
+                    PSC.select("DISTINCT id AS i", "name").into("bk").from("t").build().query());
+
+            // PostgreSQL's DISTINCT ON (...) belongs to the SELECT as a whole: its expression list is dropped with it.
+            assertEquals("INSERT INTO bk (id) SELECT DISTINCT ON (id) id FROM t", PSC.select("DISTINCT ON (id) id").into("bk").from("t").build().query());
+            assertEquals("INSERT INTO bk (a, b) SELECT distinct on (a, b) a, b FROM t",
+                    PSC.select("distinct on (a, b) a", "b").into("bk").from("t").build().query());
+            assertEquals("INSERT INTO bk (id) SELECT DISTINCT ON(lower(name), ')') id FROM t",
+                    PSC.select("DISTINCT ON(lower(name), ')') id").into("bk").from("t").build().query());
+
+            // Only a leading keyword followed by whitespace is a quantifier: a column named like one, or a later item, is kept.
+            assertEquals("INSERT INTO bk (distinct_id) SELECT distinct_id FROM t", PSC.select("distinct_id").into("bk").from("t").build().query());
+            assertEquals("INSERT INTO bk (id, all_flag) SELECT id, all_flag FROM t", PSC.select("id", "all_flag").into("bk").from("t").build().query());
+
+            // The sub-entity check sees the item without its quantifier, so a sub-entity root is still rejected.
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("DISTINCT devices", "id").into("bk", Account.class));
         }
 
         // Regression: select("*").into(t).from(s) rendered the invalid target column list "INSERT INTO t (*) SELECT * FROM s".
@@ -290,6 +351,68 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("INSERT INTO account_backup (id, name) SELECT id, name FROM account",
                     PSC.select("id", "name").into("account_backup").from("account").build().query());
             assertEquals("INSERT INTO stats (count(*)) SELECT count(*) FROM account", PSC.select("count(*)").into("stats").from("account").build().query());
+        }
+
+        // Regression: into(Class) / into(String, Class) after select(Src.class) replaced the source entity mapping, so the
+        // SELECT list read the TARGET entity's columns from the source table ("SELECT id AS "id", archived_name AS ...").
+        @Test
+        void testInsertSelectIntoEntityKeepsSourceEntityMappingForSelectList() {
+            assertEquals("INSERT INTO profile_archive (id, archived_name) SELECT id AS \"id\", f_name AS \"fullName\" FROM profile",
+                    PSC.select(DivergentColumnProfile.class).into(ArchivedProfile.class).from("profile").build().query());
+            assertEquals("INSERT INTO archive (id, archived_name) SELECT id AS \"id\", f_name AS \"fullName\" FROM profile",
+                    PSC.select(DivergentColumnProfile.class).into("archive", ArchivedProfile.class).from("profile").build().query());
+
+            // The later clauses resolve against the source entity as well.
+            assertSql("INSERT INTO profile_archive (id, archived_name) SELECT p.id AS \"id\", p.f_name AS \"fullName\" FROM profile p WHERE p.f_name = ?",
+                    List.of("x"),
+                    PSC.select(DivergentColumnProfile.class).into(ArchivedProfile.class).from("profile p").where(Filters.eq("fullName", "x")).build());
+
+            // Without a source entity (select(String...)), the target mapping still maps the select list.
+            assertEquals("INSERT INTO profile_archive (archived_name) SELECT archived_name AS \"fullName\" FROM profile",
+                    PSC.select("fullName").into(ArchivedProfile.class).from("profile").build().query());
+        }
+
+        // Regression: the INSERT ... SELECT target column list rendered sub-entity expansions as table-qualified columns
+        // ("INSERT INTO bk (id, device.id, device.account_id, ...)"), which no database accepts.
+        @Test
+        void testInsertSelectRejectsSubEntityTargetColumns() {
+            final SqlBuilder withSubEntities = PSC.select(Account.class, true);
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> withSubEntities.into("account_backup"));
+            assertTrue(e.getMessage().startsWith("INSERT ... SELECT cannot derive a target column from the sub-entity select item 'devices."), e.getMessage());
+            // The rejection left the builder unchanged.
+            assertEquals(PSC.select(Account.class, true).from("account").build().query(), withSubEntities.from("account").build().query());
+
+            for (final String item : List.of("devices", "DEVICES", "devices ", "devices AS d", "devices.name")) {
+                e = assertThrows(IllegalArgumentException.class, () -> PSC.select("id", item).into("bk", Account.class));
+                assertTrue(e.getMessage().contains("'" + item + "'"), e.getMessage());
+            }
+
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("id", "devices").into(Account.class));
+            assertThrows(IllegalArgumentException.class, () -> PSC.select(Map.of("devices", "d")).into("bk", Account.class));
+            // A sub-entity of the source entity is rejected even when the target entity has no such property.
+            assertThrows(IllegalArgumentException.class, () -> PSC.select(Account.class, true).into(ArchivedProfile.class));
+
+            // Plain columns, and names without an entity mapping, are unchanged.
+            assertEquals("INSERT INTO bk (id, devices) SELECT id, devices FROM account",
+                    PSC.select("id", "devices").into("bk").from("account").build().query());
+            assertEquals("INSERT INTO bk (id, contact) SELECT id AS \"id\", contact AS \"contact\" FROM account",
+                    PSC.select("id", "contact").into("bk", Account.class).from("account").build().query());
+
+            // A multi-select is not judged by its first Selection's mapping: the plain column 'devices' of the second
+            // Selection is not Account's sub-entity property.
+            final List<Selection> selections = List.of(Selection.builder(Account.class).tableAlias("a").includedPropNames(List.of("id")).build(),
+                    Selection.builder(PlainDevicesRow.class).tableAlias("s").includedPropNames(List.of("devices")).build());
+            assertTrue(PSC.select(selections).into("t").from("account a, plain_devices_row s").build().query().startsWith("INSERT INTO t ("));
+        }
+
+        // Regression: the protected parseInsertEntity reported an empty entity map with the bare message "entity map".
+        @Test
+        void testParseInsertEntityReportsEmptyEntityMap() {
+            final SqlBuilder builder = PSC.select("id");
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> AbstractQueryBuilder.parseInsertEntity(builder, new HashMap<String, Object>(), null));
+            assertEquals("entity map must not be empty", e.getMessage());
+            assertEquals("SELECT id FROM t", builder.from("t").build().query());
         }
 
         // Regression: the protected toInsertPropsList reported a null or empty propsList as "All elements in propsList are null".
@@ -1908,6 +2031,33 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("SELECT * FROM (SELECT id FROM users) u -- note\n WHERE x = ?", sql);
         }
 
+        // Regression: from(builder, alias) took the alias from the last table reference of a multi-reference alias text
+        // ("u, orders o" -> "o"), so entity columns and predicates were silently qualified with the wrong table.
+        @Test
+        void testDerivedTableAliasUsesPrimaryReferenceOnly() {
+            final String expected = PSC.select(Account.class)
+                    .from("(SELECT id, first_name FROM account) u, orders o")
+                    .where(Filters.eq("firstName", "x"))
+                    .build()
+                    .query();
+            final String sql = PSC.select(Account.class)
+                    .from(PSC.select("id", "first_name").from("account"), "u, orders o")
+                    .where(Filters.eq("firstName", "x"))
+                    .build()
+                    .query();
+
+            assertEquals(expected, sql);
+            assertTrue(sql.startsWith("SELECT u.id AS \"id\""), sql);
+            assertTrue(sql.endsWith("FROM (SELECT id, first_name FROM account) u, orders o WHERE u.first_name = ?"), sql);
+
+            final String joined = PSC.select(Account.class)
+                    .from(PSC.select("id", "first_name").from("account"), "u JOIN orders o ON o.account_id = u.id")
+                    .where(Filters.eq("firstName", "x"))
+                    .build()
+                    .query();
+            assertTrue(joined.endsWith("u JOIN orders o ON o.account_id = u.id WHERE u.first_name = ?"), joined);
+        }
+
         @Test
         void testExplicitAliasEqualToExpressionSuffixIsKept() {
             // Only a whole-expression match ("name AS name") makes the alias redundant; a suffix match must keep it.
@@ -2409,6 +2559,21 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("a", AbstractQueryBuilder.tableAlias("a", Account.class));
         }
 
+        @Test
+        void testFromClassNullOrEmptyAliasOmitsTableAnnotationAlias() {
+            // Unlike selectFrom(Class, null, true), this overload explicitly suppresses the @Table alias.
+            for (final String alias : Arrays.asList(null, "")) {
+                assertSql("SELECT id AS \"id\", status AS \"status\" FROM aliased_orders WHERE status = ? ORDER BY id", List.of("open"),
+                        PSC.select("id", "status").from(AliasedOrder.class, alias).where(Filters.eq("status", "open")).orderBy("id").build());
+            }
+
+            // Omitting the alias argument applies the annotation, while a supplied alias overrides it.
+            assertSql("SELECT o.id AS \"id\", o.status AS \"status\" FROM aliased_orders o WHERE o.status = ? ORDER BY o.id", List.of("open"),
+                    PSC.select("id", "status").from(AliasedOrder.class).where(Filters.eq("status", "open")).orderBy("id").build());
+            assertSql("SELECT x.id AS \"id\", x.status AS \"status\" FROM aliased_orders x WHERE x.status = ? ORDER BY x.id", List.of("open"),
+                    PSC.select("id", "status").from(AliasedOrder.class, "x").where(Filters.eq("status", "open")).orderBy("id").build());
+        }
+
         // A sub-entity table contributing no column must not be listed in FROM (Cartesian product), with or
         // without exclusions and through the Selection path alike.
         @Test
@@ -2450,6 +2615,44 @@ public class AbstractQueryBuilderTest extends TestBase {
             // select(List) leaves FROM to the caller, so it does not fall back.
             assertEquals("SELECT id AS \"id\", status AS \"status\", c.id AS \"customer.id\", c.name AS \"customer.name\" FROM aliased_orders",
                     PSC.select(Selection.builder(AliasedOrder.class).includeSubEntityProperties(true).build()).from("aliased_orders").build().query());
+        }
+
+        // Regression: an included sub-entity root written with padding or another letter case ("customer ", "CUSTOMER") was
+        // expanded by the select list, which strips the padding and resolves the property leniently, but the generated FROM
+        // left out the sub-entity table and the parent's fallback alias.
+        @Test
+        void testSelectFromListsSubEntityTableForPaddedOrRecasedRoot() {
+            final String expected = PSC.selectFrom(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "customer")).build()).build().query();
+
+            for (final String root : List.of("customer ", "CUSTOMER", "Customer", " customer　")) {
+                assertEquals(expected, PSC.selectFrom(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", root)).build()).build().query(),
+                        root);
+            }
+
+            assertEquals("SELECT o.id AS \"id\", c.name AS \"customer.name\" FROM aliased_orders o, aliased_customer c",
+                    PSC.selectFrom(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", " customer.name")).build()).build().query());
+            assertEquals("aliased_orders, aliased_customer c", AbstractQueryBuilder.getFromClause(
+                    List.of(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "customer ")).build()), NamingPolicy.SNAKE_CASE));
+            assertTrue(AbstractQueryBuilder.listsSubEntityTable(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "CUSTOMER")).build()));
+
+            // An aliased root is not expanded, so its table is still not listed.
+            assertFalse(
+                    AbstractQueryBuilder.listsSubEntityTable(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "customer AS c2")).build()));
+
+            // The same-table check of select(...).from(Class) sees a padded root too.
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> PSC.select("id", "homeAddress ", "workAddress").from(SubEntityPerson.class));
+            assertTrue(e.getMessage().contains("'homeAddress' and 'workAddress'"), e.getMessage());
+        }
+
+        // The renderer resolves this name to customerId's physical column, so the customer sub-entity contributes
+        // no selected column and must not add a table to FROM. Include the original exact-name case and padding variants.
+        @Disabled("Known open issue: a mapped column matching a sub-entity root adds an unintended cross join")
+        @ParameterizedTest
+        @ValueSource(strings = { "customer", "customer ", " customer", "\tcustomer\t", "customer\u3000" })
+        void testKnownOpenIssueSelectFromMappedColumnDoesNotListSubEntityTable(final String column) {
+            assertSql("SELECT id AS \"id\", customer AS \"customer\" FROM mapped_column_orders", List.of(),
+                    PSC.selectFrom(Selection.builder(MappedColumnOrder.class).includedPropNames(List.of("id", column)).build()).build());
         }
 
         @Test
@@ -5617,7 +5820,8 @@ public class AbstractQueryBuilderTest extends TestBase {
                     .query();
 
             assertEquals(viaUnion, viaAppend);
-            assertTrue(viaAppend.endsWith("ORDER BY first_name"), "ORDER BY after a set operation must not be alias-qualified: " + viaAppend);
+            // Not alias-qualified, and naming the first operand's result label (see testOrderByAfterSetOperationReferencesFirstOperandResultLabels).
+            assertTrue(viaAppend.endsWith("ORDER BY \"firstName\""), "ORDER BY after a set operation must not be alias-qualified: " + viaAppend);
 
             // Same reset for the Criteria-carried set-operation path.
             final String viaCriteria = PSC.select("firstName")
@@ -5625,7 +5829,7 @@ public class AbstractQueryBuilderTest extends TestBase {
                     .append(Criteria.builder().union(Filters.subQuery("SELECT first_name FROM archive")).orderBy("firstName").build())
                     .build()
                     .query();
-            assertTrue(viaCriteria.endsWith("ORDER BY first_name"), viaCriteria);
+            assertTrue(viaCriteria.endsWith("ORDER BY \"firstName\""), viaCriteria);
 
             // A select modifier can no longer be spliced into the already-finished left operand; the staged
             // modifier is now rejected at build() exactly as it is after union(String).
@@ -6085,6 +6289,98 @@ public class AbstractQueryBuilderTest extends TestBase {
 
                 assertDistinctBindings(result, List.of(4, 1, 2, 3));
             }
+        }
+
+        // Regression: ORDER BY of a compound query may only name the combined result's columns, which the FIRST SELECT
+        // labels ("first_name AS \"firstName\""). The sort key was still converted to the source column ("ORDER BY first_name"),
+        // which PostgreSQL, MySQL, Oracle and SQL Server reject.
+        @Test
+        void testOrderByAfterSetOperationReferencesFirstOperandResultLabels() {
+            assertEquals("SELECT first_name AS \"firstName\" FROM users UNION SELECT first_name AS \"firstName\" FROM admins ORDER BY \"firstName\" DESC",
+                    PSC.select("firstName").from("users").union(PSC.select("firstName").from("admins")).orderByDesc("firstName").build().query());
+            assertEquals(
+                    "SELECT acc.id AS \"id\", acc.first_name AS \"firstName\" FROM account acc UNION SELECT acc.id AS \"id\", acc.first_name AS \"firstName\" FROM account acc ORDER BY \"firstName\", \"id\"",
+                    PSC.select("id", "firstName")
+                            .from(Account.class)
+                            .union(PSC.select("id", "firstName").from(Account.class))
+                            .orderBy("firstName", "id")
+                            .build()
+                            .query());
+
+            // The whole-entity select list, the *Select starters, a Criteria-carried ORDER BY, and an explicit alias.
+            assertTrue(PSC.select(Account.class)
+                    .from("account")
+                    .union("SELECT * FROM account2")
+                    .orderBy("lastName")
+                    .build()
+                    .query()
+                    .endsWith("ORDER BY \"lastName\""));
+            assertTrue(PSC.select("firstName")
+                    .from("users")
+                    .unionSelect(List.of("firstName"))
+                    .from("admins")
+                    .orderBy("firstName")
+                    .build()
+                    .query()
+                    .endsWith("ORDER BY \"firstName\""));
+            assertTrue(PSC.select("firstName")
+                    .from("users")
+                    .append(Criteria.builder().union(Filters.subQuery("SELECT first_name FROM admins")).orderBy("firstName").build())
+                    .build()
+                    .query()
+                    .endsWith("ORDER BY \"firstName\""));
+            assertTrue(PSC.select("firstName || lastName AS fullName")
+                    .from("users")
+                    .union("SELECT x FROM admins")
+                    .orderBy("fullName")
+                    .build()
+                    .query()
+                    .endsWith("ORDER BY fullName"));
+            assertTrue(Dsl.MSC.select("firstName")
+                    .from("users")
+                    .union("SELECT first_name FROM admins")
+                    .orderBy("firstName")
+                    .build()
+                    .query()
+                    .endsWith("ORDER BY \"firstName\""));
+
+            // Unchanged where the first operand emitted no label: an unconverted name, NO_CHANGE, and NO_CHANGE with a
+            // @Column mapping (the result column is the physical name, which the entity mapping still supplies).
+            assertEquals("SELECT first_name FROM users UNION SELECT first_name FROM admins ORDER BY first_name",
+                    PSC.select("first_name").from("users").union(PSC.select("first_name").from("admins")).orderBy("first_name").build().query());
+            assertEquals("SELECT id FROM users UNION SELECT id FROM admins ORDER BY id",
+                    PSC.select("id").from("users").union(PSC.select("id").from("admins")).orderBy("id").build().query());
+            assertTrue(PSB.select("status")
+                    .from(SqlBuilderTest.Account.class)
+                    .union("SELECT account_status FROM archive")
+                    .orderBy("status")
+                    .build()
+                    .query()
+                    .endsWith("ORDER BY account_status"));
+
+            // Only the combined-result ORDER BY changes; the second operand's own clauses still resolve as before.
+            assertEquals(
+                    "SELECT first_name AS \"firstName\" FROM users UNION SELECT first_name AS \"firstName\" FROM admins WHERE first_name = ? ORDER BY \"firstName\"",
+                    PSC.select("firstName")
+                            .from("users")
+                            .unionSelect(List.of("firstName"))
+                            .from("admins")
+                            .where(Filters.eq("firstName", 1))
+                            .orderBy("firstName")
+                            .build()
+                            .query());
+        }
+
+        // Intended behavior for KNOWN OPEN ISSUES #13: literal FROM/parentheses must not hide the real result label,
+        // and AS inside a dollar quote must not invent a competing, unquoted firstName label.
+        @Disabled("Known open issue #13 in AbstractQueryBuilder: compound ORDER BY scans quoted contents as SQL")
+        @ParameterizedTest
+        @ValueSource(strings = { "$$ FROM $$ AS x", "$tag$ FROM $tag$ AS x", "$$ ( $$ AS x", "'\\' AS x", "$$junk AS firstName, text$$ AS other" })
+        void testKnownOpenIssueCompoundOrderByIgnoresPostgreSqlLiteralContents(final String expression) {
+            final Dsl pg = lexDialect(PSC, "PostgreSQL");
+
+            assertSql("SELECT " + expression + ", first_name AS \"firstName\" FROM t UNION SELECT 'x', first_name FROM t2 ORDER BY \"firstName\"", List.of(),
+                    pg.select(expression, "firstName").from("t").union("SELECT 'x', first_name FROM t2").orderBy("firstName").build());
         }
 
         @Test
@@ -7072,6 +7368,31 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("SELECT id FROM account WHERE id = 1", builder.build().query());
         }
 
+        // Regression: from(String) accepted a Unicode-whitespace-only expression ("SELECT * FROM 　"), although its
+        // documentation, from(String, Class) and join(String) reject a blank one.
+        @Test
+        void testFromRejectsUnicodeBlankExpression() {
+            final SqlBuilder builder = PSC.select("*");
+            final String blank = "expr must not be null, empty, or blank";
+
+            assertEquals(blank, assertThrows(IllegalArgumentException.class, () -> builder.from("　")).getMessage());
+            assertEquals(blank, assertThrows(IllegalArgumentException.class, () -> builder.from(" 　\n")).getMessage());
+            assertEquals(blank, assertThrows(IllegalArgumentException.class, () -> builder.from("　", Account.class)).getMessage());
+            assertEquals("SELECT * FROM t", builder.from("t").build().query());
+        }
+
+        // Regression: from(Class[, alias]) reported an unterminated block comment in the @Table name as an "expr" argument,
+        // which it does not have; join(Class) names it "tableName".
+        @Test
+        void testFromEntityNamesUnterminatedCommentTableName() {
+            final String rejection = "tableName must not contain an unterminated block comment: open_comment_table /* x";
+            final SqlBuilder builder = PSC.select("id");
+
+            assertEquals(rejection, assertThrows(IllegalArgumentException.class, () -> builder.from(OpenCommentTableEntity.class)).getMessage());
+            assertEquals(rejection, assertThrows(IllegalArgumentException.class, () -> builder.from(OpenCommentTableEntity.class, "o")).getMessage());
+            assertEquals("SELECT id FROM t", builder.from("t").build().query());
+        }
+
         // Regression: an unterminated "/*" in table text, a select modifier, a derived-table alias or an appended fragment
         // commented out every later clause (SQLite reads it to the end of input, silently dropping the WHERE). Each entry
         // point now rejects it, as join(String) does.
@@ -7254,6 +7575,98 @@ public class AbstractQueryBuilderTest extends TestBase {
                 final SqlBuilder builder = PSB.select("*").from(from);
                 assertEquals("a", builder._tableAlias);
                 assertSql("SELECT * FROM " + from, List.of(), builder.build());
+            }
+
+            // Regression: each JOIN-modifier lookahead re-ran the trivia skip to the end of the line when that skip read text the
+            // outer scanner sees as words ("--x" on MySQL, "#x" on SQL Server) as a line comment: quadratic in the line length.
+            @Test
+            void testFromJoinLookaheadStaysLinearWhenTriviaSkipReadsCommentsAsWords() {
+                final List<String> mySqlFroms = List.of("t " + "GLOBAL --x ".repeat(40_000) + "alias", "t GLOBAL " + "--x GLOBAL\n".repeat(40_000) + "alias",
+                        "t GLOBAL --x " + "GLOBAL --y ".repeat(20_000) + "\n" + " ".repeat(80_000) + "alias",
+                        "t " + "GLOBAL --x /*c*/ ".repeat(20_000) + "alias");
+                final List<String> sqlServerFroms = List.of("t " + "GLOBAL #x ".repeat(40_000) + "alias", "t GLOBAL " + "#x GLOBAL\n".repeat(40_000) + "alias");
+
+                org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(java.time.Duration.ofSeconds(5), () -> {
+                    for (final String from : mySqlFroms) {
+                        final SqlBuilder builder = dialect("MySQL").select("*").from(from);
+                        assertEquals("alias", builder._tableAlias);
+                        assertSql("SELECT * FROM " + from, List.of(), builder.build());
+                    }
+
+                    for (final String from : sqlServerFroms) {
+                        final SqlBuilder builder = dialect("SQL Server").select("*").from(from);
+                        assertEquals("alias", builder._tableAlias);
+                        assertSql("SELECT * FROM " + from, List.of(), builder.build());
+                    }
+                });
+
+                // The shared lookahead state keeps the outcomes: a JOIN visible only after a skipped comment still ends the
+                // primary table reference, and comment boundaries visited by a failed lookahead stay failures.
+                SqlBuilder builder = dialect("MySQL").select("*").from("t a GLOBAL --x GLOBAL\n GLOBAL JOIN u ON a.id = u.id");
+                assertEquals("a", builder._tableAlias);
+                builder.build();
+                builder = dialect("MySQL").select("*").from("t GLOBAL --a\n--b\n GLOBAL /*c*/ alias");
+                assertEquals("alias", builder._tableAlias);
+                builder.build();
+            }
+
+            // Regression: the JOIN of a MySQL index hint "{USE|IGNORE|FORCE} {INDEX|KEY} FOR JOIN (index_list)" was read as a
+            // JOIN separator, so FOR became the primary alias and every entity column was qualified with "FOR.".
+            @Test
+            void testFromIndexHintForJoinIsNotJoinSeparator() {
+                final Dsl mySql = dialect("MySQL");
+                SqlBuilder builder = mySql.select("*").from("account a FORCE INDEX FOR JOIN (idx_name)");
+                assertEquals("account a FORCE INDEX FOR JOIN (idx_name)", builder._tableName);
+                assertNull(builder._tableAlias);
+                builder.build();
+
+                assertSql("SELECT firstName FROM account a USE KEY FOR JOIN (i) WHERE id = ?", List.of(1),
+                        mySql.select("firstName").from("account a USE KEY FOR JOIN (i)", Account.class).where(Filters.eq("id", 1)).build());
+                assertSql("SELECT firstName FROM account a IGNORE INDEX FOR JOIN (i) WHERE id = ?", List.of(1),
+                        mySql.select("firstName").from(Account.class, "a IGNORE INDEX FOR JOIN (i)").where(Filters.eq("id", 1)).build());
+
+                // A real JOIN after the hint still separates the table references, in from(String...) too.
+                builder = PSB.select("*").from("account a USE INDEX FOR JOIN (i) JOIN device d ON d.account_id = a.id");
+                assertEquals("account a USE INDEX FOR JOIN (i)", builder._tableName);
+                builder.build();
+                builder = mySql.select("*").from("account a FORCE INDEX FOR JOIN (i)", "device d");
+                assertEquals("account a FORCE INDEX FOR JOIN (i)", builder._tableName);
+                builder.build();
+
+                // FOR inside a comment, or not part of an index hint, does not hide the JOIN.
+                builder = mySql.select("*").from("t a -- index for\n JOIN u ON u.id = a.id");
+                assertEquals("a", builder._tableAlias);
+                builder.build();
+                builder = mySql.select("*").from("t a FOR JOIN u");
+                // The JOIN still separates; the reserved FOR is never inferred as the primary table's alias.
+                assertEquals("t a FOR", builder._tableName);
+                assertNull(builder._tableAlias);
+                builder.build();
+            }
+
+            // Regression: the index-hint recognizer accepted only whitespace between INDEX/KEY, FOR, JOIN and the index list, so
+            // a comment there ("USE INDEX /*c*/ FOR JOIN (i)") made the hint's JOIN a table separator and FOR the primary alias
+            // (entity columns rendered as "FOR.first_name").
+            @Test
+            void testFromIndexHintWithCommentsIsNotJoinSeparator() {
+                final Dsl mySql = dialect("MySQL");
+
+                for (final String from : List.of("account a USE INDEX /*c*/ FOR JOIN (i)", "account a USE INDEX FOR /*c*/ JOIN (i)",
+                        "account a USE INDEX FOR JOIN /*c*/ (i)", "account a USE INDEX/*c*/FOR/*d*/JOIN/*e*/(i)", "account a FORCE KEY -- c\n FOR JOIN (i)",
+                        "account a IGNORE INDEX # c\n FOR JOIN (i)")) {
+                    final SqlBuilder builder = mySql.select("firstName").from(from, Account.class);
+                    assertEquals(from, builder._tableName, from);
+                    assertNull(builder._tableAlias, from);
+                    assertSql("SELECT firstName FROM " + from + " WHERE id = ?", List.of(1), builder.where(Filters.eq("id", 1)).build());
+                }
+
+                // Under the dialect-agnostic default too, and a real JOIN after a commented hint still separates the references.
+                final SqlBuilder defaultDialect = PSB.select("*").from("account a USE INDEX /*c*/ FOR JOIN (i)");
+                assertNull(defaultDialect._tableAlias);
+                defaultDialect.build();
+                final SqlBuilder joined = PSB.select("*").from("account a USE INDEX /*c*/ FOR JOIN (i) JOIN device d ON d.account_id = a.id");
+                assertEquals("account a USE INDEX /*c*/ FOR JOIN (i)", joined._tableName);
+                joined.build();
             }
         }
 
@@ -8264,6 +8677,53 @@ public class AbstractQueryBuilderTest extends TestBase {
         }
     }
 
+    /** An entity whose plain {@code devices} column shares its name with {@link Account}'s sub-entity property. */
+    public static class PlainDevicesRow {
+        private long id;
+        private String devices;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getDevices() {
+            return devices;
+        }
+
+        public void setDevices(final String devices) {
+            this.devices = devices;
+        }
+    }
+
+    /** The INSERT ... SELECT target of {@link DivergentColumnProfile}: the same properties, mapped to other columns. */
+    @Table(name = "profile_archive")
+    public static class ArchivedProfile {
+        private long id;
+
+        @Column("archived_name")
+        private String fullName;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getFullName() {
+            return fullName;
+        }
+
+        public void setFullName(final String fullName) {
+            this.fullName = fullName;
+        }
+    }
+
     @Table(name = "review_parent", nonColumnFields = { "child" })
     public static class ExcludedChildParent {
         private int id;
@@ -8551,6 +9011,39 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         public void setCity(final String city) {
             this.city = city;
+        }
+    }
+
+    /** The physical column "customer" collides with the sub-entity property of the same name. */
+    @Table(name = "mapped_column_orders")
+    public static class MappedColumnOrder {
+        private int id;
+        @Column("customer")
+        private int customerId;
+        private AliasedCustomer customer;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+
+        public int getCustomerId() {
+            return customerId;
+        }
+
+        public void setCustomerId(final int customerId) {
+            this.customerId = customerId;
+        }
+
+        public AliasedCustomer getCustomer() {
+            return customer;
+        }
+
+        public void setCustomer(final AliasedCustomer customer) {
+            this.customer = customer;
         }
     }
 

@@ -136,7 +136,7 @@ public class SubQuery extends AbstractCondition {
     /** The entity class of a class-based structured subquery; {@code null} otherwise. */
     final Class<?> entityClass;
 
-    private List<String> propNames;
+    private final List<String> propNames;
 
     // For Kryo
     /** The complete query text of a raw SQL or builder-backed subquery; {@code null} for structured subqueries. */
@@ -153,7 +153,7 @@ public class SubQuery extends AbstractCondition {
 
     /** The trailing condition or clause for a structured subquery; a predicate is normalized to a
      *  {@link Where}. {@code null} for raw SQL, builder-backed snapshots, or structured subqueries without clauses. */
-    private Condition condition;
+    private final Condition condition;
 
     /** Lazily memoized unmodifiable view of {@link #propNames} (performance only). */
     private transient ImmutableList<String> cachedPropNamesView;
@@ -166,6 +166,8 @@ public class SubQuery extends AbstractCondition {
     SubQuery() {
         entityName = null;
         entityClass = null;
+        propNames = null;
+        condition = null;
         sql = null;
         rawParameters = ImmutableList.empty();
         rebuildParametersPerCall = false;
@@ -213,8 +215,8 @@ public class SubQuery extends AbstractCondition {
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
      *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder
      *         (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments);
-     *         or contains a positional placeholder without a corresponding binding (including a {@code ?} outside quoted text and
-     *         comments in text that does not start with a recognized query keyword)
+     *         contains a positional placeholder without a corresponding binding (including a {@code ?} outside quoted text and
+     *         comments in text that does not start with a recognized query keyword); or contains an unterminated block comment
      */
     public SubQuery(final String sql) {
         this(Strings.EMPTY, sql, Collections.emptyList(), true);
@@ -230,15 +232,17 @@ public class SubQuery extends AbstractCondition {
      * compare array bindings by content via {@link N#deepEquals(Object, Object)}/{@link N#deepHashCode(Object)}
      * and every other binding through its own {@code equals}/{@code hashCode}. Bindings retained by reference
      * must not be mutated while the subquery is in use, particularly when it is stored in a {@code HashSet}. Markers inside
-     * quoted text and comments, and PostgreSQL JSON {@code ?} operators, are not counted as placeholders.
+     * quoted text and comments, and PostgreSQL JSON {@code ?} operators, are not counted as placeholders. A PostgreSQL
+     * dollar-quoted string ({@code $$...$$}) is not treated as quoted text here, so a {@code ?} inside one is counted.
      *
      * <p>Named ({@code :name}) and MyBatis ({@code #{name}}) markers are deliberately rejected because
      * a raw fragment has no generated-name metadata for collision-safe composition. Use a builder-backed
      * subquery when named-placeholder policies are required.</p>
      *
      * <p>A binding that is itself SQL is written into the text at construction instead of being bound, so the
-     * subquery renders the same SQL under every builder policy (exactly as a {@link SqlExpression} value of a
-     * structured condition is rendered): a {@link SqlExpression} replaces its {@code ?} verbatim, and a raw
+     * subquery renders the same SQL under every builder policy (as a {@link SqlExpression} value of a structured
+     * condition is rendered as SQL rather than bound, except that no naming policy is applied and comments are kept):
+     * a {@link SqlExpression} replaces its {@code ?} verbatim, and a raw
      * {@code SubQuery} replaces it as {@code (sql)} with its own bindings taking its place in the binding list.
      * {@link #rawSql()} and {@link #parameters()} report the result.</p>
      * <pre>{@code
@@ -261,8 +265,9 @@ public class SubQuery extends AbstractCondition {
      *         query such as {@code SELECT}, {@code WITH}, {@code VALUES} or {@code TABLE}, or a DML statement) but contains
      *         a {@code ?} outside quoted text and comments; an object-array binding contains a cycle; a binding is a
      *         {@link SqlExpression} that is blank, comment-only, or contains parameter markers of its own (such as
-     *         {@link Filters#QME}); or a binding is any other {@link Condition} (a predicate, or a structured or
-     *         builder-backed subquery), whose SQL would depend on the enclosing builder's policy
+     *         {@link Filters#QME}); a binding is any other {@link Condition} (a predicate, or a structured or
+     *         builder-backed subquery), whose SQL would depend on the enclosing builder's policy; or the SQL, after
+     *         inlining the {@link SqlExpression} bindings, contains an unterminated block comment
      */
     public SubQuery(final String sql, final Collection<?> parameters) {
         this(Strings.EMPTY, sql, parameters, true);
@@ -288,7 +293,7 @@ public class SubQuery extends AbstractCondition {
      * @throws IllegalArgumentException if {@code sql} is {@code null}, empty, or blank; contains malformed placeholder text
      *         such as an unclosed {@code #{...}} marker; contains a named ({@code :name}) or MyBatis {@code #{...}} placeholder
      *         (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments);
-     *         or contains a positional placeholder without a corresponding binding
+     *         contains a positional placeholder without a corresponding binding; or contains an unterminated block comment
      * @deprecated the entity name is unused when rendering raw query-expression text; it is only exposed by
      *             {@link #entityName()} and participates in {@link #equals(Object)}/{@link #hashCode()}. Use
      *             {@link #SubQuery(String)} for raw text, or
@@ -326,8 +331,8 @@ public class SubQuery extends AbstractCondition {
      * @param validateBindings whether placeholders must match the bindings
      * @throws IllegalArgumentException if {@code sql} is null, empty, or blank; {@code parameters} is null;
      *         binding validation is enabled and the SQL has malformed, named, or mismatched placeholders, or a
-     *         {@link Condition} binding cannot be inlined (see {@link #inlineConditionBindings(String, List, List)});
-     *         or a binding is a cyclic object array
+     *         {@link Condition} binding cannot be inlined (see {@link #inlineConditionBindings(String, List, List)}), or the
+     *         (inlined) text contains an unterminated block comment; or a binding is a cyclic object array
      */
     private SubQuery(final String entityName, final String sql, final Collection<?> parameters, final boolean validateBindings) {
         super(Operator.EMPTY);
@@ -346,8 +351,9 @@ public class SubQuery extends AbstractCondition {
                 rawText = inlineConditionBindings(sql, bindings, valueBindings);
                 bindings = valueBindings;
 
-                // Defensive: the inlined text is re-scanned so the remaining bindings provably line up with the
-                // placeholders that are left (a spliced expression cannot add or hide a '?' unnoticed).
+                // Defensive: the inlined text is re-scanned so the remaining bindings match the number of placeholders
+                // that are left (a spliced expression that adds or hides a '?' is caught, unless it does both at once,
+                // as two lone-quote expressions around a quoted '?' do).
                 try {
                     validateRawBindings(rawText, bindings);
                 } catch (final IllegalArgumentException e) {
@@ -355,6 +361,12 @@ public class SubQuery extends AbstractCondition {
                             "Inlining the SqlExpression/SubQuery bindings of a raw subquery left mismatched placeholders (" + e.getMessage() + "): " + rawText,
                             e);
                 }
+            }
+
+            // Embedded in IN/EXISTS/= the text is emitted as written, so an unclosed "/*" would comment out the closing
+            // parenthesis and every later clause of the outer statement (as append(String) and the FROM/JOIN text guard).
+            if (QueryUtil.hasUnterminatedBlockComment(rawText)) {
+                throw new IllegalArgumentException("Raw subquery text must not contain an unterminated block comment: " + rawText);
             }
         }
 
@@ -1114,7 +1126,7 @@ public class SubQuery extends AbstractCondition {
      *       depends on the enclosing builder's naming or parameter policy, which a raw fragment cannot follow.</li>
      * </ul>
      * Inlined text ending in a line comment is terminated, and it is separated by a space from an adjacent
-     * identifier/number character or from a {@code -} it would otherwise fuse with into a {@code --} comment,
+     * identifier/number character or from a preceding {@code -} it would otherwise fuse with into a {@code --} comment,
      * mirroring how {@code RAW_SQL} builders inline values.
      *
      * @param sql the validated raw SQL text
@@ -1242,9 +1254,9 @@ public class SubQuery extends AbstractCondition {
      * @param sql the non-blank raw SQL to inspect
      * @param parameters the non-null binding snapshot
      * @throws IllegalArgumentException if SQL placeholder syntax is malformed, named or MyBatis placeholders
-     *         are present (also in text {@link ParsedSql} does not recognize as a query), the text is not a statement
-     *         ParsedSql recognizes as a query yet contains a {@code ?} outside quoted text and comments, or the
-     *         positional placeholder count differs from the binding count
+     *         are present (also in text {@link ParsedSql} does not recognize as a data operation statement), the text is
+     *         not a statement ParsedSql recognizes as a data operation (a query or DML statement) yet contains a {@code ?}
+     *         outside quoted text and comments, or the positional placeholder count differs from the binding count
      */
     private static void validateRawBindings(final String sql, final Collection<?> parameters) {
         // ParsedSql supplies the project's quote/comment-aware placeholder scan and also distinguishes
@@ -1424,14 +1436,16 @@ public class SubQuery extends AbstractCondition {
      * For structured subqueries, generates a {@code SELECT [props] FROM [entity] [condition-or-clauses]}
      * statement, applying the naming policy to property names, the entity/table name, and to
      * the trailing condition or clauses. A select item has only its identifiers converted, the way a query
-     * builder renders the same item minus the builder's table-alias prefix: string literals, parameter markers,
+     * builder renders the same item minus the builder's table-alias prefix and the column alias it generates
+     * ({@code AS "firstName"}): string literals, parameter markers,
      * delimited identifiers, function names, recognised (upper-case) SQL keywords and tokens that do not start
      * with an ASCII letter or {@code _} (numbers such as {@code 2faCode}, dollar-quoted strings such as
      * {@code $$text$$}) are kept as written ({@code COUNT(*) AS cnt}, {@code 'HelloWorld' AS s},
      * {@code CURRENT_TIMESTAMP AS ts}).
      * An alias is kept as written as well: one after {@code AS} ({@code firstName AS fn}), and an implicit one
      * when the item is exactly a name (bare, delimited or dot-qualified), whitespace and a bare alias
-     * ({@code firstName fn}, {@code [firstName] fn}, {@code acc.firstName fn}), unless that name is a SQL keyword
+     * ({@code firstName fn}, {@code [firstName] fn}, {@code acc.firstName fn}; a query builder, which expects
+     * {@code AS}, instead converts such a trailing word like an identifier), unless that name is a SQL keyword
      * in any case ({@code distinct userId} is a modifier and a column). After any other expression, a subscript
      * ({@code ids[1]}) or an array constructor ({@code ARRAY[1, 2]}) included, a trailing word is converted like an
      * identifier, as the builders do ({@code COUNT(*) myCount} renders as {@code COUNT(*) my_count} under

@@ -1200,6 +1200,18 @@ public class SubQueryTest extends TestBase {
             assertEquals("FROM t SELECT \"a?\" WHERE b = N'?'", new SubQuery("FROM t SELECT \"a?\" WHERE b = N'?'").rawSql());
         }
 
+        // Regression: raw subquery text (or an inlined SqlExpression binding) with an unterminated block comment was accepted,
+        // and embedded in IN/EXISTS/= it commented out the closing parenthesis and every later clause of the outer statement.
+        @Test
+        void testRawSubQueryRejectsUnterminatedBlockComment() {
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery("SELECT id FROM t /* x"));
+            assertThrows(IllegalArgumentException.class, () -> new SubQuery("SELECT id FROM t WHERE a = ?", List.of(SqlExpression.of("1 /* x"))));
+
+            assertEquals("SELECT id FROM t /* x */", new SubQuery("SELECT id FROM t /* x */").rawSql());
+            assertEquals("SELECT '/*' FROM t", new SubQuery("SELECT '/*' FROM t").rawSql());
+            assertEquals("SELECT 1 -- /*\n", new SubQuery("SELECT 1 -- /*\n").rawSql());
+        }
+
         @Test
         void testRawSubQueryTableVariantsCommentOnlyPlaceholdersAndFailClosedTradeOffs() {
             // Covers TABLE statements (parenthesized, lowercase, BOM-prefixed) with bindings, a '?' only inside a comment of

@@ -546,7 +546,7 @@ public final class SqlMapper {
      * Attributes may include batchSize, fetchSize, resultSetType, timeout, etc.
      *
      * <p>If a caller supplied an {@code "id"} entry in the attributes map to
-     * {@link #add(String, ParsedSql, Map)}, it is present in the returned map; it is informational
+     * {@link #add(String, ParsedSql, Map)} or {@link #add(String, String, Map)}, it is present in the returned map; it is informational
      * only and is ignored by the {@code saveTo} methods, which always write the canonical identifier.</p>
      *
      * <p><b>Usage Examples:</b></p>
@@ -577,7 +577,8 @@ public final class SqlMapper {
     }
 
     /**
-     * Adds a parsed SQL with the specified identifier.
+     * Adds a parsed SQL with the specified identifier and no attributes
+     * ({@link #attributes(String)} returns an empty map for it).
      * This method validates the ID and throws an exception if an SQL with the same ID already exists.
      *
      * <p><b>Usage Examples:</b></p>
@@ -780,6 +781,7 @@ public final class SqlMapper {
     /**
      * Validates {@code name} against the XML Name grammar.
      *
+     * @param name the attribute name to validate
      * @throws UncheckedException if the XML parser cannot be configured on the first call
      * @throws IllegalArgumentException if {@code name} is not a valid XML attribute name
      */
@@ -1164,7 +1166,7 @@ public final class SqlMapper {
 
     /**
      * Returns a string representation of this {@code SqlMapper}.
-     * The string contains all SQL definitions in the mapper.
+     * The string contains all SQL definitions in the mapper, in insertion order; attributes are not included.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

@@ -584,11 +584,17 @@ public abstract class AbstractCondition implements Condition {
      *                                  {@link SqlExpression}, or a structured subquery has a known projection arity other than one
      */
     protected static <T> T validateValueOperand(final T operand, final String argumentName) {
+        return validateValueOperand(operand, argumentName, true);
+    }
+
+    private static <T> T validateValueOperand(final T operand, final String argumentName, final boolean quantifiedAllowed) {
         if (operand instanceof Condition && !(operand instanceof SqlExpression) && !(operand instanceof SubQuery)
                 && !isQuantifiedSubQueryOperand((Condition) operand)) {
             final Condition condition = (Condition) operand;
-            throw new IllegalArgumentException(argumentName + " must be a literal value, SqlExpression, scalar SubQuery, or a directly supported "
-                    + "ALL/ANY/SOME operand, not a predicate or query clause: " + condition.getClass().getName());
+            // Only advertise ALL/ANY/SOME where the caller accepts it; validateNonQuantifiedValueOperand rejects it next.
+            throw new IllegalArgumentException(argumentName + (quantifiedAllowed
+                    ? " must be a literal value, SqlExpression, scalar SubQuery, or a directly supported ALL/ANY/SOME operand, not a predicate or query clause: "
+                    : " must be a literal value, SqlExpression, or scalar SubQuery, not a predicate or query clause: ") + condition.getClass().getName());
         }
 
         if (operand instanceof SqlExpression) {
@@ -619,7 +625,8 @@ public abstract class AbstractCondition implements Condition {
      * {@link NotExists} do not constrain projection width and do not use this validation.
      *
      * <p>This checks selected-property metadata; it does not parse raw query text, expand wildcard
-     * projections, or determine how many rows a subquery returns.</p>
+     * projections, or determine how many rows a subquery returns. A selected property that holds a comma-separated
+     * list ({@code "id, name"}, which the query builders render as written) counts one column per list element.</p>
      *
      * @param expectedArity the number of columns required by the enclosing SQL construct
      * @param subQuery the non-null subquery whose explicit structured projection is inspected
@@ -630,18 +637,66 @@ public abstract class AbstractCondition implements Condition {
 
         final Collection<String> subQuerySelectPropNames = subQuery.selectPropNames();
 
-        if (subQuerySelectPropNames != null && !hasWildcardProjection(subQuerySelectPropNames) && subQuerySelectPropNames.size() != expectedArity) {
-            throw new IllegalArgumentException("The number of selected properties in subQuery (" + subQuerySelectPropNames.size()
-                    + ") must match the required arity (" + expectedArity + ")");
+        if (subQuerySelectPropNames != null && !hasWildcardProjection(subQuerySelectPropNames)) {
+            final int width = projectionWidth(subQuerySelectPropNames);
+
+            if (width >= 0 && width != expectedArity) {
+                throw new IllegalArgumentException(
+                        "The number of selected columns in subQuery (" + width + ") must match the required arity (" + expectedArity + ")");
+            }
         }
     }
 
     /**
-     * Returns whether any selected property name is a wildcard ({@code *} or {@code qualifier.*}), in
-     * which case the projection's column count cannot be determined here and arity is left unchecked.
+     * Counts the columns a structured projection selects: one per selected property, plus one per top-level comma of a
+     * property that holds a comma-separated list. Commas inside parentheses, quoted text, brackets and comments do not
+     * separate columns.
+     *
+     * @param selectPropNames the selected property names, none of which is a wildcard
+     * @return the column count, or {@code -1} if it cannot be determined (a list containing {@code $}, which may be a
+     *         dollar-quoted string that the tokenizer does not read as one literal)
+     */
+    private static int projectionWidth(final Collection<String> selectPropNames) {
+        int width = 0;
+
+        for (final String selectPropName : selectPropNames) {
+            width++;
+
+            if (selectPropName == null || selectPropName.indexOf(',') < 0) {
+                continue;
+            }
+
+            if (selectPropName.indexOf('$') >= 0) {
+                return -1;
+            }
+
+            // The synthetic FROM context reads a #temp qualifier as SQL Server does, as in containsWildcardToken.
+            final List<String> tokens = SqlParser.tokenize("FROM " + selectPropName);
+            int depth = 0;
+
+            for (int i = 1; i < tokens.size(); i++) {
+                final String token = tokens.get(i);
+
+                if ("(".equals(token)) {
+                    depth++;
+                } else if (")".equals(token)) {
+                    depth--;
+                } else if (",".equals(token) && depth == 0) {
+                    width++;
+                }
+            }
+        }
+
+        return width;
+    }
+
+    /**
+     * Returns whether any selected property name is a wildcard ({@code *}, {@code qualifier.*},
+     * {@code DISTINCT *}, {@code * EXCEPT (...)}, ...), in which case the projection's column count
+     * cannot be determined here and arity is left unchecked.
      *
      * @param selectPropNames the selected property names to inspect
-     * @return {@code true} if any element is {@code *} or ends with {@code .*} after SQL whitespace and comments are ignored
+     * @return {@code true} if any element projects a wildcard after SQL whitespace and comments are ignored
      */
     private static boolean hasWildcardProjection(final Collection<String> selectPropNames) {
         for (final String selectPropName : selectPropNames) {
@@ -657,33 +712,85 @@ public abstract class AbstractCondition implements Condition {
                 return true;
             }
 
-            if (trimmed.indexOf('*') >= 0) {
-                // Whitespace and comments can separate a qualifier from its wildcard, or follow '*'.
-                // Tokenize away that trivia while keeping quoted literals/identifiers intact, so COUNT(*)
-                // and a column literally named "users.*" still have a known projection width, and a comment
-                // ending in ".*" ("id -- x.*") cannot hide one. The synthetic FROM context reads a #temp
-                // qualifier as SQL Server does instead of as a MySQL hash comment. This only decides whether
-                // arity can be checked here: SqlBuilder still rejects a comment token in a select item when
-                // the query is built, and renders a #temp qualifier only under a SQL Server dialect.
-                final StringBuilder projection = new StringBuilder(trimmed.length());
-                final List<String> tokens = SqlParser.tokenize("FROM " + trimmed);
-
-                for (int i = 1; i < tokens.size(); i++) {
-                    final String token = tokens.get(i);
-                    if (!Strings.isBlank(token)) {
-                        projection.append(token);
-                    }
-                }
-
-                final String normalized = projection.toString();
-
-                if ("*".equals(normalized) || normalized.endsWith(".*")) {
-                    return true;
-                }
+            if (trimmed.indexOf('*') >= 0 && containsWildcardToken(trimmed)) {
+                return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * Returns whether a select item contains a projection wildcard: a top-level {@code *} that starts
+     * the item; follows {@code DISTINCT}, {@code DISTINCTROW}, {@code ALL}, a comma, or a qualifier dot (not the
+     * decimal point of a numeric literal such as {@code 1.}); or has no right operand, so it cannot be a
+     * multiplication (it ends the item or precedes a comma, {@code EXCEPT}, {@code EXCLUDE} or {@code REPLACE}, as in
+     * {@code DISTINCT ON (id) *} or {@code TOP 10 *}). This covers {@code DISTINCT *} and the
+     * {@code * EXCEPT (...)}/{@code * EXCLUDE (...)}/{@code * REPLACE (...)} forms, but not {@code COUNT(*)} or the
+     * multiplication in {@code a * b}.
+     *
+     * @param selectItem the trimmed select item, which contains a {@code '*'} character
+     * @return {@code true} if the item projects a wildcard
+     */
+    private static boolean containsWildcardToken(final String selectItem) {
+        // Whitespace and comments can separate a qualifier from its wildcard, or follow '*'.
+        // Tokenize away that trivia while keeping quoted literals/identifiers intact, so COUNT(*)
+        // and a column literally named "users.*" still have a known projection width, and a comment
+        // containing ".*" ("id -- x.*") cannot hide one. The synthetic FROM context reads a #temp
+        // qualifier as SQL Server does instead of as a MySQL hash comment. This only decides whether
+        // arity can be checked here: SqlBuilder still rejects a comment token in a select item when
+        // the query is built, and renders a #temp qualifier only under a SQL Server dialect.
+        // The tokenizer keeps a bare qualifier's dot on the qualifier ("t." then "*"), but emits it
+        // separately after a delimited one ("[t]", "." then "*").
+        final List<String> tokens = SqlParser.tokenize("FROM " + selectItem);
+        String prev = null;
+        int depth = 0;
+
+        for (int i = 1; i < tokens.size(); i++) {
+            final String token = tokens.get(i);
+
+            if (Strings.isBlank(token)) {
+                continue;
+            }
+
+            if ("(".equals(token)) {
+                depth++;
+            } else if (")".equals(token)) {
+                depth--;
+            } else if ("*".equals(token) && depth == 0
+                    && (prev == null || isWildcardQualifierToken(prev) || ",".equals(prev) || "DISTINCT".equalsIgnoreCase(prev)
+                            || "DISTINCTROW".equalsIgnoreCase(prev) || "ALL".equalsIgnoreCase(prev) || hasNoRightOperand(tokens, i + 1))) {
+                return true;
+            }
+
+            prev = token;
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether {@code token} ends with a qualifier dot ({@code t.}, {@code #t.}, or the lone {@code .} the tokenizer emits
+     * after a quoted qualifier) rather than with the decimal point of a numeric literal ({@code 1.}, {@code 10.}).
+     */
+    private static boolean isWildcardQualifierToken(final String token) {
+        return token.endsWith(".") && !Character.isDigit(token.charAt(0));
+    }
+
+    /**
+     * Whether the {@code *} before {@code tokens[from]} has no right operand: the next token is absent, a comma, or a
+     * wildcard column modifier ({@code EXCEPT}, {@code EXCLUDE}, {@code REPLACE}), so it cannot be a multiplication.
+     */
+    private static boolean hasNoRightOperand(final List<String> tokens, final int from) {
+        for (int i = from; i < tokens.size(); i++) {
+            final String token = tokens.get(i);
+
+            if (!Strings.isBlank(token)) {
+                return ",".equals(token) || "EXCEPT".equalsIgnoreCase(token) || "EXCLUDE".equalsIgnoreCase(token) || "REPLACE".equalsIgnoreCase(token);
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -706,7 +813,7 @@ public abstract class AbstractCondition implements Condition {
      *                                  known projection arity is not one
      */
     protected static <T> T validateNonQuantifiedValueOperand(final T operand, final String argumentName) {
-        validateValueOperand(operand, argumentName);
+        validateValueOperand(operand, argumentName, false);
 
         if (operand instanceof Condition && isQuantifiedSubQueryOperand((Condition) operand)) {
             throw new IllegalArgumentException(
@@ -1481,8 +1588,8 @@ public abstract class AbstractCondition implements Condition {
         return cond instanceof SqlExpression && isEmptyLiteral(((SqlExpression) cond).literal());
     }
 
-    /** Implements {@link #isEmptyPredicate(Condition)} for an expression literal. */
-    private static boolean isEmptyLiteral(final String literal) {
+    /** Implements {@link #isEmptyPredicate(Condition)} for an expression literal; also used by the {@link SqlExpression} helpers. */
+    static boolean isEmptyLiteral(final String literal) {
         if (Strings.isBlank(literal)) {
             return true;
         }
@@ -1592,7 +1699,10 @@ public abstract class AbstractCondition implements Condition {
      */
     static void checkSortEntry(final String propName, final SortDirection direction) {
         checkSortPropName(propName);
-        N.checkArgument(direction != null, "SortDirection for '" + propName + "' must not be null");
+
+        if (direction == null) {
+            throw new IllegalArgumentException("SortDirection for '" + propName + "' must not be null");
+        }
     }
 
     /**

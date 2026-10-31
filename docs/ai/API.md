@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.9.6)
-- Build: faed424bdd727cc0ccae42f595a0cb1f5bc30f9a
+# abacus-query API Index (v4.9.7)
+- Build: bda449de860ed72fbe523514a75e7b08899f15db
 - Java: 21
-- Generated: 2026-10-25
+- Generated: 2026-10-30
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -41,7 +41,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of the entity mapping or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns; not checked for a select(List<Selection>) projection); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -59,18 +59,23 @@ Base class for fluent SQL builders.
 - **Summary:** Specifies the target table for an INSERT or INSERT ... SELECT operation using an entity class.
 - **Contract:**
   - Installing the entity mapping and rendering the INSERT clause are atomic; if rendering fails, neither the mapping nor a partial clause is retained.
+  - When no source entity was staged, for example with select(String...) or select(Map), entityClass maps the select list and the later clauses as well, unless a from(...) overload that takes an entity class installs that class instead.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the target table (must not be null)
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its mapped table name contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its mapped table name contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of entityClass or (except for a select(List<Selection>) projection) of the source entity, or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
   - ```java
     String sql = PSC.insert(account).into(Account.class).build().query();
     // Table name derived from Account class based on naming policy
+
+    // Src maps name to @Column("src_name"), Dst (table "dst") maps it to @Column("dst_name")
+    String copySql = PSC.select(Src.class).into(Dst.class).from("src").build().query();
+    // Output: INSERT INTO dst (id, dst_name) SELECT id AS "id", src_name AS "name" FROM src
     ```
 - **See also:** #into(String)
 - **Signature:** `public This into(final String tableName, final Class<?> entityClass)`
@@ -83,7 +88,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of entityClass or (except for a select(List<Selection>) projection) of the source entity, or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -208,7 +213,7 @@ Base class for fluent SQL builders.
   - Child parameters are merged before parameters from subsequent outer clauses, and generated named parameters are renamed when necessary to avoid collisions with the parent query.
 - **Parameters:**
   - `sqlBuilder` (`This`) — the child builder supplying a complete, lexically SELECT-only query (a syntactic SELECT candidate); consumed once child finalization begins
-  - `alias` (`String`) — the derived-table alias, emitted as trusted SQL (a trailing line comment is terminated with a line feed)
+  - `alias` (`String`) — the derived-table alias or trusted SQL beginning with that alias; if it includes additional comma-separated or joined table references, only the derived table's own alias qualifies entity properties. A trailing line comment is terminated with a line feed.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, is not building a SELECT, has no projection, or already has a FROM clause, or if the child is incomplete or was already consumed; or if a configured named-parameter handler emits an empty token under NAMED_SQL.
@@ -260,7 +265,7 @@ Base class for fluent SQL builders.
   - Installing the entity mapping and rendering the SELECT/FROM text are atomic; if rendering fails, neither the mapping nor a partial clause is retained.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class representing the table (must not be null)
-  - `alias` (`String`) — the table alias
+  - `alias` (`String`) — the table alias; null or empty renders the table without an alias (the entity's @Table alias is not applied, unlike #from(Class))
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
@@ -295,7 +300,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -355,7 +360,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -405,7 +410,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -455,7 +460,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -505,7 +510,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -555,7 +560,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -605,7 +610,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -1239,8 +1244,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This limit(final int count)`
 - **Summary:** Adds a row-count restriction to the query, rendered in the dialect's pagination syntax.
 - **Contract:**
-  - FETCH together with an ORDER BY clause); the OFFSET 0 ROWS prefix is omitted when #offset(int) or #offsetRows(int) has already been called.
-  - SQL Server rejects a FETCH count of 0 at execution, so limit(0) renders SQL it will not run any other product, or no product info: LIMIT count On the FETCH-style dialects (Oracle, DB2, SQL Server) this method also consumes the OFFSET and FETCH slots, because OFFSET must precede FETCH: call #offset(int) before this method, or prefer #limit(int, int), which emits the combined clause in the correct order.
+  - FETCH together with an ORDER BY clause); the OFFSET 0 ROWS prefix is omitted when #offset(int) or #offsetRows(int) has already been called any other product, or no product info: LIMIT count On the FETCH-style dialects (Oracle, DB2, SQL Server) this method also consumes the OFFSET and FETCH slots, because OFFSET must precede FETCH: call #offset(int) before this method, or prefer #limit(int, int), which emits the combined clause in the correct order.
 - **Parameters:**
   - `count` (`int`) — the maximum number of rows to return
 - **Returns:** this SqlBuilder instance for method chaining
@@ -1266,7 +1270,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This limit(final int count, final int offset)`
 - **Summary:** Adds a count-plus-offset pagination clause, rendered in the dialect's pagination syntax.
 - **Parameters:**
-  - `count` (`int`) — the maximum number of rows to return (SQL Server rejects a FETCH count of 0 at execution)
+  - `count` (`int`) — the maximum number of rows to return
   - `offset` (`int`) — the number of rows to skip
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
@@ -1333,7 +1337,7 @@ Base class for fluent SQL builders.
 - **Contract:**
   - Call #offsetRows(int) first when an offset is needed; #offset(int) is also compatible when this builder uses a FETCH-style dialect.
 - **Parameters:**
-  - `count` (`int`) — the number of rows to fetch (SQL Server rejects a FETCH count of 0 at execution)
+  - `count` (`int`) — the number of rows to fetch
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if LIMIT, FETCH NEXT, or FETCH FIRST has already been set, if a prior offset used limit-style OFFSET n rather than OFFSET n ROWS, for SQL Server if ORDER BY has not been set, if a preceding qualified JOIN has not been completed with on(...)/using(...), on INSERT VALUES, UPDATE, or DELETE statements, if the current SELECT segment has no FROM clause yet, or after FOR UPDATE has been emitted
@@ -1355,7 +1359,7 @@ Base class for fluent SQL builders.
 - **Contract:**
   - Call #offsetRows(int) first when an offset is needed; #offset(int) is also compatible when this builder uses a FETCH-style dialect.
 - **Parameters:**
-  - `count` (`int`) — the number of rows to fetch (SQL Server rejects a FETCH count of 0 at execution)
+  - `count` (`int`) — the number of rows to fetch
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if LIMIT, FETCH FIRST, or FETCH NEXT has already been set, if a prior offset used limit-style OFFSET n rather than OFFSET n ROWS, for SQL Server if ORDER BY has not been set, if a preceding qualified JOIN has not been completed with on(...)/using(...), on INSERT VALUES, UPDATE, or DELETE statements, if the current SELECT segment has no FROM clause yet, or after FOR UPDATE has been emitted
@@ -1397,6 +1401,7 @@ Base class for fluent SQL builders.
 - **Contract:**
   - When the statement built so far is nonempty, a separating space is inserted before expr if the statement does not already end with a space and expr does not already begin with one.
   - Caller-supplied edge whitespace is otherwise preserved; if the statement ends with a space and expr begins with one, both spaces remain.
+  - When the fragment is appended, the leading join-connector check described below also updates builder state.
 - **Parameters:**
   - `expr` (`String`) — the expression to append
 - **Returns:** this SqlBuilder instance for method chaining
@@ -2388,7 +2393,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class to generate INSERT for
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or declares no insertable property
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or declares no insertable property
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2402,7 +2407,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or no insertable property remains after exclusions are applied
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or no insertable property remains after exclusions are applied
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2417,7 +2422,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class to generate INSERT INTO for
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no insertable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, declares no insertable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
   - `java.lang.IllegalStateException` — if a named-parameter handler emits an empty token under NAMED_SQL
   - `java.lang.RuntimeException` — if the configured named-parameter handler throws an unchecked exception
@@ -2433,7 +2438,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the insert
 - **Returns:** a new SqlBuilder instance configured for INSERT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no insertable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, no insertable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
   - `java.lang.IllegalStateException` — if a named-parameter handler emits an empty token under NAMED_SQL
   - `java.lang.RuntimeException` — if the configured named-parameter handler throws an unchecked exception
@@ -2506,7 +2511,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class to update
 - **Returns:** a new SqlBuilder instance configured for UPDATE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or declares no updatable property
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or declares no updatable property, or if its mapped table name contains an unterminated block comment
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2522,7 +2527,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the update
 - **Returns:** a new SqlBuilder instance configured for UPDATE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or no updatable property remains after exclusions are applied
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or no updatable property remains after exclusions are applied, or if its mapped table name contains an unterminated block comment
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2571,7 +2576,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class to delete from
 - **Returns:** a new SqlBuilder instance configured for DELETE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class
+  - `java.lang.IllegalArgumentException` — if entityClass is null or is not a valid entity bean class, or if its mapped table name contains an unterminated block comment
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2663,7 +2668,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class to select properties from
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or declares no selectable property
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or declares no selectable property
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2681,7 +2686,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or declares no selectable property
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or declares no selectable property
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2702,7 +2707,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or no selectable property remains after exclusions are applied
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or no selectable property remains after exclusions are applied
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2720,7 +2725,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null or no selectable property remains after exclusions are applied
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or no selectable property remains after exclusions are applied
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2789,7 +2794,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `selection` (`Selection`) — the selection descriptor defining the entity, aliases, and property filtering; must not be null
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if selection is null, has a null, empty, or blank included property name, carries a blank, quoted, or comment-bearing table or class alias, resolves to no selectable property, or has an entity class that is not a valid entity bean class and lists no included property names (or that is neither a bean nor a Map type and has a table alias; otherwise the included property names of a non-bean class are rendered as written), or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class
+  - `java.lang.IllegalArgumentException` — if selection is null, has a null, empty, or blank included property name, carries a blank, quoted, or comment-bearing table or class alias, resolves to no selectable property, or has an entity class that is not a valid entity bean class and lists no included property names (or that is neither a bean nor a Map type and has a table alias; otherwise the included property names of a non-bean class are rendered as written); two included sub-entity properties that would read the same table reference (same table and alias), or a selected sub-entity property that references the entity's own class, are rejected by the from(...) call that renders the selection
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2806,7 +2811,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `selections` (`List<Selection>`) — list of Selection objects defining what to select from each entity
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if selections is null or empty, contains a null element, a null, empty, or blank included property name, or a blank, quoted, or comment-bearing table or class alias, resolves to no properties in total, or contains a selection whose entity class is not a valid entity bean class and that lists no included property names (or whose class is neither a bean nor a Map type and that has a table alias; otherwise the included property names of a non-bean class are rendered as written), or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class
+  - `java.lang.IllegalArgumentException` — if selections is null or empty, contains a null element, a null, empty, or blank included property name, or a blank, quoted, or comment-bearing table or class alias, resolves to no properties in total, or contains a selection whose entity class is not a valid entity bean class and that lists no included property names (or whose class is neither a bean nor a Map type and that has a table alias; otherwise the included property names of a non-bean class are rendered as written); two included sub-entity properties that would read the same table reference (same table and alias), or a selected sub-entity property that references the entity's own class, are rejected by the from(...) call that renders the selections
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2828,11 +2833,13 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 ##### selectFrom(...) -> SqlBuilder
 - **Signature:** `public SqlBuilder selectFrom(final Class<?> entityClass)`
 - **Summary:** Creates a complete SELECT FROM statement for an entity class.
+- **Contract:**
+  - If the entity class declares a @Table alias, that alias is applied to the table and qualifies the selected columns, as with #selectFrom(Class, String); the example below assumes an entity without one.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select from
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if the entity's @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2845,10 +2852,10 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Summary:** Creates a SELECT FROM statement for an entity class with table alias.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select from
-  - `tableAlias` (`String`) — the table alias to use
+  - `tableAlias` (`String`) — the table alias to use; a null, empty, or blank alias renders the table without one (the entity's @Table alias is not applied, unlike #selectFrom(Class))
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2860,6 +2867,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Signature:** `public SqlBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties)`
 - **Summary:** Creates a SELECT FROM statement with optional sub-entity properties.
 - **Contract:**
+  - The entity's @Table alias, if it declares one, is used as the table alias.
   - Use includeSubEntityProperties = false with explicit joins when further joins are needed.
   - A sub-entity property is included only when the parent entity maps it: a @NonColumn or transient sub-entity, one listed in @Table(nonColumnFields), or one missing from a non-empty @Table(columnFields) list contributes neither nested columns nor a table reference.
 - **Parameters:**
@@ -2867,7 +2875,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if the entity's @Table alias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2882,11 +2890,11 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - Use includeSubEntityProperties = false with explicit joins when further joins are needed.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select from
-  - `tableAlias` (`String`) — the table alias to use (with includeSubEntityProperties, a null, empty, or blank alias falls back to the entity's @Table alias, keeping the parent columns qualified next to the sub-entity tables)
+  - `tableAlias` (`String`) — the table alias to use (with includeSubEntityProperties, for an entity that declares a mapped sub-entity property, a null, empty, or blank alias falls back to the entity's @Table alias, keeping the parent columns qualified next to the sub-entity tables)
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if tableAlias (or the @Table alias it falls back to) contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2897,12 +2905,14 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     ```
 - **Signature:** `public SqlBuilder selectFrom(final Class<?> entityClass, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT FROM statement with excluded properties.
+- **Contract:**
+  - The entity's @Table alias, if it declares one, is used as the table alias.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select from
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if the entity's @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2916,11 +2926,11 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Summary:** Creates a SELECT FROM statement with alias and excluded properties.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select from
-  - `tableAlias` (`String`) — the table alias to use
+  - `tableAlias` (`String`) — the table alias to use; a null, empty, or blank alias renders the table without one (the entity's @Table alias is not applied, unlike #selectFrom(Class, Set))
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2933,6 +2943,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Signature:** `public SqlBuilder selectFrom(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT FROM statement with sub-entities and exclusions.
 - **Contract:**
+  - This method provides control over both sub-entity inclusion and property exclusion while using the entity's @Table alias (if it declares one) as the table alias.
   - Use includeSubEntityProperties = false with explicit joins when further joins are needed.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select from
@@ -2940,7 +2951,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if the entity's @Table alias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2957,12 +2968,12 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - A sub-entity property is included only when the parent entity maps it: a @NonColumn or transient sub-entity, one listed in @Table(nonColumnFields), or one missing from a non-empty @Table(columnFields) list contributes neither nested columns nor a table reference.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select from
-  - `tableAlias` (`String`) — the table alias to use (with includeSubEntityProperties, a null, empty, or blank alias falls back to the entity's @Table alias, keeping the parent columns qualified next to the sub-entity tables)
+  - `tableAlias` (`String`) — the table alias to use (with includeSubEntityProperties, for an entity that declares a mapped sub-entity property, a null, empty, or blank alias falls back to the entity's @Table alias, keeping the parent columns qualified next to the sub-entity tables)
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
   - `excludedPropNames` (`Set<String>`) — set of property names to exclude from selection
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if tableAlias (or the @Table alias it falls back to) contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -3080,11 +3091,13 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     ```
 - **Signature:** `public SqlBuilder selectCountFrom(final Class<?> entityClass)`
 - **Summary:** Creates a COUNT(*) query for an entity class.
+- **Contract:**
+  - The table name is derived from the entity class name or @Table annotation, and the entity's @Table alias, if it declares one, is used as the table alias (as by from(Class)).
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to count
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)
+  - `java.lang.IllegalArgumentException` — if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -3972,7 +3985,7 @@ Builder class for constructing the WHERE clause of a SQL query.
 - **Signature:** `public WhereClause and(final String expr)`
 - **Summary:** Adds an AND condition to the WHERE clause.
 - **Contract:**
-  - If called before any #append(String), this acts as the first condition and emits WHERE cond with no leading AND.
+  - If no condition has been appended yet (by #append(String) or any other method), this acts as the first condition and emits WHERE cond with no leading AND.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to add with AND (must not be null, empty, or blank)
 - **Returns:** this WhereClause instance for method chaining
@@ -3988,7 +4001,7 @@ Builder class for constructing the WHERE clause of a SQL query.
 - **Signature:** `public WhereClause or(final String expr)`
 - **Summary:** Adds an OR condition to the WHERE clause.
 - **Contract:**
-  - If called before any #append(String), this acts as the first condition and emits WHERE cond with no leading OR.
+  - If no condition has been appended yet (by #append(String) or any other method), this acts as the first condition and emits WHERE cond with no leading OR.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to add with OR (must not be null, empty, or blank)
 - **Returns:** this WhereClause instance for method chaining
@@ -4188,7 +4201,7 @@ Builder class for constructing the HAVING clause of a SQL query.
 - **Signature:** `public HavingClause and(final String expr)`
 - **Summary:** Adds an AND condition to the HAVING clause.
 - **Contract:**
-  - If called before any #append(String), this acts as the first condition and emits HAVING cond with no leading AND.
+  - If no condition has been appended yet (by #append(String) or any other method), this acts as the first condition and emits HAVING cond with no leading AND.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to add with AND (must not be null, empty, or blank)
 - **Returns:** this HavingClause instance for method chaining
@@ -4204,7 +4217,7 @@ Builder class for constructing the HAVING clause of a SQL query.
 - **Signature:** `public HavingClause or(final String expr)`
 - **Summary:** Adds an OR condition to the HAVING clause.
 - **Contract:**
-  - If called before any #append(String), this acts as the first condition and emits HAVING cond with no leading OR.
+  - If no condition has been appended yet (by #append(String) or any other method), this acts as the first condition and emits HAVING cond with no leading OR.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to add with OR (must not be null, empty, or blank)
 - **Returns:** this HavingClause instance for method chaining
@@ -4628,6 +4641,7 @@ Factory class for creating SQL Condition objects used in query construction.
   - ```java
     User user = new User("John", "john@example.com", 25);
     And condition = Filters.allEqual(user);
+    // If User's only selectable properties are name, email and age, in that order:
     // SQL fragment: ((name = 'John') AND (email = 'john@example.com') AND (age = 25))
     ```
 - **Signature:** `public static And allEqual(final Object entity, final Collection<String> includedPropNames)`
@@ -4853,7 +4867,7 @@ Factory class for creating SQL Condition objects used in query construction.
     EntityId id = EntityId.of("companyId", 1, "userId", 100);
     And condition = Filters.idToCond(id);
     // SQL fragment: ((companyId = 1) AND (userId = 100))
-    // (EntityId orders its keys alphabetically, regardless of insertion order)
+    // (EntityId orders its keys by natural, case-sensitive String order, regardless of insertion order)
     ```
 - **Signature:** `public static Or idToCond(final Collection<? extends EntityId> entityIds)`
 - **Summary:** Converts a collection of EntityIds to an Or condition where each EntityId becomes an And condition.
@@ -6225,7 +6239,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a Join clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** a Join clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6239,7 +6253,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a Join clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** a Join clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6268,7 +6282,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a LEFT JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to left join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** a LeftJoin clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6282,7 +6296,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a LEFT JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to left join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** a LeftJoin clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6311,7 +6325,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a RIGHT JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to right join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** a RightJoin clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6325,7 +6339,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a RIGHT JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to right join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** a RightJoin clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6379,7 +6393,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a FULL JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to full join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** a FullJoin clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6393,7 +6407,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a FULL JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to full join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** a FullJoin clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6422,7 +6436,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an INNER JOIN clause with the specified entity and join condition.
 - **Parameters:**
   - `joinEntity` (`String`) — the entity/table name to inner join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** an InnerJoin clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntity is null, empty, or blank, or contains an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -6436,7 +6450,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an INNER JOIN clause with multiple entities and a join condition.
 - **Parameters:**
   - `joinEntities` (`Collection<String>`) — collection of entity/table names to inner join
-  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join
+  - `joinCondition` (`Condition`) — the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition
 - **Returns:** an InnerJoin clause
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if joinEntities is null, empty, or contains a null/empty/blank element or an element containing an unterminated block comment; if joinCondition is null; or if joinCondition is or contains a Criteria, a null operator, a SQL clause, an SqlExpression whose text begins with ON or USING, a nested ON/USING connector, an ANY/ALL/SOME quantified-subquery operand (a comparison wrapping one, such as a = ANY (subquery), is accepted), a standalone SubQuery, or a blank or comment-only SqlExpression
@@ -7209,7 +7223,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
   - Parameter conversion is only applied when the SQL is a recognized data operation statement (see the class-level documentation).
 - **Parameters:**
   - `sql` (`String`) — the SQL string to parse (must not be null, empty, or blank)
-- **Returns:** a ParsedSql instance for the given SQL (typically a cached instance, unless the SQL is longer than #MAX_CACHEABLE_SQL_LENGTH characters)
+- **Returns:** a ParsedSql instance for the given SQL (typically a cached instance, unless the SQL is longer than #MAX_CACHEABLE_SQL_LENGTH characters or the JVM is shutting down, which closes the cache)
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank (including SQL made up only of characters that String#trim() removes, such as control characters); or if parameter detection in a recognized data-operation statement finds mixed styles (?, :propName, #{propName}), an iBatis/MyBatis parameter missing its closing brace or with an empty property name before its ':' or ',' (#{:id}), an unpaired UTF-16 surrogate in or immediately before a prospective colon-style name, or an unpaired surrogate directly after a '?' opening the content of a standalone bracket group
 - **Examples:**
@@ -7530,7 +7544,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Summary:** Returns the property names to be used for SELECT operations on the given entity class.
 - **Contract:**
   - When includeSubEntityProperties is true, the method returns nested properties using dot notation (e.g., "address.street").
-  - A sub-entity property itself (such as "address") is never listed: it is omitted when includeSubEntityProperties is false, and only its nested properties are listed when it is true.
+  - A sub-entity property itself (such as "address") is never listed: it is omitted when includeSubEntityProperties is false, and only its nested properties are listed when it is true: the sub-entity's own non-sub-entity properties, one level deep, and none for a sub-entity property of the entity's own type (a cyclic path).
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to analyze (must not be null)
   - `includeSubEntityProperties` (`boolean`) — true to include nested entity properties, false for top-level only
@@ -7559,7 +7573,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Parameters:**
   - `entity` (`Object`) — the entity instance to analyze (must not be null)
   - `includeSubEntityProperties` (`boolean`) — true to include nested entity properties, false for top-level only
-  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; null or empty means no exclusions)
+  - `excludedPropNames` (`Set<String>`) — set of property names to exclude from the result (nullable; null or empty means no exclusions), matched as described by #selectPropNames(Class, boolean, Set) (with sub-entity properties included, excluding a root such as "address" also excludes "address.street")
 - **Returns:** an immutable list of property names suitable for SELECT operations
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entity is null, or its class is not a valid entity bean class
@@ -8152,7 +8166,7 @@ Immutable descriptor of a database product, holding the product name and version
 - **Summary:** Creates a ProductInfo with the given product name and version.
 - **Parameters:**
   - `name` (`String`) — the database product name, such as "Oracle" or "MySQL"
-  - `version` (`String`) — the database product version, such as "19c" or "9.7"
+  - `version` (`String`) — the database product version, such as "19c" or "9.7"; null is normalized to an empty version
 - **Returns:** a new ProductInfo with the given name and version
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if name is null, empty, or blank
@@ -8401,7 +8415,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
 - **Signature:** `public ImmutableMap<String, String> attributes(final String id)`
 - **Summary:** Retrieves the attributes associated with the specified SQL identifier.
 - **Contract:**
-  - If a caller supplied an "id" entry in the attributes map to #add(String, ParsedSql, Map), it is present in the returned map; it is informational only and is ignored by the saveTo methods, which always write the canonical identifier.
+  - If a caller supplied an "id" entry in the attributes map to #add(String, ParsedSql, Map) or #add(String, String, Map), it is present in the returned map; it is informational only and is ignored by the saveTo methods, which always write the canonical identifier.
 - **Parameters:**
   - `id` (`String`) — the SQL identifier to look up
 - **Returns:** an immutable map of attribute names to values, or null if the id is null, empty, exceeds #MAX_ID_LENGTH characters, or is not found
@@ -8422,7 +8436,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
     ```
 ##### add(...) -> void
 - **Signature:** `public void add(final String id, final ParsedSql sql)`
-- **Summary:** Adds a parsed SQL with the specified identifier.
+- **Summary:** Adds a parsed SQL with the specified identifier and no attributes (#attributes(String) returns an empty map for it).
 - **Contract:**
   - This method validates the ID and throws an exception if an SQL with the same ID already exists.
 - **Parameters:**
@@ -8957,6 +8971,8 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 ##### isSelectQuery(...) -> boolean
 - **Signature:** `public static boolean isSelectQuery(final String sql)`
 - **Summary:** Checks if the given SQL statement is a SELECT query.
+- **Contract:**
+  - If leading comments, parentheses or a WITH clause read differently under the supported quote and line-comment conventions, so that lexically valid readings find different leading keywords, false is returned.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true if the SQL is a SELECT query, false otherwise
@@ -9002,6 +9018,8 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 ##### isInsertQuery(...) -> boolean
 - **Signature:** `public static boolean isInsertQuery(final String sql)`
 - **Summary:** Checks if the given SQL statement is an INSERT query.
+- **Contract:**
+  - If leading comments, parentheses or a WITH clause read differently under the supported quote and line-comment conventions, so that lexically valid readings find different leading keywords, false is returned.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true if the SQL is an INSERT query, false otherwise
@@ -9028,6 +9046,8 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 ##### isUpdateQuery(...) -> boolean
 - **Signature:** `public static boolean isUpdateQuery(final String sql)`
 - **Summary:** Checks if the given SQL statement is an UPDATE query.
+- **Contract:**
+  - If leading comments, parentheses or a WITH clause read differently under the supported quote and line-comment conventions, so that lexically valid readings find different leading keywords, false is returned.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true if the SQL is an UPDATE query, false otherwise
@@ -9051,6 +9071,8 @@ A utility class for parsing SQL statements into lexical SQL tokens.
 ##### isDeleteQuery(...) -> boolean
 - **Signature:** `public static boolean isDeleteQuery(final String sql)`
 - **Summary:** Checks if the given SQL statement is a DELETE query.
+- **Contract:**
+  - If leading comments, parentheses or a WITH clause read differently under the supported quote and line-comment conventions, so that lexically valid readings find different leading keywords, false is returned.
 - **Parameters:**
   - `sql` (`String`) — the SQL statement to check; may be empty or null
 - **Returns:** true if the SQL is a DELETE query, false otherwise
@@ -9466,7 +9488,7 @@ Internal constants container providing the standardized parameter-name string li
   - **Summary:** Parameter name for a single SQL mapper file path.
   - **Nullability:** unspecified
 - **Declaration:** `public static final String filePaths`
-  - **Summary:** Parameter name for the collection of SQL mapper file paths.
+  - **Summary:** Parameter name for a string of one or more SQL mapper file paths separated by ',' or ';'.
   - **Nullability:** unspecified
 - **Declaration:** `public static final String files`
   - **Summary:** Parameter name for the collection of files to read from.
@@ -11010,7 +11032,7 @@ A container representing a complete SQL query structure composed of multiple cla
 - **Signature:** `public ImmutableList<Condition> findConditions(final Operator operator)`
 - **Summary:** Returns all conditions whose Condition#operator() equals the given operator, in the order they were added.
 - **Parameters:**
-  - `operator` (`Operator`) — the operator to match (may be null, in which case this returns an empty list since AbstractCondition disallows null operators)
+  - `operator` (`Operator`) — the operator to match (may be null, in which case this returns an empty list since a Criteria rejects conditions with a null operator at construction)
 - **Returns:** an immutable list of matching conditions; empty if none found
 - **Examples:**
   - ```java
@@ -12650,14 +12672,14 @@ Represents an IN subquery condition in SQL queries.
 - **Summary:** Creates an IN subquery condition for a single property.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without * or qualifier.*, it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here
+  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without a wildcard (such as * or qualifier.*), it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose column count is not 1
 - **Signature:** `public InSubQuery(final Collection<String> propNames, final SubQuery subQuery)`
 - **Summary:** Creates an IN subquery condition for multiple properties.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the property/column names to check (must not be null or empty and must not contain null, empty, or blank elements). Their order must match the column order in the subquery.
-  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without * or qualifier.*, it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.
+  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without a wildcard (such as * or qualifier.*), it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propNames is null or empty, if any element is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose number of selected columns does not match propNames.size()
 
@@ -14693,14 +14715,14 @@ Represents a NOT IN subquery condition in SQL queries.
 - **Summary:** Creates a NOT IN subquery condition for a single property.
 - **Parameters:**
   - `propName` (`String`) — the property/column name (must not be null, empty, or blank)
-  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without * or qualifier.*, it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here
+  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without a wildcard (such as * or qualifier.*), it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propName is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose column count is not 1
 - **Signature:** `public NotInSubQuery(final Collection<String> propNames, final SubQuery subQuery)`
 - **Summary:** Creates a NOT IN subquery condition for multiple properties.
 - **Parameters:**
   - `propNames` (`Collection<String>`) — the property/column names to check (must not be null or empty and must not contain null, empty, or blank elements). Their order must match the column order in the subquery.
-  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without * or qualifier.*, it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.
+  - `subQuery` (`SubQuery`) — the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without a wildcard (such as * or qualifier.*), it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if propNames is null or empty, if any element is null, empty, or blank, if subQuery is null, or if the subquery has a known, non-wildcard structured projection whose number of selected columns does not match propNames.size()
 
@@ -15226,7 +15248,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NULL)
 - **Returns:** a SQL representation of the equality expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15248,7 +15270,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NULL)
 - **Returns:** a SQL representation of the equality expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15266,7 +15288,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NOT NULL)
 - **Returns:** a SQL representation of the not-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15288,7 +15310,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; may be null (renders as IS NOT NULL)
 - **Returns:** a SQL representation of the not-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15304,7 +15326,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the greater-than expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15323,7 +15345,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the greater-than expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15339,7 +15361,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the greater-than-or-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15355,7 +15377,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the greater-than-or-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15371,7 +15393,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the less-than expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15387,7 +15409,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the less-than expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15403,7 +15425,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the less-than-or-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15419,7 +15441,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`Object`) — the right-hand side value; should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the less-than-or-equal expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15436,7 +15458,7 @@ Represents a raw SQL expression that can be used in queries.
   - `maxValue` (`Object`) — the maximum value (inclusive); should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the BETWEEN expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if minValue or maxValue is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if minValue or maxValue is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if minValue or maxValue is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if minValue or maxValue is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15458,7 +15480,7 @@ Represents a raw SQL expression that can be used in queries.
   - `maxValue` (`Object`) — the upper bound of the excluded range (inclusive); should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the NOT BETWEEN expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or if minValue or maxValue is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if minValue or maxValue is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only, or if minValue or maxValue is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if minValue or maxValue is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15477,7 +15499,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`String`) — the pattern to match against (can include % and _ wildcards); should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the LIKE expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.like("name", "John%");
@@ -15497,7 +15519,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`String`) — the pattern to exclude (can include % and _ wildcards); should not be null — a null renders as the literal null
 - **Returns:** a SQL representation of the NOT LIKE expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.notLike("name", "John%");
@@ -15513,7 +15535,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to check for null
 - **Returns:** a SQL representation of the IS NULL expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.isNull("email");          // Returns: "email IS NULL"
@@ -15526,7 +15548,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to check for not null
 - **Returns:** a SQL representation of the IS NOT NULL expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.isNotNull("email");    // Returns: "email IS NOT NULL"
@@ -15539,7 +15561,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the column reference or expression to check
 - **Returns:** a parenthesized IS NULL OR = '' expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.isNullOrEmpty("description");
@@ -15552,7 +15574,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the column reference or expression to check
 - **Returns:** a parenthesized IS NOT NULL AND <> '' expression
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.isNotNullAndNotEmpty("name");
@@ -15567,7 +15589,7 @@ Represents a raw SQL expression that can be used in queries.
   - `exprs` (`String[]`) — the expressions to combine with AND; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the AND expression, or an empty string if no expressions are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element of exprs is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if any element of exprs is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.and("active = true", "age > 18", "status = 'APPROVED'");
@@ -15585,7 +15607,7 @@ Represents a raw SQL expression that can be used in queries.
   - `exprs` (`String[]`) — the expressions to combine with OR; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the OR expression, or an empty string if no expressions are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any element of exprs is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if any element of exprs is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.or("status = 'active'", "status = 'pending'", "priority = 1");
@@ -15598,7 +15620,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values to add; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the addition expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15617,7 +15639,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values to subtract; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the subtraction expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15637,7 +15659,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values to subtract; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the subtraction expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15662,7 +15684,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values to multiply; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the multiplication expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15681,7 +15703,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values to divide; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the division expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15700,7 +15722,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values for modulus operation; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the modulus expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15719,7 +15741,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values for left shift operation; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the left shift expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15735,7 +15757,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values for right shift operation; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the right shift expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15751,7 +15773,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values for bitwise AND operation; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the bitwise AND expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15770,7 +15792,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values for bitwise OR operation; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the bitwise OR expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15786,7 +15808,7 @@ Represents a raw SQL expression that can be used in queries.
   - `operands` (`Object[]`) — the values for bitwise XOR operation; a null or empty array yields an empty string
 - **Returns:** a SQL representation of the bitwise XOR expression, or an empty string if no operands are supplied
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
+  - `java.lang.IllegalArgumentException` — if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class
   - `java.lang.UnsupportedOperationException` — if a structured subquery inspects bean metadata that uses the long date format for a LocalDate or LocalTime property
   - `java.lang.RuntimeException` — if a custom condition renderer or a value's string conversion throws an unchecked exception
 - **Examples:**
@@ -15829,7 +15851,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to count
 - **Returns:** a COUNT function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.count("*");                      // Returns: "COUNT(*)"
@@ -15843,7 +15865,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to average
 - **Returns:** an AVG function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.avg("salary");   // Returns: "AVG(salary)"
@@ -15856,7 +15878,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to sum
 - **Returns:** a SUM function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.sum("amount");              // Returns: "SUM(amount)"
@@ -15869,7 +15891,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to find minimum
 - **Returns:** a MIN function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.min("price");           // Returns: "MIN(price)"
@@ -15882,7 +15904,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to find maximum
 - **Returns:** a MAX function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.max("score");         // Returns: "MAX(score)"
@@ -15895,7 +15917,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to get absolute value of
 - **Returns:** an ABS function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.abs("balance");        // Returns: "ABS(balance)"
@@ -15908,7 +15930,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate arc cosine of
 - **Returns:** an ACOS function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.acos("0.5");             // Returns: "ACOS(0.5)"
@@ -15921,7 +15943,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate arc sine of
 - **Returns:** an ASIN function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.asin("0.5");           // Returns: "ASIN(0.5)"
@@ -15934,7 +15956,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate arc tangent of
 - **Returns:** an ATAN function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.atan("1");                // Returns: "ATAN(1)"
@@ -15947,7 +15969,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to round up
 - **Returns:** a CEIL function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.ceil("4.2");      // Returns: "CEIL(4.2)"
@@ -15960,7 +15982,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate cosine of
 - **Returns:** a COS function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.cos("3.14159");   // Returns: "COS(3.14159)"
@@ -15973,7 +15995,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate exponential of
 - **Returns:** an EXP function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.exp("2");              // Returns: "EXP(2)"
@@ -15986,7 +16008,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to round down
 - **Returns:** a FLOOR function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.floor("4.8");        // Returns: "FLOOR(4.8)"
@@ -16000,7 +16022,7 @@ Represents a raw SQL expression that can be used in queries.
   - `value` (`String`) — the value to calculate logarithm of
 - **Returns:** a LOG function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if base or value is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if base or value is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.log("10", "100");     // Returns: "LOG(10, 100)"
@@ -16013,7 +16035,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate natural logarithm of
 - **Returns:** an LN function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.ln("10");       // Returns: "LN(10)"
@@ -16027,7 +16049,7 @@ Represents a raw SQL expression that can be used in queries.
   - `divisor` (`String`) — the divisor
 - **Returns:** a MOD function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if dividend or divisor is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if dividend or divisor is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.mod("10", "3");             // Returns: "MOD(10, 3)"
@@ -16041,7 +16063,7 @@ Represents a raw SQL expression that can be used in queries.
   - `exponent` (`String`) — the exponent
 - **Returns:** a POWER function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if base or exponent is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if base or exponent is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.power("2", "10");             // Returns: "POWER(2, 10)"
@@ -16054,7 +16076,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to get sign of
 - **Returns:** a SIGN function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.sign("-5");         // Returns: "SIGN(-5)"
@@ -16067,7 +16089,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate sine of
 - **Returns:** a SIN function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.sin("1.5708");   // Returns: "SIN(1.5708)"
@@ -16080,7 +16102,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate square root of
 - **Returns:** a SQRT function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.sqrt("16");      // Returns: "SQRT(16)"
@@ -16093,7 +16115,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the expression to calculate tangent of
 - **Returns:** a TAN function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.tan("0.7854");   // Returns: "TAN(0.7854)"
@@ -16107,7 +16129,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr2` (`String`) — the second SQL expression (column reference or pre-quoted literal)
 - **Returns:** a CONCAT function string of the form CONCAT(expr1, expr2)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr1 or expr2 is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr1 or expr2 is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.concat("firstName", "' '");
@@ -16121,11 +16143,11 @@ Represents a raw SQL expression that can be used in queries.
 - **Summary:** Creates a REPLACE function expression.
 - **Parameters:**
   - `expr` (`String`) — the SQL expression to search in
-  - `oldString` (`String`) — the string to search for
-  - `replacement` (`String`) — the replacement string
+  - `oldString` (`String`) — the SQL expression for the substring to search for, emitted verbatim (pre-quote a literal string, e.g. "'@'")
+  - `replacement` (`String`) — the SQL expression for the replacement, emitted verbatim (pre-quote a literal string, e.g. "'_at_'")
 - **Returns:** a REPLACE function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr, oldString, or replacement is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr, oldString, or replacement is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.replace("email", "'@'", "'_at_'");
@@ -16141,7 +16163,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the SQL expression whose length is returned
 - **Returns:** a LENGTH function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.length("name");           // Returns: "LENGTH(name)"
@@ -16155,7 +16177,7 @@ Represents a raw SQL expression that can be used in queries.
   - `fromIndex` (`int`) — the starting position (1-based)
 - **Returns:** a SUBSTR function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.substr("phone", 1);   // Returns: "SUBSTR(phone, 1)"
@@ -16169,7 +16191,7 @@ Represents a raw SQL expression that can be used in queries.
   - `length` (`int`) — the number of characters to extract
 - **Returns:** a SUBSTR function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.substr("phone", 1, 3);   // Returns: "SUBSTR(phone, 1, 3)"
@@ -16182,7 +16204,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the SQL expression to trim
 - **Returns:** a TRIM function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.trim("input");        // Returns: "TRIM(input)"
@@ -16195,7 +16217,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the SQL expression to left trim
 - **Returns:** an LTRIM function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.ltrim("comment");    // Returns: "LTRIM(comment)"
@@ -16208,7 +16230,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the SQL expression to right trim
 - **Returns:** an RTRIM function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.rtrim("code");           // Returns: "RTRIM(code)"
@@ -16223,7 +16245,7 @@ Represents a raw SQL expression that can be used in queries.
   - `padExpr` (`String`) — the SQL expression to pad with
 - **Returns:** an LPAD function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr or padExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr or padExpr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.lpad("id", 10, "'0'");     // Returns: "LPAD(id, 10, '0')"
@@ -16238,7 +16260,7 @@ Represents a raw SQL expression that can be used in queries.
   - `padExpr` (`String`) — the SQL expression to pad with
 - **Returns:** an RPAD function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr or padExpr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr or padExpr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.rpad("name", 20, "' '");    // Returns: "RPAD(name, 20, ' ')"
@@ -16251,7 +16273,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the SQL expression to convert to lowercase
 - **Returns:** a LOWER function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.lower("email");      // Returns: "LOWER(email)"
@@ -16264,7 +16286,7 @@ Represents a raw SQL expression that can be used in queries.
   - `expr` (`String`) — the SQL expression to convert to uppercase
 - **Returns:** an UPPER function string
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, blank, or comment-only
 - **Examples:**
   - ```java
     String expr = SqlExpression.upper("name");            // Returns: "UPPER(name)"
@@ -16363,14 +16385,14 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Parameters:**
   - `sql` (`String`) — complete raw query-expression text (must not be null, empty, blank, or contain a parameter placeholder)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; contains malformed placeholder text such as an unclosed #{...} marker; contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); or contains a positional placeholder without a corresponding binding (including a ? outside quoted text and comments in text that does not start with a recognized query keyword)
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; contains malformed placeholder text such as an unclosed #{...} marker; contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); contains a positional placeholder without a corresponding binding (including a ? outside quoted text and comments in text that does not start with a recognized query keyword); or contains an unterminated block comment
 - **Signature:** `public SubQuery(final String sql, final Collection<?> parameters)`
 - **Summary:** Creates a raw subquery with positional JDBC bindings.
 - **Parameters:**
   - `sql` (`String`) — complete raw query-expression text (must not be null, empty, or blank)
   - `parameters` (`Collection<?>`) — positional binding values in placeholder encounter order (must not be null); individual binding values may be null; array/Date/Calendar bindings are snapshotted, all others kept by reference; SqlExpression and raw SubQuery bindings are inlined as described above
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; parameters is null; the SQL contains malformed placeholder text such as an unclosed #{...} marker; the SQL contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); the number of positional placeholders differs from the number of bindings; the SQL is not a statement ParsedSql recognizes (a query such as SELECT, WITH, VALUES or TABLE, or a DML statement) but contains a ? outside quoted text and comments; an object-array binding contains a cycle; a binding is a SqlExpression that is blank, comment-only, or contains parameter markers of its own (such as Filters#QME); or a binding is any other Condition (a predicate, or a structured or builder-backed subquery), whose SQL would depend on the enclosing builder's policy
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; parameters is null; the SQL contains malformed placeholder text such as an unclosed #{...} marker; the SQL contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); the number of positional placeholders differs from the number of bindings; the SQL is not a statement ParsedSql recognizes (a query such as SELECT, WITH, VALUES or TABLE, or a DML statement) but contains a ? outside quoted text and comments; an object-array binding contains a cycle; a binding is a SqlExpression that is blank, comment-only, or contains parameter markers of its own (such as Filters#QME); a binding is any other Condition (a predicate, or a structured or builder-backed subquery), whose SQL would depend on the enclosing builder's policy; or the SQL, after inlining the SqlExpression bindings, contains an unterminated block comment
 - **Signature:** `@Deprecated public SubQuery(final String entityName, final String sql)`
 - **Summary:** Creates a subquery with an entity name and raw SQL.
 - **Deprecated:** the entity name is unused when rendering raw query-expression text; it is only exposed by #entityName() and participates in #equals(Object)/#hashCode(). Use #SubQuery(String) for raw text, or #SubQuery(String, java.util.Collection, Condition) when an entity-name-based structured subquery is actually wanted.
@@ -16378,7 +16400,7 @@ Represents a complete or structured SELECT used within SQL conditions.
   - `entityName` (`String`) — the entity/table name; may be null or empty, in which case it is stored as the empty string
   - `sql` (`String`) — complete raw query-expression text (must not be null, empty, or blank)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; contains malformed placeholder text such as an unclosed #{...} marker; contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); or contains a positional placeholder without a corresponding binding
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank; contains malformed placeholder text such as an unclosed #{...} marker; contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); contains a positional placeholder without a corresponding binding; or contains an unterminated block comment
 - **Signature:** `public SubQuery(final String entityName, final String propName, final Condition condition)`
 - **Summary:** Creates a structured single-property subquery for an entity name.
 - **Parameters:**
@@ -16555,7 +16577,7 @@ Represents a complete or structured SELECT used within SQL conditions.
 - **Signature:** `@Override public String toSql(final NamingPolicy namingPolicy)`
 - **Summary:** Converts this subquery to its SQL representation.
 - **Contract:**
-  - An alias is kept as written as well: one after AS (firstName AS fn), and an implicit one when the item is exactly a name (bare, delimited or dot-qualified), whitespace and a bare alias (firstName fn, \[firstName\] fn, acc.firstName fn), unless that name is a SQL keyword in any case (distinct userId is a modifier and a column).
+  - An alias is kept as written as well: one after AS (firstName AS fn), and an implicit one when the item is exactly a name (bare, delimited or dot-qualified), whitespace and a bare alias (firstName fn, \[firstName\] fn, acc.firstName fn; a query builder, which expects AS, instead converts such a trailing word like an identifier), unless that name is a SQL keyword in any case (distinct userId is a modifier and a column).
   - Render the subquery through a SqlBuilder when condition identifiers must also resolve against entity column mappings.
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply; if null, com.landawn.abacus.util.NamingPolicy#NO_CHANGE is used

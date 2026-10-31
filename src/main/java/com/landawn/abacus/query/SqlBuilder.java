@@ -97,7 +97,7 @@ import com.landawn.abacus.util.Strings;
  *   <tr><td>{@link Dsl#MLC}</td><td>{@code #{name}} (deprecated)</td><td>camelCase</td><td>{@code SELECT firstName FROM account WHERE id = #{id}}</td></tr>
  * </table>
  *
- * <p><b>Usage examples:</b>
+ * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // SELECT with conditions
  * String sql = PSC.select("firstName", "lastName")
@@ -144,7 +144,8 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
     /**
      * Constructs a new SqlBuilder with the specified SqlDialect.
      *
-     * @param sqlDialect the complete rendering and tokenizer configuration for this builder
+     * @param sqlDialect the complete rendering and tokenizer configuration for this builder; a {@code null} dialect is
+     *        treated as an all-defaults dialect (see {@link AbstractQueryBuilder#AbstractQueryBuilder(SqlDialect)})
      * @throws IllegalArgumentException if the dialect's naming policy is {@link com.landawn.abacus.util.NamingPolicy#KEBAB_CASE}
      */
     protected SqlBuilder(final SqlDialect sqlDialect) {
@@ -364,7 +365,9 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
 
     /**
      * Renders a {@code BETWEEN} / {@code NOT BETWEEN} clause, e.g. {@code col BETWEEN :minCol AND :maxCol}.
-     * The bound parameter names are derived from the property name with any table-alias prefix stripped.
+     * Under the named and iBATIS SQL policies (and in subclasses, whose setters may inspect the names) the bound
+     * parameter names are {@code min}/{@code max} plus the property name with any table-alias prefix stripped;
+     * otherwise both bounds are bound under the property name itself.
      *
      * @param propName the property/column name
      * @param operator the operator ({@link Operator#BETWEEN} or {@link Operator#NOT_BETWEEN})
@@ -454,6 +457,10 @@ public class SqlBuilder extends AbstractQueryBuilder<SqlBuilder> { // NOSONAR
      * avoiding temporary sublists and arrays, while each condition element is rendered at its original position.
      * Returns {@code false} without rendering anything for 16 or fewer values, another SQL policy, or a subclass,
      * so subclasses retain individual setter calls and their hooks still run.
+     *
+     * @param propName the property/column name the values are bound for
+     * @param values the membership values, possibly containing {@link Condition} elements
+     * @return {@code true} if the value list was rendered and bound here, {@code false} if nothing was rendered
      * @throws IllegalArgumentException if a condition in {@code values} contains an unsupported condition type, an unsafe column, or an incompatible subquery
      * @throws IllegalStateException if rendering a condition in {@code values} encounters an incomplete or out-of-order structured subquery
      * @throws UnsupportedOperationException if a structured subquery's entity metadata configures a LocalDate or LocalTime property with date format {@code long}

@@ -412,6 +412,39 @@ public class SqlExpressionTest extends TestBase {
     @Nested
     class HelperValidation {
         @Test
+        void testHelperValidationMessagesNameThePublicParameter() {
+            assertEquals("exprs[1] must not be null or blank", assertThrows(IllegalArgumentException.class, () -> SqlExpression.and("a", " ")).getMessage());
+            assertEquals("exprs[0] must not be null or blank", assertThrows(IllegalArgumentException.class, () -> SqlExpression.or(null, "b")).getMessage());
+            assertEquals("expr must not be null or blank", assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNull(null)).getMessage());
+            assertEquals("expr must not be null or blank", assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNotNull(" ")).getMessage());
+        }
+
+        // Regression: the String helpers accepted a comment-only expr and a blank or comment-only SqlExpression operand,
+        // rendering truncated SQL ("a = ", " + 1", "COUNT(-- c\n)") that the equivalent condition constructors reject.
+        @Test
+        void testStaticHelpersRejectBlankOrCommentOnlyOperands() {
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.equal("a", SqlExpression.of("")));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.equal("a", SqlExpression.of("-- x")));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.between("a", 1, SqlExpression.of(" ")));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.between("a", SqlExpression.of("/* c */"), 2));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.plus(SqlExpression.of(""), 1));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNull("-- c"));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.equal("/* c */", 1));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.count("/* c */"));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.and("-- c", "b = 1"));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNullOrEmpty("/* c */"));
+            assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNotNullAndNotEmpty("-- c"));
+            assertEquals("expr must not be null or blank", assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNullOrEmpty(" ")).getMessage());
+            assertEquals("expr must not consist only of SQL comments: -- c",
+                    assertThrows(IllegalArgumentException.class, () -> SqlExpression.isNull("-- c")).getMessage());
+
+            // Still accepted: a SQL Server temp-table reference, and an expression that only carries a trailing comment.
+            assertEquals("a = #tmp", SqlExpression.equal("a", SqlExpression.of("#tmp")));
+            assertEquals("price -- comment\n = 1", SqlExpression.equal("price -- comment\n", 1));
+            assertEquals("COUNT(*)", SqlExpression.count("*"));
+        }
+
+        @Test
         void testStaticHelpersRejectNullOrBlankExpr() {
             // the expr/column side must never render as the text "null"
             assertThrows(IllegalArgumentException.class, () -> SqlExpression.equal(null, 1));

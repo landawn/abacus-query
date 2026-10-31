@@ -588,7 +588,10 @@ public class Binary extends ComposableCondition {
             return validateValueOperand(propValue, cs.propValue);
         }
 
-        return snapshotMutableValue(validateNonQuantifiedValueOperand(propValue, cs.propValue));
+        // Quantified operands returned above, so both validators accept the same values here; the choice only decides
+        // whether the rejection message offers ALL/ANY/SOME, which is right only for an operator that accepts them.
+        return snapshotMutableValue(QUANTIFIED_COMPARISON_OPERATORS.contains(op) ? validateValueOperand(propValue, cs.propValue)
+                : validateNonQuantifiedValueOperand(propValue, cs.propValue));
     }
 
     /** Returns a safe public view while preserving identity for immutable and application-defined values. */

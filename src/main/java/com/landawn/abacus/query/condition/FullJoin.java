@@ -39,6 +39,9 @@ import java.util.Collection;
  *   <li>Left-side columns are NULL for right-side rows with no matching left-side row</li>
  *   <li>Result set size is at least the size of the larger table (more when matches are many-to-many)</li>
  * </ul>
+ *
+ * <p>Database support: MySQL and MariaDB do not support {@code FULL [OUTER] JOIN}, and SQLite supports it only
+ * from version 3.39.0. This class always renders {@code FULL JOIN}; it does not emulate the join by dialect.</p>
  * 
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code

@@ -160,7 +160,7 @@ public final class cs { // NOSONAR
     public static final String filePath = "filePath";
 
     /**
-     * Parameter name for the collection of SQL mapper file paths.
+     * Parameter name for a string of one or more SQL mapper file paths separated by {@code ','} or {@code ';'}.
      */
     public static final String filePaths = "filePaths";
 

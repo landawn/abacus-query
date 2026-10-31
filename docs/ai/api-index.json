@@ -1,11 +1,11 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.9.6",
-    "generated_at": "2026-10-25",
+    "version": "4.9.7",
+    "generated_at": "2026-10-30",
     "java_target": "21",
     "source": {
-      "git_sha": "faed424bdd727cc0ccae42f595a0cb1f5bc30f9a"
+      "git_sha": "bda449de860ed72fbe523514a75e7b08899f15db"
     }
   },
   "packages": [
@@ -75,7 +75,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of the entity mapping or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns; not checked for a select(List<Selection>) projection); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -121,7 +121,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, if its mapped table name contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its mapped table name contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of entityClass or (except for a select(List<Selection>) projection) of the source entity, or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -135,10 +135,11 @@
               "javadoc_summary": "Specifies the target table for an INSERT or INSERT ... SELECT operation using an entity class.",
               "returns": "this SqlBuilder instance for method chaining",
               "contract": [
-                "Installing the entity mapping and rendering the INSERT clause are atomic; if rendering fails, neither the mapping nor a partial clause is retained."
+                "Installing the entity mapping and rendering the INSERT clause are atomic; if rendering fails, neither the mapping nor a partial clause is retained.",
+                "When no source entity was staged, for example with select(String...) or select(Map), entityClass maps the select list and the later clauses as well, unless a from(...) overload that takes an entity class installs that class instead."
               ],
               "examples": [
-                "String sql = PSC.insert(account).into(Account.class).build().query();\n// Table name derived from Account class based on naming policy"
+                "String sql = PSC.insert(account).into(Account.class).build().query();\n// Table name derived from Account class based on naming policy\n\n// Src maps name to @Column(\"src_name\"), Dst (table \"dst\") maps it to @Column(\"dst_name\")\nString copySql = PSC.select(Src.class).into(Dst.class).from(\"src\").build().query();\n// Output: INSERT INTO dst (id, dst_name) SELECT id AS \"id\", src_name AS \"name\" FROM src"
               ],
               "see_also": [
                 "#into(String)"
@@ -174,7 +175,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items; or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of entityClass or (except for a select(List<Selection>) projection) of the source entity, or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -457,7 +458,7 @@
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "the derived-table alias, emitted as trusted SQL (a trailing line comment is terminated with a line feed)",
+                  "javadoc": "the derived-table alias or trusted SQL beginning with that alias; if it includes additional comma-separated or joined table references, only the derived table's own alias qualifies entity properties. A trailing line comment is terminated with a line feed.",
                   "nullability": "unspecified"
                 }
               ],
@@ -596,7 +597,7 @@
                 {
                   "name": "alias",
                   "type": "String",
-                  "javadoc": "the table alias",
+                  "javadoc": "the table alias; null or empty renders the table without an alias (the entity's @Table alias is not applied, unlike #from(Class))",
                   "nullability": "unspecified"
                 }
               ],
@@ -683,7 +684,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -804,7 +805,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -923,7 +924,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1042,7 +1043,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1161,7 +1162,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1280,7 +1281,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -1399,7 +1400,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class, or its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null or is not a valid entity bean class, if its table name contains an unterminated block comment or ends inside a line comment under this builder's dialect (for example t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -2789,8 +2790,7 @@
               "javadoc_summary": "Adds a row-count restriction to the query, rendered in the dialect's pagination syntax.",
               "returns": "this SqlBuilder instance for method chaining",
               "contract": [
-                "FETCH together with an ORDER BY clause); the OFFSET 0 ROWS prefix is omitted when #offset(int) or #offsetRows(int) has already been called.",
-                "SQL Server rejects a FETCH count of 0 at execution, so limit(0) renders SQL it will not run any other product, or no product info: LIMIT count On the FETCH-style dialects (Oracle, DB2, SQL Server) this method also consumes the OFFSET and FETCH slots, because OFFSET must precede FETCH: call #offset(int) before this method, or prefer #limit(int, int), which emits the combined clause in the correct order."
+                "FETCH together with an ORDER BY clause); the OFFSET 0 ROWS prefix is omitted when #offset(int) or #offsetRows(int) has already been called any other product, or no product info: LIMIT count On the FETCH-style dialects (Oracle, DB2, SQL Server) this method also consumes the OFFSET and FETCH slots, because OFFSET must precede FETCH: call #offset(int) before this method, or prefer #limit(int, int), which emits the combined clause in the correct order."
               ],
               "examples": [
                 "String sql = PSC.select(\"*\")\n                .from(\"users\")\n                .limit(10)\n                .build().query();\n// Output: SELECT * FROM users LIMIT 10\n\nDsl oracleDsl = Dsl.forDialect(SqlDialect.builder()\n        .sqlPolicy(SqlDialect.SqlPolicy.PARAMETERIZED_SQL)\n        .productInfo(SqlDialect.ProductInfo.of(\"Oracle\"))\n        .build());\nString oracleSql = oracleDsl.select(\"*\").from(\"users\").limit(10).build().query();\n// Output: SELECT * FROM users FETCH FIRST 10 ROWS ONLY"
@@ -2810,7 +2810,7 @@
                 {
                   "name": "count",
                   "type": "int",
-                  "javadoc": "the maximum number of rows to return (SQL Server rejects a FETCH count of 0 at execution)",
+                  "javadoc": "the maximum number of rows to return",
                   "nullability": "unspecified"
                 },
                 {
@@ -2926,7 +2926,7 @@
                 {
                   "name": "count",
                   "type": "int",
-                  "javadoc": "the number of rows to fetch (SQL Server rejects a FETCH count of 0 at execution)",
+                  "javadoc": "the number of rows to fetch",
                   "nullability": "unspecified"
                 }
               ],
@@ -2966,7 +2966,7 @@
                 {
                   "name": "count",
                   "type": "int",
-                  "javadoc": "the number of rows to fetch (SQL Server rejects a FETCH count of 0 at execution)",
+                  "javadoc": "the number of rows to fetch",
                   "nullability": "unspecified"
                 }
               ],
@@ -3075,7 +3075,8 @@
               "returns": "this SqlBuilder instance for method chaining",
               "contract": [
                 "When the statement built so far is nonempty, a separating space is inserted before expr if the statement does not already end with a space and expr does not already begin with one.",
-                "Caller-supplied edge whitespace is otherwise preserved; if the statement ends with a space and expr begins with one, both spaces remain."
+                "Caller-supplied edge whitespace is otherwise preserved; if the statement ends with a space and expr begins with one, both spaces remain.",
+                "When the fragment is appended, the leading join-connector check described below also updates builder state."
               ],
               "examples": [
                 "String sql = PSC.select(\"*\")\n                .from(\"users\")\n                .append(\"FOR UPDATE\")\n                .build().query();\n// Output: SELECT * FROM users FOR UPDATE"
@@ -5020,7 +5021,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or declares no insertable property"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or declares no insertable property"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5061,7 +5062,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or no insertable property remains after exclusions are applied"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or no insertable property remains after exclusions are applied"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5096,7 +5097,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no insertable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, declares no insertable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5145,7 +5146,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no insertable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, no insertable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5299,7 +5300,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or declares no updatable property"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or declares no updatable property, or if its mapped table name contains an unterminated block comment"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5342,7 +5343,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or no updatable property remains after exclusions are applied"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or no updatable property remains after exclusions are applied, or if its mapped table name contains an unterminated block comment"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5451,7 +5452,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or is not a valid entity bean class"
+                  "condition": "if entityClass is null or is not a valid entity bean class, or if its mapped table name contains an unterminated block comment"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5615,7 +5616,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or declares no selectable property"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or declares no selectable property"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5656,7 +5657,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or declares no selectable property"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or declares no selectable property"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5699,7 +5700,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or no selectable property remains after exclusions are applied"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or no selectable property remains after exclusions are applied"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5746,7 +5747,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null or no selectable property remains after exclusions are applied"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or no selectable property remains after exclusions are applied"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5781,7 +5782,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if the entity's @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5790,7 +5791,9 @@
               ],
               "javadoc_summary": "Creates a complete SELECT FROM statement for an entity class.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
-              "contract": [],
+              "contract": [
+                "If the entity class declares a @Table alias, that alias is applied to the table and qualifies the selected columns, as with #selectFrom(Class, String); the example below assumes an entity without one."
+              ],
               "examples": [
                 "String sql = PSC.selectFrom(Account.class)\n                .where(Filters.equal(\"status\", \"active\"))\n                .build().query();\n// Output: SELECT id AS \"id\", first_name AS \"firstName\", last_name AS \"lastName\", email AS \"email\" FROM account WHERE status = ?"
               ],
@@ -5815,14 +5818,14 @@
                 {
                   "name": "tableAlias",
                   "type": "String",
-                  "javadoc": "the table alias to use",
+                  "javadoc": "the table alias to use; a null, empty, or blank alias renders the table without one (the entity's @Table alias is not applied, unlike #selectFrom(Class))",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null, is not a valid entity bean class, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5863,7 +5866,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if the entity's @Table alias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5873,6 +5876,7 @@
               "javadoc_summary": "Creates a SELECT FROM statement with optional sub-entity properties.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
               "contract": [
+                "The entity's @Table alias, if it declares one, is used as the table alias.",
                 "Use includeSubEntityProperties = false with explicit joins when further joins are needed.",
                 "A sub-entity property is included only when the parent entity maps it: a @NonColumn or transient sub-entity, one listed in @Table(nonColumnFields), or one missing from a non-empty @Table(columnFields) list contributes neither nested columns nor a table reference."
               ],
@@ -5900,7 +5904,7 @@
                 {
                   "name": "tableAlias",
                   "type": "String",
-                  "javadoc": "the table alias to use (with includeSubEntityProperties, a null, empty, or blank alias falls back to the entity's @Table alias, keeping the parent columns qualified next to the sub-entity tables)",
+                  "javadoc": "the table alias to use (with includeSubEntityProperties, for an entity that declares a mapped sub-entity property, a null, empty, or blank alias falls back to the entity's @Table alias, keeping the parent columns qualified next to the sub-entity tables)",
                   "nullability": "unspecified"
                 },
                 {
@@ -5913,7 +5917,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, declares no selectable property, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if tableAlias (or the @Table alias it falls back to) contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5956,7 +5960,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if the entity's @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5965,7 +5969,9 @@
               ],
               "javadoc_summary": "Creates a SELECT FROM statement with excluded properties.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
-              "contract": [],
+              "contract": [
+                "The entity's @Table alias, if it declares one, is used as the table alias."
+              ],
               "examples": [
                 "Set<String> excluded = N.asSet(\"password\", \"secretKey\");\nString sql = PSC.selectFrom(Account.class, excluded)\n                .where(Filters.equal(\"active\", true))\n                .build().query();\n// Selects all properties except password and secretKey"
               ],
@@ -5990,7 +5996,7 @@
                 {
                   "name": "tableAlias",
                   "type": "String",
-                  "javadoc": "the table alias to use",
+                  "javadoc": "the table alias to use; a null, empty, or blank alias renders the table without one (the entity's @Table alias is not applied, unlike #selectFrom(Class, Set))",
                   "nullability": "unspecified"
                 },
                 {
@@ -6003,7 +6009,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token"
+                  "condition": "if entityClass is null, is not a valid entity bean class, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if tableAlias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6050,7 +6056,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if the entity's @Table alias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6060,6 +6066,7 @@
               "javadoc_summary": "Creates a SELECT FROM statement with sub-entities and exclusions.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
               "contract": [
+                "This method provides control over both sub-entity inclusion and property exclusion while using the entity's @Table alias (if it declares one) as the table alias.",
                 "Use includeSubEntityProperties = false with explicit joins when further joins are needed."
               ],
               "examples": [
@@ -6086,7 +6093,7 @@
                 {
                   "name": "tableAlias",
                   "type": "String",
-                  "javadoc": "the table alias to use (with includeSubEntityProperties, a null, empty, or blank alias falls back to the entity's @Table alias, keeping the parent columns qualified next to the sub-entity tables)",
+                  "javadoc": "the table alias to use (with includeSubEntityProperties, for an entity that declares a mapped sub-entity property, a null, empty, or blank alias falls back to the entity's @Table alias, keeping the parent columns qualified next to the sub-entity tables)",
                   "nullability": "unspecified"
                 },
                 {
@@ -6105,7 +6112,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if tableAlias contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, no selectable property remains after exclusions are applied, or the class resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment, such as t -- note), or if tableAlias (or the @Table alias it falls back to) contains a line break or a SQL comment token, or if two included sub-entity properties would read the same table reference (same table and alias; a self-referencing sub-entity property is not expanded)"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6295,7 +6302,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if selection is null, has a null, empty, or blank included property name, carries a blank, quoted, or comment-bearing table or class alias, resolves to no selectable property, or has an entity class that is not a valid entity bean class and lists no included property names (or that is neither a bean nor a Map type and has a table alias; otherwise the included property names of a non-bean class are rendered as written), or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class"
+                  "condition": "if selection is null, has a null, empty, or blank included property name, carries a blank, quoted, or comment-bearing table or class alias, resolves to no selectable property, or has an entity class that is not a valid entity bean class and lists no included property names (or that is neither a bean nor a Map type and has a table alias; otherwise the included property names of a non-bean class are rendered as written); two included sub-entity properties that would read the same table reference (same table and alias), or a selected sub-entity property that references the entity's own class, are rejected by the from(...) call that renders the selection"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6335,7 +6342,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if selections is null or empty, contains a null element, a null, empty, or blank included property name, or a blank, quoted, or comment-bearing table or class alias, resolves to no properties in total, or contains a selection whose entity class is not a valid entity bean class and that lists no included property names (or whose class is neither a bean nor a Map type and that has a table alias; otherwise the included property names of a non-bean class are rendered as written), or if two included sub-entity properties would read the same table reference (same table and alias), or a selected sub-entity property references the entity's own class"
+                  "condition": "if selections is null or empty, contains a null element, a null, empty, or blank included property name, or a blank, quoted, or comment-bearing table or class alias, resolves to no properties in total, or contains a selection whose entity class is not a valid entity bean class and that lists no included property names (or whose class is neither a bean nor a Map type and that has a table alias; otherwise the included property names of a non-bean class are rendered as written); two included sub-entity properties that would read the same table reference (same table and alias), or a selected sub-entity property that references the entity's own class, are rejected by the from(...) call that renders the selections"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6632,7 +6639,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL)"
+                  "condition": "if entityClass is null, is not a valid entity bean class, or resolves to a blank mapped table name (or one that contains an unterminated block comment or ends inside a line comment under this DSL's dialect, such as t -- note, or #tmp on MySQL), or if its @Table alias contains a line break or a SQL comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6641,7 +6648,9 @@
               ],
               "javadoc_summary": "Creates a COUNT(*) query for an entity class.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
-              "contract": [],
+              "contract": [
+                "The table name is derived from the entity class name or @Table annotation, and the entity's @Table alias, if it declares one, is used as the table alias (as by from(Class))."
+              ],
               "examples": [
                 "String sql = PSC.selectCountFrom(Account.class)\n                .where(Filters.isNotNull(\"email\"))\n                .build().query();\n// Output: SELECT count(*) FROM account WHERE email IS NOT NULL"
               ],
@@ -8836,7 +8845,7 @@
               "javadoc_summary": "Adds an AND condition to the WHERE clause.",
               "returns": "this WhereClause instance for method chaining",
               "contract": [
-                "If called before any #append(String), this acts as the first condition and emits WHERE cond with no leading AND."
+                "If no condition has been appended yet (by #append(String) or any other method), this acts as the first condition and emits WHERE cond with no leading AND."
               ],
               "examples": [
                 "where.append(\"active = true\").and(\"age >= 18\").and(\"country = ?\");\n// Generates: WHERE active = true AND age >= 18 AND country = ?"
@@ -8873,7 +8882,7 @@
               "javadoc_summary": "Adds an OR condition to the WHERE clause.",
               "returns": "this WhereClause instance for method chaining",
               "contract": [
-                "If called before any #append(String), this acts as the first condition and emits WHERE cond with no leading OR."
+                "If no condition has been appended yet (by #append(String) or any other method), this acts as the first condition and emits WHERE cond with no leading OR."
               ],
               "examples": [
                 "where.append(\"role = 'admin'\").or(\"role = 'moderator'\");\n// Generates: WHERE role = 'admin' OR role = 'moderator'"
@@ -9320,7 +9329,7 @@
               "javadoc_summary": "Adds an AND condition to the HAVING clause.",
               "returns": "this HavingClause instance for method chaining",
               "contract": [
-                "If called before any #append(String), this acts as the first condition and emits HAVING cond with no leading AND."
+                "If no condition has been appended yet (by #append(String) or any other method), this acts as the first condition and emits HAVING cond with no leading AND."
               ],
               "examples": [
                 "having.append(\"COUNT(*) > 5\").and(\"MAX(price) < 1000\");\n// Generates: HAVING COUNT(*) > 5 AND MAX(price) < 1000"
@@ -9357,7 +9366,7 @@
               "javadoc_summary": "Adds an OR condition to the HAVING clause.",
               "returns": "this HavingClause instance for method chaining",
               "contract": [
-                "If called before any #append(String), this acts as the first condition and emits HAVING cond with no leading OR."
+                "If no condition has been appended yet (by #append(String) or any other method), this acts as the first condition and emits HAVING cond with no leading OR."
               ],
               "examples": [
                 "having.append(\"MIN(score) > 80\").or(\"AVG(score) > 90\");\n// Generates: HAVING MIN(score) > 80 OR AVG(score) > 90"
@@ -10332,7 +10341,7 @@
               "returns": "an And condition",
               "contract": [],
               "examples": [
-                "User user = new User(\"John\", \"john@example.com\", 25);\nAnd condition = Filters.allEqual(user);\n// SQL fragment: ((name = 'John') AND (email = 'john@example.com') AND (age = 25))"
+                "User user = new User(\"John\", \"john@example.com\", 25);\nAnd condition = Filters.allEqual(user);\n// If User's only selectable properties are name, email and age, in that order:\n// SQL fragment: ((name = 'John') AND (email = 'john@example.com') AND (age = 25))"
               ],
               "see_also": []
             },
@@ -10922,7 +10931,7 @@
               "returns": "an And condition",
               "contract": [],
               "examples": [
-                "EntityId id = EntityId.of(\"companyId\", 1, \"userId\", 100);\nAnd condition = Filters.idToCond(id);\n// SQL fragment: ((companyId = 1) AND (userId = 100))\n// (EntityId orders its keys alphabetically, regardless of insertion order)"
+                "EntityId id = EntityId.of(\"companyId\", 1, \"userId\", 100);\nAnd condition = Filters.idToCond(id);\n// SQL fragment: ((companyId = 1) AND (userId = 100))\n// (EntityId orders its keys by natural, case-sensitive String order, regardless of insertion order)"
               ],
               "see_also": []
             },
@@ -14453,7 +14462,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -14491,7 +14500,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -14566,7 +14575,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -14604,7 +14613,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -14679,7 +14688,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -14717,7 +14726,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -14856,7 +14865,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -14894,7 +14903,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -14969,7 +14978,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -15007,7 +15016,7 @@
                 {
                   "name": "joinCondition",
                   "type": "Condition",
-                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for an unconditional join",
+                  "javadoc": "the join condition (must not be null); a plain predicate is rendered with an ON prefix, an On/Using supplies its own keyword — use #crossJoin(String) / #naturalJoin(String) for a join without an explicit condition",
                   "nullability": "unspecified"
                 }
               ],
@@ -16983,7 +16992,7 @@
                 }
               ],
               "javadoc_summary": "Parses the given SQL string and returns a ParsedSql instance.",
-              "returns": "a ParsedSql instance for the given SQL (typically a cached instance, unless the SQL is longer than #MAX_CACHEABLE_SQL_LENGTH characters)",
+              "returns": "a ParsedSql instance for the given SQL (typically a cached instance, unless the SQL is longer than #MAX_CACHEABLE_SQL_LENGTH characters or the JVM is shutting down, which closes the cache)",
               "contract": [
                 "Parameter conversion is only applied when the SQL is a recognized data operation statement (see the class-level documentation)."
               ],
@@ -17573,7 +17582,7 @@
               "returns": "an immutable list of property names suitable for SELECT operations",
               "contract": [
                 "When includeSubEntityProperties is true, the method returns nested properties using dot notation (e.g., \"address.street\").",
-                "A sub-entity property itself (such as \"address\") is never listed: it is omitted when includeSubEntityProperties is false, and only its nested properties are listed when it is true."
+                "A sub-entity property itself (such as \"address\") is never listed: it is omitted when includeSubEntityProperties is false, and only its nested properties are listed when it is true: the sub-entity's own non-sub-entity properties, one level deep, and none for a sub-entity property of the entity's own type (a cyclic path)."
               ],
               "examples": [
                 "// Get top-level properties only\nCollection<String> selectProps = QueryUtil.selectPropNames(User.class, false, null);\n// Returns: [\"id\", \"name\", \"email\", ...]\n\n// Include sub-entity properties (e.g., nested Address)\nCollection<String> allProps = QueryUtil.selectPropNames(User.class, true, null);\n// Returns: [\"id\", \"name\", \"email\", \"address.street\", \"address.city\", ...]\n\n// Exclude specific properties\nSet<String> excluded = N.asSet(\"email\");\nCollection<String> filteredProps = QueryUtil.selectPropNames(User.class, false, excluded);\n// Returns: [\"id\", \"name\", ...]"
@@ -17606,7 +17615,7 @@
                 {
                   "name": "excludedPropNames",
                   "type": "Set<String>",
-                  "javadoc": "set of property names to exclude from the result (nullable; null or empty means no exclusions)",
+                  "javadoc": "set of property names to exclude from the result (nullable; null or empty means no exclusions), matched as described by #selectPropNames(Class, boolean, Set) (with sub-entity properties included, excluding a root such as \"address\" also excludes \"address.street\")",
                   "nullability": "unspecified"
                 }
               ],
@@ -18823,7 +18832,7 @@
                 {
                   "name": "version",
                   "type": "String",
-                  "javadoc": "the database product version, such as \"19c\" or \"9.7\"",
+                  "javadoc": "the database product version, such as \"19c\" or \"9.7\"; null is normalized to an empty version",
                   "nullability": "unspecified"
                 }
               ],
@@ -19352,7 +19361,7 @@
               "javadoc_summary": "Retrieves the attributes associated with the specified SQL identifier.",
               "returns": "an immutable map of attribute names to values, or null if the id is null, empty, exceeds #MAX_ID_LENGTH characters, or is not found",
               "contract": [
-                "If a caller supplied an \"id\" entry in the attributes map to #add(String, ParsedSql, Map), it is present in the returned map; it is informational only and is ignored by the saveTo methods, which always write the canonical identifier."
+                "If a caller supplied an \"id\" entry in the attributes map to #add(String, ParsedSql, Map) or #add(String, String, Map), it is present in the returned map; it is informational only and is ignored by the saveTo methods, which always write the canonical identifier."
               ],
               "examples": [
                 "// Given XML: <sql id=\"batchInsert\" batchSize=\"100\" timeout=\"30\">...</sql>\nSqlMapper mapper = SqlMapper.loadFrom(\"sql/queries.xml\");\n\nImmutableMap<String, String> attrs = mapper.attributes(\"batchInsert\");\nif (attrs != null) {\n    String batchSize = attrs.get(\"batchSize\");   // \"100\"\n    String timeout = attrs.get(\"timeout\");       // \"30\"\n}\n\n// Returns null for unknown ids\nImmutableMap<String, String> unknown = mapper.attributes(\"nonExistentId\");\n// unknown is null"
@@ -19388,7 +19397,7 @@
                   "condition": "if id is null/empty, contains whitespace, exceeds #MAX_ID_LENGTH characters, or already exists, or if sql is null"
                 }
               ],
-              "javadoc_summary": "Adds a parsed SQL with the specified identifier.",
+              "javadoc_summary": "Adds a parsed SQL with the specified identifier and no attributes (#attributes(String) returns an empty map for it).",
               "contract": [
                 "This method validates the ID and throws an exception if an SQL with the same ID already exists."
               ],
@@ -20696,7 +20705,9 @@
               "throws": [],
               "javadoc_summary": "Checks if the given SQL statement is a SELECT query.",
               "returns": "true if the SQL is a SELECT query, false otherwise",
-              "contract": [],
+              "contract": [
+                "If leading comments, parentheses or a WITH clause read differently under the supported quote and line-comment conventions, so that lexically valid readings find different leading keywords, false is returned."
+              ],
               "examples": [
                 "// Valid SELECT queries\nboolean result1 = SqlParser.isSelectQuery(\"SELECT * FROM users\");\n// result1 = true\n\nboolean result2 = SqlParser.isSelectQuery(\"select id, name from products\");\n// result2 = true\n\nboolean result3 = SqlParser.isSelectQuery(\"  SELECT count(*) FROM orders\");\n// result3 = true\n\n// Non-SELECT queries\nboolean result4 = SqlParser.isSelectQuery(\"UPDATE users SET name = 'John'\");\n// result4 = false\n\nboolean result5 = SqlParser.isSelectQuery(\"INSERT INTO users VALUES (1, 'John')\");\n// result5 = false"
               ],
@@ -20797,7 +20808,9 @@
               "throws": [],
               "javadoc_summary": "Checks if the given SQL statement is an INSERT query.",
               "returns": "true if the SQL is an INSERT query, false otherwise",
-              "contract": [],
+              "contract": [
+                "If leading comments, parentheses or a WITH clause read differently under the supported quote and line-comment conventions, so that lexically valid readings find different leading keywords, false is returned."
+              ],
               "examples": [
                 "// Valid INSERT queries\nboolean result1 = SqlParser.isInsertQuery(\"INSERT INTO users VALUES (1, 'John')\");\n// result1 = true\n\nboolean result2 = SqlParser.isInsertQuery(\"insert into products (name, price) values ('Widget', 9.99)\");\n// result2 = true\n\nboolean result3 = SqlParser.isInsertQuery(\"  INSERT INTO orders (order_id) VALUES (100)\");\n// result3 = true\n\n// Non-INSERT queries\nboolean result4 = SqlParser.isInsertQuery(\"UPDATE users SET name = 'John'\");\n// result4 = false\n\nboolean result5 = SqlParser.isInsertQuery(\"SELECT * FROM users\");\n// result5 = false"
               ],
@@ -20831,7 +20844,9 @@
               "throws": [],
               "javadoc_summary": "Checks if the given SQL statement is an UPDATE query.",
               "returns": "true if the SQL is an UPDATE query, false otherwise",
-              "contract": [],
+              "contract": [
+                "If leading comments, parentheses or a WITH clause read differently under the supported quote and line-comment conventions, so that lexically valid readings find different leading keywords, false is returned."
+              ],
               "examples": [
                 "// Valid UPDATE queries\nboolean result1 = SqlParser.isUpdateQuery(\"UPDATE users SET name = 'John'\");\n// result1 = true\n\nboolean result2 = SqlParser.isUpdateQuery(\"update products set price = 9.99 where id = 1\");\n// result2 = true\n\n// Non-UPDATE queries\nboolean result3 = SqlParser.isUpdateQuery(\"SELECT * FROM users\");\n// result3 = false\n\nboolean result4 = SqlParser.isUpdateQuery(\"DELETE FROM users WHERE id = 1\");\n// result4 = false"
               ],
@@ -20865,7 +20880,9 @@
               "throws": [],
               "javadoc_summary": "Checks if the given SQL statement is a DELETE query.",
               "returns": "true if the SQL is a DELETE query, false otherwise",
-              "contract": [],
+              "contract": [
+                "If leading comments, parentheses or a WITH clause read differently under the supported quote and line-comment conventions, so that lexically valid readings find different leading keywords, false is returned."
+              ],
               "examples": [
                 "// Valid DELETE queries\nboolean result1 = SqlParser.isDeleteQuery(\"DELETE FROM users WHERE id = 1\");\n// result1 = true\n\nboolean result2 = SqlParser.isDeleteQuery(\"delete from products where price < 1\");\n// result2 = true\n\n// Non-DELETE queries\nboolean result3 = SqlParser.isDeleteQuery(\"SELECT * FROM users\");\n// result3 = false\n\nboolean result4 = SqlParser.isDeleteQuery(\"UPDATE users SET name = 'John'\");\n// result4 = false"
               ],
@@ -22040,7 +22057,7 @@
               ],
               "type": "String",
               "value": "\"filePaths\"",
-              "javadoc_summary": "Parameter name for the collection of SQL mapper file paths.",
+              "javadoc_summary": "Parameter name for a string of one or more SQL mapper file paths separated by ',' or ';'.",
               "nullability": "unspecified"
             },
             {
@@ -24568,7 +24585,7 @@
                 {
                   "name": "operator",
                   "type": "Operator",
-                  "javadoc": "the operator to match (may be null, in which case this returns an empty list since AbstractCondition disallows null operators)",
+                  "javadoc": "the operator to match (may be null, in which case this returns an empty list since a Criteria rejects conditions with a null operator at construction)",
                   "nullability": "unspecified"
                 }
               ],
@@ -27753,7 +27770,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without * or qualifier.*, it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here",
+                  "javadoc": "the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without a wildcard (such as * or qualifier.*), it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here",
                   "nullability": "unspecified"
                 }
               ],
@@ -27777,7 +27794,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without * or qualifier.*, it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.",
+                  "javadoc": "the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without a wildcard (such as * or qualifier.*), it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.",
                   "nullability": "unspecified"
                 }
               ],
@@ -31743,7 +31760,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without * or qualifier.*, it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here",
+                  "javadoc": "the subquery that returns the values to check against (must not be null); if it has an explicit structured projection without a wildcard (such as * or qualifier.*), it must select exactly one column; raw SQL and wildcard projections cannot be arity-checked here",
                   "nullability": "unspecified"
                 }
               ],
@@ -31767,7 +31784,7 @@
                 {
                   "name": "subQuery",
                   "type": "SubQuery",
-                  "javadoc": "the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without * or qualifier.*, it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.",
+                  "javadoc": "the subquery that returns the values to check against (must not be null). If it has an explicit structured projection without a wildcard (such as * or qualifier.*), it must select exactly propNames.size() columns. Raw SQL and wildcard projections cannot be arity-checked here.",
                   "nullability": "unspecified"
                 }
               ],
@@ -33039,7 +33056,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33087,7 +33104,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33133,7 +33150,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33181,7 +33198,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33227,7 +33244,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33273,7 +33290,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33319,7 +33336,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33365,7 +33382,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33411,7 +33428,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33457,7 +33474,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33503,7 +33520,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33549,7 +33566,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33601,7 +33618,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if minValue or maxValue is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if minValue or maxValue is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if minValue or maxValue is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if minValue or maxValue is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33653,7 +33670,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or if minValue or maxValue is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if minValue or maxValue is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if expr is null, empty, blank, or comment-only, or if minValue or maxValue is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if minValue or maxValue is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -33701,7 +33718,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a LIKE expression for pattern matching.",
@@ -33739,7 +33756,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a NOT LIKE expression for pattern matching.",
@@ -33771,7 +33788,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an IS NULL expression for the specified expression.",
@@ -33803,7 +33820,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an IS NOT NULL expression for the specified expression.",
@@ -33835,7 +33852,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a SQL expression that tests whether the specified string expression is either NULL or the empty string.",
@@ -33867,7 +33884,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a SQL expression that tests whether the specified string expression is both non-NULL and different from the empty string.",
@@ -33899,7 +33916,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any element of exprs is null, empty, or blank"
+                  "condition": "if any element of exprs is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an AND expression combining multiple expressions.",
@@ -33933,7 +33950,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any element of exprs is null, empty, or blank"
+                  "condition": "if any element of exprs is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an OR expression combining multiple expressions.",
@@ -33967,7 +33984,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34007,7 +34024,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34047,7 +34064,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34092,7 +34109,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34132,7 +34149,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34172,7 +34189,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34212,7 +34229,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34252,7 +34269,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34292,7 +34309,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34332,7 +34349,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34372,7 +34389,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if any value is a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
+                  "condition": "if any value is a blank or comment-only SqlExpression or a Float or Double that is NaN or infinite, or a Number whose text is not a valid numeric literal, or if any value is a Condition whose rendering rejects one of its own values for the same reasons, or a nested SubQuery has an invalid entity class"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -34456,7 +34473,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a COUNT function expression.",
@@ -34488,7 +34505,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an AVG (average) function expression.",
@@ -34520,7 +34537,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a SUM function expression.",
@@ -34552,7 +34569,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a MIN function expression.",
@@ -34584,7 +34601,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a MAX function expression.",
@@ -34616,7 +34633,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an ABS (absolute value) function expression.",
@@ -34648,7 +34665,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an ACOS (arc cosine) function expression.",
@@ -34680,7 +34697,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an ASIN (arc sine) function expression.",
@@ -34712,7 +34729,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an ATAN (arc tangent) function expression.",
@@ -34744,7 +34761,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a CEIL (ceiling) function expression.",
@@ -34776,7 +34793,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a COS (cosine) function expression.",
@@ -34808,7 +34825,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an EXP (exponential) function expression.",
@@ -34840,7 +34857,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a FLOOR function expression.",
@@ -34878,7 +34895,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if base or value is null, empty, or blank"
+                  "condition": "if base or value is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a LOG function expression with specified base.",
@@ -34910,7 +34927,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an LN (natural logarithm) function expression.",
@@ -34948,7 +34965,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if dividend or divisor is null, empty, or blank"
+                  "condition": "if dividend or divisor is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a MOD (modulo) function expression.",
@@ -34986,7 +35003,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if base or exponent is null, empty, or blank"
+                  "condition": "if base or exponent is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a POWER function expression.",
@@ -35018,7 +35035,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a SIGN function expression.",
@@ -35050,7 +35067,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a SIN (sine) function expression.",
@@ -35082,7 +35099,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a SQRT (square root) function expression.",
@@ -35114,7 +35131,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a TAN (tangent) function expression.",
@@ -35152,7 +35169,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr1 or expr2 is null, empty, or blank"
+                  "condition": "if expr1 or expr2 is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a CONCAT function expression that concatenates two operands.",
@@ -35183,20 +35200,20 @@
                 {
                   "name": "oldString",
                   "type": "String",
-                  "javadoc": "the string to search for",
+                  "javadoc": "the SQL expression for the substring to search for, emitted verbatim (pre-quote a literal string, e.g. \"'@'\")",
                   "nullability": "unspecified"
                 },
                 {
                   "name": "replacement",
                   "type": "String",
-                  "javadoc": "the replacement string",
+                  "javadoc": "the SQL expression for the replacement, emitted verbatim (pre-quote a literal string, e.g. \"'_at_'\")",
                   "nullability": "unspecified"
                 }
               ],
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr, oldString, or replacement is null, empty, or blank"
+                  "condition": "if expr, oldString, or replacement is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a REPLACE function expression.",
@@ -35228,7 +35245,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a LENGTH function expression.",
@@ -35266,7 +35283,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a SUBSTR function expression starting from a position.",
@@ -35310,7 +35327,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a SUBSTR function expression with start position and length.",
@@ -35342,7 +35359,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a TRIM function expression.",
@@ -35374,7 +35391,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an LTRIM (left trim) function expression.",
@@ -35406,7 +35423,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an RTRIM (right trim) function expression.",
@@ -35450,7 +35467,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr or padExpr is null, empty, or blank"
+                  "condition": "if expr or padExpr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an LPAD (left pad) function expression.",
@@ -35494,7 +35511,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr or padExpr is null, empty, or blank"
+                  "condition": "if expr or padExpr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an RPAD (right pad) function expression.",
@@ -35526,7 +35543,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates a LOWER function expression.",
@@ -35558,7 +35575,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank"
+                  "condition": "if expr is null, empty, blank, or comment-only"
                 }
               ],
               "javadoc_summary": "Creates an UPPER function expression.",
@@ -35695,7 +35712,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null, empty, or blank; contains malformed placeholder text such as an unclosed #{...} marker; contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); or contains a positional placeholder without a corresponding binding (including a ? outside quoted text and comments in text that does not start with a recognized query keyword)"
+                  "condition": "if sql is null, empty, or blank; contains malformed placeholder text such as an unclosed #{...} marker; contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); contains a positional placeholder without a corresponding binding (including a ? outside quoted text and comments in text that does not start with a recognized query keyword); or contains an unterminated block comment"
                 }
               ]
             },
@@ -35719,7 +35736,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null, empty, or blank; parameters is null; the SQL contains malformed placeholder text such as an unclosed #{...} marker; the SQL contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); the number of positional placeholders differs from the number of bindings; the SQL is not a statement ParsedSql recognizes (a query such as SELECT, WITH, VALUES or TABLE, or a DML statement) but contains a ? outside quoted text and comments; an object-array binding contains a cycle; a binding is a SqlExpression that is blank, comment-only, or contains parameter markers of its own (such as Filters#QME); or a binding is any other Condition (a predicate, or a structured or builder-backed subquery), whose SQL would depend on the enclosing builder's policy"
+                  "condition": "if sql is null, empty, or blank; parameters is null; the SQL contains malformed placeholder text such as an unclosed #{...} marker; the SQL contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); the number of positional placeholders differs from the number of bindings; the SQL is not a statement ParsedSql recognizes (a query such as SELECT, WITH, VALUES or TABLE, or a DML statement) but contains a ? outside quoted text and comments; an object-array binding contains a cycle; a binding is a SqlExpression that is blank, comment-only, or contains parameter markers of its own (such as Filters#QME); a binding is any other Condition (a predicate, or a structured or builder-backed subquery), whose SQL would depend on the enclosing builder's policy; or the SQL, after inlining the SqlExpression bindings, contains an unterminated block comment"
                 }
               ]
             },
@@ -35748,7 +35765,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null, empty, or blank; contains malformed placeholder text such as an unclosed #{...} marker; contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); or contains a positional placeholder without a corresponding binding"
+                  "condition": "if sql is null, empty, or blank; contains malformed placeholder text such as an unclosed #{...} marker; contains a named (:name) or MyBatis #{...} placeholder (in text that does not start with a recognized query keyword, any such marker outside quoted text and comments); contains a positional placeholder without a corresponding binding; or contains an unterminated block comment"
                 }
               ]
             },
@@ -36024,7 +36041,7 @@
               "javadoc_summary": "Converts this subquery to its SQL representation.",
               "returns": "SQL representation of the subquery",
               "contract": [
-                "An alias is kept as written as well: one after AS (firstName AS fn), and an implicit one when the item is exactly a name (bare, delimited or dot-qualified), whitespace and a bare alias (firstName fn, [firstName] fn, acc.firstName fn), unless that name is a SQL keyword in any case (distinct userId is a modifier and a column).",
+                "An alias is kept as written as well: one after AS (firstName AS fn), and an implicit one when the item is exactly a name (bare, delimited or dot-qualified), whitespace and a bare alias (firstName fn, [firstName] fn, acc.firstName fn; a query builder, which expects AS, instead converts such a trailing word like an identifier), unless that name is a SQL keyword in any case (distinct userId is a modifier and a column).",
                 "Render the subquery through a SqlBuilder when condition identifiers must also resolve against entity column mappings."
               ],
               "examples": [

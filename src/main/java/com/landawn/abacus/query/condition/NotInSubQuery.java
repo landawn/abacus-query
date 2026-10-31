@@ -85,7 +85,7 @@ public class NotInSubQuery extends AbstractInSubQuery {
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
      * @param subQuery the subquery that returns the values to check against (must not be {@code null});
-     *            if it has an explicit structured projection without {@code *} or {@code qualifier.*}, it must select
+     *            if it has an explicit structured projection without a wildcard (such as {@code *} or {@code qualifier.*}), it must select
      *            exactly one column; raw SQL and wildcard projections cannot be arity-checked here
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, if {@code subQuery} is {@code null},
      *             or if the subquery has a known, non-wildcard structured projection whose column count is not 1
@@ -120,7 +120,7 @@ public class NotInSubQuery extends AbstractInSubQuery {
      * @param propNames the property/column names to check (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements).
      *            Their order must match the column order in the subquery.
      * @param subQuery the subquery that returns the values to check against (must not be {@code null}).
-     *            If it has an explicit structured projection without {@code *} or {@code qualifier.*}, it must select
+     *            If it has an explicit structured projection without a wildcard (such as {@code *} or {@code qualifier.*}), it must select
      *            exactly {@code propNames.size()} columns. Raw SQL and wildcard projections cannot be arity-checked here.
      * @throws IllegalArgumentException if {@code propNames} is {@code null} or empty, if any element is {@code null}, empty, or blank,
      *             if {@code subQuery} is {@code null}, or if the subquery has a known, non-wildcard structured projection

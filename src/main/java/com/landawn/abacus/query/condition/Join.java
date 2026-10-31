@@ -96,9 +96,9 @@ import com.landawn.abacus.util.Strings;
  */
 public class Join extends AbstractCondition {
 
-    private List<String> joinEntities;
+    private final List<String> joinEntities;
 
-    private Condition condition;
+    private final Condition condition;
 
     /** Lazily memoized immutable view of {@link #joinEntities} (performance only). */
     private transient ImmutableList<String> cachedJoinEntitiesView;
@@ -109,6 +109,8 @@ public class Join extends AbstractCondition {
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Join() {
+        joinEntities = null;
+        condition = null;
     }
 
     /**

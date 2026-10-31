@@ -29,6 +29,9 @@ package com.landawn.abacus.query.condition;
  *   <li>Strings: BETWEEN 'A' AND 'M' (ordered according to the database collation)</li>
  * </ul>
  *
+ * <p>The bounds are neither reordered nor compared by this class. With reversed non-null bounds
+ * ({@code minValue > maxValue}), standard (asymmetric) {@code BETWEEN} matches no rows.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Numeric range

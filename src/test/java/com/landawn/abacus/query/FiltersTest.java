@@ -1550,6 +1550,17 @@ public class FiltersTest extends TestBase {
         }
 
         @Test
+        void testCollectionFactoriesNameTheCallerParameterForBadElements() {
+            final Map<String, Object> props = new HashMap<>();
+            props.put("a", 1);
+
+            assertEquals("Map elements of entitiesOrPropMaps must not be empty",
+                    assertThrows(IllegalArgumentException.class, () -> Filters.anyOfAllEqual(Arrays.asList(props, new HashMap<>()))).getMessage());
+            assertEquals("entityIds must not contain null",
+                    assertThrows(IllegalArgumentException.class, () -> Filters.idToCond(Arrays.asList((EntityId) null))).getMessage());
+        }
+
+        @Test
         void testAnyOfAllEqualEntities() {
             Account account1 = new Account();
             Account account2 = new Account();

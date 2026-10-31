@@ -679,7 +679,7 @@ public class InTest extends TestBase {
             assertEquals("values must not contain null elements; null found at index 1", ex.getMessage());
 
             ex = assertThrows(IllegalArgumentException.class, () -> new In("id", Arrays.asList(1, 2, Filters.eq("a", 1))));
-            assertTrue(ex.getMessage().startsWith("values[2] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+            assertTrue(ex.getMessage().startsWith("values[2] must be a literal value, SqlExpression, or scalar SubQuery, not"), ex.getMessage());
 
             final Condition quantified = Filters.any(Filters.subQuery("t", Arrays.asList("id"), Filters.eq("x", 1)));
             ex = assertThrows(IllegalArgumentException.class, () -> new In("id", Arrays.asList(1, quantified)));
@@ -694,10 +694,25 @@ public class InTest extends TestBase {
 
             ex = assertThrows(IllegalArgumentException.class,
                     () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, 2), Arrays.asList(Filters.eq("a", 1), 4))));
-            assertTrue(ex.getMessage().startsWith("valueRows[1][0] must be a literal value, SqlExpression, scalar SubQuery"), ex.getMessage());
+            assertTrue(ex.getMessage().startsWith("valueRows[1][0] must be a literal value, SqlExpression, or scalar SubQuery, not"), ex.getMessage());
 
             ex = assertThrows(IllegalArgumentException.class, () -> new In(Arrays.asList("a", "b"), Arrays.asList(Arrays.asList(1, quantified))));
             assertEquals("valueRows[0][1] must not be an ALL/ANY/SOME operand; quantified operands require a direct scalar-comparison RHS", ex.getMessage());
+        }
+
+        @Test
+        void testPredicateValueMessageDoesNotOfferQuantifiedOperandWhereItIsRejected() {
+            // IN values and BETWEEN bounds reject ALL/ANY/SOME, so their predicate message must not suggest one.
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> new In("a", Arrays.asList(Filters.eq("x", 1), 2)));
+            assertEquals("values[0] must be a literal value, SqlExpression, or scalar SubQuery, not a predicate or query clause: " + Equal.class.getName(),
+                    ex.getMessage());
+
+            ex = assertThrows(IllegalArgumentException.class, () -> new Between("a", Filters.eq("x", 1), 1));
+            assertTrue(ex.getMessage().startsWith("minValue must be a literal value, SqlExpression, or scalar SubQuery, not"), ex.getMessage());
+
+            // a scalar comparison RHS accepts a quantified operand, so its message still offers one
+            ex = assertThrows(IllegalArgumentException.class, () -> new Equal("a", Filters.eq("x", 1)));
+            assertTrue(ex.getMessage().contains("or a directly supported ALL/ANY/SOME operand"), ex.getMessage());
         }
 
         @Test

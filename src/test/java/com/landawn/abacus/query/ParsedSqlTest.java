@@ -29,6 +29,104 @@ import com.landawn.abacus.util.Strings;
 
 public class ParsedSqlTest extends TestBase {
 
+    /**
+     * Child-JVM entry point for the shutdown tests in {@link Caching}. It parses SQL inside a JVM shutdown hook, either
+     * after the parse cache has been initialized and then closed by its own shutdown hook ({@code afterCacheClosed}), or
+     * with {@code ParsedSql} first used (and so initialized) inside the hook ({@code firstUseInHook}), and prints one
+     * {@code RESULT} line per parse.
+     */
+    public static final class ShutdownParseProbe {
+        public static void main(final String[] args) {
+            final boolean firstUseInHook = "firstUseInHook".equals(args[0]);
+
+            if (!firstUseInHook) {
+                ParsedSql.parse("SELECT * FROM t WHERE id = :id"); // initializes the cache, which registers its closing shutdown hook
+            }
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    if (!firstUseInHook) {
+                        // Shutdown hooks run concurrently: wait until the cache's own hook has closed it.
+                        final java.lang.reflect.Field field = ParsedSql.class.getDeclaredField("pool");
+                        field.setAccessible(true);
+                        final KeyedObjectPool<?, ?> cache = (KeyedObjectPool<?, ?>) field.get(null);
+                        final long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30);
+
+                        while (!cache.isClosed() && System.nanoTime() < deadline) {
+                            Thread.sleep(10);
+                        }
+
+                        System.out.println("CACHE_CLOSED " + cache.isClosed());
+                    }
+
+                    for (int i = 0; i < 2; i++) {
+                        final ParsedSql parsed = ParsedSql.parse("UPDATE t SET a = :a WHERE id = :id");
+                        System.out.println("RESULT " + parsed.parameterizedSql() + " " + parsed.namedParameters());
+                    }
+
+                    try {
+                        ParsedSql.parse(" ");
+                        System.out.println("BLANK accepted");
+                    } catch (final IllegalArgumentException e) {
+                        System.out.println("BLANK IAE");
+                    }
+                } catch (final Throwable e) { // NOSONAR - report every failure to the parent test
+                    System.out.println("FAILED " + e);
+                }
+
+                System.out.flush();
+            }));
+        }
+    }
+
+    /** Runs {@link ShutdownParseProbe} in a child JVM on this test's class path and returns its combined output. */
+    private static String runShutdownParseProbe(final String mode) throws Exception {
+        final java.util.Set<String> classPath = new java.util.LinkedHashSet<>();
+
+        for (ClassLoader loader = Thread.currentThread().getContextClassLoader(); loader != null; loader = loader.getParent()) {
+            if (loader instanceof java.net.URLClassLoader) {
+                for (final java.net.URL url : ((java.net.URLClassLoader) loader).getURLs()) {
+                    classPath.add(java.nio.file.Paths.get(url.toURI()).toString());
+                }
+            }
+        }
+
+        for (final Class<?> cls : List.of(ShutdownParseProbe.class, ParsedSql.class, Strings.class, KeyedObjectPool.class)) {
+            final java.security.CodeSource source = cls.getProtectionDomain().getCodeSource();
+
+            if (source != null && source.getLocation() != null) {
+                classPath.add(java.nio.file.Paths.get(source.getLocation().toURI()).toString());
+            }
+        }
+
+        for (final String entry : System.getProperty("java.class.path", "").split(java.io.File.pathSeparator)) {
+            if (!entry.isEmpty()) {
+                classPath.add(entry);
+            }
+        }
+
+        final Process process = new ProcessBuilder(java.nio.file.Paths.get(System.getProperty("java.home"), "bin", "java").toString(), "-Xmx128m", "-cp",
+                String.join(java.io.File.pathSeparator, classPath), ShutdownParseProbe.class.getName(), mode).redirectErrorStream(true).start();
+        final java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+        final Thread reader = new Thread(() -> {
+            try (java.io.InputStream in = process.getInputStream()) {
+                in.transferTo(output);
+            } catch (final java.io.IOException e) {
+                // The process output ends with the process.
+            }
+        });
+        reader.start();
+
+        try {
+            assertTrue(process.waitFor(120, java.util.concurrent.TimeUnit.SECONDS), "child JVM did not exit");
+            reader.join(10_000);
+        } finally {
+            process.destroyForcibly();
+        }
+
+        return output.toString(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
     @Nested
     class Caching {
         @Test
@@ -84,7 +182,7 @@ public class ParsedSqlTest extends TestBase {
             assertEquals(3, second.parameterCount());
         }
 
-        // Characterisation: cache hits are served from a lock-free mirror in front of the pool; every thread must still see the one pooled instance.
+        // Characterisation: concurrent cache hits must all see the one pooled instance.
         @Test
         void testParse_cachedInstanceIsSharedAcrossThreads() throws Exception {
             final String[] sqls = new String[8];
@@ -369,6 +467,29 @@ public class ParsedSqlTest extends TestBase {
 
             // Parse errors still propagate.
             assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ? AND b = :b", cache));
+        }
+
+        // Regression: parse(String) used its pool unguarded, so a parse inside a JVM shutdown hook threw IllegalStateException
+        // once the pool's own shutdown hook had closed it (and blank SQL threw that ISE instead of IllegalArgumentException).
+        @Test
+        void testParse_insideShutdownHookAfterCacheClosed() throws Exception {
+            final String output = runShutdownParseProbe("afterCacheClosed");
+
+            assertTrue(output.contains("CACHE_CLOSED true"), output);
+            assertEquals(2, output.split("RESULT UPDATE t SET a = \\? WHERE id = \\? \\[a, id\\]", -1).length - 1, output);
+            assertTrue(output.contains("BLANK IAE"), output);
+            assertFalse(output.contains("FAILED"), output);
+        }
+
+        // Regression: when ParsedSql was first used inside a JVM shutdown hook, creating its pool failed its static initialization,
+        // so that parse threw ExceptionInInitializerError and every later one NoClassDefFoundError.
+        @Test
+        void testParse_firstUseInsideShutdownHook() throws Exception {
+            final String output = runShutdownParseProbe("firstUseInHook");
+
+            assertEquals(2, output.split("RESULT UPDATE t SET a = \\? WHERE id = \\? \\[a, id\\]", -1).length - 1, output);
+            assertTrue(output.contains("BLANK IAE"), output);
+            assertFalse(output.contains("FAILED"), output);
         }
 
         // SQL longer than MAX_CACHEABLE_SQL_LENGTH (as given, surrounding whitespace included) bypasses the cache entirely: neither looked up nor stored.
@@ -1450,6 +1571,33 @@ public class ParsedSqlTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> {
                 ParsedSql.parse("INSERT INTO t VALUES (#{id}, #{name)");
             });
+        }
+
+        // Regression: when a split "#{ b }" marker was joined with a closing token that carries a quote ("}'x'"), the joined
+        // word looked quoted, so a ':name' in the same token was never scanned and the mixed-style check was skipped.
+        @Test
+        void testParse_MixedStylesAroundSplitMyBatisMarkerGluedToLiteralAreRejected() {
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = :a#{ b }'x'"));
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = #{ b }:a'x'"));
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = :a#{ b }"));
+        }
+
+        // Regression: the "##" operator token swallowed the '#' of a following MyBatis opener ("##{mask}" -> "##" + "{mask}"),
+        // so the marker was neither bound nor counted outside brackets (inside ARRAY[...] it was) and mixed styles went unnoticed.
+        @Test
+        void testParse_MyBatisOpenerAfterHashSeparatorIsRestored() {
+            final ParsedSql parsed = ParsedSql.parse("SELECT * FROM t WHERE flags ##{mask} = 0");
+            assertEquals("SELECT * FROM t WHERE flags #? = 0", parsed.parameterizedSql());
+            assertEquals(List.of("mask"), parsed.namedParameters());
+            assertEquals(1, parsed.parameterCount());
+            assertEquals("SELECT ARRAY[flags #?] FROM t", ParsedSql.parse("SELECT ARRAY[flags ##{mask}] FROM t").parameterizedSql());
+
+            final ParsedSql two = ParsedSql.parse("SELECT #{a}##{b}");
+            assertEquals("SELECT ?#?", two.parameterizedSql());
+            assertEquals(List.of("a", "b"), two.namedParameters());
+
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = ? AND flags ##{mask} = 0"));
+            assertThrows(IllegalArgumentException.class, () -> ParsedSql.parse("SELECT * FROM t WHERE a = :a##{ b }"));
         }
 
         @Test
@@ -2559,6 +2707,31 @@ public class ParsedSqlTest extends TestBase {
 
     @Nested
     class QuestionMarkOperators {
+        // Regression: a '$'-leading operand (dollar-quoted literal, PostgreSQL $n parameter) was accepted on the left of a JSON
+        // existence operator but not on its right, so "doc ? $$k$$" counted the operator as a placeholder.
+        @Test
+        void testParse_DollarLeadingRightOperandOfJsonExistenceOperatorIsNotAPlaceholder() {
+            assertEquals(0, ParsedSql.parse("SELECT doc ? $$k$$ FROM t").parameterCount());
+            assertEquals(0, ParsedSql.parse("SELECT doc ?| $tag$k$tag$ FROM t").parameterCount());
+            assertEquals(0, ParsedSql.parse("SELECT ARRAY[doc ? $$k$$] FROM t").parameterCount());
+            assertEquals(0, ParsedSql.parse("SELECT doc ? $1 FROM t").parameterCount());
+            assertEquals(0, ParsedSql.parse("SELECT $$k$$ ? 'a' FROM t").parameterCount());
+            assertEquals(1, ParsedSql.parse("SELECT ? FROM t").parameterCount());
+        }
+
+        // Regression: an empty or blank "#{}" (kept as text, never bound) counted as a MyBatis marker, which settled the
+        // ambiguous "SELECT skip ? id" as a JSON operator instead of a positional placeholder.
+        @Test
+        void testParse_EmptyIbatisBracesDoNotSettleSelectSkipAsJsonOperator() {
+            assertEquals(1, ParsedSql.parse("SELECT skip ? id FROM t WHERE c = #{}").parameterCount());
+            assertEquals(1, ParsedSql.parse("SELECT skip ? id FROM t WHERE c = #{ }").parameterCount());
+            assertEquals(1, ParsedSql.parse("SELECT skip ? id FROM t WHERE c = ARRAY[#{}]").parameterCount());
+
+            final ParsedSql named = ParsedSql.parse("SELECT skip ? id FROM t WHERE c = #{k}");
+            assertEquals(List.of("k"), named.namedParameters());
+            assertEquals(1, named.parameterCount());
+        }
+
         @Test
         void testParse_JdbcEscapedQuestionOperatorsDoNotBind() {
             for (final String expression : List.of("doc ?? 'k'", "doc??'k'", "doc ??| keys", "doc ??& keys", "doc @?? path", "??- line '{1,0,0}'")) {
@@ -3153,6 +3326,35 @@ public class ParsedSqlTest extends TestBase {
 
     @Nested
     class SqlNormalization {
+        // Regression: a hash operator token ("?#", "##", "#>", "#-") is SQL to the tokenizer but opens a line comment on MySQL.
+        // The rebuild collapsed the line break that ends that comment, so on MySQL "SET balance = ?# note\nWHERE id = 42" ran
+        // as "SET balance = ?" and updated every row; an unterminated "/*" on such a line also dropped the lines after it.
+        @Test
+        void testParse_lineBreakEndingALineThatHoldsHashOperatorIsKept() {
+            ParsedSql parsed = ParsedSql.parse("UPDATE account SET balance = ?# new balance\nWHERE id = 42");
+            assertEquals("UPDATE account SET balance = ?# new balance\nWHERE id = 42", parsed.parameterizedSql());
+            assertEquals(1, parsed.parameterCount());
+
+            assertEquals("UPDATE account SET status = 1 ## reset\nWHERE id = 42",
+                    ParsedSql.parse("UPDATE account SET status = 1 ## reset\nWHERE id = 42").parameterizedSql());
+
+            parsed = ParsedSql.parse("UPDATE account SET balance = :b#> c\r\n  WHERE id = :id");
+            assertEquals("UPDATE account SET balance = ?#> c\nWHERE id = ?", parsed.parameterizedSql());
+            assertEquals(List.of("b", "id"), parsed.namedParameters());
+
+            assertEquals("SELECT payload #- '{a}'\nFROM events WHERE id = ?",
+                    ParsedSql.parse("SELECT payload #- '{a}'\nFROM events\nWHERE id = ?").parameterizedSql());
+
+            // A "/*" opened on such a line is comment text to MySQL, which reads the next line as SQL again: keep it as written.
+            assertEquals("UPDATE account SET a = ?# x /* y\nWHERE id = 1",
+                    ParsedSql.parse("UPDATE account SET a = ?# x /* y\nWHERE id = 1").parameterizedSql());
+
+            // Unchanged: a spaced MySQL comment is removed with its line break, and a temp-table name keeps collapsing.
+            assertEquals("UPDATE account SET a = ? WHERE id = 1", ParsedSql.parse("UPDATE account SET a = ? # x\nWHERE id = 1").parameterizedSql());
+            assertEquals("SELECT * FROM #t WHERE id = ?", ParsedSql.parse("SELECT * FROM #t\nWHERE id = ?").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE b ?# c AND d = ?", ParsedSql.parse("SELECT a FROM t WHERE b ?# c AND d = ?").parameterizedSql());
+        }
+
         @Test
         void testParse_manyFlatCommentsContainingGlobsAvoidRepeatedSuffixScans() {
             // Treating each glob's "/*" as a nested opener repeatedly rescanned the remaining SQL, making parsing quadratic.

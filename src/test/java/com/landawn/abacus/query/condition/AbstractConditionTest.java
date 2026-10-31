@@ -808,6 +808,25 @@ public class AbstractConditionTest extends TestBase {
             assertArrayEquals(new Object[] { "still usable" }, (Object[]) AbstractCondition.snapshotMutableValue(new Object[] { "still usable" }));
         }
 
+        // Regression: Using.columnNames, AbstractBetween.minValue/maxValue, AbstractIn.values, AbstractInSubQuery.subQuery and
+        // SubQuery.propNames/condition were not final, so a condition published through a data race could expose them unset
+        // (Using.columnNames() returned an empty list while toSql() still rendered the columns). Conditions are immutable
+        // and shared freely; the Java memory model guarantees safe publication only for final fields.
+        @Test
+        void testConditionStateFieldsAreFinalForSafePublication() {
+            for (final Class<?> cls : List.of(AbstractCondition.class, AbstractBetween.class, AbstractIn.class, AbstractInSubQuery.class, Binary.class,
+                    Cell.class, ComposableCell.class, Junction.class, Join.class, Limit.class, On.class, Using.class, SubQuery.class, SqlExpression.class,
+                    Criteria.class, GroupBy.class, OrderBy.class)) {
+                for (final java.lang.reflect.Field field : cls.getDeclaredFields()) {
+                    final int modifiers = field.getModifiers();
+
+                    if (!java.lang.reflect.Modifier.isStatic(modifiers) && !java.lang.reflect.Modifier.isTransient(modifiers)) {
+                        assertTrue(java.lang.reflect.Modifier.isFinal(modifiers), cls.getSimpleName() + "." + field.getName());
+                    }
+                }
+            }
+        }
+
         @Test
         void testPrimitiveArraySnapshotsKeepTheirTypeAndStorageIsolated() {
             for (final Object value : List.of(new boolean[] { true, false }, new byte[] { 1, 2 }, new short[] { 1, 2 }, new char[] { 'a', 'b' },
@@ -925,6 +944,29 @@ public class AbstractConditionTest extends TestBase {
             assertEquals("SELECT id FROM accounts ORDER BY id", subQuery.toString().replaceAll("\\s+", " ").trim());
         }
 
+        // Regression: the projection arity check counted selected properties, not columns, so a property holding a
+        // comma-separated list ("id, name") was accepted as a scalar operand and rejected as a matching two-column tuple.
+        @Test
+        void testCommaSeparatedSelectItemCountsEachTopLevelColumn() {
+            final SubQuery twoColumns = new SubQuery("t", List.of("id, name"), null);
+            assertThrows(IllegalArgumentException.class, () -> new Equal("x", twoColumns));
+            assertThrows(IllegalArgumentException.class, () -> new Any(twoColumns));
+            assertDoesNotThrow(() -> new InSubQuery(List.of("a", "b"), twoColumns));
+            assertDoesNotThrow(() -> new NotInSubQuery(List.of("a", "b"), twoColumns));
+            assertEquals("SELECT x FROM u WHERE (a, b) IN (SELECT id, name FROM t)",
+                    Dsl.PSC.select("x").from("u").where(Filters.in(List.of("a", "b"), twoColumns)).build().query());
+
+            // Commas inside parentheses, quotes, brackets and comments do not add columns.
+            for (final String item : List.of("COUNT(a, b)", "'a,b'", "\"a,b\"", "[a,b]", "ARRAY[1, 2]", "id -- x, y", "COALESCE(a, b) AS c")) {
+                final SubQuery oneColumn = new SubQuery("t", List.of(item), null);
+                assertDoesNotThrow(() -> new Equal("x", oneColumn), item);
+                assertThrows(IllegalArgumentException.class, () -> new InSubQuery(List.of("a", "b"), oneColumn), item);
+            }
+
+            // A list the tokenizer may misread (a dollar-quoted string) has an unknown width and is left to the database.
+            assertDoesNotThrow(() -> new Equal("x", new SubQuery("t", List.of("$$a, b$$"), null)));
+        }
+
         // The wildcard arity decision ignores comments, but SqlBuilder still rejects a comment token in a select item when the
         // query is built. A #temp qualifier is a hash comment there too, except under a SQL Server dialect, which renders it.
         @Test
@@ -950,6 +992,25 @@ public class AbstractConditionTest extends TestBase {
             final InSubQuery spaced = new InSubQuery(List.of("id", "name"), new SubQuery("users", List.of("users.\n\t*"), new Equal("active", true)));
             assertEquals("SELECT id FROM accounts WHERE (id, name) IN (SELECT users. * FROM users WHERE active = ?)",
                     Dsl.PSC.select("id").from("accounts").where(spaced).build().query());
+        }
+
+        // Regression: every token ending in '.' was read as a wildcard qualifier, so the decimal point of the numeric literal
+        // in "1. * 2" made the multiplication look like a wildcard and disabled tuple arity validation.
+        @Test
+        void testDecimalPointBeforeMultiplicationIsNotAWildcardQualifier() {
+            for (final String projection : List.of("1. * 2", "1.*2", "10. * price")) {
+                final SubQuery subQuery = new SubQuery("t", List.of(projection), null);
+
+                assertThrows(IllegalArgumentException.class, () -> new InSubQuery(List.of("a", "b"), subQuery), projection);
+                assertDoesNotThrow(() -> new Equal("a", subQuery), projection);
+            }
+
+            // Qualified wildcards are unaffected.
+            for (final String projection : List.of("t.*", "t. *", "t1.*", "\"t\".*", "[t].*")) {
+                final SubQuery subQuery = new SubQuery("t", List.of(projection), null);
+
+                assertDoesNotThrow(() -> new InSubQuery(List.of("a", "b"), subQuery), projection);
+            }
         }
 
         @Test
@@ -1078,6 +1139,26 @@ public class AbstractConditionTest extends TestBase {
             }
         }
 
+        // Regression: a '*' after a select modifier other than DISTINCT/ALL ("DISTINCTROW *", "DISTINCT ON (id) *", "TOP 10 *")
+        // was counted as one known column, so tuple IN/NOT IN rejected these valid wildcard projections.
+        @Test
+        void testTupleMembershipAcceptsWildcardAfterAnySelectModifier() {
+            for (final String projection : List.of("DISTINCTROW *", "distinctrow\t*", "DISTINCTROW users.*", "DISTINCT ON (id) *", "distinct on (a, b) *",
+                    "DISTINCT ON (id) * EXCEPT (c)", "TOP 10 *", "TOP (10) *", "SQL_CALC_FOUND_ROWS *")) {
+                final SubQuery subQuery = new SubQuery("users", List.of(projection), new Equal("active", true));
+
+                assertSame(subQuery, assertDoesNotThrow(() -> new InSubQuery(List.of("id", "name"), subQuery), projection).subQuery());
+                assertSame(subQuery, assertDoesNotThrow(() -> new NotInSubQuery(List.of("id", "name"), subQuery), projection).subQuery());
+            }
+
+            // A '*' with a right operand is still a multiplication of known width.
+            for (final String projection : List.of("TOP 10 price * 2", "DISTINCT ON (id) price * qty", "DISTINCTROW price * 2")) {
+                final SubQuery subQuery = new SubQuery("users", List.of(projection), null);
+
+                assertThrows(IllegalArgumentException.class, () -> new InSubQuery(List.of("id", "name"), subQuery), projection);
+            }
+        }
+
         // Regression: arity validation recognized only "*" and a trailing ".*", so a wildcard split by whitespace or comments
         // ("users. *") failed tuple IN validation, while a comment ending in ".*" ("id -- x.*") disabled the check.
         @Test
@@ -1089,6 +1170,28 @@ public class AbstractConditionTest extends TestBase {
                 assertSame(subQuery, assertDoesNotThrow(() -> new InSubQuery(List.of("id", "name"), subQuery), projection).subQuery());
                 assertSame(subQuery, assertDoesNotThrow(() -> new NotInSubQuery(List.of("id", "name"), subQuery), projection).subQuery());
             }
+        }
+
+        // Regression: a wildcard after a set quantifier or followed by a column modifier ("DISTINCT *", "* EXCEPT (c)") was
+        // counted as one known column, so tuple IN rejected it while "DISTINCT users.*" was accepted.
+        @Test
+        void testTupleMembershipAcceptsModifiedWildcardProjections() {
+            for (final String projection : List.of("DISTINCT *", "distinct\t*", "ALL *", "DISTINCT users.*", "* EXCEPT (c)", "* EXCLUDE (c)",
+                    "users.* EXCLUDE (c)", "* REPLACE (a + 1 AS a)", "[users].* EXCEPT (c)", "a, *")) {
+                final SubQuery subQuery = new SubQuery("users", List.of(projection), new Equal("active", true));
+
+                assertSame(subQuery, assertDoesNotThrow(() -> new InSubQuery(List.of("id", "name"), subQuery), projection).subQuery());
+                assertSame(subQuery, assertDoesNotThrow(() -> new NotInSubQuery(List.of("id", "name"), subQuery), projection).subQuery());
+            }
+
+            for (final String projection : List.of("DISTINCT COUNT(*)", "COUNT(*) EXCEPT", "price * 2", "DISTINCT price * qty")) {
+                final SubQuery subQuery = new SubQuery("users", List.of(projection), null);
+
+                assertThrows(IllegalArgumentException.class, () -> new InSubQuery(List.of("id", "name"), subQuery), projection);
+            }
+
+            assertEquals("(a, b) IN (SELECT DISTINCT * FROM t WHERE z = 1)",
+                    new InSubQuery(List.of("a", "b"), Filters.subQuery("t", List.of("DISTINCT *"), Filters.eq("z", 1))).toString());
         }
 
         // A whitespace-separated wildcard renders through the builder with its parameters.

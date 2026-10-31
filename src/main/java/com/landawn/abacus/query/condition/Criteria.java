@@ -366,7 +366,7 @@ public class Criteria extends AbstractCondition {
      * }</pre>
      *
      * @param operator the operator to match (may be {@code null}, in which case this returns an
-     *                 empty list since {@link AbstractCondition} disallows null operators)
+     *                 empty list since a {@code Criteria} rejects conditions with a null operator at construction)
      * @return an immutable list of matching conditions; empty if none found
      */
     public ImmutableList<Condition> findConditions(final Operator operator) {
@@ -2900,8 +2900,8 @@ public class Criteria extends AbstractCondition {
         /**
          * Rejects a repeated property name in the fixed-arity {@code groupBy}/{@code orderBy} overloads.
          * Those overloads are backed by a map keyed on the property name, so a repeated name would otherwise
-         * collapse silently (keeping only the last sort direction). {@code null} names are left to the
-         * clause constructor's own validation.
+         * collapse silently (keeping only the last sort direction). {@code null} names are skipped; the
+         * overloads reject them first through {@code checkSortEntry}.
          *
          * @param propNames the property names supplied to the overload, in call order
          * @throws IllegalArgumentException if any two of the given names are equal
@@ -2955,8 +2955,11 @@ public class Criteria extends AbstractCondition {
                     final String actual = cond instanceof SqlExpression ? cond.getClass().getSimpleName() + " \"" + ((SqlExpression) cond).literal() + "\""
                             : cond.getClass().getSimpleName() + " with operator " + cond.operator();
 
-                    throw new IllegalArgumentException(
-                            "Invalid condition for " + methodName + ": expected " + expectedOperator + " or non-clause condition, but got " + actual);
+                    throw new IllegalArgumentException("Invalid condition for " + methodName + ": expected " + expectedOperator
+                            + " or non-clause condition, but got " + actual
+                            + (cond instanceof SqlExpression
+                                    ? "; a raw expression must not begin with a clause keyword: pass only the clause body to the builder method for that clause"
+                                    : ""));
                 }
 
                 if (!(cond instanceof Clause)) {

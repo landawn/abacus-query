@@ -711,6 +711,17 @@ public class JoinTest extends TestBase {
         }
     }
 
+    @Test
+    void testStateFieldsAreFinalForSafePublication() {
+        // Like every other condition, Join must be safe to share across threads without synchronization,
+        // which the Java memory model guarantees only for final fields.
+        for (final java.lang.reflect.Field field : Join.class.getDeclaredFields()) {
+            if (!java.lang.reflect.Modifier.isStatic(field.getModifiers()) && !java.lang.reflect.Modifier.isTransient(field.getModifiers())) {
+                assertTrue(java.lang.reflect.Modifier.isFinal(field.getModifiers()), field.getName());
+            }
+        }
+    }
+
     // Test subclass to access protected constructors
     private static class TestJoin extends Join {
         public TestJoin(Operator operator, String joinEntity) {

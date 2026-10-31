@@ -696,6 +696,71 @@ public class DslTest extends TestBase {
         void testTableNamePreservation(final Factory factory) {
             assertSql("SELECT * FROM userAccounts", List.of(), factory.dsl.select("*").from("userAccounts").build());
         }
+
+        @Test
+        void testEntityFactoriesRejectBadTableNameBeforeAllocatingBuilder() {
+            final int before = AbstractQueryBuilder.activeStringBuilderCounter.get();
+
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> PSC.update(BlockCommentTableEntity.class)).getMessage().startsWith("tableName"));
+            assertTrue(assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom(BlockCommentTableEntity.class)).getMessage().startsWith("tableName"));
+            assertEquals(before, AbstractQueryBuilder.activeStringBuilderCounter.get(), "A rejected factory must not allocate a pooled builder");
+
+            // a non-bean class fails before any builder exists, so no cleanup failure is attached
+            final IllegalArgumentException nonBean = assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom(String.class));
+            assertEquals(0, nonBean.getSuppressed().length, Arrays.toString(nonBean.getSuppressed()));
+            assertEquals(before, AbstractQueryBuilder.activeStringBuilderCounter.get());
+        }
+
+        @Test
+        void testSelectRejectsNonBeanSelectionWhateverItsPosition() {
+            final Selection account = Selection.builder(com.landawn.abacus.query.entity.Account.class).build();
+            final Selection nonBean = Selection.builder(String.class).build();
+
+            assertThrows(IllegalArgumentException.class, () -> PSC.select(List.of(nonBean, account)));
+            assertThrows(IllegalArgumentException.class, () -> PSC.select(List.of(account, nonBean)));
+            assertThrows(IllegalArgumentException.class,
+                    () -> PSC.select(Selection.builder(String.class).tableAlias("s").includedPropNames(List.of("firstName")).build()));
+
+            // included names of a non-bean class without a table alias are still accepted
+            assertEquals("SELECT first_name AS \"firstName\" FROM t",
+                    PSC.select(Selection.builder(String.class).includedPropNames(List.of("firstName")).build()).from("t").build().query());
+        }
+
+        @Test
+        void testInsertEmptyEntityMapMessage() {
+            assertEquals("entity map must not be empty",
+                    assertThrows(IllegalArgumentException.class, () -> PSC.insert((Object) new HashMap<String, Object>())).getMessage());
+        }
+
+        @Test
+        void testSelectFromSubEntityPathChecksFallbackTableAlias() {
+            // the sub-entity path falls back to the @Table alias when no alias is passed, so that alias is checked too
+            assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(CommentAliasParent.class, true));
+            assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(CommentAliasParent.class, (String) null, true));
+            assertThrows(IllegalArgumentException.class, () -> PSC.selectFrom(CommentAliasParent.class, "", true));
+            assertTrue(PSC.selectFrom(CommentAliasParent.class, "p", true).build().query().contains("FROM par p"));
+        }
+    }
+
+    @lombok.Data
+    @Table(name = "t /* x")
+    static class BlockCommentTableEntity {
+        private long id;
+        private String name;
+    }
+
+    @lombok.Data
+    @Table(name = "par", alias = "a -- x")
+    static class CommentAliasParent {
+        private long id;
+        private CommentAliasKid kid;
+    }
+
+    @lombok.Data
+    @Table(name = "kid", alias = "k")
+    static class CommentAliasKid {
+        private long id;
+        private long parId;
     }
 
     @Nested

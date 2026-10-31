@@ -1,5 +1,6 @@
 package com.landawn.abacus.query;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -16,8 +17,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntPredicate;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.landawn.abacus.TestBase;
 
@@ -154,8 +159,12 @@ public class SqlParserTest extends TestBase {
         @Test
         void testBracketRegionKeywordBoundariesAndVetoesRemainExact() throws Exception {
             for (final boolean allowInsert : List.of(false, true)) {
-                for (final String word : List.of("RETURNINGly", "_RETURNING", "1RETURNING", "RETURNING$", "éRETURNING")) {
+                for (final String word : List.of("RETURNINGly", "_RETURNING", "x1RETURNING", "_1RETURNING", "RETURNING$", "éRETURNING")) {
                     assertFalse(hasBracketedStatement("[UPDATE x " + word + "]", allowInsert), word);
+                }
+                // A number ends at its first letter, so a word glued to it is a word of its own.
+                for (final String word : List.of("1RETURNING", "1.5RETURNING", "1e1RETURNING", "$1RETURNING")) {
+                    assertTrue(hasBracketedStatement("[UPDATE x " + word + "]", allowInsert), word);
                 }
                 assertTrue(hasBracketedStatement("[UPDATE x returning]", allowInsert));
                 assertTrue(hasBracketedStatement("[WITH DELETE]", allowInsert));
@@ -328,6 +337,23 @@ public class SqlParserTest extends TestBase {
             assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM /* a */ #t /* b */ WHERE x = 1"));
         }
 
+        // Regression: the CockroachDB bracket check rescanned the rest of a run of comment lines for every '[' inside one
+        // ("-- [\n" x 16000, 80 KB: about 4 s per gate); the skip result after each comment end is now cached.
+        @Test
+        void testBracketCheckOverCommentRunIsLinear() {
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+                for (final String unit : new String[] { "-- [\n", "--[\n", "\n--[\n", "/* [ */\n-- [\n" }) {
+                    final String sql = "SELECT 1 " + unit.repeat(16000);
+                    assertTrue(SqlParser.isSyntacticallyReadQuery(sql));
+                    assertTrue(SqlParser.isReadOrInsertQuery(sql));
+                }
+            });
+
+            // A statement source after such a run, or after a comment shared with an earlier bracket, is still found.
+            assertAllReadGatesReject("SELECT * FROM [" + "-- [\n".repeat(100) + "DELETE FROM t RETURNING *]");
+            assertAllReadGatesReject("SELECT 1 -- [\n" + "-- [\n".repeat(100) + "/* [ */ DELETE FROM t RETURNING *]");
+        }
+
         // Regression: a SQL Server bracket name that starts with a data-change verb and contains '(' turned on the
         // bracket-as-punctuation reading, where the semicolon-less batch splitter took the verb for a new statement.
         @Test
@@ -356,6 +382,22 @@ public class SqlParserTest extends TestBase {
 
             assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT [Update Date], [Delete Flag] FROM [dbo].[t]"));
             assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t ([Update Date]) VALUES (1) RETURNING id"));
+        }
+
+        // Regression: the CockroachDB bracket check skipped a RETURNING glued to a number ("1RETURNING"), which a number ends
+        // at its first letter, so "[DELETE FROM t WHERE id = 1RETURNING *]" was accepted as a read.
+        @Test
+        void testBracketedStatementSourceWithReturningGluedToNumberIsRejected() {
+            for (final String sql : new String[] { "SELECT * FROM [DELETE FROM t WHERE id = 1RETURNING *]",
+                    "SELECT * FROM [DELETE FROM t WHERE id = 1.5RETURNING *]", "SELECT * FROM [DELETE FROM t WHERE id = 1e1RETURNING *]",
+                    "SELECT * FROM [UPDATE t SET a = 1 WHERE id = 1RETURNING a]", "SELECT * FROM [DELETE FROM t WHERE id = 0x1fRETURNING *]" }) {
+                assertAllReadGatesReject(sql);
+            }
+
+            // A word glued to an identifier is still one identifier.
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM [DELETE FROM t WHERE id = t1returning]"));
+            assertTrue(SqlParser.isReadOrInsertQuery("SELECT * FROM [DELETE FROM t WHERE id = t1returning]"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT * FROM [DELETE FROM t WHERE id = _1RETURNING]"));
         }
 
         // Regression: CockroachDB nests block comments and accepts a parenthesized query or EXPLAIN ANALYZE (which runs the
@@ -1528,6 +1570,51 @@ public class SqlParserTest extends TestBase {
             assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (1) ON CONFLICT (id) WHERE do = update DO NOTHING"));
         }
 
+        // Regression: SQLite reads DO as a column name, and a "do" column in the conflict target's index predicate left the
+        // conflict clause, hiding the real DO UPDATE ("ON CONFLICT (a) WHERE do = 1 DO UPDATE ..." was accepted).
+        @Test
+        void testIsReadOrInsertQuery_onConflictPredicateDoColumnBeforeDoUpdateRejected() {
+            for (final String sql : new String[] { "INSERT INTO t (a, do) VALUES (1, 2) ON CONFLICT (a) WHERE do = 1 DO UPDATE SET a = 3",
+                    "INSERT INTO t (a, do) VALUES (1, 2) ON CONFLICT (a) WHERE do DO UPDATE SET a = 3",
+                    "INSERT INTO t (a, do) VALUES (1, 2) ON CONFLICT (a) WHERE do IS NOT NULL DO UPDATE SET a = 3",
+                    "INSERT INTO t (a, do) VALUES (1, 2) ON CONFLICT (a) WHERE (do) DO UPDATE SET a = 3" }) {
+                assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+                assertFalse(BATCHES.isReadOrInsertQuery(sql), sql);
+            }
+
+            // A later, nested ON CONFLICT ... DO UPDATE after an earlier DO NOTHING is still found at its own depth.
+            assertFalse(SqlParser.isReadOrInsertQuery("WITH x AS (INSERT INTO t VALUES (1) ON CONFLICT (a) DO NOTHING RETURNING a), "
+                    + "y AS (INSERT INTO u VALUES (1) ON CONFLICT (b) DO UPDATE SET c = 1 RETURNING c) SELECT * FROM x"));
+
+            // DO NOTHING stays accepted, including with RETURNING, a later statement and inside a CTE.
+            for (final String sql : new String[] { "INSERT INTO t VALUES (1) ON CONFLICT (a) DO NOTHING",
+                    "INSERT INTO t VALUES (1) ON CONFLICT (a) DO NOTHING RETURNING a",
+                    "INSERT INTO t VALUES (1) ON CONFLICT (a) DO NOTHING; INSERT INTO u VALUES (2)",
+                    "WITH x AS (INSERT INTO t VALUES (1) ON CONFLICT (a) DO NOTHING RETURNING a) SELECT * FROM x",
+                    "INSERT INTO t (a, do) VALUES (1, 2) ON CONFLICT (a) WHERE do = 1 DO NOTHING" }) {
+                assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            }
+        }
+
+        // Regression: the Databricks/Delta Lake selective overwrite "INSERT INTO t REPLACE WHERE pred query" (and REPLACE USING /
+        // REPLACE ON) deletes the matching rows before inserting, but was accepted as a plain insert.
+        @Test
+        void testIsReadOrInsertQuery_insertReplaceWhereSelectiveOverwriteRejected() {
+            for (final String sql : new String[] { "INSERT INTO t REPLACE WHERE d = 1 SELECT * FROM s",
+                    "INSERT INTO TABLE t REPLACE WHERE d >= '2024-01-01' SELECT * FROM s", "INSERT INTO t REPLACE USING (d) SELECT * FROM s",
+                    "INSERT INTO t REPLACE ON t.d = s.d (SELECT * FROM s)", "insert into t replace /* c */ where d = 1 select * from s",
+                    "WITH s AS (SELECT 1 AS d) INSERT INTO t REPLACE WHERE d = 1 SELECT * FROM s" }) {
+                assertFalse(SqlParser.isReadOrInsertQuery(sql), sql);
+                assertFalse(BATCHES.isReadOrInsertQuery(sql), sql);
+            }
+
+            // REPLACE as a function, in a literal, or followed by another word is not the clause; without an INSERT it is not either.
+            for (final String sql : new String[] { "INSERT INTO t SELECT replace(a, 'x', 'y') FROM s WHERE d = 1", "INSERT INTO t VALUES ('replace where')",
+                    "INSERT INTO t SELECT * FROM s replace_t WHERE d = 1", "SELECT * FROM t replace WHERE d = 1" }) {
+                assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            }
+        }
+
         @Test
         void testIsReadOrInsertQuery_overwriteInsideStringLiteralIsAllowed() {
             // "OVERWRITE" appears only inside a string literal, so it is not an INSERT OVERWRITE clause.
@@ -2271,6 +2358,20 @@ public class SqlParserTest extends TestBase {
             assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t VALUES (#{value}); DELETE FROM t"));
         }
 
+        // Regression: masking kept the closing tag's last '$', which the classifiers read as a name character, so "$$x$$INTO"
+        // became the single name "$INTO" and PostgreSQL's SELECT ... INTO (which creates a table) passed the read gates.
+        @Test
+        void testReadGatesRejectSelectIntoGluedToDollarQuotedLiteral() {
+            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT $$x$$INTO b FROM t"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT $a$x$a$INTO b FROM t"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("WITH x AS (SELECT 1) SELECT $$x$$INTO b FROM x"));
+            assertFalse(SqlParser.isReadOrInsertQuery("SELECT $$x$$INTO b FROM t"));
+
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$x$$ FROM t"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$x$$AS y FROM t"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT $$it's$$, $q$a$q$ FROM t"));
+        }
+
         @Test
         void testReadOnlyAndReadOrInsertGates_hashTempAfterDerivedTableDoesNotHideLaterDelete() {
             final String sql = "SELECT * FROM (SELECT 1) derived, #tmp; DELETE FROM users";
@@ -2449,6 +2550,25 @@ public class SqlParserTest extends TestBase {
                 assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
                 assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
             }
+        }
+
+        // Regression: with semicolon-less batches, the MERGE of a T-SQL join hint ("INNER MERGE JOIN") started a new
+        // statement, so a valid SELECT was rejected (HASH/LOOP/REMOTE hints were already accepted).
+        @Test
+        void testSemicolonlessBatchAcceptsMergeJoinHint() {
+            for (final String sql : new String[] { "SELECT * FROM a INNER MERGE JOIN b ON a.id = b.id",
+                    "SELECT * FROM a LEFT OUTER MERGE JOIN b ON a.id = b.id", "SELECT * FROM a FULL MERGE JOIN b ON a.id = b.id",
+                    "SELECT * FROM a RIGHT /* c */ MERGE JOIN b ON a.id = b.id" }) {
+                assertTrue(BATCHES.isSyntacticallyReadQuery(sql), sql);
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+            }
+
+            assertTrue(BATCHES.isReadOrInsertQuery("INSERT INTO t SELECT * FROM a INNER MERGE JOIN b ON a.id = b.id"));
+
+            // A MERGE statement after a hint, or a MERGE not followed by JOIN, is still a new statement.
+            assertBatchGatesReject("SELECT * FROM a INNER HASH JOIN b ON a.id = b.id MERGE t USING s ON 1 = 1 WHEN MATCHED THEN DELETE;");
+            assertBatchGatesReject("SELECT * FROM a INNER MERGE JOIN b ON a.id = b.id MERGE t USING s ON 1 = 1 WHEN MATCHED THEN DELETE;");
+            assertBatchGatesReject("SELECT * FROM a LEFT MERGE t USING s ON 1 = 1 WHEN MATCHED THEN DELETE;");
         }
 
         @Test
@@ -2911,6 +3031,19 @@ public class SqlParserTest extends TestBase {
             }
         }
 
+        // Regression: the subscript-bracket pass read the '#' after a consumed "@?" as part of "?#" (code, not a comment),
+        // so the apostrophe in that comment opened a phantom string; the later chained subscript then ended at a ']'
+        // inside a block comment and ParsedSql rewrote the commented-out ":p".
+        @Test
+        void testSubscriptChainAfterConsumedOperatorHashCommentKeepsCommentInsideGroup() {
+            final String sql = "SELECT j @?#c '\n, x[1] [2 /* ] = :p */ ] FROM t";
+            assertTrue(SqlParser.tokenize(sql).contains("[2 /* ] = :p */ ]"), SqlParser.tokenize(sql).toString());
+            assertEquals(0, ParsedSql.parse(sql).parameterCount());
+
+            // Control: the same text without the consumed operator.
+            assertTrue(SqlParser.tokenize("SELECT j #c '\n, x[1] [2 /* ] = :p */ ] FROM t").contains("[2 /* ] = :p */ ]"));
+        }
+
         // Controls: suffix column lists, following CTEs, quoted and dollar-quoted mark values, MariaDB's CYCLE ... RESTRICT,
         // Oracle's SEARCH ordering options and its CYCLE form without USING all end the clause in the right place.
         @Test
@@ -3025,6 +3158,19 @@ public class SqlParserTest extends TestBase {
             // The same column must not exempt file-writing INTO clauses from either classification mode.
             assertAllReadGatesReject("SELECT t.as FROM t INTO OUTFILE '/tmp/x'");
             assertAllReadGatesReject("SELECT t.as FROM t INTO DUMPFILE '/tmp/x'");
+        }
+
+        // Regression: the trailing INTO OUTFILE scan dropped the INTO after any '.', including the decimal point of MySQL's
+        // "1." literal, so "WHERE b = 1. INTO OUTFILE '/x'" (a server file write) passed both read gates.
+        @Test
+        void testTrailingIntoOutfileAfterDecimalPointIsRejected() {
+            assertAllReadGatesReject("SELECT a FROM t WHERE b = 1. INTO OUTFILE '/tmp/x'");
+            assertAllReadGatesReject("SELECT a FROM t WHERE b = 1.INTO DUMPFILE '/tmp/x'");
+            assertAllReadGatesReject("SELECT a FROM t WHERE b = 1.5 INTO OUTFILE '/tmp/x'");
+
+            // A qualified name is still a column, never the INSERT verb that would exempt the INTO.
+            assertReadGatesReject("SELECT a FROM t ORDER BY t.insert INTO OUTFILE '/tmp/x'");
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM t WHERE b = t.into"));
         }
 
         @Test
@@ -3363,6 +3509,16 @@ public class SqlParserTest extends TestBase {
             assertTrue(SqlParser.tokenize("SELECT * INTO ##global_temp FROM source").contains("##global_temp"));
         }
 
+        // Regression: the memo's line-comment pass classified a temp table that follows a line comment ("FROM -- c\n#t") as a
+        // comment opener, contradicting the tokenizer; a later backward walk then anchored "-- d\n#u" to FROM and kept "#u".
+        @Test
+        void testHashAfterLineCommentIsNotAnchoredThroughEarlierTempTableLine() {
+            final List<String> tokens = SqlParser.tokenize("SELECT * FROM -- c\n#t WHERE a = 1 -- d\n#u");
+            assertTrue(tokens.contains("#t"), tokens.toString());
+            assertFalse(tokens.contains("#u"), tokens.toString());
+            assertEquals(-1, SqlParser.indexOfToken("SELECT * FROM -- c\n#t WHERE a = 1 -- d\n#u x WHERE", "WHERE", 30));
+        }
+
         @Test
         void testHashCommentAfterClosingParenthesis_memoizedTokensMatchUnmemoizedResult() {
             // The token streams below were recorded from the pre-memoization tokenizer (small row counts
@@ -3383,6 +3539,149 @@ public class SqlParserTest extends TestBase {
         // Block comment whose body starts with '/' (e.g. "/*/x*/") must NOT end one char early: the
         // opening '*' must not be reused as the closing '*'. Regression for all four char scanners.
         // ----------------------------------------------------------------------------------------------
+
+        // Regression: the backward walk from '#' treated a "*/" at the end of a line comment as a block-comment closer and
+        // jumped past the FROM keyword, so the temp table (and the rest of its line) was dropped as a MySQL comment.
+        @Test
+        void testHashTempTableAfterLineCommentContainingCommentCloserIsKept() {
+            assertTrue(SqlParser.tokenize("SELECT * FROM -- */\n#t").contains("#t"));
+            assertTrue(SqlParser.tokenize("SELECT * FROM -- end */\n#t WHERE a = 1").contains("WHERE"));
+            assertEquals(23, SqlParser.indexOfToken("SELECT * FROM -- */\n#t WHERE a = 1", "WHERE"));
+
+            // A real block comment before the hash is still crossed.
+            assertTrue(SqlParser.tokenize("SELECT * FROM /* c */\n#t").contains("#t"));
+        }
+
+        // Regression: whitespace around qualification dots or an omitted schema hid the MERGE target from the backward
+        // scan, so the source and every following parameter were discarded as a hash comment.
+        @ParameterizedTest
+        @ValueSource(strings = { "dbo . t", "dbo. t", "dbo .t", "db..t", "db . . t", "db . dbo . t", "[dbo] . [t]", "[db] . . [t]", "\"dbo\" . \"t\"",
+                "`dbo` . `t`", "server...t", "server . . . t" })
+        void testMergeUsingHashTempTableAfterQualifiedTarget(final String target) {
+            for (final String source : List.of("#s", "##s")) {
+                for (final String marker : List.of("?", ":value", "#{value}")) {
+                    final String prefix = "MERGE INTO " + target + " USING " + source + " AS s ON t.id = s.id WHEN MATCHED THEN UPDATE SET a = ";
+                    final String sql = prefix + marker;
+                    assertTrue(SqlParser.tokenize(sql).contains(source), sql);
+                    assertEquals(sql.indexOf(source), SqlParser.indexOfToken(sql, source), sql);
+                    assertEquals(source, SqlParser.nextToken(sql, sql.indexOf(source)), sql);
+
+                    final ParsedSql parsed = ParsedSql.parse(sql);
+                    assertEquals(prefix + "?", parsed.parameterizedSql(), sql);
+                    assertEquals(1, parsed.parameterCount(), sql);
+                    assertEquals("?".equals(marker) ? List.of() : List.of("value"), parsed.namedParameters(), sql);
+                }
+            }
+        }
+
+        // A qualified hash target currently starts a MySQL comment before the MERGE source recognizer runs.
+        // The intended result preserves both temp tables, the full statement, and positional/named bindings.
+        @Disabled("Known open issue: qualified hash temp-table targets truncate MERGE statements and discard parameters")
+        @ParameterizedTest
+        @CsvSource({ "dbo.#t, #s, ?", "tempdb..#t, #s, :value", "tempdb.dbo.#t, #s, #{value}", "dbo . #t, #s, :value", "[tempdb] . . #t, ##s, #{value}" })
+        void testKnownOpenIssueMergeWithQualifiedHashTarget(final String target, final String source, final String marker) {
+            assertMergePreservesQualifiedHashTarget(target, source, marker);
+        }
+
+        // The same classifier defect predates MERGE support and also removes a SELECT's WHERE and parameter.
+        @Disabled("Known open issue: qualified hash temp-table references truncate SELECT statements and discard parameters")
+        @ParameterizedTest
+        @ValueSource(strings = { "dbo.#t", "tempdb..#t", "tempdb.dbo.#t" })
+        void testKnownOpenIssueSelectFromQualifiedHashTable(final String table) {
+            assertSelectPreservesQualifiedHashTable(table);
+        }
+
+        // Global temp tables already survive qualification; keep these working cases enabled independently.
+        @ParameterizedTest
+        @CsvSource({ "dbo.##t, ?", "tempdb..##t, :value", "tempdb.dbo.##t, #{value}" })
+        void testQualifiedGlobalTempTablesKeepStatementsAndBindings(final String table, final String marker) {
+            assertMergePreservesQualifiedHashTarget(table, "##s", marker);
+            assertSelectPreservesQualifiedHashTable(table);
+        }
+
+        private void assertMergePreservesQualifiedHashTarget(final String target, final String source, final String marker) {
+            final String prefix = "MERGE INTO " + target + " AS t USING " + source + " AS s ON t.id = s.id WHEN MATCHED THEN UPDATE SET a = ";
+            final String sql = prefix + marker;
+            final ParsedSql parsed = ParsedSql.parse(sql);
+
+            assertAll(sql, () -> assertTrue(SqlParser.tokenize(sql).contains(source)),
+                    () -> assertEquals(sql.indexOf(source), SqlParser.indexOfToken(sql, source)),
+                    () -> assertEquals(source, SqlParser.nextToken(sql, sql.indexOf(source))), () -> assertEquals(prefix + "?", parsed.parameterizedSql()),
+                    () -> assertEquals(1, parsed.parameterCount()),
+                    () -> assertEquals("?".equals(marker) ? List.of() : List.of("value"), parsed.namedParameters()));
+        }
+
+        private void assertSelectPreservesQualifiedHashTable(final String table) {
+            final String sql = "SELECT * FROM " + table + " WHERE x = ?";
+            final ParsedSql parsed = ParsedSql.parse(sql);
+
+            assertAll(sql, () -> assertTrue(SqlParser.tokenize(sql).contains("WHERE")),
+                    () -> assertEquals(sql.indexOf("WHERE"), SqlParser.indexOfToken(sql, "WHERE")), () -> assertEquals(sql, parsed.parameterizedSql()),
+                    () -> assertEquals(1, parsed.parameterCount()));
+        }
+
+        @Test
+        void testMergeUsingHashTempTableAfterQualifiedTargetWithComments() {
+            // Trivia may surround either dot, including a dot representing an omitted schema. Keep the alias, hints and
+            // TOP handling intact while crossing that trivia; comments must not become part of a qualifier.
+            for (final String[] target : new String[][] { { "dbo /* left */ . /* right */ t", "dbo . t" }, { "dbo -- left\n. -- right\nt", "dbo . t" },
+                    { "db /* left */ . /* schema */ . /* right */ t", "db . . t" }, { "[db] -- left\n. -- schema\n. [t]", "[db] . . [t]" } }) {
+                final String suffix = " WITH (HOLDLOCK) AS tgt USING #s AS src ON tgt.id = src.id WHEN MATCHED THEN UPDATE SET a = :value";
+                final String sql = "MERGE TOP (10) INTO " + target[0] + suffix;
+                assertTrue(SqlParser.tokenize(sql).contains("#s"), sql);
+                assertEquals(sql.indexOf("#s"), SqlParser.indexOfToken(sql, "#s"), sql);
+
+                final ParsedSql parsed = ParsedSql.parse(sql);
+                assertEquals("MERGE TOP (10) INTO " + target[1] + suffix.replace(":value", "?"), parsed.parameterizedSql(), sql);
+                assertEquals(1, parsed.parameterCount(), sql);
+                assertEquals(List.of("value"), parsed.namedParameters(), sql);
+            }
+        }
+
+        // Regression: a MERGE source ("USING #s") was not a hash-identifier position, so "#s ..." was dropped as a MySQL
+        // comment and ParsedSql emitted the truncated "MERGE INTO t USING" without the statement's parameter.
+        @Test
+        void testMergeUsingHashTempTableSourceIsIdentifier() {
+            final String sql = "MERGE INTO t USING #s AS s ON t.id = s.id WHEN MATCHED THEN UPDATE SET a = ?";
+            assertTrue(SqlParser.tokenize(sql).contains("#s"), SqlParser.tokenize(sql).toString());
+            assertEquals(sql.indexOf("#s"), SqlParser.indexOfToken(sql, "#s"));
+            assertEquals(sql, ParsedSql.parse(sql).parameterizedSql());
+            assertEquals(1, ParsedSql.parse(sql).parameterCount());
+            assertTrue(SqlParser.tokenize("MERGE t USING ##s s ON 1 = 1").contains("##s"));
+
+            // The other shapes of a MERGE target: TOP, INTO, a schema-qualified or bracketed name, an alias and table hints.
+            for (final String merge : List.of("MERGE TOP (10) INTO dbo.t AS tgt USING #s AS src ON tgt.id = src.id WHEN MATCHED THEN UPDATE SET a = ?",
+                    "MERGE TOP (10) PERCENT [dbo].[t] tgt USING #s src ON tgt.id = src.id WHEN MATCHED THEN UPDATE SET a = ?",
+                    "MERGE INTO t WITH (HOLDLOCK) AS tgt USING #s AS src ON tgt.id = src.id WHEN MATCHED THEN UPDATE SET a = ?",
+                    "MERGE INTO t WITH (HOLDLOCK) USING #s AS src ON t.id = src.id WHEN MATCHED THEN UPDATE SET a = ?",
+                    "MERGE INTO \"t\" /* target */ USING\n#s src ON 1 = 1 WHEN MATCHED THEN UPDATE SET a = ?")) {
+                final String parameterized = ParsedSql.parse(merge).parameterizedSql();
+                assertTrue(parameterized.contains("USING #s") && parameterized.endsWith("SET a = ?"), parameterized);
+                assertTrue(SqlParser.tokenize(merge).contains("#s"), merge);
+                assertEquals(1, ParsedSql.parse(merge).parameterCount(), merge);
+            }
+
+            // MySQL JOIN ... USING (cols) is unaffected, and a hash comment that is not identifier-shaped still ends the line.
+            assertEquals("SELECT * FROM a JOIN b USING (id) WHERE x = ?",
+                    ParsedSql.parse("SELECT * FROM a JOIN b USING (id) WHERE x = ? # c").parameterizedSql());
+            assertEquals("SELECT * FROM a JOIN b USING (id)", ParsedSql.parse("SELECT * FROM a JOIN b USING # c\n(id)").parameterizedSql());
+        }
+
+        // Regression: USING was a hash-identifier position for every statement, so an identifier-shaped MySQL comment after a
+        // join's USING (or MySQL's multi-table DELETE ... USING) was kept as a temp table and its line break normalized away,
+        // letting the comment swallow the column list and the WHERE clause on MySQL. Only a MERGE source is a table position.
+        @Test
+        void testHashCommentAfterNonMergeUsingIsStillAComment() {
+            assertEquals("SELECT * FROM a JOIN b USING (id) WHERE x = ?",
+                    ParsedSql.parse("SELECT * FROM a JOIN b USING #comment\n(id) WHERE x = ?").parameterizedSql());
+            assertFalse(SqlParser.tokenize("SELECT * FROM a JOIN b USING #comment\n(id) WHERE x = ?").contains("#comment"));
+            assertEquals("DELETE FROM t1 USING t1 JOIN t2 ON t1.id = t2.id WHERE t2.x = ?",
+                    ParsedSql.parse("DELETE FROM t1 USING #note\n t1 JOIN t2 ON t1.id = t2.id WHERE t2.x = ?").parameterizedSql());
+
+            // A join's USING inside a MERGE source subquery is a join's USING as well.
+            assertEquals("MERGE INTO t USING (SELECT * FROM a JOIN b USING (id)) s ON t.id = s.id WHEN MATCHED THEN DELETE",
+                    ParsedSql.parse("MERGE INTO t USING (SELECT * FROM a JOIN b USING #c\n(id)) s ON t.id = s.id WHEN MATCHED THEN DELETE").parameterizedSql());
+        }
 
         @Test
         void testParse_blockCommentBodyStartingWithSlashIsFullyConsumed() {
@@ -5512,6 +5811,20 @@ public class SqlParserTest extends TestBase {
             assertEquals(-1, index);
         }
 
+        // Regression: a composite search component kept its inner whitespace only when it STARTED with a quote or bracket,
+        // so prefixed components (N'a b', E'a b', ARRAY[1, 2], x.[a b]) were split and never matched.
+        @Test
+        void testIndexOfTokenCompositeWithPrefixedQuotedComponentContainingWhitespace() {
+            assertEquals(2, SqlParser.indexOfToken("x = N'a b' AND y", "= N'a b'"));
+            assertEquals(2, SqlParser.indexOfToken("x = E'a b' AND y", "= E'a b'"));
+            assertEquals(0, SqlParser.indexOfToken("SELECT ARRAY[1, 2] FROM t", "SELECT ARRAY[1, 2]"));
+            assertEquals(0, SqlParser.indexOfToken("SELECT x.[a b] FROM t", "SELECT x.[a b]"));
+
+            // Each component still has to match a whole token.
+            assertEquals(-1, SqlParser.indexOfToken("x = N'a  b' AND y", "= N'a b'"));
+            assertEquals(4, SqlParser.indexOfToken("x = N'a b' AND y", "N'a b'"));
+        }
+
         @Test
         void testIndexOfTokenFromPosition() {
             String sql = "SELECT * FROM users WHERE age > 18 AND status = 'active'";
@@ -5554,6 +5867,45 @@ public class SqlParserTest extends TestBase {
 
             // The static default facade has the same corrected token contract.
             assertEquals(sql.indexOf("[Display ]] Name]"), SqlParser.indexOfToken(sql, "[Display ]] Name]"));
+        }
+
+        // Regression: a composite search token was split at every whitespace, including whitespace inside a quoted or
+        // bracketed component, so "BY [first name]" or "= 'a  b'" could never be found.
+        @Test
+        void testIndexOfTokenCompositeWithQuotedComponentContainingWhitespace() {
+            assertEquals(22, SqlParser.indexOfToken("SELECT * FROM t ORDER BY [first name] DESC", "BY [first name]"));
+            assertEquals(22, SqlParser.indexOfToken("SELECT * FROM t ORDER BY 'a b' DESC", "BY 'a b'"));
+            assertEquals(16, SqlParser.indexOfToken("SELECT * FROM t ORDER BY \"a b\" DESC", "ORDER BY \"a b\""));
+            assertEquals(24, SqlParser.indexOfToken("SELECT * FROM t WHERE x = 'a  b'", "= 'a  b'"));
+            final String commented = "SELECT * FROM t ORDER /* c */ BY  [first name] DESC";
+            assertEquals(commented.indexOf("BY"), SqlParser.tokenizer().indexOfToken(commented, "BY\t[first name]  DESC"));
+            assertEquals(-1, SqlParser.indexOfToken("SELECT * FROM t ORDER BY [first  name] DESC", "BY [first name]"));
+            final String escaped = "SELECT * FROM t WHERE [O'Brien] = 'it\\'s x'";
+            assertEquals(escaped.indexOf('['), SqlParser.indexOfToken(escaped, "[O'Brien] = 'it\\'s x'"));
+
+            // Components without inner whitespace, and a token whose standalone scan drops text, keep the whitespace split.
+            assertEquals(25, SqlParser.indexOfToken("SELECT * FROM t ORDER BY [first name] DESC", "[first name]"));
+            assertEquals(14, SqlParser.indexOfToken("SELECT * FROM #tmp t", "#tmp t"));
+        }
+
+        @Test
+        void testIndexOfTokenCompositeWithWhitespaceBearingSeparatorStillSplitsIt() {
+            // A configured separator containing whitespace is not a quoted component, so its spelling may vary in the SQL.
+            final SqlParser.Tokenizer orderBy = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("order by").build());
+            assertEquals(7, orderBy.indexOfToken("SELECT x ORDER BY y", "x order by", 0, false));
+            assertEquals(7, orderBy.indexOfToken("SELECT x order  by y", "x order by", 0, false));
+            assertEquals(7, orderBy.indexOfToken("SELECT x order\nby y", "x order by", 0, false));
+
+            final SqlParser.Tokenizer arrow = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator(" ->").build());
+            assertEquals(7, arrow.indexOfToken("SELECT a->b FROM t", "a  -> b", 0, false));
+        }
+
+        @Test
+        void testIndexOfTokenLongCompositeWithHashOrBracketComponentsIsLinear() {
+            assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+                assertEquals(-1, SqlParser.indexOfToken("SELECT * FROM t WHERE a = 1 AND [x] = #y", "FROM #t ".repeat(16000) + "x"));
+                assertEquals(-1, SqlParser.indexOfToken("SELECT * FROM t WHERE a = 1 AND [x] = #y", "[a] ".repeat(16000) + "x"));
+            });
         }
 
         @Test
@@ -6540,6 +6892,23 @@ public class SqlParserTest extends TestBase {
             for (final String value : List.of("+", "-'x'", "1e+wrong")) {
                 assertEquals(-1, scan.invoke(null, value, 0, SqlParser.defaultTokenizerConfig(), null), value);
             }
+        }
+
+        // Regression: the CYCLE value scanners read the empty literal after a name "q"/"nq" (PostgreSQL's typed literal of
+        // a type named q) as an Oracle q-quote delimited by "'", jumped to a later "''" (even in a comment) and resolved
+        // the statement's verb past the real DELETE/UPDATE.
+        @Test
+        void testCteCycleTypedLiteralNamedQIsNotAnOracleAlternativeQuote() {
+            final String delete = "WITH c AS (SELECT 1) CYCLE a SET b TO 'Y' DEFAULT q'' USING p DELETE FROM t -- '' SELECT";
+
+            for (final String sql : List.of(delete, "WITH c AS (SELECT 1) CYCLE a SET b TO 'Y' DEFAULT nq'' USING p DELETE FROM t -- '' SELECT",
+                    "WITH c AS (SELECT 1) CYCLE a SET b TO q'' DEFAULT 'N' USING p UPDATE t SET a = 1 /* '' DEFAULT 0 USING p SELECT */")) {
+                assertReadGatesReject(sql);
+                assertFalse(SqlParser.isSelectQuery(sql), sql);
+            }
+
+            assertTrue(SqlParser.isDeleteQuery(delete));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("WITH c AS (SELECT 1) CYCLE a SET b TO 'Y' DEFAULT q'' USING p SELECT 1"));
         }
 
         @Test

@@ -318,7 +318,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the equality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a SQL representation of the equality expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -343,7 +343,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the equality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NULL})
      * @return a SQL representation of the equality expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -375,7 +375,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the inequality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a SQL representation of the not-equal expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -400,7 +400,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the inequality
      * @param value the right-hand side value; may be {@code null} (renders as {@code IS NOT NULL})
      * @return a SQL representation of the not-equal expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -428,7 +428,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the greater-than expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -453,7 +453,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the greater-than expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -478,7 +478,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the greater-than-or-equal expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -503,7 +503,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the greater-than-or-equal expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -528,7 +528,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the less-than expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -553,7 +553,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the less-than expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -578,7 +578,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the less-than-or-equal expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -603,7 +603,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the left-hand side of the comparison
      * @param value the right-hand side value; should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the less-than-or-equal expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code value} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -633,7 +633,7 @@ public class SqlExpression extends ComposableCondition {
      * @param minValue the minimum value (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @param maxValue the maximum value (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the BETWEEN expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code minValue} or {@code maxValue} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code minValue} or {@code maxValue} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code minValue} or {@code maxValue} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -664,7 +664,7 @@ public class SqlExpression extends ComposableCondition {
      * @param minValue the lower bound of the excluded range (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @param maxValue the upper bound of the excluded range (inclusive); should not be {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the NOT BETWEEN expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or if {@code minValue} or {@code maxValue} is a {@link Float}
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or if {@code minValue} or {@code maxValue} is a blank or comment-only {@link SqlExpression} or a {@link Float}
      *             or {@link Double} that is {@code NaN} or infinite, or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code minValue} or {@code maxValue} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -696,7 +696,7 @@ public class SqlExpression extends ComposableCondition {
      * @param value the pattern to match against (can include % and _ wildcards); should not be
      *              {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the LIKE expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String like(final String expr, final String value) {
         return link(Operator.LIKE, expr, value);
@@ -719,7 +719,7 @@ public class SqlExpression extends ComposableCondition {
      * @param value the pattern to exclude (can include % and _ wildcards); should not be
      *              {@code null} — a {@code null} renders as the literal {@code null}
      * @return a SQL representation of the NOT LIKE expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String notLike(final String expr, final String value) {
         return link(Operator.NOT_LIKE, expr, value);
@@ -736,9 +736,10 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to check for null
      * @return a SQL representation of the IS NULL expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String isNull(final String expr) {
+        checkExpr(expr);
         return link2(Operator.IS, expr, NULL_KEYWORD);
     }
 
@@ -753,9 +754,10 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to check for not null
      * @return a SQL representation of the IS NOT NULL expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String isNotNull(final String expr) {
+        checkExpr(expr);
         return link2(Operator.IS_NOT, expr, NULL_KEYWORD);
     }
 
@@ -771,12 +773,10 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the column reference or expression to check
      * @return a parenthesized {@code IS NULL OR = ''} expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String isNullOrEmpty(final String expr) {
-        if (Strings.isBlank(expr)) {
-            throw new IllegalArgumentException("expr must not be null or blank");
-        }
+        checkExpr(expr);
 
         final String terminatedExpr = QueryUtil.terminateLineComment(expr);
         return "(" + terminatedExpr + " IS NULL OR " + terminatedExpr + " = '')";
@@ -796,12 +796,10 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the column reference or expression to check
      * @return a parenthesized {@code IS NOT NULL AND <> ''} expression
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String isNotNullAndNotEmpty(final String expr) {
-        if (Strings.isBlank(expr)) {
-            throw new IllegalArgumentException("expr must not be null or blank");
-        }
+        checkExpr(expr);
 
         final String terminatedExpr = QueryUtil.terminateLineComment(expr);
         return "(" + terminatedExpr + " IS NOT NULL AND " + terminatedExpr + " <> '')";
@@ -810,6 +808,10 @@ public class SqlExpression extends ComposableCondition {
     /**
      * Creates an AND expression combining multiple expressions.
      * All conditions must be true for the AND expression to be true.
+     *
+     * <p><b>&#9888;&#65039;</b> This is a static helper that returns a {@link String}. Invoked through an instance, as in
+     * {@code Filters.expr("a = 1").and("b = 2")}, it ignores the receiver and returns {@code "(b = 2)"}; to combine an
+     * expression object, pass a {@link Condition} to {@link ComposableCondition#and(Condition)} instead.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -822,7 +824,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param exprs the expressions to combine with AND; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the AND expression, or an empty string if no expressions are supplied
-     * @throws IllegalArgumentException if any element of {@code exprs} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if any element of {@code exprs} is {@code null}, empty, blank, or comment-only
      */
     public static String and(final String... exprs) {
         return link2(Operator.AND, exprs);
@@ -832,6 +834,10 @@ public class SqlExpression extends ComposableCondition {
      * Creates an OR expression combining multiple expressions.
      * At least one condition must be true for the OR expression to be true.
      *
+     * <p><b>&#9888;&#65039;</b> This is a static helper that returns a {@link String}. Invoked through an instance, as in
+     * {@code Filters.expr("a = 1").or("b = 2")}, it ignores the receiver and returns {@code "(b = 2)"}; to combine an
+     * expression object, pass a {@link Condition} to {@link ComposableCondition#or(Condition)} instead.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * String expr = SqlExpression.or("status = 'active'", "status = 'pending'", "priority = 1");
@@ -840,7 +846,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param exprs the expressions to combine with OR; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the OR expression, or an empty string if no expressions are supplied
-     * @throws IllegalArgumentException if any element of {@code exprs} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if any element of {@code exprs} is {@code null}, empty, blank, or comment-only
      */
     public static String or(final String... exprs) {
         return link2(Operator.OR, exprs);
@@ -862,7 +868,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values to add; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the addition expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -890,7 +896,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values to subtract; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -924,7 +930,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values to subtract; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the subtraction expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -954,7 +960,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values to multiply; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the multiplication expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -982,7 +988,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values to divide; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the division expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1010,7 +1016,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values for modulus operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the modulus expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1035,7 +1041,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values for left shift operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the left shift expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1060,7 +1066,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values for right shift operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the right shift expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1087,7 +1093,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values for bitwise AND operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise AND expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1111,7 +1117,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values for bitwise OR operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise OR expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1125,6 +1131,8 @@ public class SqlExpression extends ComposableCondition {
 
     /**
      * Creates a bitwise XOR expression for the given objects.
+     * The {@code ^} operator is emitted as written and is not translated for the target dialect: it is bitwise XOR in
+     * MySQL and SQL Server, but exponentiation in PostgreSQL (whose bitwise XOR operator is {@code #}).
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1135,7 +1143,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param operands the values for bitwise XOR operation; a {@code null} or empty array yields an empty string
      * @return a SQL representation of the bitwise XOR expression, or an empty string if no operands are supplied
-     * @throws IllegalArgumentException if any value is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any value is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any value is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1148,16 +1156,35 @@ public class SqlExpression extends ComposableCondition {
     }
 
     /**
-     * Rejects a {@code null}, empty, or blank SQL fragment passed as the {@code expr} argument of the
+     * Rejects a {@code null}, empty, blank, or comment-only SQL fragment passed as the {@code expr} argument of the
      * static helpers ({@link #equal(String, Object)}, {@link #isNull(String)}, ...), so the text
-     * {@code null} is never emitted in place of a column reference.
+     * {@code null}, or nothing at all, is never emitted in place of a column reference.
      *
      * @param expr the SQL fragment to validate
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or consists only of SQL comments
      */
     private static void checkExpr(final String expr) {
         if (Strings.isBlank(expr)) {
             throw new IllegalArgumentException("expr must not be null or blank");
+        }
+
+        if (isEmptyLiteral(expr)) {
+            throw new IllegalArgumentException("expr must not consist only of SQL comments: " + expr);
+        }
+    }
+
+    /**
+     * Rejects a blank or comment-only {@link SqlExpression} operand of the static helpers, exactly as the condition
+     * constructors reject it as a value (see {@link AbstractCondition#validateValueOperand(Object, String)}): it would render
+     * a truncated expression such as {@code a = }.
+     *
+     * @param operand the operand to validate; any other value (including {@code null}) is accepted
+     * @param argumentName the argument name used in the exception message
+     * @throws IllegalArgumentException if {@code operand} is a blank or comment-only {@link SqlExpression}
+     */
+    private static void checkOperand(final Object operand, final String argumentName) {
+        if (operand instanceof SqlExpression && isEmptyLiteral(((SqlExpression) operand).literal())) {
+            throw new IllegalArgumentException(argumentName + " must not be a blank or comment-only SqlExpression");
         }
     }
 
@@ -1174,8 +1201,8 @@ public class SqlExpression extends ComposableCondition {
      * @param literal the left-hand side literal
      * @param value the right-hand side value; may be {@code null}
      * @return a SQL representation of the linked expression
-     * @throws IllegalArgumentException if {@code operator} is {@code null}; if {@code literal} is {@code null}, empty, or blank;
-     *             or if {@code value} is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if {@code operator} is {@code null}; if {@code literal} is {@code null}, empty, blank, or comment-only;
+     *             or if {@code value} is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code value} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1186,6 +1213,7 @@ public class SqlExpression extends ComposableCondition {
     static String link(final Operator operator, final String literal, final Object value) {
         N.checkArgNotNull(operator, cs.operator);
         checkExpr(literal);
+        checkOperand(value, "value");
 
         if (value == null) {
             if (operator == Operator.EQUAL) {
@@ -1221,7 +1249,7 @@ public class SqlExpression extends ComposableCondition {
      * @param min the lower bound value
      * @param max the upper bound value
      * @return the rendered SQL fragment
-     * @throws IllegalArgumentException if {@code operator} is {@code null}; if {@code literal} is {@code null}, empty, or blank;
+     * @throws IllegalArgumentException if {@code operator} is {@code null}; if {@code literal} is {@code null}, empty, blank, or comment-only;
      *             or if {@code min} or {@code max} is a {@code NaN} or infinite {@link Float}/{@link Double},
      *             or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code min} or {@code max} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
@@ -1233,6 +1261,8 @@ public class SqlExpression extends ComposableCondition {
     static String link(final Operator operator, final String literal, final Object min, final Object max) {
         N.checkArgNotNull(operator, cs.operator);
         checkExpr(literal);
+        checkOperand(min, "minValue");
+        checkOperand(max, "maxValue");
 
         final StringBuilder sb = Objectory.createStringBuilder();
 
@@ -1263,7 +1293,7 @@ public class SqlExpression extends ComposableCondition {
      * @param literal the left-hand side literal
      * @param operatorPostfix the literal keyword/token appended after the operator (emitted verbatim)
      * @return the rendered SQL fragment
-     * @throws IllegalArgumentException if {@code operator} is {@code null}, or if {@code literal} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code operator} is {@code null}, or if {@code literal} is {@code null}, empty, blank, or comment-only
      */
     static String link2(final Operator operator, final String literal, final String operatorPostfix) {
         N.checkArgNotNull(operator, cs.operator);
@@ -1308,7 +1338,11 @@ public class SqlExpression extends ComposableCondition {
 
         for (int i = 0; i < literals.length; i++) {
             if (Strings.isBlank(literals[i])) {
-                throw new IllegalArgumentException("literals[" + i + "] must not be null or blank");
+                throw new IllegalArgumentException("exprs[" + i + "] must not be null or blank");
+            }
+
+            if (isEmptyLiteral(literals[i])) {
+                throw new IllegalArgumentException("exprs[" + i + "] must not consist only of SQL comments: " + literals[i]);
             }
         }
 
@@ -1344,7 +1378,7 @@ public class SqlExpression extends ComposableCondition {
      * @param linkedSymbol the symbol to use for linking (e.g. {@code "+"}, {@code "*"}, {@code "&"})
      * @param objects the objects to link; a {@code null} or empty array yields an empty string
      * @return the joined SQL expression string, or an empty string if no objects are supplied
-     * @throws IllegalArgumentException if any object is a {@link Float} or {@link Double} that is {@code NaN} or infinite,
+     * @throws IllegalArgumentException if any object is a blank or comment-only {@link SqlExpression} or a {@link Float} or {@link Double} that is {@code NaN} or infinite,
      *             or a {@link Number} whose text is not a valid numeric literal, or if any object is a {@link Condition}
      *             whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1355,6 +1389,10 @@ public class SqlExpression extends ComposableCondition {
     static String link(String linkedSymbol, final Object... objects) {
         if (N.isEmpty(objects)) {
             return Strings.EMPTY;
+        }
+
+        for (int i = 0; i < objects.length; i++) {
+            checkOperand(objects[i], "operands[" + i + "]");
         }
 
         if (!(SPACE.equals(linkedSymbol) || COMMA_SPACE.equals(linkedSymbol))) {
@@ -1477,7 +1515,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to count
      * @return a COUNT function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String count(final String expr) {
         return function(COUNT, expr);
@@ -1495,7 +1533,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to average
      * @return an AVG function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String avg(final String expr) {
         return function(AVG, expr);
@@ -1513,7 +1551,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to sum
      * @return a SUM function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String sum(final String expr) {
         return function(SUM, expr);
@@ -1531,7 +1569,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to find minimum
      * @return a MIN function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String min(final String expr) {
         return function(MIN, expr);
@@ -1549,7 +1587,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to find maximum
      * @return a MAX function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String max(final String expr) {
         return function(MAX, expr);
@@ -1567,7 +1605,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to get absolute value of
      * @return an ABS function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String abs(final String expr) {
         return function(ABS, expr);
@@ -1585,7 +1623,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate arc cosine of
      * @return an ACOS function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String acos(final String expr) {
         return function(ACOS, expr);
@@ -1603,7 +1641,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate arc sine of
      * @return an ASIN function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String asin(final String expr) {
         return function(ASIN, expr);
@@ -1621,7 +1659,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate arc tangent of
      * @return an ATAN function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String atan(final String expr) {
         return function(ATAN, expr);
@@ -1639,7 +1677,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to round up
      * @return a CEIL function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String ceil(final String expr) {
         return function(CEIL, expr);
@@ -1657,7 +1695,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate cosine of
      * @return a COS function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String cos(final String expr) {
         return function(COS, expr);
@@ -1675,7 +1713,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate exponential of
      * @return an EXP function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String exp(final String expr) {
         return function(EXP, expr);
@@ -1693,7 +1731,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to round down
      * @return a FLOOR function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String floor(final String expr) {
         return function(FLOOR, expr);
@@ -1714,7 +1752,7 @@ public class SqlExpression extends ComposableCondition {
      * @param base the logarithm base
      * @param value the value to calculate logarithm of
      * @return a LOG function string
-     * @throws IllegalArgumentException if {@code base} or {@code value} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code base} or {@code value} is {@code null}, empty, blank, or comment-only
      */
     public static String log(final String base, final String value) {
         return function(LOG, base, value);
@@ -1732,7 +1770,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate natural logarithm of
      * @return an LN function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String ln(final String expr) {
         return function(LN, expr);
@@ -1751,7 +1789,7 @@ public class SqlExpression extends ComposableCondition {
      * @param dividend the dividend
      * @param divisor the divisor
      * @return a MOD function string
-     * @throws IllegalArgumentException if {@code dividend} or {@code divisor} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code dividend} or {@code divisor} is {@code null}, empty, blank, or comment-only
      */
     public static String mod(final String dividend, final String divisor) {
         return function(MOD, dividend, divisor);
@@ -1770,7 +1808,7 @@ public class SqlExpression extends ComposableCondition {
      * @param base the base
      * @param exponent the exponent
      * @return a POWER function string
-     * @throws IllegalArgumentException if {@code base} or {@code exponent} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code base} or {@code exponent} is {@code null}, empty, blank, or comment-only
      */
     public static String power(final String base, final String exponent) {
         return function(POWER, base, exponent);
@@ -1788,7 +1826,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to get sign of
      * @return a SIGN function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String sign(final String expr) {
         return function(SIGN, expr);
@@ -1806,7 +1844,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate sine of
      * @return a SIN function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String sin(final String expr) {
         return function(SIN, expr);
@@ -1824,7 +1862,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate square root of
      * @return a SQRT function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String sqrt(final String expr) {
         return function(SQRT, expr);
@@ -1842,7 +1880,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the expression to calculate tangent of
      * @return a TAN function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String tan(final String expr) {
         return function(TAN, expr);
@@ -1865,7 +1903,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr1 the first SQL expression (column reference or pre-quoted literal)
      * @param expr2 the second SQL expression (column reference or pre-quoted literal)
      * @return a CONCAT function string of the form {@code CONCAT(expr1, expr2)}
-     * @throws IllegalArgumentException if {@code expr1} or {@code expr2} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr1} or {@code expr2} is {@code null}, empty, blank, or comment-only
      */
     public static String concat(final String expr1, final String expr2) {
         return function(CONCAT, expr1, expr2);
@@ -1885,10 +1923,10 @@ public class SqlExpression extends ComposableCondition {
      * }</pre>
      *
      * @param expr the SQL expression to search in
-     * @param oldString the string to search for
-     * @param replacement the replacement string
+     * @param oldString the SQL expression for the substring to search for, emitted verbatim (pre-quote a literal string, e.g. {@code "'@'"})
+     * @param replacement the SQL expression for the replacement, emitted verbatim (pre-quote a literal string, e.g. {@code "'_at_'"})
      * @return a REPLACE function string
-     * @throws IllegalArgumentException if {@code expr}, {@code oldString}, or {@code replacement} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr}, {@code oldString}, or {@code replacement} is {@code null}, empty, blank, or comment-only
      */
     public static String replace(final String expr, final String oldString, final String replacement) {
         return function(REPLACE, expr, oldString, replacement);
@@ -1907,7 +1945,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the SQL expression whose length is returned
      * @return a LENGTH function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String length(final String expr) {
         return function(LENGTH, expr);
@@ -1926,7 +1964,7 @@ public class SqlExpression extends ComposableCondition {
      * @param expr the SQL expression to extract from
      * @param fromIndex the starting position (1-based)
      * @return a SUBSTR function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String substr(final String expr, final int fromIndex) {
         return function(SUBSTR, expr, fromIndex);
@@ -1946,7 +1984,7 @@ public class SqlExpression extends ComposableCondition {
      * @param fromIndex the starting position (1-based)
      * @param length the number of characters to extract
      * @return a SUBSTR function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String substr(final String expr, final int fromIndex, final int length) {
         return function(SUBSTR, expr, fromIndex, length);
@@ -1964,7 +2002,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the SQL expression to trim
      * @return a TRIM function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String trim(final String expr) {
         return function(TRIM, expr);
@@ -1982,7 +2020,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the SQL expression to left trim
      * @return an LTRIM function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String ltrim(final String expr) {
         return function(LTRIM, expr);
@@ -2000,7 +2038,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the SQL expression to right trim
      * @return an RTRIM function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String rtrim(final String expr) {
         return function(RTRIM, expr);
@@ -2020,7 +2058,7 @@ public class SqlExpression extends ComposableCondition {
      * @param length the total length after padding
      * @param padExpr the SQL expression to pad with
      * @return an LPAD function string
-     * @throws IllegalArgumentException if {@code expr} or {@code padExpr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} or {@code padExpr} is {@code null}, empty, blank, or comment-only
      */
     public static String lpad(final String expr, final int length, final String padExpr) {
         return function(LPAD, expr, length, padExpr);
@@ -2040,7 +2078,7 @@ public class SqlExpression extends ComposableCondition {
      * @param length the total length after padding
      * @param padExpr the SQL expression to pad with
      * @return an RPAD function string
-     * @throws IllegalArgumentException if {@code expr} or {@code padExpr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} or {@code padExpr} is {@code null}, empty, blank, or comment-only
      */
     public static String rpad(final String expr, final int length, final String padExpr) {
         return function(RPAD, expr, length, padExpr);
@@ -2058,7 +2096,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the SQL expression to convert to lowercase
      * @return a LOWER function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String lower(final String expr) {
         return function(LOWER, expr);
@@ -2076,7 +2114,7 @@ public class SqlExpression extends ComposableCondition {
      *
      * @param expr the SQL expression to convert to uppercase
      * @return an UPPER function string
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only
      */
     public static String upper(final String expr) {
         return function(UPPER, expr);
@@ -2109,12 +2147,16 @@ public class SqlExpression extends ComposableCondition {
      * @param functionName the function name, emitted verbatim as supplied
      * @param args the function arguments; emitted verbatim, comma-separated
      * @return the rendered function call string
-     * @throws IllegalArgumentException if any element of {@code args} is {@code null} or a blank {@link String}
+     * @throws IllegalArgumentException if any element of {@code args} is {@code null}, a blank or comment-only {@link String}, or a blank or comment-only {@link SqlExpression}
      */
     private static String function(final String functionName, final Object... args) {
         for (int i = 0; i < args.length; i++) {
             if (args[i] == null || (args[i] instanceof String str && Strings.isBlank(str))) {
                 throw new IllegalArgumentException("Argument " + (i + 1) + " of " + functionName + "() must not be null or blank");
+            }
+
+            if (args[i] instanceof String str ? isEmptyLiteral(str) : args[i] instanceof SqlExpression expr && isEmptyLiteral(expr.literal())) {
+                throw new IllegalArgumentException("Argument " + (i + 1) + " of " + functionName + "() must not be blank or consist only of SQL comments");
             }
         }
 
@@ -2227,7 +2269,7 @@ public class SqlExpression extends ComposableCondition {
      * the subscript) is copied exactly as written, as described below for a backslash before a quote.
      * Bind names and MyBatis attributes inside a {@code #{...}} or {@code ${...}} marker are also
      * protected when the marker contains whitespace; tokenization can still normalize whitespace
-     * runs. A marker without a closing {@code '}'} is not a binding and is converted like ordinary SQL. Recognized SQL
+     * runs. A marker without a closing <code>'}'</code> is not a binding and is converted like ordinary SQL. Recognized SQL
      * keyword tokens are also left unchanged when written in their canonical upper-case form
      * (for example {@code CURRENT_DATE}); a lower-case token is treated as an identifier and
      * converted. Leading and trailing underscore runs of an identifier are preserved and only the

@@ -250,7 +250,8 @@ public class SqlDialect {
          * Creates a {@code ProductInfo} with the given product name and version.
          *
          * @param name the database product name, such as {@code "Oracle"} or {@code "MySQL"}
-         * @param version the database product version, such as {@code "19c"} or {@code "9.7"}
+         * @param version the database product version, such as {@code "19c"} or {@code "9.7"}; {@code null} is
+         *        normalized to an empty version
          * @return a new {@code ProductInfo} with the given name and version
          * @throws IllegalArgumentException if {@code name} is {@code null}, empty, or blank
          */

@@ -22,8 +22,11 @@
  * {@code like}, {@code isNull}, {@code and}, {@code or}, {@code not}, {@code exists},
  * {@code leftJoin}, {@code where}, {@code orderBy}, &hellip;); the constructors are public as well.
  * {@link com.landawn.abacus.query.condition.NamedProperty} offers a fluent alternative that binds one
- * property name once and then produces many conditions from it. Every condition is fed back into a
- * builder through {@code where(...)}, {@code having(...)}, {@code join(...)}, or {@code append(...)}.</p>
+ * property name once and then produces many conditions from it. Conditions are fed back into a query
+ * builder through {@code where(...)}, {@code having(...)}, {@code on(...)}, or {@code append(...)}. A
+ * {@link com.landawn.abacus.query.condition.Join} object reaches a query builder only inside a
+ * {@code Criteria} (added with {@code Criteria.builder().join(...)}); {@code append(...)} rejects a
+ * standalone {@code Join}.</p>
  *
  * <h2>The hierarchy</h2>
  * <p>{@link com.landawn.abacus.query.condition.Condition} is the root interface, exposing only

@@ -2293,8 +2293,8 @@ public final class DynamicQuery {
 
         /**
          * Adds an {@code AND} condition to the {@code WHERE} clause.
-         * If called before any {@link #append(String)}, this acts as the first condition and emits
-         * {@code WHERE cond} with no leading {@code AND}.
+         * If no condition has been appended yet (by {@link #append(String)} or any other method), this acts as the
+         * first condition and emits {@code WHERE cond} with no leading {@code AND}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2324,8 +2324,8 @@ public final class DynamicQuery {
 
         /**
          * Adds an {@code OR} condition to the {@code WHERE} clause.
-         * If called before any {@link #append(String)}, this acts as the first condition and emits
-         * {@code WHERE cond} with no leading {@code OR}.
+         * If no condition has been appended yet (by {@link #append(String)} or any other method), this acts as the
+         * first condition and emits {@code WHERE cond} with no leading {@code OR}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2713,8 +2713,8 @@ public final class DynamicQuery {
 
         /**
          * Adds an {@code AND} condition to the {@code HAVING} clause.
-         * If called before any {@link #append(String)}, this acts as the first condition and emits
-         * {@code HAVING cond} with no leading {@code AND}.
+         * If no condition has been appended yet (by {@link #append(String)} or any other method), this acts as the
+         * first condition and emits {@code HAVING cond} with no leading {@code AND}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -2744,8 +2744,8 @@ public final class DynamicQuery {
 
         /**
          * Adds an {@code OR} condition to the {@code HAVING} clause.
-         * If called before any {@link #append(String)}, this acts as the first condition and emits
-         * {@code HAVING cond} with no leading {@code OR}.
+         * If no condition has been appended yet (by {@link #append(String)} or any other method), this acts as the
+         * first condition and emits {@code HAVING cond} with no leading {@code OR}.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

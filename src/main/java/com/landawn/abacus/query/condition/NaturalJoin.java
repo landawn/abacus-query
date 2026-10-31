@@ -41,6 +41,7 @@ import java.util.Collection;
  *   <li>Less explicit than other join types</li>
  *   <li>May join on unintended columns if naming conventions overlap</li>
  *   <li>Best used when table relationships are well-defined and stable</li>
+ *   <li>Not supported by SQL Server, which has no {@code NATURAL JOIN}; use an explicit {@link On} condition there</li>
  * </ul>
  * 
  * <p>Because the join predicate is implicit, this class exposes no constructor that accepts an

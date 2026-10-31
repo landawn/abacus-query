@@ -46,6 +46,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Can only be used when column names are identical in both tables</li>
  *   <li>Cannot specify table qualifiers with column names</li>
  *   <li>Less flexible than ON for complex join conditions</li>
+ *   <li>Not supported by SQL Server, whose joins accept only {@code ON}</li>
  * </ul>
  *
  * <p><b>API status:</b> both public {@code Using} constructors (and the corresponding
@@ -106,7 +107,7 @@ public class Using extends Cell {
      * (e.g., during Kryo deserialization). Not part of {@link #equals(Object)}/{@link #hashCode()}, which
      * already account for these columns through the wrapped condition.
      */
-    private List<String> columnNames;
+    private final List<String> columnNames;
 
     /** Lazily memoized immutable view returned by {@link #columnNames()} (performance only). */
     private transient ImmutableList<String> cachedColumnNamesView;
@@ -117,6 +118,7 @@ public class Using extends Cell {
      * directly in application code. It exists solely for serialization/deserialization purposes.
      */
     Using() {
+        columnNames = null;
     }
 
     /**

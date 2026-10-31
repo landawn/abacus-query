@@ -56,14 +56,14 @@ public abstract class AbstractBetween extends ComposableCondition {
      * excluded range for {@code NOT_BETWEEN}. May be a non-null literal value, a
      * {@link SqlExpression}, or a scalar {@link SubQuery}.
      */
-    private Object minValue;
+    private final Object minValue;
 
     /**
      * The upper bound of the range; inclusive for {@code BETWEEN}, and the upper edge of the
      * excluded range for {@code NOT_BETWEEN}. May be a non-null literal value, a
      * {@link SqlExpression}, or a scalar {@link SubQuery}.
      */
-    private Object maxValue;
+    private final Object maxValue;
 
     /**
      * Whether {@link #parameters()} must rebuild its result on every call instead of memoizing it: {@code true}
@@ -82,6 +82,8 @@ public abstract class AbstractBetween extends ComposableCondition {
      */
     AbstractBetween() {
         propName = null;
+        minValue = null;
+        maxValue = null;
         rebuildParametersPerCall = false;
     }
 

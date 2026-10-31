@@ -75,6 +75,11 @@ import com.landawn.abacus.util.N;
  *   <li>EXCEPT/MINUS returns rows from first query that don't appear in second query</li>
  * </ul>
  *
+ * <p><b>Operator precedence:</b> set operators are emitted flat, in the order they are added. PostgreSQL,
+ * SQL Server, DB2, MySQL 8.0.31+ and MariaDB bind {@code INTERSECT} tighter than {@code UNION}/{@code EXCEPT}/{@code MINUS},
+ * so {@code A UNION B INTERSECT C} evaluates as {@code A UNION (B INTERSECT C)} there, while Oracle and SQLite
+ * evaluate left to right.</p>
+ *
  * <p><b>Usage Examples:</b></p>
  * <pre>{@code
  * // Find customers who are both active AND have recent orders

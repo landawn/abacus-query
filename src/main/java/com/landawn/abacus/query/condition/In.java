@@ -131,9 +131,10 @@ public class In extends AbstractIn {
      * In idFilter = new In(Arrays.asList("id"), Arrays.asList(Arrays.asList(1), Arrays.asList(2)));
      * // SQL: (id) IN ((1), (2))
      *
-     * // The same rows supplied as maps keyed by property name
+     * // A row supplied as a map keyed by property name
      * In fromMaps = new In(Arrays.asList("first_name", "last_name"),
      *         Arrays.asList(N.asMap("first_name", "John", "last_name", "Doe")));
+     * // SQL: (first_name, last_name) IN (('John', 'Doe'))
      * }</pre>
      *
      * <p><b>&#9888;&#65039;</b> The multi-column row value-list form is supported by MySQL, PostgreSQL,

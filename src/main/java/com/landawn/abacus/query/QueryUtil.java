@@ -88,7 +88,7 @@ public final class QueryUtil {
 
     /**
      * Regular expression pattern for validating simple column names.
-     * To match, a column name must be non-empty and consist solely of letters, digits, underscores, or hyphens.
+     * To match, a column name must be non-empty and consist solely of ASCII letters, ASCII digits, underscores, or hyphens.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -121,9 +121,10 @@ public final class QueryUtil {
     /**
      * Maximum number of nested bean-property hops expanded into dot-notation column mappings;
      * configurable via the {@code abacus.query.maxNestedPropDepth} system property
-     * (default: {@value #DEFAULT_MAX_NESTED_PROP_DEPTH}, never negative).
+     * (default: {@value #DEFAULT_MAX_NESTED_PROP_DEPTH}, at least 1: selections that include sub-entity properties always
+     * list one level of them, so that level must always be mapped to its table's columns).
      */
-    private static final int MAX_NESTED_PROP_DEPTH = Math.max(0, Integer.getInteger("abacus.query.maxNestedPropDepth", DEFAULT_MAX_NESTED_PROP_DEPTH));
+    private static final int MAX_NESTED_PROP_DEPTH = Math.max(1, Integer.getInteger("abacus.query.maxNestedPropDepth", DEFAULT_MAX_NESTED_PROP_DEPTH));
 
     /**
      * Cache of column-name-to-property-name maps per entity class, built by
@@ -186,7 +187,7 @@ public final class QueryUtil {
 
             if (cache == null) {
                 // Create the holder only after loadPropNamesByClass accepted the class: a rejected class (a non-bean,
-                // a Map subclass, an anonymous class) must not stay a key that pins its class loader.
+                // a Map subclass, an anonymous class without bean properties) must not stay a key that pins its class loader.
                 cache = noExclusionPropNamesPool.computeIfAbsent(entityClass, cls -> new AtomicReferenceArray<>(5));
             }
 
@@ -1283,7 +1284,8 @@ public final class QueryUtil {
      * that need to retrieve data for nested entity relationships. A sub-entity excluded by the parent's
      * {@code @Table} column configuration or non-column metadata contributes no nested properties. A sub-entity
      * property itself (such as {@code "address"}) is never listed: it is omitted when {@code includeSubEntityProperties}
-     * is {@code false}, and only its nested properties are listed when it is {@code true}.</p>
+     * is {@code false}, and only its nested properties are listed when it is {@code true}: the sub-entity's own
+     * non-sub-entity properties, one level deep, and none for a sub-entity property of the entity's own type (a cyclic path).</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1425,7 +1427,9 @@ public final class QueryUtil {
      *
      * @param entity the entity instance to analyze (must not be {@code null})
      * @param includeSubEntityProperties {@code true} to include nested entity properties, {@code false} for top-level only
-     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions)
+     * @param excludedPropNames set of property names to exclude from the result (nullable; {@code null} or empty means no exclusions),
+     *        matched as described by {@link #selectPropNames(Class, boolean, Set)} (with sub-entity properties included,
+     *        excluding a root such as {@code "address"} also excludes {@code "address.street"})
      * @return an immutable list of property names suitable for SELECT operations
      * @throws IllegalArgumentException if {@code entity} is {@code null}, or its class is not a valid entity bean class
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
@@ -1709,7 +1713,8 @@ public final class QueryUtil {
      * therefore renders identically through {@code Condition.toSql(NamingPolicy)} and through a builder.
      * The one exception is a column literally named after a registered SQL keyword (for example
      * {@code TRUE}): {@code SqlExpression} and the builders leave registered keywords untouched, while the
-     * structured conditions do not consult the keyword registry and convert such a name like any other.</p>
+     * structured conditions do not consult the keyword registry and convert such a name like any other
+     * (a {@code SubQuery}'s select list does consult it and keeps the keyword, as the builders do).</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

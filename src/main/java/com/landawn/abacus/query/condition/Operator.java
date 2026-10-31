@@ -34,8 +34,9 @@ import com.landawn.abacus.util.Strings;
  * <ul>
  *   <li><b>Comparison:</b> EQUAL, NOT_EQUAL, GREATER_THAN, LESS_THAN, etc.</li>
  *   <li><b>Composable:</b> AND, OR, NOT, XOR</li>
- *   <li><b>Range/Set:</b> BETWEEN, IN, NOT_IN, LIKE</li>
- *   <li><b>Null checks:</b> IS, IS_NOT</li>
+ *   <li><b>Range/Set:</b> BETWEEN, NOT_BETWEEN, IN, NOT_IN</li>
+ *   <li><b>Pattern matching:</b> LIKE, NOT_LIKE</li>
+ *   <li><b>IS tests:</b> IS, IS_NOT (NULL, TRUE/FALSE/UNKNOWN, NaN, infinity)</li>
  *   <li><b>Subquery:</b> EXISTS, NOT_EXISTS, ANY, SOME, ALL</li>
  *   <li><b>Join types:</b> JOIN, LEFT_JOIN, RIGHT_JOIN, FULL_JOIN, etc.</li>
  *   <li><b>Clauses:</b> WHERE, HAVING, GROUP_BY, ORDER_BY, etc.</li>
@@ -179,13 +180,14 @@ public enum Operator {
 
     /**
      * IS operator.
-     * Used for NULL comparisons (IS NULL).
+     * Used for {@code IS NULL} and the other {@code IS} tests, such as {@code IS TRUE}, {@code IS NAN}, or {@code IS INFINITE}.
      */
     IS(SK.IS),
 
     /**
      * IS NOT operator.
-     * Used for NOT NULL comparisons (IS NOT NULL).
+     * Used for {@code IS NOT NULL} and the other {@code IS NOT} tests, such as {@code IS NOT TRUE}, {@code IS NOT NAN}, or
+     * {@code IS NOT INFINITE}.
      */
     IS_NOT(SK.IS_NOT),
 

@@ -50,7 +50,7 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
     final ImmutableList<String> propNames;
 
     /** The subquery whose result set the property value(s) are tested against; {@code null} for an uninitialized instance. */
-    private SubQuery subQuery;
+    private final SubQuery subQuery;
 
     /**
      * Default constructor for serialization frameworks like Kryo.
@@ -59,14 +59,15 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      */
     AbstractInSubQuery() {
         propNames = ImmutableList.empty();
+        subQuery = null;
     }
 
     /**
      * Creates a condition for a single property.
      *
      * <p><b>&#9888;&#65039;</b> If the subquery is a structured subquery with an explicit projection (i.e. it exposes
-     * selected property names via {@link SubQuery#selectPropNames()} and none is {@code *} or
-     * {@code qualifier.*}), it must select exactly one column. Raw SQL and wildcard projections
+     * selected property names via {@link SubQuery#selectPropNames()} and none is a wildcard such as {@code *},
+     * {@code qualifier.*} or {@code DISTINCT *}), it must select exactly one column. Raw SQL and wildcard projections
      * are not validated for column arity.</p>
      *
      * @param propName the property/column name (must not be {@code null}, empty, or blank)
@@ -91,8 +92,8 @@ public abstract class AbstractInSubQuery extends ComposableCondition {
      * Creates a condition for multiple properties.
      *
      * <p><b>&#9888;&#65039;</b> If the subquery is a structured subquery with an explicit projection (i.e. it
-     * exposes selected property names via {@link SubQuery#selectPropNames()} and none is {@code *} or
-     * {@code qualifier.*}), the number of selected columns must match {@code propNames.size()}.
+     * exposes selected property names via {@link SubQuery#selectPropNames()} and none is a wildcard such as
+     * {@code *}, {@code qualifier.*} or {@code DISTINCT *}), the number of selected columns must match {@code propNames.size()}.
      * Raw SQL and wildcard projections cannot be validated for column arity and are left to the database.</p>
      *
      * @param propNames the property/column names (must not be {@code null} or empty and must not contain {@code null}, empty, or blank elements)
