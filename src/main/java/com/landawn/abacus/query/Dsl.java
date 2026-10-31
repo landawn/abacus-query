@@ -256,6 +256,13 @@ public final class Dsl {
         return new SqlBuilder(sqlDialect);
     }
 
+    /** Copies a caller-owned column array into one mutable, exactly sized list without an intermediate array copy. */
+    private static List<String> snapshotPropOrColumnNames(final String[] propOrColumnNames) {
+        final List<String> snapshot = new ArrayList<>(propOrColumnNames.length);
+        Collections.addAll(snapshot, propOrColumnNames);
+        return snapshot;
+    }
+
     /**
      * Copies caller-owned excluded property names. A {@link SortedSet} keeps its comparator (for example
      * {@code String.CASE_INSENSITIVE_ORDER}), as {@link Selection} does, so the exclusions match exactly as when the same set
@@ -443,7 +450,7 @@ public final class Dsl {
      */
     public SqlBuilder insert(final String... propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, SqlBuilder.INSERTION_PART_MSG);
-        final List<String> propOrColumnNameSnapshot = new ArrayList<>(Array.asList(propOrColumnNames));
+        final List<String> propOrColumnNameSnapshot = snapshotPropOrColumnNames(propOrColumnNames);
         AbstractQueryBuilder.checkSqlFragmentsNotBlank(propOrColumnNameSnapshot, "propOrColumnNames");
 
         final SqlBuilder instance = createSqlBuilderInstance();
@@ -603,7 +610,9 @@ public final class Dsl {
     public SqlBuilder insert(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, SqlBuilder.INSERTION_PART_MSG);
 
-        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? Collections.emptySet() : snapshotExcludedPropNames(excludedPropNames);
+        // A String specifies one column and ignores exclusions; do not copy an unused caller collection.
+        final Set<String> excludedPropNameSnapshot = entity instanceof String || N.isEmpty(excludedPropNames) ? Collections.emptySet()
+                : snapshotExcludedPropNames(excludedPropNames);
         final Object entitySnapshot;
 
         // Validate and snapshot every form before allocating a builder backed by a pooled SQL buffer.
@@ -1228,7 +1237,7 @@ public final class Dsl {
      */
     public SqlBuilder select(final String... propOrColumnNames) {
         N.checkArgNotEmpty(propOrColumnNames, SqlBuilder.SELECTION_PART_MSG);
-        final List<String> propOrColumnNameSnapshot = new ArrayList<>(Array.asList(propOrColumnNames));
+        final List<String> propOrColumnNameSnapshot = snapshotPropOrColumnNames(propOrColumnNames);
         AbstractQueryBuilder.checkSqlFragmentsNotBlank(propOrColumnNameSnapshot, "propOrColumnNames");
 
         final SqlBuilder instance = createSqlBuilderInstance();

@@ -1260,7 +1260,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         res.add(tableRef(entityClass, tableAlias(alias, entityClass), namingPolicy));
 
-        addSubEntityTableRefs(entityClass, listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames, namingPolicy), namingPolicy, res);
+        addSubEntityTableRefs(entityClass, listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames, namingPolicy, true), namingPolicy,
+                res);
 
         return new ArrayList<>(res);
     }
@@ -1274,10 +1275,26 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     private static Map<String, Class<?>> listedSubEntityProps(final Class<?> entityClass, final BeanInfo entityInfo,
             final Collection<String> subEntityPropNames, final Collection<String> selectPropNames, final NamingPolicy namingPolicy) {
+        // Protected builder state can contain a custom collection with specialized contains semantics. Only the
+        // exact ArrayList class, or internally owned Selection/QueryUtil snapshots at the other call sites, is indexed.
+        return listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames, namingPolicy,
+                selectPropNames != null && selectPropNames.getClass() == ArrayList.class);
+    }
+
+    private static Map<String, Class<?>> listedSubEntityProps(final Class<?> entityClass, final BeanInfo entityInfo,
+            final Collection<String> subEntityPropNames, final Collection<String> selectPropNames, final NamingPolicy namingPolicy,
+            final boolean standardMembership) {
         final Map<String, Class<?>> res = new LinkedHashMap<>();
+        // Tiny projections are cheaper to check directly. Wide projections otherwise repeat normalization and bean
+        // lookup for every root, including allocating the same padding-stripped strings again.
+        final Set<String> selectedRoots = standardMembership && subEntityPropNames.size() >= 4 && N.size(selectPropNames) >= 8
+                && (long) subEntityPropNames.size() * selectPropNames.size() >= 128
+                        ? indexSelectedSubEntityRoots(entityClass, entityInfo, subEntityPropNames, selectPropNames, namingPolicy)
+                        : null;
 
         for (final String subEntityPropName : subEntityPropNames) {
-            if (!containsSelectedPropOrSubProp(entityClass, entityInfo, selectPropNames, subEntityPropName, namingPolicy)) {
+            if (selectedRoots == null ? !containsSelectedPropOrSubProp(entityClass, entityInfo, selectPropNames, subEntityPropName, namingPolicy)
+                    : !selectedRoots.contains(subEntityPropName)) {
                 continue;
             }
 
@@ -1295,6 +1312,41 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return res;
+    }
+
+    /** Resolves a wide projection once; null keeps unusual metadata names on the general prefix-matching path. */
+    private static Set<String> indexSelectedSubEntityRoots(final Class<?> entityClass, final BeanInfo entityInfo,
+            final Collection<String> subEntityPropNames, final Collection<String> selectPropNames, final NamingPolicy namingPolicy) {
+        for (final String root : subEntityPropNames) {
+            if (root.indexOf(SK._PERIOD) >= 0 || !root.equals(stripSelectItemPadding(root))) {
+                return null;
+            }
+        }
+
+        final Set<String> selectedRoots = new HashSet<>();
+
+        for (final String original : selectPropNames) {
+            if (original == null) {
+                continue;
+            }
+
+            final String item = stripSelectItemPadding(original);
+            final int dot = item.indexOf(SK._PERIOD);
+
+            if (dot >= 0) {
+                // Dotted selections depend on their exact-case root even when a scalar column shadows that root.
+                selectedRoots.add(item.substring(0, dot));
+            } else if (!item.isEmpty()) {
+                final PropInfo propInfo = entityInfo.getPropInfo(item);
+
+                if (propInfo != null && propInfo.isSubEntity && !isMappedSelectItem(entityClass, original, item, namingPolicy)) {
+                    selectedRoots.add(item);
+                    selectedRoots.add(propInfo.name); // BeanInfo also resolves differently cased root spellings.
+                }
+            }
+        }
+
+        return selectedRoots;
     }
 
     /** Whether a sub-entity property of {@code entityClass} refers back to {@code entityClass} itself (a cyclic path). */
@@ -1522,6 +1574,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         final List<String> copy = new ArrayList<>(values);
         checkSqlFragmentsNotBlank(copy, argName);
+
+        return copy;
+    }
+
+    /** Keeps the mutable, independent ArrayList passed to overridable collection overloads, with one array copy. */
+    private static List<String> copySqlFragmentArray(final String[] values) {
+        final List<String> copy = new ArrayList<>(values == null ? 0 : values.length);
+
+        if (values != null) {
+            Collections.addAll(copy, values);
+        }
 
         return copy;
     }
@@ -3087,46 +3150,164 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     private record LexicalReading(boolean backslashEscapes, boolean hashPairTokens, boolean doubleQuotedBackslashEscapes, boolean lineFeedOnlyLineComments,
             boolean dollarQuotes) {
+        private static final LexicalReading[] VALUES = createValues();
+
         /** The MySQL family's only reading: backslash escapes in both string forms (its comment rules come from the dialect family). */
-        static final LexicalReading[] MYSQL_ONLY = { new LexicalReading(true, false, true, false, false) };
+        static final LexicalReading[] MYSQL_ONLY = { VALUES[5] };
 
         /** The standard reading alone: doubled-quote escapes only, {@code ##} as one token. */
-        static final LexicalReading[] STANDARD_ONLY = { new LexicalReading(false, true, false, false, false) };
+        static final LexicalReading[] STANDARD_ONLY = { VALUES[2] };
 
         /**
          * The legacy dialect-agnostic reading of the trailing-comment check: standard strings, and the second {@code '#'}
          * of {@code ##} may open a hash comment.
          */
-        static final LexicalReading[] HASH_PAIR_COMMENT_ONLY = { new LexicalReading(false, false, false, false, false) };
+        static final LexicalReading[] HASH_PAIR_COMMENT_ONLY = { VALUES[0] };
 
         /** The dollar-quote reading of the trailing-comment check: standard strings, {@code ##} as one token. */
-        static final LexicalReading[] DOLLAR_QUOTES_ONLY = { new LexicalReading(false, true, false, false, true) };
+        static final LexicalReading[] DOLLAR_QUOTES_ONLY = { VALUES[18] };
 
         /** {@link #DOLLAR_QUOTES_ONLY} and its variant with backslash escapes in single-quoted strings. */
-        static final LexicalReading[] DOLLAR_QUOTES_WITH_BACKSLASH_ESCAPES = { DOLLAR_QUOTES_ONLY[0], new LexicalReading(true, true, false, false, true) };
+        static final LexicalReading[] DOLLAR_QUOTES_WITH_BACKSLASH_ESCAPES = { DOLLAR_QUOTES_ONLY[0], VALUES[19] };
+
+        // The flags describe a finite grammar, never SQL text. These private arrays are only read after publication.
+        // Dialect-plan bits: backslash reading, hash-pair comment reading, dollar-quote reading, default dialect.
+        static final LexicalReading[][] DIALECT_PLANS = createDialectPlans();
+        static final LexicalReading[][] TRAILING_PLANS = createTrailingPlans();
+        static final Map<LexicalReading[], Variants> PLAN_VARIANTS = createPlanVariants();
+
+        private static LexicalReading[] createValues() {
+            final LexicalReading[] values = new LexicalReading[32];
+
+            for (int flags = 0; flags < values.length; flags++) {
+                values[flags] = new LexicalReading((flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0, (flags & 16) != 0);
+            }
+
+            return values;
+        }
+
+        private static LexicalReading[][] createDialectPlans() {
+            final LexicalReading[][] plans = new LexicalReading[16][];
+
+            for (int flags = 0; flags < plans.length; flags++) {
+                final List<LexicalReading> readings = new ArrayList<>(6);
+
+                for (int escapes = 0; escapes <= (flags & 1); escapes++) {
+                    final LexicalReading reading = VALUES[2 | escapes | (escapes != 0 && (flags & 8) != 0 ? 4 : 0)];
+                    readings.add(reading);
+
+                    if ((flags & 2) != 0) {
+                        readings.add(VALUES[escapes | (escapes != 0 && (flags & 8) != 0 ? 4 : 0)]);
+                    }
+
+                    if ((flags & 4) != 0) {
+                        readings.add(reading.withDollarQuotes());
+                    }
+                }
+
+                plans[flags] = readings.toArray(new LexicalReading[0]);
+            }
+
+            return plans;
+        }
+
+        private static LexicalReading[][] createTrailingPlans() {
+            final LexicalReading[][] plans = new LexicalReading[4][];
+
+            for (int flags = 0; flags < plans.length; flags++) {
+                final List<LexicalReading> readings = new ArrayList<>(4);
+
+                for (int escapes = 0; escapes <= (flags & 1); escapes++) {
+                    // The legacy trailing-comment reading allows the second '#' of ## to open a hash comment.
+                    readings.add(VALUES[escapes == 0 ? 0 : 5]);
+
+                    if ((flags & 2) != 0) {
+                        readings.add(VALUES[escapes == 0 ? 2 : 7]);
+                    }
+                }
+
+                plans[flags] = readings.toArray(new LexicalReading[0]);
+            }
+
+            return plans;
+        }
+
+        private static Map<LexicalReading[], Variants> createPlanVariants() {
+            final Map<LexicalReading[], Variants> variants = new HashMap<>();
+
+            for (final LexicalReading[] readings : new LexicalReading[][] { MYSQL_ONLY, STANDARD_ONLY, HASH_PAIR_COMMENT_ONLY, DOLLAR_QUOTES_ONLY,
+                    DOLLAR_QUOTES_WITH_BACKSLASH_ESCAPES }) {
+                variants.put(readings, new Variants(readings));
+            }
+
+            for (final LexicalReading[] readings : DIALECT_PLANS) {
+                variants.put(readings, new Variants(readings));
+            }
+
+            for (final LexicalReading[] readings : TRAILING_PLANS) {
+                variants.put(readings, new Variants(readings));
+            }
+
+            return Collections.unmodifiableMap(variants);
+        }
+
+        private static final class Variants {
+            final LexicalReading[] lineFeedOnly;
+            final LexicalReading[][] failClosed;
+
+            Variants(final LexicalReading[] readings) {
+                lineFeedOnly = new LexicalReading[readings.length];
+                final List<LexicalReading> ansiReadings = new ArrayList<>(readings.length * 2);
+
+                for (int i = 0; i < readings.length; i++) {
+                    final LexicalReading reading = readings[i];
+                    lineFeedOnly[i] = reading.withLineFeedOnlyLineComments();
+                    ansiReadings.add(reading);
+
+                    if (reading.doubleQuotedBackslashEscapes()) {
+                        ansiReadings.add(reading.withDoubleQuotedBackslashEscapes(false));
+                    }
+                }
+
+                final LexicalReading[] ansi = ansiReadings.size() == readings.length ? readings : ansiReadings.toArray(new LexicalReading[0]);
+                final LexicalReading[] bothLineEndings = withBothLineEndings(readings);
+                failClosed = new LexicalReading[][] { readings, ansi, bothLineEndings,
+                        ansi == readings ? bothLineEndings : withBothLineEndings(ansi) };
+            }
+
+            private static LexicalReading[] withBothLineEndings(final LexicalReading[] readings) {
+                final LexicalReading[] result = Arrays.copyOf(readings, readings.length * 2);
+
+                for (int i = 0; i < readings.length; i++) {
+                    result[readings.length + i] = readings[i].withLineFeedOnlyLineComments();
+                }
+
+                return result;
+            }
+        }
+
+        private int flags() {
+            return (backslashEscapes ? 1 : 0) | (hashPairTokens ? 2 : 0) | (doubleQuotedBackslashEscapes ? 4 : 0)
+                    | (lineFeedOnlyLineComments ? 8 : 0) | (dollarQuotes ? 16 : 0);
+        }
 
         LexicalReading withDoubleQuotedBackslashEscapes(final boolean escapes) {
-            return new LexicalReading(backslashEscapes, hashPairTokens, escapes, lineFeedOnlyLineComments, dollarQuotes);
+            return VALUES[escapes ? flags() | 4 : flags() & ~4];
         }
 
         LexicalReading withLineFeedOnlyLineComments() {
-            return new LexicalReading(backslashEscapes, hashPairTokens, doubleQuotedBackslashEscapes, true, dollarQuotes);
+            return VALUES[flags() | 8];
         }
 
         LexicalReading withDollarQuotes() {
-            return new LexicalReading(backslashEscapes, hashPairTokens, doubleQuotedBackslashEscapes, lineFeedOnlyLineComments, true);
+            return VALUES[flags() | 16];
         }
     }
 
     /** Returns {@code readings} with only {@code '\n'} ending a line comment (see {@link LexicalReading#lineFeedOnlyLineComments()}). */
     private static LexicalReading[] withLineFeedOnlyLineComments(final LexicalReading[] readings) {
-        final LexicalReading[] result = new LexicalReading[readings.length];
-
-        for (int i = 0; i < readings.length; i++) {
-            result[i] = readings[i].withLineFeedOnlyLineComments();
-        }
-
-        return result;
+        // Every caller supplies an unmodified private base plan registered by LexicalReading's static initialization.
+        return LexicalReading.PLAN_VARIANTS.get(readings).lineFeedOnly;
     }
 
     /**
@@ -3145,23 +3326,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return readings;
         }
 
-        final List<LexicalReading> result = new ArrayList<>(readings.length * 4);
-
-        for (final LexicalReading reading : readings) {
-            result.add(reading);
-
-            if (ansiQuoteVariants && reading.doubleQuotedBackslashEscapes()) {
-                result.add(reading.withDoubleQuotedBackslashEscapes(false));
-            }
-        }
-
-        if (lineFeedOnlyVariants) {
-            for (int i = 0, size = result.size(); i < size; i++) {
-                result.add(result.get(i).withLineFeedOnlyLineComments());
-            }
-        }
-
-        return result.toArray(new LexicalReading[0]);
+        return LexicalReading.PLAN_VARIANTS.get(readings).failClosed[(ansiQuoteVariants ? 1 : 0) | (lineFeedOnlyVariants ? 2 : 0)];
     }
 
     /** Reports whether {@code sql} contains a {@code '\r'} that is not part of a {@code "\r\n"} line break. */
@@ -3203,24 +3368,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return LexicalReading.STANDARD_ONLY;
         }
 
-        final List<LexicalReading> readings = new ArrayList<>(6);
-
-        for (final boolean backslashEscapes : backslashReading ? new boolean[] { false, true } : new boolean[] { false }) {
-            final boolean doubleQuotedBackslashEscapes = backslashEscapes && defaultDialect;
-            final LexicalReading reading = new LexicalReading(backslashEscapes, true, doubleQuotedBackslashEscapes, false, false);
-
-            readings.add(reading);
-
-            if (hashPairCommentReading) {
-                readings.add(new LexicalReading(backslashEscapes, false, doubleQuotedBackslashEscapes, false, false));
-            }
-
-            if (dollarQuoteReading) {
-                readings.add(reading.withDollarQuotes());
-            }
-        }
-
-        return readings.toArray(new LexicalReading[0]);
+        return LexicalReading.DIALECT_PLANS[(backslashReading ? 1 : 0) | (hashPairCommentReading ? 2 : 0) | (dollarQuoteReading ? 4 : 0)
+                | (defaultDialect ? 8 : 0)];
     }
 
     /**
@@ -3888,18 +4037,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return withFailClosedVariants(LexicalReading.HASH_PAIR_COMMENT_ONLY, sql);
         }
 
-        final List<LexicalReading> readings = new ArrayList<>(4);
-
-        for (final boolean backslashEscapes : backslashReading ? new boolean[] { false, true } : new boolean[] { false }) {
-            // hashPairTokens=false: the second '#' of "##" may open a hash comment (the legacy dialect-agnostic reading).
-            readings.add(new LexicalReading(backslashEscapes, false, backslashEscapes, false, false));
-
-            if (hashPairTokenReading) {
-                readings.add(new LexicalReading(backslashEscapes, true, backslashEscapes, false, false));
-            }
-        }
-
-        return withFailClosedVariants(readings.toArray(new LexicalReading[0]), sql);
+        return withFailClosedVariants(LexicalReading.TRAILING_PLANS[(backslashReading ? 1 : 0) | (hashPairTokenReading ? 2 : 0)], sql);
     }
 
     /** Scans a complete fragment under one lexical reading, retaining explicit E-string escapes. */
@@ -5638,7 +5776,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     @Beta
     public This groupByAsc(final String... propOrColumnNames) {
         assertNotClosed();
-        return groupBy(N.toList(propOrColumnNames), SortDirection.ASC);
+        return groupBy(copySqlFragmentArray(propOrColumnNames), SortDirection.ASC);
     }
 
     /**
@@ -5732,7 +5870,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     @Beta
     public This groupByDesc(final String... propOrColumnNames) {
         assertNotClosed();
-        return groupBy(N.toList(propOrColumnNames), SortDirection.DESC);
+        return groupBy(copySqlFragmentArray(propOrColumnNames), SortDirection.DESC);
     }
 
     /**
@@ -6182,7 +6320,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     @Beta
     public This orderByAsc(final String... propOrColumnNames) {
         assertNotClosed();
-        return orderBy(N.toList(propOrColumnNames), SortDirection.ASC);
+        return orderBy(copySqlFragmentArray(propOrColumnNames), SortDirection.ASC);
     }
 
     /**
@@ -6276,7 +6414,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     @Beta
     public This orderByDesc(final String... propOrColumnNames) {
         assertNotClosed();
-        return orderBy(N.toList(propOrColumnNames), SortDirection.DESC);
+        return orderBy(copySqlFragmentArray(propOrColumnNames), SortDirection.DESC);
     }
 
     /**
@@ -7958,7 +8096,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         String beforeLast = null;
         int depth = 0;
 
-        for (final String token : _tokenizer.tokenize(_sb.substring(_firstSelectKeywordEndIdx))) {
+        for (final String token : _tokenizer.tokenize(_sb.substring(_firstSelectKeywordEndIdx, firstOperandProjectionEnd()))) {
             if (token.isBlank()) {
                 continue;
             }
@@ -7990,6 +8128,57 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return result;
+    }
+
+    /**
+     * Bounds ordinary first-operand projections before copying/tokenizing them. Only the default separators and a
+     * context-independent prefix are eligible: comments, string literals, subscripts, escapes and custom separators
+     * retain the complete input and its existing lexical behavior. In particular this is not a replacement SQL lexer.
+     */
+    private int firstOperandProjectionEnd() {
+        final int length = _sb.length();
+
+        if (_tokenizer.tokenizerConfig() != SqlParser.tokenizer().tokenizerConfig()) {
+            return length;
+        }
+
+        int depth = 0;
+        char quote = 0;
+
+        for (int i = _firstSelectKeywordEndIdx; i < length; i++) {
+            final char ch = _sb.charAt(i);
+
+            // These characters can make an earlier token depend on later text or on contextual parser state.
+            if (ch >= 128 || ch == '\\' || ch == '\'' || ch == '#' || ch == '[' || ch == '$' || ch == '-' || ch == '/') {
+                return length;
+            }
+
+            if (quote != 0) {
+                if (ch == quote) {
+                    if (i + 1 < length && _sb.charAt(i + 1) == quote) {
+                        i++;
+                    } else {
+                        quote = 0;
+                    }
+                }
+            } else if (ch == '"' || ch == '`') {
+                quote = ch;
+            } else if (ch == '(') {
+                depth++;
+            } else if (ch == ')') {
+                if (--depth < 0) {
+                    return length;
+                }
+            } else if (depth == 0 && ch == 'F' && i > _firstSelectKeywordEndIdx && SqlParser.isTokenWhitespace(_sb.charAt(i - 1))
+                    && i + 4 < length && _sb.charAt(i + 1) == 'R' && _sb.charAt(i + 2) == 'O' && _sb.charAt(i + 3) == 'M'
+                    && SqlParser.isTokenWhitespace(_sb.charAt(i + 4))) {
+                // The complete FROM token and its preceding context are identical to the full input. Nothing after
+                // this built-in whitespace boundary can affect them, and the consuming loop stops at this FROM.
+                return i + 4;
+            }
+        }
+
+        return length;
     }
 
     private String unquoteResultColumnLabel(final String label) {
@@ -9931,6 +10120,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (final Map.Entry<String, Integer> entry : childOccurrences.entrySet()) {
             final String name = entry.getKey();
             final int parentCount = parentOccurrences.getOrDefault(name, 0);
+            // User callbacks/subclasses may mutate naming state while rendering tokens; retain their live lookups.
+            boolean cacheOccupiedSuffixes = supportsIncrementalNaming() && parentCount >= 0 && entry.getValue() > 1
+                    && parentCount <= Integer.MAX_VALUE - entry.getValue();
+            OccupiedSuffixRanges occupiedSuffixes = null;
 
             for (int i = entry.getValue(); i > 0; i--) {
                 final String oldName = indexedNamedParameterName(name, i);
@@ -9948,11 +10141,45 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
                 if (rename) {
                     int suffix = parentCount + i;
+                    final int firstSuffix = suffix;
+                    int probes = 0;
                     newName = indexedNamedParameterName(name, suffix);
 
                     // Bump past names already taken on either side, e.g. a property literally named "<base>_<n>".
-                    while (containsGeneratedParameterName(newName) || childParameterNames.contains(newName)) {
+                    while (true) {
+                        if (occupiedSuffixes != null) {
+                            final int next = occupiedSuffixes.skip(suffix);
+
+                            if (next != suffix) {
+                                suffix = next;
+                                newName = indexedNamedParameterName(name, suffix);
+                            }
+                        }
+
+                        if (!containsGeneratedParameterName(newName) && !childParameterNames.contains(newName)) {
+                            break;
+                        }
+
+                        if (suffix == Integer.MAX_VALUE) {
+                            // Preserve the original integer-wrap behavior, without overflowing interval endpoints.
+                            cacheOccupiedSuffixes = false;
+                            occupiedSuffixes = null;
+                        }
+
                         newName = indexedNamedParameterName(name, ++suffix);
+
+                        if (cacheOccupiedSuffixes && occupiedSuffixes == null && ++probes == 8) {
+                            occupiedSuffixes = new OccupiedSuffixRanges();
+                        }
+                    }
+
+                    if (occupiedSuffixes != null) {
+                        if (suffix == Integer.MAX_VALUE) {
+                            cacheOccupiedSuffixes = false;
+                            occupiedSuffixes = null;
+                        } else {
+                            occupiedSuffixes.add(firstSuffix, suffix);
+                        }
                     }
 
                     renamedOccurrenceBounds.merge(name, suffix, Math::max);
@@ -10037,6 +10264,43 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return rewriteChildPlaceholders(sql, renames);
+    }
+
+    /**
+     * Occupied suffix intervals for one base's descending rename pass. Starting suffixes strictly decrease. Every
+     * searched suffix is permanently occupied during this pass: at i itself the parent owns it (otherwise no rename
+     * starts there); above i a child name cannot be removed by any later, lower i. The chosen new name is occupied too.
+     * Freed old names below the search start are deliberately excluded. Other bases get a fresh index.
+     *
+     * <p>Intervals are stored from highest to lowest start; a later search can pop and skip whole intervals, then merge
+     * them into its newly occupied run. Each interval is pushed/popped once, without boxing individual suffixes.</p>
+     */
+    private static final class OccupiedSuffixRanges {
+        private int[] starts = new int[4];
+        private int[] ends = new int[4];
+        private int size;
+
+        int skip(int suffix) {
+            while (size > 0 && starts[size - 1] <= suffix) {
+                suffix = Math.max(suffix, ends[--size] + 1);
+            }
+
+            return suffix;
+        }
+
+        void add(final int first, int last) {
+            while (size > 0 && starts[size - 1] <= last + 1) {
+                last = Math.max(last, ends[--size]);
+            }
+
+            if (size == starts.length) {
+                starts = Arrays.copyOf(starts, size * 2);
+                ends = Arrays.copyOf(ends, size * 2);
+            }
+
+            starts[size] = first;
+            ends[size++] = last;
+        }
     }
 
     /**
@@ -14144,7 +14408,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return Collections.emptyMap();
         }
 
-        return listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames, namingPolicy);
+        // Selection owns its included-property snapshot; QueryUtil supplies the other internally owned projection.
+        return listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames, namingPolicy, true);
     }
 
     /**

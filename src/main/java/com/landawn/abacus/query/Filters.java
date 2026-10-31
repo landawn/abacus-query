@@ -945,7 +945,7 @@ public final class Filters {
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entitiesOrPropMaps) {
         N.checkArgNotNull(entitiesOrPropMaps, cs.entitiesOrPropMaps);
-        final List<?> elements = new ArrayList<>(entitiesOrPropMaps);
+        final ArrayList<?> elements = new ArrayList<>(entitiesOrPropMaps);
         N.checkArgNotEmpty(elements, cs.entitiesOrPropMaps);
 
         final Object firstNonNull = N.firstNonNull(elements).orElseThrow(() -> new IllegalArgumentException("All specified entities/maps are null."));
@@ -964,7 +964,7 @@ public final class Filters {
             return or(condList);
         }
 
-        return anyOfAllEqual(elements, selectablePropNames(firstNonNull.getClass()));
+        return anyOfAllEqualSnapshot(elements, selectablePropNames(firstNonNull.getClass()));
     }
 
     /**
@@ -1016,19 +1016,41 @@ public final class Filters {
     @Beta
     public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames) {
         N.checkArgNotNull(entities, cs.entities);
-        final List<?> entitySnapshot = new ArrayList<>(entities);
+        final ArrayList<?> entitySnapshot = new ArrayList<>(entities);
+
+        return anyOfAllEqualSnapshot(entitySnapshot, includedPropNames);
+    }
+
+    /**
+     * Builds the entity form from an owned snapshot, so the single-argument overload need not copy its snapshot again.
+     * All row metadata is validated before reading any values, including when rows have different runtime classes.
+     *
+     * @param <T> the row type captured from the owned snapshot
+     * @param entitySnapshot the non-null, privately owned list of rows; surviving rows are compacted into its prefix
+     * @param includedPropNames requested names, snapshotted after validating the rows
+     * @return the OR of the non-null rows' equality groups
+     */
+    private static <T> Or anyOfAllEqualSnapshot(final ArrayList<T> entitySnapshot, final Collection<String> includedPropNames) {
         N.checkArgNotEmpty(entitySnapshot, cs.entities);
 
-        boolean hasEntity = false;
+        int nonNullCount = 0;
 
-        for (final Object entity : entitySnapshot) {
+        for (int i = 0, size = entitySnapshot.size(); i < size; i++) {
+            final T entity = entitySnapshot.get(i);
+
             if (entity != null) {
                 N.checkArgument(!(entity instanceof Map), "All non-null elements must be entity objects; maps require the map overload");
-                hasEntity = true;
+
+                // Only previously read positions are overwritten; the private list preserves row order for later passes.
+                if (nonNullCount != i) {
+                    entitySnapshot.set(nonNullCount, entity);
+                }
+
+                nonNullCount++;
             }
         }
 
-        N.checkArgument(hasEntity, "All specified entities are null.");
+        N.checkArgument(nonNullCount > 0, "All specified entities are null.");
         N.checkArgNotNull(includedPropNames, cs.includedPropNames);
         final List<String> propNameSnapshot = new ArrayList<>(includedPropNames);
         N.checkArgNotEmpty(propNameSnapshot, cs.includedPropNames);
@@ -1037,20 +1059,16 @@ public final class Filters {
             N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
         }
 
-        final List<Object> nonNullEntities = new ArrayList<>(entitySnapshot.size());
-        final List<BeanInfo> entityInfos = new ArrayList<>(entitySnapshot.size());
+        final List<BeanInfo> entityInfos = new ArrayList<>(nonNullCount);
 
-        for (final Object entity : entitySnapshot) {
-            if (entity != null) {
-                nonNullEntities.add(entity);
-                entityInfos.add(checkReadableProperties(entity, propNameSnapshot));
-            }
+        for (int i = 0; i < nonNullCount; i++) {
+            entityInfos.add(checkReadableProperties(entitySnapshot.get(i), propNameSnapshot));
         }
 
-        final List<Condition> condList = new ArrayList<>(nonNullEntities.size());
+        final List<Condition> condList = new ArrayList<>(nonNullCount);
 
-        for (int i = 0, size = nonNullEntities.size(); i < size; i++) {
-            condList.add(and(equalConditions(nonNullEntities.get(i), entityInfos.get(i), propNameSnapshot)));
+        for (int i = 0; i < nonNullCount; i++) {
+            condList.add(and(equalConditions(entitySnapshot.get(i), entityInfos.get(i), propNameSnapshot)));
         }
 
         return or(condList);
@@ -3295,7 +3313,10 @@ public final class Filters {
      */
     private static void checkSortEntry(final String propName, final SortDirection direction) {
         N.checkArgument(!Strings.isBlank(propName), "Property name must not be null, empty, or blank");
-        N.checkArgument(direction != null, "SortDirection for '" + propName + "' must not be null");
+
+        if (direction == null) {
+            throw new IllegalArgumentException("SortDirection for '" + propName + "' must not be null");
+        }
     }
 
     /**

@@ -565,19 +565,23 @@ public final class QueryUtil {
     public static boolean hasUnterminatedBlockComment(final String sql) {
         N.checkArgNotNull(sql, cs.sql);
 
-        if (sql.indexOf("/*") < 0) {
+        final int firstBlockCommentStart = sql.indexOf("/*");
+
+        if (firstBlockCommentStart < 0) {
             return false;
         }
+
+        final int lastBlockCommentStart = sql.lastIndexOf("/*");
 
         // Only readings that can differ for this text are run: a reading flag is irrelevant without its trigger character.
         final int relevant = (sql.indexOf('\\') >= 0 ? BLOCK_SCAN_BACKSLASH_ESCAPES : 0) | (sql.indexOf('\r') >= 0 ? BLOCK_SCAN_CR_ENDS_LINE_COMMENT : 0)
                 | (sql.indexOf('#') >= 0 ? BLOCK_SCAN_HASH_COMMENTS : 0) | (sql.indexOf('[') >= 0 ? BLOCK_SCAN_BRACKET_IDENTIFIERS : 0)
-                | (sql.indexOf("/*", sql.indexOf("/*") + 2) >= 0 ? BLOCK_SCAN_NESTED_COMMENTS : 0)
+                | (firstBlockCommentStart < lastBlockCommentStart ? BLOCK_SCAN_NESTED_COMMENTS : 0)
                 | (hasDashesNotStartingMySqlComment(sql) ? BLOCK_SCAN_MYSQL_DASH_COMMENTS : 0)
                 | (SqlParser.containsDollarQuoteOpener(sql, false) ? BLOCK_SCAN_DOLLAR_QUOTES : 0);
 
         for (int reading = 0; reading <= relevant; reading++) {
-            if ((reading & ~relevant) == 0 && hasUnterminatedBlockComment(sql, reading)) {
+            if ((reading & ~relevant) == 0 && hasUnterminatedBlockComment(sql, reading, lastBlockCommentStart)) {
                 return true;
             }
         }
@@ -595,9 +599,10 @@ public final class QueryUtil {
      *
      * @param sql the text to scan
      * @param reading the {@code BLOCK_SCAN_*} flags of this reading
+     * @param lastBlockCommentStart the last raw {@code /*} position, shared by all readings
      * @return {@code true} if text appended after {@code sql} would continue an open block comment
      */
-    private static boolean hasUnterminatedBlockComment(final String sql, final int reading) {
+    private static boolean hasUnterminatedBlockComment(final String sql, final int reading, final int lastBlockCommentStart) {
         final boolean backslashEscapes = (reading & BLOCK_SCAN_BACKSLASH_ESCAPES) != 0;
         final boolean carriageReturnEndsLineComment = (reading & BLOCK_SCAN_CR_ENDS_LINE_COMMENT) != 0;
         final boolean hashComments = (reading & BLOCK_SCAN_HASH_COMMENTS) != 0;
@@ -613,7 +618,9 @@ public final class QueryUtil {
         boolean backtickUnclosed = false;
         boolean bracketUnclosed = false;
 
-        for (int i = 0, len = sql.length(); i < len; i++) {
+        // Once this reading has passed the last possible opener, the remaining text cannot start a block comment.
+        // Skips still inspect the complete SQL: a quote or comment beginning earlier may close beyond this bound.
+        for (int i = 0, len = sql.length(); i <= lastBlockCommentStart; i++) {
             final char ch = sql.charAt(i);
 
             if ((ch == '\'' && !singleQuoteUnclosed) || (ch == '"' && !doubleQuoteUnclosed) || (ch == '`' && !backtickUnclosed)
