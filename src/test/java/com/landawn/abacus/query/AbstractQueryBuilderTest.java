@@ -2633,11 +2633,12 @@ public class AbstractQueryBuilderTest extends TestBase {
                     PSC.selectFrom(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", " customer.name")).build()).build().query());
             assertEquals("aliased_orders, aliased_customer c", AbstractQueryBuilder.getFromClause(
                     List.of(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "customer ")).build()), NamingPolicy.SNAKE_CASE));
-            assertTrue(AbstractQueryBuilder.listsSubEntityTable(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "CUSTOMER")).build()));
+            assertTrue(AbstractQueryBuilder.listsSubEntityTable(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "CUSTOMER")).build(),
+                    NamingPolicy.SNAKE_CASE));
 
             // An aliased root is not expanded, so its table is still not listed.
-            assertFalse(
-                    AbstractQueryBuilder.listsSubEntityTable(Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "customer AS c2")).build()));
+            assertFalse(AbstractQueryBuilder.listsSubEntityTable(
+                    Selection.builder(AliasedOrder.class).includedPropNames(List.of("id", "customer AS c2")).build(), NamingPolicy.SNAKE_CASE));
 
             // The same-table check of select(...).from(Class) sees a padded root too.
             final IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
@@ -2647,12 +2648,49 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         // The renderer resolves this name to customerId's physical column, so the customer sub-entity contributes
         // no selected column and must not add a table to FROM. Include the original exact-name case and padding variants.
-        @Disabled("Known open issue: a mapped column matching a sub-entity root adds an unintended cross join")
         @ParameterizedTest
         @ValueSource(strings = { "customer", "customer ", " customer", "\tcustomer\t", "customer\u3000" })
-        void testKnownOpenIssueSelectFromMappedColumnDoesNotListSubEntityTable(final String column) {
+        void testSelectFromMappedColumnDoesNotListSubEntityTable(final String column) {
             assertSql("SELECT id AS \"id\", customer AS \"customer\" FROM mapped_column_orders", List.of(),
                     PSC.selectFrom(Selection.builder(MappedColumnOrder.class).includedPropNames(List.of("id", column)).build()).build());
+
+            // A scalar collision must not activate the parent's fallback alias or add an unused child table.
+            assertSql("SELECT id AS \"id\", customer AS \"customer\" FROM mapped_aliased_orders", List.of(),
+                    PSC.selectFrom(Selection.builder(MappedAliasedOrder.class).includedPropNames(List.of("id", column)).build()).build());
+            assertSql("SELECT a.id AS \"order.id\", a.customer AS \"order.customer\" FROM mapped_aliased_orders a", List.of(),
+                    PSC.selectFrom(
+                            Selection.builder(MappedAliasedOrder.class).tableAlias("a").classAlias("order").includedPropNames(List.of("id", column)).build())
+                            .build());
+            assertEquals("mapped_column_orders", AbstractQueryBuilder.getFromClause(
+                    List.of(Selection.builder(MappedColumnOrder.class).includedPropNames(List.of("id", column)).build()), NamingPolicy.SNAKE_CASE));
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = { "customer", "customer " })
+        void testMappedColumnCollisionStillListsSelectedChildProperties(final String column) {
+            // Finding a mapped scalar must not prevent a later child selection from contributing its table.
+            assertSql("SELECT o.id AS \"id\", o.customer AS \"customer\", c.name AS \"customer.name\" FROM mapped_aliased_orders o, aliased_customer c",
+                    List.of(),
+                    PSC.selectFrom(Selection.builder(MappedAliasedOrder.class).includedPropNames(List.of("id", column, "customer.name")).build()).build());
+
+            // Column-map keys are exact: a differently cased root still expands through the bean metadata.
+            assertSql("SELECT o.id AS \"id\", c.id AS \"customer.id\", c.name AS \"customer.name\" FROM mapped_aliased_orders o, aliased_customer c", List.of(),
+                    PSC.selectFrom(Selection.builder(MappedAliasedOrder.class).includedPropNames(List.of("id", "CUSTOMER ")).build()).build());
+
+            assertSql("SELECT o.id AS \"id\", o.customer AS \"customerId\", c.id AS \"customer.id\", c.name AS \"customer.name\""
+                    + " FROM mapped_aliased_orders o, aliased_customer c", List.of(), PSC.selectFrom(MappedAliasedOrder.class, true).build());
+        }
+
+        @Test
+        void testMappedColumnCollisionUsesActiveNamingPolicy() {
+            final Selection selection = Selection.builder(PolicyCollisionOrder.class).includedPropNames(List.of("id", "customer_id ")).build();
+
+            // Only SNAKE_CASE maps the scalar customerId to the child root customer_id.
+            assertSql("SELECT id AS \"id\", customer_id AS \"customer_id\" FROM policy_orders", List.of(), PSC.selectFrom(selection).build());
+            assertSql("SELECT o.id, c.id AS \"customer_id.id\", c.name AS \"customer_id.name\" FROM policy_orders o, aliased_customer c", List.of(),
+                    PSB.selectFrom(selection).build());
+            assertFalse(AbstractQueryBuilder.listsSubEntityTable(selection, NamingPolicy.SNAKE_CASE));
+            assertTrue(AbstractQueryBuilder.listsSubEntityTable(selection, NamingPolicy.NO_CHANGE));
         }
 
         @Test
@@ -9044,6 +9082,42 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         public void setCustomer(final AliasedCustomer customer) {
             this.customer = customer;
+        }
+    }
+
+    @Table(name = "mapped_aliased_orders", alias = "o")
+    public static class MappedAliasedOrder extends MappedColumnOrder {
+    }
+
+    /** The scalar column collides with the child root only under SNAKE_CASE. */
+    @Table(name = "policy_orders", alias = "o")
+    public static class PolicyCollisionOrder {
+        private int id;
+        private int customerId;
+        private AliasedCustomer customer_id;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+
+        public int getCustomerId() {
+            return customerId;
+        }
+
+        public void setCustomerId(final int customerId) {
+            this.customerId = customerId;
+        }
+
+        public AliasedCustomer getCustomer_id() {
+            return customer_id;
+        }
+
+        public void setCustomer_id(final AliasedCustomer customer_id) {
+            this.customer_id = customer_id;
         }
     }
 

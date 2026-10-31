@@ -330,18 +330,19 @@ public final class Dsl {
      * qualified next to the (qualified) sub-entity columns, so an
      * {@code id} shared by parent and sub-entity is not ambiguous. The SELECT list and the generated FROM clause
      * both read the returned selections, so they stay consistent.
+     * Scalar-column collisions are resolved with this DSL's naming policy before deciding whether a fallback is needed.
      *
      * @param selectionSnapshots validated selection snapshots (as returned by {@link #snapshotSelections(List)})
      * @return {@code selectionSnapshots} itself when no fallback applies, otherwise a new list
      * @throws IllegalArgumentException if a fallback {@code @Table} alias is not a valid table alias
      */
-    private static List<Selection> withSubEntityTableAliasFallback(final List<Selection> selectionSnapshots) {
+    private List<Selection> withSubEntityTableAliasFallback(final List<Selection> selectionSnapshots) {
         List<Selection> result = selectionSnapshots;
 
         for (int i = 0, size = selectionSnapshots.size(); i < size; i++) {
             final Selection selection = selectionSnapshots.get(i);
 
-            if (Strings.isNotEmpty(selection.tableAlias()) || !SqlBuilder.listsSubEntityTable(selection)) {
+            if (Strings.isNotEmpty(selection.tableAlias()) || !SqlBuilder.listsSubEntityTable(selection, namingPolicy)) {
                 continue;
             }
 

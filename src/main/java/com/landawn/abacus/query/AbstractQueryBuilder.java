@@ -1260,7 +1260,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         res.add(tableRef(entityClass, tableAlias(alias, entityClass), namingPolicy));
 
-        addSubEntityTableRefs(entityClass, listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames), namingPolicy, res);
+        addSubEntityTableRefs(entityClass, listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames, namingPolicy), namingPolicy, res);
 
         return new ArrayList<>(res);
     }
@@ -1273,11 +1273,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * be qualified with a separate table, so listing the entity's own table again would only multiply the rows.
      */
     private static Map<String, Class<?>> listedSubEntityProps(final Class<?> entityClass, final BeanInfo entityInfo,
-            final Collection<String> subEntityPropNames, final Collection<String> selectPropNames) {
+            final Collection<String> subEntityPropNames, final Collection<String> selectPropNames, final NamingPolicy namingPolicy) {
         final Map<String, Class<?>> res = new LinkedHashMap<>();
 
         for (final String subEntityPropName : subEntityPropNames) {
-            if (!containsSelectedPropOrSubProp(entityInfo, selectPropNames, subEntityPropName)) {
+            if (!containsSelectedPropOrSubProp(entityClass, entityInfo, selectPropNames, subEntityPropName, namingPolicy)) {
                 continue;
             }
 
@@ -3662,7 +3662,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     // reference ("homeAddress" and "workAddress", both "address ad") would read the same row. An explicit
                     // sub-entity root is expanded even when the column mapping excludes it, hence the full property list.
                     checkSubEntityTableRefs(_entityClass,
-                            listedSubEntityProps(_entityClass, _entityInfo, _entityInfo.subEntityPropNameList, _propOrColumnNames), _namingPolicy);
+                            listedSubEntityProps(_entityClass, _entityInfo, _entityInfo.subEntityPropNameList, _propOrColumnNames, _namingPolicy),
+                            _namingPolicy);
                 }
 
                 int i = 0;
@@ -3691,7 +3692,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 // The sub-entity checks of selectFrom's generated FROM clause, which the caller's FROM clause does not
                 // change (see checkSubEntityTableRefs). A non-bean class has no sub-entities and renders its names as-is.
                 if (Beans.isBeanClass(selection.entityClass())) {
-                    checkSubEntityTableRefs(selection.entityClass(), listedSubEntityProps(selection), _namingPolicy);
+                    checkSubEntityTableRefs(selection.entityClass(), listedSubEntityProps(selection, _namingPolicy), _namingPolicy);
                 }
             }
 
@@ -14076,7 +14077,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param multiSelects the list of selections defining the tables and their properties; neither the list nor its elements may be {@code null}
      *        (its elements are expected to have passed {@link #checkMultiSelects(List)})
-     * @param namingPolicy the naming policy for table name conversion
+     * @param namingPolicy the naming policy for table name conversion and resolving selected mapped columns
      * @return the constructed FROM clause string
      * @throws IllegalArgumentException if {@code multiSelects} is {@code null} or contains a {@code null} selection,
      *         or a selected entity or included sub-entity is not a valid bean class, or if two selected sub-entity
@@ -14099,7 +14100,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (final Selection selection : multiSelects) {
             tableRefs.add(tableRef(selection.entityClass(), selection.tableAlias(), namingPolicy));
 
-            addSubEntityTableRefs(selection.entityClass(), listedSubEntityProps(selection), namingPolicy, tableRefs);
+            addSubEntityTableRefs(selection.entityClass(), listedSubEntityProps(selection, namingPolicy), namingPolicy, tableRefs);
         }
 
         return String.join(SK.COMMA_SPACE, tableRefs);
@@ -14111,19 +14112,20 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * {@code root.prop} properties.
      *
      * @param selection a selection that has passed {@link #checkMultiSelects(List)}
+     * @param namingPolicy the naming policy used by the SELECT renderer to resolve mapped columns
      * @return {@code true} if the generated FROM clause includes a sub-entity table for this selection
      * @throws IllegalArgumentException if the selected entity is not a valid bean class
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
-    static boolean listsSubEntityTable(final Selection selection) {
-        return !listedSubEntityProps(selection).isEmpty();
+    static boolean listsSubEntityTable(final Selection selection, final NamingPolicy namingPolicy) {
+        return !listedSubEntityProps(selection, namingPolicy).isEmpty();
     }
 
     /**
      * Returns the sub-entity properties whose tables {@link #getFromClause(List, NamingPolicy)} lists for
      * {@code selection}, mapped to their sub-entity classes, in property order.
      */
-    private static Map<String, Class<?>> listedSubEntityProps(final Selection selection) {
+    private static Map<String, Class<?>> listedSubEntityProps(final Selection selection, final NamingPolicy namingPolicy) {
         if (N.isEmpty(selection.includedPropNames()) && !selection.includesSubEntityProperties()) {
             return Collections.emptyMap();
         }
@@ -14142,22 +14144,23 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return Collections.emptyMap();
         }
 
-        return listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames);
+        return listedSubEntityProps(entityClass, entityInfo, subEntityPropNames, selectPropNames, namingPolicy);
     }
 
     /**
      * Reports whether {@code selectPropNames} selects the sub-entity property {@code propName} of {@code entityInfo}
-     * itself or any of its sub-properties (prefixed by {@code propName + "."}). Each item is resolved as the select-list
-     * renderer (the 11-arg {@code appendColumnName}) resolves it: its padding is stripped, and an item without a
-     * {@code '.'} selects the sub-entity when {@link BeanInfo#getPropInfo(String)}, which also matches another letter
-     * case ({@code "DEVICES"}), resolves it to that property.
+     * itself or any of its sub-properties (prefixed by {@code propName + "."}). A root is expanded only if neither its
+     * original nor its padding-stripped spelling resolves to a mapped column under {@code namingPolicy}, matching the
+     * select-list renderer's mapping precedence. Unmapped roots are resolved through {@link BeanInfo#getPropInfo(String)},
+     * including another letter case ({@code "DEVICES"}). Dotted sub-properties retain their table dependency.
      */
-    private static boolean containsSelectedPropOrSubProp(final BeanInfo entityInfo, final Collection<String> selectPropNames, final String propName) {
+    private static boolean containsSelectedPropOrSubProp(final Class<?> entityClass, final BeanInfo entityInfo, final Collection<String> selectPropNames,
+            final String propName, final NamingPolicy namingPolicy) {
         if (N.isEmpty(selectPropNames)) {
             return false;
         }
 
-        if (selectPropNames.contains(propName)) {
+        if (selectPropNames.contains(propName) && !isMappedSelectItem(entityClass, propName, propName, namingPolicy)) {
             return true;
         }
 
@@ -14170,20 +14173,40 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             final String item = stripSelectItemPadding(selectPropName);
 
-            if (item.equals(propName) || item.startsWith(prefix)) {
+            if (item.startsWith(prefix)) {
                 return true;
+            }
+
+            if (item.equals(propName)) {
+                if (!isMappedSelectItem(entityClass, selectPropName, item, namingPolicy)) {
+                    return true;
+                }
+
+                continue; // A later item may still select a genuine child column.
             }
 
             if (!item.isEmpty() && item.indexOf(SK._PERIOD) < 0) {
                 final PropInfo propInfo = entityInfo.getPropInfo(item);
 
-                if (propInfo != null && propInfo.isSubEntity && propInfo.name.equals(propName)) {
+                if (propInfo != null && propInfo.isSubEntity && propInfo.name.equals(propName)
+                        && !isMappedSelectItem(entityClass, selectPropName, item, namingPolicy)) {
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    /**
+     * Checks mapping precedence only for a candidate sub-entity root. Reuse the cached map; ordinary scalar items and
+     * dotted child selections do not need an extra lookup. A mapped column named like a child root must not add that
+     * child's table to FROM, which would introduce an unused cross join. Check the original spelling as well because
+     * appendColumnName resolves exact mappings before stripping SELECT padding.
+     */
+    private static boolean isMappedSelectItem(final Class<?> entityClass, final String original, final String stripped, final NamingPolicy namingPolicy) {
+        final ImmutableMap<String, ColumnInfo> columnMap = propToColumnInfoMap(entityClass, namingPolicy);
+        return columnMap.containsKey(stripped) || original.length() != stripped.length() && columnMap.containsKey(original);
     }
 
     /**
