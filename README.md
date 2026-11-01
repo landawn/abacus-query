@@ -1,7 +1,7 @@
 # abacus-query
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.landawn.abacus/abacus-query.svg)](https://central.sonatype.com/artifact/com.landawn.abacus/abacus-query)
-[![Javadocs](https://img.shields.io/badge/javadoc-4.9.6-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.9.6/index.html)
+[![Javadocs](https://img.shields.io/badge/javadoc-4.9.7-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.9.7/index.html)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 
 **A Java SQL toolkit for building, composing, and inspecting SQL.** `abacus-query`
@@ -9,10 +9,6 @@ produces SQL strings and ordered parameter values. Your application supplies the
 database connection, executes statements, manages transactions, and maps results.
 It works with JDBC and can supply SQL to execution libraries such as
 [abacus-jdbc](https://github.com/landawn/abacus-jdbc).
-
-This guide describes the **4.9.7 source tree**, which targets **Java 21**. Dependency
-versions below match [pom.xml](./pom.xml); use matching artifacts available in your
-repository, or install this checkout locally with Maven.
 
 ## Contents
 

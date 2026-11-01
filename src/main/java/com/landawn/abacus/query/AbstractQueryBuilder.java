@@ -8254,6 +8254,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Bounds ordinary first-operand projections before copying/tokenizing them. Only the default separators and a
      * context-independent prefix are eligible: comments, string literals, subscripts, escapes and custom separators
      * retain the complete input and its existing lexical behavior. In particular this is not a replacement SQL lexer.
+     * A late fallback or an absent boundary can require one extra linear scan; this is an accepted cost of the shortcut.
      */
     private int firstOperandProjectionEnd() {
         final int length = _sb.length();
@@ -8295,6 +8296,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 if (hasDistinctBeforeFrom(i)) {
                     // The token consumer distinguishes IS [NOT] DISTINCT FROM from the clause. Retain its complete
                     // input here instead of duplicating that grammar (a false positive only forfeits this shortcut).
+                    // Custom configurations, comment syntax and non-ASCII text already force fallback before this
+                    // point; that is why combined operator tokens, retained comments and Unicode folds need no
+                    // separate handling in the backward check.
                     return length;
                 }
 
@@ -8307,7 +8311,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         return length;
     }
 
-    /** Conservative ASCII check used only at a candidate FROM boundary under the default tokenizer. */
+    /**
+     * Conservative ASCII check used only at a top-level, unquoted FROM bounded by built-in whitespace. The caller has
+     * already required the default tokenizer configuration and excluded comment syntax and non-ASCII text in the prefix.
+     * With those preconditions, skipping the consumer's ignorable whitespace exposes any DISTINCT that can keep the
+     * operator prefix active. This checks a superset of IS [NOT] DISTINCT FROM; it does not require IS or NOT to be present.
+     */
     private boolean hasDistinctBeforeFrom(final int fromIndex) {
         int end = fromIndex;
 
