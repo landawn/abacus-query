@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -300,6 +301,41 @@ public class SelectionTest extends TestBase {
         assertTrue(str.contains("Selection("));
         assertTrue(str.contains("tableAlias=a"));
         assertTrue(str.contains("classAlias=account"));
+    }
+
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testExcludedPropNamesNullDoesNotEqualASet() {
+            final Selection unset = Selection.builder(Account.class).build();
+            final Selection excluded = Selection.builder(Account.class).excludedPropNames(Set.of("status")).build();
+
+            assertNotEquals(unset, excluded);
+            assertNotEquals(excluded, unset);
+        }
+
+        @Test
+        void testSortedExcludedNamesWithTheSameComparatorAndDifferentSizesAreNotEqual() {
+            final Set<String> one = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            one.add("status");
+            final Set<String> two = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            two.add("status");
+            two.add("email");
+            final Selection smaller = Selection.builder(Account.class).excludedPropNames(one).build();
+            final Selection larger = Selection.builder(Account.class).excludedPropNames(two).build();
+
+            assertNotEquals(smaller, larger);
+            assertNotEquals(larger, smaller);
+        }
+
+        @Test
+        void testUnsetExcludedPropNamesAreEqual() {
+            final Selection first = Selection.builder(Account.class).build();
+            final Selection second = Selection.builder(Account.class).build();
+
+            assertEquals(first, second);
+            assertEquals(first.hashCode(), second.hashCode());
+        }
     }
 
     private static List<Selection> changingSelectionList(final Selection firstPass, final Selection laterPass) {

@@ -72,8 +72,7 @@ public class LineCoverageGapTest extends TestBase {
 
     @Test
     void testBlankSqlFragmentsAreRejectedWithIndexedNames() {
-        final IllegalArgumentException orderBy = assertThrows(IllegalArgumentException.class,
-                () -> PSC.select("id").from("account").orderBy("id", " "));
+        final IllegalArgumentException orderBy = assertThrows(IllegalArgumentException.class, () -> PSC.select("id").from("account").orderBy("id", " "));
         assertEquals("propOrColumnNames[1] must not be null, empty, or blank", orderBy.getMessage());
 
         final IllegalArgumentException groupBy = assertThrows(IllegalArgumentException.class,
@@ -100,7 +99,12 @@ public class LineCoverageGapTest extends TestBase {
 
     @Test
     void testCompoundOrderByScansDoubledQuotesLoneSignsAndAnExtraParenthesis() {
-        final String doubled = PSC.select("\"a\"\"b\" AS label").from("account").union(PSC.select("c AS label").from("archive")).orderBy("label").build().query();
+        final String doubled = PSC.select("\"a\"\"b\" AS label")
+                .from("account")
+                .union(PSC.select("c AS label").from("archive"))
+                .orderBy("label")
+                .build()
+                .query();
         assertTrue(doubled.contains("\"a\"\"b\""), doubled);
         assertTrue(doubled.contains("ORDER BY"), doubled);
 
@@ -126,10 +130,12 @@ public class LineCoverageGapTest extends TestBase {
 
     @Test
     void testCustomNamedHandlerSeedsChildParameterNames() {
-        final Dsl custom = Dsl.forDialect(
-                NSC.sqlDialect().toBuilder().namedParameterHandler((sql, name) -> sql.append(':').append(name)).build());
-        final String sql = custom.select("id").from("account").where(Filters.and(Filters.eq("id", 1),
-                Filters.exists(new SubQuery("account", List.of("id"), Filters.eq("id", 2))))).build().query();
+        final Dsl custom = Dsl.forDialect(NSC.sqlDialect().toBuilder().namedParameterHandler((sql, name) -> sql.append(':').append(name)).build());
+        final String sql = custom.select("id")
+                .from("account")
+                .where(Filters.and(Filters.eq("id", 1), Filters.exists(new SubQuery("account", List.of("id"), Filters.eq("id", 2)))))
+                .build()
+                .query();
 
         assertTrue(sql.contains("EXISTS"), sql);
         assertTrue(sql.contains(":id") && sql.contains(":id_2"), sql);
@@ -160,8 +166,7 @@ public class LineCoverageGapTest extends TestBase {
 
     @Test
     void testDynamicQueryRejectsBlankSelectFragments() {
-        final IllegalArgumentException element = assertThrows(IllegalArgumentException.class,
-                () -> DynamicQuery.builder().select().append(List.of("id", " ")));
+        final IllegalArgumentException element = assertThrows(IllegalArgumentException.class, () -> DynamicQuery.builder().select().append(List.of("id", " ")));
         assertEquals("Element in columns must not be null, empty, or blank", element.getMessage());
 
         final Map<String, String> blankKey = new LinkedHashMap<>();
@@ -211,8 +216,7 @@ public class LineCoverageGapTest extends TestBase {
     @Test
     void testH2OrderByRejectsALineCommentAfterAHashPair() {
         final Dsl h2 = Dsl.forDialect(PSC.sqlDialect().toBuilder().productInfo(ProductInfo.of("H2")).build());
-        final IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-                () -> h2.select("id").from("account").orderBy("a ## b // c"));
+        final IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> h2.select("id").from("account").orderBy("a ## b // c"));
         assertTrue(failure.getMessage().contains("comment"), failure.getMessage());
     }
 
@@ -263,8 +267,12 @@ public class LineCoverageGapTest extends TestBase {
 
     @Test
     void testNamedRewriteSkipsAColonGluedToAnIdentifier() {
-        final String sql = NSC.select("id").from("account").where(Filters.eq("id", 1))
-                .union(NSC.select("foo:bar").from("archive").where(Filters.eq("id", 2))).build().query();
+        final String sql = NSC.select("id")
+                .from("account")
+                .where(Filters.eq("id", 1))
+                .union(NSC.select("foo:bar").from("archive").where(Filters.eq("id", 2)))
+                .build()
+                .query();
         assertTrue(sql.contains("foo:bar"), sql);
         assertTrue(sql.contains(":id") && sql.contains(":id_2"), sql);
     }

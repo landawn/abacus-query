@@ -3447,6 +3447,20 @@ public class FiltersTest extends TestBase {
         }
     }
 
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testPatternFactoriesRejectABlankPropertyName() {
+            final String expected = "Property name must not be null, empty, or blank";
+
+            assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> Filters.notContains(" ", "x")).getMessage());
+            assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> Filters.startsWith(null, "x")).getMessage());
+            assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> Filters.notStartsWith("", "x")).getMessage());
+            assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> Filters.endsWith("\t", "x")).getMessage());
+            assertEquals(expected, assertThrows(IllegalArgumentException.class, () -> Filters.notEndsWith(" ", "x")).getMessage());
+        }
+    }
+
     private static Map<String, Object> mapWithUnstableSize() {
         final Map<String, Object> result = new LinkedHashMap<>() {
             private int sizeCalls;

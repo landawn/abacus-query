@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -144,6 +145,29 @@ public class ComposableCellTest extends TestBase {
 
         assertTrue(sql.contains("NOT"));
         assertTrue(sql.contains("user_name"));
+    }
+
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testHashCollapsesAZeroSumToOne() {
+            int prefix = 17;
+            prefix = (prefix * 31) + Operator.NOT.hashCode();
+            final int needed = -(prefix * 31);
+            assertNotEquals(0, needed);
+
+            final Equal equal = equalWithHash(needed);
+            assertEquals(needed, equal.hashCode());
+            assertEquals(1, new Not(equal).hashCode());
+        }
+
+        private static Equal equalWithHash(final int target) {
+            final String propName = "age";
+            int prefix = 17;
+            prefix = (prefix * 31) + propName.hashCode();
+            prefix = (prefix * 31) + Operator.EQUAL.hashCode();
+            return new Equal(propName, target - (prefix * 31));
+        }
     }
 
     private static final class TestComposableCell extends ComposableCell {

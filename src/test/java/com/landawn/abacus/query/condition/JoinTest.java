@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -703,6 +704,52 @@ public class JoinTest extends TestBase {
         assertTrue(ex.getMessage().contains("use a predicate without clause, quantified, ON, or USING operators (a blank expression is not a predicate)"),
                 ex.getMessage());
         assertFalse(ex.getMessage().contains("non-empty predicate"), ex.getMessage());
+    }
+
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testDefaultJoinRendersAConditionWhenEntitiesAreEmpty() throws Exception {
+            final Equal predicate = new Equal("a", 1);
+            final Join join = new Join();
+            final java.lang.reflect.Field condition = Join.class.getDeclaredField("condition");
+            condition.setAccessible(true);
+            condition.set(join, predicate);
+
+            assertEquals("null " + predicate.toSql(NamingPolicy.NO_CHANGE), join.toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testDefaultJoinRendersNullOperatorWhenEntitiesArePresent() throws Exception {
+            final Join join = new Join();
+            final java.lang.reflect.Field joinEntities = Join.class.getDeclaredField("joinEntities");
+            joinEntities.setAccessible(true);
+            joinEntities.set(join, List.of("orders"));
+
+            assertEquals("null orders", join.toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testHashCollapsesAZeroSumToOne() {
+            final String entity = "orders";
+            int prefix = 17;
+            prefix = (prefix * 31) + Operator.JOIN.hashCode();
+            prefix = (prefix * 31) + List.of(entity).hashCode();
+            final int needed = -(prefix * 31);
+            assertNotEquals(0, needed);
+
+            final Equal predicate = equalWithHash(needed);
+            assertEquals(needed, predicate.hashCode());
+            assertEquals(1, new Join(entity, predicate).hashCode());
+        }
+
+        private static Equal equalWithHash(final int target) {
+            final String propName = "age";
+            int prefix = 17;
+            prefix = (prefix * 31) + propName.hashCode();
+            prefix = (prefix * 31) + Operator.EQUAL.hashCode();
+            return new Equal(propName, target - (prefix * 31));
+        }
     }
 
     private static final class TestComposableWrapper extends ComposableCell {

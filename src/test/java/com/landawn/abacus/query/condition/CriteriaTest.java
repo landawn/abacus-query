@@ -2211,6 +2211,47 @@ public class CriteriaTest extends TestBase {
         }
     }
 
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testHashCollapsesAZeroSumToOne() {
+            int criteriaPrefix = 17;
+            criteriaPrefix = (criteriaPrefix * 31) + 0;
+            final int neededWhere = -(criteriaPrefix * 31) - 31;
+            assertNotEquals(0, neededWhere);
+
+            int wherePrefix = 17;
+            wherePrefix = (wherePrefix * 31) + Operator.WHERE.hashCode();
+            final int neededEqual = neededWhere - (wherePrefix * 31);
+            assertNotEquals(0, neededEqual);
+
+            final Equal equal = equalWithHash(neededEqual);
+            assertEquals(neededEqual, equal.hashCode());
+            assertEquals(neededWhere, new Where(equal).hashCode());
+
+            final Criteria criteria = Criteria.builder().where(equal).build();
+            assertNull(criteria.selectModifier());
+            assertEquals(1, criteria.conditions().size());
+            assertEquals(1, criteria.hashCode());
+        }
+
+        @Test
+        void testWhereRejectsAClauseOperatorThatIsNotAClause() {
+            final IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                    () -> Criteria.builder().where(new FakeClauseCondition(Operator.WHERE)));
+
+            assertEquals("Invalid condition for where: operator WHERE requires a Clause", error.getMessage());
+        }
+
+        private static Equal equalWithHash(final int target) {
+            final String propName = "age";
+            int prefix = 17;
+            prefix = (prefix * 31) + propName.hashCode();
+            prefix = (prefix * 31) + Operator.EQUAL.hashCode();
+            return new Equal(propName, target - (prefix * 31));
+        }
+    }
+
     private static void invokeCheckCondition(final Criteria.Builder builder, final Condition condition) {
         try {
             java.lang.reflect.Method method = Criteria.Builder.class.getDeclaredMethod("checkCondition", Condition.class);

@@ -1535,6 +1535,63 @@ public class SubQueryTest extends TestBase {
         }
     }
 
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testClosedBlockCommentIsNotAnAlias() {
+            final String item = "expr /* AS fake */ AS real";
+            assertEquals("SELECT " + item + " FROM t", new SubQuery("t", List.of(item), null).toSql(NamingPolicy.NO_CHANGE));
+        }
+
+        @Test
+        void testDefaultSubQueryHashTreatsANullEntityNameAsZero() {
+            final SubQuery left = new SubQuery();
+            final SubQuery right = new SubQuery();
+
+            assertEquals(left, right);
+            assertEquals(left.hashCode(), right.hashCode());
+        }
+
+        @Test
+        void testEscapeStringPrefixRejectsLetterUnderscoreDollarAndNonAscii() {
+            for (final String item : List.of("firstNameE'abc' AS label", "_E'abc' AS x", "$E'abc' AS x", "\u00e9E'abc' AS label")) {
+                assertEquals("SELECT " + item + " FROM t", new SubQuery("t", List.of(item), null).toSql(NamingPolicy.NO_CHANGE), item);
+            }
+        }
+
+        @Test
+        void testHashCollapsesAZeroSumToOne() {
+            final String sql = "SELECT id FROM t WHERE id = ?";
+            int prefix = 17;
+            prefix = (prefix * 31) + sql.hashCode();
+            prefix = (prefix * 31) + "".hashCode();
+            prefix = (prefix * 31) + 0; // entity class
+            prefix = (prefix * 31) + 0; // property names
+            prefix = (prefix * 31) + 0; // condition
+            final int binding = -(prefix * 31) - 31;
+
+            assertEquals(1, new SubQuery(sql, List.of(binding)).hashCode());
+        }
+
+        @Test
+        void testRawBindingsOfDifferentLengthsAreNotEqual() throws Exception {
+            final String sql = "SELECT id FROM account WHERE id = ?";
+            final SubQuery one = new SubQuery(sql, List.of(1));
+            final SubQuery longer = new SubQuery(sql, List.of(1));
+            final java.lang.reflect.Field rawParameters = SubQuery.class.getDeclaredField("rawParameters");
+            rawParameters.setAccessible(true);
+            rawParameters.set(longer, com.landawn.abacus.util.ImmutableList.of(1, 2));
+
+            assertNotEquals(one, longer);
+            assertNotEquals(longer, one);
+        }
+
+        @Test
+        void testTrailingHashIsACommentToken() {
+            assertEquals("SELECT firstName#\n FROM t", new SubQuery("t", List.of("firstName#"), null).toSql(NamingPolicy.NO_CHANGE));
+        }
+    }
+
     @Table(name = "person", alias = "p")
     public static class MappedColumnEntity {
         @com.landawn.abacus.annotation.Column("\"a.b\"")

@@ -9106,6 +9106,52 @@ public class DslTest extends TestBase {
         }
     }
 
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testInsertBeanSkipsNullPropertiesAndADefaultNumericId() {
+            final SparseInsertBean row = new SparseInsertBean();
+            row.setLabel("kept");
+
+            final String sql = PSC.insert(row).into("sparse_insert_bean").build().query();
+
+            assertEquals("INSERT INTO sparse_insert_bean (label) VALUES (?)", sql);
+            assertFalse(sql.contains("note"));
+        }
+
+        @Test
+        void testNestedLongDateOnAGrandchildReleasesTheAllocatedBuilder() {
+            final NestedDateRoot row = new NestedDateRoot();
+            row.setLabel("kept");
+            final List<Runnable> factories = List.of(() -> PSC.insert(row), () -> PSC.insert(NestedDateRoot.class), () -> PSC.batchInsert(List.of(row)),
+                    () -> PSC.update(NestedDateRoot.class), () -> PSC.deleteFrom(NestedDateRoot.class), () -> PSC.select(NestedDateRoot.class, true));
+
+            for (final Runnable factory : factories) {
+                final int before = AbstractQueryBuilder.activeStringBuilderCounter.get();
+                final UnsupportedOperationException failure = assertThrows(UnsupportedOperationException.class, factory::run);
+
+                assertTrue(failure.getMessage().contains("Date format cannot be 'long'"), failure.getMessage());
+                // setEntityClass runs only inside the factory try, after the prop-name and table-name checks.
+                assertTrue(Arrays.stream(failure.getStackTrace()).anyMatch(frame -> "setEntityClass".equals(frame.getMethodName())), failure.toString());
+                assertEquals(before, AbstractQueryBuilder.activeStringBuilderCounter.get());
+            }
+
+            assertEquals("SELECT id FROM account", PSC.select("id").from("account").build().query());
+        }
+
+        @Test
+        void testSelectCountFromReleasesTheBuilderWhenTheTableTrimsToEmpty() {
+            // U+0001 is not blank, and it holds no block comment, but String.trim() drops it.
+            final int before = AbstractQueryBuilder.activeStringBuilderCounter.get();
+            final IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> PSC.selectCountFrom("\u0001"));
+
+            assertEquals("'expr' cannot be null or empty", failure.getMessage());
+            assertTrue(Arrays.stream(failure.getStackTrace()).anyMatch(frame -> "from".equals(frame.getMethodName())), failure.toString());
+            assertEquals(before, AbstractQueryBuilder.activeStringBuilderCounter.get());
+            assertEquals("SELECT id FROM account", PSC.select("id").from("account").build().query());
+        }
+    }
+
     enum Factory {
         SCSB(Dsl.SCSB),
         ACSB(Dsl.ACSB),
@@ -9141,5 +9187,91 @@ public class DslTest extends TestBase {
         private long id;
         @com.landawn.abacus.annotation.JsonXmlField(dateFormat = "long")
         private java.time.LocalDate eventDate;
+    }
+
+    static class SparseInsertBean {
+        @Id
+        private long id;
+        private String note;
+        private String label;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getNote() {
+            return note;
+        }
+
+        public void setNote(final String note) {
+            this.note = note;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(final String label) {
+            this.label = label;
+        }
+    }
+
+    static class NestedDateRoot {
+        private String label;
+        private NestedDateMid child;
+
+        public String getLabel() {
+            return label;
+        }
+
+        public void setLabel(final String label) {
+            this.label = label;
+        }
+
+        public NestedDateMid getChild() {
+            return child;
+        }
+
+        public void setChild(final NestedDateMid child) {
+            this.child = child;
+        }
+    }
+
+    static class NestedDateMid {
+        private String note;
+        private NestedDateLeaf grand;
+
+        public String getNote() {
+            return note;
+        }
+
+        public void setNote(final String note) {
+            this.note = note;
+        }
+
+        public NestedDateLeaf getGrand() {
+            return grand;
+        }
+
+        public void setGrand(final NestedDateLeaf grand) {
+            this.grand = grand;
+        }
+    }
+
+    static class NestedDateLeaf {
+        @com.landawn.abacus.annotation.JsonXmlField(dateFormat = "long")
+        private java.time.LocalDate when;
+
+        public java.time.LocalDate getWhen() {
+            return when;
+        }
+
+        public void setWhen(final java.time.LocalDate when) {
+            this.when = when;
+        }
     }
 }

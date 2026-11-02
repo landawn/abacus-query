@@ -2757,6 +2757,33 @@ public class DynamicQueryTest extends TestBase {
         }
     }
 
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testSelectAppendRejectsBlankColumnAliasKey() {
+            final Map<String, String> columnAliases = new LinkedHashMap<>();
+            columnAliases.put(" ", "alias");
+
+            assertEquals("Key in columnAliases must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> DynamicQuery.builder().select().append(columnAliases)).getMessage());
+        }
+
+        @Test
+        void testSelectAppendRejectsBlankColumnAliasValue() {
+            final Map<String, String> columnAliases = new LinkedHashMap<>();
+            columnAliases.put("id", " ");
+
+            assertEquals("Value in columnAliases must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> DynamicQuery.builder().select().append(columnAliases)).getMessage());
+        }
+
+        @Test
+        void testSelectAppendRejectsBlankColumnInCollection() {
+            assertEquals("Element in columns must not be null, empty, or blank",
+                    assertThrows(IllegalArgumentException.class, () -> DynamicQuery.builder().select().append(List.of("id", " "))).getMessage());
+        }
+    }
+
     private static DynamicQuery.FromClause singleArgJoin(final DynamicQuery.FromClause from, final int method, final String joinExpr) {
         return switch (method) {
             case 0 -> from.join(joinExpr);

@@ -345,6 +345,21 @@ public class AbstractBetweenTest extends TestBase {
         }
     }
 
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testHashCollapsesAZeroSumToOne() {
+            final String propName = "age";
+            int prefix = 17;
+            prefix = (prefix * 31) + propName.hashCode();
+            prefix = (prefix * 31) + Operator.BETWEEN.hashCode();
+            final int minValue = 0;
+            prefix = (prefix * 31) + minValue;
+
+            assertEquals(1, new Between(propName, minValue, -(prefix * 31)).hashCode());
+        }
+    }
+
     private static final class TestAbstractBetween extends AbstractBetween {
         TestAbstractBetween(final String propName, final Object minValue, final Object maxValue) {
             super(propName, Operator.BETWEEN, minValue, maxValue);

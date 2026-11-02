@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -587,6 +588,34 @@ public class AbstractInTest extends TestBase {
         assertTrue(rowValue.usesRowValueConstructor());
         assertEquals(boolean.class, AbstractIn.class.getMethod("usesRowValueConstructor").getReturnType());
         assertThrows(NoSuchMethodException.class, () -> AbstractIn.class.getMethod("rowValueConstructor"));
+    }
+
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testHashCollapsesAZeroSumToOne() {
+            final In probe = new In("status", List.of(0));
+            int prefix = 17;
+            prefix = (prefix * 31) + probe.propNames().hashCode();
+            prefix = (prefix * 31) + probe.operator().hashCode();
+            prefix = (prefix * 31) + (probe.usesRowValueConstructor() ? 1231 : 1237);
+
+            // One scalar member contributes 31 + value. That value makes the outer sum 0.
+            final int value = -(prefix * 31) - 31;
+            assertEquals(1, new In("status", List.of(value)).hashCode());
+        }
+
+        @Test
+        void testNullMembershipListDiffersFromAPopulatedList() throws Exception {
+            final In valued = new In("status", List.of("open"));
+            final In cleared = new In("status", List.of("open"));
+            final java.lang.reflect.Field values = AbstractIn.class.getDeclaredField("values");
+            values.setAccessible(true);
+            values.set(cleared, null);
+
+            assertFalse(valued.equals(cleared));
+            assertFalse(cleared.equals(valued));
+        }
     }
 
     private static final class TestAbstractIn extends AbstractIn {

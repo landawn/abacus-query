@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import com.landawn.abacus.TestBase;
 import com.landawn.abacus.query.Filters;
 import com.landawn.abacus.query.QueryUtil;
+import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
 
 /**
@@ -2073,6 +2074,23 @@ public class SqlExpressionTest extends TestBase {
             assertEquals("", SqlExpression.link2(null, new String[0]));
             assertEquals("(age > 18)", SqlExpression.link2(null, new String[] { "age > 18" }));
             assertThrows(IllegalArgumentException.class, () -> SqlExpression.link2(null, new String[] { null }));
+        }
+    }
+
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testFunctionRendersASqlExpressionAndRejectsACommentOnlyOne() throws Exception {
+            final java.lang.reflect.Method function = SqlExpression.class.getDeclaredMethod("function", String.class, Object[].class);
+            function.setAccessible(true);
+
+            final SqlExpression column = new SqlExpression("id");
+            assertEquals("COUNT(" + QueryUtil.terminateLineComment(N.stringOf(column)) + ")", function.invoke(null, "COUNT", new Object[] { column }));
+
+            final SqlExpression comment = new SqlExpression("/* c */");
+            final java.lang.reflect.InvocationTargetException wrapped = assertThrows(java.lang.reflect.InvocationTargetException.class,
+                    () -> function.invoke(null, "COUNT", new Object[] { comment }));
+            assertEquals("Argument 1 of COUNT() must not be blank or consist only of SQL comments", wrapped.getCause().getMessage());
         }
     }
 

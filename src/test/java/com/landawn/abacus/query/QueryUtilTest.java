@@ -1801,6 +1801,132 @@ public class QueryUtilTest extends TestBase {
         }
     }
 
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testAdjacentStringLiteralsWithoutALineBreakKeepTheSpace() {
+            final String expr = "msg = 'hello ' 'world'";
+            final StringBuilder rendered = new StringBuilder();
+
+            assertEquals(-1, appendUnchanged(rendered, expr, SqlParser.tokenizer().tokenize(expr)));
+            assertEquals(expr, rendered.toString());
+            assertFalse(rendered.toString().contains("\n"));
+        }
+
+        @Test
+        void testCastTypeWithNoFollowingTokenReadsAnEmptyNextToken() {
+            final String expr = "id::text ";
+            final StringBuilder rendered = new StringBuilder();
+
+            assertEquals(-1, appendUnchanged(rendered, expr, SqlParser.tokenizer().tokenize(expr)));
+            assertEquals(expr, rendered.toString());
+        }
+
+        @Test
+        void testDollarQuoteRemainderAfterTheClosingTagStaysAToken() {
+            final StringBuilder rendered = new StringBuilder();
+
+            // One token longer than the closing tag, so the identifier glued after $$a$$ is converted on its own.
+            assertEquals(-1, QueryUtil.appendRawExpression(rendered, "$$a$$b", List.of("$$a$$b"), SqlParser.tokenizer(), false, String::toUpperCase,
+                    String::toUpperCase));
+            assertEquals("$$a$$B", rendered.toString());
+        }
+
+        @Test
+        void testEmptyAngleBracketTokenIsNotATypeDelimiter() {
+            final StringBuilder rendered = new StringBuilder();
+            final List<String> tokens = List.of("CAST", "(", "x", " ", "AS", " ", "", "STRUCT", "<>", ")");
+
+            assertEquals(-1, appendUnchanged(rendered, "CAST(x AS STRUCT<>)", tokens));
+            assertEquals("CAST(x AS STRUCT<>)", rendered.toString());
+        }
+
+        @Test
+        void testGluedUnclosedPlaceholderIsCopiedAsWritten() {
+            final SqlParser.Tokenizer tokenizer = SqlParser.tokenizer();
+            final String hash = "col#{unclosed";
+            final String dollar = "log_${month";
+            final StringBuilder hashRendered = new StringBuilder();
+            final StringBuilder dollarRendered = new StringBuilder();
+
+            assertEquals(-1, appendUnchanged(hashRendered, hash, tokenizer.tokenize(hash)));
+            assertEquals(-1, appendUnchanged(dollarRendered, dollar, tokenizer.tokenize(dollar)));
+            assertEquals(hash, hashRendered.toString());
+            assertEquals(dollar, dollarRendered.toString());
+        }
+
+        @Test
+        void testHasUnterminatedBlockCommentMarksAnUnclosedBacktick() {
+            assertFalse(QueryUtil.hasUnterminatedBlockComment("`open /* x */"));
+        }
+
+        @Test
+        void testHasUnterminatedBlockCommentMarksAnUnclosedBracket() {
+            assertFalse(QueryUtil.hasUnterminatedBlockComment("[open /* x */"));
+        }
+
+        @Test
+        void testHasUnterminatedBlockCommentMarksAnUnclosedDoubleQuote() {
+            assertFalse(QueryUtil.hasUnterminatedBlockComment("\"open /* x */"));
+        }
+
+        @Test
+        void testHasUnterminatedBlockCommentSkipsABackslashInsideAClosedQuote() {
+            assertFalse(QueryUtil.hasUnterminatedBlockComment("'\\a' /* x */"));
+            assertFalse(QueryUtil.hasUnterminatedBlockComment("[id] '\\a' /* x */"));
+        }
+
+        @Test
+        void testNestedPropExclusionsOfAnEmptySelectableSet() {
+            final Set<String> excluded = Set.of("a", "b", "c", "d", "e", "f", "g", "h", "i");
+
+            assertEquals(List.of(), QueryUtil.selectPropNames(NonColumnOnlyEntity.class, true, excluded));
+        }
+
+        @Test
+        void testSubscriptInteriorTreatsAnUngluedBracketAsQuoted() {
+            assertEquals("TAGS[[#]]", renderUpper("tags[[#]]"));
+            assertEquals("TAGS[a [#]]", renderUpper("tags[a [#]]"));
+            assertEquals("TAGS[a[#]]", renderUpper("tags[a[#]]"));
+        }
+
+        @Test
+        void testTableNameAndAliasWithoutAnnotationDerivesTheClassName() {
+            assertEquals("simple_entity", QueryUtil.tableNameAndAlias(SimpleEntity.class, NamingPolicy.SNAKE_CASE));
+        }
+
+        @Test
+        void testTypeNameAfterCastKeepsDelimitedIdentifiers() {
+            assertEquals("id :: `orderStatus`", renderUnchanged("id :: `orderStatus`"));
+            assertEquals("id :: [orderStatus]", renderUnchanged("id :: [orderStatus]"));
+        }
+
+        @Test
+        void testWhitespaceInsideADollarQuoteSkipsAnUnlocatedToken() {
+            final StringBuilder rendered = new StringBuilder();
+
+            assertEquals(-1, QueryUtil.appendRawExpression(rendered, "$$hello$$", List.of("$$hello$$", " ", "orphan"), SqlParser.tokenizer(), false,
+                    String::toUpperCase, String::toUpperCase));
+            assertEquals("$$hello$$ ORPHAN", rendered.toString());
+        }
+
+        private static int appendUnchanged(final StringBuilder rendered, final String expr, final List<String> tokens) {
+            return QueryUtil.appendRawExpression(rendered, expr, tokens, SqlParser.tokenizer(), false, word -> word, word -> word);
+        }
+
+        private static String renderUnchanged(final String expr) {
+            final StringBuilder rendered = new StringBuilder();
+            appendUnchanged(rendered, expr, SqlParser.tokenizer().tokenize(expr));
+            return rendered.toString();
+        }
+
+        private static String renderUpper(final String expr) {
+            final StringBuilder rendered = new StringBuilder();
+            QueryUtil.appendRawExpression(rendered, expr, List.of(expr), SqlParser.tokenizer(), false, String::toUpperCase, String::toUpperCase);
+            return rendered.toString();
+        }
+    }
+
     private static <T> List<T> concurrentMetadata(final Supplier<T> supplier) throws Exception {
         final int readers = 16;
         final CountDownLatch ready = new CountDownLatch(readers);

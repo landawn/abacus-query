@@ -1597,6 +1597,14 @@ public class AbstractConditionTest extends TestBase {
         }
     }
 
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testGluedTildeAfterANonReservedKeywordIsNotAPredicateOperator() {
+            assertTrue(AbstractCondition.isClause(Filters.expr("offset ~flags")));
+        }
+    }
+
     /** Stands in for an optional dependency; the child class loader below hides it, as if its jar were absent. */
     public static final class OptionalDependency {
     }

@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -880,6 +881,38 @@ public class JunctionTest extends TestBase {
     @Test
     void testTrustedConstructorStillRejectsNonJunctionOperator() {
         assertThrows(IllegalArgumentException.class, () -> new Junction(Operator.EQUAL, new java.util.ArrayList<>(), true));
+    }
+
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testDefaultInstanceHashUsesANullOperator() {
+            final Junction left = new Junction();
+            final Junction right = new Junction();
+
+            assertEquals(left, right);
+            assertEquals(left.hashCode(), right.hashCode());
+        }
+
+        @Test
+        void testHashCollapsesAZeroSumToOne() {
+            int prefix = 17;
+            prefix = (prefix * 31) + Operator.AND.hashCode();
+            final int neededEqual = -(prefix * 31) - 31;
+            assertNotEquals(0, neededEqual);
+
+            final Equal equal = equalWithHash(neededEqual);
+            assertEquals(neededEqual, equal.hashCode());
+            assertEquals(1, new Junction(Operator.AND, equal).hashCode());
+        }
+
+        private static Equal equalWithHash(final int target) {
+            final String propName = "age";
+            int prefix = 17;
+            prefix = (prefix * 31) + propName.hashCode();
+            prefix = (prefix * 31) + Operator.EQUAL.hashCode();
+            return new Equal(propName, target - (prefix * 31));
+        }
     }
 
     /**

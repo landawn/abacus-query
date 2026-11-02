@@ -12,7 +12,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.landawn.abacus.TestBase;
@@ -241,6 +243,40 @@ public class AbstractInSubQueryTest extends TestBase {
 
         assertDoesNotThrow(() -> AbstractCondition.validateSubQuerySelectArity(2, withNullProp));
         assertThrows(IllegalArgumentException.class, () -> AbstractCondition.validateSubQuerySelectArity(1, withNullProp));
+    }
+
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testHashCollapsesAZeroSumToOne() {
+            final String propName = "deptId";
+            final InSubQuery shell = new InSubQuery(propName, new SubQuery("SELECT id FROM t"));
+            int outer = 17;
+            outer = (outer * 31) + shell.propNames().hashCode();
+            outer = (outer * 31) + shell.operator().hashCode();
+            final int neededSubQuery = -(outer * 31);
+            assertNotEquals(0, neededSubQuery);
+
+            final String sql = "SELECT id FROM t WHERE id = ?";
+            int subPrefix = 17;
+            subPrefix = (subPrefix * 31) + sql.hashCode();
+            subPrefix = (subPrefix * 31) + "".hashCode();
+            subPrefix = (subPrefix * 31) + 0;
+            subPrefix = (subPrefix * 31) + 0;
+            subPrefix = (subPrefix * 31) + 0;
+            final int binding = (neededSubQuery - (subPrefix * 31)) - 31;
+            final SubQuery subQuery = new SubQuery(sql, List.of(binding));
+
+            assertEquals(neededSubQuery, subQuery.hashCode());
+            assertEquals(1, new InSubQuery(propName, subQuery).hashCode());
+        }
+
+        @Test
+        void testNullNamingPolicyMatchesNoChange() {
+            final InSubQuery condition = new InSubQuery("deptId", new SubQuery("SELECT id FROM departments"));
+
+            assertEquals(condition.toSql(NamingPolicy.NO_CHANGE), condition.toSql(null));
+        }
     }
 
     private static final class NominallyNonEmptyCollection<E> extends AbstractCollection<E> {

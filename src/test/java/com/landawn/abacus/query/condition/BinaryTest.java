@@ -1257,4 +1257,38 @@ public class BinaryTest extends TestBase {
             assertSame(listValue, new NotEqual("payload", listValue).propValueAs(ArrayList.class));
         }
     }
+
+    @Nested
+    class UncoveredPaths {
+        @Test
+        void testEqualHashCollapsesAZeroSumToOne() {
+            final String propName = "age";
+            int prefix = 17;
+            prefix = (prefix * 31) + propName.hashCode();
+            prefix = (prefix * 31) + Operator.EQUAL.hashCode();
+
+            // The pre-saturation sum is 0 exactly when the integer value is the negation of that prefix.
+            assertEquals(1, new Equal(propName, -(prefix * 31)).hashCode());
+        }
+
+        @Test
+        void testInOperandThatIsNotACollectionUsesDeepEquals() {
+            final Binary expression = new Binary("id", Operator.IN, new SqlExpression("(SELECT 1)"));
+            final Binary differentExpression = new Binary("id", Operator.IN, new SqlExpression("(SELECT 2)"));
+            final Binary membership = new Binary("id", Operator.IN, List.of(1));
+
+            assertNotEquals(expression, differentExpression);
+            assertNotEquals(expression, membership);
+        }
+
+        @Test
+        void testSharedSqlExpressionInOperandsMatchByIdentity() {
+            final SqlExpression shared = new SqlExpression("(SELECT 1)");
+            final Binary left = new Binary("id", Operator.IN, shared);
+            final Binary right = new Binary("id", Operator.IN, shared);
+
+            assertEquals(left, right);
+            assertEquals(left.hashCode(), right.hashCode());
+        }
+    }
 }
