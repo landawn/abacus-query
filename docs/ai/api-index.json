@@ -1,11 +1,11 @@
 {
   "library": {
     "name": "abacus-query",
-    "version": "4.9.7",
-    "generated_at": "2026-10-30",
+    "version": "4.9.8",
+    "generated_at": "2026-11-02",
     "java_target": "21",
     "source": {
-      "git_sha": "bda449de860ed72fbe523514a75e7b08899f15db"
+      "git_sha": "988f590a9ec642d2753d7fc83f2b037933ecadcc"
     }
   },
   "packages": [
@@ -6649,7 +6649,7 @@
               "javadoc_summary": "Creates a COUNT(*) query for an entity class.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
               "contract": [
-                "The table name is derived from the entity class name or @Table annotation, and the entity's @Table alias, if it declares one, is used as the table alias (as by from(Class))."
+                "The table name is derived from the entity class name or @Table annotation, and the entity's @Table alias, if it declares one, is used as the table alias (as by from(Class)) and qualifies the columns in WHERE conditions; the example below assumes an entity without one."
               ],
               "examples": [
                 "String sql = PSC.selectCountFrom(Account.class)\n                .where(Filters.isNotNull(\"email\"))\n                .build().query();\n// Output: SELECT count(*) FROM account WHERE email IS NOT NULL"
@@ -16894,7 +16894,7 @@
               "javadoc_summary": "Creates a Limit clause with a count and offset.",
               "returns": "a Limit clause",
               "contract": [
-                "When offset == 0, the rendered SQL omits the OFFSET clause."
+                "When offset == 0, it renders like #limit(int): the OFFSET clause is omitted, except on SQL Server, whose FETCH pagination always needs OFFSET 0 ROWS."
               ],
               "examples": [
                 "Limit limit = Filters.limit(20, 10);\n// Results in SQL like: LIMIT 20 OFFSET 10 (skip 10, take 20)"
@@ -22069,7 +22069,7 @@
               ],
               "type": "String",
               "value": "\"files\"",
-              "javadoc_summary": "Parameter name for the collection of files to read from.",
+              "javadoc_summary": "Parameter name for the array of files to read from.",
               "nullability": "unspecified"
             },
             {
@@ -26920,7 +26920,7 @@
               "returns": "this Builder instance for method chaining",
               "contract": [
                 "If a LIMIT clause already exists, it will be replaced.",
-                "When rendered by a SQL builder, the parsed count/offset is re-emitted in that builder dialect's pagination syntax whichever accepted form was passed (for example OFFSET m ROWS FETCH NEXT n ROWS ONLY on Oracle, DB2 or SQL Server, LIMIT n OFFSET m elsewhere); an expression whose numbers exceed the int range is re-rendered only when it is a generic LIMIT count [OFFSET offset] or MySQL LIMIT offset, count form (SQL Server builders also normalize such a FETCH-form expression); any other out-of-range form is emitted as written."
+                "When rendered by a SQL builder, the parsed count/offset is re-emitted in that builder dialect's pagination syntax whichever accepted form was passed (for example OFFSET m ROWS FETCH NEXT n ROWS ONLY on Oracle, DB2 or SQL Server, LIMIT n OFFSET m elsewhere); an expression whose numbers exceed the int range is re-rendered only when it is a generic LIMIT count [OFFSET offset] or MySQL LIMIT offset, count form (SQL Server builders also normalize such a FETCH-form expression, and MySQL, MariaDB and SQLite builders, which have no FETCH clause, render it as LIMIT count [OFFSET offset]); any other out-of-range form is emitted as written."
               ],
               "examples": [
                 "Criteria c = Criteria.builder().limit(\"10 OFFSET 20\").build();\nc.toSql(NamingPolicy.NO_CHANGE);   // returns \" LIMIT 10 OFFSET 20\"\n\n// Placeholders are not accepted: each count or offset must be a non-negative integer literal.\nCriteria.builder().limit(\"? OFFSET ?\");   // throws IllegalArgumentException"

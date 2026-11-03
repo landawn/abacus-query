@@ -142,7 +142,9 @@ public final class QueryUtil {
      * Cache of {@link ColumnInfo} maps per entity class and naming policy, built by
      * {@link #propToColumnInfoMap(Class, NamingPolicy)}.
      */
-    private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, ColumnInfo>>> entityPropColumnInfoMap = new ConcurrentHashMap<>();
+    // One slot per NamingPolicy.ordinal(): warm reads are a lock-free volatile element read (a synchronized EnumMap made
+    // every builder thread contend on one monitor per entity class); first builds still publish under the slot array's lock.
+    private static final Map<Class<?>, AtomicReferenceArray<ImmutableMap<String, ColumnInfo>>> entityPropColumnInfoMap = new ConcurrentHashMap<>();
 
     /**
      * Caches, per entity class, the {@link PropInfo} objects resolved for that class's ID
@@ -263,21 +265,20 @@ public final class QueryUtil {
 
         final NamingPolicy effectiveNamingPolicy = namingPolicy == null ? NamingPolicy.SNAKE_CASE : namingPolicy;
 
-        Map<NamingPolicy, ImmutableMap<String, ColumnInfo>> namingPropColumnInfoMap = entityPropColumnInfoMap.get(entityClass);
+        AtomicReferenceArray<ImmutableMap<String, ColumnInfo>> namingPropColumnInfoMap = entityPropColumnInfoMap.get(entityClass);
         ImmutableMap<String, ColumnInfo> result = null;
 
-        if (namingPropColumnInfoMap == null || (result = namingPropColumnInfoMap.get(effectiveNamingPolicy)) == null) {
+        if (namingPropColumnInfoMap == null || (result = namingPropColumnInfoMap.get(effectiveNamingPolicy.ordinal())) == null) {
             final ImmutableMap<String, String> propToColumnNameMap = propToColumnNameMap(entityClass, effectiveNamingPolicy);
 
             if (namingPropColumnInfoMap == null) {
-                namingPropColumnInfoMap = entityPropColumnInfoMap.computeIfAbsent(entityClass,
-                        cls -> Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class)));
+                namingPropColumnInfoMap = entityPropColumnInfoMap.computeIfAbsent(entityClass, cls -> new AtomicReferenceArray<>(NamingPolicy.values().length));
             }
 
             // Lock only this class's policy map, and resolve recursive name metadata before taking it.
             // Publishing after an unguarded build would discard entire maps on concurrent first use.
             synchronized (namingPropColumnInfoMap) {
-                result = namingPropColumnInfoMap.get(effectiveNamingPolicy);
+                result = namingPropColumnInfoMap.get(effectiveNamingPolicy.ordinal());
 
                 if (result == null) {
                     final Map<String, ColumnInfo> newPropColumnInfoMap = N.newHashMap(propToColumnNameMap.size() * 2);
@@ -292,7 +293,7 @@ public final class QueryUtil {
                     }
 
                     result = ImmutableMap.wrap(newPropColumnInfoMap);
-                    namingPropColumnInfoMap.put(effectiveNamingPolicy, result);
+                    namingPropColumnInfoMap.set(effectiveNamingPolicy.ordinal(), result);
                 }
             }
         }

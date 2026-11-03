@@ -5133,7 +5133,8 @@ public final class Filters {
      * Creates a {@link Limit} clause with a count and offset.
      * Used for pagination of results. Note the parameter order is {@code (count, offset)} —
      * the first argument is the maximum number of rows to return, and the second is the number
-     * of rows to skip. When {@code offset == 0}, the rendered SQL omits the {@code OFFSET} clause.
+     * of rows to skip. When {@code offset == 0}, it renders like {@link #limit(int)}: the {@code OFFSET} clause is
+     * omitted, except on SQL Server, whose {@code FETCH} pagination always needs {@code OFFSET 0 ROWS}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -5167,8 +5168,9 @@ public final class Filters {
      * (Oracle, DB2, SQL Server) re-renders a {@code LIMIT}-form expression, including MySQL's comma form, in that
      * syntax, and SQL Server additionally normalizes a {@code FETCH}-form expression to
      * {@code OFFSET ... ROWS FETCH NEXT ... ROWS ONLY}; on {@code LIMIT}-style dialects MySQL's comma form
-     * {@code LIMIT 20, 99999999999} is rendered as {@code LIMIT 99999999999 OFFSET 20}; every other unresolved
-     * form is emitted verbatim.</p>
+     * {@code LIMIT 20, 99999999999} is rendered as {@code LIMIT 99999999999 OFFSET 20}, and on MySQL/MariaDB and
+     * SQLite, which have no {@code FETCH} clause, a {@code FETCH}-form expression is rendered as
+     * {@code LIMIT count [OFFSET offset]}; every other unresolved form is emitted verbatim.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code

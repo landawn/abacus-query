@@ -779,18 +779,51 @@ public abstract class AbstractCondition implements Condition {
 
     /**
      * Whether the {@code *} before {@code tokens[from]} has no right operand: the next token is absent, a comma, or a
-     * wildcard column modifier ({@code EXCEPT}, {@code EXCLUDE}, {@code REPLACE}), so it cannot be a multiplication.
+     * wildcard column modifier ({@code EXCEPT}, {@code EXCLUDE}, {@code REPLACE (expr AS col, ...)}), so it cannot be a
+     * multiplication. {@code REPLACE} counts only in its modifier form: {@code price * REPLACE(name, 'a', 'b')} multiplies
+     * by the string function.
      */
     private static boolean hasNoRightOperand(final List<String> tokens, final int from) {
         for (int i = from; i < tokens.size(); i++) {
             final String token = tokens.get(i);
 
             if (!Strings.isBlank(token)) {
-                return ",".equals(token) || "EXCEPT".equalsIgnoreCase(token) || "EXCLUDE".equalsIgnoreCase(token) || "REPLACE".equalsIgnoreCase(token);
+                return ",".equals(token) || "EXCEPT".equalsIgnoreCase(token) || "EXCLUDE".equalsIgnoreCase(token)
+                        || "REPLACE".equalsIgnoreCase(token) && isReplaceColumnModifierList(tokens, i + 1);
             }
         }
 
         return true;
+    }
+
+    /**
+     * Whether the tokens from {@code from} open a parenthesized list holding a top-level {@code AS}, as the
+     * {@code * REPLACE (expr AS col, ...)} column modifier does and the {@code REPLACE(str, from, to)} function never does.
+     */
+    private static boolean isReplaceColumnModifierList(final List<String> tokens, final int from) {
+        int depth = 0;
+
+        for (int i = from; i < tokens.size(); i++) {
+            final String token = tokens.get(i);
+
+            if (Strings.isBlank(token)) {
+                continue;
+            }
+
+            if ("(".equals(token)) {
+                depth++;
+            } else if (depth == 0) {
+                return false; // REPLACE not followed by a list
+            } else if (")".equals(token)) {
+                if (--depth == 0) {
+                    return false;
+                }
+            } else if (depth == 1 && "AS".equalsIgnoreCase(token)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

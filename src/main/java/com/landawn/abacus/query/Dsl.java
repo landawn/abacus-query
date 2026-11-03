@@ -355,7 +355,8 @@ public final class Dsl {
 
             final String defaultTableAlias = SqlBuilder.tableAlias(selection.entityClass());
 
-            if (Strings.isEmpty(defaultTableAlias)) {
+            // A blank @Table alias means "not specified", as on the selectFrom(Class, ...) path.
+            if (Strings.isBlank(defaultTableAlias)) {
                 continue;
             }
 
@@ -610,9 +611,9 @@ public final class Dsl {
     public SqlBuilder insert(final Object entity, final Set<String> excludedPropNames) {
         N.checkArgNotNull(entity, SqlBuilder.INSERTION_PART_MSG);
 
-        // A String specifies one column and ignores exclusions; do not copy an unused caller collection.
-        final Set<String> excludedPropNameSnapshot = entity instanceof String || N.isEmpty(excludedPropNames) ? Collections.emptySet()
-                : snapshotExcludedPropNames(excludedPropNames);
+        // A String specifies one column and ignores exclusions. Otherwise the set is read exactly once below (by the
+        // map's removeIf or the bean snapshot) and never retained, so it needs no defensive copy on this per-row path.
+        final Set<String> excludedPropNameSnapshot = entity instanceof String || N.isEmpty(excludedPropNames) ? Collections.emptySet() : excludedPropNames;
         final Object entitySnapshot;
 
         // Validate and snapshot every form before allocating a builder backed by a pooled SQL buffer.
@@ -1735,9 +1736,11 @@ public final class Dsl {
     public SqlBuilder selectFrom(final Class<?> entityClass, final String tableAlias, final boolean includeSubEntityProperties,
             final Set<String> excludedPropNames) {
         N.checkArgNotNull(entityClass, SqlBuilder.SELECTION_PART_MSG);
-        // One snapshot so the generated FROM table list and the projection observe the same exclusions.
-        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? null : snapshotExcludedPropNames(excludedPropNames);
         final boolean includesSubEntityTables = SqlBuilder.hasSubEntityToInclude(entityClass, includeSubEntityProperties);
+        // One snapshot so the generated FROM table list and the projection observe the same exclusions; without sub-entity
+        // tables the projection is the only reader, which uses the set immediately.
+        final Set<String> excludedPropNameSnapshot = N.isEmpty(excludedPropNames) ? null
+                : includesSubEntityTables ? snapshotExcludedPropNames(excludedPropNames) : excludedPropNames;
         final List<String> selectTableNames = includesSubEntityTables
                 ? SqlBuilder.buildFromTableRefs(entityClass, tableAlias, excludedPropNameSnapshot, namingPolicy)
                 : null;
@@ -2177,7 +2180,8 @@ public final class Dsl {
      * Creates a COUNT(*) query for an entity class.
      *
      * <p>The table name is derived from the entity class name or @Table annotation, and the entity's
-     * {@code @Table} alias, if it declares one, is used as the table alias (as by {@code from(Class)}).
+     * {@code @Table} alias, if it declares one, is used as the table alias (as by {@code from(Class)}) and qualifies the
+     * columns in WHERE conditions; the example below assumes an entity without one.
      * This is a convenient way to count rows with entity class mapping for proper
      * property name conversion in WHERE conditions.</p>
      *

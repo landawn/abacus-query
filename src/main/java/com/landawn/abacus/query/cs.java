@@ -165,7 +165,7 @@ public final class cs { // NOSONAR
     public static final String filePaths = "filePaths";
 
     /**
-     * Parameter name for the collection of files to read from.
+     * Parameter name for the array of files to read from.
      */
     public static final String files = "files";
 

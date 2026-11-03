@@ -1792,6 +1792,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         checkSqlFragmentNotBlank(tableName, "tableName");
 
         final String normalizedTableName = tableName.trim();
+        N.checkArgNotEmpty(normalizedTableName, cs.tableName);
 
         return mutateAtomically(false, () -> appendIntoClause(normalizedTableName, false));
     }
@@ -2008,9 +2009,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Derives the {@code INSERT ... SELECT} target column from a staged select item: the source expression without its
      * {@code AS} alias (consistent with {@code select(Map)}, whose keys -- not alias values -- are used here), stripped of
-     * padding like the select item itself (so a trailing U+3000 is not glued to the target column), and, for the leading
-     * item, without a set quantifier ({@code DISTINCT}, {@code DISTINCTROW} or {@code ALL} followed by whitespace, including
-     * PostgreSQL's {@code DISTINCT ON (expr, ...)}) that belongs to the SELECT, not to the column.
+     * padding like the select item itself (so a trailing U+3000 is not glued to the target column), for the leading item
+     * without a set quantifier ({@code DISTINCT}, {@code DISTINCTROW} or {@code ALL} followed by whitespace or {@code '('},
+     * including PostgreSQL's {@code DISTINCT ON (expr, ...)}) that belongs to the SELECT, not to the column, and without
+     * parentheses around a single column ({@code DISTINCT(name)}, {@code ((name))} -> {@code name}; see
+     * {@link #withoutEnclosingParentheses(String)}).
      *
      * @param selectItem the staged select item
      * @param leadingItem whether {@code selectItem} is the first item of the projection
@@ -2024,15 +2027,17 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             for (final String quantifier : new String[] { DISTINCTROW, DISTINCT, ALL }) {
                 final int len = quantifier.length();
 
-                if (column.length() > len && column.regionMatches(true, 0, quantifier, 0, len) && Character.isWhitespace(column.charAt(len))) {
+                if (column.length() > len && column.regionMatches(true, 0, quantifier, 0, len)
+                        && (Character.isWhitespace(column.charAt(len)) || column.charAt(len) == '(')) {
                     final String rest = stripSelectItemPadding(column.substring(len));
 
-                    return DISTINCT.equals(quantifier) ? withoutDistinctOnList(rest) : rest;
+                    return withoutEnclosingParentheses(DISTINCT.equals(quantifier) ? withoutDistinctOnList(rest) : rest);
                 }
             }
         }
 
-        return column;
+        // "(name)" (as in "DISTINCT(name)") parenthesizes the column, not a list: it is no valid target column.
+        return withoutEnclosingParentheses(column);
     }
 
     /**
@@ -2060,15 +2065,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         for (int depth = 0; i < len; i++) {
             // Parentheses inside $$...$$ or $tag$...$tag$ are literal text, not the end of DISTINCT ON. Reuse the
             // renderer's dollar-quote boundaries so its expression cannot leak into the INSERT target column list.
-            final int dollarQuoteEnd = _dollarQuotes && str.charAt(i) == '$' ? SqlParser.dollarQuoteEnd(str, i, _h2) : 0;
+            final int skipped = skipQuotedTextOrComment(str, i);
 
-            if (dollarQuoteEnd < 0) {
+            if (skipped < 0) {
                 return str; // An unterminated literal cannot contain the list's closing parenthesis.
-            }
-
-            final int skipped = dollarQuoteEnd > 0 ? dollarQuoteEnd : skipSqlQuotedOrComment(str, i);
-
-            if (skipped != i) {
+            } else if (skipped != i) {
                 i = skipped - 1;
             } else if (str.charAt(i) == '(') {
                 depth++;
@@ -2078,6 +2079,103 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return str;
+    }
+
+    /**
+     * Returns the column reference that {@code str} parenthesizes, at any nesting depth ({@code (name)},
+     * {@code ((t.name))} -> {@code name}, {@code t.name}), or {@code str} itself if it is no such group. A row value
+     * ({@code (a, b)}), a literal, a subquery or another expression ({@code (a+b)}, {@code (lower(name))}), or several
+     * groups ({@code (a) + (b)}) name no target column: unwrapping them would only trade one invalid target for another,
+     * and a row value's commas would even change the target column count. Runs in linear time.
+     */
+    private static String withoutEnclosingParentheses(final String str) {
+        final int len = str.length();
+        int start = 0;
+        int end = len;
+        int openings = 0;
+        int closings = 0;
+
+        while (start < end && (str.charAt(start) == '(' || isWhitespaceOrSpaceChar(str.charAt(start)))) {
+            if (str.charAt(start++) == '(') {
+                openings++;
+            }
+        }
+
+        while (end > start && (str.charAt(end - 1) == ')' || isWhitespaceOrSpaceChar(str.charAt(end - 1)))) {
+            if (str.charAt(--end) == ')') {
+                closings++;
+            }
+        }
+
+        // A column reference holds no parentheses (outside its quoted parts, which it must close), so the stripped ')'s
+        // close the stripped '('s exactly when the counts match: "((name))" unwraps; "(a) + (b)", "((a)" and "("a)" do not.
+        return openings > 0 && openings == closings && isColumnReference(str, start, end) ? str.substring(start, end) : str;
+    }
+
+    /**
+     * Whether {@code str[start, end)} is a column reference: one or more {@code '.'}-separated parts, each an unquoted
+     * identifier (a letter or {@code '_'}, then letters, digits, {@code '_'} or {@code '$'}) or a closed
+     * {@code "..."}, {@code `...`} or {@code [...]} quoted identifier.
+     */
+    private static boolean isColumnReference(final String str, final int start, final int end) {
+        int i = start;
+
+        while (i < end) {
+            final char ch = str.charAt(i);
+
+            if (ch == '"' || ch == '`' || ch == '[') {
+                i = quotedIdentifierEnd(str, i, end);
+
+                if (i < 0) {
+                    return false;
+                }
+            } else if (Character.isLetter(ch) || ch == '_') {
+                do {
+                    i++;
+                } while (i < end && (Character.isLetterOrDigit(str.charAt(i)) || str.charAt(i) == '_' || str.charAt(i) == '$'));
+            } else {
+                return false;
+            }
+
+            if (i == end) {
+                return true;
+            } else if (str.charAt(i++) != '.') {
+                return false;
+            }
+        }
+
+        return false; // Empty, or ends with '.'.
+    }
+
+    /**
+     * Returns the index just past the quoted identifier that opens at {@code start} of {@code str} (a doubled closing
+     * quote is an escaped one), or {@code -1} if it is not closed before {@code end}.
+     */
+    private static int quotedIdentifierEnd(final String str, final int start, final int end) {
+        final char closingQuote = str.charAt(start) == '[' ? ']' : str.charAt(start);
+
+        for (int i = start + 1; i < end; i++) {
+            if (str.charAt(i) == closingQuote) {
+                if (i + 1 < end && str.charAt(i + 1) == closingQuote) {
+                    i++;
+                } else {
+                    return i + 1;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Returns the end of the quoted text or comment that starts at {@code index} of {@code str}, including a dollar-quoted
+     * string under this builder's dialect; {@code index} itself if none starts there, or {@code -1} if a dollar-quoted
+     * string is unterminated.
+     */
+    private int skipQuotedTextOrComment(final String str, final int index) {
+        final int dollarQuoteEnd = _dollarQuotes && str.charAt(index) == '$' ? SqlParser.dollarQuoteEnd(str, index, _h2) : 0;
+
+        return dollarQuoteEnd < 0 ? -1 : dollarQuoteEnd > 0 ? dollarQuoteEnd : skipSqlQuotedOrComment(str, index);
     }
 
     /** Whether {@code column} is a {@code root.prop} path below a sub-entity property of the installed entity. */
@@ -2304,6 +2402,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         checkCanAppendInto();
         checkSqlFragmentNotBlank(tableName, "tableName");
         final String normalizedTableName = tableName.trim();
+        N.checkArgNotEmpty(normalizedTableName, cs.tableName);
 
         return mutateAtomically(false, () -> {
             if (entityClass != null) {
@@ -7018,6 +7117,13 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
             }
 
+            final Matcher fetchFormMatcher = (_dialectFamily == DialectFamily.MYSQL || _sqlite) && !fetchAfterOffsetRows
+                    ? FETCH_LIMIT_EXPRESSION_PATTERN.matcher(limit.expression())
+                    : null;
+            // MySQL/MariaDB and SQLite re-render a FETCH-form expression as "LIMIT count [OFFSET offset]" (below), so it is
+            // not a FETCH clause there and must not be rejected as one on UPDATE/DELETE.
+            final boolean rendersFetchAsLimit = fetchFormMatcher != null && fetchFormMatcher.matches();
+
             // The retained numeric literal may itself carry an OFFSET portion; consume the
             // OFFSET slot too so a follow-up offset(...) call is rejected instead of silently emitting a
             // second OFFSET clause. Limit has already normalized and validated the full expression, so its
@@ -7025,7 +7131,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (limitExpressionHasOffset(limit.expression())) {
                 claimClauseSlots(SK.LIMIT, SK.OFFSET);
             } else {
-                if (isFetchLimitExpression(limit.expression())) {
+                if (!rendersFetchAsLimit && isFetchLimitExpression(limit.expression())) {
                     // FETCH is not valid on UPDATE/DELETE; report it exactly as fetchFirstRows(...) does.
                     checkClauseCanBeAppended(SK.FETCH_FIRST);
                 }
@@ -7040,11 +7146,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             final Matcher commaFormMatcher = GENERIC_LIMIT_EXPRESSION_PATTERN.matcher(limit.expression());
-            final Matcher fetchFormMatcher = (_dialectFamily == DialectFamily.MYSQL || _sqlite) && !fetchAfterOffsetRows
-                    ? FETCH_LIMIT_EXPRESSION_PATTERN.matcher(limit.expression())
-                    : null;
 
-            if (fetchFormMatcher != null && fetchFormMatcher.matches()) {
+            if (rendersFetchAsLimit) {
                 // MySQL/MariaDB and SQLite have no OFFSET ... ROWS / FETCH clause: render "LIMIT count [OFFSET offset]",
                 // as a resolved FETCH-form Limit is (the slots were claimed above).
                 _sb.append(_SPACE).append(SK.LIMIT).append(_SPACE).append(fetchFormMatcher.group(2));
@@ -8059,7 +8162,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Used by clause methods (e.g. {@code WHERE}, {@code GROUP BY}, {@code HAVING}, {@code ORDER BY},
      * {@code LIMIT}, {@code OFFSET}) that may appear at most once per query segment (a set operation starts a new segment).
      * Recording {@code ORDER BY} in a statement that contains a set operation also clears the table alias, so the sort
-     * keys of the combined result are not qualified with the alias of the last operand's {@code FROM}.
+     * keys of the combined result are not qualified with the alias of the last operand's {@code FROM}, and resolves a sort
+     * key equal to a result-column label of the first {@code SELECT} ({@code ... AS label}) to that label.
      *
      * @param op the clause keyword that is being emitted (e.g. {@link SK#WHERE}, {@link SK#GROUP_BY})
      * @throws IllegalStateException if the builder is closed, a preceding qualified JOIN has not been

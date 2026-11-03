@@ -334,6 +334,52 @@ public class SqlParserTest extends TestBase {
 
     @Nested
     class QueryClassification {
+        // Regression: the leading-verb fast path took "SELECT#x" for SELECT under every reading, but the SQL Server reading
+        // keeps "SELECT#x" as one name (an implicit procedure call), so the answer depended on a leading "/**/".
+        @Test
+        void testHashGluedToLeadingVerbIsCheckedUnderEveryReading() {
+            assertFalse(SqlParser.isSyntacticallyReadQuery("/**/SELECT#x 1"));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT#x 1"));
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT#x INTO t VALUES (1)"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 #x"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM #tmp"));
+        }
+
+        // Regression: "$1." also reads as a number, so "$1.insert" was taken for the INSERT verb and exempted the MySQL
+        // INTO OUTFILE after it; "$1" is a plain identifier in MySQL, which writes the file.
+        @Test
+        void testDollarDigitQualifiedInsertColumnDoesNotExemptIntoOutfile() {
+            assertReadGatesReject("SELECT a FROM t AS $1 WHERE $1.insert INTO OUTFILE '/tmp/x'");
+            assertReadGatesReject("SELECT a FROM t AS $1 ORDER BY $1.insert INTO DUMPFILE '/tmp/x'");
+            assertReadGatesReject("SELECT b = 1. INTO OUTFILE '/tmp/x' FROM t");
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT INTO outfile VALUES (1)"));
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT IGNORE INTO outfile VALUES (1)"));
+        }
+
+        // Regression: Unicode case folding ("ı"/"İ" -> I, "ſ" -> S) turned non-ASCII identifiers into exempting keywords,
+        // while MySQL and PostgreSQL fold keywords by ASCII case only.
+        @Test
+        void testNonAsciiCaseFoldedWordsDoNotExemptMutations() {
+            assertReadGatesReject("SELECT 1 AS ınsert FROM t ORDER BY ınsert INTO OUTFILE '/tmp/x'");
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT a FROM (DELETE ıs OUTPUT deleted.a) AS d"));
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO x SELECT a FROM (DELETE İS OUTPUT deleted.a) AS d"));
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t EXEC ıs"));
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT ınto EXEC p"));
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT INTO t (ſelect) EXEC('DELETE FROM u')"));
+            // Plain non-ASCII identifiers remain fine.
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT ıd FROM t WHERE ıd = 1"));
+        }
+
+        // Masks that alternate between lexical modes (a backslash-escaped quote plus unrelated quoted identifiers, "$"
+        // and "--") are classified once per distinct text; the answers stay the same.
+        @Test
+        void testAlternatingModeMasksKeepTheirClassification() {
+            final String read = "SELECT \"a\", `b` FROM t WHERE x = 'a\\'b\\'c' AND y = $1 AND z = \"w\" -- k\n AND q = 1";
+            assertTrue(SqlParser.isSyntacticallyReadQuery(read));
+            assertTrue(SqlParser.isReadOrInsertQuery(read));
+            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT \"a\", `b` FROM t WHERE x = 'a\\'; DELETE FROM t; -- ' AND z = \"w\" -- k\n AND q = 1"));
+        }
+
         // Regression: "SELECT @1INTO x FROM t" is "SELECT @ 1 INTO x" (a SELECT INTO) to PostgreSQL <= 14, whose '@' is the
         // absolute-value operator; a digit after '@' now starts a literal, not a variable name.
         @Test
@@ -5269,6 +5315,18 @@ public class SqlParserTest extends TestBase {
         void testTokenizerConfigRemovalRejectsNullOrEmptyString() {
             assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenizerConfigBuilder().withoutSeparator(null));
             assertThrows(IllegalArgumentException.class, () -> SqlParser.tokenizerConfigBuilder().withoutSeparator(""));
+        }
+
+        // The hash is now precomputed at construction; it must keep matching equals() and the original formula.
+        @Test
+        void testTokenizerConfigPrecomputedHashCodeMatchesEquality() {
+            final SqlParser.TokenizerConfig custom = SqlParser.tokenizerConfigBuilder().withSeparator("::").withSemicolonlessBatches(true).build();
+            final SqlParser.TokenizerConfig same = SqlParser.tokenizerConfigBuilder().withSeparator("::").withSemicolonlessBatches(true).build();
+
+            assertEquals(custom, same);
+            assertEquals(custom.hashCode(), same.hashCode());
+            assertEquals(31 * custom.separators().hashCode() + Boolean.hashCode(true), custom.hashCode());
+            assertEquals(SqlDialect.builder().tokenizerConfig(custom).build().hashCode(), SqlDialect.builder().tokenizerConfig(same).build().hashCode());
         }
 
         @Test

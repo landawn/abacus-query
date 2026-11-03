@@ -609,6 +609,37 @@ public class DslTest extends TestBase {
 
     @Nested
     class FactoryContracts {
+        // Regression: a blank @Table alias is "not specified" on the selectFrom(Class, true) path, but the Selection path
+        // substituted it and then rejected it as a blank table alias.
+        @Test
+        void testBlankTableAliasIsIgnoredBySelectionSubEntityFallback() {
+            final String expected = Dsl.PSC.selectFrom(BlankAliasParent.class, true).build().query();
+
+            assertEquals(expected, Dsl.PSC.selectFrom(Selection.builder(BlankAliasParent.class).includeSubEntityProperties(true).build()).build().query());
+        }
+
+        // The excluded names are no longer copied on these paths; a comparator-based set must still match as before.
+        @Test
+        void testExcludedPropNamesKeepTheirComparatorWithoutSnapshot() {
+            final Set<String> excluded = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            excluded.add("FIRSTNAME");
+
+            final com.landawn.abacus.query.entity.Account account = new com.landawn.abacus.query.entity.Account();
+            account.setFirstName("f");
+            account.setLastName("l");
+            final String insertSql = Dsl.PSC.insert(account, excluded).into("account").build().query();
+            assertFalse(insertSql.contains("first_name"), insertSql);
+            assertTrue(insertSql.contains("last_name"), insertSql);
+
+            final Map<String, Object> props = new LinkedHashMap<>();
+            props.put("firstName", "f");
+            props.put("lastName", "l");
+            assertEquals("INSERT INTO account (last_name) VALUES (?)", Dsl.PSC.insert(props, excluded).into("account").build().query());
+
+            final String selectSql = Dsl.PSC.selectFrom(com.landawn.abacus.query.entity.Account.class, excluded).build().query();
+            assertFalse(selectSql.contains("first_name"), selectSql);
+        }
+
         @ParameterizedTest(name = "{0}")
         @EnumSource(value = Factory.class, names = { "PSB", "PAC", "PLC" })
         void testCreateInstance(final Factory factory) {
@@ -761,6 +792,13 @@ public class DslTest extends TestBase {
     static class CommentAliasKid {
         private long id;
         private long parId;
+    }
+
+    @lombok.Data
+    @Table(name = "blank_par", alias = " ")
+    static class BlankAliasParent {
+        private long id;
+        private CommentAliasKid kid;
     }
 
     @Nested

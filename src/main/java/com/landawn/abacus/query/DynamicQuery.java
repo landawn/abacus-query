@@ -224,9 +224,10 @@ public final class DynamicQuery {
 
         // Every reading endsInsideLineCommentUnderAnyReading tries is dialect-neutral and never takes "//" for a comment
         // (only an H2 builder does), so it can answer true only for a region opened by "--" or "#": skip the multi-reading
-        // scan for the common fragment that contains neither character, which cannot end inside a line comment there.
-        return (fragment.indexOf('-') >= 0 || fragment.indexOf('#') >= 0) && AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment)
-                ? sb.append('\n')
+        // scan for the common fragment that contains neither token, which cannot end inside a line comment there. Test for
+        // "--", not a single '-': subtraction and negative literals ("a - b", "<> -1") are common and would otherwise pay
+        // for the full scan on every such fragment.
+        return (fragment.contains("--") || fragment.indexOf('#') >= 0) && AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment) ? sb.append('\n')
                 : sb;
     }
 

@@ -101,10 +101,79 @@ public class AbstractQueryBuilderTest extends TestBase {
                 }
             }
         }
+
+        @Test
+        void testOutOfIntRangeFetchLimitRendersAsLimitOnMySqlAndSqliteUpdateDelete() {
+            // MySQL/SQLite re-render an unresolved FETCH-form Limit as "LIMIT n", so it is no FETCH clause to reject there.
+            for (final String product : List.of("MySQL", "MariaDB", "SQLite")) {
+                final Dsl dsl = lexDialect(PSC, product);
+
+                assertEquals("DELETE FROM t LIMIT 99999999999", dsl.deleteFrom("t").append(Filters.limit("FETCH FIRST 99999999999 ROWS ONLY")).build().query());
+                assertEquals("UPDATE t SET a = ? WHERE id = ? LIMIT 99999999999",
+                        dsl.update("t").set("a").where(Filters.eq("id", 1)).append(Filters.limit("FETCH FIRST 99999999999 ROWS ONLY")).build().query());
+            }
+
+            // Where the expression would be emitted verbatim as FETCH, it is still rejected on DELETE.
+            assertThrows(IllegalStateException.class, () -> PSC.deleteFrom("t").append(Filters.limit("FETCH FIRST 99999999999 ROWS ONLY")));
+        }
     }
 
     @Nested
     class Inserts {
+        @Test
+        void testInsertSelectStripsParenthesizedQuantifierFromTargetColumn() {
+            assertEquals("INSERT INTO t2 (name) SELECT DISTINCT(name) FROM t", PSC.select("DISTINCT(name)").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 (name, b) SELECT DISTINCT (name), b FROM t", PSC.select("DISTINCT (name)", "b").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 (name) SELECT ALL(name) FROM t", PSC.select("ALL(name)").into("t2").from("t").build().query());
+            // Not one enclosing group: left as it was.
+            assertEquals("INSERT INTO t2 ((a) + (b)) SELECT DISTINCT (a) + (b) FROM t", PSC.select("DISTINCT (a) + (b)").into("t2").from("t").build().query());
+        }
+
+        @Test
+        void testInsertSelectUnwrapsOnlyParenthesizedSingleColumns() {
+            // Nested parentheses around one column are all removed, with or without a quantifier, and on any item.
+            assertEquals("INSERT INTO t2 (name) SELECT DISTINCT ((name)) FROM t", PSC.select("DISTINCT ((name))").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 (name) SELECT DISTINCT ( ( name ) ) FROM t", PSC.select("DISTINCT ( ( name ) )").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 (a, b) SELECT (a), ((b)) FROM t", PSC.select("(a)", "((b))").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 (c) SELECT DISTINCT ON (a) (c) FROM t", PSC.select("DISTINCT ON (a) (c)").into("t2").from("t").build().query());
+            // Whitespace in a quoted identifier does not separate words.
+            assertEquals("INSERT INTO t2 (\"a b\") SELECT (\"a b\") FROM t", PSC.select("(\"a b\")").into("t2").from("t").build().query());
+
+            // A row value is one source expression: splitting it at its commas would declare more target columns than
+            // the SELECT yields, so it is left as it was.
+            assertEquals("INSERT INTO t2 ((a, b)) SELECT DISTINCT (a, b) FROM t", PSC.select("DISTINCT (a, b)").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 (((a, b))) SELECT DISTINCT ((a, b)) FROM t", PSC.select("DISTINCT ((a, b))").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 ((b, c)) SELECT DISTINCT ON (a) (b, c) FROM t",
+                    PSC.select("DISTINCT ON (a) (b, c)").into("t2").from("t").build().query());
+
+            // Qualified and quoted column references unwrap; deep nesting is handled in one pass.
+            assertEquals("INSERT INTO t2 (x.name) SELECT (x.name) AS \"(x.name)\" FROM t", PSC.select("(x.name)").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 (`a``b`) SELECT (`a``b`) FROM t", PSC.select("(`a``b`)").into("t2").from("t").build().query());
+            final String deeplyNested = "(".repeat(10_000) + "name" + ")".repeat(10_000);
+            assertEquals("INSERT INTO t2 (name) SELECT " + deeplyNested + " FROM t", PSC.select(deeplyNested).into("t2").from("t").build().query());
+
+            // Neither is an expression, literal or subquery unwrapped, with or without whitespace, nor an unbalanced group.
+            assertEquals("INSERT INTO t2 ((a + b)) SELECT (a + b) FROM t", PSC.select("(a + b)").into("t2").from("t").build().query());
+            for (final String expr : new String[] { "(a+b)", "(lower(name))", "(now())", "(a::text)", "('lit')", "(1)", "(a.)", "(\"a)", "((a)",
+                    "(a) + (b)" }) {
+                final String query = PSC.select("DISTINCT " + expr).into("t2").from("t").build().query();
+                assertTrue(query.startsWith("INSERT INTO t2 (" + expr + ") SELECT DISTINCT " + expr), query);
+            }
+            assertEquals("INSERT INTO t2 ((SELECT max(x) FROM s)) SELECT (SELECT max(x) FROM s) FROM t",
+                    PSC.select("(SELECT max(x) FROM s)").into("t2").from("t").build().query());
+
+            // The sub-entity check sees the unwrapped column.
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("(devices)", "id").into("bk", Account.class));
+        }
+
+        @Test
+        void testIntoRejectsTableNameOfOnlyControlCharacters() {
+            // trim() empties "\u0001" although Strings.isBlank does not; it must not render "INSERT INTO  (a)".
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("a").into("\u0001"));
+            assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into("\u0001"));
+            assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into("\u0000", Account.class));
+        }
+
         @Test
         void testBatchInsertKeepsDefaultCompositeIdPartWhenAnotherIdIsAssigned() {
             CompositeIdEntity first = new CompositeIdEntity().setTenantId(7).setLocalId(0).setName("Alice");
@@ -326,7 +395,7 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("INSERT INTO bk (id) SELECT DISTINCT ON(lower(name), ')') id FROM t",
                     PSC.select("DISTINCT ON(lower(name), ')') id").into("bk").from("t").build().query());
 
-            // Only a leading keyword followed by whitespace is a quantifier: a column named like one, or a later item, is kept.
+            // Only a leading keyword followed by whitespace or '(' is a quantifier: a column named like one, or a later item, is kept.
             assertEquals("INSERT INTO bk (distinct_id) SELECT distinct_id FROM t", PSC.select("distinct_id").into("bk").from("t").build().query());
             assertEquals("INSERT INTO bk (id, all_flag) SELECT id, all_flag FROM t", PSC.select("id", "all_flag").into("bk").from("t").build().query());
 

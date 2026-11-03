@@ -2625,7 +2625,8 @@ public class Criteria extends AbstractCondition {
          * {@code OFFSET m ROWS FETCH NEXT n ROWS ONLY} on Oracle, DB2 or SQL Server, {@code LIMIT n OFFSET m}
          * elsewhere); an expression whose numbers exceed the {@code int} range is re-rendered only when it is a
          * generic {@code LIMIT count [OFFSET offset]} or MySQL {@code LIMIT offset, count} form (SQL Server builders
-         * also normalize such a {@code FETCH}-form expression); any other out-of-range form is emitted as written.
+         * also normalize such a {@code FETCH}-form expression, and MySQL, MariaDB and SQLite builders, which have no
+         * {@code FETCH} clause, render it as {@code LIMIT count [OFFSET offset]}); any other out-of-range form is emitted as written.
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code

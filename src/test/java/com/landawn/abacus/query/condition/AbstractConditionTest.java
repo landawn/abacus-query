@@ -1194,6 +1194,23 @@ public class AbstractConditionTest extends TestBase {
                     new InSubQuery(List.of("a", "b"), Filters.subQuery("t", List.of("DISTINCT *"), Filters.eq("z", 1))).toString());
         }
 
+        // Regression: "price * REPLACE(name, 'a', 'b')" multiplies by the string function, but was read as the
+        // "* REPLACE (expr AS col)" wildcard modifier, which skipped the projection-width check.
+        @Test
+        void testMultiplicationByReplaceFunctionIsNoWildcard() {
+            final SubQuery oneColumn = new SubQuery("users", List.of("price * REPLACE(name, 'a', 'b')"), null);
+            assertThrows(IllegalArgumentException.class, () -> new InSubQuery(List.of("a", "b"), oneColumn));
+
+            final SubQuery twoColumns = new SubQuery("users", Arrays.asList("price * REPLACE(name, 'a', 'b')", "id"), null);
+            assertThrows(IllegalArgumentException.class, () -> new Equal("x", twoColumns));
+
+            // The modifier form keeps its unknown width.
+            for (final String projection : List.of("* REPLACE (a + 1 AS a)", "t.* REPLACE (lower(n) AS n, x AS y)")) {
+                final SubQuery subQuery = new SubQuery("users", List.of(projection), null);
+                assertDoesNotThrow(() -> new InSubQuery(List.of("a", "b"), subQuery), projection);
+            }
+        }
+
         // A whitespace-separated wildcard renders through the builder with its parameters.
         @Test
         void testWildcardMembershipRetainsParametersWhenRenderedThroughTheBuilder() {

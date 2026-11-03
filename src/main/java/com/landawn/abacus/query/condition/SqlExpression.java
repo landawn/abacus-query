@@ -1250,7 +1250,7 @@ public class SqlExpression extends ComposableCondition {
      * @param max the upper bound value
      * @return the rendered SQL fragment
      * @throws IllegalArgumentException if {@code operator} is {@code null}; if {@code literal} is {@code null}, empty, blank, or comment-only;
-     *             or if {@code min} or {@code max} is a {@code NaN} or infinite {@link Float}/{@link Double},
+     *             or if {@code min} or {@code max} is a blank or comment-only {@link SqlExpression} or a {@code NaN} or infinite {@link Float}/{@link Double},
      *             or a {@link Number} whose text is not a valid numeric literal,
      *             or if {@code min} or {@code max} is a {@link Condition} whose rendering rejects one of its own values for the same reasons,
      *             or a nested {@link SubQuery} has an invalid entity class
@@ -1325,7 +1325,7 @@ public class SqlExpression extends ComposableCondition {
      * @param literals the literals to join
      * @return the joined string
      * @throws IllegalArgumentException if {@code operator} is {@code null} and at least two literals are supplied,
-     *                                  or if any element of {@code literals} is {@code null}, empty, or blank
+     *                                  or if any element of {@code literals} is {@code null}, empty, blank, or comment-only
      */
     static String link2(final Operator operator, final String... literals) {
         if (N.isEmpty(literals)) {

@@ -1,7 +1,7 @@
-# abacus-query API Index (v4.9.7)
-- Build: bda449de860ed72fbe523514a75e7b08899f15db
+# abacus-query API Index (v4.9.8)
+- Build: 988f590a9ec642d2753d7fc83f2b037933ecadcc
 - Java: 21
-- Generated: 2026-10-30
+- Generated: 2026-11-02
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -72,7 +72,7 @@ Base class for fluent SQL builders.
   - ```java
     String sql = PSC.insert(account).into(Account.class).build().query();
     // Table name derived from Account class based on naming policy
-
+    
     // Src maps name to @Column("src_name"), Dst (table "dst") maps it to @Column("dst_name")
     String copySql = PSC.select(Src.class).into(Dst.class).from("src").build().query();
     // Output: INSERT INTO dst (id, dst_name) SELECT id AS "id", src_name AS "name" FROM src
@@ -3092,7 +3092,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Signature:** `public SqlBuilder selectCountFrom(final Class<?> entityClass)`
 - **Summary:** Creates a COUNT(*) query for an entity class.
 - **Contract:**
-  - The table name is derived from the entity class name or @Table annotation, and the entity's @Table alias, if it declares one, is used as the table alias (as by from(Class)).
+  - The table name is derived from the entity class name or @Table annotation, and the entity's @Table alias, if it declares one, is used as the table alias (as by from(Class)) and qualifies the columns in WHERE conditions; the example below assumes an entity without one.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to count
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
@@ -7171,7 +7171,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Signature:** `public static Limit limit(final int count, final int offset)`
 - **Summary:** Creates a Limit clause with a count and offset.
 - **Contract:**
-  - When offset == 0, the rendered SQL omits the OFFSET clause.
+  - When offset == 0, it renders like #limit(int): the OFFSET clause is omitted, except on SQL Server, whose FETCH pagination always needs OFFSET 0 ROWS.
 - **Parameters:**
   - `count` (`int`) — the maximum number of rows to return (must be non-negative)
   - `offset` (`int`) — the number of rows to skip (must be non-negative)
@@ -9491,7 +9491,7 @@ Internal constants container providing the standardized parameter-name string li
   - **Summary:** Parameter name for a string of one or more SQL mapper file paths separated by ',' or ';'.
   - **Nullability:** unspecified
 - **Declaration:** `public static final String files`
-  - **Summary:** Parameter name for the collection of files to read from.
+  - **Summary:** Parameter name for the array of files to read from.
   - **Nullability:** unspecified
 - **Declaration:** `public static final String firstFilePath`
   - **Summary:** Parameter name for the first SQL mapper file path in a multi-file load.
@@ -12190,7 +12190,7 @@ A mutable builder for constructing Criteria instances with a fluent API.
 - **Summary:** Sets or replaces the LIMIT clause using a string expression.
 - **Contract:**
   - If a LIMIT clause already exists, it will be replaced.
-  - When rendered by a SQL builder, the parsed count/offset is re-emitted in that builder dialect's pagination syntax whichever accepted form was passed (for example OFFSET m ROWS FETCH NEXT n ROWS ONLY on Oracle, DB2 or SQL Server, LIMIT n OFFSET m elsewhere); an expression whose numbers exceed the int range is re-rendered only when it is a generic LIMIT count \[OFFSET offset\] or MySQL LIMIT offset, count form (SQL Server builders also normalize such a FETCH-form expression); any other out-of-range form is emitted as written.
+  - When rendered by a SQL builder, the parsed count/offset is re-emitted in that builder dialect's pagination syntax whichever accepted form was passed (for example OFFSET m ROWS FETCH NEXT n ROWS ONLY on Oracle, DB2 or SQL Server, LIMIT n OFFSET m elsewhere); an expression whose numbers exceed the int range is re-rendered only when it is a generic LIMIT count \[OFFSET offset\] or MySQL LIMIT offset, count form (SQL Server builders also normalize such a FETCH-form expression, and MySQL, MariaDB and SQLite builders, which have no FETCH clause, render it as LIMIT count \[OFFSET offset\]); any other out-of-range form is emitted as written.
 - **Parameters:**
   - `expr` (`String`) — the LIMIT expression as a string (must not be null, empty, or blank)
 - **Returns:** this Builder instance for method chaining

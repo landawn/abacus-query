@@ -208,6 +208,17 @@ public class DynamicQueryTest extends TestBase {
 
     @Nested
     class CommentBoundaries {
+        // The trailing-comment prefilter now looks for "--" instead of any '-': subtraction and negative literals still
+        // render unchanged, and a real "--" comment is still ended.
+        @Test
+        void testSingleDashFragmentsSkipTheCommentScanButDashCommentsAreStillEnded() {
+            final Builder b = DynamicQuery.builder();
+            b.select().append("a - b");
+            b.from().append("t");
+            b.where().append("o.status <> -1").and("x = 'us-east-1'").and("y = 1 -- note").and("z = ?");
+            assertEquals("SELECT a - b FROM t WHERE o.status <> -1 AND x = 'us-east-1' AND y = 1 -- note\n AND z = ?", b.build());
+        }
+
         @Test
         void testFragmentTrailingCommentCheckFailsClosedAcrossDialectReadings() {
             // Regression: a fragment carries no dialect, but its trailing-comment check used one fixed reading: a PostgreSQL

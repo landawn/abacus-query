@@ -488,10 +488,17 @@ public final class SqlParser {
          */
         private final boolean semicolonlessBatches;
 
+        /**
+         * Precomputed: the config is immutable, and SqlDialect.hashCode (hence every Dsl.forDialect lookup) would otherwise
+         * re-hash every separator on each call.
+         */
+        private final int hashCode;
+
         private TokenizerConfig(final Set<String> configuredSeparators, final boolean semicolonlessBatches) {
             // Both callers transfer exclusive ownership; builders copy on their next mutation.
             separators = Collections.unmodifiableSet(configuredSeparators);
             this.semicolonlessBatches = semicolonlessBatches;
+            hashCode = 31 * separators.hashCode() + Boolean.hashCode(semicolonlessBatches);
 
             int maxLength = 1;
             final byte[] ascii = new byte[128];
@@ -659,7 +666,7 @@ public final class SqlParser {
          */
         @Override
         public int hashCode() {
-            return 31 * separators.hashCode() + Boolean.hashCode(semicolonlessBatches);
+            return hashCode;
         }
 
         /**
@@ -4520,10 +4527,13 @@ public final class SqlParser {
         }
         if (first < sql.length() && Character.isLetter(sql.charAt(first))) {
             final int end = identifierEnd(sql, first);
-            knownAllowedLeadingVerb = matchesToken(sql, first, end, "SELECT", false) || allowInsert && matchesToken(sql, first, end, "INSERT", false);
-            if (!knownAllowedLeadingVerb && !matchesToken(sql, first, end, "WITH", false)) {
+            final boolean allowedLeadingVerb = matchesToken(sql, first, end, "SELECT", false) || allowInsert && matchesToken(sql, first, end, "INSERT", false);
+            if (!allowedLeadingVerb && !matchesToken(sql, first, end, "WITH", false)) {
                 return false;
             }
+            // A '#' glued to the verb is not invariant: the SQL Server reading keeps "SELECT#x" as one name (an implicit
+            // procedure call leading the batch), so let every reading check its own leading word then.
+            knownAllowedLeadingVerb = allowedLeadingVerb && (end == sql.length() || sql.charAt(end) != '#');
         }
         boolean hasValidMode = false;
         // '#' classification on the raw text does not depend on the quote/comment mode. Reuse
@@ -4539,8 +4549,12 @@ public final class SqlParser {
         final int quoteAxes = lexicalAxes(sql);
         final int commentModes = sql.indexOf("--") >= 0 ? 2 : 1;
         boolean hasInvalidMode = false;
+        // The latest text accepted per comment policy, and the earlier ones (a handful at most: one per mode). The common
+        // single-text case allocates no list.
         String acceptedMysqlMask = null;
         String acceptedStandardMask = null;
+        List<String> earlierAcceptedMysqlMasks = null;
+        List<String> earlierAcceptedStandardMasks = null;
         for (int noEscapeQuotes = 0; noEscapeQuotes <= quoteAxes; noEscapeQuotes++) {
             if (isSkippedLexicalMode(noEscapeQuotes, quoteAxes)) {
                 continue;
@@ -4569,9 +4583,14 @@ public final class SqlParser {
                 }
 
                 // Different modes may produce the same text, for example when their distinguishing characters
-                // occur inside a comment. Keep every mask and stability check, but classify that text only once
-                // per comment policy while it remains the latest accepted result. All other inputs are fixed here.
-                if (maskedSql.equals(mysqlCommentRules ? acceptedMysqlMask : acceptedStandardMask)) {
+                // occur inside a comment. Keep every mask and stability check, but classify each distinct text only
+                // once per comment policy. All other inputs are fixed here, so an accepted text stays accepted. Only
+                // remembering the latest one re-classified masks that alternate between modes (A, B, A, B, ...: a
+                // backslash-escaped quote plus unrelated quoted identifiers or "--"), up to once per mode.
+                final String latestAcceptedMask = mysqlCommentRules ? acceptedMysqlMask : acceptedStandardMask;
+                final List<String> earlierAcceptedMasks = mysqlCommentRules ? earlierAcceptedMysqlMasks : earlierAcceptedStandardMasks;
+
+                if (maskedSql.equals(latestAcceptedMask) || earlierAcceptedMasks != null && earlierAcceptedMasks.contains(maskedSql)) {
                     continue;
                 }
 
@@ -4580,8 +4599,10 @@ public final class SqlParser {
                 }
 
                 if (mysqlCommentRules) {
+                    earlierAcceptedMysqlMasks = withAddedMask(earlierAcceptedMysqlMasks, acceptedMysqlMask);
                     acceptedMysqlMask = maskedSql;
                 } else {
+                    earlierAcceptedStandardMasks = withAddedMask(earlierAcceptedStandardMasks, acceptedStandardMask);
                     acceptedStandardMask = maskedSql;
                 }
             }
@@ -4687,6 +4708,21 @@ public final class SqlParser {
         // comment and parameter shapes (a MyBatis "#{...}" marker reads the same everywhere).
         return !((hasInvalidMode || sql.indexOf('\r') >= 0 && sql.indexOf("--") >= 0 || containsNonMarkerHash(sql) || containsSqliteParameterSuffix(sql))
                 && isRejectedUnderEveryBracketReading(sql, tokenizerConfig, READING_SQLITE, memo, allowInsert, knownAllowedLeadingVerb));
+    }
+
+    /**
+     * Returns {@code masks} with {@code mask} added (a new list if {@code masks} is {@code null}), or {@code masks}
+     * unchanged if {@code mask} is {@code null}, so a list is allocated only once a second distinct mask is accepted.
+     */
+    private static List<String> withAddedMask(final List<String> masks, final String mask) {
+        if (mask == null) {
+            return masks;
+        }
+
+        final List<String> result = masks == null ? new ArrayList<>(4) : masks;
+        result.add(mask);
+
+        return result;
     }
 
     /**
@@ -6347,7 +6383,7 @@ public final class SqlParser {
         int statementStart = 0;
         int index = 0;
         // Batch-mode state (unused otherwise): parenthesis depth, whether the current statement's own verb has
-        // been seen, and the previous top-level word for the FOR UPDATE clause carve-out.
+        // been seen, and the previous top-level word for the clause carve-outs (FOR UPDATE, the MERGE join hint).
         int depth = 0;
         boolean mainVerbSeen = false;
         int previousWordStart = -1;
@@ -6744,8 +6780,8 @@ public final class SqlParser {
                         && matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INSERT", false)) {
                     final int next = skipLeadingWhitespaceAndComments(sql, end, tokenizerConfig, memo);
                     insertTopExpression = next < sql.length() && sql.charAt(next) == '(';
-                } else if (!insertTopExpression && (matchesToken(sql, index, end, "SELECT", false) || matchesToken(sql, index, end, "VALUES", false)
-                        || matchesToken(sql, index, end, "DEFAULT", false))) {
+                } else if (!insertTopExpression && isAsciiWord(sql, index, end) && (matchesToken(sql, index, end, "SELECT", false)
+                        || matchesToken(sql, index, end, "VALUES", false) || matchesToken(sql, index, end, "DEFAULT", false))) {
                     // The INSERT's source is settled, so a later EXEC/EXECUTE word cannot be the procedure this
                     // INSERT feeds from; it is an ordinary identifier (PostgreSQL allows "execute" as a column
                     // name, so "INSERT INTO t SELECT execute FROM s" must stay accepted).
@@ -6758,7 +6794,7 @@ public final class SqlParser {
                     // called exec/execute, as may columns inside (...); only a later top-level word is a call.
                     // A '.' after the word is decided by startsProcedureReference: it does not by itself make the
                     // word a qualifier, since SQL Server names a module with omitted leading parts as "..p" / ".dbo.p".
-                    final boolean identifier = previousInsertWordStart >= 0
+                    final boolean identifier = previousInsertWordStart >= 0 && isAsciiWord(sql, previousInsertWordStart, previousInsertWordEnd)
                             && (matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INSERT", false)
                                     || matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "INTO", false)
                                     || matchesToken(sql, previousInsertWordStart, previousInsertWordEnd, "AS", false));
@@ -6911,6 +6947,10 @@ public final class SqlParser {
      */
     private static boolean isReservedExpressionContinuation(final String sql, final int index) {
         final int end = identifierEnd(sql, index);
+
+        if (!isAsciiWord(sql, index, end)) {
+            return false;
+        }
 
         return matchesToken(sql, index, end, "AS", false) || matchesToken(sql, index, end, "IS", false) || matchesToken(sql, index, end, "NOT", false)
                 || matchesToken(sql, index, end, "IN", false) || matchesToken(sql, index, end, "BETWEEN", false) || matchesToken(sql, index, end, "LIKE", false)
@@ -7406,11 +7446,13 @@ public final class SqlParser {
 
             if (Character.isLetter(ch)) {
                 final int end = identifierEnd(sql, index);
-                final boolean afterInsert = previousStart >= 0 && matchesToken(sql, previousStart, previousEnd, "INSERT", false);
+                final boolean afterInsert = previousStart >= 0 && isAsciiWord(sql, previousStart, previousEnd)
+                        && matchesToken(sql, previousStart, previousEnd, "INSERT", false);
 
                 if ((matchesToken(sql, index, end, "OUTFILE", false) || matchesToken(sql, index, end, "DUMPFILE", false)) && previousStart >= 0
                         && matchesToken(sql, previousStart, previousEnd, "INTO", false)
-                        && !(beforePreviousStart >= 0 && matchesToken(sql, beforePreviousStart, beforePreviousEnd, "INSERT", false))) {
+                        && !(beforePreviousStart >= 0 && isAsciiWord(sql, beforePreviousStart, beforePreviousEnd)
+                                && matchesToken(sql, beforePreviousStart, beforePreviousEnd, "INSERT", false))) {
                     return true;
                 }
 
@@ -7427,7 +7469,12 @@ public final class SqlParser {
                 // A dot-qualified word ("t.insert") is a column name, never the INSERT statement verb whose
                 // INTO introduces a table name, so it must not exempt a following INTO OUTFILE. The decimal point
                 // ending a numeric literal ("b = 1. INTO OUTFILE", MySQL's "1." literal) qualifies nothing.
-                previousStart = followsQualifierDot(sql, index, tokenizerConfig, memo) ? -1 : index;
+                // Only the INSERT exemption takes the qualifier reading of any '.': "$1." also reads as a number
+                // (T-SQL money, a PostgreSQL parameter), but in MySQL "$1" is a plain identifier, so "$1.insert" is a
+                // column there and must not exempt the INTO OUTFILE after it.
+                final int dotIndex = skipBackwardWhitespaceAndComments(sql, index - 1, tokenizerConfig, memo);
+                final boolean afterDot = dotIndex >= 0 && sql.charAt(dotIndex) == '.';
+                previousStart = afterDot && (!isNumericLiteralDecimalPoint(sql, dotIndex) || matchesToken(sql, index, end, "INSERT", false)) ? -1 : index;
                 previousEnd = end;
                 index = end;
                 continue;
@@ -7923,8 +7970,28 @@ public final class SqlParser {
         };
     }
 
+    /**
+     * Whether {@code sql[start, end)} has no non-ASCII character. Case-insensitive matching folds {@code ı}/{@code İ} to
+     * {@code I}, {@code ſ} to {@code S} and the Kelvin sign to {@code K}, while MySQL and PostgreSQL match keywords by ASCII
+     * case only: a word that would EXEMPT a construct from rejection must be ASCII, or {@code ınsert} would hide a mutation.
+     * Detection sites keep the folding reading (H2 upper-cases with English rules), which is the fail-closed one there.
+     */
+    private static boolean isAsciiWord(final String sql, final int start, final int end) {
+        for (int i = start; i < end; i++) {
+            if (sql.charAt(i) >= 0x80) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /** Keywords reserved in every target dialect that can only follow an operand, never a statement verb. */
     private static boolean isOperandFollowingKeyword(final String word) {
+        if (!isAsciiWord(word, 0, word.length())) {
+            return false;
+        }
+
         return switch (word.length()) {
             case 2 -> "IS".equalsIgnoreCase(word) || "IN".equalsIgnoreCase(word) || "OR".equalsIgnoreCase(word) || "AS".equalsIgnoreCase(word);
             case 3 -> "NOT".equalsIgnoreCase(word) || "AND".equalsIgnoreCase(word);
