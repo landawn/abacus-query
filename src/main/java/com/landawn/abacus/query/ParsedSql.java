@@ -154,8 +154,9 @@ import com.landawn.abacus.util.Strings;
  * runs; markers in such kept text are not converted, so a binding there fails loudly. A block comment right after a
  * {@code /} ({@code //* c *}{@code /}), which H2 reads as the start of a {@code //} line comment, is kept as written
  * with the whitespace and comments after it, so neither reading changes. A line holding a hash operator
- * ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}), which the tokenizer keeps as SQL but MySQL reads as the
- * start of a {@code #} line comment, is handled the same way. For an
+ * ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}) or a blank <code>#{}</code> / <code>#{ }</code> marker,
+ * which the tokenizer keeps as SQL but MySQL reads as the start of a {@code #} line comment, is handled the same way (a
+ * blank marker that spans a line break is kept as written, line break included). For an
  * unrecognized operation the token stream is not used to rebuild the SQL and no parameter
  * conversion is performed, so its comments remain in the normalized parameterized SQL.</p>
  *
@@ -357,6 +358,8 @@ public final class ParsedSql {
                 String word = words.get(i);
                 // A MyBatis binding may join following tokens and advance i; offset 0 of word stays at this token.
                 final int tokenIndex = i;
+                // Whether this token keeps a blank "#{}" / "#{ }" as text (see the line-break rule below).
+                boolean keepsBlankIbatisMarker = false;
 
                 final boolean chainedSubscript = chainedSubscripts != null && chainedSubscripts[i];
 
@@ -421,6 +424,11 @@ public final class ParsedSql {
                         // inside a literal cannot close it ("ARRAY[#{a, '}']" must not become "ARRAY[?']"). A quote left
                         // open, or a second "#{" before the '}', makes the marker malformed.
                         int closingIndex = findIbatisClosingBraceIndex(word, markerStartIndex + 2);
+                        // For a marker joined across tokens: the token holding its opener (-1 if not joined), the opener's
+                        // offset in that token, and the '}' offset in the last joined token (token i).
+                        int joinedFromToken = -1;
+                        int joinedOpenerOffset = 0;
+                        int joinedBraceOffset = 0;
 
                         if (closingIndex == MALFORMED_IBATIS_MARKER) {
                             throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: missing closing '}' in: " + this.sql);
@@ -440,6 +448,10 @@ public final class ParsedSql {
                             // may still hold a '}' inside a balanced literal, so only the joined tokens are searched.
                             final StringBuilder ibatisTokenBuilder = new StringBuilder();
                             ibatisTokenBuilder.append(word, markerStartIndex, word.length());
+                            // The opener lies in token i, which word ends with (a marker left open by an earlier join of
+                            // this token follows that join's '}', inside the last token it joined).
+                            joinedFromToken = i;
+                            joinedOpenerOffset = markerStartIndex - (word.length() - words.get(i).length());
 
                             while (closingIndex < 0 && i < size - 1) {
                                 final String nextWord = words.get(++i);
@@ -456,6 +468,7 @@ public final class ParsedSql {
 
                                 if (braceIndex >= 0) {
                                     closingIndex = ibatisTokenBuilder.length() + braceIndex;
+                                    joinedBraceOffset = braceIndex;
                                 }
 
                                 ibatisTokenBuilder.append(nextWord);
@@ -481,6 +494,23 @@ public final class ParsedSql {
                             throw new IllegalArgumentException("Malformed iBatis/MyBatis parameter: empty property name in: " + this.sql);
                         }
 
+                        keepsBlankIbatisMarker |= namedParameter == null;
+
+                        // A blank marker joined across a line break is kept as written: collapsed onto one line, its '#',
+                        // which MySQL reads as a line comment, swallowed the SQL after the break ("a = 1 #{\n} LIMIT 1"
+                        // became "a = 1 #{ } LIMIT 1"). Null when it has no line break (or, defensively, cannot be aligned).
+                        String blankMarkerSource = null;
+
+                        if (namedParameter == null && joinedFromToken >= 0) {
+                            if (tokenSourceOffsets == null) {
+                                final int[] aligned = alignTokenSourceOffsets(this.sql, words);
+                                tokenSourceOffsets = aligned == null ? N.EMPTY_INT_ARRAY : aligned;
+                            }
+
+                            blankMarkerSource = joinedBlankMarkerSource(this.sql, tokenSourceOffsets, joinedFromToken, joinedOpenerOffset, i,
+                                    joinedBraceOffset);
+                        }
+
                         if (namedParameter != null) {
                             if (namedParameterList == null) {
                                 namedParameterList = new ArrayList<>(2);
@@ -496,6 +526,8 @@ public final class ParsedSql {
                             // joining above may already have materialized the complete marker.
                             if (namedParameter != null) {
                                 word = (trailingQuestionMarkCount(sb) & 1) == 0 ? SK.QUESTION_MARK : " ?";
+                            } else if (blankMarkerSource != null) {
+                                word = blankMarkerSource;
                             }
                             break;
                         }
@@ -512,7 +544,11 @@ public final class ParsedSql {
                             // Empty or blank "#{...}" content — keep verbatim, no parameter, and keep
                             // scanning so a subsequent marker in the same token ("#{}#{a}", "#{ }#{a}")
                             // is still extracted instead of being lost.
-                            rebuilt.append(word, markerStartIndex, closingIndex + 1);
+                            if (blankMarkerSource != null) {
+                                rebuilt.append(blankMarkerSource);
+                            } else {
+                                rebuilt.append(word, markerStartIndex, closingIndex + 1);
+                            }
                         }
 
                         copiedFrom = closingIndex + 1;
@@ -617,7 +653,8 @@ public final class ParsedSql {
                 // kept, and a "//" that H2 would read as quoted text (inside "$$...$$", which is not modelled) also counts.
                 // MySQL has the same hazard with '#': the tokenizer keeps a hash operator ("?#", "##", "#>", "#-") as SQL,
                 // where MySQL opens a "#" line comment ("SET a = ?# note\nWHERE id = 42" must not run as "SET a = ?"),
-                // so a line holding one is treated exactly like a line holding "//".
+                // so a line holding one is treated exactly like a line holding "//". So is a line holding a blank "#{}" or
+                // "#{ }" kept as text: MySQL reads its '#' as a comment too ("a = 1 #{}\nLIMIT 1" must keep its LIMIT).
                 if (SK.SPACE.equals(word) && i > 0 && i + 1 < size) {
                     if (lineHoldsDialectLineComment
                             || sb.length() > 0 && sb.charAt(sb.length() - 1) == '\'' && words.get(i - 1).endsWith("'") && words.get(i + 1).startsWith("'")) {
@@ -688,7 +725,7 @@ public final class ParsedSql {
                     if (!opensDoubleSlashComment && !lineHoldsDialectLineComment) {
                         lineHoldsDialectLineComment = mayHoldDoubleSlashComment
                                 && (sb.length() > 0 && sb.charAt(sb.length() - 1) == '/' && word.startsWith("/") || mayHoldH2LineComment(word))
-                                || mayHoldHashOperator && isHashOperatorToken(word);
+                                || mayHoldHashOperator && (isHashOperatorToken(word) || keepsBlankIbatisMarker);
                     }
                 }
 
@@ -1193,9 +1230,11 @@ public final class ParsedSql {
      * ({@code id = :id //* c *}{@code / 1 OR 1 = 1} becomes {@code id = ? //* c *}{@code / 1 OR 1 = 1}, not
      * {@code id = ? / 1 OR 1 = 1}), an unterminated one with the rest of the statement, and its line is a line holding
      * {@code //}. Kept text is not converted, so a marker in it fails loudly. A line holding a hash operator token
-     * ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}) is
-     * treated exactly like a line holding {@code //}, since MySQL reads its {@code #} as the start of a line comment
-     * ({@code SET a = ?# c\nWHERE id = 42} keeps its line break instead of running as {@code SET a = ?} on MySQL).
+     * ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}) or a blank <code>#{}</code> / <code>#{ }</code> marker
+     * (kept as text) is treated exactly like a line holding {@code //}, since MySQL reads its {@code #} as the start of a
+     * line comment ({@code SET a = ?# c\nWHERE id = 42} keeps its line break instead of running as {@code SET a = ?} on
+     * MySQL, and <code>a = 1 #{}\nLIMIT 1</code> keeps its {@code LIMIT}); a blank marker that spans a line break is kept
+     * as written (<code>a = 1 #{\n} LIMIT 1</code> does not become <code>a = 1 #{ } LIMIT 1</code>).
      * A {@code ?} converted
      * from a named or iBatis marker that would otherwise pair with an adjacent {@code ?} is separated from it by
      * one space ({@code payload?:key} becomes {@code payload? ?}, {@code :a:b} becomes {@code ? ?},
@@ -1500,6 +1539,29 @@ public final class ParsedSql {
         }
 
         return false;
+    }
+
+    /**
+     * Returns the source text of a blank MyBatis marker whose tokens were joined, from the {@code '#'} at
+     * {@code openerOffset} of token {@code fromToken} through the {@code '}'} at {@code braceOffset} of token
+     * {@code toToken}, if that text holds a line break; otherwise, or if the tokens are not aligned (an empty
+     * {@code offsets}), {@code null}.
+     */
+    private static String joinedBlankMarkerSource(final String sql, final int[] offsets, final int fromToken, final int openerOffset, final int toToken,
+            final int braceOffset) {
+        if (offsets.length == 0 || offsets[fromToken] < 0 || offsets[toToken] < 0) {
+            return null;
+        }
+
+        final int start = offsets[fromToken] + openerOffset;
+        final int end = offsets[toToken] + braceOffset + 1;
+
+        if (start < 0 || end > sql.length() || start + 2 >= end || !sql.startsWith("#{", start) || sql.charAt(end - 1) != '}'
+                || !containsLineBreak(sql, start, end)) {
+            return null;
+        }
+
+        return sql.substring(start, end);
     }
 
     /** Returns {@code true} if {@code text} holds a line break and only spaces, tabs, form feeds and line breaks after the first one. */

@@ -96,7 +96,8 @@ public class AbstractQueryBuilderTest extends TestBase {
                 final Dsl mysql = lexDialect(PSB, product);
 
                 for (final String prefix : List.of("##", "#>")) {
-                    assertSql("DELETE FROM account WHERE id = 1 " + prefix + " c OR 1=1", List.of(),
+                    // The expression ends inside that comment, so it is ended with a line feed (as a trailing H2 "//" is).
+                    assertSql("DELETE FROM account WHERE id = 1 " + prefix + " c OR 1=1\n", List.of(),
                             mysql.deleteFrom("account").where("id = 1 " + prefix + " c\r OR 1=1").build());
                 }
             }
@@ -3293,8 +3294,9 @@ public class AbstractQueryBuilderTest extends TestBase {
         void testMySqlDashPairRewriteSkipsMarkersCommentsAndStrings() {
             final Dsl mysql = lexDialect(PSC, "MySQL");
 
-            // The marker is not rewritten; its nonsensical "--" name then still reads as a comment (pre-existing).
-            assertEquals("SELECT id FROM t WHERE a = #{x", mysql.select("id").from("t").where(Filters.expr("a = #{x--y} AND b--1 > 0")).build().query());
+            // The marker is not rewritten; its nonsensical "--" name then still reads as a comment (pre-existing). The "#{x"
+            // left over is unclosed, a MySQL comment, so the expression is ended with a line feed.
+            assertEquals("SELECT id FROM t WHERE a = #{x\n", mysql.select("id").from("t").where(Filters.expr("a = #{x--y} AND b--1 > 0")).build().query());
             assertEquals("SELECT id FROM t WHERE a = 1 AND b- -1 > 0",
                     mysql.select("id").from("t").where(Filters.expr("a /* a--1 */ = 1 AND b--1 > 0")).build().query());
             assertEquals("SELECT id FROM t WHERE n = \"a\\\"--1\" AND b- -1 > 0",
@@ -7364,6 +7366,97 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("UPDATE account SET role = 'admin' #{x} = 'x' WHERE id = 1",
                     mysqlRaw.update("account").set(Map.of("role = 'admin' #{x}", "x")).where(Filters.eq("id", 1)).build().query());
             assertEquals("SELECT a FROM account #{x} WHERE id = ?", mysql.select("a").from("account #{x}").where(Filters.equal("id", 1)).build().query());
+        }
+
+        @Test
+        void testMySqlBlankOrNestedMyBatisMarkerIsAHashComment() {
+            // ParsedSql keeps a blank "#{}" / "#{ }" as text and rejects nested openers, so neither is ever substituted: MySQL
+            // reads its '#' as a line comment. "WHERE status = 0 #{} LIMIT 1" used to lose the LIMIT of the DELETE.
+            final Dsl mysql = lexDialect(PSC, "MySQL");
+            final Dsl mysqlRaw = lexDialect(SCSB, "MySQL");
+
+            for (final String marker : new String[] { "#{}", "#{ }", "#{\t}", "#{a #{b}" }) {
+                assertThrows(IllegalArgumentException.class, () -> mysql.select("a").from("account").orderBy("a " + marker), marker);
+                assertEquals("SELECT a FROM account " + marker + "\n WHERE id = ?",
+                        mysql.select("a").from("account " + marker).where(Filters.equal("id", 1)).build().query(), marker);
+            }
+
+            // A raw expression that ends inside such a comment gets a line feed, so the clause appended next survives.
+            assertEquals("DELETE FROM account WHERE status = 0 #{}\n LIMIT 1", mysql.deleteFrom("account").where("status = 0 #{}").limit(1).build().query());
+            assertEquals("DELETE FROM account WHERE status = 0 #{ }\n LIMIT 1",
+                    mysql.deleteFrom("account").where(Filters.expr("status = 0 #{ }")).limit(1).build().query());
+            assertEquals("DELETE FROM account WHERE status = 0 #{\n LIMIT 1", mysql.deleteFrom("account").where("status = 0 #{").limit(1).build().query());
+            assertEquals("DELETE FROM account WHERE status = 0 ## stale\n LIMIT 1",
+                    mysql.deleteFrom("account").where("status = 0 ## stale").limit(1).build().query());
+            assertEquals("DELETE FROM account WHERE (status = 0 #{}\n) AND (id = ?) LIMIT 1",
+                    mysql.deleteFrom("account").where(Filters.and(Filters.expr("status = 0 #{}"), Filters.eq("id", 1))).limit(1).build().query());
+            assertEquals("UPDATE t SET flag = flag ## toggle\n WHERE id = 1",
+                    mysqlRaw.update("t").set(Map.of("flag", SqlExpression.of("flag ## toggle"))).where(Filters.eq("id", 1)).build().query());
+            assertEquals("SELECT a FROM t GROUP BY a HAVING count(*) > 1 #{}\n LIMIT 1",
+                    mysql.select("a").from("t").groupBy("a").having("count(*) > 1 #{}").limit(1).build().query());
+            assertEquals("SELECT a FROM t INNER JOIN u ON u.id = t.id #{}\n WHERE x = ?",
+                    mysql.select("a").from("t").innerJoin("u").on("u.id = t.id #{}").where(Filters.eq("x", 1)).build().query());
+            // ParsedSql keeps that line break, so the LIMIT reaches MySQL on its own line.
+            assertEquals("DELETE FROM account WHERE status = 0 #{}\nLIMIT 1",
+                    ParsedSql.parse(mysql.deleteFrom("account").where("status = 0 #{}").limit(1).build().query()).parameterizedSql());
+
+            // Column positions reject such a comment outright: set("a = b #{}") used to render "UPDATE t SET a = b #{} WHERE id = ?",
+            // which updates every row on MySQL.
+            assertThrows(IllegalArgumentException.class, () -> mysql.update("t").set("a = b #{}").where(Filters.eq("id", 1)));
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("a").from("t").groupBy("a #{}"));
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("a #{ }").from("t"));
+
+            // Raw sub-queries and the operands of other conditions are ended with a line feed too.
+            assertEquals("DELETE FROM t WHERE id IN (SELECT id FROM u WHERE a = 1 #{}\n) LIMIT 1",
+                    mysql.deleteFrom("t").where(Filters.in("id", Filters.subQuery("SELECT id FROM u WHERE a = 1 #{}"))).limit(1).build().query());
+            assertEquals("DELETE FROM t WHERE EXISTS (SELECT 1 FROM u WHERE a = 1 #{ }\n) LIMIT 1",
+                    mysql.deleteFrom("t").where(Filters.exists(Filters.subQuery("SELECT 1 FROM u WHERE a = 1 #{ }"))).limit(1).build().query());
+            assertEquals("DELETE FROM t WHERE a BETWEEN 1 #{}\n AND ? LIMIT 1",
+                    mysql.deleteFrom("t").where(Filters.between("a", SqlExpression.of("1 #{}"), 2)).limit(1).build().query());
+            assertEquals("DELETE FROM t WHERE NOT (a = 1 #{}\n) LIMIT 1",
+                    mysql.deleteFrom("t").where(Filters.not(Filters.expr("a = 1 #{}"))).limit(1).build().query());
+            assertEquals("DELETE FROM t WHERE a = b #{}\n LIMIT 1",
+                    mysql.deleteFrom("t").where(Filters.eq("a", SqlExpression.of("b #{}"))).limit(1).build().query());
+            // A binding marker before the comment does not hide it.
+            assertEquals("DELETE FROM t WHERE a = #{a} ## x\n LIMIT 1", mysql.deleteFrom("t").where("a = #{a} ## x").limit(1).build().query());
+
+            // A binding marker stays a data token, and other dialects read no '#' comment there.
+            assertEquals("DELETE FROM t WHERE a = #{a} AND b = #{ b } AND c = '#' LIMIT 1",
+                    mysql.deleteFrom("t").where("a = #{a} AND b = #{ b } AND c = '#'").limit(1).build().query());
+            assertEquals("DELETE FROM account WHERE status = 0 #{x} LIMIT 1", mysql.deleteFrom("account").where("status = 0 #{x}").limit(1).build().query());
+            assertEquals("DELETE FROM account WHERE status = 0 #{ x } LIMIT 1",
+                    mysql.deleteFrom("account").where("status = 0 #{ x }").limit(1).build().query());
+            assertEquals("DELETE FROM account WHERE status = 0 ## stale",
+                    lexDialect(PSC, "PostgreSQL").deleteFrom("account").where("status = 0 ## stale").build().query());
+        }
+
+        @Test
+        void testMayOpenHashCommentTellsBindingMarkersFromComments() {
+            // false only when every '#' opens a binding marker: the MySQL comment scans are skipped for such text.
+            for (final String text : new String[] { "", "a = 1", "a = #{a}", "a = #{ a } AND b = #{b,jdbcType=INTEGER}", "#{a}#{b}", "#{ }" }) {
+                assertFalse(AbstractQueryBuilder.mayOpenHashComment(text), text);
+            }
+
+            for (final String text : new String[] { "#", "a ## b", "a = '#'", "#{", "a = #{}", "#{ }", "#{\t}", "#{a\n}", "#{a\r}", "#{a #{b}", "#{a#b}",
+                    "#{a} #x" }) {
+                assertTrue(AbstractQueryBuilder.mayOpenHashComment(text), text);
+            }
+        }
+
+        @Test
+        void testMySqlMyBatisMarkerScansStayLinear() {
+            // Each "#{" used to scan forward to the same final '}', which made "#{#{#{...}" quadratic (about 2 seconds for
+            // 16,000 openers). A scan now ends at the next "#{", so 100,000 openers or markers take milliseconds.
+            final Dsl mysql = lexDialect(PSC, "MySQL");
+            final String openers = "#{".repeat(100_000) + "}";
+            final String markers = "#{a}".repeat(100_000);
+
+            org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(java.time.Duration.ofSeconds(5), () -> {
+                assertThrows(IllegalArgumentException.class, () -> mysql.select("a").from("t").orderBy("a " + openers));
+                assertTrue(mysql.select("a").from("t " + openers).where(Filters.eq("id", 1)).build().query().endsWith("}\n WHERE id = ?"));
+                assertTrue(mysql.select("a").from("t").orderBy("a " + markers).limit(1).build().query().endsWith("#{a} LIMIT 1"));
+                assertTrue(mysql.select("a").from("t " + markers).where(Filters.eq("id", 1)).build().query().endsWith("#{a} WHERE id = ?"));
+            });
         }
 
         @Test

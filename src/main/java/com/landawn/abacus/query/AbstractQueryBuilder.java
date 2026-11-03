@@ -178,12 +178,12 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     // A caller fragment that ends inside a line comment under the target database's reading can swallow the clause the
     // builder appends next, silently widening an UPDATE/DELETE:
     // 1. MySQL: where(Filters.expr("status = 0 ## stale\nAND id = 42")) -> "... WHERE status = 0 ## stale AND id = 42".
-    //    The tokenizer keeps "##", "#>", "#>>", "#-" and "?#" as data and joins lines, so MySQL's '#' comment drops AND id = 42;
-    //    a SET value such as SqlExpression.of("flag ## toggle") swallows the WHERE, and "?#" swallows a LIMIT. An unclosed
-    //    MyBatis-like "#{" is kept the same way: deleteFrom("account").where("status = 0 #{").limit(1) loses the LIMIT.
+    //    The tokenizer keeps "##", "#>", "#>>", "#-", "?#" and blank or unclosed "#{" markers as data and joins lines, so
+    //    MySQL's '#' comment drops AND id = 42. (A raw expression that ENDS inside such a comment now gets a line feed on a
+    //    MySQL builder, so a trailing "## x", "?#" or "#{}" no longer swallows the WHERE/LIMIT appended after it.)
     // 2. Dialect-agnostic default: deleteFrom("account ##archived").where(...) -> "DELETE FROM account ##archived WHERE id = 1",
     //    which deletes every row on MySQL ("#archived" and "## archived" do get a line feed). The default dialect's comment
-    //    guard also accepts an unclosed "#{" (orderBy("a #{").limit(10)); only a MySQL builder rejects it.
+    //    guard also accepts an unclosed or blank "#{" (orderBy("a #{").limit(10)); only a MySQL builder rejects it.
     // 3. Oracle: set("name = q'[it's]' -- x").where(...) keeps the WHERE inside the comment (q'[...]' literals are not read);
     //    join(...) and orderBy(...).limit(n) fragments with such a literal swallow ON/FETCH the same way.
     // 4. MySQL with NO_BACKSLASH_ESCAPES: innerJoin("d ON d.path = 'C:\\' -- don't").where(...) swallows the WHERE (the
@@ -3596,7 +3596,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param sql the text the classifier is queried for (only at offsets holding {@code '#'})
      * @param sqlServerTempIdentifiers whether every {@code #name}/{@code ##name} is a SQL Server temporary-table identifier
-     * @param mysqlHashComments whether MySQL rules apply (every {@code '#'} other than a closed <code>#{...}</code> marker opens a comment)
+     * @param mysqlHashComments whether MySQL rules apply (every {@code '#'} other than a <code>#{...}</code> binding marker, see {@link #isMyBatisBindingMarker(String, int)}, opens a comment)
      * @param tokenizerConfig the separators used to distinguish operators from comments
      * @return the classifier; never {@code null}
      */
@@ -4293,7 +4293,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * no dialect or clause context (e.g. {@link DynamicQuery} fragments): the dialect-agnostic reading of
      * {@link #endsInsideLineComment(String, boolean)}; when {@code sql} contains {@code '['}, the reading in which
      * {@code [} opens an array subscript rather than a bracket-quoted identifier (PostgreSQL's {@code ARRAY['a]b'] -- c});
-     * and when it contains {@code '#'}, MySQL's reading, in which every {@code '#'} other than a closed <code>#{...}</code>
+     * and when it contains {@code '#'}, MySQL's reading, in which every {@code '#'} other than a <code>#{...}</code> binding
      * marker opens a comment ({@code #tenant filter} at the start of a fragment), and SQL Server's, in which every
      * {@code #name} is a temporary-table identifier. H2's {@code //} line comments and nested block comments are not
      * read. The extra line feed of a false positive is
@@ -11006,7 +11006,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * for scanning. Bracket-quoted identifiers (only when {@code bracketIdentifiers}) remain opaque, as do
      * strings and comments inside a subscript. With {@code mysqlStrings}, single- and double-quoted string
      * literals honor backslash escapes; otherwise only {@code E'...'} strings do. Under MySQL every {@code '#'}
-     * other than a closed <code>#{...}</code> marker opens a line comment; elsewhere {@code hashIdentifiers} (see
+     * other than a <code>#{...}</code> binding marker opens a line comment; elsewhere {@code hashIdentifiers} (see
      * {@link #hashIdentifierMatcher(String, boolean, boolean, SqlParser.TokenizerConfig)}) tells temporary-table
      * identifiers from hash comments.
      */
@@ -11108,8 +11108,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return end < 0 ? len : end + 2;
         }
 
-        // Under MySQL rules only a closed #{...} MyBatis marker is data; an unterminated "#{" opens a comment.
-        if (ch == '#' && (mysqlCommentRules ? !isClosedMyBatisMarker(sql, start)
+        // Under MySQL rules only a #{...} MyBatis binding marker is data; an unterminated or blank "#{" opens a comment.
+        if (ch == '#' && (mysqlCommentRules ? !isMyBatisBindingMarker(sql, start)
                 : !(sqlServerTempIdentifiers && isSqlServerTempIdentifierAt(sql, start)) && isAliasScannerHashCommentStart(sql, start))) {
             int i = start + 1;
 
@@ -11124,26 +11124,64 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
-     * Reports whether a closed <code>#{...}</code> MyBatis marker starts at {@code hashIndex}: a {@code '#'} followed by
-     * {@code '{'} and a {@code '}'} on the same line. An unterminated <code>#{</code> is never substituted by MyBatis, so
-     * MySQL reads it as the start of a {@code #} line comment.
+     * Reports whether a MyBatis <code>#{...}</code> binding marker starts at {@code hashIndex}: a {@code '#'} followed by
+     * {@code '{'}, a body that is not blank ({@link Character#isWhitespace(char)}) and a {@code '}'} on the same line, with
+     * no other <code>#{</code> before that {@code '}'}. No other marker is substituted: {@link ParsedSql} converts such a
+     * marker to {@code ?}, or rejects it if its name before a {@code ':'} or {@code ','} is empty (<code>#{:id}</code>,
+     * <code>#{, mode=IN}</code>), so neither form can silently become a comment; MySQL reads every other {@code '#'} as the
+     * start of a {@code #} line comment. That includes an
+     * unterminated <code>#{</code>, a blank <code>#{}</code> or <code>#{ }</code> (which {@link ParsedSql} keeps as text,
+     * so {@code status = 0 #{} LIMIT 1} loses its LIMIT), and the outer of two nested openers (<code>#{a #{b}</code>,
+     * which {@link ParsedSql} rejects). Stopping at a nested opener also keeps the scans that start at successive openers
+     * disjoint, so a scanner that asks at every {@code '#'} stays linear: each opener used to scan forward to the same
+     * {@code '}'}, which made <code>"#{".repeat(n) + "}"</code> quadratic.
+     *
+     * @param sql the text to inspect
+     * @param hashIndex the index of a {@code '#'} in {@code sql}
+     * @return {@code true} if a binding marker starts at {@code hashIndex}
      */
-    private static boolean isClosedMyBatisMarker(final String sql, final int hashIndex) {
+    static boolean isMyBatisBindingMarker(final String sql, final int hashIndex) {
         final int len = sql.length();
 
         if (hashIndex + 1 >= len || sql.charAt(hashIndex + 1) != '{') {
             return false;
         }
 
+        boolean blank = true;
+
         for (int i = hashIndex + 2; i < len; i++) {
             final char ch = sql.charAt(i);
 
             if (ch == '}') {
-                return true;
+                return !blank;
             }
 
-            if (ch == '\n' || ch == '\r') {
+            if (ch == '\n' || ch == '\r' || ch == '#' && i + 1 < len && sql.charAt(i + 1) == '{') {
                 return false;
+            }
+
+            if (blank && !Character.isWhitespace(ch)) {
+                blank = false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Whether {@code sql} holds a {@code '#'} that MySQL may read as the start of a line comment: any {@code '#'} that does
+     * not open a <code>#{...}</code> binding marker (see {@link #isMyBatisBindingMarker(String, int)}), quoted or not. A
+     * {@code false} answer proves that no reading of {@code sql} has a {@code '#'} comment, so callers skip their
+     * comment scans for the common MyBatis-style text whose every {@code '#'} is a marker ({@code a = #{a} AND b = #{b}}).
+     * Linear: a marker's scan ends at the next <code>#{</code>, and a lone {@code '#'} inside a marker answers at once.
+     *
+     * @param sql the text to inspect
+     * @return {@code true} if some {@code '#'} in {@code sql} is not a binding marker
+     */
+    static boolean mayOpenHashComment(final String sql) {
+        for (int i = sql.indexOf('#'); i >= 0; i = sql.indexOf('#', i + 1)) {
+            if (!isMyBatisBindingMarker(sql, i)) {
+                return true;
             }
         }
 
@@ -13233,7 +13271,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * too, is emitted as written, its whitespace and words included. For PostgreSQL, H2 and the dialect-agnostic
      * default, a trailing line comment after a dollar-quoted string is ended with a newline. On H2, which also reads {@code //} as a line comment, the text from the first such
      * comment that has more text after its line break is likewise emitted as written (keeping the line break that
-     * ends the comment), and a trailing {@code //} comment is ended with a newline.
+     * ends the comment), and a trailing {@code //} comment is ended with a newline. On MySQL, which reads every
+     * {@code '#'} other than a <code>#{...}</code> binding marker as a line comment, a trailing such comment that the
+     * tokenizer kept as data ({@code status = 0 ## x}, a blank <code>#{}</code> or an unclosed <code>#{</code>) is ended
+     * with a newline as well; one that runs on past a line break inside the expression still joins the next line.
      * A SQL Server expression containing a local or global temporary-table identifier ({@code #name} or
      * {@code ##name}) is emitted verbatim after comment validation, because a dialect-neutral tokenizer
      * otherwise has to interpret a context-free {@code #name} as a MySQL hash comment.
@@ -13323,8 +13364,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         // would a "--" after a dollar quote that the tokenizer kept in one token with it, as in a subscript
         // (ARRAY[$$']$$] -- c). The emitted text is tested, not the source: a "--" comment the tokenizer dropped needs no
         // line break. Without a comment opener in the source (a "${x}" or "$1" marker only), the emitted text holds none.
+        // MySQL only: the tokenizer keeps "##", "#>", "?#" and blank or unclosed "#{" markers as data, while MySQL reads
+        // their '#' as a line comment, so "status = 0 #{}" followed by " LIMIT 1" would lose the LIMIT. Emitted text whose
+        // every '#' opens a binding marker ("a = #{a}", the common MyBatis-style text) holds no such comment and skips the
+        // scan. The emitted text is tested, not the source: rendering can cut a marker ("#{x--y}" renders as "#{x", the
+        // tokenizer dropping "--y}" as a comment), which leaves an unclosed "#{".
         if (verbatimFrom >= 0 && endsInsideLineComment(source.substring(verbatimFrom))
-                || (_h2 && source.contains("//") || _dollarQuotes && source.indexOf('$') >= 0 && mayOpenLineComment(source))
+                || (_h2 && source.contains("//") || _dollarQuotes && source.indexOf('$') >= 0 && mayOpenLineComment(source)
+                        || _dialectFamily == DialectFamily.MYSQL && source.indexOf('#') >= 0 && mayOpenHashComment(_sb.substring(renderStart)))
                         && endsInsideLineComment(_sb.substring(renderStart))) {
             _sb.append('\n');
         }
@@ -13595,8 +13642,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Detects SQL comment openers outside quoted regions. Hash-prefixed operators, MyBatis markers,
      * and SQL Server temporary identifiers are data tokens rather than hash comments; under the MySQL
-     * family, which reads every {@code '#'} as a comment, only a <code>#{...}</code> marker closed on the same line is
-     * (an unterminated <code>#{</code> is reported as a comment).
+     * family, which reads every {@code '#'} as a comment, only a <code>#{...}</code> binding marker is (see
+     * {@link #isMyBatisBindingMarker(String, int)}: an unterminated or blank <code>#{</code> is reported as a comment).
      * Where a backslash escapes a quote depends on the dialect: {@code 'C:\'} is a complete literal in
      * standard SQL (PostgreSQL, Oracle, SQL Server, SQLite, H2, DB2) but unterminated under MySQL's backslash
      * escapes, so {@code 'C:\' -- note} hides its comment from the backslash reading only. Every family except
@@ -13740,9 +13787,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (ch == '#') {
                 if (_dialectFamily == DialectFamily.MYSQL) {
                     // MySQL starts a line comment at every '#' outside quotes: "status = 1 ## reset" or "a #> b" would
-                    // swallow the clauses appended after them. Only a closed #{...} MyBatis marker is a data token: an
-                    // unterminated "#{" is never substituted, so MySQL reads it as a comment too.
-                    if (isClosedMyBatisMarker(expr, i)) {
+                    // swallow the clauses appended after them. Only a #{...} MyBatis binding marker is a data token: an
+                    // unterminated or blank "#{" is never substituted, so MySQL reads it as a comment too.
+                    if (isMyBatisBindingMarker(expr, i)) {
                         i++;
                         continue;
                     }

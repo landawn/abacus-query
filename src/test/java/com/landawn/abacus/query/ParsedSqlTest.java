@@ -1418,6 +1418,36 @@ public class ParsedSqlTest extends TestBase {
             assertEquals("SELECT * FROM t WHERE a = #{} AND b = #{ } AND c = ?", parsed.parameterizedSql());
             assertEquals(List.of("c"), parsed.namedParameters());
 
+            // Regression: MySQL reads the '#' of a kept blank marker as a line comment, so collapsing the line break after it
+            // turned "a = 1 #{}\nLIMIT 1" into "a = 1 #{} LIMIT 1", which deletes every matching row on MySQL. The line
+            // break is now kept, as after a hash operator; a binding marker still collapses its gaps.
+            assertEquals("DELETE FROM t WHERE a = 1 #{}\nLIMIT 1", ParsedSql.parse("DELETE FROM t WHERE a = 1 #{}\nLIMIT 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE a = ? #{ }\nLIMIT 1", ParsedSql.parse("DELETE FROM t WHERE a = ? #{ }\n  LIMIT 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE a = ?#{}\nAND b = 2 LIMIT 1",
+                    ParsedSql.parse("DELETE FROM t WHERE a = #{a}#{}\nAND b = 2\nLIMIT 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE a = ? LIMIT 1", ParsedSql.parse("DELETE FROM t WHERE a = #{a}\nLIMIT 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE a = 1 #{} LIMIT 1", ParsedSql.parse("DELETE FROM t WHERE a = 1 #{} LIMIT 1").parameterizedSql());
+
+            // Regression: a blank marker spanning a line break was joined onto one line ("a = 1 #{\n} LIMIT 1" became
+            // "a = 1 #{ } LIMIT 1"), so its comment swallowed the LIMIT that MySQL had read on the next line. It is now kept
+            // as written, line break (CRLF too), whitespace and dropped comments included.
+            assertEquals("DELETE FROM t WHERE a = 1 #{\n} LIMIT 1", ParsedSql.parse("DELETE FROM t WHERE a = 1 #{\n} LIMIT 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE a = 1 #{ \r\n } LIMIT 1", ParsedSql.parse("DELETE FROM t WHERE a = 1 #{ \r\n } LIMIT 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE a = 1 #{ /* c */\n} LIMIT 1",
+                    ParsedSql.parse("DELETE FROM t WHERE a = 1 #{ /* c */\n} LIMIT 1").parameterizedSql());
+            assertEquals("SELECT ARRAY[#{\n}] FROM t", ParsedSql.parse("SELECT ARRAY[#{\n}] FROM t").parameterizedSql());
+            // ... also after a converted marker glued to it, with text glued after its '}'.
+            final ParsedSql glued = ParsedSql.parse("DELETE FROM t WHERE a = #{b}#{\n}x LIMIT 1");
+            assertEquals("DELETE FROM t WHERE a = ?#{\n}x LIMIT 1", glued.parameterizedSql());
+            assertEquals(List.of("b"), glued.namedParameters());
+            // The markers around it are still counted, and the next line break after it is kept as well.
+            final ParsedSql around = ParsedSql.parse("DELETE FROM t WHERE a = ? #{\n} AND b = ?\nLIMIT 1");
+            assertEquals("DELETE FROM t WHERE a = ? #{\n} AND b = ?\nLIMIT 1", around.parameterizedSql());
+            assertEquals(2, around.parameterCount());
+            // A named marker spanning a line break is still converted, and a single-line blank one is unchanged.
+            assertEquals("DELETE FROM t WHERE a = ? LIMIT 1", ParsedSql.parse("DELETE FROM t WHERE a = #{x\n} LIMIT 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE a = 1 #{ } LIMIT 1", ParsedSql.parse("DELETE FROM t WHERE a = 1 #{ } LIMIT 1").parameterizedSql());
+
             // The ':jdbcType' shorthand after a name.
             assertEquals(List.of("list[0]"), ParsedSql.parse("SELECT * FROM t WHERE a = #{list[0]:INTEGER}").namedParameters());
             assertEquals(List.of("a"), ParsedSql.parse("SELECT * FROM t WHERE a = #{a::int}").namedParameters());

@@ -266,6 +266,44 @@ public class DynamicQueryTest extends TestBase {
             b5.from().append("t");
             b5.where().append("x = #{").and("y = 2");
             assertEquals("SELECT a FROM t WHERE x = #{\n AND y = 2", b5.build());
+
+            // Likewise a blank "#{}" / "#{ }" (kept as text, never bound) and the outer of two nested openers.
+            for (final String marker : new String[] { "#{}", "#{ }", "#{a #{b}" }) {
+                assertTrue(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("x = " + marker), marker);
+                final Builder b6 = DynamicQuery.builder();
+                b6.select().append("a");
+                b6.from().append("t");
+                b6.where().append("x = " + marker).and("y = 2");
+                assertEquals("SELECT a FROM t WHERE x = " + marker + "\n AND y = 2", b6.build(), marker);
+            }
+
+            // A binding marker with surrounding whitespace is still a marker.
+            final Builder b7 = DynamicQuery.builder();
+            b7.select().append("a");
+            b7.from().append("t");
+            b7.where().append("x = #{ x }").and("y = 2");
+            assertEquals("SELECT a FROM t WHERE x = #{ x } AND y = 2", b7.build());
+        }
+
+        @Test
+        void testMyBatisMarkerPrefilterStaysLinear() {
+            // Each "#{" used to scan forward to the same final '}': "#{".repeat(16_000) + "}" took about a second to build.
+            final String openers = "#{".repeat(100_000) + "}";
+            final String markers = "#{a}".repeat(100_000);
+
+            org.junit.jupiter.api.Assertions.assertTimeoutPreemptively(java.time.Duration.ofSeconds(5), () -> {
+                final Builder open = DynamicQuery.builder();
+                open.select().append("a");
+                open.from().append("t");
+                open.where().append("x = " + openers).and("y = 2");
+                assertTrue(open.build().endsWith("}\n AND y = 2"));
+
+                final Builder closed = DynamicQuery.builder();
+                closed.select().append("a");
+                closed.from().append("t");
+                closed.where().append("x = " + markers).and("y = 2");
+                assertTrue(closed.build().endsWith("#{a} AND y = 2"));
+            });
         }
 
         @Test

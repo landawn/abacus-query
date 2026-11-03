@@ -226,36 +226,10 @@ public final class DynamicQuery {
         // (only an H2 builder does), so it can answer true only for a region opened by "--" or "#": skip the multi-reading
         // scan for the common fragment that contains neither token, which cannot end inside a line comment there. Test for
         // "--", not a single '-': subtraction and negative literals ("a - b", "<> -1") are common and would otherwise pay
-        // for the full scan on every such fragment. Likewise a MyBatis "#{x}" marker closed on its line opens no comment.
-        return (fragment.contains("--") || mayOpenHashComment(fragment)) && AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment)
-                ? sb.append('\n')
-                : sb;
-    }
-
-    /**
-     * Whether {@code fragment} holds a {@code #} that some reading may take for a line comment: every {@code #} except one
-     * opening a MyBatis <code>#{...}</code> marker whose {@code }} closes it on the same line.
-     */
-    private static boolean mayOpenHashComment(final String fragment) {
-        final int len = fragment.length();
-
-        for (int i = fragment.indexOf('#'); i >= 0; i = fragment.indexOf('#', i + 1)) {
-            if (i + 1 >= len || fragment.charAt(i + 1) != '{') {
-                return true;
-            }
-
-            int j = i + 2;
-
-            while (j < len && fragment.charAt(j) != '}' && fragment.charAt(j) != '\n' && fragment.charAt(j) != '\r') {
-                j++;
-            }
-
-            if (j >= len || fragment.charAt(j) != '}') {
-                return true; // an unclosed "#{" is a comment to MySQL
-            }
-        }
-
-        return false;
+        // for the full scan on every such fragment. Likewise a MyBatis "#{x}" binding marker opens no comment, while an
+        // unclosed "#{" or a blank "#{}" does under MySQL's reading (see AbstractQueryBuilder.mayOpenHashComment).
+        return (fragment.contains("--") || AbstractQueryBuilder.mayOpenHashComment(fragment))
+                && AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment) ? sb.append('\n') : sb;
     }
 
     /**

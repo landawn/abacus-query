@@ -1,5 +1,5 @@
 # abacus-query API Index (v4.9.8)
-- Build: 91dabc6dc766d2f9328b1004085e9e68154d03e1
+- Build: feee443515eb944ac408105f63b836721364f10f
 - Java: 21
 - Generated: 2026-11-03
 
