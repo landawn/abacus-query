@@ -5,7 +5,7 @@
     "generated_at": "2026-11-03",
     "java_target": "21",
     "source": {
-      "git_sha": "feee443515eb944ac408105f63b836721364f10f"
+      "git_sha": "f064358f0f45ca3bff6299c501a96adddb958086"
     }
   },
   "packages": [
@@ -9680,7 +9680,7 @@
                 "for_removal": false
               },
               "javadoc_summary": "Returns a condition that always evaluates to true.",
-              "returns": "an SqlExpression that always evaluates to true (1 &lt; 2)",
+              "returns": "an SqlExpression that always evaluates to true (1 < 2)",
               "contract": [],
               "examples": [
                 "Condition condition = includeFilter ? Filters.equal(\"status\", \"active\")\n                                   : Filters.alwaysTrue();\n// Filters.alwaysTrue() renders the literal: 1 < 2"
@@ -9705,7 +9705,7 @@
                 "for_removal": false
               },
               "javadoc_summary": "Returns a condition that always evaluates to false.",
-              "returns": "an SqlExpression that always evaluates to false (1 &gt; 2)",
+              "returns": "an SqlExpression that always evaluates to false (1 > 2)",
               "contract": [],
               "examples": [
                 "Condition condition = excludeAll ? Filters.alwaysFalse()\n                                 : Filters.equal(\"status\", \"active\");\n// Filters.alwaysFalse() renders the literal: 1 > 2"
@@ -10068,7 +10068,7 @@
                   "condition": "if props is null or empty, or any property name key is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column; or if a value is a cyclic object array"
                 }
               ],
-              "javadoc_summary": "Creates an OR condition from a map where each entry represents a property-value equality check across <b>different</b> columns/properties.",
+              "javadoc_summary": "Creates an OR condition from a map where each entry represents a property-value equality check across different columns/properties.",
               "returns": "an Or condition",
               "contract": [],
               "examples": [
@@ -10206,7 +10206,7 @@
                   "condition": "if any property name is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column; or if a value is a cyclic object array"
                 }
               ],
-              "javadoc_summary": "Creates an OR condition with two property-value pairs across <b>different</b> columns/properties.",
+              "javadoc_summary": "Creates an OR condition with two property-value pairs across different columns/properties.",
               "returns": "an Or condition",
               "contract": [],
               "examples": [
@@ -10268,7 +10268,7 @@
                   "condition": "if any property name is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column; or if a value is a cyclic object array"
                 }
               ],
-              "javadoc_summary": "Creates an OR condition with three property-value pairs across <b>different</b> columns/properties.",
+              "javadoc_summary": "Creates an OR condition with three property-value pairs across different columns/properties.",
               "returns": "an Or condition",
               "contract": [],
               "examples": [
@@ -10300,7 +10300,7 @@
                   "condition": "if props is null or empty, or any property name key is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column; or if a value is a cyclic object array"
                 }
               ],
-              "javadoc_summary": "Creates an AND condition from a map where each entry represents a property-value equality check across <b>different</b> columns/properties.",
+              "javadoc_summary": "Creates an AND condition from a map where each entry represents a property-value equality check across different columns/properties.",
               "returns": "an And condition",
               "contract": [],
               "examples": [
@@ -10436,7 +10436,7 @@
                   "condition": "if any property name is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column; or if a value is a cyclic object array"
                 }
               ],
-              "javadoc_summary": "Creates an AND condition with two property-value pairs across <b>different</b> columns/properties.",
+              "javadoc_summary": "Creates an AND condition with two property-value pairs across different columns/properties.",
               "returns": "an And condition",
               "contract": [],
               "examples": [
@@ -10498,7 +10498,7 @@
                   "condition": "if any property name is null, empty, or blank; if a condition-valued entry is invalid as a scalar operand, including a structured SubQuery whose known, non-wildcard projection contains more than one column; or if a value is a cyclic object array"
                 }
               ],
-              "javadoc_summary": "Creates an AND condition with three property-value pairs across <b>different</b> columns/properties.",
+              "javadoc_summary": "Creates an AND condition with three property-value pairs across different columns/properties.",
               "returns": "an And condition",
               "contract": [],
               "examples": [
@@ -10538,7 +10538,7 @@
                   "condition": "if reading a selected bean property or invoking its getter fails"
                 }
               ],
-              "javadoc_summary": "Creates an OR of per-row AND-of-equals conditions &mdash; i.e. a \"match any row\" filter, where a row matches when all of its columns equal the given values.",
+              "javadoc_summary": "Creates an OR of per-row AND-of-equals conditions — i.e. a \"match any row\" filter, where a row matches when all of its columns equal the given values.",
               "returns": "an Or condition",
               "contract": [
                 "If the first non-null element is a Map, all non-null elements must be maps with non-null String keys.",
@@ -10591,7 +10591,7 @@
                   "condition": "if reading a selected bean property or invoking its getter fails"
                 }
               ],
-              "javadoc_summary": "Creates an OR of per-row AND-of-equals conditions &mdash; a \"match any row\" filter &mdash; using only the specified properties of each entity.",
+              "javadoc_summary": "Creates an OR of per-row AND-of-equals conditions — a \"match any row\" filter — using only the specified properties of each entity.",
               "returns": "an Or condition",
               "contract": [],
               "examples": [
@@ -17931,7 +17931,7 @@
                 {
                   "name": "qualifiedPartConverter",
                   "type": "UnaryOperator<String>",
-                  "javadoc": "converts a name that follows a delimited qualifier (the firstName in \"T\".firstName) or a glued marker (the createdAt in <code>log_${month}.createdAt</code>)",
+                  "javadoc": "converts a name that follows a delimited qualifier (the firstName in \"T\".firstName) or a glued marker (the createdAt in log_${month}.createdAt)",
                   "nullability": "unspecified"
                 }
               ],
@@ -17944,7 +17944,7 @@
               "javadoc_summary": "Renders the tokens of a raw SQL expression, converting the identifiers in it.",
               "returns": "the index in expr from which it was appended verbatim, or -1 if every token was rendered",
               "contract": [
-                "When a token glues more than a name together, for example scores[idx + 1], ARRAY[1, 2], unitPrice::numeric or log_${month}, only its leading name is converted, together with a column after a glued marker and a dot (the createdAt in log_${month}.createdAt ) and, inside a subscript, the upper bound of a slice (the hi in arr[lo:hi]).",
+                "When a token glues more than a name together, for example scores[idx + 1], ARRAY[1, 2], unitPrice::numeric or log_${month}, only its leading name is converted, together with a column after a glued marker and a dot (the createdAt in log_${month}.createdAt) and, inside a subscript, the upper bound of a slice (the hi in arr[lo:hi]).",
                 "The caller must terminate a trailing line comment in that text before it appends more SQL."
               ],
               "examples": [],
@@ -19936,7 +19936,7 @@
               ],
               "type": "int",
               "value": "128",
-              "javadoc_summary": "Maximum allowed length for SQL identifiers ({@value}).",
+              "javadoc_summary": "Maximum allowed length for SQL identifiers (128).",
               "nullability": "unspecified"
             }
           ]
@@ -27437,7 +27437,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a greater-than (&gt;) comparison condition in SQL queries.",
+          "javadoc_summary": "Represents a greater-than (>) comparison condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -27477,7 +27477,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL queries.",
+          "javadoc_summary": "Represents a greater-than-or-equal-to (>=) comparison condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -28778,7 +28778,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a less-than (&lt;) comparison condition in SQL queries.",
+          "javadoc_summary": "Represents a less-than (<) comparison condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -28818,7 +28818,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL queries.",
+          "javadoc_summary": "Represents a less-than-or-equal-to (<=) comparison condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],
@@ -31583,7 +31583,7 @@
           "modifiers": [
             "public"
           ],
-          "javadoc_summary": "Represents a NOT EQUAL (!= or &lt;&gt;) condition in SQL queries.",
+          "javadoc_summary": "Represents a NOT EQUAL (!= or <>) condition in SQL queries.",
           "thread_safety": "unspecified",
           "nullability": "unspecified",
           "type_params": [],

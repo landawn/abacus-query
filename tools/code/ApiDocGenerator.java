@@ -35,6 +35,7 @@ import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
+import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
@@ -43,6 +44,7 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
+import com.sun.source.doctree.ValueTree;
 import com.sun.source.tree.AnnotationTree;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.BlockTree;
@@ -184,6 +186,8 @@ public final class ApiDocGenerator {
     }
 
     private static int methodOrder;
+    // Declaration whose Javadoc is being rendered; resolves {@value} references.
+    private static TreePath currentDocPath;
 
     public static void main(final String[] args) throws Exception {
         final Path sourceRoot = args.length > 0 ? Path.of(args[0]) : Path.of("src/main/java");
@@ -519,6 +523,15 @@ public final class ApiDocGenerator {
             return null;
         }
 
+        currentDocPath = path;
+        try {
+            return readDoc(comment);
+        } finally {
+            currentDocPath = null;
+        }
+    }
+
+    private static DocInfo readDoc(final DocCommentTree comment) {
         final DocInfo doc = new DocInfo();
         final String prose = proseText(comment.getFullBody());
         doc.summary = readSummary(comment, prose);
@@ -650,12 +663,12 @@ public final class ApiDocGenerator {
                 if ("pre".equalsIgnoreCase(((StartElementTree) tree).getName().toString())) {
                     preDepth++;
                 }
-                sb.append(' ');
+                appendDocText(tree, sb);
             } else if (tree.getKind() == DocTree.Kind.END_ELEMENT) {
                 if ("pre".equalsIgnoreCase(((EndElementTree) tree).getName().toString()) && preDepth > 0) {
                     preDepth--;
                 }
-                sb.append(' ');
+                appendDocText(tree, sb);
             } else if (preDepth == 0) {
                 appendDocText(tree, sb);
             }
@@ -677,8 +690,67 @@ public final class ApiDocGenerator {
                     }
                 }
             }
+            case VALUE -> sb.append(resolveValue((ValueTree) tree));
+            case ENTITY -> sb.append(decodeEntity(((EntityTree) tree).getName().toString()));
+            // Inline markup (<b>, <i>, <code>, ...) is dropped; block-level markup becomes a word break.
+            case START_ELEMENT -> appendElementBreak(((StartElementTree) tree).getName().toString(), sb);
+            case END_ELEMENT -> appendElementBreak(((EndElementTree) tree).getName().toString(), sb);
             default -> sb.append(tree);
         }
+    }
+
+    private static final Set<String> INLINE_ELEMENTS = Set.of("a", "b", "i", "em", "strong", "code", "tt", "u", "s", "sub", "sup", "span", "small", "var",
+            "kbd", "samp", "cite", "q", "abbr", "mark");
+
+    private static void appendElementBreak(final String elementName, final StringBuilder sb) {
+        if (!INLINE_ELEMENTS.contains(elementName.toLowerCase(Locale.ROOT))) {
+            sb.append(' ');
+        }
+    }
+
+    private static final Map<String, String> NAMED_ENTITIES = Map.ofEntries(Map.entry("lt", "<"), Map.entry("gt", ">"), Map.entry("amp", "&"),
+            Map.entry("quot", "\""), Map.entry("apos", "'"), Map.entry("nbsp", " "), Map.entry("mdash", "—"), Map.entry("ndash", "–"),
+            Map.entry("hellip", "…"), Map.entry("rarr", "→"), Map.entry("larr", "←"), Map.entry("le", "≤"), Map.entry("ge", "≥"),
+            Map.entry("ne", "≠"), Map.entry("times", "×"), Map.entry("middot", "·"), Map.entry("copy", "©"));
+
+    private static String decodeEntity(final String name) {
+        if (name.startsWith("#")) {
+            try {
+                final int codePoint = name.length() > 1 && (name.charAt(1) == 'x' || name.charAt(1) == 'X') ? Integer.parseInt(name.substring(2), 16)
+                        : Integer.parseInt(name.substring(1));
+                return Character.toString(codePoint);
+            } catch (final IllegalArgumentException e) {
+                return "&" + name + ";";
+            }
+        }
+        return NAMED_ENTITIES.getOrDefault(name, "&" + name + ";");
+    }
+
+    /**
+     * Resolves {@code {@value}} / {@code {@value #FIELD}} to the field's literal initializer, searching the
+     * documented declaration and its enclosing types. Unresolvable references fall back to their text.
+     */
+    private static String resolveValue(final ValueTree value) {
+        final String reference = value.getReference() == null ? null : value.getReference().getSignature();
+        final String fieldName = reference == null ? null : reference.substring(reference.indexOf('#') + 1);
+        for (TreePath p = currentDocPath; p != null; p = p.getParentPath()) {
+            final Tree leaf = p.getLeaf();
+            if (fieldName == null && leaf instanceof VariableTree varTree) {
+                return literalOrNull(varTree) != null ? literalOrNull(varTree) : varTree.getName().toString();
+            }
+            if (fieldName != null && leaf instanceof ClassTree classTree) {
+                for (final Tree member : classTree.getMembers()) {
+                    if (member instanceof VariableTree varTree && varTree.getName().contentEquals(fieldName) && literalOrNull(varTree) != null) {
+                        return literalOrNull(varTree);
+                    }
+                }
+            }
+        }
+        return reference == null ? "" : fieldName;
+    }
+
+    private static String literalOrNull(final VariableTree varTree) {
+        return varTree.getInitializer() instanceof com.sun.source.tree.LiteralTree literal ? literal.toString() : null;
     }
 
     private static String inferThreadSafety(final String docText) {

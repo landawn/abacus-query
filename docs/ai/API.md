@@ -1,5 +1,5 @@
 # abacus-query API Index (v4.9.8)
-- Build: feee443515eb944ac408105f63b836721364f10f
+- Build: f064358f0f45ca3bff6299c501a96adddb958086
 - Java: 21
 - Generated: 2026-11-03
 
@@ -4368,7 +4368,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Deprecated:** dangerous; could silently bypass all filtering, returning all rows. Avoid using this method; restructure the conditional logic instead.
 - **Parameters:**
   - (none)
-- **Returns:** an SqlExpression that always evaluates to true (1 &lt; 2)
+- **Returns:** an SqlExpression that always evaluates to true (1 < 2)
 - **Examples:**
   - ```java
     Condition condition = includeFilter ? Filters.equal("status", "active")
@@ -4381,7 +4381,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Deprecated:** dangerous; could silently return zero rows. Avoid using this method; restructure the conditional logic instead.
 - **Parameters:**
   - (none)
-- **Returns:** an SqlExpression that always evaluates to false (1 &gt; 2)
+- **Returns:** an SqlExpression that always evaluates to false (1 > 2)
 - **Examples:**
   - ```java
     Condition condition = excludeAll ? Filters.alwaysFalse()
@@ -4536,7 +4536,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **See also:** com.landawn.abacus.query.SqlBuilder
 ##### anyEqual(...) -> Or
 - **Signature:** `public static Or anyEqual(final Map<String, ?> props)`
-- **Summary:** Creates an OR condition from a map where each entry represents a property-value equality check across <b>different</b> columns/properties.
+- **Summary:** Creates an OR condition from a map where each entry represents a property-value equality check across different columns/properties.
 - **Parameters:**
   - `props` (`Map<String, ?>`) — map of property names to values (must not be empty). Entries are consumed once during this call; later additions, removals, and value replacements in the map do not affect the returned condition. Mutable value objects follow Binary's copying rules
 - **Returns:** an Or condition
@@ -4584,7 +4584,7 @@ Factory class for creating SQL Condition objects used in query construction.
     // Only uses name and email, ignores age
     ```
 - **Signature:** `public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2)`
-- **Summary:** Creates an OR condition with two property-value pairs across <b>different</b> columns/properties.
+- **Summary:** Creates an OR condition with two property-value pairs across different columns/properties.
 - **Parameters:**
   - `propName1` (`String`) — first property name
   - `propValue1` (`Object`) — first property value
@@ -4599,7 +4599,7 @@ Factory class for creating SQL Condition objects used in query construction.
     // SQL fragment: ((name = 'John') OR (email = 'john@example.com'))
     ```
 - **Signature:** `public static Or anyEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3, final Object propValue3)`
-- **Summary:** Creates an OR condition with three property-value pairs across <b>different</b> columns/properties.
+- **Summary:** Creates an OR condition with three property-value pairs across different columns/properties.
 - **Parameters:**
   - `propName1` (`String`) — first property name
   - `propValue1` (`Object`) — first property value
@@ -4617,7 +4617,7 @@ Factory class for creating SQL Condition objects used in query construction.
     ```
 ##### allEqual(...) -> And
 - **Signature:** `public static And allEqual(final Map<String, ?> props)`
-- **Summary:** Creates an AND condition from a map where each entry represents a property-value equality check across <b>different</b> columns/properties.
+- **Summary:** Creates an AND condition from a map where each entry represents a property-value equality check across different columns/properties.
 - **Parameters:**
   - `props` (`Map<String, ?>`) — map of property names to values (must not be empty). Entries are consumed once during this call; later additions, removals, and value replacements in the map do not affect the returned condition. Mutable value objects follow Binary's copying rules
 - **Returns:** an And condition
@@ -4664,7 +4664,7 @@ Factory class for creating SQL Condition objects used in query construction.
     // Only uses email and age, ignores name
     ```
 - **Signature:** `public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2)`
-- **Summary:** Creates an AND condition with two property-value pairs across <b>different</b> columns/properties.
+- **Summary:** Creates an AND condition with two property-value pairs across different columns/properties.
 - **Parameters:**
   - `propName1` (`String`) — first property name
   - `propValue1` (`Object`) — first property value
@@ -4679,7 +4679,7 @@ Factory class for creating SQL Condition objects used in query construction.
     // SQL fragment: ((status = 'active') AND (type = 'premium'))
     ```
 - **Signature:** `public static And allEqual(final String propName1, final Object propValue1, final String propName2, final Object propValue2, final String propName3, final Object propValue3)`
-- **Summary:** Creates an AND condition with three property-value pairs across <b>different</b> columns/properties.
+- **Summary:** Creates an AND condition with three property-value pairs across different columns/properties.
 - **Parameters:**
   - `propName1` (`String`) — first property name
   - `propValue1` (`Object`) — first property value
@@ -4697,7 +4697,7 @@ Factory class for creating SQL Condition objects used in query construction.
     ```
 ##### anyOfAllEqual(...) -> Or
 - **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entitiesOrPropMaps)`
-- **Summary:** Creates an OR of per-row AND-of-equals conditions &mdash; i.e. a "match any row" filter, where a row matches when all of its columns equal the given values.
+- **Summary:** Creates an OR of per-row AND-of-equals conditions — i.e. a "match any row" filter, where a row matches when all of its columns equal the given values.
 - **Contract:**
   - If the first non-null element is a Map, all non-null elements must be maps with non-null String keys.
   - Otherwise, every non-null element must be an entity rather than a map, and all properties selected from the first entity's class are used.
@@ -4732,7 +4732,7 @@ Factory class for creating SQL Condition objects used in query construction.
     ```
 - **See also:** #anyOfAllEqual(Collection, Collection), #anyEqual(Map), #allEqual(Map)
 - **Signature:** `@Beta public static Or anyOfAllEqual(final Collection<?> entities, final Collection<String> includedPropNames)`
-- **Summary:** Creates an OR of per-row AND-of-equals conditions &mdash; a "match any row" filter &mdash; using only the specified properties of each entity.
+- **Summary:** Creates an OR of per-row AND-of-equals conditions — a "match any row" filter — using only the specified properties of each entity.
 - **Parameters:**
   - `entities` (`Collection<?>`) — collection of entity objects (must not be empty)
   - `includedPropNames` (`Collection<String>`) — the property names to include (must not be empty). Both input collections are snapshotted during the call
@@ -7724,7 +7724,7 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Signature:** `@Internal public static int appendRawExpression(final StringBuilder sb, final String expr, final List<String> tokens, final SqlParser.Tokenizer tokenizer, final boolean backslashEscapesOnly, final UnaryOperator<String> wordConverter, final UnaryOperator<String> qualifiedPartConverter)`
 - **Summary:** Renders the tokens of a raw SQL expression, converting the identifiers in it.
 - **Contract:**
-  - When a token glues more than a name together, for example scores\[idx + 1\], ARRAY\[1, 2\], unitPrice::numeric or log_${month}, only its leading name is converted, together with a column after a glued marker and a dot (the createdAt in log_${month}.createdAt ) and, inside a subscript, the upper bound of a slice (the hi in arr\[lo:hi\]).
+  - When a token glues more than a name together, for example scores\[idx + 1\], ARRAY\[1, 2\], unitPrice::numeric or log_${month}, only its leading name is converted, together with a column after a glued marker and a dot (the createdAt in log_${month}.createdAt) and, inside a subscript, the upper bound of a slice (the hi in arr\[lo:hi\]).
   - The caller must terminate a trailing line comment in that text before it appends more SQL.
 - **Parameters:**
   - `sb` (`StringBuilder`) — the builder to append to
@@ -7733,7 +7733,7 @@ Utility class for handling database query operations, entity-column mappings, an
   - `tokenizer` (`SqlParser.Tokenizer`) — the tokenizer that produced tokens; it also tokenizes the interior of array subscripts
   - `backslashEscapesOnly` (`boolean`) — true if the target server reads a backslash before a quote in a string literal as an escape and has no dollar-quoted strings (MySQL), so the tokenizer's reading is taken as authoritative and conversion never stops early. It matches MySQL only for string literals: MySQL applies no backslash escapes inside backtick identifiers, inside "..." identifiers under ANSI_QUOTES, or anywhere under NO_BACKSLASH_ESCAPES
   - `wordConverter` (`UnaryOperator<String>`) — converts an identifier; it applies any SQL keyword exemption itself
-  - `qualifiedPartConverter` (`UnaryOperator<String>`) — converts a name that follows a delimited qualifier (the firstName in "T".firstName) or a glued marker (the createdAt in <code>log_${month}.createdAt</code>)
+  - `qualifiedPartConverter` (`UnaryOperator<String>`) — converts a name that follows a delimited qualifier (the firstName in "T".firstName) or a glued marker (the createdAt in log_${month}.createdAt)
 - **Returns:** the index in expr from which it was appended verbatim, or -1 if every token was rendered
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if any argument is null
@@ -8280,7 +8280,7 @@ A utility class for managing SQL scripts stored in XML files and mapping them to
   - **Summary:** XML attribute name for query timeout configuration.
   - **Nullability:** unspecified
 - **Declaration:** `public static final int MAX_ID_LENGTH`
-  - **Summary:** Maximum allowed length for SQL identifiers ({@value}).
+  - **Summary:** Maximum allowed length for SQL identifiers (128).
   - **Nullability:** unspecified
 
 #### Public Constructors
@@ -12504,7 +12504,7 @@ Represents a FULL JOIN clause in SQL queries.
 - (none)
 
 ### Class GreaterThan (com.landawn.abacus.query.condition.GreaterThan)
-Represents a greater-than (&gt;) comparison condition in SQL queries.
+Represents a greater-than (>) comparison condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -12528,7 +12528,7 @@ Represents a greater-than (&gt;) comparison condition in SQL queries.
 - (none)
 
 ### Class GreaterThanOrEqual (com.landawn.abacus.query.condition.GreaterThanOrEqual)
-Represents a greater-than-or-equal-to (&gt;=) comparison condition in SQL queries.
+Represents a greater-than-or-equal-to (>=) comparison condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -13324,7 +13324,7 @@ Represents a LEFT JOIN clause in SQL queries.
 - (none)
 
 ### Class LessThan (com.landawn.abacus.query.condition.LessThan)
-Represents a less-than (&lt;) comparison condition in SQL queries.
+Represents a less-than (<) comparison condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -13348,7 +13348,7 @@ Represents a less-than (&lt;) comparison condition in SQL queries.
 - (none)
 
 ### Class LessThanOrEqual (com.landawn.abacus.query.condition.LessThanOrEqual)
-Represents a less-than-or-equal-to (&lt;=) comparison condition in SQL queries.
+Represents a less-than-or-equal-to (<=) comparison condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
@@ -14609,7 +14609,7 @@ Represents a NOT BETWEEN condition in SQL queries.
 - (none)
 
 ### Class NotEqual (com.landawn.abacus.query.condition.NotEqual)
-Represents a NOT EQUAL (!= or &lt;&gt;) condition in SQL queries.
+Represents a NOT EQUAL (!= or <>) condition in SQL queries.
 
 **Thread-safety:** unspecified
 **Nullability:** unspecified
