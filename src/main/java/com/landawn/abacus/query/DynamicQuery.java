@@ -226,9 +226,36 @@ public final class DynamicQuery {
         // (only an H2 builder does), so it can answer true only for a region opened by "--" or "#": skip the multi-reading
         // scan for the common fragment that contains neither token, which cannot end inside a line comment there. Test for
         // "--", not a single '-': subtraction and negative literals ("a - b", "<> -1") are common and would otherwise pay
-        // for the full scan on every such fragment.
-        return (fragment.contains("--") || fragment.indexOf('#') >= 0) && AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment) ? sb.append('\n')
+        // for the full scan on every such fragment. Likewise a MyBatis "#{x}" marker closed on its line opens no comment.
+        return (fragment.contains("--") || mayOpenHashComment(fragment)) && AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading(fragment)
+                ? sb.append('\n')
                 : sb;
+    }
+
+    /**
+     * Whether {@code fragment} holds a {@code #} that some reading may take for a line comment: every {@code #} except one
+     * opening a MyBatis <code>#{...}</code> marker whose {@code }} closes it on the same line.
+     */
+    private static boolean mayOpenHashComment(final String fragment) {
+        final int len = fragment.length();
+
+        for (int i = fragment.indexOf('#'); i >= 0; i = fragment.indexOf('#', i + 1)) {
+            if (i + 1 >= len || fragment.charAt(i + 1) != '{') {
+                return true;
+            }
+
+            int j = i + 2;
+
+            while (j < len && fragment.charAt(j) != '}' && fragment.charAt(j) != '\n' && fragment.charAt(j) != '\r') {
+                j++;
+            }
+
+            if (j >= len || fragment.charAt(j) != '}') {
+                return true; // an unclosed "#{" is a comment to MySQL
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -856,7 +883,9 @@ public final class DynamicQuery {
          * use a separate buffer and are emitted before both typed ordering and this raw tail. Consequently,
          * either {@code orderBy().append(...)} or a trailing {@code append("ORDER BY ...")} can order a
          * combined set-operation result; prefer the typed form when it is sufficient. Multiple raw fragments
-         * retain their relative invocation order, while typed pagination is emitted before all raw fragments.</p>
+         * retain their relative invocation order, while typed pagination is emitted before all raw fragments,
+         * so do not combine a raw {@code ORDER BY} with typed pagination: {@code append("ORDER BY id")} plus
+         * {@code limit(10)} renders {@code ... LIMIT 10 ORDER BY id}.</p>
          *
          * <p><b>Usage Examples:</b></p>
          * <pre>{@code
@@ -1123,7 +1152,8 @@ public final class DynamicQuery {
 
         /**
          * Builds the final SQL string from all the components and releases resources.
-         * This method MUST be called to get the SQL and clean up internal resources.
+         * This method MUST be called to get the SQL. The clause buffers are plain, unpooled {@link StringBuilder}s, so a
+         * builder that is never built leaks nothing.
          * After calling {@code build()}, this builder is closed and must not be reused: any subsequent
          * call to a builder method (including {@code build()} itself) throws {@link IllegalStateException}.
          *

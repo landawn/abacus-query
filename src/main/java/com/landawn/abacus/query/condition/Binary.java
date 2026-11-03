@@ -182,7 +182,10 @@ public class Binary extends ComposableCondition {
      *                  {@link Collection} or array value is copied defensively and must be non-empty;
      *                  elements must be non-null scalar values, explicit scalar expressions, or scalar sub-queries. A
      *                  {@link SqlExpression} or a {@link SubQuery} is also accepted as the whole right-hand
-     *                  side of {@code IN}/{@code NOT IN}.
+     *                  side of {@code IN}/{@code NOT IN}: a {@code SubQuery} is parenthesized automatically
+     *                  ({@code id IN (SELECT ...)}), while a {@code SqlExpression} is rendered verbatim and must
+     *                  supply its own parentheses ({@code Filters.expr("(1, 2)")} renders {@code id IN (1, 2)}, but
+     *                  {@code Filters.expr("1, 2")} renders the invalid {@code id IN 1, 2}).
      *                  Every structured subquery with a known, non-wildcard projection must select exactly
      *                  one column; raw SQL and wildcard projection arity are left to the database.
      *                  For {@code IS}/{@code IS NOT}, the value must be {@code null}, a Boolean, or

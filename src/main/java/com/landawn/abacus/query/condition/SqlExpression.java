@@ -195,6 +195,16 @@ public class SqlExpression extends ComposableCondition {
         registerSqlKeyword("BINARY_DOUBLE");
         registerSqlKeyword("BINARY_FLOAT");
 
+        // Oracle hierarchical-query operator/pseudocolumns and floating-point constants: underscore keywords that
+        // CAMEL_CASE would otherwise rewrite ("CONNECT_BY_ROOT" -> "connectByRoot", "BINARY_DOUBLE_NAN" -> "binaryDoubleNan").
+        registerSqlKeyword("CONNECT_BY_ROOT");
+        registerSqlKeyword("CONNECT_BY_ISLEAF");
+        registerSqlKeyword("CONNECT_BY_ISCYCLE");
+        registerSqlKeyword("BINARY_FLOAT_NAN");
+        registerSqlKeyword("BINARY_FLOAT_INFINITY");
+        registerSqlKeyword("BINARY_DOUBLE_NAN");
+        registerSqlKeyword("BINARY_DOUBLE_INFINITY");
+
         // Predicate operands used by the Is/IsNot condition family and its documented escape hatch.
         // Unlike NULL (which SK contributes), these are not in SK, so without registration the
         // builder path would emit "IS nan" / "IS NOT infinite" / "IS unknown" / "IS true".
@@ -212,7 +222,10 @@ public class SqlExpression extends ComposableCondition {
      */
     final String literal;
 
-    /** Lazily memoized {@link SqlParser#tokenize(String)} result for {@link #literal} (performance only). */
+    /** The longest {@link #literal} whose tokens are memoized in {@link #cachedParsedLiteral}. */
+    private static final int MAX_CACHED_LITERAL_LENGTH = 1024;
+
+    /** Lazily memoized {@link SqlParser#tokenize(String)} result for a short {@link #literal} (performance only). */
     private transient volatile List<String> cachedParsedLiteral;
 
     /**
@@ -1161,7 +1174,7 @@ public class SqlExpression extends ComposableCondition {
      * {@code null}, or nothing at all, is never emitted in place of a column reference.
      *
      * @param expr the SQL fragment to validate
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or comment-only, or consists only of SQL comments
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, blank, or consists only of SQL comments
      */
     private static void checkExpr(final String expr) {
         if (Strings.isBlank(expr)) {
@@ -2272,7 +2285,10 @@ public class SqlExpression extends ComposableCondition {
      * runs. A marker without a closing <code>'}'</code> is not a binding and is converted like ordinary SQL. Recognized SQL
      * keyword tokens are also left unchanged when written in their canonical upper-case form
      * (for example {@code CURRENT_DATE}); a lower-case token is treated as an identifier and
-     * converted. Leading and trailing underscore runs of an identifier are preserved and only the
+     * converted. An upper-case keyword outside that registry (such as {@code CASE}, {@code WHEN} or {@code INTERVAL})
+     * is converted like an identifier too; for a keyword without an underscore this changes only its letter case,
+     * which SQL ignores ({@code CASE WHEN isActive THEN 1 END} renders as {@code case when is_active then 1 end}
+     * under {@code SNAKE_CASE}). Leading and trailing underscore runs of an identifier are preserved and only the
      * part between them is converted (see {@link QueryUtil#convertIdentifier(String, NamingPolicy)}),
      * so {@code _firstName} renders as {@code _first_name} and {@code _1} stays {@code _1}.
      * A literal that is not a single simple identifier is tokenized by
@@ -2348,7 +2364,12 @@ public class SqlExpression extends ComposableCondition {
 
         if (words == null) {
             words = SqlParser.tokenize(literal);
-            cachedParsedLiteral = words;
+
+            // Only short literals keep their tokens: the token list costs several times the literal's size (an 80K-char
+            // IN list retains ~650 KB per instance), and the builders re-tokenize the literal anyway.
+            if (literal.length() <= MAX_CACHED_LITERAL_LENGTH) {
+                cachedParsedLiteral = words;
+            }
         }
 
         final StringBuilder sb = Objectory.createStringBuilder();

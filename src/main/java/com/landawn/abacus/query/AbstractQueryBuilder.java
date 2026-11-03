@@ -111,7 +111,9 @@ import com.landawn.abacus.util.u.Optional;
  * throws {@link IllegalArgumentException} for a self-referencing sub-entity property (one whose type is the entity class
  * itself, such as {@code parent}), whose columns cannot be qualified without an explicit self join; {@code from(...)}
  * likewise rejects a select list that expands two sub-entity properties mapped to the same table reference, since both
- * would read the same row.</p>
+ * would read the same row. In the ORDER BY of a compound query (after a set operation), which may only name result
+ * columns, the expanded columns are the first SELECT's result labels ({@code "profile.name"}); a sub-entity property
+ * of which that SELECT labels only some columns is rejected with {@link IllegalArgumentException}.</p>
  *
  * <p>Raw SQL fragments follow the lexical limitations documented by {@link SqlParser}; in particular,
  * nested block comments are not supported. When composing complete
@@ -177,9 +179,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     // builder appends next, silently widening an UPDATE/DELETE:
     // 1. MySQL: where(Filters.expr("status = 0 ## stale\nAND id = 42")) -> "... WHERE status = 0 ## stale AND id = 42".
     //    The tokenizer keeps "##", "#>", "#>>", "#-" and "?#" as data and joins lines, so MySQL's '#' comment drops AND id = 42;
-    //    a SET value such as SqlExpression.of("flag ## toggle") swallows the WHERE, and "?#" swallows a LIMIT.
+    //    a SET value such as SqlExpression.of("flag ## toggle") swallows the WHERE, and "?#" swallows a LIMIT. An unclosed
+    //    MyBatis-like "#{" is kept the same way: deleteFrom("account").where("status = 0 #{").limit(1) loses the LIMIT.
     // 2. Dialect-agnostic default: deleteFrom("account ##archived").where(...) -> "DELETE FROM account ##archived WHERE id = 1",
-    //    which deletes every row on MySQL ("#archived" and "## archived" do get a line feed).
+    //    which deletes every row on MySQL ("#archived" and "## archived" do get a line feed). The default dialect's comment
+    //    guard also accepts an unclosed "#{" (orderBy("a #{").limit(10)); only a MySQL builder rejects it.
     // 3. Oracle: set("name = q'[it's]' -- x").where(...) keeps the WHERE inside the comment (q'[...]' literals are not read);
     //    join(...) and orderBy(...).limit(n) fragments with such a literal swallow ON/FETCH the same way.
     // 4. MySQL with NO_BACKSLASH_ESCAPES: innerJoin("d ON d.path = 'C:\\' -- don't").where(...) swallows the WHERE (the
@@ -208,9 +212,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     //    select("$$ FROM $$ AS x", "firstName").from("t").union("SELECT 'x', first_name FROM t2").orderBy("firstName")
     //    emits ORDER BY first_name instead of ORDER BY "firstName", which PostgreSQL rejects. A literal '(' or a standard
     //    string ending in a backslash can likewise hide the result labels; AS text inside a dollar quote can invent one.
-    // 14. Large FETCH-form limits on MySQL UPDATE/DELETE are rejected before conversion to LIMIT: append(new Limit(
-    //    "FETCH FIRST 99999999999 ROWS ONLY")) throws, while count 10 renders LIMIT 10. Validation checks FETCH rather than
-    //    the LIMIT clause that would be emitted (the new conversion currently only succeeds for SELECT).
+    // 14. An out-of-int-range limit with an explicit ZERO offset is rejected on MySQL/SQLite UPDATE/DELETE:
+    //    deleteFrom("t").append(new Limit("LIMIT 0, 99999999999")) throws "'OFFSET' pagination is not valid for DELETE
+    //    statements", while "LIMIT 0, 10" renders DELETE FROM t LIMIT 10 (the resolved form drops a zero offset, but any
+    //    offset token in an unresolved expression claims the OFFSET slot).
     // See also the known issues listed under the SqlParser, ParsedSql, DynamicQuery, QueryUtil and SqlBuilder class declarations.
 
     /** Shared logger for builder lifecycle and pooled-resource usage diagnostics. */
@@ -524,7 +529,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 "NAN", "INFINITE", "UNKNOWN", "TRUE", "FALSE",
                 // MySQL compound INTERVAL units and Oracle binary floating-point types
                 "DAY_HOUR", "DAY_MINUTE", "DAY_SECOND", "DAY_MICROSECOND", "HOUR_MINUTE", "HOUR_SECOND", "HOUR_MICROSECOND", "MINUTE_SECOND",
-                "MINUTE_MICROSECOND", "SECOND_MICROSECOND", "YEAR_MONTH", "BINARY_DOUBLE", "BINARY_FLOAT" }) {
+                "MINUTE_MICROSECOND", "SECOND_MICROSECOND", "YEAR_MONTH", "BINARY_DOUBLE", "BINARY_FLOAT",
+                // Oracle hierarchical-query operators/pseudocolumns and binary floating-point constants
+                "CONNECT_BY_ROOT", "CONNECT_BY_ISLEAF", "CONNECT_BY_ISCYCLE", "BINARY_FLOAT_NAN", "BINARY_FLOAT_INFINITY", "BINARY_DOUBLE_NAN",
+                "BINARY_DOUBLE_INFINITY" }) {
             sqlKeyWords.add(keyword);
         }
     }
@@ -926,7 +934,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * The alias is retrieved from the {@link Table} annotation's alias attribute.
      *
      * @param entityClass the entity class (may be {@code null})
-     * @return the table alias, or an empty string if not defined or if {@code entityClass} is {@code null}
+     * @return the table alias, or an empty string if not defined (or blank) or if {@code entityClass} is {@code null}
      */
     protected static String tableAlias(final Class<?> entityClass) {
         if (entityClass == null) {
@@ -940,7 +948,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 alias = entityClass.getAnnotation(Table.class).alias();
             }
 
-            if (alias == null) {
+            // A blank alias is no alias: kept, it would qualify a sub-entity's columns as " .id" and its table as "child  ".
+            if (alias == null || Strings.isBlank(alias)) {
                 alias = "";
             }
 
@@ -1213,7 +1222,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * Returns a list of table names (with aliases if defined) for the main entity and its sub-entity properties.
      *
      * @param entityClass the entity class
-     * @param alias the table alias for the main entity (can be null or empty)
+     * @param alias the table alias for the main entity (can be null, empty, or blank, in which case the entity's
+     *        {@link Table} alias, if any, is used)
      * @param excludedPropNames property names excluded from the projection (can be null); a sub-entity table is omitted
      *        when neither its root property nor any of its {@code root.prop} properties remains selected
      * @param namingPolicy the naming policy for table name conversion
@@ -2053,7 +2063,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 final int len = quantifier.length();
 
                 if (column.length() > len && column.regionMatches(true, 0, quantifier, 0, len)
-                        && (Character.isWhitespace(column.charAt(len)) || column.charAt(len) == '(')) {
+                        && (isWhitespaceOrSpaceChar(column.charAt(len)) || column.charAt(len) == '(')) {
                     final String rest = stripSelectItemPadding(column.substring(len));
 
                     return withoutEnclosingParentheses(DISTINCT.equals(quantifier) ? withoutDistinctOnList(rest) : rest);
@@ -2292,7 +2302,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return {@code true} if the projection is a single wildcard, so the target column list must be omitted
      * @throws IllegalArgumentException if a wildcard item is combined with other select items
      */
-    private static boolean isSoleWildcardProjection(final Collection<String> selectItems) {
+    private boolean isSoleWildcardProjection(final Collection<String> selectItems) {
         int itemCount = 0;
         boolean hasWildcard = false;
 
@@ -2336,12 +2346,43 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return false;
         }
 
-        if (itemCount == 1) {
+        // The scan above knows no backslash escapes or bracket-quoted identifiers, so MySQL's "'a\'', *" or SQL Server's
+        // "[it's], *" hides its comma inside an apparently open quote. Count again with those regions skipped: a wildcard
+        // is combined with other items if either reading sees more than one (fail closed).
+        if (itemCount == 1 && countTopLevelSelectItems(selectItems.iterator().next()) == 1) {
             return true;
         }
 
         throw new IllegalArgumentException("INSERT ... SELECT cannot derive a target column list from a wildcard select item ('*' or 'alias.*') "
                 + "combined with other select items: " + selectItems + ". Select only the wildcard, or list the columns explicitly");
+    }
+
+    /**
+     * Counts the top-level comma-separated elements of {@code selectItem}, skipping quoted text and comments with
+     * {@link #skipQuotedTextOrComment(String, int)} (backslash escapes in single-quoted strings, bracket-quoted identifiers,
+     * and this dialect's dollar-quoted strings). Text after an unterminated quote or dollar quote separates nothing.
+     */
+    private int countTopLevelSelectItems(final String selectItem) {
+        int count = 1;
+        int depth = 0;
+
+        for (int i = 0, len = selectItem.length(); i < len; i++) {
+            final int skipped = skipQuotedTextOrComment(selectItem, i);
+
+            if (skipped < 0) {
+                break;
+            } else if (skipped != i) {
+                i = skipped - 1;
+            } else if (selectItem.charAt(i) == '(') {
+                depth++;
+            } else if (selectItem.charAt(i) == ')' && depth > 0) {
+                depth--;
+            } else if (selectItem.charAt(i) == ',' && depth == 0) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     /**
@@ -2629,7 +2670,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, if the current operation is not {@code QUERY}, no columns have been set by
      *                               {@code select()}, or {@code from(...)} was already called for this query segment
-     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         an element consisting only of control or space characters,
      *         or an element that contains an unterminated block comment,
      *         or if a staged select column name contains a SQL comment token
      *         or has an explicit top-level {@code AS} alias containing a quote character, line break, or SQL comment token,
@@ -2657,7 +2699,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, if the current operation is not {@code QUERY}, no columns have been set by
      *                               {@code select()}, or {@code from(...)} was already called for this query segment
-     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, contains a {@code null}, empty, or blank element
+     * @throws IllegalArgumentException if {@code tableNames} is {@code null} or empty, contains a {@code null}, empty, or blank element,
+     *         an element consisting only of control or space characters,
      *         or an element that contains an unterminated block comment,
      *         or if a staged select column name contains a SQL comment token
      *         or has an explicit top-level {@code AS} alias containing a quote character, line break, or SQL comment token,
@@ -2674,6 +2717,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             final String normalizedTableName = normalizedTableNames.get(idx).trim();
             if (normalizedTableName.isEmpty()) {
                 N.checkArgNotEmpty(normalizedTableName, "tableNames[" + idx + "]");
+            } else if (isWhitespaceOrSpaceChar(normalizedTableName.charAt(0))) {
+                // trim() keeps Unicode space characters such as U+00A0: a name of only those renders an empty table reference.
+                checkTableNameNotBlank(normalizedTableName, "tableNames[" + idx + "]");
             }
             normalizedTableNames.set(idx, normalizedTableName);
             fromBodyLength += normalizedTableName.length();
@@ -2736,7 +2782,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, if the current operation is not {@code QUERY}, no columns have been set by
      *                               {@code select()}, or {@code from(...)} was already called for this query segment
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or contains an unterminated block comment,
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         or contains an unterminated block comment,
      *         or if a staged select column name contains a SQL comment token
      *         or has an explicit top-level {@code AS} alias containing a quote character, line break, or SQL comment token,
      *         or if a staged {@link Selection} table alias contains H2's {@code //} comment token
@@ -2747,6 +2794,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         checkSqlFragmentNotBlank(expr, cs.expr);
         final String trimmedExpr = expr.trim();
         N.checkArgNotEmpty(trimmedExpr, cs.expr);
+        checkTableNameNotBlank(trimmedExpr, cs.expr);
 
         // Only the first table reference supplies the primary table/alias used while rendering entity
         // properties. A raw FROM body may contain quoted commas or an inline JOIN; a character-only comma
@@ -3548,7 +3596,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param sql the text the classifier is queried for (only at offsets holding {@code '#'})
      * @param sqlServerTempIdentifiers whether every {@code #name}/{@code ##name} is a SQL Server temporary-table identifier
-     * @param mysqlHashComments whether MySQL rules apply (every {@code '#'} other than a <code>#{</code> marker opens a comment)
+     * @param mysqlHashComments whether MySQL rules apply (every {@code '#'} other than a closed <code>#{...}</code> marker opens a comment)
      * @param tokenizerConfig the separators used to distinguish operators from comments
      * @return the classifier; never {@code null}
      */
@@ -3671,7 +3719,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder is closed, if the current operation is not {@code QUERY}, no columns have been set by
      *                               {@code select()}, or {@code from(...)} was already called for this query segment
-     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or contains an unterminated block comment,
+     * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         or contains an unterminated block comment,
      *         or if a staged select column name contains a SQL comment token
      *         or has an explicit top-level {@code AS} alias containing a quote character, line break, or SQL comment token,
      *         or if a staged {@link Selection} table alias contains H2's {@code //} comment token
@@ -4244,8 +4293,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * no dialect or clause context (e.g. {@link DynamicQuery} fragments): the dialect-agnostic reading of
      * {@link #endsInsideLineComment(String, boolean)}; when {@code sql} contains {@code '['}, the reading in which
      * {@code [} opens an array subscript rather than a bracket-quoted identifier (PostgreSQL's {@code ARRAY['a]b'] -- c});
-     * and when it contains {@code '#'}, MySQL's reading, in which every {@code '#'} other than a <code>#{</code> marker
-     * opens a comment ({@code #tenant filter} at the start of a fragment), and SQL Server's, in which every
+     * and when it contains {@code '#'}, MySQL's reading, in which every {@code '#'} other than a closed <code>#{...}</code>
+     * marker opens a comment ({@code #tenant filter} at the start of a fragment), and SQL Server's, in which every
      * {@code #name} is a temporary-table identifier. H2's {@code //} line comments and nested block comments are not
      * read. The extra line feed of a false positive is
      * harmless, while a missed comment would silently swallow the next appended clause. Condition renderers keep the
@@ -4346,7 +4395,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * <p>Only the alias-scoped mapping is registered: the joined entity never supplies this builder's primary
      * mapping, so an unqualified property name in a later clause keeps resolving against the FROM table (and,
-     * for a plain-string FROM, is emitted verbatim rather than qualified with the FROM table's alias).</p>
+     * for a plain-string FROM, is converted by the naming policy alone rather than qualified with the FROM table's alias).</p>
      *
      * @param entityClass the entity class whose property-column mapping to register; if it is not an entity bean class,
      *        this builder's current primary mapping is registered for {@code alias} instead
@@ -4838,7 +4887,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         or contains an unterminated block comment
      */
     public This join(final String joinExpr) {
         return appendJoinExpr(_SPACE_JOIN_SPACE, joinExpr, true);
@@ -4856,13 +4906,14 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this builder instance for method chaining
      * @throws IllegalStateException if this builder is closed, has no current SELECT with a FROM clause, has an
      *         unfinished qualified JOIN, or has already emitted a later clause or complete set-operation operand
-     * @throws IllegalArgumentException if {@code joinExpr} is null or blank, contains an unterminated block comment, or
+     * @throws IllegalArgumentException if {@code joinExpr} is null or blank, consists only of control or space characters,
+     *         contains an unterminated block comment, or
      *         contains a top-level ON/USING connector when {@code joinConditionAllowed} is false
      */
     @SuppressWarnings("unchecked")
     private This appendJoinExpr(final char[] joinKeyword, final String joinExpr, final boolean joinConditionAllowed) {
         checkCanAppendJoin();
-        checkSqlFragmentNotBlank(joinExpr, "joinExpr");
+        checkTableNameNotBlank(joinExpr, "joinExpr");
 
         if (!joinConditionAllowed && containsTopLevelJoinCondition(joinExpr)) {
             throw new IllegalArgumentException("CROSS JOIN and NATURAL JOIN expressions must not contain a top-level ON or USING connector");
@@ -4922,7 +4973,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *
      * @param joinKeyword the leading join keyword token (e.g. {@link #_SPACE_LEFT_JOIN_SPACE})
      * @param entityClass the entity class to join
-     * @param alias the table alias; may be {@code null} or empty
+     * @param alias the table alias; may be {@code null}, empty, or blank (all meaning no alias)
      * @return this builder instance for method chaining
      * @throws IllegalStateException if this builder is closed, has no current SELECT with a FROM clause, has an
      *         unfinished qualified JOIN, or has already emitted a later clause or complete set-operation operand
@@ -4950,9 +5001,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
         checkEntityTableNameDoesNotEndInLineComment(tableName);
 
-        final String tableReference = Strings.isNotEmpty(alias) ? tableName + " " + alias : tableName;
+        // As in from(Class, String), a blank alias is no alias (it used to be emitted as padding: "JOIN child   ON ...").
+        final boolean hasAlias = Strings.isNotBlank(alias);
+        final String tableReference = hasAlias ? tableName + " " + alias : tableName;
 
-        if (Strings.isNotEmpty(alias)) {
+        if (hasAlias) {
             // Match FROM's alias extraction: SQL accepts padding and AS before the alias, but those
             // characters must not become part of the lookup key for a later alias.property reference.
             final TopLevelAlias parsedAlias = findTopLevelAlias(tableReference, false);
@@ -4988,7 +5041,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * <p>The joined entity's property mapping is registered for {@code alias} only; it never becomes this
      * builder's primary mapping. An <i>unqualified</i> property name in a later clause is therefore resolved
      * against the FROM table, and when the FROM table was given as a plain string (which carries no entity
-     * mapping) such a name is emitted verbatim and unqualified - ambiguous if both tables define it. Prefer
+     * mapping) such a name is only converted by the naming policy and left unqualified - ambiguous if both tables define it. Prefer
      * {@link #from(Class, String)} over {@code from("table alias")} so unqualified names resolve, or qualify
      * them explicitly ({@code "alias.propName"}).</p>
      *
@@ -5024,7 +5077,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         or contains an unterminated block comment
      */
     public This innerJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_INNER_JOIN_SPACE, joinExpr, true);
@@ -5099,7 +5153,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         or contains an unterminated block comment
      */
     public This leftJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_LEFT_JOIN_SPACE, joinExpr, true);
@@ -5174,7 +5229,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         or contains an unterminated block comment
      */
     public This rightJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_RIGHT_JOIN_SPACE, joinExpr, true);
@@ -5249,7 +5305,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, or contains an unterminated block comment
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         or contains an unterminated block comment
      */
     public This fullJoin(final String joinExpr) {
         return appendJoinExpr(_SPACE_FULL_JOIN_SPACE, joinExpr, true);
@@ -5324,7 +5381,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, contains an unterminated block comment, or contains a top-level
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         contains an unterminated block comment, or contains a top-level
      *                                  {@code ON}/{@code USING} connector
      */
     public This crossJoin(final String joinExpr) {
@@ -5400,7 +5458,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current SELECT segment has no {@code FROM} clause yet, a later SQL clause or a completed
      *         set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with
      *         {@code on(...)}/{@code using(...)}
-     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, contains an unterminated block comment, or contains a top-level
+     * @throws IllegalArgumentException if {@code joinExpr} is {@code null}, empty, or blank, consists only of control or space characters,
+     *         contains an unterminated block comment, or contains a top-level
      *                                  {@code ON}/{@code USING} connector
      */
     public This naturalJoin(final String joinExpr) {
@@ -7135,9 +7194,11 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
 
             // Like limit(int): an already-claimed LIMIT slot is reported as "already set" below, not as an
-            // ordering error (a FETCH/limit call also claims the OFFSET slot).
+            // ordering error (a FETCH/limit call also claims the OFFSET slot). Like limit(int, int), an expression
+            // carrying its own offset reports the claimed OFFSET slot as "already set" instead, too.
             if (!usesFetchPagination() && !calledOpSet.contains(SK.LIMIT) && calledOpSet.contains(SK.OFFSET)
-                    && (!isFetchLimitExpression(limit.expression()) || !calledOpSet.contains(OFFSET_ROWS_SLOT))) {
+                    && (!isFetchLimitExpression(limit.expression()) || !calledOpSet.contains(OFFSET_ROWS_SLOT))
+                    && !limitExpressionHasOffset(limit.expression())) {
                 throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
             }
 
@@ -7163,8 +7224,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 checkIfAlreadyCalled(SK.LIMIT);
 
                 // A FETCH clause is terminal with respect to OFFSET: an existing OFFSET may legally
-                // precede it, but a later offset(...) call must not be allowed after it.
-                if (isFetchLimitExpression(limit.expression())) {
+                // precede it, but a later offset(...) call must not be allowed after it. A FETCH form re-rendered
+                // as "LIMIT count" is no FETCH clause, so a later offset(...) stays allowed, as after limit(int).
+                if (!rendersFetchAsLimit && isFetchLimitExpression(limit.expression())) {
                     calledOpSet.add(SK.OFFSET);
                 }
             }
@@ -7180,7 +7242,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                     _sb.append(_SPACE).append(SK.OFFSET).append(_SPACE).append(fetchFormMatcher.group(1));
                 }
             } else if (commaFormMatcher.matches() && commaFormMatcher.group(3) != null) {
-                // MySQL-only "LIMIT offset, count" (e.g. PostgreSQL rejects it): render the portable
+                // MySQL-style "LIMIT offset, count" (SQLite accepts it too, but e.g. PostgreSQL rejects it): render the portable
                 // "LIMIT count OFFSET offset", exactly as limit(count, offset) renders a resolved Limit.
                 _sb.append(_SPACE)
                         .append(SK.LIMIT)
@@ -9143,13 +9205,15 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
 
             final boolean unresolvedFetchCanFollowOffsetRows = Strings.isNotEmpty(limit.expression()) && isFetchLimitExpression(limit.expression())
                     && calledOpSet.contains(OFFSET_ROWS_SLOT);
+            final boolean carriesOffset = (limit.isResolved() && limit.offset() > 0)
+                    || (!limit.isResolved() && Strings.isNotEmpty(limit.expression()) && limitExpressionHasOffset(limit.expression()));
 
-            if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET) && !unresolvedFetchCanFollowOffsetRows) {
+            // A limit carrying its own offset reports the claimed OFFSET slot as "already set" (below), as appendLimit does.
+            if (!usesFetchPagination() && calledOpSet.contains(SK.OFFSET) && !unresolvedFetchCanFollowOffsetRows && !carriesOffset) {
                 throw new IllegalStateException("'" + SK.LIMIT + "' must be added before '" + SK.OFFSET + "' for this SQL dialect");
             }
 
-            if ((limit.isResolved() && limit.offset() > 0)
-                    || (!limit.isResolved() && Strings.isNotEmpty(limit.expression()) && limitExpressionHasOffset(limit.expression()))) {
+            if (carriesOffset) {
                 checkClauseSlotAvailable(SK.OFFSET);
             }
         }
@@ -9246,7 +9310,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @return this SqlBuilder instance for method chaining
      * @throws IllegalStateException if this builder has already been closed by {@link #build()}, or if the
      *         statement prefix cannot be rendered yet (an INSERT with no {@code into(...)} table, an UPDATE
-     *         with no {@code set(...)} columns, or a SELECT segment not completed by {@code from(...)});
+     *         with no {@code set(...)} columns, or a SELECT segment not completed by {@code from(...)}), or a select
+     *         modifier was staged after a set operation that appended a complete sub-query (see {@link #selectModifier(String)});
      *         or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
      * @throws IllegalArgumentException if {@code expr} is {@code null}, empty, or blank, or contains an unterminated block comment;
      *         or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered,
@@ -10207,8 +10272,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Rejects structured operands whose own compound or terminal clauses would escape into the enclosing query.
      *
-     * @throws IllegalArgumentException if {@code subQuery} is a builder-backed snapshot or a structured
-     *         condition that carries its own set operations, ORDER BY, pagination, or FOR UPDATE
+     * @throws IllegalArgumentException if {@code subQuery}, a builder-backed snapshot or a structured (non-raw) sub-query,
+     *         carries its own set operations, ORDER BY, pagination, or FOR UPDATE (a raw SQL operand is not inspected)
      */
     private void checkSetOperationIsolation(final SubQuery subQuery, final String operationName) {
         if (subQuery instanceof final SubQuerySnapshot snapshot) {
@@ -10941,7 +11006,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * for scanning. Bracket-quoted identifiers (only when {@code bracketIdentifiers}) remain opaque, as do
      * strings and comments inside a subscript. With {@code mysqlStrings}, single- and double-quoted string
      * literals honor backslash escapes; otherwise only {@code E'...'} strings do. Under MySQL every {@code '#'}
-     * other than a <code>#{</code> marker opens a line comment; elsewhere {@code hashIdentifiers} (see
+     * other than a closed <code>#{...}</code> marker opens a line comment; elsewhere {@code hashIdentifiers} (see
      * {@link #hashIdentifierMatcher(String, boolean, boolean, SqlParser.TokenizerConfig)}) tells temporary-table
      * identifiers from hash comments.
      */
@@ -11043,7 +11108,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             return end < 0 ? len : end + 2;
         }
 
-        if (ch == '#' && (mysqlCommentRules ? start + 1 >= len || sql.charAt(start + 1) != '{'
+        // Under MySQL rules only a closed #{...} MyBatis marker is data; an unterminated "#{" opens a comment.
+        if (ch == '#' && (mysqlCommentRules ? !isClosedMyBatisMarker(sql, start)
                 : !(sqlServerTempIdentifiers && isSqlServerTempIdentifierAt(sql, start)) && isAliasScannerHashCommentStart(sql, start))) {
             int i = start + 1;
 
@@ -11055,6 +11121,33 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         return start;
+    }
+
+    /**
+     * Reports whether a closed <code>#{...}</code> MyBatis marker starts at {@code hashIndex}: a {@code '#'} followed by
+     * {@code '{'} and a {@code '}'} on the same line. An unterminated <code>#{</code> is never substituted by MyBatis, so
+     * MySQL reads it as the start of a {@code #} line comment.
+     */
+    private static boolean isClosedMyBatisMarker(final String sql, final int hashIndex) {
+        final int len = sql.length();
+
+        if (hashIndex + 1 >= len || sql.charAt(hashIndex + 1) != '{') {
+            return false;
+        }
+
+        for (int i = hashIndex + 2; i < len; i++) {
+            final char ch = sql.charAt(i);
+
+            if (ch == '}') {
+                return true;
+            }
+
+            if (ch == '\n' || ch == '\r') {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -13436,7 +13529,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param propName the property or column name to append (must not be {@code null}, empty, or blank, and must not contain a SQL comment token)
      * @throws IllegalStateException if this builder is closed
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or contains a SQL comment token,
-     *         or names a self-referencing sub-entity property of the current entity (one whose type is the entity class itself)
+     *         or names a self-referencing sub-entity property of the current entity (one whose type is the entity class itself),
+     *         or, in a compound query's ORDER BY, a sub-entity property of which the first SELECT labels only some columns
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     protected void appendColumnName(final String propName) {
@@ -13464,7 +13558,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @param direction the sort direction to append after the column(s), or {@code null} for none
      * @throws IllegalStateException if this builder is closed
      * @throws IllegalArgumentException if {@code propName} is {@code null}, empty, or blank, or contains a SQL comment token,
-     *         or names a self-referencing sub-entity property of the current entity
+     *         or names a self-referencing sub-entity property of the current entity, or, in a compound query's ORDER BY, a
+     *         sub-entity property of which the first SELECT labels only some columns
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     private void appendColumnName(final String propName, final SortDirection direction) {
@@ -13500,7 +13595,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     /**
      * Detects SQL comment openers outside quoted regions. Hash-prefixed operators, MyBatis markers,
      * and SQL Server temporary identifiers are data tokens rather than hash comments; under the MySQL
-     * family, which reads every {@code '#'} as a comment, only a <code>#{</code> marker is.
+     * family, which reads every {@code '#'} as a comment, only a <code>#{...}</code> marker closed on the same line is
+     * (an unterminated <code>#{</code> is reported as a comment).
      * Where a backslash escapes a quote depends on the dialect: {@code 'C:\'} is a complete literal in
      * standard SQL (PostgreSQL, Oracle, SQL Server, SQLite, H2, DB2) but unterminated under MySQL's backslash
      * escapes, so {@code 'C:\' -- note} hides its comment from the backslash reading only. Every family except
@@ -13644,8 +13740,9 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             if (ch == '#') {
                 if (_dialectFamily == DialectFamily.MYSQL) {
                     // MySQL starts a line comment at every '#' outside quotes: "status = 1 ## reset" or "a #> b" would
-                    // swallow the clauses appended after them. Only a #{...} MyBatis marker is a data token.
-                    if (i < len - 1 && expr.charAt(i + 1) == '{') {
+                    // swallow the clauses appended after them. Only a closed #{...} MyBatis marker is a data token: an
+                    // unterminated "#{" is never substituted, so MySQL reads it as a comment too.
+                    if (isClosedMyBatisMarker(expr, i)) {
                         i++;
                         continue;
                     }
@@ -13758,7 +13855,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      *         a top-level {@code AS} alias that is blank, quoted, or contains a line break or an SQL comment token, or, with
      *         {@code withClassAlias}, that is not a single token (contains a comma or whitespace); or if, without
      *         {@code propAlias}, it names a self-referencing sub-entity property of {@code entityClass} (one whose type is
-     *         {@code entityClass} itself), whose columns cannot be qualified without an explicit self join
+     *         {@code entityClass} itself), whose columns cannot be qualified without an explicit self join; or if, in a
+     *         compound query's ORDER BY, it names a sub-entity property of which the first SELECT labels only some columns
      * @throws UnsupportedOperationException if inspected entity metadata configures a LocalDate or LocalTime property with date format {@code long}
      */
     protected void appendColumnName(final Class<?> entityClass, final BeanInfo entityInfo, final ImmutableMap<String, ColumnInfo> propColumnNameMap,
@@ -13823,11 +13921,24 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
                 final ImmutableMap<String, ColumnInfo> subPropColumnNameMap = propToColumnInfoMap(propEntityClass, _namingPolicy);
 
                 final Collection<String> subSelectPropNames = QueryUtil.selectPropNames(propEntityClass, false, null);
+                // A compound query's ORDER BY may only name result columns: the first SELECT's labels ("profile.name")
+                // replace the table-qualified sub-entity columns.
+                final Map<String, ColumnInfo> resultLabels = !isForSelect && _hasSetOperation && calledOpSet.contains(SK.ORDER_BY)
+                        ? compoundOrderByLabels(propInfo.name, subSelectPropNames)
+                        : null;
                 int i = 0;
 
                 for (final String subPropName : subSelectPropNames) {
                     if (i++ > 0) {
                         _sb.append(_COMMA_SPACE);
+                    }
+
+                    final ColumnInfo resultColumn = resultLabels == null ? null : resultLabels.get(propInfo.name + SK._PERIOD + subPropName);
+
+                    if (resultColumn != null) {
+                        _sb.append(resultColumn.columnName());
+                        appendSortDirection(direction);
+                        continue;
                     }
 
                     final ColumnInfo subTp = subPropColumnNameMap.get(subPropName);
@@ -13982,6 +14093,41 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
         }
 
         appendSortDirection(direction);
+    }
+
+    /**
+     * Returns the first SELECT's result labels when a compound query's ORDER BY is to render the columns of the
+     * sub-entity property {@code subEntityPropName} as those labels: the labels (see {@link #firstOperandResultColumns()})
+     * if they include a {@code subEntityPropName.prop} label for every name in {@code subPropNames}, or {@code null} if
+     * they include none (the table-qualified columns are kept). The ORDER BY lookup map cannot answer this itself: it
+     * also holds the entity's own {@code subEntityPropName.prop} mappings.
+     *
+     * @throws IllegalArgumentException if only some of the labels are present: ordering by the labelled columns alone would
+     *         drop sort keys, and the table-qualified fallback for the others is no result column, which a compound
+     *         query's ORDER BY rejects
+     */
+    private Map<String, ColumnInfo> compoundOrderByLabels(final String subEntityPropName, final Collection<String> subPropNames) {
+        final Map<String, ColumnInfo> resultLabels = firstOperandResultColumns();
+
+        if (resultLabels == null) {
+            return null;
+        }
+
+        int labelled = 0;
+
+        for (final String subPropName : subPropNames) {
+            if (resultLabels.containsKey(subEntityPropName + SK._PERIOD + subPropName)) {
+                labelled++;
+            }
+        }
+
+        if (labelled > 0 && labelled < subPropNames.size()) {
+            throw new IllegalArgumentException("Sub-entity property '" + subEntityPropName + "' cannot be ordered in a compound query: the first SELECT "
+                    + "selects only " + labelled + " of its " + subPropNames.size() + " columns. Order by the selected '" + subEntityPropName
+                    + ".prop' result columns explicitly, or select every column of '" + subEntityPropName + "'");
+        }
+
+        return labelled > 0 ? resultLabels : null;
     }
 
     /** Whether an inline select alias is a single token: it contains no comma and no whitespace or space character. */

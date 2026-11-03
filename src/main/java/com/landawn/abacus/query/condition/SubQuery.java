@@ -233,7 +233,9 @@ public class SubQuery extends AbstractCondition {
      * and every other binding through its own {@code equals}/{@code hashCode}. Bindings retained by reference
      * must not be mutated while the subquery is in use, particularly when it is stored in a {@code HashSet}. Markers inside
      * quoted text and comments, and PostgreSQL JSON {@code ?} operators, are not counted as placeholders. A PostgreSQL
-     * dollar-quoted string ({@code $$...$$}) is not treated as quoted text here, so a {@code ?} inside one is counted.
+     * dollar-quoted string ({@code $$...$$}) is not treated as quoted text here: a {@code ?} inside one is read as ordinary
+     * SQL, so it is counted unless that reading takes it for a JSON operator ({@code $$ = ? $$} adds a placeholder,
+     * {@code $$ ? $$} does not).
      *
      * <p>Named ({@code :name}) and MyBatis ({@code #{name}}) markers are deliberately rejected because
      * a raw fragment has no generated-name metadata for collision-safe composition. Use a builder-backed
@@ -1126,8 +1128,10 @@ public class SubQuery extends AbstractCondition {
      *       depends on the enclosing builder's naming or parameter policy, which a raw fragment cannot follow.</li>
      * </ul>
      * Inlined text ending in a line comment is terminated, and it is separated by a space from an adjacent
-     * identifier/number character or from a preceding {@code -} it would otherwise fuse with into a {@code --} comment,
-     * mirroring how {@code RAW_SQL} builders inline values.
+     * identifier/number character, and from an adjacent {@code -} or {@code /} (before it) or {@code *} (after it)
+     * that it would otherwise fuse with into a {@code --} or {@code /*} comment opener ({@code 10-?} with {@code -1}
+     * renders {@code 10- -1}, {@code ?*2} with {@code a /} renders {@code a / *2}), mirroring how {@code RAW_SQL}
+     * builders inline values.
      *
      * @param sql the validated raw SQL text
      * @param bindings the validated bindings, one per positional placeholder, in order
@@ -1153,14 +1157,16 @@ public class SubQuery extends AbstractCondition {
 
             sb.append(sql, last, i);
 
-            if (i > 0 && (isGlueChar(sql.charAt(i - 1)) || (sql.charAt(i - 1) == '-' && text.startsWith("-")))) {
+            if (i > 0 && (isGlueChar(sql.charAt(i - 1)) || !text.isEmpty() && fusesIntoCommentOpener(sql.charAt(i - 1), text.charAt(0)))) {
                 sb.append(_SPACE);
             }
 
             sb.append(text);
             last = i + 1;
 
-            if (last < sql.length() && isGlueChar(sql.charAt(last))) {
+            // As on the leading side: a trailing '-' or '/' must not fuse with a following '-' or '*' into "--" or "/*".
+            if (last < sql.length()
+                    && (isGlueChar(sql.charAt(last)) || !text.isEmpty() && fusesIntoCommentOpener(text.charAt(text.length() - 1), sql.charAt(last)))) {
                 sb.append(_SPACE);
             }
         }
@@ -1206,6 +1212,11 @@ public class SubQuery extends AbstractCondition {
     /** Returns {@code true} for a character that would fuse with adjacent inlined text into one identifier or number. */
     private static boolean isGlueChar(final char ch) {
         return Character.isLetterOrDigit(ch) || ch == '_' || ch == '$' || ch == '.';
+    }
+
+    /** Returns {@code true} if {@code first} directly followed by {@code second} opens a {@code --} or {@code /*} comment. */
+    private static boolean fusesIntoCommentOpener(final char first, final char second) {
+        return (first == '-' && second == '-') || (first == '/' && second == '*');
     }
 
     /**

@@ -533,6 +533,10 @@ public final class Filters {
      * Each selected property of the entity will be included as an equality check in the {@code OR} condition
      * across <b>different</b> columns/properties.
      *
+     * <p>Properties whose value is {@code null} are included too and render as {@code propName IS NULL}
+     * (see {@link #equal(String, Object)}), so any row with one of those columns {@code NULL} matches; use
+     * {@link #anyEqual(Object, Collection)} to restrict the properties.</p>
+     *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * User user = new User("John", "john@example.com");
@@ -704,6 +708,10 @@ public final class Filters {
      * Creates an {@code AND} condition from an entity object using its selectable top-level properties.
      * Each selected property of the entity will be included as an equality check in the {@code AND} condition
      * across <b>different</b> columns/properties.
+     *
+     * <p>Properties whose value is {@code null} are included too and render as {@code propName IS NULL}
+     * (see {@link #equal(String, Object)}), and unset primitive properties contribute their default value (for
+     * example {@code status = 0}); use {@link #allEqual(Object, Collection)} to restrict the properties.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -4149,7 +4157,8 @@ public final class Filters {
      *            {@code byte[]}, which stays one binary value) is treated as the value list itself, so
      *            {@code in(p, (Object) List.of(1, 2))} renders {@code p IN (1, 2)}; to compare against a single collection-valued
      *            value, wrap it: {@code in(p, List.of(list))}. An {@code Object[]} holding exactly one array or collection is
-     *            unpacked the same way
+     *            unpacked the same way. A lone {@link SubQuery} is not unpacked: it stays one scalar-subquery value
+     *            ({@code p IN ((subquery))}); use {@link #in(String, SubQuery)} for subquery membership
      * @return an {@link In} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is
@@ -4464,7 +4473,8 @@ public final class Filters {
      *            {@code byte[]}, which stays one binary value) is treated as the value list itself, so
      *            {@code notIn(p, (Object) List.of(1, 2))} renders {@code p NOT IN (1, 2)}; to compare against a single collection-valued
      *            value, wrap it: {@code notIn(p, List.of(list))}. An {@code Object[]} holding exactly one array or collection is
-     *            unpacked the same way
+     *            unpacked the same way. A lone {@link SubQuery} is not unpacked: it stays one scalar-subquery value
+     *            ({@code p NOT IN ((subquery))}); use {@link #notIn(String, SubQuery)} for subquery membership
      * @return a {@link NotIn} condition
      * @throws IllegalArgumentException if a scalar subquery operand has a known, non-wildcard projection
      *                                  with more than one column; if {@code propName} is {@code null}, empty, or blank, if {@code values} is

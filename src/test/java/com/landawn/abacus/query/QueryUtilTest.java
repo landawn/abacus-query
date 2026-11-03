@@ -1350,6 +1350,14 @@ public class QueryUtilTest extends TestBase {
         }
 
         @Test
+        void testGetTableNameAndAlias_BlankAliasIsIgnored() {
+            // A whitespace-only @Table alias means "no alias", as in the FROM clause the builders render.
+            assertEquals("blank_alias_table", QueryUtil.tableNameAndAlias(BlankAliasEntity.class));
+            assertEquals("blank_alias_table", QueryUtil.tableNameAndAlias(BlankAliasEntity.class, NamingPolicy.SNAKE_CASE));
+            assertEquals("", QueryUtil.tableAlias(BlankAliasEntity.class));
+        }
+
+        @Test
         void testGetTableNameAndAlias_NoChange() {
             String tableName = QueryUtil.tableNameAndAlias(Account.class, NamingPolicy.NO_CHANGE);
             assertNotNull(tableName);
@@ -2523,6 +2531,19 @@ public class QueryUtilTest extends TestBase {
 
     @Table(alias = "ao")
     static class AliasOnlyEntity {
+        private int id;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(final int id) {
+            this.id = id;
+        }
+    }
+
+    @Table(name = "blank_alias_table", alias = " ")
+    static class BlankAliasEntity {
         private int id;
 
         public int getId() {

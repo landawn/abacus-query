@@ -29,11 +29,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.xml.parsers.DocumentBuilder;
+
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import com.landawn.abacus.annotation.SuppressFBWarnings;
 import com.landawn.abacus.exception.ParsingException;
@@ -106,6 +110,24 @@ public final class SqlMapper {
      * Logger for this class.
      */
     static final Logger logger = LoggerFactory.getLogger(SqlMapper.class);
+
+    /** Routes recoverable XML parser problems to the logger and rethrows fatal ones (see loadStream). */
+    private static final ErrorHandler LOGGING_ERROR_HANDLER = new ErrorHandler() {
+        @Override
+        public void warning(final SAXParseException e) {
+            logger.warn("SQL mapper XML warning: {}", describe(e));
+        }
+
+        @Override
+        public void error(final SAXParseException e) {
+            logger.warn("SQL mapper XML error: {}", describe(e));
+        }
+
+        @Override
+        public void fatalError(final SAXParseException e) throws SAXException {
+            throw e;
+        }
+    };
 
     /**
      * XML element name for the root sqlMapper element.
@@ -433,7 +455,11 @@ public final class SqlMapper {
      */
     private static void loadStream(final SqlMapper sqlMapper, final InputStream inputStream, final String sourceLabel) {
         try {
-            final Document doc = XmlUtil.createDOMParser(true, true).parse(inputStream);
+            final DocumentBuilder parser = XmlUtil.createDOMParser(true, true);
+            // The JDK's default ErrorHandler prints every problem to System.err ("[Fatal Error] :1:37: ..."), outside the
+            // logger; a fatal error is reported through the ParsingException below instead.
+            parser.setErrorHandler(LOGGING_ERROR_HANDLER);
+            final Document doc = parser.parse(inputStream);
             final Element sqlMapperElement = doc.getDocumentElement();
 
             if (sqlMapperElement == null || !SqlMapper.SQL_MAPPER.equals(sqlMapperElement.getTagName())) {
@@ -464,8 +490,18 @@ public final class SqlMapper {
         } catch (final IOException e) {
             throw new UncheckedIOException("Failed to read SQL mapper XML from: " + sourceLabel, e);
         } catch (final SAXException e) {
-            throw new ParsingException("Failed to parse SQL mapper XML from: " + sourceLabel, e);
+            throw new ParsingException("Failed to parse SQL mapper XML from: " + sourceLabel + ": " + describe(e), e);
         }
+    }
+
+    /**
+     * The parser's message (or, if it has none, the exception's class name), prefixed with the line and column of a
+     * {@link SAXParseException}.
+     */
+    private static String describe(final SAXException e) {
+        final String message = e.getMessage() == null ? e.getClass().getName() : e.getMessage();
+
+        return e instanceof final SAXParseException pe ? "line " + pe.getLineNumber() + ", column " + pe.getColumnNumber() + ": " + message : message;
     }
 
     /**

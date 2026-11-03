@@ -1,7 +1,7 @@
 # abacus-query API Index (v4.9.8)
-- Build: 844f71a281845c4bafb1932ee5da584a9ae07690
+- Build: 91dabc6dc766d2f9328b1004085e9e68154d03e1
 - Java: 21
-- Generated: 2026-11-02
+- Generated: 2026-11-03
 
 ## Packages
 - com.landawn.abacus.query — SQL generation and inspection: fluent query builders, a condition factory, and utilities for parsing, classifying, and externalizing SQL text.
@@ -168,7 +168,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if tableNames is null or empty, contains a null, empty, or blank element or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
+  - `java.lang.IllegalArgumentException` — if tableNames is null or empty, contains a null, empty, or blank element, an element consisting only of control or space characters, or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -182,7 +182,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if tableNames is null or empty, contains a null, empty, or blank element or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
+  - `java.lang.IllegalArgumentException` — if tableNames is null or empty, contains a null, empty, or blank element, an element consisting only of control or space characters, or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -197,7 +197,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -236,7 +236,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is not QUERY, no columns have been set by select(), or from(...) was already called for this query segment
-  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
+  - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
 - **Examples:**
   - ```java
@@ -284,7 +284,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -316,7 +316,7 @@ Base class for fluent SQL builders.
 - **Signature:** `public This join(final Class<?> entityClass, final String alias)`
 - **Summary:** Adds a JOIN clause using an entity class with an alias.
 - **Contract:**
-  - An unqualified property name in a later clause is therefore resolved against the FROM table, and when the FROM table was given as a plain string (which carries no entity mapping) such a name is emitted verbatim and unqualified - ambiguous if both tables define it.
+  - An unqualified property name in a later clause is therefore resolved against the FROM table, and when the FROM table was given as a plain string (which carries no entity mapping) such a name is only converted by the naming policy and left unqualified - ambiguous if both tables define it.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to join (must not be null)
   - `alias` (`String`) — the table alias
@@ -344,7 +344,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -394,7 +394,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -444,7 +444,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -494,7 +494,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, or contains an unterminated block comment
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -544,7 +544,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, contains an unterminated block comment, or contains a top-level ON/USING connector
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, consists only of control or space characters, contains an unterminated block comment, or contains a top-level ON/USING connector
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -594,7 +594,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current SELECT segment has no FROM clause yet, a later SQL clause or a completed set-operation operand has already been emitted, or the preceding qualified JOIN has not been completed with on(...)/using(...)
-  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, contains an unterminated block comment, or contains a top-level ON/USING connector
+  - `java.lang.IllegalArgumentException` — if joinExpr is null, empty, or blank, consists only of control or space characters, contains an unterminated block comment, or contains a top-level ON/USING connector
 - **Examples:**
   - ```java
     String sql = PSC.select("*")
@@ -1406,7 +1406,7 @@ Base class for fluent SQL builders.
   - `expr` (`String`) — the expression to append
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
-  - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (an INSERT with no into(...) table, an UPDATE with no set(...) columns, or a SELECT segment not completed by from(...)); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
+  - `java.lang.IllegalStateException` — if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (an INSERT with no into(...) table, an UPDATE with no set(...) columns, or a SELECT segment not completed by from(...)), or a select modifier was staged after a set operation that appended a complete sub-query (see #selectModifier(String)); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
   - `java.lang.IllegalArgumentException` — if expr is null, empty, or blank, or contains an unterminated block comment; or if a staged UPDATE column is null, blank, or contains a SQL comment token when its SET list is rendered, or the UPDATE/DELETE target table name contains an unterminated block comment.
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception
 - **Examples:**
@@ -2681,6 +2681,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
 - **Summary:** Creates a SELECT statement for an entity class with optional sub-entity properties.
 - **Contract:**
   - When includeSubEntityProperties is true, properties of nested entity objects are also included in the selection with appropriate prefixes.
+  - The nested columns are qualified with each sub-entity's table alias (or table name), and the parent columns with the alias of the first table in the FROM clause, so the FROM clause supplied to the builder must list the sub-entity tables as well; #selectFrom(Class, boolean) generates such a FROM clause.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select properties from
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
@@ -2695,9 +2696,9 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
                      .from("orders")
                      .build().query();
     
-    // With sub-entities (includes nested object properties)
+    // With sub-entities (includes nested object properties); FROM lists the sub-entity table too
     String sql2 = PSC.select(Order.class, true)
-                     .from("orders")
+                     .from("orders o, customer")
                      .build().query();
     ```
 - **Signature:** `public SqlBuilder select(final Class<?> entityClass, final Set<String> excludedPropNames)`
@@ -2719,6 +2720,8 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
     ```
 - **Signature:** `public SqlBuilder select(final Class<?> entityClass, final boolean includeSubEntityProperties, final Set<String> excludedPropNames)`
 - **Summary:** Creates a SELECT statement for an entity class with sub-entities and exclusions.
+- **Contract:**
+  - As with #select(Class, boolean), a FROM clause supplied for sub-entity properties must list the sub-entity tables as well.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to select properties from
   - `includeSubEntityProperties` (`boolean`) — whether to include properties of nested entity objects
@@ -2731,7 +2734,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - ```java
     Set<String> excluded = N.asSet("internalNotes", "auditLog");
     String sql = PSC.select(Order.class, true, excluded)
-                    .from("orders")
+                    .from("orders o, customer")
                     .build().query();
     // Selects all Order properties including sub-entities, except excluded ones
     ```
@@ -3512,7 +3515,7 @@ Builder for constructing dynamic SQL queries clause by clause.
 - **Signature:** `public String build()`
 - **Summary:** Builds the final SQL string from all the components and releases resources.
 - **Contract:**
-  - This method MUST be called to get the SQL and clean up internal resources.
+  - This method MUST be called to get the SQL.
   - After calling build(), this builder is closed and must not be reused: any subsequent call to a builder method (including build() itself) throws IllegalStateException.
 - **Parameters:**
   - (none)
@@ -6594,7 +6597,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates an IN condition with an array of object values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `values` (`Object[]`) — array of non-null values; a single Collection or array argument (other than byte\[\], which stays one binary value) is treated as the value list itself, so in(p, (Object) List.of(1, 2)) renders p IN (1, 2); to compare against a single collection-valued value, wrap it: in(p, List.of(list)). An Object\[\] holding exactly one array or collection is unpacked the same way
+  - `values` (`Object[]`) — array of non-null values; a single Collection or array argument (other than byte\[\], which stays one binary value) is treated as the value list itself, so in(p, (Object) List.of(1, 2)) renders p IN (1, 2); to compare against a single collection-valued value, wrap it: in(p, List.of(list)). An Object\[\] holding exactly one array or collection is unpacked the same way. A lone SubQuery is not unpacked: it stays one scalar-subquery value (p IN ((subquery))); use #in(String, SubQuery) for subquery membership
 - **Returns:** an In condition
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a SqlExpression containing a SQL token or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected); or if an element of values is a cyclic object array
@@ -6775,7 +6778,7 @@ Factory class for creating SQL Condition objects used in query construction.
 - **Summary:** Creates a NOT IN condition with an array of object values.
 - **Parameters:**
   - `propName` (`String`) — the property/column name
-  - `values` (`Object[]`) — array of non-null values to exclude; a single Collection or array argument (other than byte\[\], which stays one binary value) is treated as the value list itself, so notIn(p, (Object) List.of(1, 2)) renders p NOT IN (1, 2); to compare against a single collection-valued value, wrap it: notIn(p, List.of(list)). An Object\[\] holding exactly one array or collection is unpacked the same way
+  - `values` (`Object[]`) — array of non-null values to exclude; a single Collection or array argument (other than byte\[\], which stays one binary value) is treated as the value list itself, so notIn(p, (Object) List.of(1, 2)) renders p NOT IN (1, 2); to compare against a single collection-valued value, wrap it: notIn(p, List.of(list)). An Object\[\] holding exactly one array or collection is unpacked the same way. A lone SubQuery is not unpacked: it stays one scalar-subquery value (p NOT IN ((subquery))); use #notIn(String, SubQuery) for subquery membership
 - **Returns:** a NotIn condition
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if a scalar subquery operand has a known, non-wildcard projection with more than one column; if propName is null, empty, or blank, if values is null, empty, or contains null, or if any element is a Condition other than a SqlExpression containing a SQL token or a scalar SubQuery (predicates, clauses, JOIN/ON/USING connectors and All/Any/Some operands are all rejected); or if an element of values is a cyclic object array
@@ -7225,7 +7228,7 @@ Represents a parsed SQL statement with support for named parameters and paramete
   - `sql` (`String`) — the SQL string to parse (must not be null, empty, or blank)
 - **Returns:** a ParsedSql instance for the given SQL (typically a cached instance, unless the SQL is longer than #MAX_CACHEABLE_SQL_LENGTH characters or the JVM is shutting down, which closes the cache)
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank (including SQL made up only of characters that String#trim() removes, such as control characters); or if parameter detection in a recognized data-operation statement finds mixed styles (?, :propName, #{propName}), an iBatis/MyBatis parameter missing its closing brace or with an empty property name before its ':' or ',' (#{:id}), an unpaired UTF-16 surrogate in or immediately before a prospective colon-style name, or an unpaired surrogate directly after a '?' opening the content of a standalone bracket group
+  - `java.lang.IllegalArgumentException` — if sql is null, empty, or blank (including SQL made up only of characters that String#trim() removes, such as control characters); or if parameter detection in a recognized data-operation statement finds mixed styles (?, :propName, #{propName}), an iBatis/MyBatis parameter missing its closing brace or with an empty property name before its ':' or ',' (#{:id}), an unpaired UTF-16 surrogate in, immediately before, or immediately after a prospective colon-style name, or an unpaired surrogate directly after a '?' opening the content of a standalone bracket group
 - **Examples:**
   - ```java
     // Using named parameters
@@ -7739,10 +7742,10 @@ Utility class for handling database query operations, entity-column mappings, an
 - **Summary:** Returns the table alias from the @Table annotation on the entity class.
 - **Contract:**
   - If no @Table annotation exists, this method returns null.
-  - If @Table is present but the alias attribute is not specified, this method returns an empty string.
+  - If @Table is present but the alias attribute is not specified, or is blank (whitespace only), this method returns an empty string, as #tableNameAndAlias(Class) and the builders treat a blank alias as no alias.
 - **Parameters:**
   - `entityClass` (`Class<?>`) — the entity class to check (must not be null)
-- **Returns:** the table alias if defined in @Table annotation, empty string if @Table is present but alias is not set, or null if no @Table annotation exists
+- **Returns:** the table alias if defined in @Table annotation, empty string if @Table is present but alias is not set (or is blank), or null if no @Table annotation exists
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if entityClass is null
 - **Examples:**
@@ -7934,7 +7937,7 @@ Builder for immutable Selection instances.
 - **Signature:** `public SelectionBuilder tableAlias(final String tableAlias)`
 - **Summary:** Sets the table alias.
 - **Contract:**
-  - null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain SQL comment tokens (it is prefixed verbatim to every rendered column).
+  - null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain a line break or SQL comment tokens (it is prefixed verbatim to every rendered column).
 - **Parameters:**
   - `tableAlias` (`String`) — the table alias
 - **Returns:** this builder
@@ -7942,7 +7945,7 @@ Builder for immutable Selection instances.
 - **Signature:** `public SelectionBuilder classAlias(final String classAlias)`
 - **Summary:** Sets the result class alias.
 - **Contract:**
-  - null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain SQL comment tokens (it prefixes every rendered column alias, e.g. "acc.id").
+  - null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain a line break or SQL comment tokens (it prefixes every rendered column alias, e.g. "acc.id").
 - **Parameters:**
   - `classAlias` (`String`) — the class alias
 - **Returns:** this builder
@@ -10301,7 +10304,7 @@ Base class for binary conditions that compare a property with a value.
 - **Parameters:**
   - `propName` (`String`) — the property name to compare (must not be null, empty, or blank)
   - `operator` (`Operator`) — the comparison operator (must not be null); must be an operator valid for a binary propName OP value condition, i.e. one of Operator#EQUAL, Operator#NOT_EQUAL, Operator#NOT_EQUAL_ANSI, Operator#GREATER_THAN, Operator#GREATER_THAN_OR_EQUAL, Operator#LESS_THAN, Operator#LESS_THAN_OR_EQUAL, Operator#LIKE, Operator#NOT_LIKE, Operator#IS, Operator#IS_NOT, Operator#IN, or Operator#NOT_IN
-  - `propValue` (`Object`) — the value to compare against; may be a literal value, null only for the =, !=, <>, IS and IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values, explicit scalar expressions, or scalar sub-queries. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN. Every structured subquery with a known, non-wildcard projection must select exactly one column; raw SQL and wildcard projection arity are left to the database. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is("x", true) equals Filters.isTrue("x").
+  - `propValue` (`Object`) — the value to compare against; may be a literal value, null only for the =, !=, <>, IS and IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values, explicit scalar expressions, or scalar sub-queries. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN: a SubQuery is parenthesized automatically (id IN (SELECT ...)), while a SqlExpression is rendered verbatim and must supply its own parentheses (Filters.expr("(1, 2)") renders id IN (1, 2), but Filters.expr("1, 2") renders the invalid id IN 1, 2). Every structured subquery with a known, non-wildcard projection must select exactly one column; raw SQL and wildcard projection arity are left to the database. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is("x", true) equals Filters.isTrue("x").
 - **Throws:**
   - `java.lang.IllegalArgumentException` — if operator is null; if propName is null, empty, or blank; if operator is not one of the operators listed above; or if, for an IN/NOT_IN operator, propValue is not a non-empty Collection, a non-empty array, a SqlExpression, or a SubQuery; if propValue is null for an operator other than =, !=, <>, IS, or IS NOT, or an IN/NOT IN element is null; if IS/IS NOT receives a value other than null, a Boolean, or a SqlExpression; if a condition-valued operand is an ordinary predicate or query clause or a blank or comment-only SqlExpression; or if an All/Any/Some operand is used anywhere other than the direct RHS of a compatible scalar comparison; if a scalar SubQuery has a known, non-wildcard projection with multiple columns; or if propValue, or an element of an IN/NOT IN membership list, is a cyclic object array
 
@@ -16328,6 +16331,7 @@ Represents a raw SQL expression that can be used in queries.
   - If that interior contains a comment or # outside a string literal, it is copied unchanged.
   - Bind names and MyBatis attributes inside a #{...} or ${...} marker are also protected when the marker contains whitespace; tokenization can still normalize whitespace runs.
   - Recognized SQL keyword tokens are also left unchanged when written in their canonical upper-case form (for example CURRENT_DATE); a lower-case token is treated as an identifier and converted.
+  - An upper-case keyword outside that registry (such as CASE, WHEN or INTERVAL) is converted like an identifier too; for a keyword without an underscore this changes only its letter case, which SQL ignores (CASE WHEN isActive THEN 1 END renders as case when is_active then 1 end under SNAKE_CASE).
 - **Parameters:**
   - `namingPolicy` (`NamingPolicy`) — the naming policy to apply to detected identifiers; if null, NamingPolicy#NO_CHANGE is used
 - **Returns:** the expression string with identifiers converted according to the naming policy

@@ -3674,6 +3674,57 @@ public class ParsedSqlTest extends TestBase {
             assertEquals("SET x = 1 // c\nAND y", ParsedSql.parse("SET x = 1 // c\nAND y").parameterizedSql());
         }
 
+        // Regression: H2 reads "//*" as a "//" line comment, but the block comment after the '/' was dropped, so
+        // "id = :id //* c */ 1 OR 1 = 1" became "id = ? / 1 OR 1 = 1": one row deleted from the source, every row from the output.
+        @Test
+        void testParse_blockCommentAfterSlashOpensH2LineCommentAndIsKept() {
+            ParsedSql parsed = ParsedSql.parse("DELETE FROM t WHERE id = :id //* c */ 1 OR 1 = 1");
+            assertEquals("DELETE FROM t WHERE id = ? //* c */ 1 OR 1 = 1", parsed.parameterizedSql());
+            assertEquals(List.of("id"), parsed.namedParameters());
+
+            parsed = ParsedSql.parse("DELETE FROM t WHERE id = ? //* c */ 1 OR 1 = 1");
+            assertEquals("DELETE FROM t WHERE id = ? //* c */ 1 OR 1 = 1", parsed.parameterizedSql());
+            assertEquals(1, parsed.parameterCount());
+
+            // Markers inside the kept comment are comment text in both readings: not converted, counted or located.
+            parsed = ParsedSql.parse("DELETE FROM t WHERE id = ? //* ? :x */ 1 OR x = ?");
+            assertEquals("DELETE FROM t WHERE id = ? //* ? :x */ 1 OR x = ?", parsed.parameterizedSql());
+            assertEquals(2, parsed.parameterCount());
+            assertArrayEquals(new int[] { 25, 48 }, parsed.positionalParameterOffsets());
+            parsed = ParsedSql.parse("DELETE FROM t WHERE id = :id //* :x */ 1 OR x = :y");
+            assertEquals("DELETE FROM t WHERE id = ? //* :x */ 1 OR x = ?", parsed.parameterizedSql());
+            assertEquals(List.of("id", "y"), parsed.namedParameters());
+
+            // The whitespace and comments up to the next token are kept with it, also before ',', ';' or ')', after an
+            // operator that ends in '/' and after a glued '?'.
+            assertEquals("CALL p(? //* c */, ?)", ParsedSql.parse("CALL p(? //* c */, ?)").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = 4 //* c */", ParsedSql.parse("SELECT a FROM t WHERE x = 4 //* c */;").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = 4 ||//* c */ 2 OR y = ?",
+                    ParsedSql.parse("SELECT a FROM t WHERE x = 4 ||//* c */ 2 OR y = ?").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE id = ?//* c */1 OR 1 = 1", ParsedSql.parse("DELETE FROM t WHERE id = ?//* c */1 OR 1 = 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE id = ? //* c */ /* d */ 1 OR 1 = 1",
+                    ParsedSql.parse("DELETE FROM t WHERE id = ? //* c */ /* d */ 1 OR 1 = 1").parameterizedSql());
+
+            // H2's comment runs to the line break: kept, and after it the next gaps collapse again ...
+            assertEquals("DELETE FROM t WHERE id = ? //* c */ AND a = 1\nAND b = 2 AND c = 3",
+                    ParsedSql.parse("DELETE FROM t WHERE id = :id //* c */ AND a = 1\nAND b = 2\nAND c = 3").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE id = ? //* c */\n  AND b = 2 AND c = 3",
+                    ParsedSql.parse("DELETE FROM t WHERE id = :id //* c */\n  AND b = 2\nAND c = 3").parameterizedSql());
+            // ... unless H2 reads more than whitespace after the line break inside the kept text (here a "--" comment).
+            assertEquals("DELETE FROM t WHERE id = ? //* a \n -- */ 1 OR 1 = 1\nAND id = 2",
+                    ParsedSql.parse("DELETE FROM t WHERE id = ? //* a \n -- */ 1 OR 1 = 1\nAND id = 2").parameterizedSql());
+
+            // An unterminated comment is kept with the rest of the SQL, once.
+            assertEquals("DELETE FROM t WHERE id = 4 //* c\nAND x = 1", ParsedSql.parse("DELETE FROM t WHERE id = 4 //* c\nAND x = 1").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE id = ? //* c \n d */", ParsedSql.parse("DELETE FROM t WHERE id = ? //* c \n d */  ").parameterizedSql());
+
+            // A '/' separated from the comment, a kept comment token and a "//*" inside a literal are unchanged.
+            assertEquals("DELETE FROM t WHERE id = 4 / 1 OR x = ?", ParsedSql.parse("DELETE FROM t WHERE id = 4 / /* c */ 1 OR x = ?").parameterizedSql());
+            assertEquals("DELETE FROM t WHERE id = ? //* c */ 1 OR 1 = 1",
+                    ParsedSql.parse("-- Keep comments\nDELETE FROM t WHERE id = ? //* c */ 1 OR 1 = 1").parameterizedSql());
+            assertEquals("SELECT a FROM t WHERE x = '//*' AND y = ?", ParsedSql.parse("SELECT a FROM t WHERE x = '//*' /* c */ AND y = ?").parameterizedSql());
+        }
+
         @Test
         void testParse_MultipleTrailingSemicolons() {
             // Bug: previously only a single trailing ';' was stripped.
@@ -3703,7 +3754,9 @@ public class ParsedSqlTest extends TestBase {
         @Test
         void testParse_RemovingBlockCommentsCannotCreateCommentOpenersOrOperators() {
             assertEquals("SELECT 1- -2", ParsedSql.parse("SELECT 1-/* comment */-2").parameterizedSql());
-            assertEquals("SELECT 1/ *2", ParsedSql.parse("SELECT 1//* comment */*2").parameterizedSql());
+            // "//*" opens an H2 line comment, so the comment after the '/' is kept as written instead (see
+            // testParse_blockCommentAfterSlashOpensH2LineCommentAndIsKept); "1/ *2" was invalid SQL in every dialect.
+            assertEquals("SELECT 1//* comment */*2", ParsedSql.parse("SELECT 1//* comment */*2").parameterizedSql());
             assertEquals("SELECT 1< =2", ParsedSql.parse("SELECT 1</* comment */=2").parameterizedSql());
             // Separate the placeholder from '-' because '?-' is a configured PostgreSQL operator.
             final ParsedSql positional = ParsedSql.parse("SELECT ? -/* comment */- ?");
@@ -4027,6 +4080,28 @@ public class ParsedSqlTest extends TestBase {
             assertEquals(2, parsed.parameterCount());
             assertEquals("id", parsed.namedParameters().get(0));
             assertEquals("name", parsed.namedParameters().get(1));
+        }
+
+        // Regression: UPSERT (CockroachDB, YugabyteDB, Apache Phoenix) was not a data operation, so its markers were neither
+        // converted nor counted.
+        @Test
+        void testParse_UpsertStatementIsDataOperation() {
+            ParsedSql parsed = ParsedSql.parse("UPSERT INTO t (a, b) VALUES (:a, :b)");
+            assertTrue(parsed.isDataOperation());
+            assertEquals("UPSERT INTO t (a, b) VALUES (?, ?)", parsed.parameterizedSql());
+            assertEquals(List.of("a", "b"), parsed.namedParameters());
+            assertEquals(2, parsed.parameterCount());
+
+            parsed = ParsedSql.parse("upsert into t (a, b) values (?, ?)");
+            assertTrue(parsed.isDataOperation());
+            assertEquals(2, parsed.parameterCount());
+            assertArrayEquals(new int[] { 29, 32 }, parsed.positionalParameterOffsets());
+
+            parsed = ParsedSql.parse("UPSERT INTO t (a) VALUES (#{a})");
+            assertEquals("UPSERT INTO t (a) VALUES (?)", parsed.parameterizedSql());
+            assertEquals(List.of("a"), parsed.namedParameters());
+
+            assertEquals(1, ParsedSql.parse("EXPLAIN UPSERT INTO t (a) VALUES (?)").parameterCount());
         }
 
         @Test

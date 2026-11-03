@@ -31,6 +31,7 @@ import com.landawn.abacus.util.N;
  *
  * <p>Typical implementors include comparison conditions ({@link Binary} and subclasses),
  * range conditions ({@link AbstractBetween}), collection conditions ({@link AbstractIn}),
+ * subquery-membership conditions ({@link AbstractInSubQuery}), raw {@link SqlExpression} fragments,
  * junction conditions ({@link Junction}, {@link And}, {@link Or}), and composable-cell
  * conditions ({@link ComposableCell} and its subclasses such as {@link Not}, {@link Exists}).</p>
  *

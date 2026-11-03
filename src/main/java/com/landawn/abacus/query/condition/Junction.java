@@ -28,7 +28,6 @@ import com.landawn.abacus.query.cs;
 import com.landawn.abacus.util.ImmutableList;
 import com.landawn.abacus.util.N;
 import com.landawn.abacus.util.NamingPolicy;
-import com.landawn.abacus.util.Objectory;
 import com.landawn.abacus.util.Strings;
 
 /**
@@ -425,42 +424,41 @@ public class Junction extends ComposableCondition {
             return identitySql();
         }
 
-        final StringBuilder sb = Objectory.createStringBuilder();
+        // A plain, small StringBuilder on purpose (as in DynamicQuery.Builder): the Objectory pool is one globally locked
+        // queue of 16K-char buffers, held here once per nesting level for output that is usually a few dozen characters,
+        // which serialized concurrent rendering; a buffer that outgrew it was discarded anyway.
+        final StringBuilder sb = new StringBuilder(conditions.size() * 32);
+        final Operator op = operator();
+        final String opStr = op == null ? Strings.NULL : op.toString();
+        boolean isFirst = true;
 
-        try {
-            final Operator op = operator();
-            final String opStr = op == null ? Strings.NULL : op.toString();
-            boolean isFirst = true;
-            for (final Condition condition : conditions) {
-                if (condition == null) {
-                    continue;
-                }
+        for (final Condition condition : conditions) {
+            if (condition == null) {
+                continue;
+            }
 
-                if (!isFirst) {
-                    sb.append(_SPACE);
-                    sb.append(opStr);
-                    sb.append(_SPACE);
-                } else {
-                    sb.append(_PARENTHESIS_L);
-                }
-
+            if (!isFirst) {
+                sb.append(_SPACE);
+                sb.append(opStr);
+                sb.append(_SPACE);
+            } else {
                 sb.append(_PARENTHESIS_L);
-                sb.append(QueryUtil.terminateLineComment(String.valueOf(condition.toSql(effectiveNamingPolicy))));
-                sb.append(_PARENTHESIS_R);
-
-                isFirst = false;
             }
 
-            if (isFirst) {
-                return identitySql();
-            }
-
+            sb.append(_PARENTHESIS_L);
+            sb.append(QueryUtil.terminateLineComment(String.valueOf(condition.toSql(effectiveNamingPolicy))));
             sb.append(_PARENTHESIS_R);
 
-            return sb.toString();
-        } finally {
-            Objectory.recycle(sb);
+            isFirst = false;
         }
+
+        if (isFirst) {
+            return identitySql();
+        }
+
+        sb.append(_PARENTHESIS_R);
+
+        return sb.toString();
     }
 
     /**

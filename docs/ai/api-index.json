@@ -2,10 +2,10 @@
   "library": {
     "name": "abacus-query",
     "version": "4.9.8",
-    "generated_at": "2026-11-02",
+    "generated_at": "2026-11-03",
     "java_target": "21",
     "source": {
-      "git_sha": "844f71a281845c4bafb1932ee5da584a9ae07690"
+      "git_sha": "91dabc6dc766d2f9328b1004085e9e68154d03e1"
     }
   },
   "packages": [
@@ -346,7 +346,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableNames is null or empty, contains a null, empty, or blank element or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
+                  "condition": "if tableNames is null or empty, contains a null, empty, or blank element, an element consisting only of control or space characters, or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -385,7 +385,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableNames is null or empty, contains a null, empty, or blank element or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
+                  "condition": "if tableNames is null or empty, contains a null, empty, or blank element, an element consisting only of control or space characters, or an element that contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -424,7 +424,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
+                  "condition": "if expr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -520,7 +520,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if expr is null, empty, or blank, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
+                  "condition": "if expr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or if a staged select column name contains a SQL comment token or has an explicit top-level AS alias containing a quote character, line break, or SQL comment token, or if a staged Selection table alias contains H2's // comment token"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -649,7 +649,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
+                  "condition": "if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a JOIN clause to the SQL statement.",
@@ -739,7 +739,7 @@
               "javadoc_summary": "Adds a JOIN clause using an entity class with an alias.",
               "returns": "this SqlBuilder instance for method chaining",
               "contract": [
-                "An unqualified property name in a later clause is therefore resolved against the FROM table, and when the FROM table was given as a plain string (which carries no entity mapping) such a name is emitted verbatim and unqualified - ambiguous if both tables define it."
+                "An unqualified property name in a later clause is therefore resolved against the FROM table, and when the FROM table was given as a plain string (which carries no entity mapping) such a name is only converted by the naming policy and left unqualified - ambiguous if both tables define it."
               ],
               "examples": [
                 "String sql = PSC.select(\"*\")\n                .from(User.class, \"u\")\n                .join(Order.class, \"o\")\n                .on(\"u.id = o.user_id\")\n                .build().query();\n// Output: SELECT * FROM users u JOIN orders o ON u.id = o.user_id\n// (assumes @Table(name = \"users\") / @Table(name = \"orders\"); otherwise the table\n// names are derived from the class names)"
@@ -770,7 +770,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
+                  "condition": "if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds an INNER JOIN clause to the SQL statement.",
@@ -889,7 +889,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
+                  "condition": "if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a LEFT JOIN clause to the SQL statement.",
@@ -1008,7 +1008,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
+                  "condition": "if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a RIGHT JOIN clause to the SQL statement.",
@@ -1127,7 +1127,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, or contains an unterminated block comment"
+                  "condition": "if joinExpr is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Adds a FULL JOIN clause to the SQL statement.",
@@ -1246,7 +1246,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, contains an unterminated block comment, or contains a top-level ON/USING connector"
+                  "condition": "if joinExpr is null, empty, or blank, consists only of control or space characters, contains an unterminated block comment, or contains a top-level ON/USING connector"
                 }
               ],
               "javadoc_summary": "Adds a CROSS JOIN clause to the SQL statement.",
@@ -1365,7 +1365,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if joinExpr is null, empty, or blank, contains an unterminated block comment, or contains a top-level ON/USING connector"
+                  "condition": "if joinExpr is null, empty, or blank, consists only of control or space characters, contains an unterminated block comment, or contains a top-level ON/USING connector"
                 }
               ],
               "javadoc_summary": "Adds a NATURAL JOIN clause to the SQL statement.",
@@ -3060,7 +3060,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalStateException",
-                  "condition": "if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (an INSERT with no into(...) table, an UPDATE with no set(...) columns, or a SELECT segment not completed by from(...)); or if a configured named-parameter handler emits an empty token under NAMED_SQL."
+                  "condition": "if this builder has already been closed by #build(), or if the statement prefix cannot be rendered yet (an INSERT with no into(...) table, an UPDATE with no set(...) columns, or a SELECT segment not completed by from(...)), or a select modifier was staged after a set operation that appended a complete sub-query (see #selectModifier(String)); or if a configured named-parameter handler emits an empty token under NAMED_SQL."
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
@@ -5667,10 +5667,11 @@
               "javadoc_summary": "Creates a SELECT statement for an entity class with optional sub-entity properties.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
               "contract": [
-                "When includeSubEntityProperties is true, properties of nested entity objects are also included in the selection with appropriate prefixes."
+                "When includeSubEntityProperties is true, properties of nested entity objects are also included in the selection with appropriate prefixes.",
+                "The nested columns are qualified with each sub-entity's table alias (or table name), and the parent columns with the alias of the first table in the FROM clause, so the FROM clause supplied to the builder must list the sub-entity tables as well; #selectFrom(Class, boolean) generates such a FROM clause."
               ],
               "examples": [
-                "// Without sub-entities\nString sql1 = PSC.select(Order.class, false)\n                 .from(\"orders\")\n                 .build().query();\n\n// With sub-entities (includes nested object properties)\nString sql2 = PSC.select(Order.class, true)\n                 .from(\"orders\")\n                 .build().query();"
+                "// Without sub-entities\nString sql1 = PSC.select(Order.class, false)\n                 .from(\"orders\")\n                 .build().query();\n\n// With sub-entities (includes nested object properties); FROM lists the sub-entity table too\nString sql2 = PSC.select(Order.class, true)\n                 .from(\"orders o, customer\")\n                 .build().query();"
               ],
               "see_also": []
             },
@@ -5756,9 +5757,11 @@
               ],
               "javadoc_summary": "Creates a SELECT statement for an entity class with sub-entities and exclusions.",
               "returns": "a new SqlBuilder instance configured for SELECT operation",
-              "contract": [],
+              "contract": [
+                "As with #select(Class, boolean), a FROM clause supplied for sub-entity properties must list the sub-entity tables as well."
+              ],
               "examples": [
-                "Set<String> excluded = N.asSet(\"internalNotes\", \"auditLog\");\nString sql = PSC.select(Order.class, true, excluded)\n                .from(\"orders\")\n                .build().query();\n// Selects all Order properties including sub-entities, except excluded ones"
+                "Set<String> excluded = N.asSet(\"internalNotes\", \"auditLog\");\nString sql = PSC.select(Order.class, true, excluded)\n                .from(\"orders o, customer\")\n                .build().query();\n// Selects all Order properties including sub-entities, except excluded ones"
               ],
               "see_also": []
             },
@@ -7727,7 +7730,7 @@
               "javadoc_summary": "Builds the final SQL string from all the components and releases resources.",
               "returns": "the assembled SQL text; an empty builder returns an empty string, and partial clause builders return their fragments without checking statement completeness",
               "contract": [
-                "This method MUST be called to get the SQL and clean up internal resources.",
+                "This method MUST be called to get the SQL.",
                 "After calling build(), this builder is closed and must not be reused: any subsequent call to a builder method (including build() itself) throws IllegalStateException."
               ],
               "examples": [
@@ -15422,7 +15425,7 @@
                 {
                   "name": "values",
                   "type": "Object[]",
-                  "javadoc": "array of non-null values; a single Collection or array argument (other than byte[], which stays one binary value) is treated as the value list itself, so in(p, (Object) List.of(1, 2)) renders p IN (1, 2); to compare against a single collection-valued value, wrap it: in(p, List.of(list)). An Object[] holding exactly one array or collection is unpacked the same way",
+                  "javadoc": "array of non-null values; a single Collection or array argument (other than byte[], which stays one binary value) is treated as the value list itself, so in(p, (Object) List.of(1, 2)) renders p IN (1, 2); to compare against a single collection-valued value, wrap it: in(p, List.of(list)). An Object[] holding exactly one array or collection is unpacked the same way. A lone SubQuery is not unpacked: it stays one scalar-subquery value (p IN ((subquery))); use #in(String, SubQuery) for subquery membership",
                   "nullability": "unspecified"
                 }
               ],
@@ -15929,7 +15932,7 @@
                 {
                   "name": "values",
                   "type": "Object[]",
-                  "javadoc": "array of non-null values to exclude; a single Collection or array argument (other than byte[], which stays one binary value) is treated as the value list itself, so notIn(p, (Object) List.of(1, 2)) renders p NOT IN (1, 2); to compare against a single collection-valued value, wrap it: notIn(p, List.of(list)). An Object[] holding exactly one array or collection is unpacked the same way",
+                  "javadoc": "array of non-null values to exclude; a single Collection or array argument (other than byte[], which stays one binary value) is treated as the value list itself, so notIn(p, (Object) List.of(1, 2)) renders p NOT IN (1, 2); to compare against a single collection-valued value, wrap it: notIn(p, List.of(list)). An Object[] holding exactly one array or collection is unpacked the same way. A lone SubQuery is not unpacked: it stays one scalar-subquery value (p NOT IN ((subquery))); use #notIn(String, SubQuery) for subquery membership",
                   "nullability": "unspecified"
                 }
               ],
@@ -16988,7 +16991,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if sql is null, empty, or blank (including SQL made up only of characters that String#trim() removes, such as control characters); or if parameter detection in a recognized data-operation statement finds mixed styles (?, :propName, #{propName}), an iBatis/MyBatis parameter missing its closing brace or with an empty property name before its ':' or ',' (#{:id}), an unpaired UTF-16 surrogate in or immediately before a prospective colon-style name, or an unpaired surrogate directly after a '?' opening the content of a standalone bracket group"
+                  "condition": "if sql is null, empty, or blank (including SQL made up only of characters that String#trim() removes, such as control characters); or if parameter detection in a recognized data-operation statement finds mixed styles (?, :propName, #{propName}), an iBatis/MyBatis parameter missing its closing brace or with an empty property name before its ':' or ',' (#{:id}), an unpaired UTF-16 surrogate in, immediately before, or immediately after a prospective colon-style name, or an unpaired surrogate directly after a '?' opening the content of a standalone bracket group"
                 }
               ],
               "javadoc_summary": "Parses the given SQL string and returns a ParsedSql instance.",
@@ -17972,10 +17975,10 @@
                 }
               ],
               "javadoc_summary": "Returns the table alias from the @Table annotation on the entity class.",
-              "returns": "the table alias if defined in @Table annotation, empty string if @Table is present but alias is not set, or null if no @Table annotation exists",
+              "returns": "the table alias if defined in @Table annotation, empty string if @Table is present but alias is not set (or is blank), or null if no @Table annotation exists",
               "contract": [
                 "If no @Table annotation exists, this method returns null.",
-                "If @Table is present but the alias attribute is not specified, this method returns an empty string."
+                "If @Table is present but the alias attribute is not specified, or is blank (whitespace only), this method returns an empty string, as #tableNameAndAlias(Class) and the builders treat a blank alias as no alias."
               ],
               "examples": [
                 "// Given: @Table(name = \"users\", alias = \"u\") on User class\nString alias = QueryUtil.tableAlias(User.class);\n// Returns: \"u\"\n\n// Given: @Table(name = \"orders\") on Order class (no alias)\nString alias2 = QueryUtil.tableAlias(Order.class);\n// Returns: \"\" (empty string when alias is not specified)\n\n// Given: no @Table annotation on LogEntry class\nString alias3 = QueryUtil.tableAlias(LogEntry.class);\n// Returns: null"
@@ -18345,7 +18348,7 @@
               "javadoc_summary": "Sets the table alias.",
               "returns": "this builder",
               "contract": [
-                "null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain SQL comment tokens (it is prefixed verbatim to every rendered column)."
+                "null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain a line break or SQL comment tokens (it is prefixed verbatim to every rendered column)."
               ],
               "examples": [],
               "see_also": []
@@ -18371,7 +18374,7 @@
               "javadoc_summary": "Sets the result class alias.",
               "returns": "this builder",
               "contract": [
-                "null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain SQL comment tokens (it prefixes every rendered column alias, e.g. \"acc.id\")."
+                "null or an empty string means no alias; a non-empty alias is validated when the selection is rendered and must not be blank, quoted, or contain a line break or SQL comment tokens (it prefixes every rendered column alias, e.g. \"acc.id\")."
               ],
               "examples": [],
               "see_also": []
@@ -23622,7 +23625,7 @@
                 {
                   "name": "propValue",
                   "type": "Object",
-                  "javadoc": "the value to compare against; may be a literal value, null only for the =, !=, <>, IS and IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values, explicit scalar expressions, or scalar sub-queries. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN. Every structured subquery with a known, non-wildcard projection must select exactly one column; raw SQL and wildcard projection arity are left to the database. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is(\"x\", true) equals Filters.isTrue(\"x\").",
+                  "javadoc": "the value to compare against; may be a literal value, null only for the =, !=, <>, IS and IS NOT operators (rendering as IS NULL / IS NOT NULL), an explicit SqlExpression, or a scalar SubQuery. An All, Any, or Some operand is accepted only as the direct right-hand side of =, !=, <>, <, <=, >, or >=. For an IN/NOT_IN operator, a Collection or array value is copied defensively and must be non-empty; elements must be non-null scalar values, explicit scalar expressions, or scalar sub-queries. A SqlExpression or a SubQuery is also accepted as the whole right-hand side of IN/NOT IN: a SubQuery is parenthesized automatically (id IN (SELECT ...)), while a SqlExpression is rendered verbatim and must supply its own parentheses (Filters.expr(\"(1, 2)\") renders id IN (1, 2), but Filters.expr(\"1, 2\") renders the invalid id IN 1, 2). Every structured subquery with a known, non-wildcard projection must select exactly one column; raw SQL and wildcard projection arity are left to the database. For IS/IS NOT, the value must be null, a Boolean, or an explicit SqlExpression such as NULL, TRUE, or UNKNOWN. A Boolean is normalized at construction to the SQL keyword expression TRUE / FALSE (the same literals Filters.isTrue/Filters.isFalse use), so it is always rendered inline (x IS TRUE) and never bound as a parameter; consequently new Is(\"x\", true) equals Filters.isTrue(\"x\").",
                   "nullability": "unspecified"
                 }
               ],
@@ -35629,7 +35632,8 @@
                 "When a token glues more than a name together, only its leading name is converted: unitPrice::numeric(10, 2) renders as unit_price::numeric(10, 2) under SNAKE_CASE (the cast type is kept, including a quoted one such as ::\"OrderStatus\"), myTags[:tagIndex] as my_tags[:tagIndex], and log_${month} keeps its marker.",
                 "If that interior contains a comment or # outside a string literal, it is copied unchanged.",
                 "Bind names and MyBatis attributes inside a #{...} or ${...} marker are also protected when the marker contains whitespace; tokenization can still normalize whitespace runs.",
-                "Recognized SQL keyword tokens are also left unchanged when written in their canonical upper-case form (for example CURRENT_DATE); a lower-case token is treated as an identifier and converted."
+                "Recognized SQL keyword tokens are also left unchanged when written in their canonical upper-case form (for example CURRENT_DATE); a lower-case token is treated as an identifier and converted.",
+                "An upper-case keyword outside that registry (such as CASE, WHEN or INTERVAL) is converted like an identifier too; for a keyword without an underscore this changes only its letter case, which SQL ignores (CASE WHEN isActive THEN 1 END renders as case when is_active then 1 end under SNAKE_CASE)."
               ],
               "examples": [
                 "SqlExpression.of(\"firstName\").toSql(NamingPolicy.SNAKE_CASE);          // returns \"first_name\"\nSqlExpression.of(\"_firstName\").toSql(NamingPolicy.SNAKE_CASE);         // returns \"_first_name\"\nSqlExpression.of(\"firstName = 'John'\").toSql(NamingPolicy.SNAKE_CASE); // returns \"first_name = 'John'\" (identifier converted, quoted literal kept)\nSqlExpression.of(\"price-tax\").toSql(NamingPolicy.CAMEL_CASE);          // returns \"price-tax\" (SQL subtraction preserved; each operand converted independently)\nSqlExpression.of(\"price  *  2\").toSql(NamingPolicy.NO_CHANGE);         // returns \"price * 2\" (parser path collapses whitespace runs)\nSqlExpression.of(\"firstName\").toSql(NamingPolicy.NO_CHANGE);           // returns \"firstName\"\nSqlExpression.of(\"firstName\").toSql(null);                             // returns \"firstName\" (null defaults to NO_CHANGE)\nSqlExpression.of(\"\").toSql(NamingPolicy.NO_CHANGE);                    // returns \"\" (empty literal)\n// an uninitialized instance (null literal, only possible via deserialization) returns \"null\""

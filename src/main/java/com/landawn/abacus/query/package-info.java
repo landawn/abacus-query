@@ -64,7 +64,7 @@
  * <p>{@link com.landawn.abacus.query.Filters} is the factory for the condition objects defined in
  * {@link com.landawn.abacus.query.condition} &mdash; comparisons, logical junctions, pattern matches,
  * null checks, subqueries, joins, and clauses &mdash; which builders accept in {@code where(...)},
- * {@code having(...)}, {@code join(...)}, and {@code append(...)}.
+ * {@code having(...)}, {@code on(...)}, and {@code append(...)}.
  * {@link com.landawn.abacus.query.Selection} describes a per-table projection (entity class, table and
  * class aliases, included/excluded properties) for multi-table selects, and
  * {@link com.landawn.abacus.query.SortDirection} supplies {@code ASC}/{@code DESC}.
@@ -102,8 +102,8 @@
  * {@code SqlMapper} is mutable and requires external synchronization when reads and writes occur
  * concurrently. {@code SqlBuilder} and
  * {@link com.landawn.abacus.query.DynamicQuery.Builder} are <em>not</em> thread-safe and are
- * single-use: create one per query and finish it, which releases the internal pooled resources.
- * A {@code SqlBuilder} is finished by {@code build()}, {@code toSubQuery()}, or one of the terminal helpers
+ * single-use: create one per query and finish it (finishing a {@code SqlBuilder} releases its internal pooled
+ * buffer; a {@code DynamicQuery.Builder} holds no pooled resources). A {@code SqlBuilder} is finished by {@code build()}, {@code toSubQuery()}, or one of the terminal helpers
  * {@code apply(...)}, {@code accept(...)}, and {@code debugPrint()}; a {@code DynamicQuery.Builder}
  * is finished by {@code build()}.</p>
  *

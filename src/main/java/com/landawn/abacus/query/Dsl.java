@@ -265,9 +265,10 @@ public final class Dsl {
 
     /**
      * Copies caller-owned excluded property names. A {@link SortedSet} keeps its comparator (for example
-     * {@code String.CASE_INSENSITIVE_ORDER}), as {@link Selection} does, so the exclusions match exactly as when the same set
-     * is passed to the corresponding {@code select(...)} overload (such as {@link #select(Class, Set)}); a plain
-     * {@code HashSet} copy matched them case-sensitively instead.
+     * {@code String.CASE_INSENSITIVE_ORDER}), as {@link Selection} does, so the copy has the caller's membership semantics.
+     * Its only caller is the sub-entity path of {@link #selectFrom(Class, String, boolean, Set)}, where
+     * {@link QueryUtil#selectPropNames(Class, boolean, Set)} (with sub-entity properties) matches exclusions by exact
+     * {@code String} equality whatever the comparator, unlike {@link #select(Class, Set)}, which honors it.
      *
      * @param excludedPropNames the non-empty excluded property names to copy
      * @return a mutable copy of {@code excludedPropNames}
@@ -1352,7 +1353,10 @@ public final class Dsl {
      *
      * <p>When includeSubEntityProperties is true, properties of nested entity objects are also
      * included in the selection with appropriate prefixes. This is useful for fetching related
-     * entities in a single query.</p>
+     * entities in a single query. The nested columns are qualified with each sub-entity's table alias
+     * (or table name), and the parent columns with the alias of the first table in the FROM clause, so the
+     * FROM clause supplied to the builder must list the sub-entity tables as well;
+     * {@link #selectFrom(Class, boolean)} generates such a FROM clause.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -1361,9 +1365,9 @@ public final class Dsl {
      *                  .from("orders")
      *                  .build().query();
      *
-     * // With sub-entities (includes nested object properties)
+     * // With sub-entities (includes nested object properties); FROM lists the sub-entity table too
      * String sql2 = PSC.select(Order.class, true)
-     *                  .from("orders")
+     *                  .from("orders o, customer")
      *                  .build().query();
      * }</pre>
      *
@@ -1409,13 +1413,15 @@ public final class Dsl {
      * Creates a SELECT statement for an entity class with sub-entities and exclusions.
      *
      * <p>This method provides full control over entity property selection, allowing both
-     * inclusion of sub-entity properties and exclusion of specific properties.</p>
+     * inclusion of sub-entity properties and exclusion of specific properties. As with
+     * {@link #select(Class, boolean)}, a FROM clause supplied for sub-entity properties must list the
+     * sub-entity tables as well.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
      * Set<String> excluded = N.asSet("internalNotes", "auditLog");
      * String sql = PSC.select(Order.class, true, excluded)
-     *                 .from("orders")
+     *                 .from("orders o, customer")
      *                 .build().query();
      * // Selects all Order properties including sub-entities, except excluded ones
      * }</pre>

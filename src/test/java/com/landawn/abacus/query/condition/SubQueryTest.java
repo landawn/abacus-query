@@ -1121,6 +1121,15 @@ public class SubQueryTest extends TestBase {
             assertEquals("SELECT a FROM t WHERE b=firstName AND c = 1",
                     new SubQuery("SELECT a FROM t WHERE b=?AND c = 1", Arrays.asList(SqlExpression.of("firstName"))).rawSql());
             assertEquals("SELECT a FROM t WHERE b = 10- -1", new SubQuery("SELECT a FROM t WHERE b = 10-?", Arrays.asList(SqlExpression.of("-1"))).rawSql());
+            // Same on the trailing side: "a -" before "-1" must not fuse into a "--" comment that drops the rest of the line.
+            assertEquals("SELECT a - -1 FROM t WHERE b = 2", new SubQuery("SELECT ?-1 FROM t WHERE b = 2", Arrays.asList(SqlExpression.of("a -"))).rawSql());
+            // Likewise '/' and '*' must not fuse into a "/*" block comment opener (it was rejected as unterminated).
+            assertEquals("SELECT a / *2 FROM t WHERE b = 2", new SubQuery("SELECT ?*2 FROM t WHERE b = 2", Arrays.asList(SqlExpression.of("a /"))).rawSql());
+            assertEquals("SELECT 4/ *a FROM t WHERE b = 2", new SubQuery("SELECT 4/? FROM t WHERE b = 2", Arrays.asList(SqlExpression.of("*a"))).rawSql());
+            assertEquals("SELECT a / *2 FROM t WHERE b = 2 /* n */",
+                    new SubQuery("SELECT ?*2 FROM t WHERE b = 2 /* n */", Arrays.asList(SqlExpression.of("a /"))).rawSql());
+            // Other neighbours stay glued.
+            assertEquals("SELECT 4/a*2 FROM t", new SubQuery("SELECT 4/?*2 FROM t", Arrays.asList(SqlExpression.of("a"))).rawSql());
             assertEquals("SELECT a FROM t WHERE b = x -- c\n AND c = 2",
                     new SubQuery("SELECT a FROM t WHERE b = ? AND c = 2", Arrays.asList(SqlExpression.of("x -- c"))).rawSql());
 

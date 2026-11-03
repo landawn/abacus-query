@@ -121,6 +121,28 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Nested
     class Inserts {
         @Test
+        void testInsertSelectWildcardBehindDialectQuotedTextIsCombined() {
+            // The comma after MySQL's 'a\'' or SQL Server's [it's] separates two items, so the wildcard is combined with
+            // another item and no target column list can be derived (the list used to be silently omitted).
+            final Dsl mysql = lexDialect(PSC, "MySQL");
+            final Dsl sqlServer = lexDialect(PSC, "Microsoft SQL Server");
+
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("'a\\'', *").into("t2").from("t").build());
+            assertThrows(IllegalArgumentException.class, () -> sqlServer.select("[it's], *").into("t2").from("t").build());
+
+            // A sole wildcard still omits the list.
+            assertEquals("INSERT INTO t2 SELECT t.* FROM t", mysql.select("t.*").into("t2").from("t").build().query());
+            assertEquals("INSERT INTO t2 SELECT [a,b].* FROM t", sqlServer.select("[a,b].*").into("t2").from("t").build().query());
+        }
+
+        @Test
+        void testInsertSelectQuantifierFollowedByNoBreakSpaceIsNotPartOfTheTargetColumn() {
+            final String sql = PSC.select("DISTINCT name").into("t2").from("t").build().query();
+
+            assertTrue(sql.startsWith("INSERT INTO t2 (name) SELECT"), sql);
+        }
+
+        @Test
         void testInsertSelectStripsParenthesizedQuantifierFromTargetColumn() {
             assertEquals("INSERT INTO t2 (name) SELECT DISTINCT(name) FROM t", PSC.select("DISTINCT(name)").into("t2").from("t").build().query());
             assertEquals("INSERT INTO t2 (name, b) SELECT DISTINCT (name), b FROM t", PSC.select("DISTINCT (name)", "b").into("t2").from("t").build().query());
@@ -1989,6 +2011,78 @@ public class AbstractQueryBuilderTest extends TestBase {
 
     @Nested
     class NamingAndMetadata {
+        @Test
+        void testBlankSubEntityTableAliasCountsAsNoAlias() {
+            // A whitespace-only @Table alias on the sub-entity class is no alias, as on the parent class: its columns are
+            // qualified with its table name (they used to read " .id").
+            final String sql = PSC.selectFrom(BlankAliasChildOwner.class, true).build().query();
+
+            assertFalse(sql.contains(" .id"), sql);
+            assertEquals(
+                    "SELECT p.id AS \"id\", p.name AS \"name\", blank_alias_child.id AS \"child.id\", blank_alias_child.street_name AS \"child.streetName\""
+                            + " FROM blank_alias_parent p, blank_alias_child",
+                    sql);
+            assertEquals("blank_alias_child.id", QueryUtil.propToColumnNameMap(BlankAliasChildOwner.class, NamingPolicy.SNAKE_CASE).get("child.id"));
+        }
+
+        @Test
+        void testBlankTableAliasIsNoAliasOnEntityJoins() {
+            // join(Class) passes the @Table alias on; a blank one used to be emitted as padding ("JOIN blank_alias_child   ON").
+            assertEquals("", QueryUtil.tableAlias(BlankAliasChild.class));
+            assertEquals("SELECT x FROM t JOIN blank_alias_child ON t.id = blank_alias_child.id",
+                    PSC.select("x").from("t").join(BlankAliasChild.class).on("t.id = blank_alias_child.id").build().query());
+            assertEquals("SELECT x FROM t LEFT JOIN blank_alias_child ON t.id = blank_alias_child.id",
+                    PSC.select("x").from("t").leftJoin(BlankAliasChild.class).on("t.id = blank_alias_child.id").build().query());
+            assertEquals("SELECT x FROM t CROSS JOIN blank_alias_child", PSC.select("x").from("t").crossJoin(BlankAliasChild.class).build().query());
+
+            // An explicitly passed blank alias means no alias as well, as in from(Class, String).
+            assertEquals("SELECT x FROM t INNER JOIN blank_alias_parent ON t.id = blank_alias_parent.id",
+                    PSC.select("x").from("t").innerJoin(BlankAliasChildOwner.class, " ").on("t.id = blank_alias_parent.id").build().query());
+            assertEquals("SELECT x FROM t INNER JOIN blank_alias_parent q ON t.id = q.id",
+                    PSC.select("x").from("t").innerJoin(BlankAliasChildOwner.class, "q").on("t.id = q.id").build().query());
+        }
+
+        @Test
+        void testCompoundOrderByRejectsPartiallyLabelledSubEntity() {
+            // Every column of the sub-entity is a result label of the first SELECT: they replace the qualified columns.
+            assertEquals(
+                    "SELECT p.id AS \"id\", blank_alias_child.id AS \"child.id\", blank_alias_child.street_name AS \"child.streetName\""
+                            + " FROM blank_alias_parent p UNION SELECT 1, 2, 3 FROM t ORDER BY \"child.id\" DESC, \"child.streetName\" DESC",
+                    PSC.select("id", "child").from(BlankAliasChildOwner.class).union("SELECT 1, 2, 3 FROM t").orderByDesc("child").build().query());
+
+            // Only "child.id" is a result label: ordering by it alone would drop a sort key, and the qualified fallback
+            // blank_alias_child.street_name is no result column, which a compound ORDER BY rejects.
+            final SqlBuilder builder = PSC.select("id", "child.id").from(BlankAliasChildOwner.class).union("SELECT 1, 2 FROM t");
+            final IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> builder.orderBy("child"));
+            assertTrue(e.getMessage().startsWith("Sub-entity property 'child' cannot be ordered in a compound query"), e.getMessage());
+            assertThrows(IllegalArgumentException.class, () -> builder.orderBy("child", SortDirection.ASC));
+            assertThrows(IllegalArgumentException.class, () -> builder.orderBy("id", "child"));
+
+            // The rejected calls left nothing behind; the selected label can still be ordered by.
+            assertEquals(
+                    "SELECT p.id AS \"id\", blank_alias_child.id AS \"child.id\" FROM blank_alias_parent p UNION SELECT 1, 2 FROM t" + " ORDER BY \"child.id\"",
+                    builder.orderBy("child.id").build().query());
+
+            // No label at all: the sub-entity keeps its table-qualified columns, as before.
+            assertEquals("SELECT p.id AS \"id\" FROM blank_alias_parent p UNION SELECT 1 FROM t ORDER BY blank_alias_child.id, blank_alias_child.street_name",
+                    PSC.select("id").from(BlankAliasChildOwner.class).union("SELECT 1 FROM t").orderBy("child").build().query());
+        }
+
+        @Test
+        void testOracleHierarchicalAndBinaryFloatKeywordsKeepTheirSpelling() {
+            // Keywords, not snake_case column names: a naming policy must not rewrite them (CONNECT_BY_ROOT -> connectByRoot).
+            assertEquals(
+                    "SELECT a FROM t WHERE CONNECT_BY_ISLEAF = 1 AND CONNECT_BY_ISCYCLE = 0 AND first_name_x = BINARY_FLOAT_NAN"
+                            + " AND x_y < BINARY_FLOAT_INFINITY AND x_y <> BINARY_DOUBLE_NAN AND x_y < BINARY_DOUBLE_INFINITY",
+                    PSC.select("a")
+                            .from("t")
+                            .where("CONNECT_BY_ISLEAF = 1 AND CONNECT_BY_ISCYCLE = 0 AND firstNameX = BINARY_FLOAT_NAN AND xY < BINARY_FLOAT_INFINITY"
+                                    + " AND xY <> BINARY_DOUBLE_NAN AND xY < BINARY_DOUBLE_INFINITY")
+                            .build()
+                            .query());
+            assertEquals("SELECT a FROM t ORDER BY CONNECT_BY_ROOT firstName", PLC.select("a").from("t").orderBy("CONNECT_BY_ROOT first_name").build().query());
+        }
+
         // Covers the "##" token and the backslash readings of the alias scanner: an explicit dialect finds the derived-table
         // alias past "##", the default infers none where its readings disagree, and standard dialects keep 'it\'s' unterminated.
         @Test
@@ -4140,6 +4234,40 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertEquals("SELECT * FROM users LIMIT 99999999999 OFFSET 5",
                     PSC.select("*").from("users").append(new Limit("LIMIT 5, 99999999999")).build().query());
             assertEquals("SELECT * FROM users LIMIT 99999999999", postgres.select("*").from("users").append(new Limit("LIMIT 99999999999")).build().query());
+        }
+
+        @Test
+        void testOutOfIntRangeFetchLimitRenderedAsLimitAllowsLaterOffsetOnMySqlAndSqlite() {
+            // Re-rendered as "LIMIT n", the FETCH form is no FETCH clause: a later offset(...) is allowed, as after count 10.
+            for (final String product : List.of("MySQL", "MariaDB", "SQLite")) {
+                final Dsl dsl = lexDialect(PSC, product);
+
+                assertEquals("SELECT * FROM t LIMIT 99999999999 OFFSET 5",
+                        dsl.select("*").from("t").append(new Limit("FETCH FIRST 99999999999 ROWS ONLY")).offset(5).build().query(), product);
+                assertEquals("SELECT * FROM t LIMIT 10 OFFSET 5",
+                        dsl.select("*").from("t").append(new Limit("FETCH FIRST 10 ROWS ONLY")).offset(5).build().query(), product);
+            }
+        }
+
+        @Test
+        void testUnresolvedLimitWithOwnOffsetAfterOffsetReportsOffsetAlreadySet() {
+            // Like its resolved twin "LIMIT 10 OFFSET 2", an expression carrying its own offset reports the claimed OFFSET
+            // slot, not a LIMIT-before-OFFSET ordering error, both standalone and inside a Criteria.
+            for (final String expr : List.of("LIMIT 99999999999 OFFSET 2", "LIMIT 10 OFFSET 2", "LIMIT 2, 99999999999",
+                    "OFFSET 2 ROWS FETCH NEXT 99999999999 ROWS ONLY")) {
+                final IllegalStateException direct = assertThrows(IllegalStateException.class,
+                        () -> PSC.select("*").from("t").offset(5).append(new Limit(expr)));
+                assertEquals("'OFFSET' has already been set and cannot be set again", direct.getMessage(), expr);
+
+                final IllegalStateException criteria = assertThrows(IllegalStateException.class,
+                        () -> PSC.select("*").from("t").offset(5).append(Criteria.builder().limit(new Limit(expr)).build()));
+                assertEquals("'OFFSET' has already been set and cannot be set again", criteria.getMessage(), expr);
+            }
+
+            // Without an offset of its own, the ordering error stays.
+            final IllegalStateException noOffset = assertThrows(IllegalStateException.class,
+                    () -> PSC.select("*").from("t").offset(5).append(new Limit("LIMIT 99999999999")));
+            assertEquals("'LIMIT' must be added before 'OFFSET' for this SQL dialect", noOffset.getMessage());
         }
     }
 
@@ -7216,6 +7344,44 @@ public class AbstractQueryBuilderTest extends TestBase {
     @Nested
     class Validation {
         @Test
+        void testMySqlUnterminatedMyBatisMarkerIsAHashComment() {
+            // MyBatis substitutes only a closed #{...} marker; MySQL reads an unterminated "#{" as a '#' line comment, which
+            // would swallow the LIMIT of a DELETE, or the WHERE of an UPDATE.
+            final Dsl mysql = lexDialect(PSC, "MySQL");
+            final Dsl mysqlRaw = lexDialect(SCSB, "MySQL");
+
+            assertThrows(IllegalArgumentException.class, () -> mysql.select("a").from("account").orderBy("a #{"));
+            assertThrows(IllegalArgumentException.class, () -> mysql.deleteFrom("account").where(Filters.eq("status", 0)).orderBy("id #{"));
+            assertThrows(IllegalArgumentException.class,
+                    () -> mysqlRaw.update("account").set(Map.of("role = 'admin' #{", "x")).where(Filters.eq("id", 1)).build());
+            // A FROM or JOIN fragment ending inside the comment gets a line feed.
+            assertFalse(mysql.select("a").from("account #{").where(Filters.equal("id", 1)).build().query().contains("#{ WHERE"));
+            assertFalse(mysql.select("a").from("t").innerJoin("u #{").on("u.id = t.id").build().query().contains("#{ ON"));
+
+            // A closed marker stays a data token.
+            assertEquals("SELECT a FROM account WHERE tenant = ? ORDER BY a #{x} LIMIT 10",
+                    mysql.select("a").from("account").where(Filters.eq("tenant", 1)).orderBy("a #{x}").limit(10).build().query());
+            assertEquals("UPDATE account SET role = 'admin' #{x} = 'x' WHERE id = 1",
+                    mysqlRaw.update("account").set(Map.of("role = 'admin' #{x}", "x")).where(Filters.eq("id", 1)).build().query());
+            assertEquals("SELECT a FROM account #{x} WHERE id = ?", mysql.select("a").from("account #{x}").where(Filters.equal("id", 1)).build().query());
+        }
+
+        @Test
+        void testFromAndJoinRejectSpaceOnlyTableReference() {
+            // U+00A0 is neither blank nor removed by trim(): the table reference would render empty ("SELECT x FROM  ").
+            final IllegalArgumentException single = assertThrows(IllegalArgumentException.class, () -> PSC.select("x").from(" "));
+            assertEquals("expr must not consist only of control or space characters", single.getMessage());
+
+            final IllegalArgumentException indexed = assertThrows(IllegalArgumentException.class, () -> PSC.select("x").from(List.of("t", " ")));
+            assertEquals("tableNames[1] must not consist only of control or space characters", indexed.getMessage());
+
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("x").from("t", " "));
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("x").from("t").innerJoin(" "));
+
+            assertEquals("SELECT x FROM t,  u", PSC.select("x").from(List.of("t", " u")).build().query());
+        }
+
+        @Test
         void testClosedBuilderStatePrecedesInvalidClauseArguments() {
             assertClosedFirst(builder -> builder.from((String) null));
             assertClosedFirst(builder -> builder.from((String[]) null));
@@ -9345,6 +9511,59 @@ public class AbstractQueryBuilderTest extends TestBase {
 
         public void setParent(final SubEntityNode parent) {
             this.parent = parent;
+        }
+    }
+
+    @Table(name = "blank_alias_child", alias = " ")
+    public static class BlankAliasChild {
+        private long id;
+        private String streetName;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getStreetName() {
+            return streetName;
+        }
+
+        public void setStreetName(final String streetName) {
+            this.streetName = streetName;
+        }
+    }
+
+    @Table(name = "blank_alias_parent", alias = "p")
+    public static class BlankAliasChildOwner {
+        private long id;
+        private String name;
+        private BlankAliasChild child;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public BlankAliasChild getChild() {
+            return child;
+        }
+
+        public void setChild(final BlankAliasChild child) {
+            this.child = child;
         }
     }
 

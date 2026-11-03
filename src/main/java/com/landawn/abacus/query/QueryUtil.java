@@ -778,9 +778,10 @@ public final class QueryUtil {
         N.checkArgNotNull(sql, cs.sql);
 
         // The dialect-neutral endsInsideLineComment(String, boolean) used here never reads "//" as a comment (only an H2
-        // builder does), so it can answer true only for a region opened by "--" or "#": a fragment without '-' and '#'
-        // cannot end inside a line comment and never needs the multi-reading scan.
-        if (sql.indexOf('-') < 0 && sql.indexOf('#') < 0) {
+        // builder does), so it can answer true only for a region opened by "--" or "#": a fragment without "--" and '#'
+        // cannot end inside a line comment and never needs the multi-reading scan. Testing "--" rather than a single
+        // '-' keeps date literals, negative numbers and subtraction on the fast path.
+        if (sql.indexOf("--") < 0 && sql.indexOf('#') < 0) {
             return sql;
         }
 
@@ -1769,7 +1770,9 @@ public final class QueryUtil {
         // "acc._id"), so the COLUMN segment now renders exactly as it does through a builder. The qualifier is
         // still converted - a condition does not know the declared alias - so Filters.eq("acc.Id", 1) renders as
         // "ACC.ID = 1" under SCREAMING_SNAKE_CASE where a builder with a known alias keeps "acc.ID": harmless for
-        // case-insensitive unquoted identifiers, but not full parity.
+        // case-insensitive unquoted identifiers, but not full parity. A mixed-case qualifier is respelled, not only
+        // re-cased, under SNAKE_CASE or CAMEL_CASE ("myAcc.id" renders as "my_acc.id"), so such an alias referenced
+        // from a condition (an outer alias inside a structured SubQuery, say) no longer names the declared alias.
         // Names that need conversion retain the segment-by-segment rules. The conservative identity check
         // above avoids this allocation for lowercase ASCII names without changing underscores or Unicode.
         final StringBuilder sb = new StringBuilder(identifier.length() + 8);
@@ -3086,7 +3089,8 @@ public final class QueryUtil {
      * The alias can be used in SQL queries to reference the table with a shorter name.
      *
      * <p>If no {@code @Table} annotation exists, this method returns {@code null}. If {@code @Table} is present
-     * but the alias attribute is not specified, this method returns an empty string.</p>
+     * but the alias attribute is not specified, or is blank (whitespace only), this method returns an empty string,
+     * as {@link #tableNameAndAlias(Class)} and the builders treat a blank alias as no alias.</p>
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -3104,7 +3108,8 @@ public final class QueryUtil {
      * }</pre>
      *
      * @param entityClass the entity class to check (must not be {@code null})
-     * @return the table alias if defined in {@code @Table} annotation, empty string if {@code @Table} is present but alias is not set, or {@code null} if no {@code @Table} annotation exists
+     * @return the table alias if defined in {@code @Table} annotation, empty string if {@code @Table} is present but alias is not set
+     *         (or is blank), or {@code null} if no {@code @Table} annotation exists
      * @throws IllegalArgumentException if {@code entityClass} is {@code null}
      */
     @Internal
@@ -3112,7 +3117,13 @@ public final class QueryUtil {
         N.checkArgNotNull(entityClass, cs.entityClass);
 
         final Table anno = entityClass.getAnnotation(Table.class);
-        return anno == null ? null : anno.alias();
+
+        if (anno == null) {
+            return null;
+        }
+
+        // A blank alias is no alias: kept, join(Class) rendered it as padding ("JOIN child   ON ...").
+        return Strings.isBlank(anno.alias()) ? "" : anno.alias();
     }
 
     /**
@@ -3198,6 +3209,6 @@ public final class QueryUtil {
         final Table anno = entityClass.getAnnotation(Table.class);
         final String alias = anno == null ? null : anno.alias();
 
-        return Strings.isEmpty(alias) ? tableName : Strings.concat(tableName, SK.SPACE, alias);
+        return Strings.isBlank(alias) ? tableName : Strings.concat(tableName, SK.SPACE, alias);
     }
 }

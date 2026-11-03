@@ -49,7 +49,7 @@ import com.landawn.abacus.util.Strings;
  *   <li>Fluent API for creating various SQL conditions</li>
  *   <li>Support for comparison operators (equal, notEqual, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual)</li>
  *   <li>Support for pattern matching (like, notLike, startsWith, notStartsWith, endsWith, notEndsWith, contains, notContains)</li>
- *   <li>Support for null checks (isNull, isNotNull)</li>
+ *   <li>Support for null, empty, NaN, and infinity checks (isNull, isNotNull, isNullOrEmpty, isNotNullAndNotEmpty, isNaN, isNotNaN, isInfinite, isNotInfinite)</li>
  *   <li>Support for range operations (between, notBetween) and set operations (in, notIn), with set operations offering overloads for {@code Object[]}, all eight primitive array types ({@code boolean[]}, {@code char[]}, {@code byte[]}, {@code short[]}, {@code int[]}, {@code long[]}, {@code float[]}, {@code double[]}), {@link Collection}, and {@link SubQuery}</li>
  *   <li>Convenience methods for OR combinations (equalsAny) with overloads for {@code Object[]}, all eight primitive array types ({@code boolean[]}, {@code char[]}, {@code byte[]}, {@code short[]}, {@code int[]}, {@code long[]}, {@code float[]}, {@code double[]}), and {@link Collection}</li>
  * </ul>

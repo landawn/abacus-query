@@ -66,14 +66,15 @@ import com.landawn.abacus.util.Strings;
  * starts with {@code _} or a Unicode identifier-start code point and continues with {@code _} or
  * Unicode identifier-part code points. Digits are therefore allowed after the first code point but
  * not at the start of a segment. Unicode whitespace and punctuation are delimiters rather than name
- * characters, and an unpaired UTF-16 surrogate in, or immediately before, a prospective parameter name
- * is rejected. A colon glued to a closing quote, parenthesis or bracket is not a marker: it separates the
+ * characters, and an unpaired UTF-16 surrogate in, immediately before, or immediately after a prospective parameter
+ * name is rejected. A colon glued to a closing quote, parenthesis or bracket is not a marker: it separates the
  * key and value of a compact {@code JSON_OBJECT('key':value)}, or bounds a slice ({@code arr[f(x):n]}).</p>
  *
  * <p>Parameter detection and conversion is only performed when the SQL is recognized as a
  * data operation statement (one whose first non-comment / non-parenthesis token is
  * {@code SELECT}, {@code INSERT}, {@code UPDATE}, {@code DELETE}, {@code WITH}, {@code MERGE},
- * {@code CALL}, {@code VALUES}, {@code TABLE}, {@code EXPLAIN} or {@code REPLACE}, also when a quoted name or
+ * {@code CALL}, {@code VALUES}, {@code TABLE}, {@code EXPLAIN}, {@code REPLACE} or {@code UPSERT} (CockroachDB,
+ * YugabyteDB, Apache Phoenix), also when a quoted name or
  * bracket group is glued to it, as in {@code SELECT"a"}; a leading byte-order mark
  * {@code U+FEFF} is ignored for this purpose and kept in the SQL text). JDBC call escapes
  * (<code>{call ...}</code> and <code>{? = call ...}</code>) are recognized as {@code CALL}, including
@@ -150,7 +151,9 @@ import com.landawn.abacus.util.Strings;
  * comment that opens on such a line (comment text to H2) and continues past its line break is kept as written rather
  * than dropped (see
  * {@link #parameterizedSql()}), so on H2 the comment neither swallows the rest of the statement nor hides lines that H2
- * runs; markers in such kept text are not converted, so a binding there fails loudly. A line holding a hash operator
+ * runs; markers in such kept text are not converted, so a binding there fails loudly. A block comment right after a
+ * {@code /} ({@code //* c *}{@code /}), which H2 reads as the start of a {@code //} line comment, is kept as written
+ * with the whitespace and comments after it, so neither reading changes. A line holding a hash operator
  * ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}), which the tokenizer keeps as SQL but MySQL reads as the
  * start of a {@code #} line comment, is handled the same way. For an
  * unrecognized operation the token stream is not used to rebuild the SQL and no parameter
@@ -284,8 +287,8 @@ public final class ParsedSql {
      *         statement mixes parameter styles,
      *         contains an iBatis/MyBatis marker without a closing brace or with an empty property name
      *         ({@code #{:id}}), or contains an unpaired UTF-16
-     *         surrogate in a prospective colon-style name, its preceding boundary, or immediately after
-     *         a positional marker opening a standalone bracket group
+     *         surrogate in a prospective colon-style name, its preceding boundary, the character right after the name,
+     *         or immediately after a positional marker opening a standalone bracket group
      */
     private ParsedSql(final String inputSql) {
         this.sql = inputSql.trim();
@@ -338,11 +341,15 @@ public final class ParsedSql {
         // comment (see the line-break rule below). Only SQL that contains "//" or '#' can set it, so the output of any
         // other statement is unchanged.
         final boolean mayHoldDoubleSlashComment = this.sql.indexOf("//") >= 0;
+        // Whether a '/' may be followed by a block comment that the tokenizer drops but H2 reads as a "//" line comment.
+        final boolean mayHoldDoubleSlashBlockOpener = mayHoldDoubleSlashComment && this.sql.indexOf("//*") >= 0;
         final boolean mayHoldHashOperator = this.sql.indexOf('#') >= 0;
         boolean lineHoldsDialectLineComment = false;
         // Source offset of every token, aligned lazily, once, when a collapsed gap may have to keep its line break and
-        // the SQL contains a line break somewhere.
+        // the SQL contains a line break somewhere, or when a '/' may be followed by a block comment (see below).
         int[] tokenSourceOffsets = null;
+        // The end of the source text emitted as written after such a '/', so the tail rule below never emits it twice.
+        int sourceKeptThrough = 0;
         final StringBuilder sb = Objectory.createStringBuilder();
 
         try {
@@ -615,8 +622,11 @@ public final class ParsedSql {
                     if (lineHoldsDialectLineComment
                             || sb.length() > 0 && sb.charAt(sb.length() - 1) == '\'' && words.get(i - 1).endsWith("'") && words.get(i + 1).startsWith("'")) {
                         if (tokenSourceOffsets == null) {
-                            // Empty when the SQL has no line break at all (or, defensively, cannot be aligned).
-                            final int[] aligned = containsLineBreak(this.sql, 0, this.sql.length()) ? alignTokenSourceOffsets(this.sql, words) : null;
+                            // Empty when the SQL has no line break at all (or, defensively, cannot be aligned). Without a
+                            // line break the offsets only serve the "//*" rule below; no gap here can keep a line break.
+                            final int[] aligned = mayHoldDoubleSlashBlockOpener || containsLineBreak(this.sql, 0, this.sql.length())
+                                    ? alignTokenSourceOffsets(this.sql, words)
+                                    : null;
                             tokenSourceOffsets = aligned == null ? N.EMPTY_INT_ARRAY : aligned;
                         }
 
@@ -634,10 +644,52 @@ public final class ParsedSql {
                             }
                         }
                     }
-                } else if (!lineHoldsDialectLineComment) {
-                    lineHoldsDialectLineComment = mayHoldDoubleSlashComment
-                            && (sb.length() > 0 && sb.charAt(sb.length() - 1) == '/' && word.startsWith("/") || mayHoldH2LineComment(word))
-                            || mayHoldHashOperator && isHashOperatorToken(word);
+                } else {
+                    // H2 reads "//*" as a "//" line comment, while the tokenizer, like every other dialect, reads a '/'
+                    // and then a block comment that it drops: "id = ? //* c */ 1 OR 1 = 1" became "id = ? / 1 OR 1 = 1",
+                    // which H2 runs without the comment. So the gap after such a '/' is emitted exactly as written
+                    // ("//* c */ "): H2 still reads a line comment there and the other dialects a '/' and a block comment.
+                    // Markers in the kept text are comment text to both readings and stay unconverted; the parameter
+                    // count and the source offsets come from the tokens and are unaffected.
+                    boolean opensDoubleSlashComment = false;
+
+                    if (mayHoldDoubleSlashBlockOpener && i == tokenIndex && words.get(i).endsWith("/") && !words.get(i).startsWith("/*")) {
+                        if (tokenSourceOffsets == null) {
+                            final int[] aligned = alignTokenSourceOffsets(this.sql, words);
+                            tokenSourceOffsets = aligned == null ? N.EMPTY_INT_ARRAY : aligned;
+                        }
+
+                        final int tokenEnd = tokenSourceOffsets.length > 0 && tokenSourceOffsets[i] >= 0 ? tokenSourceOffsets[i] + words.get(i).length() : -1;
+
+                        if (tokenEnd > 0 && this.sql.startsWith("/*", tokenEnd)) {
+                            opensDoubleSlashComment = true;
+                            // The dropped text runs to the next token: the one after the collapsed " " (none before ',', ';'
+                            // or ')'), or the end of the SQL after an unterminated comment, which drops all the text after it.
+                            final int next = i + 1 < size && SK.SPACE.equals(words.get(i + 1)) ? i + 2 : i + 1;
+                            final int gapEnd = next < size ? tokenSourceOffsets[next] : this.sql.length();
+
+                            if (gapEnd > tokenEnd) {
+                                sb.append(word);
+                                word = this.sql.substring(tokenEnd, gapEnd);
+                                sourceKeptThrough = gapEnd;
+                                i = next - 1; // the collapsed gap, if any, is replaced by its source text
+                                // H2's comment ends at the kept text's first line break; anything but whitespace after that
+                                // break (the rest of the block comment, another comment) is read differently, so the next
+                                // line break must be kept as well.
+                                lineHoldsDialectLineComment = !hasOnlyWhitespaceAfterFirstLineBreak(word);
+                            } else {
+                                // The comment is a token of its own ("-- Keep comments") and is emitted as it is; the line
+                                // holds the H2 comment.
+                                lineHoldsDialectLineComment = true;
+                            }
+                        }
+                    }
+
+                    if (!opensDoubleSlashComment && !lineHoldsDialectLineComment) {
+                        lineHoldsDialectLineComment = mayHoldDoubleSlashComment
+                                && (sb.length() > 0 && sb.charAt(sb.length() - 1) == '/' && word.startsWith("/") || mayHoldH2LineComment(word))
+                                || mayHoldHashOperator && isHashOperatorToken(word);
+                    }
                 }
 
                 sb.append(word);
@@ -654,7 +706,8 @@ public final class ParsedSql {
             // A line holding a hash operator is handled the same way, because MySQL reads a "/*" in its "#" comment as text.
             if (lineHoldsDialectLineComment && containsLineBreak(this.sql, 0, this.sql.length())) {
                 final int[] offsets = tokenSourceOffsets == null ? alignTokenSourceOffsets(this.sql, words) : tokenSourceOffsets;
-                final int tailStart = offsets == null ? -1 : endOfLastAlignedToken(words, offsets);
+                final int lastTokenEnd = offsets == null ? -1 : endOfLastAlignedToken(words, offsets);
+                final int tailStart = lastTokenEnd < 0 ? -1 : Math.max(lastTokenEnd, sourceKeptThrough);
 
                 if (tailStart >= 0 && this.sql.indexOf("/*", tailStart) >= 0 && hasTextAfterLineBreak(this.sql, tailStart)) {
                     while (sb.length() > 0 && sb.charAt(sb.length() - 1) == ' ') {
@@ -934,8 +987,8 @@ public final class ParsedSql {
      *         in a recognized data-operation statement finds mixed styles ({@code ?}, {@code :propName},
      *         {@code #{propName}}), an iBatis/MyBatis parameter missing its closing brace or with an empty property
      *         name before its {@code ':'} or {@code ','} ({@code #{:id}}), an unpaired UTF-16
-     *         surrogate in or immediately before a prospective colon-style name, or an unpaired surrogate
-     *         directly after a {@code '?'} opening the content of a standalone bracket group
+     *         surrogate in, immediately before, or immediately after a prospective colon-style name, or an unpaired
+     *         surrogate directly after a {@code '?'} opening the content of a standalone bracket group
      */
     public static ParsedSql parse(final String sql) {
         N.checkArgNotNull(sql, cs.sql);
@@ -1135,8 +1188,12 @@ public final class ParsedSql {
      * as a line holding {@code //} as well, even if it holds none. If the output ends on such a line, the text discarded
      * after its last token is kept as written whenever it contains a {@code /*} (on that line or a later one) and goes
      * on to a later line (complete comments there are kept too); an unterminated {@code /*} on a later line then makes
-     * H2 report it instead of running the truncated statement. Kept text is not converted, so a marker in it fails
-     * loudly. A line holding a hash operator token ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}) is
+     * H2 report it instead of running the truncated statement. A block comment directly after a {@code /} opens an H2
+     * {@code //} line comment, so it is kept as written together with the whitespace and comments up to the next token
+     * ({@code id = :id //* c *}{@code / 1 OR 1 = 1} becomes {@code id = ? //* c *}{@code / 1 OR 1 = 1}, not
+     * {@code id = ? / 1 OR 1 = 1}), an unterminated one with the rest of the statement, and its line is a line holding
+     * {@code //}. Kept text is not converted, so a marker in it fails loudly. A line holding a hash operator token
+     * ({@code ?#}, {@code ##}, {@code #>}, {@code #>>}, {@code #-}) is
      * treated exactly like a line holding {@code //}, since MySQL reads its {@code #} as the start of a line comment
      * ({@code SET a = ?# c\nWHERE id = 42} keeps its line break instead of running as {@code SET a = ?} on MySQL).
      * A {@code ?} converted
@@ -1445,6 +1502,23 @@ public final class ParsedSql {
         return false;
     }
 
+    /** Returns {@code true} if {@code text} holds a line break and only spaces, tabs, form feeds and line breaks after the first one. */
+    private static boolean hasOnlyWhitespaceAfterFirstLineBreak(final String text) {
+        boolean afterLineBreak = false;
+
+        for (int i = 0, len = text.length(); i < len; i++) {
+            final char ch = text.charAt(i);
+
+            if (ch == '\n' || ch == '\r') {
+                afterLineBreak = true;
+            } else if (afterLineBreak && ch != ' ' && ch != '\t' && ch != '\f') {
+                return false;
+            }
+        }
+
+        return afterLineBreak;
+    }
+
     /**
      * Returns the offset in {@code sql} just past the last token that {@code offsets} aligned (see
      * {@link #alignTokenSourceOffsets(String, List)}), or {@code -1} if no token was aligned (an empty array included).
@@ -1553,7 +1627,7 @@ public final class ParsedSql {
     /**
      * Returns {@code true} if a comment opener the tokenizer recognizes ({@code "--"}, {@code "#"} or
      * {@code "/*"}) starts at {@code index} of {@code text}. Exactly the openers
-     * {@link #resolvePositionalParameterOffsets(String, List, IntList, IntList)} skips, so its token match and
+     * {@link #locateToken(String, String, int)} skips, so its token match and
      * its comment skipping cannot disagree about where a comment begins.
      */
     private static boolean startsWithCommentOpener(final String text, final int index) {
@@ -1566,7 +1640,7 @@ public final class ParsedSql {
             case 4 -> "WITH".equalsIgnoreCase(word) || "CALL".equalsIgnoreCase(word);
             case 5 -> "MERGE".equalsIgnoreCase(word) || "TABLE".equalsIgnoreCase(word); // TABLE t: the SQL-standard query shorthand
             case 6 -> "SELECT".equalsIgnoreCase(word) || "INSERT".equalsIgnoreCase(word) || "UPDATE".equalsIgnoreCase(word) || "DELETE".equalsIgnoreCase(word)
-                    || "VALUES".equalsIgnoreCase(word);
+                    || "VALUES".equalsIgnoreCase(word) || "UPSERT".equalsIgnoreCase(word); // UPSERT: CockroachDB, YugabyteDB, Phoenix
             case 7 -> "EXPLAIN".equalsIgnoreCase(word) || "REPLACE".equalsIgnoreCase(word);
             default -> false;
         };
@@ -1762,7 +1836,7 @@ public final class ParsedSql {
      * @param fromIndex the first character after the colon
      * @return the exclusive end of the name
      * @throws IllegalArgumentException if an unpaired UTF-16 surrogate is encountered while scanning
-     *         the name or the first character after a segment separator
+     *         the name, the character right after it, or the first character after a segment separator
      */
     private static int findNamedParameterEndIndex(final String token, final int fromIndex) {
         int index = fromIndex;
@@ -1825,8 +1899,10 @@ public final class ParsedSql {
      * Locates subscript brackets for builder placeholder rewriting using the same distinction between
      * subscripts and quoted identifiers as parameter parsing. Identifier-rooted and chained subscripts,
      * and standalone groups starting with a colon binding or positional marker, are recognized.
-     * Every unquoted nested opener is included; comments and literal content are excluded. A token with
-     * ambiguous backslash/doubled-quote readings is left opaque.
+     * Every unquoted nested opener is included; comments and literal content are excluded. A token on which
+     * the backslash-escape and doubled-quote-only readings disagree about where any quoted region ends is left
+     * opaque. That is stricter than parameter parsing, which only needs the readings to agree on the marker
+     * positions, so {@code ARRAY['a\'b\'c', :id]} binds {@code id} but reports no opener.
      *
      * <p>Standalone {@code [#{name}]} or custom-token groups remain bracket-quoted identifiers. Once a
      * standalone {@code [?]} has been rendered into that shape, its original subscript role cannot be
@@ -3710,11 +3786,11 @@ public final class ParsedSql {
      * {@code AS OF ?} and the {@code ZONE} of {@code AT TIME ZONE ?}, are handled by {@code isContextualPlaceholderKeyword},
      * and the {@code RANGE}/{@code GROUPS} of a window frame by the classifier's {@code leadsMarkerAsKeyword}).
      * Without this list such a {@code ?} followed by an identifier-like word ({@code DAY}, {@code ESCAPE}, an alias) would be dropped from the parameter count.
-     * {@code VALUES} is not listed: its rows are parenthesized, and where a bare {@code VALUES ?} is accepted
-     * (DB2) no operand can follow the bare {@code ?}, which therefore stays a placeholder, while {@code values ? 'k'}
-     * tests a column named {@code values}. A {@code ?} glued to a non-JSON operator after it ({@code VALUES ?-1},
-     * {@code VALUES ?||'x'}), and a row-constructor {@code VALUES ?} before a postfix clause
-     * ({@code VALUES ? FORMAT JSON}), are handled by the classifier's {@code leadsMarkerAsKeyword}.
+     * {@code VALUES} is not listed: it is also a plausible column name, so the classifier's {@code leadsMarkerAsKeyword}
+     * decides it from context. Where an expression operand stands ({@code WHERE values ? 'k'}) the {@code ?} tests a
+     * column named {@code values}; elsewhere {@code VALUES} is the row constructor and leads a placeholder, as in DB2's
+     * bare {@code VALUES ?} (also {@code VALUES ? 'k'} at a statement start), {@code VALUES ?-1}, {@code VALUES ?||'x'}
+     * and {@code VALUES ? FORMAT JSON}.
      */
     private static boolean isPlaceholderLeadingKeyword(final String word) {
         // Length dispatch avoids testing every keyword for identifiers, punctuation and quoted text.

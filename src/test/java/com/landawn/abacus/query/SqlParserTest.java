@@ -3569,6 +3569,98 @@ public class SqlParserTest extends TestBase {
             assertTrue(SqlParser.isSelectQuery("WITH a AS (SELECT 1), update AS (SELECT 2) SELECT * FROM a"));
             assertFalse(SqlParser.isUpdateQuery("WITH a AS (SELECT 1), update AS (SELECT 2) SELECT * FROM a"));
         }
+
+        @Test
+        void testCockroachLoneCrDoesNotEndLineCommentInBracketedStatementSource() {
+            // CockroachDB ends a "--" comment only at '\n' and nests block comments, so each bracketed source below
+            // starts at its data-change statement there, not at the text after the lone '\r'.
+            for (final String sql : new String[] { "SELECT * FROM [--\rSELECT 1\nDELETE FROM t RETURNING *]",
+                    "SELECT * FROM [--\rx\nUPDATE t SET a = 1 RETURNING *]", "SELECT * FROM [--\rx\nEXPLAIN ANALYZE DELETE FROM t]",
+                    "SELECT * FROM [--\rx\nUPSERT INTO t VALUES (1) RETURNING *]", "SELECT * FROM [/* /* */ */--\rx\nDELETE FROM t RETURNING *]" }) {
+                assertReadGatesReject(sql);
+                assertFalse(SqlParser.isReadOnlyQuery(sql), sql);
+            }
+
+            // An INSERT source is still a read-or-insert statement, but not a read.
+            final String insert = "SELECT * FROM [--\rx\nINSERT INTO t VALUES (1) RETURNING *]";
+            assertFalse(SqlParser.isSyntacticallyReadQuery(insert));
+            assertTrue(SqlParser.isReadOrInsertQuery(insert));
+        }
+
+        @Test
+        void testOverlappingBlockCommentCloserAndOpenerIsAnOpener() {
+            // Read with quotes ignored, '/*\' ... */ is one comment and its "*/" shares the '/' of the next "/*".
+            final String sql = "SELECT '/*\\' AS a, 2 */* /* */ \\' */ 3; DELETE FROM t -- '";
+
+            assertReadGatesReject(sql);
+            assertFalse(SqlParser.isReadOnlyQuery(sql));
+        }
+
+        @Test
+        void testInsertGluedToANameNeverExemptsIntoOutfile() {
+            for (final String sql : new String[] { "SELECT a FROM t WHERE b = @insert INTO OUTFILE '/tmp/f'", "SELECT a FROM t _insert INTO OUTFILE '/tmp/f'",
+                    "SELECT a FROM t $insert INTO OUTFILE '/tmp/f'", "SELECT a FROM t 1insert INTO DUMPFILE '/tmp/f'",
+                    "SELECT a FROM t x insert INTO OUTFILE '/tmp/f'" }) {
+                assertReadGatesReject(sql);
+                assertFalse(SqlParser.isReadOnlyQuery(sql), sql);
+            }
+
+            // A real INSERT into a table named outfile stays an insert.
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT IGNORE INTO outfile VALUES (1)"));
+        }
+
+        @Test
+        void testSelectListFromGluedToNonAsciiDoesNotHideInto() {
+            for (final String sql : new String[] { "SELECT 1 a€from INTO t", "SELECT 1 a from INTO t", "SELECT 1 a　from INTO t", "SELECT 1 from€ INTO t" }) {
+                assertReadGatesReject(sql);
+                assertFalse(SqlParser.isReadOnlyQuery(sql), sql);
+            }
+
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 AS €x FROM t"));
+            assertTrue(SqlParser.isReadOrInsertQuery("SELECT 1 AS €x FROM t"));
+        }
+
+        @Test
+        void testVerbGluedIntoCteNameIsNotTheStatementVerb() {
+            for (final String sql : new String[] { "WITH x€select AS (SELECT 1) DELETE FROM t", "WITH x　select AS (SELECT 1) DELETE FROM t",
+                    "WITH x@select AS (SELECT 1) DELETE FROM t", "WITH c AS (SELECT 1), d@select AS (SELECT 2) UPDATE t SET a = 1",
+                    "WITH c AS (WITH x€select AS (SELECT 1) DELETE FROM t RETURNING 1) SELECT * FROM c", "SELECT 1; WITH x€select AS (SELECT 1) DELETE FROM t",
+                    "WITH x€insert AS (SELECT 1) UPDATE t SET a = 1" }) {
+                assertReadGatesReject(sql);
+                assertFalse(SqlParser.isReadOnlyQuery(sql), sql);
+            }
+
+            // The verb after a complete CTE list is still found, also after an ideographic space.
+            for (final String sql : new String[] { "WITH x AS (SELECT 1)　SELECT * FROM x", "WITH x AS (SELECT 1) SELECT * FROM x" }) {
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+                assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+            }
+        }
+
+        @Test
+        void testVerbAfterCompleteCteListAndH2WhitespaceIsTheStatementVerb() {
+            // H2 reads NBSP, U+2007, U+202F and NEL as whitespace, so the verb glued to one right after the CTE list is the
+            // statement verb there. Reading the character as punctuation left the list unresolved, and the glued verb then
+            // counted as part of a name, so the SELECT inside the INSERT stood in for the verb.
+            for (final String space : new String[] { " ", " ", " ", "\u0085" }) {
+                final String insert = "WITH x AS (SELECT 1)" + space + "INSERT INTO t SELECT 1";
+                assertFalse(SqlParser.isSyntacticallyReadQuery(insert), insert);
+                assertTrue(SqlParser.isReadOrInsertQuery(insert), insert);
+                assertTrue(SqlParser.isInsertQuery(insert), insert);
+                assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT 1; " + insert), insert);
+            }
+
+            // Also after an H2 "//" comment, and in the nested CTE scan.
+            assertReadGatesReject("WITH x AS (SELECT 1) // c\n DELETE FROM t WHERE a IN (SELECT 1)");
+            assertReadGatesReject("WITH c AS (WITH x AS (SELECT 1) DELETE FROM t RETURNING 1) SELECT * FROM c");
+            assertTrue(SqlParser.isDeleteQuery("WITH x AS (SELECT 1) DELETE FROM t WHERE a IN (SELECT 1)"));
+
+            // A glued SELECT verb is still a read, and a verb glued into a CTE name (also after a non-ASCII letter) still is not
+            // the verb.
+            assertTrue(SqlParser.isSyntacticallyReadQuery("WITH x AS (SELECT 1) SELECT * FROM x"));
+            assertReadGatesReject("WITH é select AS (SELECT 1) DELETE FROM t");
+            assertReadGatesReject("WITH x select AS (SELECT 1) DELETE FROM t");
+        }
     }
 
     @Nested
@@ -3972,6 +4064,29 @@ public class SqlParserTest extends TestBase {
         void testParse_hashTempTableAfterLineCommentFollowingKeyword() {
             // ...or by a line comment ending in a newline.
             assertTrue(SqlParser.tokenize("SELECT * FROM -- pick one\n#tmp").contains("#tmp"));
+        }
+
+        @Test
+        void testParse_lineCommentTextNeverAnchorsHashListContext() {
+            // The comma-list walk landed inside the line comment, whose "FROM" made the '#' a temp-table name.
+            assertFalse(SqlParser.tokenize("SELECT -- FROM\n a, #t y\nFROM u").contains("#t"));
+            assertFalse(SqlParser.tokenize("SELECT # FROM\n a, #t y\nFROM u").contains("#t"));
+
+            // The walk now steps over a line comment between list elements, so the real anchor decides, whatever the
+            // comment says: the FROM list keeps its temp table (it used to be dropped as a comment after "-- main").
+            for (final String comment : new String[] { "-- JOIN", "-- main", "-- SELECT", "-- */", "# note", "-- a\n -- b" }) {
+                final String sql = "SELECT * FROM t0, " + comment + "\n t1, #t2 x\nWHERE a = ?";
+                assertTrue(SqlParser.tokenize(sql).contains("#t2"), sql);
+                assertEquals("SELECT * FROM t0, t1, #t2 x WHERE a = ?", ParsedSql.parse(sql).parameterizedSql(), sql);
+            }
+
+            assertTrue(SqlParser.tokenize("SELECT * FROM t0, -- c\n t1, -- d\n t2, #t3 x").contains("#t3"));
+            assertFalse(SqlParser.tokenize("SELECT a, -- FROM t\n b, #c d\nFROM u").contains("#c"));
+
+            // A real list context, also with a line comment before the '#' itself, is unchanged.
+            assertTrue(SqlParser.tokenize("SELECT * FROM t1, -- c\n #t2").contains("#t2"));
+            assertTrue(SqlParser.tokenize("SELECT * FROM t0, t1, #t2 x").contains("#t2"));
+            assertTrue(SqlParser.tokenize("SELECT * FROM /* c */ t0, #t2 x").contains("#t2"));
         }
 
         @Test
@@ -5426,6 +5541,39 @@ public class SqlParserTest extends TestBase {
             assertEquals(0, closingBracketTokenizer.indexOfToken("N]tail", "N]"));
             assertEquals("N]", closingBracketTokenizer.nextToken("N]tail", 0));
             assertEquals(2, closingBracketTokenizer.nextTokenEndIndex("N]tail", 0));
+        }
+
+        @Test
+        void testTokenizerConfiguredSeparatorsDoNotSwallowInteriorCommentOpeners() {
+            // A comment takes precedence over separators, so a separator holding "--" or "/*" after its first character never
+            // matches: the comment it would run into is still skipped.
+            final SqlParser.Tokenizer dashTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("<--").build());
+            assertEquals(Arrays.asList("a", " ", "<", " ", "b"), dashTokenizer.tokenize("a <-- e\nb"));
+            assertEquals(-1, dashTokenizer.indexOfToken("a <-- e\nb", "<--"));
+            assertEquals(-1, dashTokenizer.indexOfToken("a <-- e\nb", "e"));
+
+            final SqlParser.Tokenizer blockTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("</*").build());
+            assertEquals(Arrays.asList("a", " ", "<", " ", "b"), blockTokenizer.tokenize("a </* e */b"));
+            assertEquals(-1, blockTokenizer.indexOfToken("a </* e */b", "e"));
+
+            // The same rule applies to separators that start with a non-ASCII character (a separate match table).
+            final SqlParser.Tokenizer euroDashTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("€--").build());
+            assertEquals(Arrays.asList("a", " ", "€", " ", "b"), euroDashTokenizer.tokenize("a €-- e\nb"));
+            assertEquals(-1, euroDashTokenizer.indexOfToken("a €-- e\nb", "€--"));
+            assertEquals(-1, euroDashTokenizer.indexOfToken("a €-- e\nb", "e"));
+
+            final SqlParser.Tokenizer euroBlockTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("€/*").build());
+            assertEquals(Arrays.asList("a", " ", "€", " ", "b"), euroBlockTokenizer.tokenize("a €/* e */b"));
+            assertEquals(-1, euroBlockTokenizer.indexOfToken("a €/* e */b", "e"));
+
+            final SqlParser.Tokenizer euroArrowTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("€-").build());
+            assertEquals(Arrays.asList("a", " ", "€-", " ", "b"), euroArrowTokenizer.tokenize("a €- b"));
+            assertEquals(Arrays.asList("a", " ", "€", " ", "b"), euroArrowTokenizer.tokenize("a €-- e\nb"));
+
+            // A separator that merely ends where a comment opener starts is unaffected.
+            final SqlParser.Tokenizer arrowTokenizer = SqlParser.tokenizer(SqlParser.tokenizerConfigBuilder().withSeparator("<-").build());
+            assertEquals(Arrays.asList("a", " ", "<-", " ", "b"), arrowTokenizer.tokenize("a <- b"));
+            assertEquals(Arrays.asList("a", " ", "<", " ", "b"), arrowTokenizer.tokenize("a <-- e\nb"));
         }
 
         @Test

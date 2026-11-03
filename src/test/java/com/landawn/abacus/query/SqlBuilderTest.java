@@ -2654,6 +2654,20 @@ public class SqlBuilderTest extends TestBase {
         }
 
         @Test
+        void testCompoundOrderBySubEntityPropertyUsesResultLabels() {
+            // A compound query's ORDER BY may only name result columns: each expanded sub-entity column resolves to the first
+            // SELECT's label, as orderBy("profile.name") does, instead of the alias-qualified p.display_name.
+            assertEquals("SELECT p.display_name AS \"profile.name\" FROM profile_holders UNION SELECT x FROM t ORDER BY \"profile.name\"",
+                    PSC.select("profile").from(QualifiedProfileHolder.class).union("SELECT x FROM t").orderBy("profile").build().query());
+            assertEquals("SELECT p.display_name AS \"profile.name\" FROM profile_holders UNION SELECT x FROM t ORDER BY \"profile.name\" DESC",
+                    PSC.select("profile").from(QualifiedProfileHolder.class).union("SELECT x FROM t").orderByDesc("profile").build().query());
+
+            // Outside a compound query, the sub-entity still expands to its mapped columns.
+            assertEquals("SELECT p.display_name AS \"profile.name\" FROM profile_holders ORDER BY p.display_name",
+                    PSC.select("profile").from(QualifiedProfileHolder.class).orderBy("profile").build().query());
+        }
+
+        @Test
         void testUnicodeEscapeEqualsSignsRemainPartOfTheQuotedColumn() {
             final Dsl postgres = Dsl.forDialect(SqlDialect.builder()
                     .productInfo(ProductInfo.of("PostgreSQL"))

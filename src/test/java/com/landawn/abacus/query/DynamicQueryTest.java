@@ -258,6 +258,14 @@ public class DynamicQueryTest extends TestBase {
             b4.from().append("[t]");
             b4.where().append("x = #{x}").and("y = 2");
             assertEquals("SELECT [a] FROM [t] WHERE x = #{x} AND y = 2", b4.build());
+
+            // A "#{" left unclosed on its line is no MyBatis marker but a MySQL comment, so the next condition goes on a new line.
+            assertTrue(AbstractQueryBuilder.endsInsideLineCommentUnderAnyReading("x = #{"));
+            Builder b5 = DynamicQuery.builder();
+            b5.select().append("a");
+            b5.from().append("t");
+            b5.where().append("x = #{").and("y = 2");
+            assertEquals("SELECT a FROM t WHERE x = #{\n AND y = 2", b5.build());
         }
 
         @Test

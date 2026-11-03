@@ -616,6 +616,38 @@ public class SqlExpressionTest extends TestBase {
             assertEquals("yearMonth", SqlExpression.of("year_month").toSql(NamingPolicy.CAMEL_CASE));
         }
 
+        @Test
+        void testOracleHierarchicalAndFloatConstantKeywordsAreKept() {
+            assertEquals("CONNECT_BY_ROOT lastName", SqlExpression.of("CONNECT_BY_ROOT last_name").toSql(NamingPolicy.CAMEL_CASE));
+            assertEquals("x = BINARY_DOUBLE_NAN", SqlExpression.of("x = BINARY_DOUBLE_NAN").toSql(NamingPolicy.CAMEL_CASE));
+
+            for (final String keyword : new String[] { "CONNECT_BY_ROOT", "CONNECT_BY_ISLEAF", "CONNECT_BY_ISCYCLE", "BINARY_FLOAT_NAN",
+                    "BINARY_FLOAT_INFINITY", "BINARY_DOUBLE_NAN", "BINARY_DOUBLE_INFINITY" }) {
+                assertEquals(keyword, SqlExpression.of(keyword).toSql(NamingPolicy.CAMEL_CASE), keyword);
+                assertEquals("a < " + keyword, SqlExpression.of("a < " + keyword).toSql(NamingPolicy.CAMEL_CASE), keyword);
+            }
+        }
+
+        @Test
+        void testLongLiteralTokensAreNotRetained() throws Exception {
+            final java.lang.reflect.Field cache = SqlExpression.class.getDeclaredField("cachedParsedLiteral");
+            cache.setAccessible(true);
+
+            final SqlExpression shortExpr = SqlExpression.of("first_name = 'a' AND last_name = 'b'");
+            assertEquals("firstName = 'a' AND lastName = 'b'", shortExpr.toSql(NamingPolicy.CAMEL_CASE));
+            assertNotNull(cache.get(shortExpr));
+
+            final StringBuilder sb = new StringBuilder("user_id IN (");
+            for (int i = 0; i < 400; i++) {
+                sb.append(i == 0 ? "" : ", ").append(100000 + i);
+            }
+            final SqlExpression longExpr = SqlExpression.of(sb.append(')').toString());
+            final String rendered = longExpr.toSql(NamingPolicy.CAMEL_CASE);
+            assertTrue(rendered.startsWith("userId IN (100000, 100001"), rendered);
+            assertEquals(rendered, longExpr.toSql(NamingPolicy.CAMEL_CASE));
+            assertNull(cache.get(longExpr));
+        }
+
         // Regression guard for the glued-subscript fix: interiors are rendered recursively only to a fixed depth, so deeply
         // nested subscripts cannot blow the stack; deeper interiors are copied as written.
         @Test

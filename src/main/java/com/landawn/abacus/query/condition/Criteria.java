@@ -324,6 +324,9 @@ public class Criteria extends AbstractCondition {
 
     /**
      * Returns all conditions (clauses) in this criteria in the order they were added.
+     * A singleton clause (WHERE, GROUP BY, HAVING, ORDER BY, LIMIT) that was set more than once on the
+     * builder keeps the position of its first setting. This order does not affect {@link #toSql(NamingPolicy)}
+     * or {@link #parameters()}, which always follow SQL clause order, but it does affect {@link #equals(Object)}.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -600,7 +603,10 @@ public class Criteria extends AbstractCondition {
     /**
      * Checks whether this Criteria is equal to another object.
      * Two instances are equal if they have the exact same runtime class, select modifier,
-     * and ordered list of conditions.
+     * and ordered list of conditions. The comparison is order-sensitive: criteria that set the same clauses
+     * in a different order (for example {@code where(...).orderBy(...)} versus {@code orderBy(...).where(...)})
+     * are not equal, even though they render the same SQL and parameters. Re-setting a singleton clause keeps
+     * its original position, so replacement history alone does not affect equality.
      *
      * <p><b>Usage Examples:</b></p>
      * <pre>{@code
@@ -789,8 +795,10 @@ public class Criteria extends AbstractCondition {
     /**
      * A mutable builder for constructing {@link Criteria} instances with a fluent API.
      *
-     * <p>For singleton clauses (WHERE, GROUP BY, HAVING, ORDER BY, LIMIT),
-     * calling the same method again replaces the previous clause.
+     * <p>For singleton clauses (WHERE, GROUP BY, HAVING, ORDER BY, LIMIT), setting the same clause
+     * again, through any of its methods (for example {@code groupBy(...)} then {@code groupByAsc(...)}, or
+     * {@link #add(Condition)}), replaces the previous clause in place, keeping its position in
+     * {@link Criteria#conditions()}.
      * For JOINs and set operations, multiple calls accumulate.</p>
      *
      * <p><b>Usage Examples:</b></p>

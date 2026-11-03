@@ -295,8 +295,8 @@ public final class Selection {
 
         /**
          * Sets the table alias. {@code null} or an empty string means no alias; a non-empty alias is
-         * validated when the selection is rendered and must not be blank, quoted, or contain SQL
-         * comment tokens (it is prefixed verbatim to every rendered column).
+         * validated when the selection is rendered and must not be blank, quoted, or contain a line break
+         * or SQL comment tokens (it is prefixed verbatim to every rendered column).
          *
          * @param tableAlias the table alias
          * @return this builder
@@ -308,8 +308,8 @@ public final class Selection {
 
         /**
          * Sets the result class alias. {@code null} or an empty string means no alias; a non-empty alias is
-         * validated when the selection is rendered and must not be blank, quoted, or contain SQL comment tokens
-         * (it prefixes every rendered column alias, e.g. {@code "acc.id"}).
+         * validated when the selection is rendered and must not be blank, quoted, or contain a line break or SQL
+         * comment tokens (it prefixes every rendered column alias, e.g. {@code "acc.id"}).
          *
          * @param classAlias the class alias
          * @return this builder
@@ -347,7 +347,9 @@ public final class Selection {
          * Sets the property names to exclude. Passing {@code null} means no exclusions. The built selection's copy of
          * a {@link SortedSet} keeps its comparator, so, for example, a {@code TreeSet} ordered by
          * {@link String#CASE_INSENSITIVE_ORDER} excludes properties exactly as it does when passed directly to
-         * {@code select(Class, Set)}.
+         * {@code select(Class, Set)}. With {@link #includeSubEntityProperties(boolean) includeSubEntityProperties(true)},
+         * as with {@code select(Class, boolean, Set)}, names are instead matched exactly (case-sensitively), whatever
+         * the set's comparator.
          *
          * @param excludedPropNames the excluded property names
          * @return this builder

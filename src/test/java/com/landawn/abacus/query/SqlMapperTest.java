@@ -722,6 +722,36 @@ public class SqlMapperTest extends TestBase {
         }
 
         @Test
+        void testLoadFromInputStream_malformedXmlIsReportedInTheExceptionNotOnStderr() {
+            final String xml = "<sqlMapper><sql id=\"a\">select 1</sqlMapper>";
+            final java.io.PrintStream originalErr = System.err;
+            final ByteArrayOutputStream err = new ByteArrayOutputStream();
+            com.landawn.abacus.exception.ParsingException e;
+
+            System.setErr(new java.io.PrintStream(err, true, StandardCharsets.UTF_8));
+            try {
+                e = assertThrows(com.landawn.abacus.exception.ParsingException.class,
+                        () -> SqlMapper.loadFrom(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))));
+            } finally {
+                System.setErr(originalErr);
+            }
+
+            assertFalse(err.toString(StandardCharsets.UTF_8).contains("[Fatal Error]"), err.toString(StandardCharsets.UTF_8));
+            assertTrue(e.getMessage().startsWith("Failed to parse SQL mapper XML from: input stream: line 1, column "), e.getMessage());
+        }
+
+        @Test
+        void testXmlProblemDescriptionNeverEndsInNull() throws Exception {
+            final java.lang.reflect.Method describe = SqlMapper.class.getDeclaredMethod("describe", org.xml.sax.SAXException.class);
+            describe.setAccessible(true);
+
+            assertEquals("org.xml.sax.SAXException", describe.invoke(null, new org.xml.sax.SAXException()));
+            assertEquals("bad root", describe.invoke(null, new org.xml.sax.SAXException("bad root")));
+            assertEquals("line 3, column 7: org.xml.sax.SAXParseException", describe.invoke(null, new org.xml.sax.SAXParseException(null, null, null, 3, 7)));
+            assertEquals("line 3, column 7: unclosed tag", describe.invoke(null, new org.xml.sax.SAXParseException("unclosed tag", null, null, 3, 7)));
+        }
+
+        @Test
         void testLoadFromInputStream_noSqlMapperElementThrows() {
             String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root></root>";
             InputStream is = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
