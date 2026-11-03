@@ -1,5 +1,5 @@
 # abacus-query API Index (v4.9.8)
-- Build: 988f590a9ec642d2753d7fc83f2b037933ecadcc
+- Build: 844f71a281845c4bafb1932ee5da584a9ae07690
 - Java: 21
 - Generated: 2026-11-02
 
@@ -41,7 +41,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of the entity mapping or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns; not checked for a select(List<Selection>) projection); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of the entity mapping or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns; not checked for a select(List<Selection>) projection); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -88,7 +88,7 @@ Base class for fluent SQL builders.
 - **Returns:** this SqlBuilder instance for method chaining
 - **Throws:**
   - `java.lang.IllegalStateException` — if this builder is closed, if the current operation is neither ADD nor QUERY, if columns/values have not been set, or if it is called after SQL has already been emitted (e.g., after from() or a second into()); or if a configured named-parameter handler emits an empty token under NAMED_SQL.
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of entityClass or (except for a select(List<Selection>) projection) of the source entity, or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of entityClass or (except for a select(List<Selection>) projection) of the source entity, or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal.
   - `java.lang.UnsupportedOperationException` — if inspected entity metadata configures a LocalDate or LocalTime property with date format long
   - `java.lang.RuntimeException` — if SQL rendering invokes a configured named-parameter handler that throws an unchecked exception; or if rendering a raw value invokes a custom Number or object string conversion that throws an unchecked exception.
 - **Examples:**
@@ -2477,7 +2477,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `tableName` (`String`) — the name of the table to update
 - **Returns:** a new SqlBuilder instance configured for UPDATE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.update("account")
@@ -2493,7 +2493,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class for property mapping
 - **Returns:** a new SqlBuilder instance configured for UPDATE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -2546,7 +2546,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `tableName` (`String`) — the name of the table to delete from
 - **Returns:** a new SqlBuilder instance configured for DELETE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.deleteFrom("account")
@@ -2561,7 +2561,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `entityClass` (`Class<?>`) — the entity class for property mapping
 - **Returns:** a new SqlBuilder instance configured for DELETE operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings
   - `java.lang.UnsupportedOperationException` — if inspected bean metadata uses the long date format for a LocalDate or LocalTime property
 - **Examples:**
   - ```java
@@ -3081,7 +3081,7 @@ Entry point for building SQL statements with a fixed SqlDialect, including its n
   - `tableName` (`String`) — the table to count rows from
 - **Returns:** a new SqlBuilder instance configured for SELECT operation
 - **Throws:**
-  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, or contains an unterminated block comment
+  - `java.lang.IllegalArgumentException` — if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
 - **Examples:**
   - ```java
     String sql = PSC.selectCountFrom("account")

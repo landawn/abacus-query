@@ -16,8 +16,6 @@ package com.landawn.abacus.query;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -136,7 +134,8 @@ public final class QueryUtil {
      * Cache of property-name-to-column-name maps per entity class and naming policy, built by
      * {@link #propToColumnNameMap(Class, NamingPolicy)}.
      */
-    private static final Map<Class<?>, Map<NamingPolicy, ImmutableMap<String, String>>> entityTablePropColumnNameMap = new ConcurrentHashMap<>();
+    // One slot per NamingPolicy.ordinal(), as for entityPropColumnInfoMap: warm reads are a lock-free volatile element read.
+    private static final Map<Class<?>, AtomicReferenceArray<ImmutableMap<String, String>>> entityTablePropColumnNameMap = new ConcurrentHashMap<>();
 
     /**
      * Cache of {@link ColumnInfo} maps per entity class and naming policy, built by
@@ -968,10 +967,10 @@ public final class QueryUtil {
             return ImmutableMap.empty();
         }
 
-        final Map<NamingPolicy, ImmutableMap<String, String>> namingColumnNameMap = entityTablePropColumnNameMap.get(entityClass);
+        final AtomicReferenceArray<ImmutableMap<String, String>> namingColumnNameMap = entityTablePropColumnNameMap.get(entityClass);
         ImmutableMap<String, String> result = null;
 
-        if (namingColumnNameMap == null || (result = namingColumnNameMap.get(effectiveNamingPolicy)) == null) {
+        if (namingColumnNameMap == null || (result = namingColumnNameMap.get(effectiveNamingPolicy.ordinal())) == null) {
             result = registerEntityPropColumnNameMap(entityClass, effectiveNamingPolicy, null);
         }
 
@@ -1005,10 +1004,11 @@ public final class QueryUtil {
         }
 
         N.checkArgNotNull(namingPolicy, cs.namingPolicy);
-        Map<NamingPolicy, ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
+        final int slot = namingPolicy.ordinal();
+        AtomicReferenceArray<ImmutableMap<String, String>> namingPropColumnMap = entityTablePropColumnNameMap.get(entityClass);
 
         if (namingPropColumnMap != null) {
-            final ImmutableMap<String, String> cached = namingPropColumnMap.get(namingPolicy);
+            final ImmutableMap<String, String> cached = namingPropColumnMap.get(slot);
 
             if (cached != null) {
                 return cached;
@@ -1021,19 +1021,12 @@ public final class QueryUtil {
         final ImmutableMap<String, String> result = registerEntityPropColumnNameMap(entityClass, namingPolicy, null, MAX_NESTED_PROP_DEPTH);
 
         if (namingPropColumnMap == null) {
-            // Publish only after the full nested mapping succeeds; a failed build must not retain an empty holder.
-            final Map<NamingPolicy, ImmutableMap<String, String>> newMap = Collections.synchronizedMap(new EnumMap<>(NamingPolicy.class));
-            newMap.put(namingPolicy, result);
-            namingPropColumnMap = entityTablePropColumnNameMap.putIfAbsent(entityClass, newMap);
-
-            if (namingPropColumnMap == null) {
-                return result;
-            }
+            // Create the holder only after the full nested mapping succeeds; a failed build must not retain an empty one.
+            namingPropColumnMap = entityTablePropColumnNameMap.computeIfAbsent(entityClass, cls -> new AtomicReferenceArray<>(NamingPolicy.values().length));
         }
 
         // Racing cold builds may duplicate work, but every caller receives the completed published winner.
-        final ImmutableMap<String, String> cached = namingPropColumnMap.putIfAbsent(namingPolicy, result);
-        return cached == null ? result : cached;
+        return namingPropColumnMap.compareAndSet(slot, null, result) ? result : namingPropColumnMap.get(slot);
     }
 
     /**

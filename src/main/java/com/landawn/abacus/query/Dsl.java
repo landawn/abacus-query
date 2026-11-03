@@ -916,10 +916,10 @@ public final class Dsl {
      *
      * @param tableName the name of the table to update
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or contains an unterminated block comment
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
      */
     public SqlBuilder update(final String tableName) {
-        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
+        AbstractQueryBuilder.checkTableNameNotBlank(tableName, "tableName");
         checkNoUnterminatedBlockComment(tableName);
 
         final SqlBuilder instance = createSqlBuilderInstance();
@@ -951,13 +951,13 @@ public final class Dsl {
      * @param tableName the name of the table to update
      * @param entityClass the entity class for property mapping
      * @return a new SqlBuilder instance configured for UPDATE operation
-     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or contains an unterminated block
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, consists only of control or space characters, or contains an unterminated block
      *         comment, or {@code entityClass} is null, or inspected entity metadata has invalid property mappings
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder update(final String tableName, final Class<?> entityClass) {
-        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
+        AbstractQueryBuilder.checkTableNameNotBlank(tableName, "tableName");
         checkNoUnterminatedBlockComment(tableName);
         N.checkArgNotNull(entityClass, SqlBuilder.UPDATE_PART_MSG);
 
@@ -1071,10 +1071,10 @@ public final class Dsl {
      *
      * @param tableName the name of the table to delete from
      * @return a new SqlBuilder instance configured for DELETE operation
-     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or contains an unterminated block comment
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment
      */
     public SqlBuilder deleteFrom(final String tableName) {
-        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
+        AbstractQueryBuilder.checkTableNameNotBlank(tableName, "tableName");
         checkNoUnterminatedBlockComment(tableName);
 
         final SqlBuilder instance = createSqlBuilderInstance();
@@ -1103,13 +1103,13 @@ public final class Dsl {
      * @param tableName the name of the table to delete from
      * @param entityClass the entity class for property mapping
      * @return a new SqlBuilder instance configured for DELETE operation
-     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, or contains an unterminated block
+     * @throws IllegalArgumentException if {@code tableName} is null, empty, or blank, consists only of control or space characters, or contains an unterminated block
      *         comment, or {@code entityClass} is null, or inspected entity metadata has invalid property mappings
      * @throws UnsupportedOperationException if inspected bean metadata uses the {@code long} date format
      *         for a {@code LocalDate} or {@code LocalTime} property
      */
     public SqlBuilder deleteFrom(final String tableName, final Class<?> entityClass) {
-        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
+        AbstractQueryBuilder.checkTableNameNotBlank(tableName, "tableName");
         checkNoUnterminatedBlockComment(tableName);
         N.checkArgNotNull(entityClass, SqlBuilder.DELETION_PART_MSG);
 
@@ -2156,14 +2156,14 @@ public final class Dsl {
      *
      * @param tableName the table to count rows from
      * @return a new SqlBuilder instance configured for SELECT operation
-     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank, or contains an unterminated
+     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank, consists only of control or space characters, or contains an unterminated
      *         block comment
      */
     public SqlBuilder selectCountFrom(final String tableName) {
         // Validate before select(...) allocates a builder backed by a pooled StringBuilder. If from(...)
         // were left to reject a blank name, that newly allocated builder would never be returned to the
         // caller and could therefore never be released through build().
-        AbstractQueryBuilder.checkSqlFragmentNotBlank(tableName, "tableName");
+        AbstractQueryBuilder.checkTableNameNotBlank(tableName, "tableName");
         checkNoUnterminatedBlockComment(tableName);
 
         final SqlBuilder builder = select(SqlBuilder.COUNT_ALL_LIST);

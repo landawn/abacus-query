@@ -724,10 +724,10 @@ public abstract class AbstractCondition implements Condition {
      * Returns whether a select item contains a projection wildcard: a top-level {@code *} that starts
      * the item; follows {@code DISTINCT}, {@code DISTINCTROW}, {@code ALL}, a comma, or a qualifier dot (not the
      * decimal point of a numeric literal such as {@code 1.}); or has no right operand, so it cannot be a
-     * multiplication (it ends the item or precedes a comma, {@code EXCEPT}, {@code EXCLUDE} or {@code REPLACE}, as in
-     * {@code DISTINCT ON (id) *} or {@code TOP 10 *}). This covers {@code DISTINCT *} and the
-     * {@code * EXCEPT (...)}/{@code * EXCLUDE (...)}/{@code * REPLACE (...)} forms, but not {@code COUNT(*)} or the
-     * multiplication in {@code a * b}.
+     * multiplication (it ends the item or precedes a comma, {@code EXCEPT}, {@code EXCLUDE} or a {@code REPLACE} list
+     * holding a top-level {@code AS}, as in {@code DISTINCT ON (id) *} or {@code TOP 10 *}). This covers
+     * {@code DISTINCT *} and the {@code * EXCEPT (...)}/{@code * EXCLUDE (...)}/{@code * REPLACE (expr AS col, ...)}
+     * forms, but not {@code COUNT(*)}, the multiplication in {@code a * b}, or {@code price * REPLACE(name, 'a', 'b')}.
      *
      * @param selectItem the trimmed select item, which contains a {@code '*'} character
      * @return {@code true} if the item projects a wildcard

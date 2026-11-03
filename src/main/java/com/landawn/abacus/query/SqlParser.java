@@ -4068,7 +4068,9 @@ public final class SqlParser {
      * (a {@code #} that opens a statement keeps its comment reading, since no T-SQL statement can start with it,
      * unless it names a T-SQL label such as {@code #x:} or {@code #:}, after which the rest of its line is read as the
      * statement; so a MySQL comment line such as {@code #TODO: delete later} that opens a statement is rejected, while
-     * {@code # TODO: delete later}, with a space after the {@code #}, stays a comment).
+     * {@code # TODO: delete later}, with a space after the {@code #}, stays a comment). For the same reason a
+     * {@code #} glued to the leading verb is rejected: SQL Server reads {@code SELECT#note} as one name, so
+     * {@code SELECT#note\n a FROM t} is rejected while {@code SELECT #note\n a FROM t} is accepted.
      * Outside the H2, MySQL, SQLite and Oracle readings, a block comment containing a nested {@code /*} is
      * rejected, because its extent differs between dialects; such text is also read, only to reject it, in every quote
      * and comment combination above with nesting block comments (PostgreSQL, SQL Server). The H2 reading runs whenever
@@ -4469,7 +4471,9 @@ public final class SqlParser {
      * (a {@code #} that opens a statement keeps its comment reading, since no T-SQL statement can start with it,
      * unless it names a T-SQL label such as {@code #x:} or {@code #:}, after which the rest of its line is read as the
      * statement; so a MySQL comment line such as {@code #TODO: delete later} that opens a statement is rejected, while
-     * {@code # TODO: delete later}, with a space after the {@code #}, stays a comment).
+     * {@code # TODO: delete later}, with a space after the {@code #}, stays a comment). For the same reason a
+     * {@code #} glued to the leading verb is rejected: SQL Server reads {@code SELECT#note} as one name, so
+     * {@code SELECT#note\n a FROM t} is rejected while {@code SELECT #note\n a FROM t} is accepted.
      * Outside the H2, MySQL, SQLite and Oracle readings, a block comment containing a nested {@code /*} is
      * rejected, because its extent differs between dialects; such text is also read, only to reject it, in every quote
      * and comment combination above with nesting block comments (PostgreSQL, SQL Server). The H2 reading runs whenever
@@ -4532,7 +4536,8 @@ public final class SqlParser {
                 return false;
             }
             // A '#' glued to the verb is not invariant: the SQL Server reading keeps "SELECT#x" as one name (an implicit
-            // procedure call leading the batch), so let every reading check its own leading word then.
+            // procedure call leading the batch), so let every reading check its own leading word then. An '@' does not
+            // need this: SQL Server ends a keyword at '@' ("SELECT@@VERSION", "SELECT@x" select a variable).
             knownAllowedLeadingVerb = allowedLeadingVerb && (end == sql.length() || sql.charAt(end) != '#');
         }
         boolean hasValidMode = false;

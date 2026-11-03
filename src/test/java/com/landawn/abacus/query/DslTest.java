@@ -609,6 +609,23 @@ public class DslTest extends TestBase {
 
     @Nested
     class FactoryContracts {
+        // Regression: these factories did not trim, so a name of only control or space characters rendered no table
+        // ("UPDATE \u0001 SET a = ?").
+        @Test
+        void testTableNameFactoriesRejectControlOrSpaceOnlyNames() {
+            for (final String name : new String[] { "\u0001", "\u0000\u0001", " ", "  ", "  \u0001 " }) {
+                assertThrows(IllegalArgumentException.class, () -> PSC.update(name), name);
+                assertThrows(IllegalArgumentException.class, () -> PSC.update(name, com.landawn.abacus.query.entity.Account.class), name);
+                assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom(name), name);
+                assertThrows(IllegalArgumentException.class, () -> PSC.deleteFrom(name, com.landawn.abacus.query.entity.Account.class), name);
+                assertThrows(IllegalArgumentException.class, () -> PSC.selectCountFrom(name), name);
+            }
+
+            assertEquals("UPDATE t SET a = ?", PSC.update("t").set("a").build().query());
+            assertEquals("DELETE FROM t WHERE id = ?", PSC.deleteFrom("t").where(Filters.eq("id", 1)).build().query());
+            assertEquals("SELECT count(*) FROM t", PSC.selectCountFrom("t").build().query());
+        }
+
         // Regression: a blank @Table alias is "not specified" on the selectFrom(Class, true) path, but the Selection path
         // substituted it and then rejected it as a blank table alias.
         @Test
@@ -9179,12 +9196,13 @@ public class DslTest extends TestBase {
 
         @Test
         void testSelectCountFromReleasesTheBuilderWhenTheTableTrimsToEmpty() {
-            // U+0001 is not blank, and it holds no block comment, but String.trim() drops it.
+            // U+0001 is not blank, and it holds no block comment, but String.trim() drops it. The table-name check now
+            // rejects it before the pooled builder is allocated (it used to fail later, in from()), so nothing leaks.
             final int before = AbstractQueryBuilder.activeStringBuilderCounter.get();
             final IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> PSC.selectCountFrom("\u0001"));
 
-            assertEquals("'expr' cannot be null or empty", failure.getMessage());
-            assertTrue(Arrays.stream(failure.getStackTrace()).anyMatch(frame -> "from".equals(frame.getMethodName())), failure.toString());
+            assertEquals("tableName must not consist only of control or space characters", failure.getMessage());
+            assertTrue(Arrays.stream(failure.getStackTrace()).noneMatch(frame -> "from".equals(frame.getMethodName())), failure.toString());
             assertEquals(before, AbstractQueryBuilder.activeStringBuilderCounter.get());
             assertEquals("SELECT id FROM account", PSC.select("id").from("account").build().query());
         }

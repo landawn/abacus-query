@@ -343,6 +343,26 @@ public class SqlParserTest extends TestBase {
             assertFalse(SqlParser.isReadOrInsertQuery("INSERT#x INTO t VALUES (1)"));
             assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT 1 #x"));
             assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT a FROM #tmp"));
+
+            // A MySQL comment glued to the verb is rejected as documented; separated by a space it stays a comment.
+            assertFalse(SqlParser.isSyntacticallyReadQuery("SELECT#note\n a FROM t"));
+            assertFalse(SqlParser.isReadOrInsertQuery("INSERT#note\n INTO t VALUES (1)"));
+            assertTrue(SqlParser.isSyntacticallyReadQuery("SELECT #note\n a FROM t"));
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT #note\n INTO t VALUES (1)"));
+        }
+
+        // SQL Server ends a keyword at '@' ("SELECT@@VERSION"), so an '@' glued to the verb keeps the fast path; the answer
+        // must not depend on a leading comment that disables it.
+        @Test
+        void testAtSignGluedToLeadingVerbIsTheSameUnderEveryReading() {
+            for (final String sql : new String[] { "SELECT@@VERSION", "SELECT@x 1", "SELECT@x FROM t" }) {
+                assertTrue(SqlParser.isSyntacticallyReadQuery(sql), sql);
+                assertTrue(SqlParser.isSyntacticallyReadQuery("/**/" + sql), sql);
+                assertTrue(SqlParser.isReadOrInsertQuery(sql), sql);
+                assertTrue(SqlParser.isReadOrInsertQuery("/**/" + sql), sql);
+            }
+
+            assertTrue(SqlParser.isReadOrInsertQuery("INSERT@x INTO t VALUES (1)") == SqlParser.isReadOrInsertQuery("/**/INSERT@x INTO t VALUES (1)"));
         }
 
         // Regression: "$1." also reads as a number, so "$1.insert" was taken for the INSERT verb and exempted the MySQL

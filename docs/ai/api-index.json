@@ -5,7 +5,7 @@
     "generated_at": "2026-11-02",
     "java_target": "21",
     "source": {
-      "git_sha": "988f590a9ec642d2753d7fc83f2b037933ecadcc"
+      "git_sha": "844f71a281845c4bafb1932ee5da584a9ae07690"
     }
   },
   "packages": [
@@ -75,7 +75,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of the entity mapping or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns; not checked for a select(List<Selection>) projection); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of the entity mapping or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns; not checked for a select(List<Selection>) projection); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -175,7 +175,7 @@
                 },
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of entityClass or (except for a select(List<Selection>) projection) of the source entity, or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
+                  "condition": "if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or if a staged column name contains a SQL comment token; or if, for INSERT ... SELECT, a wildcard select item (* or alias.*) is combined with other select items, or a select item names a sub-entity property of entityClass or (except for a select(List<Selection>) projection) of the source entity, or one of its root.prop paths (sub-entity columns are rendered qualified with the sub-entity's table, so they cannot name target columns); or if a rendered value contains an invalid condition or incompatible subquery, or, under RAW_SQL, a non-finite floating-point value or a Number whose text is not a decimal SQL literal."
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5228,7 +5228,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment"
+                  "condition": "if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates an UPDATE statement for a table.",
@@ -5265,7 +5265,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings"
+                  "condition": "if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -5378,7 +5378,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment"
+                  "condition": "if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates a DELETE FROM statement for a table.",
@@ -5417,7 +5417,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings"
+                  "condition": "if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment, or entityClass is null, or inspected entity metadata has invalid property mappings"
                 },
                 {
                   "type": "java.lang.UnsupportedOperationException",
@@ -6608,7 +6608,7 @@
               "throws": [
                 {
                   "type": "java.lang.IllegalArgumentException",
-                  "condition": "if tableName is null, empty, or blank, or contains an unterminated block comment"
+                  "condition": "if tableName is null, empty, or blank, consists only of control or space characters, or contains an unterminated block comment"
                 }
               ],
               "javadoc_summary": "Creates a COUNT(*) query for a table.",

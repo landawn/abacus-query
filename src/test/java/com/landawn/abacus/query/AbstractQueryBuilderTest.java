@@ -172,6 +172,18 @@ public class AbstractQueryBuilderTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> PSC.select("a").into("\u0001"));
             assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into("\u0001"));
             assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into("\u0000", Account.class));
+            assertThrows(IllegalArgumentException.class, () -> PSC.select("a").into("\u0001 \u0002"));
+
+            // Unicode space characters survive trim() and isBlank, but the renderer treats them as separators, so a name made
+            // only of them is no table either ("INSERT INTO   (a)").
+            for (final String spaces : new String[] { " ", "  ", "  \u0001 " }) {
+                assertThrows(IllegalArgumentException.class, () -> PSC.select("a").into(spaces));
+                assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into(spaces));
+                assertThrows(IllegalArgumentException.class, () -> PSC.insert("a").into(spaces, Account.class));
+            }
+
+            // A real name keeps working, padded or not.
+            assertEquals("INSERT INTO t2 (a) VALUES (?)", PSC.insert("a").into(" t2 ").build().query());
         }
 
         @Test

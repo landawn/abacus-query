@@ -1589,6 +1589,47 @@ public class QueryUtilTest extends TestBase {
             assertThrows(IllegalArgumentException.class, () -> QueryUtil.propToColumnInfoMap(null, null));
         }
 
+        // The per-policy caches are lock-free slot arrays: each policy keeps its own published map, warm calls return it,
+        // and racing first calls all receive the one winner.
+        @Test
+        void testPropToColumnNameMapCachesOneMapPerNamingPolicy() throws Exception {
+            for (final NamingPolicy policy : NamingPolicy.values()) {
+                final ImmutableMap<String, String> first = QueryUtil.propToColumnNameMap(Account.class, policy);
+                assertSame(first, QueryUtil.propToColumnNameMap(Account.class, policy), policy.name());
+                assertSame(QueryUtil.propToColumnInfoMap(Account.class, policy), QueryUtil.propToColumnInfoMap(Account.class, policy), policy.name());
+            }
+
+            assertEquals("first_name", QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE).get("firstName"));
+            assertEquals("FIRST_NAME", QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SCREAMING_SNAKE_CASE).get("firstName"));
+            assertSame(QueryUtil.propToColumnNameMap(Account.class, NamingPolicy.SNAKE_CASE), QueryUtil.propToColumnNameMap(Account.class, null));
+
+            final int threads = 8;
+            final ExecutorService executor = Executors.newFixedThreadPool(threads);
+            try {
+                final CountDownLatch start = new CountDownLatch(1);
+                final List<java.util.concurrent.Future<ImmutableMap<String, String>>> results = new ArrayList<>();
+
+                for (int i = 0; i < threads; i++) {
+                    results.add(executor.submit(() -> {
+                        start.await();
+                        return QueryUtil.propToColumnNameMap(LockFreeCacheBean.class, NamingPolicy.CAMEL_CASE);
+                    }));
+                }
+
+                start.countDown();
+                final ImmutableMap<String, String> winner = results.get(0).get();
+                assertEquals("someValue", winner.get("someValue"));
+
+                for (final java.util.concurrent.Future<ImmutableMap<String, String>> result : results) {
+                    assertSame(winner, result.get());
+                }
+
+                assertSame(winner, QueryUtil.propToColumnNameMap(LockFreeCacheBean.class, NamingPolicy.CAMEL_CASE));
+            } finally {
+                executor.shutdownNow();
+            }
+        }
+
         @Test
         void testRecursiveMappingDoesNotReuseAnotherTopLevelAncestorContext() {
             final ImmutableMap<String, String> child = QueryUtil.propToColumnNameMap(MappingChild.class, NamingPolicy.SNAKE_CASE);
@@ -2399,6 +2440,28 @@ public class QueryUtilTest extends TestBase {
 
         public void setChild(final MappingChild value) {
             child = value;
+        }
+    }
+
+    /** Used only by the concurrent first-use cache test, so no other test publishes its CAMEL_CASE map first. */
+    public static class LockFreeCacheBean {
+        private long id;
+        private String someValue;
+
+        public long getId() {
+            return id;
+        }
+
+        public void setId(final long id) {
+            this.id = id;
+        }
+
+        public String getSomeValue() {
+            return someValue;
+        }
+
+        public void setSomeValue(final String someValue) {
+            this.someValue = someValue;
         }
     }
 

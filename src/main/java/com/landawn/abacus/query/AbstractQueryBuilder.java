@@ -1524,6 +1524,31 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
     }
 
     /**
+     * Validates a table name argument like {@link #checkSqlFragmentNotBlank(String, String)}, and also rejects a name made
+     * only of control characters (which {@link String#trim()} removes although {@link Strings#isBlank} keeps them) or of
+     * Unicode space characters such as U+00A0 (which the renderer treats as separators): either renders an empty table
+     * reference ({@code INSERT INTO  (a)}, {@code UPDATE  SET ...}).
+     *
+     * @param tableName the table name to validate
+     * @param argName the argument name used in the exception message
+     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank, or consists only of control
+     *         or space characters
+     */
+    static void checkTableNameNotBlank(final String tableName, final String argName) {
+        checkSqlFragmentNotBlank(tableName, argName);
+
+        for (int i = 0, len = tableName.length(); i < len; i++) {
+            final char ch = tableName.charAt(i);
+
+            if (ch > ' ' && !isWhitespaceOrSpaceChar(ch)) {
+                return;
+            }
+        }
+
+        throw new IllegalArgumentException(argName + " must not consist only of control or space characters");
+    }
+
+    /**
      * Validates that an array of raw SQL fragment arguments is not {@code null} or empty and contains
      * no {@code null}, empty, or blank element.
      *
@@ -1775,7 +1800,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current operation is neither {@code ADD} nor {@code QUERY}, if columns/values
      *             have not been set, or if it is called after SQL has already been emitted (e.g., after {@code from()} or a second {@code into()});
      *         or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
-     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank, or contains an unterminated block comment,
+     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank, consists only of control or space characters, or contains an unterminated block comment,
      *         or if a staged column name contains a SQL comment token;
      *         or if, for {@code INSERT ... SELECT}, a wildcard select item ({@code *} or {@code alias.*}) is combined with other select items,
      *         or a select item names a sub-entity property of the entity mapping or one of its {@code root.prop} paths (sub-entity
@@ -1789,10 +1814,10 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This into(final String tableName) {
         checkCanAppendInto();
-        checkSqlFragmentNotBlank(tableName, "tableName");
+        // Also rejects a control- or space-character-only name, which trim() would empty or leave rendering no table.
+        checkTableNameNotBlank(tableName, "tableName");
 
         final String normalizedTableName = tableName.trim();
-        N.checkArgNotEmpty(normalizedTableName, cs.tableName);
 
         return mutateAtomically(false, () -> appendIntoClause(normalizedTableName, false));
     }
@@ -2036,7 +2061,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
             }
         }
 
-        // "(name)" (as in "DISTINCT(name)") parenthesizes the column, not a list: it is no valid target column.
+        // A parenthesized column ("(name)", "((t.name))") is no valid target column: name the column itself.
         return withoutEnclosingParentheses(column);
     }
 
@@ -2385,7 +2410,7 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      * @throws IllegalStateException if this builder is closed, if the current operation is neither {@code ADD} nor {@code QUERY}, if columns/values
      *             have not been set, or if it is called after SQL has already been emitted (e.g., after {@code from()} or a second {@code into()});
      *         or if a configured named-parameter handler emits an empty token under {@code NAMED_SQL}.
-     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank, or contains an unterminated block comment,
+     * @throws IllegalArgumentException if {@code tableName} is {@code null}, empty, or blank, consists only of control or space characters, or contains an unterminated block comment,
      *         or if a staged column name contains a SQL comment token;
      *         or if, for {@code INSERT ... SELECT}, a wildcard select item ({@code *} or {@code alias.*}) is combined with other select items,
      *         or a select item names a sub-entity property of {@code entityClass} or (except for a {@code select(List<Selection>)}
@@ -2400,9 +2425,8 @@ public abstract class AbstractQueryBuilder<This extends AbstractQueryBuilder<Thi
      */
     public This into(final String tableName, final Class<?> entityClass) {
         checkCanAppendInto();
-        checkSqlFragmentNotBlank(tableName, "tableName");
+        checkTableNameNotBlank(tableName, "tableName");
         final String normalizedTableName = tableName.trim();
-        N.checkArgNotEmpty(normalizedTableName, cs.tableName);
 
         return mutateAtomically(false, () -> {
             if (entityClass != null) {
