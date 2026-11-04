@@ -1,7 +1,7 @@
 # abacus-query
 
 [![Maven Central](https://img.shields.io/maven-central/v/com.landawn.abacus/abacus-query.svg)](https://central.sonatype.com/artifact/com.landawn.abacus/abacus-query)
-[![Javadocs](https://img.shields.io/badge/javadoc-4.9.7-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.9.7/index.html)
+[![Javadocs](https://img.shields.io/badge/javadoc-4.9.8-brightgreen.svg)](https://www.javadoc.io/doc/com.landawn.abacus/abacus-query/4.9.8/index.html)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](./LICENSE)
 
 **A Java SQL toolkit for building, composing, and inspecting SQL.** `abacus-query`
@@ -47,7 +47,7 @@ Declare `abacus-common` explicitly for compilation and runtime:
     <dependency>
         <groupId>com.landawn.abacus</groupId>
         <artifactId>abacus-query</artifactId>
-        <version>4.9.7</version>
+        <version>4.9.8</version>
     </dependency>
     <dependency>
         <groupId>com.landawn.abacus</groupId>
@@ -60,7 +60,7 @@ Declare `abacus-common` explicitly for compilation and runtime:
 The equivalent Gradle dependencies are:
 
 ```groovy
-implementation 'com.landawn.abacus:abacus-query:4.9.7'
+implementation 'com.landawn.abacus:abacus-query:4.9.8'
 implementation 'com.landawn.abacus:abacus-common:8.3.0'
 ```
 
